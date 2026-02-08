@@ -1,0 +1,1545 @@
+/* PM DASHBOARD (JS) */
+(function () {
+  var env = document.getElementById("pmEnv");
+  var CSRFToken = env ? env.getAttribute("data-csrf") || "" : "";
+
+  // Task form indicator IDs
+  var TASK_IND = {
+    projectKey: 128,
+    title: 129,
+    status: 130,
+    assignedTo: 131,
+    startDate: 132,
+    dueDate: 133,
+    priority: 140,
+    category: 145,
+    dependencies: 146,
+  };
+
+  // Project form indicator IDs
+  var PROJECT_IND = {
+    projectKey: 135,
+    projectName: 136,
+    description: 137,
+    owner: 138,
+    projectStatus: 139,
+  };
+
+  // Endpoints
+  var BASE_QUERY_ENDPOINT =
+    "https://leaf.va.gov/platform/sl_projects/api/form/query/";
+  var FORM_POST_ENDPOINT_PREFIX =
+    "https://leaf.va.gov/platform/sl_projects/api/form/";
+  var START_PROJECT_URL =
+    "https://leaf.va.gov/platform/sl_projects/report.php?a=LEAF_Start_Request&id=form_7f573";
+  var START_TASK_URL =
+    "https://leaf.va.gov/platform/sl_projects/report.php?a=LEAF_Start_Request&id=form_c9014";
+
+  // Persistence keys
+  var STORAGE_KEYS = {
+    activeTab: "pm_active_tab",
+    tasksView: "pm_tasks_view",
+  };
+
+  // Fallback drives Kanban column order even when zero tasks
+  var STATUS_OPTIONS_FALLBACK = [
+    "Not Started",
+    "In Progress",
+    "Blocked - Dependencies",
+    "On Hold",
+    "Completed",
+  ];
+
+  var state = {
+    projectsAll: [],
+    tasksAll: [],
+    statusOptionsOrdered: STATUS_OPTIONS_FALLBACK.slice(),
+    projectKeyToRecordID: {},
+    projectKeyToTitle: {},
+    sort: {
+      projects: { key: null, dir: 1, type: "string" },
+      tasks: { key: null, dir: 1, type: "string" },
+    },
+    charts: { status: null, projectKey: null, dueBuckets: null },
+  };
+
+  function safe(s) {
+    return String(s || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
+  }
+
+  function openModal(title, url) {
+    var modal = document.getElementById("pmModal");
+    var frame = document.getElementById("pmModalFrame");
+    var titleEl = document.getElementById("pmModalTitle");
+    if (!modal || !frame || !titleEl) return;
+    titleEl.textContent = title || "Details";
+    frame.src = url;
+    modal.style.display = "block";
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal() {
+    var modal = document.getElementById("pmModal");
+    var frame = document.getElementById("pmModalFrame");
+    if (!modal || !frame) return;
+    frame.src = "about:blank";
+    modal.style.display = "none";
+    modal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  function encodeFormBody(obj) {
+    var parts = [];
+    Object.keys(obj).forEach(function (k) {
+      parts.push(
+        encodeURIComponent(k) +
+          "=" +
+          encodeURIComponent(String(obj[k] == null ? "" : obj[k])),
+      );
+    });
+    return parts.join("&");
+  }
+
+  async function fetchJSON(url) {
+    var r = await fetch(url, { credentials: "same-origin" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  }
+
+  function coerceRows(json) {
+    if (Array.isArray(json)) return json;
+    if (json && typeof json === "object") {
+      if (Array.isArray(json.data)) return json.data;
+      if (Array.isArray(json.records)) return json.records;
+      if (Array.isArray(json.results)) return json.results;
+
+      var keys = Object.keys(json);
+      var keyed =
+        keys.length &&
+        keys.every(function (k) {
+          return /^\d+$/.test(k);
+        });
+      if (keyed) {
+        return keys.map(function (k) {
+          var row = json[k] || {};
+          if (!row.recordID && !row.recordId && !row.id) row.recordID = k;
+          return row;
+        });
+      }
+    }
+    return null;
+  }
+
+  function extractFromS1(row, indicatorId) {
+    if (!row || !row.s1) return "";
+    var key = "id" + String(indicatorId);
+    var v = row.s1[key];
+    if (v == null) return "";
+    return String(v).trim();
+  }
+
+  function extractRawIndicator(row, indicatorId) {
+    if (!row) return null;
+    var key = "id" + String(indicatorId);
+    if (row.s1 && row.s1[key] != null) return row.s1[key];
+    if (row[key] != null) return row[key];
+    if (row.data && row.data[key] != null) return row.data[key];
+    return null;
+  }
+
+  function decodeEntities(str) {
+    // Handles HTML-escaped JSON like [{&quot;id&quot;:185,...}]
+    var s = String(str || "");
+    if (!s) return "";
+    var ta = document.createElement("textarea");
+    ta.innerHTML = s;
+    return ta.value;
+  }
+
+  /* ===== Dependencies parsing (restored working approach + comma rendering) ===== */
+  function parseDependencies(raw) {
+    var v = String(raw || "").trim();
+    if (!v) return [];
+    try {
+      var a = JSON.parse(v);
+      return Array.isArray(a) ? a : [];
+    } catch (e1) {
+      try {
+        var decoded = decodeEntities(v);
+        var b = JSON.parse(decoded);
+        return Array.isArray(b) ? b : [];
+      } catch (e2) {
+        return [];
+      }
+    }
+  }
+
+  function extractDependencyIds(raw) {
+    var arr = parseDependencies(raw);
+    return arr
+      .map(function (x) {
+        return x && (x.id != null ? String(x.id).trim() : "");
+      })
+      .filter(function (id) {
+        return !!id;
+      });
+  }
+
+  function recordLink(recordID, title) {
+    var id = String(recordID || "").trim();
+    if (!id) return "";
+    var href = "index.php?a=printview&recordID=" + encodeURIComponent(id);
+    return (
+      '<a href="' +
+      safe(href) +
+      '" class="pm-recordLink" data-title="' +
+      safe(title || "Record " + id) +
+      '">' +
+      safe(id) +
+      "</a>"
+    );
+  }
+
+  function renderDepsList(depIds) {
+    if (!depIds || !depIds.length) return '<span class="pm-muted">None</span>';
+    return (
+      '<span class="pm-depsList">' +
+      depIds
+        .map(function (id) {
+          return recordLink(id, "Dependency " + id);
+        })
+        .join(", ") +
+      "</span>"
+    );
+  }
+  /* ===== End dependencies block ===== */
+
+  function getRecordID(row) {
+    return String(row.recordID || row.recordId || row.id || "").trim();
+  }
+
+  function normalizeTask(row) {
+    var recordID = getRecordID(row);
+
+    // Prefer raw access first, then s1 string fallback
+    var depsRawAny = extractRawIndicator(row, TASK_IND.dependencies);
+    var depsRaw =
+      depsRawAny != null && typeof depsRawAny !== "object"
+        ? String(depsRawAny)
+        : extractFromS1(row, TASK_IND.dependencies);
+
+    // If we actually got an array/object, try to JSON-stringify then parse with the same logic
+    if (depsRawAny != null && typeof depsRawAny === "object") {
+      try {
+        depsRaw = JSON.stringify(depsRawAny);
+      } catch (e0) {}
+    }
+
+    var depIds = extractDependencyIds(depsRaw);
+
+    return {
+      recordID: recordID,
+      projectKey: extractFromS1(row, TASK_IND.projectKey),
+      title: extractFromS1(row, TASK_IND.title),
+      status: extractFromS1(row, TASK_IND.status),
+      assignedTo: extractFromS1(row, TASK_IND.assignedTo),
+      start: extractFromS1(row, TASK_IND.startDate),
+      due: extractFromS1(row, TASK_IND.dueDate),
+      priority: extractFromS1(row, TASK_IND.priority),
+      category: extractFromS1(row, TASK_IND.category),
+      dependenciesRaw: depsRaw,
+      depIds: depIds,
+      href: recordID
+        ? "index.php?a=printview&recordID=" + encodeURIComponent(recordID)
+        : "",
+    };
+  }
+
+  function normalizeProject(row) {
+    var recordID = getRecordID(row);
+    return {
+      recordID: recordID,
+      projectKey: extractFromS1(row, PROJECT_IND.projectKey),
+      projectName: extractFromS1(row, PROJECT_IND.projectName),
+      description: extractFromS1(row, PROJECT_IND.description),
+      owner: extractFromS1(row, PROJECT_IND.owner),
+      projectStatus: extractFromS1(row, PROJECT_IND.projectStatus),
+      href: recordID
+        ? "index.php?a=printview&recordID=" + encodeURIComponent(recordID)
+        : "",
+    };
+  }
+
+  function buildQueryUrl(getData, extraTerms) {
+    var terms = Array.isArray(extraTerms) ? extraTerms.slice() : [];
+    terms.push({ id: "deleted", operator: "=", match: 0, gate: "AND" });
+    var q = { terms: terms, joins: [], sort: {}, getData: getData.map(String) };
+    return (
+      BASE_QUERY_ENDPOINT +
+      "?q=" +
+      encodeURIComponent(JSON.stringify(q)) +
+      "&x-filterData=recordID,"
+    );
+  }
+
+  function hasAnyS1Value(row, indicatorIds) {
+    if (!row || !row.s1) return false;
+    for (var i = 0; i < indicatorIds.length; i++) {
+      var key = "id" + String(indicatorIds[i]);
+      var v = row.s1[key];
+      if (v !== null && v !== undefined && String(v).trim() !== "") return true;
+    }
+    return false;
+  }
+
+  function parseDateLoose(val) {
+    if (!val) return null;
+    var d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function compareValues(a, b, dir, type) {
+    if (type === "number") return dir * ((Number(a) || 0) - (Number(b) || 0));
+    if (type === "date") {
+      var da = parseDateLoose(a);
+      var db = parseDateLoose(b);
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return dir * (da - db);
+    }
+    return (
+      dir *
+      String(a || "").localeCompare(String(b || ""), undefined, {
+        numeric: true,
+        sensitivity: "base",
+      })
+    );
+  }
+
+  function setSortIndicator(containerId, activeKey, dir) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll(".pm-sortable").forEach(function (th) {
+      th.classList.remove("is-asc", "is-desc");
+      var key = th.getAttribute("data-sort");
+      if (key && key === activeKey)
+        th.classList.add(dir === 1 ? "is-asc" : "is-desc");
+    });
+  }
+
+  function getPriorityPill(priority) {
+    var p = String(priority || "").trim();
+    if (!p) return "";
+    if (p.toLowerCase() === "high")
+      return '<span class="pm-pill pm-pill-high">High</span>';
+    if (p.toLowerCase() === "medium")
+      return '<span class="pm-pill pm-pill-med">Medium</span>';
+    if (p.toLowerCase() === "low")
+      return '<span class="pm-pill pm-pill-low">Low</span>';
+    return safe(p);
+  }
+
+  function getProjectRecordHrefFromKey(projectKey) {
+    var key = String(projectKey || "").trim();
+    if (!key) return "";
+    var rid = state.projectKeyToRecordID[key];
+    if (!rid) return "";
+    return "index.php?a=printview&recordID=" + encodeURIComponent(rid);
+  }
+
+  function renderProjectsTable(projects) {
+    var el = document.getElementById("pmProjectsTable");
+    if (!el) return;
+
+    var rows = projects
+      .slice(0, 500)
+      .map(function (p) {
+        var pkHref = getProjectRecordHrefFromKey(p.projectKey) || p.href;
+        var pkLink = pkHref
+          ? '<a href="' +
+            safe(pkHref) +
+            '" class="pm-recordLink" data-title="' +
+            safe("Project " + p.projectKey) +
+            '">' +
+            safe(p.projectKey) +
+            "</a>"
+          : safe(p.projectKey);
+
+        return (
+          "<tr>" +
+          "<td>" +
+          pkLink +
+          "</td>" +
+          "<td>" +
+          safe(p.projectName) +
+          "</td>" +
+          "<td>" +
+          safe(p.description) +
+          "</td>" +
+          "<td>" +
+          safe(p.owner) +
+          "</td>" +
+          "<td>" +
+          safe(p.projectStatus) +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+
+    el.innerHTML =
+      '<table class="pm-table">' +
+      "<thead><tr>" +
+      '<th class="pm-sortable" data-sort="projectKey" data-type="string">Project Key</th>' +
+      '<th class="pm-sortable" data-sort="projectName" data-type="string">Project Name</th>' +
+      '<th class="pm-sortable" data-sort="description" data-type="string">Description</th>' +
+      '<th class="pm-sortable" data-sort="owner" data-type="string">Owner</th>' +
+      '<th class="pm-sortable" data-sort="projectStatus" data-type="string">Status</th>' +
+      "</tr></thead>" +
+      "<tbody>" +
+      rows +
+      "</tbody>" +
+      "</table>";
+
+    var s = state.sort.projects;
+    setSortIndicator("pmProjectsTable", s.key, s.dir);
+  }
+
+  function renderTasksTable(tasks) {
+    var el = document.getElementById("pmTasksTable");
+    if (!el) return;
+
+    var rows = tasks
+      .slice(0, 500)
+      .map(function (t) {
+        var pkHref = getProjectRecordHrefFromKey(t.projectKey);
+        var pkLink = pkHref
+          ? '<a href="' +
+            safe(pkHref) +
+            '" class="pm-recordLink" data-title="' +
+            safe("Project " + t.projectKey) +
+            '">' +
+            safe(t.projectKey) +
+            "</a>"
+          : safe(t.projectKey);
+
+        var taskLink = t.href
+          ? '<a href="' +
+            safe(t.href) +
+            '" class="pm-recordLink" data-title="' +
+            safe("Task " + t.recordID) +
+            '">' +
+            safe(t.recordID) +
+            "</a>"
+          : safe(t.recordID);
+
+        return (
+          "<tr>" +
+          "<td>" +
+          pkLink +
+          "</td>" +
+          "<td>" +
+          taskLink +
+          "</td>" +
+          "<td>" +
+          safe(t.title) +
+          "</td>" +
+          "<td>" +
+          safe(t.status) +
+          "</td>" +
+          "<td>" +
+          renderDepsList(t.depIds) +
+          "</td>" +
+          "<td>" +
+          getPriorityPill(t.priority) +
+          "</td>" +
+          "<td>" +
+          safe(t.category) +
+          "</td>" +
+          "<td>" +
+          safe(t.assignedTo) +
+          "</td>" +
+          "<td>" +
+          safe(t.start) +
+          "</td>" +
+          "<td>" +
+          safe(t.due) +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+
+    el.innerHTML =
+      '<table class="pm-table">' +
+      "<thead><tr>" +
+      '<th class="pm-sortable" data-sort="projectKey" data-type="string">Project Key</th>' +
+      '<th class="pm-sortable" data-sort="recordID" data-type="number">Task ID</th>' +
+      '<th class="pm-sortable" data-sort="title" data-type="string">Title</th>' +
+      '<th class="pm-sortable" data-sort="status" data-type="string">Status</th>' +
+      '<th class="pm-sortable" data-sort="dependencies" data-type="string">Dependencies</th>' +
+      '<th class="pm-sortable" data-sort="priority" data-type="string">Priority</th>' +
+      '<th class="pm-sortable" data-sort="category" data-type="string">Category</th>' +
+      '<th class="pm-sortable" data-sort="assignedTo" data-type="string">Assigned To</th>' +
+      '<th class="pm-sortable" data-sort="start" data-type="date">Start</th>' +
+      '<th class="pm-sortable" data-sort="due" data-type="date">Due</th>' +
+      "</tr></thead>" +
+      "<tbody>" +
+      rows +
+      "</tbody>" +
+      "</table>";
+
+    var s = state.sort.tasks;
+    setSortIndicator("pmTasksTable", s.key, s.dir);
+  }
+
+  function renderProjectHealthSticky(activeTab, tasksView, selectedProjectKey) {
+    var wrap = document.getElementById("pmProjectHealthSticky");
+    if (!wrap) return;
+
+    var key = String(selectedProjectKey || "").trim();
+    if (activeTab !== "tasks" || tasksView !== "table" || !key) {
+      wrap.style.display = "none";
+      wrap.innerHTML = "";
+      return;
+    }
+
+    var title = String(state.projectKeyToTitle[key] || "").trim();
+    if (!title) title = "{no project title}";
+    var tasksForProject = state.tasksAll.filter(function (t) {
+      return String(t.projectKey || "").trim() === key;
+    });
+
+    var total = tasksForProject.length;
+    var completed = 0;
+    var overdue = 0;
+    var now = new Date();
+
+    tasksForProject.forEach(function (t) {
+      var st = String(t.status || "").toLowerCase();
+      if (st.indexOf("completed") !== -1) completed += 1;
+      if (isOverdueTask(t, now)) overdue += 1;
+    });
+
+    var compPct = total ? Math.round((completed / total) * 100) : 0;
+    var overdueClass =
+      overdue > 0 ? "pm-healthValue pm-overdueRed" : "pm-healthValue";
+
+    wrap.style.display = "block";
+    wrap.innerHTML =
+      '<div class="pm-healthInner">' +
+      '<div class="pm-healthCell"><span class="pm-healthLabel">Project Key:</span> <span class="pm-healthValue">' +
+      safe(key) +
+      "</span></div>" +
+      '<div class="pm-healthCell"><span class="pm-healthLabel">Project Title:</span> <span class="pm-healthValue">' +
+      safe(title) +
+      "</span></div>" +
+      '<div class="pm-healthCell"><span class="pm-healthLabel">Total Tasks:</span> <span class="pm-healthValue">' +
+      total +
+      "</span></div>" +
+      '<div class="pm-healthCell"><span class="pm-healthLabel">Completed:</span> <span class="pm-healthValue">' +
+      completed +
+      "</span></div>" +
+      '<div class="pm-healthCell"><span class="pm-healthLabel">Completed percent:</span> <span class="pm-healthValue">' +
+      compPct +
+      "%</span></div>" +
+      '<div class="pm-healthCell"><span class="pm-healthLabel">Overdue:</span> <span class="' +
+      overdueClass +
+      '">' +
+      overdue +
+      "</span></div>" +
+      "</div>";
+  }
+
+  function normalizeStatus(s) {
+    var v = String(s || "").trim();
+    return v ? v : "Unspecified";
+  }
+
+  function getKanbanColumnsOrdered() {
+    var cols =
+      state.statusOptionsOrdered && state.statusOptionsOrdered.length
+        ? state.statusOptionsOrdered.slice()
+        : STATUS_OPTIONS_FALLBACK.slice();
+
+    var found = {};
+    state.tasksAll.forEach(function (t) {
+      var st = normalizeStatus(t.status);
+      if (st && st !== "Unspecified") found[st] = true;
+    });
+
+    Object.keys(found).forEach(function (st) {
+      if (cols.indexOf(st) === -1) cols.push(st);
+    });
+
+    return cols;
+  }
+
+  async function updateTaskStatus(recordID, newStatus) {
+    if (!recordID) throw new Error("Missing recordID");
+    if (!CSRFToken) throw new Error("Missing CSRFToken");
+
+    var url = FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordID);
+    var body = encodeFormBody({
+      130: newStatus,
+      recordID: recordID,
+      series: 1,
+      CSRFToken: CSRFToken,
+    });
+
+    var r = await fetch(url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "x-requested-with": "XMLHttpRequest",
+      },
+      credentials: "include",
+      body: body,
+    });
+
+    if (!r.ok) throw new Error("Update failed HTTP " + r.status);
+    return true;
+  }
+
+  function renderKanban(tasks) {
+    var board = document.getElementById("pmKanbanBoard");
+    if (!board) return;
+
+    var cols = getKanbanColumnsOrdered();
+    var grouped = {};
+    cols.forEach(function (c) {
+      grouped[c] = [];
+    });
+
+    tasks.forEach(function (t) {
+      var st = normalizeStatus(t.status);
+      if (!grouped[st]) grouped[st] = [];
+      grouped[st].push(t);
+    });
+
+    board.innerHTML = cols
+      .map(function (col) {
+        var colTasks = grouped[col] || [];
+
+        var cards = colTasks
+          .map(function (t) {
+            var pkHref = getProjectRecordHrefFromKey(t.projectKey);
+            var pkLink = pkHref
+              ? '<a href="' +
+                safe(pkHref) +
+                '" class="pm-recordLink" data-title="' +
+                safe("Project " + t.projectKey) +
+                '">' +
+                safe(t.projectKey) +
+                "</a>"
+              : safe(t.projectKey);
+
+            var taskHref = t.href || "";
+            var taskLink = taskHref
+              ? '<a href="' +
+                safe(taskHref) +
+                '" class="pm-recordLink" data-title="' +
+                safe("Task " + t.recordID) +
+                '">' +
+                safe(t.recordID) +
+                "</a>"
+              : safe(t.recordID);
+
+            return (
+              "" +
+              '<div class="pm-card" draggable="true" data-taskid="' +
+              safe(t.recordID) +
+              '">' +
+              '<div class="pm-card-title">' +
+              safe(t.title || "(No title)") +
+              "</div>" +
+              '<div class="pm-card-meta">' +
+              "<div><strong>Task ID:</strong> " +
+              taskLink +
+              "</div>" +
+              "<div><strong>Project:</strong> " +
+              pkLink +
+              "</div>" +
+              "<div><strong>Priority:</strong> " +
+              getPriorityPill(t.priority) +
+              "</div>" +
+              "<div><strong>Dependencies:</strong> " +
+              renderDepsList(t.depIds) +
+              "</div>" +
+              "<div><strong>Assigned:</strong> " +
+              safe(t.assignedTo) +
+              "</div>" +
+              "<div><strong>Start:</strong> " +
+              safe(t.start) +
+              "</div>" +
+              "<div><strong>Due:</strong> " +
+              safe(t.due) +
+              "</div>" +
+              "</div>" +
+              "</div>"
+            );
+          })
+          .join("");
+
+        return (
+          "" +
+          '<div class="pm-kanban-col">' +
+          '<div class="pm-kanban-col-header"><span>' +
+          safe(col) +
+          "</span><span>" +
+          colTasks.length +
+          "</span></div>" +
+          '<div class="pm-kanban-col-body" data-status="' +
+          safe(col) +
+          '">' +
+          (cards || '<div class="pm-card-meta">No tasks</div>') +
+          "</div>" +
+          "</div>"
+        );
+      })
+      .join("");
+
+    wireKanbanDnD();
+  }
+
+  function wireKanbanDnD() {
+    var draggingId = null;
+
+    document
+      .querySelectorAll(".pm-card[draggable='true']")
+      .forEach(function (card) {
+        card.addEventListener("dragstart", function (e) {
+          draggingId = card.getAttribute("data-taskid");
+          card.classList.add("is-dragging");
+          try {
+            e.dataTransfer.setData("text/plain", draggingId);
+          } catch (err) {}
+        });
+
+        card.addEventListener("dragend", function () {
+          draggingId = null;
+          card.classList.remove("is-dragging");
+          document
+            .querySelectorAll(".pm-kanban-col-body")
+            .forEach(function (b) {
+              b.classList.remove("is-over");
+            });
+        });
+      });
+
+    document.querySelectorAll(".pm-kanban-col-body").forEach(function (body) {
+      body.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        body.classList.add("is-over");
+      });
+
+      body.addEventListener("dragleave", function () {
+        body.classList.remove("is-over");
+      });
+
+      body.addEventListener("drop", async function (e) {
+        e.preventDefault();
+        body.classList.remove("is-over");
+
+        var newStatus = body.getAttribute("data-status") || "";
+        var id = draggingId;
+        if (!id) {
+          try {
+            id = e.dataTransfer.getData("text/plain");
+          } catch (err2) {}
+        }
+        if (!id || !newStatus) return;
+
+        var idx = state.tasksAll.findIndex(function (t) {
+          return String(t.recordID) === String(id);
+        });
+        if (idx === -1) return;
+
+        var oldStatus = state.tasksAll[idx].status;
+
+        state.tasksAll[idx].status = newStatus;
+        applySearchAndFilters(true);
+
+        try {
+          await updateTaskStatus(id, newStatus);
+        } catch (err3) {
+          state.tasksAll[idx].status = oldStatus;
+          applySearchAndFilters(true);
+          alert("Could not update task status. " + String(err3));
+        }
+      });
+    });
+  }
+
+  function mmddyyyyToDate(s) {
+    var v = String(s || "").trim();
+    if (!v) return null;
+    var d = new Date(v);
+    if (!isNaN(d.getTime())) return d;
+    var parts = v.split("/");
+    if (parts.length !== 3) return null;
+    var mm = parseInt(parts[0], 10) - 1;
+    var dd = parseInt(parts[1], 10);
+    var yyyy = parseInt(parts[2], 10);
+    var d2 = new Date(yyyy, mm, dd);
+    return isNaN(d2.getTime()) ? null : d2;
+  }
+
+  function isOverdueTask(t, now) {
+    var st = String(t.status || "").toLowerCase();
+    if (st.indexOf("completed") !== -1) return false;
+    var due = mmddyyyyToDate(t.due);
+    return !!(due && due.getTime() < now.getTime());
+  }
+
+  function wireTabs() {
+    var tabs = Array.from(document.querySelectorAll(".pm-tab[data-tab]"));
+    tabs.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        setActiveTab(btn.getAttribute("data-tab"));
+      });
+    });
+  }
+
+  function setActiveTab(tabName) {
+    var tabs = Array.from(document.querySelectorAll(".pm-tab[data-tab]"));
+    tabs.forEach(function (b) {
+      b.classList.remove("is-active");
+      b.setAttribute("aria-selected", "false");
+    });
+
+    var target = tabs.find(function (b) {
+      return b.getAttribute("data-tab") === tabName;
+    });
+    if (target) {
+      target.classList.add("is-active");
+      target.setAttribute("aria-selected", "true");
+    }
+
+    document.querySelectorAll(".pm-panel").forEach(function (p) {
+      p.classList.remove("is-active");
+    });
+    var panel = document.getElementById("pmTab-" + tabName);
+    if (panel) panel.classList.add("is-active");
+
+    localStorage.setItem(STORAGE_KEYS.activeTab, tabName);
+
+    applySearchAndFilters(true);
+    requestAnimationFrame(function () {
+      applySearchAndFilters(false);
+    });
+  }
+
+  function wireTaskViewToggle() {
+    var btnTable = document.getElementById("pmViewTableBtn");
+    var btnKanban = document.getElementById("pmViewKanbanBtn");
+    var btnGantt = document.getElementById("pmViewGanttBtn");
+    var wrapTable = document.getElementById("pmTasksTableWrap");
+    var wrapKanban = document.getElementById("pmKanbanWrap");
+    var wrapGantt = document.getElementById("pmGanttWrap");
+    if (
+      !btnTable ||
+      !btnKanban ||
+      !btnGantt ||
+      !wrapTable ||
+      !wrapKanban ||
+      !wrapGantt
+    )
+      return;
+
+    function setView(view) {
+      wrapTable.style.display = view === "table" ? "block" : "none";
+      wrapKanban.style.display = view === "kanban" ? "block" : "none";
+      wrapGantt.style.display = view === "gantt" ? "block" : "none";
+
+      btnTable.classList.toggle("is-active", view === "table");
+      btnKanban.classList.toggle("is-active", view === "kanban");
+      btnGantt.classList.toggle("is-active", view === "gantt");
+
+      localStorage.setItem(STORAGE_KEYS.tasksView, view);
+      applySearchAndFilters(true);
+    }
+
+    btnTable.addEventListener("click", function () {
+      setView("table");
+    });
+    btnKanban.addEventListener("click", function () {
+      setView("kanban");
+    });
+    btnGantt.addEventListener("click", function () {
+      setView("gantt");
+    });
+
+    var initial = localStorage.getItem(STORAGE_KEYS.tasksView) || "table";
+    setView(initial);
+  }
+
+  function wireSortingDelegation() {
+    var projectsContainer = document.getElementById("pmProjectsTable");
+    if (projectsContainer) {
+      projectsContainer.addEventListener("click", function (e) {
+        var th = e.target.closest(".pm-sortable");
+        if (!th) return;
+        var key = th.getAttribute("data-sort");
+        var type = th.getAttribute("data-type") || "string";
+        if (!key) return;
+
+        var s = state.sort.projects;
+        if (s.key === key) s.dir *= -1;
+        else {
+          s.key = key;
+          s.dir = 1;
+          s.type = type;
+        }
+
+        applySearchAndFilters(true);
+      });
+    }
+
+    var tasksContainer = document.getElementById("pmTasksTable");
+    if (tasksContainer) {
+      tasksContainer.addEventListener("click", function (e) {
+        var th = e.target.closest(".pm-sortable");
+        if (!th) return;
+        var key = th.getAttribute("data-sort");
+        var type = th.getAttribute("data-type") || "string";
+        if (!key) return;
+
+        var s2 = state.sort.tasks;
+        if (s2.key === key) s2.dir *= -1;
+        else {
+          s2.key = key;
+          s2.dir = 1;
+          s2.type = type;
+        }
+
+        applySearchAndFilters(true);
+      });
+    }
+  }
+
+  function populateProjectKeyDropdown(projects) {
+    var sel = document.getElementById("pmProjectKeySelect");
+    if (!sel) return;
+    var cleaned = projects
+      .filter(function (p) {
+        return (
+          (p.projectKey || "").trim() !== "" ||
+          (p.projectName || "").trim() !== ""
+        );
+      })
+      .sort(function (a, b) {
+        return (a.projectKey || "").localeCompare(b.projectKey || "");
+      });
+
+    sel.innerHTML = '<option value="">All Projects</option>';
+    cleaned.forEach(function (p) {
+      var opt = document.createElement("option");
+      opt.value = p.projectKey || "";
+      opt.textContent =
+        p.projectKey && p.projectName
+          ? p.projectKey + " | " + p.projectName
+          : p.projectKey || p.projectName || "";
+      sel.appendChild(opt);
+    });
+  }
+
+  function populateAssigneeDropdown(tasks) {
+    var sel = document.getElementById("pmAssigneeSelect");
+    if (!sel) return;
+    var vals = Array.from(
+      new Set(
+        tasks
+          .map(function (t) {
+            return (t.assignedTo || "").trim();
+          })
+          .filter(Boolean),
+      ),
+    ).sort(function (a, b) {
+      return a.localeCompare(b);
+    });
+
+    sel.innerHTML = '<option value="">All Assignees</option>';
+    vals.forEach(function (v) {
+      var opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      sel.appendChild(opt);
+    });
+  }
+
+  function populateCategoryDropdown(tasks) {
+    var sel = document.getElementById("pmCategorySelect");
+    if (!sel) return;
+
+    var vals = Array.from(
+      new Set(
+        tasks
+          .map(function (t) {
+            return (t.category || "").trim();
+          })
+          .filter(Boolean),
+      ),
+    ).sort(function (a, b) {
+      return a.localeCompare(b);
+    });
+
+    sel.innerHTML = '<option value="">All Categories</option>';
+    vals.forEach(function (v) {
+      var opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      sel.appendChild(opt);
+    });
+  }
+
+  function populateStatusDropdown(statuses) {
+    var sel = document.getElementById("pmStatusSelect");
+    if (!sel) return;
+    sel.innerHTML = '<option value="">All Statuses</option>';
+    statuses.forEach(function (s) {
+      var opt = document.createElement("option");
+      opt.value = s;
+      opt.textContent = s;
+      sel.appendChild(opt);
+    });
+  }
+
+  function getSearchQuery() {
+    var el = document.getElementById("pmSearchInput");
+    return (el && el.value ? el.value : "").trim().toLowerCase();
+  }
+
+  function getSelected(id) {
+    var el = document.getElementById(id);
+    return (el && el.value ? el.value : "").trim();
+  }
+
+  function applySearchAndFilters(renderOnlyCurrentTabFirst) {
+    var q = getSearchQuery();
+    var selectedProjectKey = getSelected("pmProjectKeySelect");
+    var selectedStatus = getSelected("pmStatusSelect");
+    var selectedAssignee = getSelected("pmAssigneeSelect");
+    var selectedPriority = getSelected("pmPrioritySelect");
+    var selectedCategory = getSelected("pmCategorySelect");
+
+    var recordMatch = function (recID) {
+      return (
+        !q ||
+        String(recID || "")
+          .toLowerCase()
+          .includes(q)
+      );
+    };
+
+    var projectsFiltered = state.projectsAll.filter(function (p) {
+      var hay = (
+        p.projectKey +
+        " " +
+        p.recordID +
+        " " +
+        p.projectName +
+        " " +
+        p.description +
+        " " +
+        p.owner +
+        " " +
+        p.projectStatus
+      ).toLowerCase();
+      return !q || hay.includes(q) || recordMatch(p.recordID);
+    });
+
+    var tasksSearchFiltered = state.tasksAll.filter(function (t) {
+      var hay = (
+        t.projectKey +
+        " " +
+        t.recordID +
+        " " +
+        t.title +
+        " " +
+        t.status +
+        " " +
+        t.priority +
+        " " +
+        t.category +
+        " " +
+        t.assignedTo +
+        " " +
+        t.start +
+        " " +
+        t.due
+      ).toLowerCase();
+
+      return !q || hay.includes(q) || recordMatch(t.recordID);
+    });
+
+    var activeTab = localStorage.getItem(STORAGE_KEYS.activeTab) || "projects";
+    var tasksView = localStorage.getItem(STORAGE_KEYS.tasksView) || "table";
+
+    var tasksFiltered = tasksSearchFiltered;
+    if (activeTab === "tasks") {
+      tasksFiltered = tasksSearchFiltered.filter(function (t) {
+        if (
+          selectedProjectKey &&
+          String(t.projectKey || "").trim() !== selectedProjectKey
+        )
+          return false;
+        if (selectedStatus && String(t.status || "").trim() !== selectedStatus)
+          return false;
+        if (
+          selectedAssignee &&
+          String(t.assignedTo || "").trim() !== selectedAssignee
+        )
+          return false;
+        if (
+          selectedPriority &&
+          String(t.priority || "").trim() !== selectedPriority
+        )
+          return false;
+        if (
+          selectedCategory &&
+          String(t.category || "").trim() !== selectedCategory
+        )
+          return false;
+        return true;
+      });
+    }
+
+    if (state.sort.projects.key) {
+      var sp = state.sort.projects;
+      projectsFiltered = projectsFiltered.slice().sort(function (a, b) {
+        return compareValues(a[sp.key], b[sp.key], sp.dir, sp.type);
+      });
+    }
+    if (state.sort.tasks.key) {
+      var st = state.sort.tasks;
+      tasksFiltered = tasksFiltered.slice().sort(function (a, b) {
+        return compareValues(a[st.key], b[st.key], st.dir, st.type);
+      });
+    }
+
+    renderProjectHealthSticky(activeTab, tasksView, selectedProjectKey);
+
+    if (renderOnlyCurrentTabFirst) {
+      if (activeTab === "projects") renderProjectsTable(projectsFiltered);
+      if (activeTab === "tasks") {
+        renderTasksTable(tasksFiltered);
+        if (tasksView === "kanban") renderKanban(tasksFiltered);
+      }
+    } else {
+      renderProjectsTable(projectsFiltered);
+      renderTasksTable(tasksFiltered);
+      if (activeTab === "tasks" && tasksView === "kanban")
+        renderKanban(tasksFiltered);
+      if (activeTab === "analytics") renderAnalytics(tasksSearchFiltered);
+    }
+  }
+
+  function wireClearFilters() {
+    function clearAll() {
+      var s = document.getElementById("pmSearchInput");
+      if (s) s.value = "";
+      [
+        "pmProjectKeySelect",
+        "pmStatusSelect",
+        "pmAssigneeSelect",
+        "pmPrioritySelect",
+        "pmCategorySelect",
+      ].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.value = "";
+      });
+      applySearchAndFilters(true);
+    }
+    var b1 = document.getElementById("pmClearFiltersBtn_projects");
+    var b2 = document.getElementById("pmClearFiltersBtn_tasks");
+    if (b1) b1.addEventListener("click", clearAll);
+    if (b2) b2.addEventListener("click", clearAll);
+  }
+
+  function wireRecordModalLinks() {
+    document.addEventListener("click", function (e) {
+      var a = e.target.closest("a.pm-recordLink");
+      if (!a) return;
+      e.preventDefault();
+      var href = a.getAttribute("href");
+      var title = a.getAttribute("data-title") || "Details";
+      if (href) openModal(title, href);
+    });
+  }
+
+  function wireModalControls() {
+    var modal = document.getElementById("pmModal");
+    var closeBtn = document.getElementById("pmModalCloseBtn");
+    if (closeBtn) closeBtn.addEventListener("click", closeModal);
+
+    if (modal) {
+      modal.addEventListener("click", function (e) {
+        var t = e.target;
+        if (t && t.getAttribute && t.getAttribute("data-close") === "1")
+          closeModal();
+      });
+    }
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeModal();
+    });
+  }
+
+  function wireAddButtons() {
+    var p = document.getElementById("pmAddProjectBtn");
+    var t = document.getElementById("pmAddTaskBtn");
+    if (p)
+      p.addEventListener("click", function () {
+        openModal("New Project", START_PROJECT_URL);
+      });
+    if (t)
+      t.addEventListener("click", function () {
+        openModal("New Task", START_TASK_URL);
+      });
+  }
+
+  function renderAnalytics(tasks) {
+    if (typeof Chart === "undefined") {
+      var note = document.querySelector(".pm-analyticsNote");
+      if (note)
+        note.textContent =
+          "Charts unavailable because Chart.js did not load in this environment.";
+      return;
+    }
+
+    if (state.charts.status) {
+      state.charts.status.destroy();
+      state.charts.status = null;
+    }
+    if (state.charts.projectKey) {
+      state.charts.projectKey.destroy();
+      state.charts.projectKey = null;
+    }
+    if (state.charts.dueBuckets) {
+      state.charts.dueBuckets.destroy();
+      state.charts.dueBuckets = null;
+    }
+
+    var byStatus = {};
+    var byProject = {};
+    var now = new Date();
+    var buckets = {
+      Overdue: 0,
+      "Due in 7 days": 0,
+      "Due in 30 days": 0,
+      "Due later": 0,
+      "No due date": 0,
+    };
+
+    tasks.forEach(function (t) {
+      var st = normalizeStatus(t.status);
+      byStatus[st] = (byStatus[st] || 0) + 1;
+
+      var pk = String(t.projectKey || "").trim() || "(Blank)";
+      byProject[pk] = (byProject[pk] || 0) + 1;
+
+      var due = mmddyyyyToDate(t.due);
+      if (!due) {
+        buckets["No due date"] += 1;
+        return;
+      }
+
+      var diff = Math.round((due.getTime() - now.getTime()) / 86400000);
+      if (diff < 0) buckets["Overdue"] += 1;
+      else if (diff <= 7) buckets["Due in 7 days"] += 1;
+      else if (diff <= 30) buckets["Due in 30 days"] += 1;
+      else buckets["Due later"] += 1;
+    });
+
+    var statusLabels = getKanbanColumnsOrdered().slice();
+    Object.keys(byStatus).forEach(function (k) {
+      if (statusLabels.indexOf(k) === -1) statusLabels.push(k);
+    });
+    var statusData = statusLabels.map(function (k) {
+      return byStatus[k] || 0;
+    });
+
+    var ctx1 = document.getElementById("pmChartTasksByStatus");
+    if (ctx1) {
+      state.charts.status = new Chart(ctx1, {
+        type: "bar",
+        data: {
+          labels: statusLabels,
+          datasets: [{ label: "Tasks", data: statusData }],
+        },
+        options: { responsive: true, maintainAspectRatio: false },
+      });
+    }
+
+    var projLabels = Object.keys(byProject).sort(function (a, b) {
+      return a.localeCompare(b);
+    });
+    var projData = projLabels.map(function (k) {
+      return byProject[k] || 0;
+    });
+
+    var ctx2 = document.getElementById("pmChartTasksByProject");
+    if (ctx2) {
+      state.charts.projectKey = new Chart(ctx2, {
+        type: "bar",
+        data: {
+          labels: projLabels,
+          datasets: [{ label: "Tasks", data: projData }],
+        },
+        options: { responsive: true, maintainAspectRatio: false },
+      });
+    }
+
+    var bucketLabels = Object.keys(buckets);
+    var bucketData = bucketLabels.map(function (k) {
+      return buckets[k];
+    });
+
+    var ctx3 = document.getElementById("pmChartDueBuckets");
+    if (ctx3) {
+      state.charts.dueBuckets = new Chart(ctx3, {
+        type: "bar",
+        data: {
+          labels: bucketLabels,
+          datasets: [{ label: "Tasks", data: bucketData }],
+        },
+        options: { responsive: true, maintainAspectRatio: false },
+      });
+    }
+
+    var health = {};
+    tasks.forEach(function (t) {
+      var pk = String(t.projectKey || "").trim() || "(Blank)";
+      if (!health[pk]) health[pk] = { total: 0, overdue: 0, completed: 0 };
+      health[pk].total += 1;
+
+      var st = String(t.status || "").toLowerCase();
+      if (st.indexOf("completed") !== -1) health[pk].completed += 1;
+
+      if (isOverdueTask(t, now)) health[pk].overdue += 1;
+    });
+
+    var healthRows = Object.keys(health)
+      .sort(function (a, b) {
+        return a.localeCompare(b);
+      })
+      .map(function (pk) {
+        var h = health[pk];
+        var compPct = h.total ? Math.round((h.completed / h.total) * 100) : 0;
+
+        var overdueCell =
+          h.overdue > 0
+            ? "<td class='pm-overdueRed'>" + h.overdue + "</td>"
+            : "<td>" + h.overdue + "</td>";
+
+        return (
+          "<tr><td>" +
+          safe(pk) +
+          "</td><td>" +
+          h.total +
+          "</td><td>" +
+          h.completed +
+          "</td><td>" +
+          compPct +
+          "%</td>" +
+          overdueCell +
+          "</tr>"
+        );
+      })
+      .join("");
+
+    var healthTable = document.getElementById("pmProjectHealthTable");
+    if (healthTable) {
+      healthTable.innerHTML =
+        '<table class="pm-table">' +
+        "<thead><tr><th>Project Key</th><th>Total tasks</th><th>Completed</th><th>Completed percent</th><th>Overdue</th></tr></thead>" +
+        "<tbody>" +
+        (healthRows || "<tr><td colspan='5'>No data</td></tr>") +
+        "</tbody>" +
+        "</table>";
+    }
+
+    var overdueTasks = tasks
+      .filter(function (t) {
+        return isOverdueTask(t, now);
+      })
+      .sort(function (a, b) {
+        var da = mmddyyyyToDate(a.due) || new Date(8640000000000000);
+        var db = mmddyyyyToDate(b.due) || new Date(8640000000000000);
+        return da - db;
+      });
+
+    var overdueRows = overdueTasks
+      .slice(0, 200)
+      .map(function (t) {
+        var pkHref = getProjectRecordHrefFromKey(t.projectKey);
+        var pkLink = pkHref
+          ? "<a href='" +
+            safe(pkHref) +
+            "' class='pm-recordLink' data-title='" +
+            safe("Project " + t.projectKey) +
+            "'>" +
+            safe(t.projectKey) +
+            "</a>"
+          : safe(t.projectKey);
+
+        var taskHref = t.href || "";
+        var taskLink = taskHref
+          ? "<a href='" +
+            safe(taskHref) +
+            "' class='pm-recordLink' data-title='" +
+            safe("Task " + t.recordID) +
+            "'>" +
+            safe(t.recordID) +
+            "</a>"
+          : safe(t.recordID);
+
+        return (
+          "<tr>" +
+          "<td>" +
+          pkLink +
+          "</td>" +
+          "<td>" +
+          taskLink +
+          "</td>" +
+          "<td>" +
+          safe(t.title) +
+          "</td>" +
+          "<td>" +
+          safe(t.assignedTo) +
+          "</td>" +
+          "<td class='pm-overdueRed'>" +
+          safe(t.due) +
+          "</td>" +
+          "<td>" +
+          safe(t.status) +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+
+    var overdueTable = document.getElementById("pmOverdueTasksTable");
+    if (overdueTable) {
+      overdueTable.innerHTML =
+        '<table class="pm-table">' +
+        "<thead><tr><th>Project Key</th><th>Task ID</th><th>Title</th><th>Assigned To</th><th>Due</th><th>Status</th></tr></thead>" +
+        "<tbody>" +
+        (overdueRows || "<tr><td colspan='6'>No overdue tasks</td></tr>") +
+        "</tbody>" +
+        "</table>";
+    }
+  }
+
+  async function main() {
+    try {
+      wireTabs();
+      wireTaskViewToggle();
+      wireSortingDelegation();
+      wireClearFilters();
+      wireRecordModalLinks();
+      wireModalControls();
+      wireAddButtons();
+
+      var projectsUrl = buildQueryUrl(
+        [
+          PROJECT_IND.projectKey,
+          PROJECT_IND.projectName,
+          PROJECT_IND.description,
+          PROJECT_IND.owner,
+          PROJECT_IND.projectStatus,
+        ],
+        [],
+      );
+
+      // Important: include ALL task fields you render, including 146
+      var tasksUrl = buildQueryUrl(
+        [
+          TASK_IND.projectKey,
+          TASK_IND.title,
+          TASK_IND.status,
+          TASK_IND.priority,
+          TASK_IND.category,
+          TASK_IND.dependencies,
+          TASK_IND.assignedTo,
+          TASK_IND.startDate,
+          TASK_IND.dueDate,
+        ],
+        [],
+      );
+
+      var results = await Promise.all([
+        fetchJSON(projectsUrl),
+        fetchJSON(tasksUrl),
+      ]);
+      var projectsJson = results[0];
+      var tasksJson = results[1];
+
+      var projectRowsAll = coerceRows(projectsJson) || [];
+      var taskRowsAll = coerceRows(tasksJson) || [];
+
+      var projectRows = projectRowsAll.filter(function (r) {
+        return hasAnyS1Value(r, [135, 136, 137, 138, 139]);
+      });
+      var taskRows = taskRowsAll.filter(function (r) {
+        return hasAnyS1Value(r, [128, 129, 130, 131, 132, 133, 140, 145, 146]);
+      });
+
+      state.projectsAll = projectRows.map(normalizeProject);
+      state.tasksAll = taskRows.map(normalizeTask);
+
+      state.projectKeyToRecordID = {};
+      state.projectKeyToTitle = {};
+      state.projectsAll.forEach(function (p) {
+        var pk = String(p.projectKey || "").trim();
+        var rid = String(p.recordID || "").trim();
+        if (pk && rid && !state.projectKeyToRecordID[pk])
+          state.projectKeyToRecordID[pk] = rid;
+        if (pk && p.projectName && !state.projectKeyToTitle[pk])
+          state.projectKeyToTitle[pk] = p.projectName;
+      });
+
+      populateProjectKeyDropdown(state.projectsAll);
+      populateAssigneeDropdown(state.tasksAll);
+      populateCategoryDropdown(state.tasksAll);
+      populateStatusDropdown(getKanbanColumnsOrdered());
+
+      [
+        "pmSearchInput",
+        "pmProjectKeySelect",
+        "pmStatusSelect",
+        "pmAssigneeSelect",
+        "pmPrioritySelect",
+        "pmCategorySelect",
+      ].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener(
+          id === "pmSearchInput" ? "input" : "change",
+          function () {
+            applySearchAndFilters(true);
+          },
+        );
+      });
+
+      var activeTab =
+        localStorage.getItem(STORAGE_KEYS.activeTab) || "projects";
+      setActiveTab(activeTab);
+
+      applySearchAndFilters(true);
+      requestAnimationFrame(function () {
+        applySearchAndFilters(false);
+      });
+    } catch (e) {
+      console.error("Failed to load data.", e);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", main);
+})();
