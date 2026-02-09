@@ -120,8 +120,11 @@
       document.querySelector("input[name='csrfToken']");
     if (input && input.value) return input.value;
 
-    if (typeof window !== "undefined" && window.CSRFToken)
-      return window.CSRFToken;
+    if (typeof window !== "undefined") {
+      if (window.CSRFToken) return window.CSRFToken;
+      if (window.csrfToken) return window.csrfToken;
+      if (window.csrf_token) return window.csrf_token;
+    }
 
     var cookieNames = ["CSRFToken", "csrf_token", "XSRF-TOKEN"];
     for (var i = 0; i < cookieNames.length; i++) {
@@ -143,6 +146,43 @@
     return "CSRFToken";
   }
 
+  function extractCSRFTokenFromHTML(html) {
+    var src = String(html || "");
+    if (!src) return { token: "", field: "" };
+
+    var inputMatch = src.match(
+      /name=["'](CSRFToken|csrf_token|csrfToken)["'][^>]*value=["']([^"']+)["']/i,
+    );
+    if (inputMatch && inputMatch[2])
+      return { token: inputMatch[2], field: inputMatch[1] };
+
+    var metaMatch = src.match(
+      /<meta[^>]*name=["']csrf-token["'][^>]*content=["']([^"']+)["']/i,
+    );
+    if (metaMatch && metaMatch[1])
+      return { token: metaMatch[1], field: "CSRFToken" };
+
+    var jsMatch = src.match(
+      /CSRFToken\s*[:=]\s*["']([^"']+)["']/i,
+    );
+    if (jsMatch && jsMatch[1])
+      return { token: jsMatch[1], field: "CSRFToken" };
+
+    var jsAltMatch = src.match(
+      /csrf_token\s*[:=]\s*["']([^"']+)["']/i,
+    );
+    if (jsAltMatch && jsAltMatch[1])
+      return { token: jsAltMatch[1], field: "csrf_token" };
+
+    var jsAltMatch2 = src.match(
+      /csrfToken\s*[:=]\s*["']([^"']+)["']/i,
+    );
+    if (jsAltMatch2 && jsAltMatch2[1])
+      return { token: jsAltMatch2[1], field: "csrfToken" };
+
+    return { token: "", field: "" };
+  }
+
   function cacheCSRF(token, field) {
     if (token) state.csrfToken = token;
     if (field) state.csrfField = field;
@@ -159,18 +199,26 @@
     }
 
     try {
+      var localHtml = document.documentElement
+        ? document.documentElement.innerHTML
+        : "";
+      var localMatch = extractCSRFTokenFromHTML(localHtml);
+      if (localMatch.token) {
+        cacheCSRF(localMatch.token, localMatch.field);
+        return localMatch.token;
+      }
+    } catch (e0) {}
+
+    try {
       var r = await fetch(START_TASK_URL, { credentials: "include" });
       if (!r.ok) throw new Error("HTTP " + r.status);
       var html = await r.text();
-      var doc = new DOMParser().parseFromString(html, "text/html");
-      var input =
-        doc.querySelector("input[name='CSRFToken']") ||
-        doc.querySelector("input[name='csrf_token']") ||
-        doc.querySelector("input[name='csrfToken']");
-      if (input && input.value) {
-        cacheCSRF(input.value, input.name);
-        return input.value;
+      var match = extractCSRFTokenFromHTML(html);
+      if (match.token) {
+        cacheCSRF(match.token, match.field);
+        return match.token;
       }
+      console.warn("CSRF token not found in START_TASK_URL response.");
     } catch (e) {
       console.warn("CSRF fetch failed.", e);
     }
