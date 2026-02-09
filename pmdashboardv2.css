@@ -545,22 +545,33 @@
   margin-bottom: 12px;
 }
 
-.pm-analyticsFilters {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  border: 1px solid #d7d7d7;
-  border-radius: 12px;
-  background: #fff;
-}
 
 .pm-analyticsGrid {
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   align-items: stretch;
+}
+
+@media (min-width: 1100px) {
+  .pm-analyticsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.pm-chartHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.pm-chartControls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .pm-analyticsFull {
@@ -578,7 +589,7 @@
 
 .pm-chartTitle {
   font-weight: 900;
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 
 .pm-chartBox {
@@ -589,6 +600,7 @@
 .pm-chartBox canvas {
   width: 100% !important;
   height: 100% !important;
+  display: block;
 }
 
 .pm-modal {
@@ -658,6 +670,8 @@
   cursor: pointer;
   font-size: 20px;
   font-weight: 900;
+  line-height: 1;
+  text-align: center;
   display: none;
   align-items: center;
   justify-content: center;

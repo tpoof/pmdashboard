@@ -1119,9 +1119,19 @@
     return isNaN(d2.getTime()) ? null : d2;
   }
 
+  function isCompletedStatus(status) {
+    var st = String(status || "").toLowerCase();
+    return (
+      st.indexOf("completed") !== -1 ||
+      st.indexOf("complete") !== -1 ||
+      st.indexOf("done") !== -1 ||
+      st.indexOf("closed") !== -1
+    );
+  }
+
   function isOverdueTask(t, now) {
     var st = String(t.status || "").toLowerCase();
-    if (st.indexOf("completed") !== -1 || st.indexOf("archive") !== -1)
+    if (isCompletedStatus(st) || st.indexOf("archive") !== -1)
       return false;
     var due = mmddyyyyToDate(t.due);
     return !!(due && due.getTime() < now.getTime());
@@ -1568,7 +1578,7 @@
       );
       var clientHeight = window.innerHeight || document.documentElement.clientHeight;
       var needsScroll = scrollHeight - clientHeight > 80;
-      btn.classList.toggle("is-visible", needsScroll && scrollTop > 200);
+      btn.classList.toggle("is-visible", needsScroll && scrollTop >= 0);
     }
 
     btn.addEventListener("click", function () {
@@ -1643,8 +1653,7 @@
 
     var yearSelect = document.getElementById("pmAnalyticsYearSelect");
     var completedTasks = tasks.filter(function (t) {
-      var st = String(t.status || "").toLowerCase();
-      return st.indexOf("completed") !== -1;
+      return isCompletedStatus(t.status);
     });
 
     var completedYears = Array.from(

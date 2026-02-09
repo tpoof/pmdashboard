@@ -171,14 +171,15 @@
       </div>
     </div>
 
-    <div class="pm-analyticsFilters">
-      <label class="pm-label" for="pmAnalyticsYearSelect">Year</label>
-      <select id="pmAnalyticsYearSelect" class="pm-select"></select>
-    </div>
-
     <div class="pm-analyticsGrid">
       <div class="pm-chartCard">
-        <div class="pm-chartTitle">Completed tasks by quarter</div>
+        <div class="pm-chartHeader">
+          <div class="pm-chartTitle">Completed tasks by quarter</div>
+          <div class="pm-chartControls">
+            <label class="pm-label" for="pmAnalyticsYearSelect">Year</label>
+            <select id="pmAnalyticsYearSelect" class="pm-select"></select>
+          </div>
+        </div>
         <div class="pm-chartBox">
           <canvas id="pmChartCompletedByQuarter"></canvas>
         </div>
