@@ -1682,6 +1682,7 @@
 
     analyticsTasks.forEach(function (t) {
       var st = normalizeStatus(t.status);
+      if (isArchivedStatus(st)) return;
       byStatus[st] = (byStatus[st] || 0) + 1;
 
       var pk = String(t.projectKey || "").trim() || "(Blank)";
@@ -1827,6 +1828,7 @@
         return !isArchivedStatus(label);
       });
     Object.keys(byStatus).forEach(function (k) {
+      if (isArchivedStatus(k)) return;
       if (statusLabels.indexOf(k) === -1) statusLabels.push(k);
     });
     var statusData = statusLabels.map(function (k) {
