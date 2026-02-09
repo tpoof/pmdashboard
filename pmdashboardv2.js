@@ -1532,40 +1532,6 @@
       });
   }
 
-  function wireDebugUpdateButton() {
-    var btn = document.getElementById("pmDebugUpdateBtn");
-    if (!btn) return;
-    var params = new URLSearchParams(window.location.search || "");
-    if (params.get("debug") !== "1") {
-      btn.style.display = "none";
-      return;
-    }
-    btn.addEventListener("click", async function () {
-      var defaultId = "";
-      var card = document.querySelector(".pm-card[data-taskid]");
-      if (card) defaultId = card.getAttribute("data-taskid") || "";
-      if (!defaultId && state.tasksAll.length)
-        defaultId = state.tasksAll[0].recordID || "";
-
-      var id = prompt("Record ID to update?", defaultId);
-      if (!id) return;
-      var status = prompt("New status?", "In Progress");
-      if (!status) return;
-
-      try {
-        await updateTaskStatus(id, status);
-        var idx = state.tasksAll.findIndex(function (t) {
-          return String(t.recordID) === String(id);
-        });
-        if (idx !== -1) state.tasksAll[idx].status = status;
-        applySearchAndFilters(true);
-        alert("Update ok.");
-      } catch (err) {
-        alert("Update failed. " + String(err));
-      }
-    });
-  }
-
   function renderAnalytics(tasks) {
     if (typeof Chart === "undefined") {
       var note = document.querySelector(".pm-analyticsNote");
@@ -1808,7 +1774,6 @@
       wireRecordModalLinks();
       wireModalControls();
       wireAddButtons();
-      wireDebugUpdateButton();
 
       var projectsUrl = buildQueryUrl(
         [

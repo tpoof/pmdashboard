@@ -51,7 +51,8 @@
 }
 
 .pm-primaryBtn:hover {
-  filter: brightness(0.98);
+  background: #7fb135;
+  border-color: #6ea42b;
 }
 
 .pm-primaryBtn:active {
@@ -73,6 +74,11 @@
   display: flex;
   justify-content: center;
   width: 100%;
+  background: #ffffff;
+  border: 1px solid #c7c7c7;
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
 .pm-centerControls,
@@ -172,6 +178,10 @@
   flex-wrap: wrap;
   gap: 12px;
   align-items: flex-end;
+  border: 1px solid #d7d7d7;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #fff;
 }
 
 .pm-field {
@@ -183,6 +193,19 @@
 
 .pm-fieldInlineBtn {
   min-width: auto;
+}
+
+.pm-filterHeader {
+  min-width: auto;
+  padding-right: 6px;
+}
+
+.pm-filterHeaderLabel {
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.75;
 }
 
 .pm-select {
@@ -206,6 +229,7 @@
 
 .pm-viewRow {
   margin-top: 12px;
+  margin-bottom: 16px;
   display: flex;
   justify-content: flex-end;
 }

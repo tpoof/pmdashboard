@@ -57,9 +57,6 @@
   <section id="pmTab-projects" class="pm-panel" role="tabpanel">
     <div class="pm-panelHeader">
       <h2 class="pm-subtitle">Projects</h2>
-      <button type="button" class="pm-ghostBtn" id="pmClearFiltersBtn_projects">
-        Clear all filters
-      </button>
     </div>
     <div id="pmProjectsTable"></div>
   </section>
@@ -67,17 +64,12 @@
   <section id="pmTab-tasks" class="pm-panel" role="tabpanel">
     <div class="pm-panelHeader">
       <h2 class="pm-subtitle">Tasks</h2>
-      <div class="pm-panelActions">
-        <button type="button" class="pm-ghostBtn" id="pmClearFiltersBtn_tasks">
-          Clear all filters
-        </button>
-        <button type="button" class="pm-ghostBtn" id="pmDebugUpdateBtn">
-          Debug Update
-        </button>
-      </div>
     </div>
 
     <div class="pm-filterRow">
+      <div class="pm-field pm-filterHeader">
+        <div class="pm-filterHeaderLabel">Filter by</div>
+      </div>
       <div class="pm-field">
         <label class="pm-label" for="pmProjectKeySelect">Project</label>
         <select id="pmProjectKeySelect" class="pm-select">
@@ -115,7 +107,11 @@
           <option value="Low">Low</option>
         </select>
       </div>
-
+      <div class="pm-field pm-fieldInlineBtn">
+        <button type="button" class="pm-ghostBtn" id="pmClearFiltersBtn_tasks">
+          Clear all filters
+        </button>
+      </div>
     </div>
 
     <div class="pm-viewRow">
