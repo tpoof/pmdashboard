@@ -117,6 +117,18 @@
     return parts.join("&");
   }
 
+  function getQueryParam(name) {
+    var search = window.location.search || "";
+    if (!search) return "";
+    try {
+      if (typeof URLSearchParams !== "undefined") {
+        return new URLSearchParams(search).get(name) || "";
+      }
+    } catch (e) {}
+    var match = search.match(new RegExp("[?&]" + name + "=([^&]+)"));
+    return match ? decodeURIComponent(match[1].replace(/\+/g, " ")) : "";
+  }
+
   function getCSRFToken() {
     if (CSRFToken && CSRFToken.indexOf("{") !== 0) return CSRFToken;
 
@@ -860,8 +872,7 @@
 
   async function handleTransferFromSandbox() {
     if (state.transferInProgress) return;
-    var params = new URLSearchParams(window.location.search || "");
-    var sourceId = params.get("transferFromSandbox");
+    var sourceId = getQueryParam("transferFromSandbox");
     if (!sourceId) return;
     sourceId = String(sourceId || "").trim();
     if (!sourceId) return;
@@ -871,6 +882,7 @@
       var newRecordID = await createTaskRecord();
       await setSandboxTicketIndicator(newRecordID, sourceId);
 
+      var params = new URLSearchParams(window.location.search || "");
       params.delete("transferFromSandbox");
       var nextUrl =
         window.location.pathname +
@@ -2329,5 +2341,6 @@
   }
 
   handleTransferFromSandbox();
+  window.addEventListener("load", handleTransferFromSandbox);
   document.addEventListener("DOMContentLoaded", main);
 })();
