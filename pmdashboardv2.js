@@ -1,4 +1,3 @@
-/* PM DASHBOARD (JS) */
 (function () {
   var env = document.getElementById("pmEnv");
   var CSRFToken = env ? env.getAttribute("data-csrf") || "" : "";
@@ -104,6 +103,24 @@
     return parts.join("&");
   }
 
+  function getCSRFToken() {
+    if (CSRFToken && CSRFToken.indexOf("{") !== 0) return CSRFToken;
+
+    var meta = document.querySelector("meta[name='csrf-token']");
+    if (meta) {
+      var v = meta.getAttribute("content") || "";
+      if (v) return v;
+    }
+
+    if (typeof window !== "undefined" && window.CSRFToken)
+      return window.CSRFToken;
+
+    var m = document.cookie.match(/(?:^|;\\s*)CSRFToken=([^;]+)/);
+    if (m && m[1]) return decodeURIComponent(m[1]);
+
+    return CSRFToken || "";
+  }
+
   async function fetchJSON(url) {
     var r = await fetch(url, { credentials: "same-origin" });
     if (!r.ok) throw new Error("HTTP " + r.status);
@@ -160,7 +177,7 @@
     return ta.value;
   }
 
-  /* ===== Dependencies parsing (restored working approach + comma rendering) ===== */
+  /* ===== Dependencies parsing (comma rendering) ===== */
   function parseDependencies(raw) {
     var v = String(raw || "").trim();
     if (!v) return [];
@@ -498,12 +515,12 @@
     setSortIndicator("pmTasksTable", s.key, s.dir);
   }
 
-  function renderProjectHealthSticky(activeTab, tasksView, selectedProjectKey) {
+  function renderProjectHealthSticky(activeTab, selectedProjectKey) {
     var wrap = document.getElementById("pmProjectHealthSticky");
     if (!wrap) return;
 
     var key = String(selectedProjectKey || "").trim();
-    if (activeTab !== "tasks" || tasksView !== "table" || !key) {
+    if (activeTab !== "tasks" || !key) {
       wrap.style.display = "none";
       wrap.innerHTML = "";
       return;
@@ -582,14 +599,15 @@
 
   async function updateTaskStatus(recordID, newStatus) {
     if (!recordID) throw new Error("Missing recordID");
-    if (!CSRFToken) throw new Error("Missing CSRFToken");
+    var token = getCSRFToken();
+    if (!token) throw new Error("Missing CSRFToken");
 
     var url = FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordID);
     var body = encodeFormBody({
       130: newStatus,
       recordID: recordID,
       series: 1,
-      CSRFToken: CSRFToken,
+      CSRFToken: token,
     });
 
     var r = await fetch(url, {
@@ -597,6 +615,7 @@
       headers: {
         "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
         "x-requested-with": "XMLHttpRequest",
+        "x-csrf-token": token,
       },
       credentials: "include",
       body: body,
@@ -705,6 +724,154 @@
       .join("");
 
     wireKanbanDnD();
+  }
+
+  function formatDateShort(d) {
+    if (!d) return "";
+    var mm = String(d.getMonth() + 1).padStart(2, "0");
+    var dd = String(d.getDate()).padStart(2, "0");
+    var yyyy = d.getFullYear();
+    return mm + "/" + dd + "/" + yyyy;
+  }
+
+  function ganttPriorityClass(priority) {
+    var p = String(priority || "").toLowerCase();
+    if (p === "high") return "pm-ganttHigh";
+    if (p === "medium") return "pm-ganttMed";
+    if (p === "low") return "pm-ganttLow";
+    return "pm-ganttNone";
+  }
+
+  function renderGantt(tasks) {
+    var wrap = document.getElementById("pmGanttInner");
+    var meta = document.getElementById("pmGanttMeta");
+    if (!wrap || !meta) return;
+
+    if (!tasks || !tasks.length) {
+      meta.textContent = "No tasks to display.";
+      wrap.innerHTML = "";
+      return;
+    }
+
+    var rows = tasks
+      .slice()
+      .sort(function (a, b) {
+        var sa = mmddyyyyToDate(a.start) || mmddyyyyToDate(a.due);
+        var sb = mmddyyyyToDate(b.start) || mmddyyyyToDate(b.due);
+        var da = sa || new Date(8640000000000000);
+        var db = sb || new Date(8640000000000000);
+        return da - db;
+      })
+      .map(function (t) {
+        var start = mmddyyyyToDate(t.start) || null;
+        var due = mmddyyyyToDate(t.due) || null;
+        var s = start || due;
+        var e = due || start;
+        return { task: t, start: s, end: e };
+      });
+
+    var visibleRows = rows.filter(function (row) {
+      return row.start || row.end;
+    });
+    var hiddenCount = rows.length - visibleRows.length;
+
+    if (!visibleRows.length) {
+      meta.textContent =
+        "No tasks with dates to display." +
+        (hiddenCount ? " " + hiddenCount + " hidden without dates." : "");
+      wrap.innerHTML = "";
+      return;
+    }
+
+    var rangeStart = null;
+    var rangeEnd = null;
+
+    visibleRows.forEach(function (row) {
+      if (!rangeStart || row.start < rangeStart) rangeStart = row.start;
+      if (!rangeEnd || row.end > rangeEnd) rangeEnd = row.end;
+    });
+
+    var rangeDays = 1;
+    if (rangeStart && rangeEnd) {
+      rangeDays = Math.max(
+        1,
+        Math.round((rangeEnd.getTime() - rangeStart.getTime()) / 86400000),
+      );
+    }
+
+    var metaParts = ["Showing " + visibleRows.length + " tasks."];
+    if (rangeStart && rangeEnd) {
+      metaParts.push(
+        "Range: " +
+          formatDateShort(rangeStart) +
+          " – " +
+          formatDateShort(rangeEnd) +
+          ".",
+      );
+    } else {
+      metaParts.push("No dated tasks to scale.");
+    }
+    if (hiddenCount) metaParts.push(hiddenCount + " hidden without dates.");
+    meta.textContent = metaParts.join(" ");
+
+    wrap.innerHTML = visibleRows
+      .map(function (row) {
+        var t = row.task;
+        var start = row.start;
+        var end = row.end;
+        var hasDates = !!(start && end && rangeStart && rangeEnd);
+
+        var leftPct = 0;
+        var widthPct = 0;
+        var barStyle = "";
+
+        if (hasDates) {
+          var startOffset = Math.round(
+            (start.getTime() - rangeStart.getTime()) / 86400000,
+          );
+          var durationDays = Math.max(
+            1,
+            Math.round((end.getTime() - start.getTime()) / 86400000) || 1,
+          );
+          leftPct = (startOffset / rangeDays) * 100;
+          widthPct = (durationDays / rangeDays) * 100;
+          if (widthPct < 1.5) widthPct = 1.5;
+          barStyle =
+            "left:" + leftPct.toFixed(2) + "%;width:" + widthPct.toFixed(2) + "%;";
+        }
+
+        var title = safe(t.title || "(No title)");
+        var pk = safe(t.projectKey || "");
+        var id = safe(t.recordID || "");
+        var dateLabel =
+          safe(t.start || "No start") + " → " + safe(t.due || "No due");
+
+        return (
+          '<div class="pm-ganttRow">' +
+          '<div class="pm-ganttTop">' +
+          '<div class="pm-ganttName">' +
+          title +
+          "</div>" +
+          '<div class="pm-ganttDates">' +
+          dateLabel +
+          "</div>" +
+          "</div>" +
+          '<div class="pm-card-meta">Task ID: ' +
+          id +
+          " · Project: " +
+          pk +
+          "</div>" +
+          '<div class="pm-ganttBarWrap">' +
+          '<div class="pm-ganttBar ' +
+          ganttPriorityClass(t.priority) +
+          '" style="' +
+          barStyle +
+          '"></div>' +
+          "</div>" +
+          "</div>"
+        );
+      })
+      .join("");
   }
 
   function wireKanbanDnD() {
@@ -1020,8 +1187,23 @@
     return (el && el.value ? el.value : "").trim();
   }
 
+  function normalizeForSearch(val) {
+    return String(val || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+  }
+
+  function matchesQuery(hay, q, qCompact) {
+    if (!q) return true;
+    var h = String(hay || "").toLowerCase();
+    if (h.includes(q)) return true;
+    if (!qCompact) return false;
+    return normalizeForSearch(h).includes(qCompact);
+  }
+
   function applySearchAndFilters(renderOnlyCurrentTabFirst) {
     var q = getSearchQuery();
+    var qCompact = normalizeForSearch(q);
     var selectedProjectKey = getSelected("pmProjectKeySelect");
     var selectedStatus = getSelected("pmStatusSelect");
     var selectedAssignee = getSelected("pmAssigneeSelect");
@@ -1029,12 +1211,7 @@
     var selectedCategory = getSelected("pmCategorySelect");
 
     var recordMatch = function (recID) {
-      return (
-        !q ||
-        String(recID || "")
-          .toLowerCase()
-          .includes(q)
-      );
+      return matchesQuery(recID, q, qCompact);
     };
 
     var projectsFiltered = state.projectsAll.filter(function (p) {
@@ -1051,7 +1228,7 @@
         " " +
         p.projectStatus
       ).toLowerCase();
-      return !q || hay.includes(q) || recordMatch(p.recordID);
+      return matchesQuery(hay, q, qCompact) || recordMatch(p.recordID);
     });
 
     var tasksSearchFiltered = state.tasksAll.filter(function (t) {
@@ -1075,7 +1252,7 @@
         t.due
       ).toLowerCase();
 
-      return !q || hay.includes(q) || recordMatch(t.recordID);
+      return matchesQuery(hay, q, qCompact) || recordMatch(t.recordID);
     });
 
     var activeTab = localStorage.getItem(STORAGE_KEYS.activeTab) || "projects";
@@ -1123,19 +1300,22 @@
       });
     }
 
-    renderProjectHealthSticky(activeTab, tasksView, selectedProjectKey);
+    renderProjectHealthSticky(activeTab, selectedProjectKey);
 
     if (renderOnlyCurrentTabFirst) {
       if (activeTab === "projects") renderProjectsTable(projectsFiltered);
       if (activeTab === "tasks") {
         renderTasksTable(tasksFiltered);
         if (tasksView === "kanban") renderKanban(tasksFiltered);
+        if (tasksView === "gantt") renderGantt(tasksFiltered);
       }
     } else {
       renderProjectsTable(projectsFiltered);
       renderTasksTable(tasksFiltered);
       if (activeTab === "tasks" && tasksView === "kanban")
         renderKanban(tasksFiltered);
+      if (activeTab === "tasks" && tasksView === "gantt")
+        renderGantt(tasksFiltered);
       if (activeTab === "analytics") renderAnalytics(tasksSearchFiltered);
     }
   }
@@ -1458,7 +1638,7 @@
         [],
       );
 
-      // Important: include ALL task fields you render, including 146
+      // Important: include ALL task fields
       var tasksUrl = buildQueryUrl(
         [
           TASK_IND.projectKey,

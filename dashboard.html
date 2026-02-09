@@ -1,9 +1,8 @@
-<!-- PM DASHBOARD (HTML) -->
 <div class="pm-wrap">
   <span id="pmEnv" data-csrf="{$CSRFToken}" style="display: none"></span>
 
   <div class="pm-header">
-    <h1 class="pm-title">PM Dashboard</h1>
+    <h1 class="pm-title">LEAF Project Dashboard</h1>
 
     <div class="pm-actionsRow">
       <button type="button" class="pm-primaryBtn" id="pmAddProjectBtn">
@@ -69,53 +68,70 @@
       </button>
     </div>
 
-    <div class="pm-row">
-      <label class="pm-label" for="pmProjectKeySelect">Project</label>
-      <select id="pmProjectKeySelect" class="pm-select">
-        <option value="">All Projects</option>
-      </select>
+    <div class="pm-filterRow">
+      <div class="pm-field">
+        <label class="pm-label" for="pmProjectKeySelect">Project</label>
+        <select id="pmProjectKeySelect" class="pm-select">
+          <option value="">All Projects</option>
+        </select>
+      </div>
 
-      <label class="pm-label" for="pmStatusSelect">Status</label>
-      <select id="pmStatusSelect" class="pm-select">
-        <option value="">All Statuses</option>
-      </select>
+      <div class="pm-field">
+        <label class="pm-label" for="pmStatusSelect">Status</label>
+        <select id="pmStatusSelect" class="pm-select">
+          <option value="">All Statuses</option>
+        </select>
+      </div>
 
-      <label class="pm-label" for="pmAssigneeSelect">Assigned To</label>
-      <select id="pmAssigneeSelect" class="pm-select">
-        <option value="">All Assignees</option>
-      </select>
+      <div class="pm-field">
+        <label class="pm-label" for="pmAssigneeSelect">Assigned To</label>
+        <select id="pmAssigneeSelect" class="pm-select">
+          <option value="">All Assignees</option>
+        </select>
+      </div>
 
-      <label class="pm-label" for="pmCategorySelect">Category</label>
-      <select id="pmCategorySelect" class="pm-select">
-        <option value="">All Categories</option>
-      </select>
+      <div class="pm-field">
+        <label class="pm-label" for="pmCategorySelect">Category</label>
+        <select id="pmCategorySelect" class="pm-select">
+          <option value="">All Categories</option>
+        </select>
+      </div>
 
-      <label class="pm-label" for="pmPrioritySelect">Priority</label>
-      <select id="pmPrioritySelect" class="pm-select">
-        <option value="">All Priorities</option>
-        <option value="High">High</option>
-        <option value="Medium">Medium</option>
-        <option value="Low">Low</option>
-      </select>
+      <div class="pm-field">
+        <label class="pm-label" for="pmPrioritySelect">Priority</label>
+        <select id="pmPrioritySelect" class="pm-select">
+          <option value="">All Priorities</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
+      </div>
 
-      <div class="pm-viewBtns">
-        <span class="pm-label">View</span>
-        <button type="button" id="pmViewTableBtn" class="pm-tab">Table</button>
-        <button type="button" id="pmViewKanbanBtn" class="pm-tab">
-          Kanban
-        </button>
-        <button type="button" id="pmViewGanttBtn" class="pm-tab">Gantt</button>
+      <div class="pm-field pm-fieldInlineBtn">
+        <div class="pm-viewBtns">
+          <span class="pm-viewLabel">View</span>
+          <button type="button" id="pmViewTableBtn" class="pm-tab">
+            Table
+          </button>
+          <button type="button" id="pmViewKanbanBtn" class="pm-tab">
+            Kanban
+          </button>
+          <button type="button" id="pmViewGanttBtn" class="pm-tab">
+            Gantt
+          </button>
+        </div>
       </div>
     </div>
 
+    <div
+      id="pmProjectHealthSticky"
+      class="pm-healthSticky"
+      style="display: none"
+    >
+      <div class="pm-healthInner"></div>
+    </div>
+
     <div id="pmTasksTableWrap">
-      <div
-        id="pmProjectHealthSticky"
-        class="pm-healthSticky"
-        style="display: none"
-      >
-        <div class="pm-healthInner"></div>
-      </div>
       <div id="pmTasksTable"></div>
     </div>
 
