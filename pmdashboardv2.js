@@ -912,6 +912,10 @@
     var meta = document.getElementById("pmGanttMeta");
     if (!wrap || !meta) return;
 
+    tasks = (tasks || []).filter(function (t) {
+      return !isArchivedStatus(t.status);
+    });
+
     if (!tasks || !tasks.length) {
       meta.textContent = "No tasks to display.";
       wrap.innerHTML = "";
@@ -1138,6 +1142,14 @@
       return false;
     var due = mmddyyyyToDate(t.due);
     return !!(due && due.getTime() < now.getTime());
+  }
+
+  function isArchivedStatus(status) {
+    return String(status || "").toLowerCase().indexOf("archive") !== -1;
+  }
+
+  function getCompletionDateForTask(t) {
+    return mmddyyyyToDate(t.due) || mmddyyyyToDate(t.start) || null;
   }
 
   function wireTabs() {
@@ -1599,7 +1611,7 @@
       );
       var clientHeight = window.innerHeight || document.documentElement.clientHeight;
       var needsScroll = scrollHeight - clientHeight > 80;
-      btn.classList.toggle("is-visible", needsScroll && scrollTop >= 0);
+      btn.classList.toggle("is-visible", needsScroll && scrollTop > 0);
     }
 
     btn.addEventListener("click", function () {
@@ -1619,6 +1631,10 @@
           "Charts unavailable because Chart.js did not load in this environment.";
       return;
     }
+
+    var analyticsTasks = (tasks || []).filter(function (t) {
+      return !isArchivedStatus(t.status);
+    });
 
     if (state.charts.status) {
       state.charts.status.destroy();
@@ -1656,7 +1672,7 @@
       "No due date": 0,
     };
 
-    tasks.forEach(function (t) {
+    analyticsTasks.forEach(function (t) {
       var st = normalizeStatus(t.status);
       byStatus[st] = (byStatus[st] || 0) + 1;
 
@@ -1683,7 +1699,7 @@
     var catQuarterSelect = document.getElementById(
       "pmAnalyticsCategoryQuarterSelect",
     );
-    var completedTasks = tasks.filter(function (t) {
+    var completedTasks = analyticsTasks.filter(function (t) {
       return isCompletedStatus(t.status);
     });
 
@@ -1691,8 +1707,8 @@
       new Set(
         completedTasks
           .map(function (t) {
-            var due = mmddyyyyToDate(t.due);
-            return due ? due.getFullYear() : null;
+            var date = getCompletionDateForTask(t);
+            return date ? date.getFullYear() : null;
           })
           .filter(function (y) {
             return y != null;
@@ -1790,10 +1806,10 @@
     var selectedYear = Number(state.analyticsYear);
     var quarters = [0, 0, 0, 0];
     completedTasks.forEach(function (t) {
-      var due = mmddyyyyToDate(t.due);
-      if (!due) return;
-      if (due.getFullYear() !== selectedYear) return;
-      var q = Math.floor(due.getMonth() / 3);
+      var date = getCompletionDateForTask(t);
+      if (!date) return;
+      if (date.getFullYear() !== selectedYear) return;
+      var q = Math.floor(date.getMonth() / 3);
       quarters[q] += 1;
     });
 
@@ -1821,9 +1837,9 @@
     var catQuarter = state.analyticsCategoryQuarter;
     var catCounts = {};
     completedTasks.forEach(function (t) {
-      var due = mmddyyyyToDate(t.due);
-      if (!due || due.getFullYear() !== catYear) return;
-      var qIdx = Math.floor(due.getMonth() / 3);
+      var date = getCompletionDateForTask(t);
+      if (!date || date.getFullYear() !== catYear) return;
+      var qIdx = Math.floor(date.getMonth() / 3);
       var qName = "Q" + (qIdx + 1);
       if (catQuarter !== "all" && qName !== catQuarter) return;
       var cat = String(t.category || "").trim() || "Unspecified";
@@ -1855,7 +1871,7 @@
     }
 
     var priorityCounts = { High: 0, Medium: 0, Low: 0, Unspecified: 0 };
-    tasks.forEach(function (t) {
+    analyticsTasks.forEach(function (t) {
       var p = String(t.priority || "").trim();
       if (!p) priorityCounts.Unspecified += 1;
       else if (p.toLowerCase() === "high") priorityCounts.High += 1;
@@ -1925,14 +1941,22 @@
     var ctx3 = document.getElementById("pmChartDueBuckets");
     if (ctx3) {
       var dueColors = bucketLabels.map(function (label) {
-        return label === "Overdue" ? "#ff4040" : "#aacdec";
+        return String(label).toLowerCase() === "overdue"
+          ? "#ff4040"
+          : "#aacdec";
       });
       state.charts.dueBuckets = new Chart(ctx3, {
         type: "bar",
         data: {
           labels: bucketLabels,
           datasets: [
-            { label: "Tasks", data: bucketData, backgroundColor: dueColors },
+            {
+              label: "Tasks",
+              data: bucketData,
+              backgroundColor: dueColors,
+              borderColor: dueColors,
+              borderWidth: 1,
+            },
           ],
         },
         options: { responsive: true, maintainAspectRatio: false },
@@ -1940,7 +1964,7 @@
     }
 
     var health = {};
-    tasks.forEach(function (t) {
+    analyticsTasks.forEach(function (t) {
       var pk = String(t.projectKey || "").trim() || "(Blank)";
       if (!health[pk]) health[pk] = { total: 0, overdue: 0, completed: 0 };
       health[pk].total += 1;
@@ -1991,7 +2015,7 @@
         "</table>";
     }
 
-    var overdueTasks = tasks
+    var overdueTasks = analyticsTasks
       .filter(function (t) {
         return isOverdueTask(t, now);
       })
