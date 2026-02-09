@@ -57,11 +57,18 @@
     projectKeyToTitle: {},
     csrfToken: "",
     csrfField: "CSRFToken",
+    analyticsYear: "",
     sort: {
       projects: { key: null, dir: 1, type: "string" },
       tasks: { key: null, dir: 1, type: "string" },
     },
-    charts: { status: null, projectKey: null, dueBuckets: null },
+    charts: {
+      status: null,
+      projectKey: null,
+      dueBuckets: null,
+      completedByQuarter: null,
+      priority: null,
+    },
   };
 
   function safe(s) {
@@ -1114,7 +1121,8 @@
 
   function isOverdueTask(t, now) {
     var st = String(t.status || "").toLowerCase();
-    if (st.indexOf("completed") !== -1) return false;
+    if (st.indexOf("completed") !== -1 || st.indexOf("archive") !== -1)
+      return false;
     var due = mmddyyyyToDate(t.due);
     return !!(due && due.getTime() < now.getTime());
   }
@@ -1539,6 +1547,39 @@
       });
   }
 
+  function wireAnalyticsYearFilter() {
+    var sel = document.getElementById("pmAnalyticsYearSelect");
+    if (!sel) return;
+    sel.addEventListener("change", function () {
+      state.analyticsYear = sel.value || "";
+      applySearchAndFilters(false);
+    });
+  }
+
+  function wireJumpToTop() {
+    var btn = document.getElementById("pmJumpTopBtn");
+    if (!btn) return;
+
+    function updateVisibility() {
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      var scrollHeight = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+      );
+      var clientHeight = window.innerHeight || document.documentElement.clientHeight;
+      var needsScroll = scrollHeight - clientHeight > 80;
+      btn.classList.toggle("is-visible", needsScroll && scrollTop > 200);
+    }
+
+    btn.addEventListener("click", function () {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    window.addEventListener("scroll", updateVisibility, { passive: true });
+    window.addEventListener("resize", updateVisibility);
+    updateVisibility();
+  }
+
   function renderAnalytics(tasks) {
     if (typeof Chart === "undefined") {
       var note = document.querySelector(".pm-analyticsNote");
@@ -1559,6 +1600,14 @@
     if (state.charts.dueBuckets) {
       state.charts.dueBuckets.destroy();
       state.charts.dueBuckets = null;
+    }
+    if (state.charts.completedByQuarter) {
+      state.charts.completedByQuarter.destroy();
+      state.charts.completedByQuarter = null;
+    }
+    if (state.charts.priority) {
+      state.charts.priority.destroy();
+      state.charts.priority = null;
     }
 
     var byStatus = {};
@@ -1592,6 +1641,65 @@
       else buckets["Due later"] += 1;
     });
 
+    var yearSelect = document.getElementById("pmAnalyticsYearSelect");
+    var completedTasks = tasks.filter(function (t) {
+      var st = String(t.status || "").toLowerCase();
+      return st.indexOf("completed") !== -1;
+    });
+
+    var completedYears = Array.from(
+      new Set(
+        completedTasks
+          .map(function (t) {
+            var due = mmddyyyyToDate(t.due);
+            return due ? due.getFullYear() : null;
+          })
+          .filter(function (y) {
+            return y != null;
+          }),
+      ),
+    ).sort(function (a, b) {
+      return b - a;
+    });
+
+    if (!completedYears.length) {
+      completedYears = [now.getFullYear()];
+    }
+
+    if (!state.analyticsYear) {
+      state.analyticsYear = String(completedYears[0]);
+    }
+
+    if (completedYears.indexOf(Number(state.analyticsYear)) === -1) {
+      state.analyticsYear = String(completedYears[0]);
+    }
+
+    if (yearSelect) {
+      yearSelect.innerHTML = completedYears
+        .map(function (y) {
+          return (
+            '<option value="' +
+            y +
+            '"' +
+            (String(y) === String(state.analyticsYear) ? " selected" : "") +
+            ">" +
+            y +
+            "</option>"
+          );
+        })
+        .join("");
+    }
+
+    var selectedYear = Number(state.analyticsYear);
+    var quarters = [0, 0, 0, 0];
+    completedTasks.forEach(function (t) {
+      var due = mmddyyyyToDate(t.due);
+      if (!due) return;
+      if (due.getFullYear() !== selectedYear) return;
+      var q = Math.floor(due.getMonth() / 3);
+      quarters[q] += 1;
+    });
+
     var statusLabels = getKanbanColumnsOrdered().slice();
     Object.keys(byStatus).forEach(function (k) {
       if (statusLabels.indexOf(k) === -1) statusLabels.push(k);
@@ -1599,6 +1707,50 @@
     var statusData = statusLabels.map(function (k) {
       return byStatus[k] || 0;
     });
+
+    var ctxQuarter = document.getElementById("pmChartCompletedByQuarter");
+    if (ctxQuarter) {
+      state.charts.completedByQuarter = new Chart(ctxQuarter, {
+        type: "bar",
+        data: {
+          labels: ["Q1", "Q2", "Q3", "Q4"],
+          datasets: [{ label: "Completed tasks", data: quarters }],
+        },
+        options: { responsive: true, maintainAspectRatio: false },
+      });
+    }
+
+    var priorityCounts = { High: 0, Medium: 0, Low: 0, Unspecified: 0 };
+    tasks.forEach(function (t) {
+      var p = String(t.priority || "").trim();
+      if (!p) priorityCounts.Unspecified += 1;
+      else if (p.toLowerCase() === "high") priorityCounts.High += 1;
+      else if (p.toLowerCase() === "medium") priorityCounts.Medium += 1;
+      else if (p.toLowerCase() === "low") priorityCounts.Low += 1;
+      else priorityCounts.Unspecified += 1;
+    });
+
+    var priorityLabels = Object.keys(priorityCounts);
+    var priorityData = priorityLabels.map(function (k) {
+      return priorityCounts[k];
+    });
+
+    var ctxPriority = document.getElementById("pmChartTasksByPriority");
+    if (ctxPriority) {
+      state.charts.priority = new Chart(ctxPriority, {
+        type: "doughnut",
+        data: {
+          labels: priorityLabels,
+          datasets: [
+            {
+              data: priorityData,
+              backgroundColor: ["#f2938c", "#e6c74c", "#aacdec", "#cfcfcf"],
+            },
+          ],
+        },
+        options: { responsive: true, maintainAspectRatio: false },
+      });
+    }
 
     var ctx1 = document.getElementById("pmChartTasksByStatus");
     if (ctx1) {
@@ -1781,6 +1933,8 @@
       wireRecordModalLinks();
       wireModalControls();
       wireAddButtons();
+      wireAnalyticsYearFilter();
+      wireJumpToTop();
 
       var projectsUrl = buildQueryUrl(
         [

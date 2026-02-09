@@ -171,7 +171,26 @@
       </div>
     </div>
 
+    <div class="pm-analyticsFilters">
+      <label class="pm-label" for="pmAnalyticsYearSelect">Year</label>
+      <select id="pmAnalyticsYearSelect" class="pm-select"></select>
+    </div>
+
     <div class="pm-analyticsGrid">
+      <div class="pm-chartCard">
+        <div class="pm-chartTitle">Completed tasks by quarter</div>
+        <div class="pm-chartBox">
+          <canvas id="pmChartCompletedByQuarter"></canvas>
+        </div>
+      </div>
+
+      <div class="pm-chartCard">
+        <div class="pm-chartTitle">Tasks by priority</div>
+        <div class="pm-chartBox">
+          <canvas id="pmChartTasksByPriority"></canvas>
+        </div>
+      </div>
+
       <div class="pm-chartCard">
         <div class="pm-chartTitle">Tasks by Status</div>
         <div class="pm-chartBox">
@@ -223,6 +242,15 @@
       </div>
     </div>
   </div>
+
+  <button
+    type="button"
+    class="pm-jumpTop"
+    id="pmJumpTopBtn"
+    aria-label="Jump to top"
+  >
+    ↑
+  </button>
 </div>
 
 <link rel="stylesheet" href="./files/pmdashboardv2.css" />
