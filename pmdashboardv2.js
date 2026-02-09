@@ -255,11 +255,11 @@
     if (recordID) {
       try {
         var viewUrl =
-          "index.php?a=edit&recordID=" + encodeURIComponent(recordID);
-        var t3 = await fetchAndExtract(viewUrl, "edit form");
+          "index.php?a=view&recordID=" + encodeURIComponent(recordID);
+        var t3 = await fetchAndExtract(viewUrl, "view form");
         if (t3) return t3;
       } catch (e3) {
-        console.warn("CSRF fetch failed (edit form).", e3);
+        console.warn("CSRF fetch failed (view form).", e3);
       }
     }
 
