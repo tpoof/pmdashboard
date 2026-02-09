@@ -1,6 +1,13 @@
 (function () {
   var env = document.getElementById("pmEnv");
-  var CSRFToken = env ? env.getAttribute("data-csrf") || "" : "";
+  var CSRFToken = "";
+  if (env) {
+    CSRFToken =
+      env.getAttribute("data-csrf") ||
+      env.getAttribute("data-csrf-alt") ||
+      env.getAttribute("data-csrf2") ||
+      "";
+  }
 
   // Task form indicator IDs
   var TASK_IND = {
@@ -242,6 +249,9 @@
       if (!document || !document.body || !url) return resolve("");
       var iframe = document.createElement("iframe");
       var done = false;
+      var maxWaitMs = 3500;
+      var pollIntervalMs = 200;
+      var startTime = Date.now();
       iframe.style.cssText =
         "position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;border:0;opacity:0;";
       var sep = url.indexOf("?") === -1 ? "?" : "&";
@@ -260,7 +270,7 @@
         resolve(token || "");
       }
 
-      iframe.addEventListener("load", function () {
+      function tryReadToken() {
         var token = "";
         try {
           var doc = iframe.contentDocument || iframe.contentWindow.document;
@@ -275,21 +285,46 @@
               var meta = doc.querySelector("meta[name='csrf-token']");
               if (meta) token = meta.getAttribute("content") || "";
             }
+
+            if (!token && doc.documentElement) {
+              var html = doc.documentElement.innerHTML || "";
+              var match = extractCSRFTokenFromHTML(html);
+              if (match && match.token) token = match.token;
+            }
           }
           if (!token && iframe.contentWindow) {
             if (iframe.contentWindow.CSRFToken)
               token = iframe.contentWindow.CSRFToken;
             else if (iframe.contentWindow.csrfToken)
               token = iframe.contentWindow.csrfToken;
+            else if (iframe.contentWindow.csrf_token)
+              token = iframe.contentWindow.csrf_token;
           }
         } catch (e2) {}
-        if (token) cacheCSRF(token, "CSRFToken");
-        finish(token);
+        return token;
+      }
+
+      function pollForToken() {
+        var token = tryReadToken();
+        if (token) {
+          cacheCSRF(token, "CSRFToken");
+          finish(token);
+          return;
+        }
+        if (Date.now() - startTime > maxWaitMs) {
+          finish("");
+          return;
+        }
+        setTimeout(pollForToken, pollIntervalMs);
+      }
+
+      iframe.addEventListener("load", function () {
+        pollForToken();
       });
 
       setTimeout(function () {
         finish("");
-      }, 6000);
+      }, maxWaitMs + 500);
 
       document.body.appendChild(iframe);
     });
@@ -911,9 +946,16 @@
     fd.append("numform_c9014", "1");
     fd.append("title", "Record");
 
+    var headers = { "x-requested-with": "XMLHttpRequest" };
+    if (token) {
+      headers["x-csrf-token"] = token;
+      headers["x-xsrf-token"] = token;
+    }
+
     var r = await fetch("/platform/sl_projects/api/form/new", {
       method: "POST",
       credentials: "include",
+      headers: headers,
       body: fd,
     });
 
