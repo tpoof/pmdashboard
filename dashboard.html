@@ -5,7 +5,11 @@
     <h1 class="pm-title">LEAF Project Dashboard</h1>
 
     <div class="pm-actionsRow">
-      <button type="button" class="pm-primaryBtn" id="pmAddProjectBtn">
+      <button
+        type="button"
+        class="pm-primaryBtn pm-primaryBtnBlue"
+        id="pmAddProjectBtn"
+      >
         + Project
       </button>
       <button type="button" class="pm-primaryBtn" id="pmAddTaskBtn">
@@ -112,19 +116,16 @@
         </select>
       </div>
 
-      <div class="pm-field pm-fieldInlineBtn">
-        <div class="pm-viewBtns">
-          <span class="pm-viewLabel">View</span>
-          <button type="button" id="pmViewTableBtn" class="pm-tab">
-            Table
-          </button>
-          <button type="button" id="pmViewKanbanBtn" class="pm-tab">
-            Kanban
-          </button>
-          <button type="button" id="pmViewGanttBtn" class="pm-tab">
-            Gantt
-          </button>
-        </div>
+    </div>
+
+    <div class="pm-viewRow">
+      <div class="pm-viewBtns">
+        <span class="pm-viewLabel">View</span>
+        <button type="button" id="pmViewTableBtn" class="pm-tab">Table</button>
+        <button type="button" id="pmViewKanbanBtn" class="pm-tab">
+          Kanban
+        </button>
+        <button type="button" id="pmViewGanttBtn" class="pm-tab">Gantt</button>
       </div>
     </div>
 

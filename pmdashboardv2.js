@@ -55,6 +55,8 @@
     statusOptionsOrdered: STATUS_OPTIONS_FALLBACK.slice(),
     projectKeyToRecordID: {},
     projectKeyToTitle: {},
+    csrfToken: "",
+    csrfField: "CSRFToken",
     sort: {
       projects: { key: null, dir: 1, type: "string" },
       tasks: { key: null, dir: 1, type: "string" },
@@ -139,6 +141,41 @@
       document.querySelector("input[name='csrfToken']");
     if (input && input.name) return input.name;
     return "CSRFToken";
+  }
+
+  function cacheCSRF(token, field) {
+    if (token) state.csrfToken = token;
+    if (field) state.csrfField = field;
+  }
+
+  async function ensureCSRFToken() {
+    if (state.csrfToken) return state.csrfToken;
+
+    var token = getCSRFToken();
+    var field = getCSRFFieldName();
+    if (token && token.indexOf("{") !== 0) {
+      cacheCSRF(token, field);
+      return token;
+    }
+
+    try {
+      var r = await fetch(START_TASK_URL, { credentials: "include" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      var html = await r.text();
+      var doc = new DOMParser().parseFromString(html, "text/html");
+      var input =
+        doc.querySelector("input[name='CSRFToken']") ||
+        doc.querySelector("input[name='csrf_token']") ||
+        doc.querySelector("input[name='csrfToken']");
+      if (input && input.value) {
+        cacheCSRF(input.value, input.name);
+        return input.value;
+      }
+    } catch (e) {
+      console.warn("CSRF fetch failed.", e);
+    }
+
+    return "";
   }
 
   async function fetchJSON(url) {
@@ -619,9 +656,9 @@
 
   async function updateTaskStatus(recordID, newStatus) {
     if (!recordID) throw new Error("Missing recordID");
-    var token = getCSRFToken();
+    var token = await ensureCSRFToken();
     if (!token) throw new Error("Missing CSRFToken");
-    var tokenField = getCSRFFieldName();
+    var tokenField = state.csrfField || getCSRFFieldName();
 
     var url = FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordID);
     var bodyObj = {
@@ -1410,6 +1447,11 @@
   function wireDebugUpdateButton() {
     var btn = document.getElementById("pmDebugUpdateBtn");
     if (!btn) return;
+    var params = new URLSearchParams(window.location.search || "");
+    if (params.get("debug") !== "1") {
+      btn.style.display = "none";
+      return;
+    }
     btn.addEventListener("click", async function () {
       var defaultId = "";
       var card = document.querySelector(".pm-card[data-taskid]");

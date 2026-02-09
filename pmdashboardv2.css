@@ -45,12 +45,27 @@
   cursor: pointer;
 }
 
+.pm-primaryBtnBlue {
+  background: #d9e8f6;
+  border: 1px solid #aacdec;
+}
+
 .pm-primaryBtn:hover {
   filter: brightness(0.98);
 }
 
 .pm-primaryBtn:active {
   transform: translateY(1px);
+}
+
+.pm-primaryBtnBlue:hover {
+  background: #aacdec;
+  border-color: #8fb8db;
+}
+
+.pm-primaryBtnBlue:active {
+  background: #d9e8f6;
+  border-color: #aacdec;
 }
 
 .pm-controls {
