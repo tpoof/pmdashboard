@@ -69,6 +69,7 @@
     analyticsYear: "",
     analyticsCategoryYear: "",
     analyticsCategoryQuarter: "",
+    analyticsTicketsYear: "",
     sort: {
       projects: { key: null, dir: 1, type: "string" },
       tasks: { key: null, dir: 1, type: "string" },
@@ -80,6 +81,7 @@
       completedByQuarter: null,
       completedByCategory: null,
       priority: null,
+      ticketsImported: null,
     },
   };
 
@@ -533,6 +535,15 @@
 
   function normalizeTask(row) {
     var recordID = getRecordID(row);
+    var createdAt =
+      row.dateInitiated ||
+      row.dateSubmitted ||
+      row.submitted ||
+      row.dateCreated ||
+      row.created ||
+      row.creationDate ||
+      row.date ||
+      "";
 
     // Prefer raw access first, then s1 string fallback
     var depsRawAny = extractRawIndicator(row, TASK_IND.dependencies);
@@ -560,6 +571,8 @@
       due: extractFromS1(row, TASK_IND.dueDate),
       priority: extractFromS1(row, TASK_IND.priority),
       category: extractFromS1(row, TASK_IND.category),
+      sandboxTicket: extractFromS1(row, TASK_IND.sandboxTicket),
+      createdAt: createdAt,
       dependenciesRaw: depsRaw,
       depIds: depIds,
       href: recordID
@@ -771,6 +784,9 @@
           getPriorityPill(t.priority) +
           "</td>" +
           "<td>" +
+          (String(t.sandboxTicket || "").trim() ? "&#10003;" : "") +
+          "</td>" +
+          "<td>" +
           safe(t.category) +
           "</td>" +
           "<td>" +
@@ -798,6 +814,7 @@
       '<th class="pm-sortable" data-sort="status" data-type="string">Status</th>' +
       '<th class="pm-sortable" data-sort="dependencies" data-type="string">Dependencies</th>' +
       '<th class="pm-sortable" data-sort="priority" data-type="string">Priority</th>' +
+      "<th>Ticket</th>" +
       '<th class="pm-sortable" data-sort="category" data-type="string">Category</th>' +
       '<th class="pm-sortable" data-sort="assignedTo" data-type="string">Assigned To</th>' +
       '<th class="pm-sortable" data-sort="start" data-type="date">Start</th>' +
@@ -1112,6 +1129,9 @@
               "<div><strong>Priority:</strong> " +
               getPriorityPill(t.priority) +
               "</div>" +
+              "<div><strong>Ticket:</strong> " +
+              (String(t.sandboxTicket || "").trim() ? "&#10003;" : "") +
+              "</div>" +
               "<div><strong>Dependencies:</strong> " +
               renderDepsList(t.depIds) +
               "</div>" +
@@ -1272,6 +1292,7 @@
         var title = safe(t.title || "(No title)");
         var pk = safe(t.projectKey || "");
         var id = safe(t.recordID || "");
+        var ticketFlag = String(t.sandboxTicket || "").trim() ? "✓" : "";
         var dateLabel =
           safe(t.start || "No start") + " → " + safe(t.due || "No due");
 
@@ -1289,6 +1310,7 @@
           id +
           " · Project: " +
           pk +
+          (ticketFlag ? " · Ticket: " + ticketFlag : "") +
           "</div>" +
           '<div class="pm-ganttBarWrap">' +
           '<div class="pm-ganttBar ' +
@@ -1410,6 +1432,10 @@
 
   function getCompletionDateForTask(t) {
     return mmddyyyyToDate(t.due) || mmddyyyyToDate(t.start) || null;
+  }
+
+  function getTicketImportedDate(t) {
+    return mmddyyyyToDate(t.start) || null;
   }
 
   function wireTabs() {
@@ -1879,6 +1905,15 @@
     });
   }
 
+  function wireAnalyticsTicketsYearFilter() {
+    var sel = document.getElementById("pmAnalyticsTicketsYearSelect");
+    if (!sel) return;
+    sel.addEventListener("change", function () {
+      state.analyticsTicketsYear = sel.value || "";
+      applySearchAndFilters(false);
+    });
+  }
+
   function wireJumpToTop() {
     var btn = document.getElementById("pmJumpTopBtn");
     if (!btn) return;
@@ -1940,6 +1975,10 @@
       state.charts.priority.destroy();
       state.charts.priority = null;
     }
+    if (state.charts.ticketsImported) {
+      state.charts.ticketsImported.destroy();
+      state.charts.ticketsImported = null;
+    }
 
     var byStatus = {};
     var byProject = {};
@@ -1979,6 +2018,9 @@
     );
     var catQuarterSelect = document.getElementById(
       "pmAnalyticsCategoryQuarterSelect",
+    );
+    var ticketsYearSelect = document.getElementById(
+      "pmAnalyticsTicketsYearSelect",
     );
     var completedTasks = analyticsTasks.filter(function (t) {
       return isCompletedStatus(t.status);
@@ -2042,6 +2084,54 @@
             y +
             '"' +
             (String(y) === String(state.analyticsCategoryYear)
+              ? " selected"
+              : "") +
+            ">" +
+            y +
+            "</option>"
+          );
+        })
+        .join("");
+    }
+
+    var ticketTasks = analyticsTasks.filter(function (t) {
+      return !!String(t.sandboxTicket || "").trim();
+    });
+
+    var ticketYears = Array.from(
+      new Set(
+        ticketTasks
+          .map(function (t) {
+            var date = getTicketImportedDate(t);
+            return date ? date.getFullYear() : null;
+          })
+          .filter(function (y) {
+            return y != null;
+          }),
+      ),
+    ).sort(function (a, b) {
+      return b - a;
+    });
+
+    if (!ticketYears.length) {
+      ticketYears = [now.getFullYear()];
+    }
+
+    if (!state.analyticsTicketsYear) {
+      state.analyticsTicketsYear = String(ticketYears[0]);
+    }
+    if (ticketYears.indexOf(Number(state.analyticsTicketsYear)) === -1) {
+      state.analyticsTicketsYear = String(ticketYears[0]);
+    }
+
+    if (ticketsYearSelect) {
+      ticketsYearSelect.innerHTML = ticketYears
+        .map(function (y) {
+          return (
+            '<option value="' +
+            y +
+            '"' +
+            (String(y) === String(state.analyticsTicketsYear)
               ? " selected"
               : "") +
             ">" +
@@ -2249,6 +2339,41 @@
       });
     }
 
+    var ticketYear = Number(state.analyticsTicketsYear);
+    var ticketCounts = new Array(12).fill(0);
+    ticketTasks.forEach(function (t) {
+      var date = getTicketImportedDate(t);
+      if (!date || date.getFullYear() !== ticketYear) return;
+      ticketCounts[date.getMonth()] += 1;
+    });
+
+    var ctxTickets = document.getElementById("pmChartTicketsImported");
+    if (ctxTickets) {
+      state.charts.ticketsImported = new Chart(ctxTickets, {
+        type: "bar",
+        data: {
+          labels: [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ],
+          datasets: [
+            { label: "Tickets imported", data: ticketCounts },
+          ],
+        },
+        options: { responsive: true, maintainAspectRatio: false },
+      });
+    }
+
     var health = {};
     analyticsTasks.forEach(function (t) {
       var pk = String(t.projectKey || "").trim() || "(Blank)";
@@ -2389,6 +2514,7 @@
       wireAddButtons();
       wireAnalyticsYearFilter();
       wireAnalyticsCategoryFilters();
+      wireAnalyticsTicketsYearFilter();
       wireJumpToTop();
 
       var projectsUrl = buildQueryUrl(
@@ -2414,6 +2540,7 @@
           TASK_IND.assignedTo,
           TASK_IND.startDate,
           TASK_IND.dueDate,
+          TASK_IND.sandboxTicket,
         ],
         [],
       );
@@ -2432,7 +2559,7 @@
         return hasAnyS1Value(r, [135, 136, 137, 138, 139]);
       });
       var taskRows = taskRowsAll.filter(function (r) {
-        return hasAnyS1Value(r, [128, 129, 130, 131, 132, 133, 140, 145, 146]);
+        return hasAnyS1Value(r, [128, 129, 130, 131, 132, 133, 140, 145, 146, 148]);
       });
 
       state.projectsAll = projectRows.map(normalizeProject);

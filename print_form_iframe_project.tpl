@@ -19,9 +19,11 @@
 
 <style type="text/css">
     .pmSandboxLink {
-        font-size: inherit;
+        font-family: monospace;
+        font-size: 20px;
+        letter-spacing: 0.01rem;
+        line-height: 150%;
         font-weight: inherit;
-        line-height: inherit;
     }
 </style>
 
