@@ -188,7 +188,7 @@
     if (field) state.csrfField = field;
   }
 
-  async function ensureCSRFToken() {
+  async function ensureCSRFToken(recordID) {
     if (state.csrfToken) return state.csrfToken;
 
     var token = getCSRFToken();
@@ -209,18 +209,58 @@
       }
     } catch (e0) {}
 
-    try {
-      var r = await fetch(START_TASK_URL, { credentials: "include" });
-      if (!r.ok) throw new Error("HTTP " + r.status);
+    async function fetchAndExtract(url, label) {
+      var r = await fetch(url, { credentials: "include" });
+      if (!r.ok) throw new Error(label + " HTTP " + r.status);
+
+      var headerNames = [
+        "x-csrf-token",
+        "csrf-token",
+        "x-xsrf-token",
+        "x-csrftoken",
+      ];
+      for (var i = 0; i < headerNames.length; i++) {
+        var h = r.headers.get(headerNames[i]);
+        if (h) {
+          cacheCSRF(h, "CSRFToken");
+          return h;
+        }
+      }
+
       var html = await r.text();
       var match = extractCSRFTokenFromHTML(html);
       if (match.token) {
         cacheCSRF(match.token, match.field);
         return match.token;
       }
-      console.warn("CSRF token not found in START_TASK_URL response.");
+
+      console.warn("CSRF token not found in " + label + " response.");
+      return "";
+    }
+
+    try {
+      var t1 = await fetchAndExtract(START_TASK_URL, "START_TASK_URL");
+      if (t1) return t1;
     } catch (e) {
-      console.warn("CSRF fetch failed.", e);
+      console.warn("CSRF fetch failed (START_TASK_URL).", e);
+    }
+
+    try {
+      var t2 = await fetchAndExtract(START_PROJECT_URL, "START_PROJECT_URL");
+      if (t2) return t2;
+    } catch (e2) {
+      console.warn("CSRF fetch failed (START_PROJECT_URL).", e2);
+    }
+
+    if (recordID) {
+      try {
+        var viewUrl =
+          "index.php?a=edit&recordID=" + encodeURIComponent(recordID);
+        var t3 = await fetchAndExtract(viewUrl, "edit form");
+        if (t3) return t3;
+      } catch (e3) {
+        console.warn("CSRF fetch failed (edit form).", e3);
+      }
     }
 
     return "";
@@ -704,7 +744,7 @@
 
   async function updateTaskStatus(recordID, newStatus) {
     if (!recordID) throw new Error("Missing recordID");
-    var token = await ensureCSRFToken();
+    var token = await ensureCSRFToken(recordID);
     if (!token) throw new Error("Missing CSRFToken");
     var tokenField = state.csrfField || getCSRFFieldName();
 
