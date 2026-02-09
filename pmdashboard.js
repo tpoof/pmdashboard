@@ -13,6 +13,7 @@
     priority: 140,
     category: 145,
     dependencies: 146,
+    sandboxTicket: 148,
   };
 
   // Project form indicator IDs
@@ -57,6 +58,7 @@
     projectKeyToTitle: {},
     csrfToken: "",
     csrfField: "CSRFToken",
+    transferInProgress: false,
     analyticsYear: "",
     analyticsCategoryYear: "",
     analyticsCategoryQuarter: "",
@@ -793,6 +795,99 @@
 
     if (!r.ok) throw new Error("Update failed HTTP " + r.status);
     return true;
+  }
+
+  async function createTaskRecord() {
+    var token = await ensureCSRFToken();
+    if (!token) throw new Error("Missing CSRFToken");
+    var tokenField = state.csrfField || getCSRFFieldName();
+
+    var fd = new FormData();
+    fd.append(tokenField, token);
+    fd.append("numform_c9014", "1");
+    fd.append("title", "Record");
+
+    var r = await fetch("/platform/sl_projects/api/form/new", {
+      method: "POST",
+      credentials: "include",
+      body: fd,
+    });
+
+    if (!r.ok) throw new Error("Create failed HTTP " + r.status);
+
+    var text = await r.text();
+    var newId;
+    try {
+      newId = JSON.parse(text);
+    } catch (e) {
+      newId = text;
+    }
+    newId = String(newId || "").trim().replace(/^\"|\"$/g, "");
+    if (!newId) throw new Error("Missing recordID");
+    return newId;
+  }
+
+  async function setSandboxTicketIndicator(recordID, sourceId) {
+    if (!recordID) throw new Error("Missing recordID");
+    var token = await ensureCSRFToken(recordID);
+    if (!token) throw new Error("Missing CSRFToken");
+    var tokenField = state.csrfField || getCSRFFieldName();
+
+    var url = FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordID);
+    var bodyObj = {
+      recordID: recordID,
+      series: 1,
+    };
+    bodyObj[TASK_IND.sandboxTicket] = "Sandbox Ticket #" + sourceId;
+    bodyObj[tokenField] = token;
+    var body = encodeFormBody(bodyObj);
+
+    var r = await fetch(url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "x-requested-with": "XMLHttpRequest",
+        "x-csrf-token": token,
+        "x-xsrf-token": token,
+      },
+      credentials: "include",
+      body: body,
+    });
+
+    if (!r.ok) throw new Error("Update failed HTTP " + r.status);
+    return true;
+  }
+
+  async function handleTransferFromSandbox() {
+    if (state.transferInProgress) return;
+    var params = new URLSearchParams(window.location.search || "");
+    var sourceId = params.get("transferFromSandbox");
+    if (!sourceId) return;
+    sourceId = String(sourceId || "").trim();
+    if (!sourceId) return;
+
+    state.transferInProgress = true;
+    try {
+      var newRecordID = await createTaskRecord();
+      await setSandboxTicketIndicator(newRecordID, sourceId);
+
+      params.delete("transferFromSandbox");
+      var nextUrl =
+        window.location.pathname +
+        (params.toString() ? "?" + params.toString() : "") +
+        window.location.hash;
+      history.replaceState({}, "", nextUrl);
+
+      setActiveTab("tasks");
+      openModal(
+        "Task " + newRecordID,
+        "index.php?a=printview&recordID=" + encodeURIComponent(newRecordID),
+      );
+    } catch (e) {
+      console.error("Transfer from sandbox failed.", e);
+    } finally {
+      state.transferInProgress = false;
+    }
   }
 
   function renderKanban(tasks) {
@@ -1556,6 +1651,18 @@
     });
   }
 
+  function wireSandboxMessageListener() {
+    window.addEventListener("message", function (event) {
+      if (event.origin !== window.location.origin) return;
+      var data = event.data || {};
+      if (!data || data.type !== "pm-open-modal") return;
+      var url = typeof data.url === "string" ? data.url : "";
+      if (!url) return;
+      var title = typeof data.title === "string" ? data.title : "Details";
+      openModal(title, url);
+    });
+  }
+
   function wireModalControls() {
     var modal = document.getElementById("pmModal");
     var closeBtn = document.getElementById("pmModalCloseBtn");
@@ -2118,6 +2225,7 @@
       wireSortingDelegation();
       wireClearFilters();
       wireRecordModalLinks();
+      wireSandboxMessageListener();
       wireModalControls();
       wireAddButtons();
       wireAnalyticsYearFilter();
@@ -2213,6 +2321,7 @@
       requestAnimationFrame(function () {
         applySearchAndFilters(false);
       });
+      await handleTransferFromSandbox();
     } catch (e) {
       console.error("Failed to load data.", e);
     }
