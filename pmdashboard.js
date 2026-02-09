@@ -2328,5 +2328,6 @@
     }
   }
 
+  handleTransferFromSandbox();
   document.addEventListener("DOMContentLoaded", main);
 })();

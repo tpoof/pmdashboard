@@ -51,7 +51,7 @@
     .pm-transfer-btn:hover,
     .pm-transfer-btn:focus {
         background: #7fb135 !important;
-        color: #000 !important;
+        color: #fff !important;
     }
 </style>
 
@@ -60,7 +60,7 @@
 <div id="toolbar" class="toolbar_right toolbar noprint">
     <!--{if $is_admin == true}-->
         <div class="pm-transfer-wrap">
-            <button type="button" class="pm-transfer-btn" onclick="transferToPMDashboard()" title="Transfer to LEAF Projects">
+            <button type="button" class="tools pm-transfer-btn" onclick="transferToPMDashboard()" title="Transfer to LEAF Projects">
                 <img src="dynicons/?img=go-next.svg&amp;w=32" alt="" aria-hidden="true" style="vertical-align: middle" /> Transfer to LEAF Projects
             </button>
         </div>
