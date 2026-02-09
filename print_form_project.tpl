@@ -183,6 +183,14 @@
 <!--{include file="site_elements/generic_dialog.tpl"}-->
 <!--{include file="site_elements/generic_OkDialog.tpl"}-->
 
+<style type="text/css">
+    .pmSandboxLink {
+        font-size: inherit;
+        font-weight: inherit;
+        line-height: inherit;
+    }
+</style>
+
 <script type="text/javascript" src="js/functions/toggleZoom.js"></script>
 <script type="text/javascript" src="<!--{$app_js_path}-->/LEAF/sensitiveIndicator.js"></script>
 <script type="text/javascript">

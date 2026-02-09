@@ -17,6 +17,14 @@
 <!--{include file="site_elements/generic_confirm_xhrDialog.tpl"}-->
 <!--{include file="site_elements/generic_dialog.tpl"}-->
 
+<style type="text/css">
+    .pmSandboxLink {
+        font-size: inherit;
+        font-weight: inherit;
+        line-height: inherit;
+    }
+</style>
+
 <script type="text/javascript" src="js/functions/toggleZoom.js"></script>
 <script type="text/javascript">
 var currIndicatorID;
