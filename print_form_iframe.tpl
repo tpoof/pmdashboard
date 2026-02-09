@@ -58,22 +58,39 @@ function transferToPMDashboard() {
 }
 
 function wireSandboxTicket148() {
-    var el = document.getElementById("xhrIndicator_148_1");
-    if (!el) return;
-    var text = (el.textContent || "").trim();
-    var match = text.match(/Sandbox\s*Ticket\s*#(\d+)/i);
-    if (!match) return;
-    var ticketId = match[1];
-    var url =
-        "/platform/sl_sandbox/index.php?a=printview&recordID=" +
-        encodeURIComponent(ticketId);
-    var link = document.createElement("a");
-    link.href = "#";
-    link.className = "pmSandboxLink";
-    link.setAttribute("data-sandbox-url", url);
-    link.textContent = "Sandbox Ticket #" + ticketId;
-    el.innerHTML = "";
-    el.appendChild(link);
+    var nodes = document.querySelectorAll("[id^='xhrIndicator_148_']");
+    if (!nodes || !nodes.length) return;
+    nodes.forEach(function(el) {
+        if (!el || el.querySelector("a.pmSandboxLink")) return;
+        var text = (el.textContent || "").trim();
+        var match = text.match(/Sandbox\s*Ticket\s*#(\d+)/i);
+        if (!match) return;
+        var ticketId = match[1];
+        var url =
+            "/platform/sl_sandbox/index.php?a=printview&recordID=" +
+            encodeURIComponent(ticketId);
+        var link = document.createElement("a");
+        link.href = "#";
+        link.className = "pmSandboxLink";
+        link.setAttribute("data-sandbox-url", url);
+        link.textContent = "Sandbox Ticket #" + ticketId;
+        el.innerHTML = "";
+        el.appendChild(link);
+    });
+}
+
+function initSandboxTicketWatcher() {
+    var target = document.getElementById("formcontent");
+    if (!target || target.__pmSandboxObserver) return;
+    var observer = new MutationObserver(function() {
+        wireSandboxTicket148();
+    });
+    observer.observe(target, {
+        childList: true,
+        subtree: true,
+        characterData: true
+    });
+    target.__pmSandboxObserver = observer;
 }
 
 document.addEventListener("click", function(event) {
@@ -237,6 +254,7 @@ $(function() {
     openContent('ajaxIndex.php?a=internalonlyview&recordID=<!--{$recordID|strip_tags}-->&childCategoryID=<!--{$childCategoryID}-->');
     <!--{/if}-->
 
+    initSandboxTicketWatcher();
 });
 
 </script>
