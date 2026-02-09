@@ -51,8 +51,8 @@
 }
 
 .pm-primaryBtn:hover {
-  background: #7fb135;
-  border-color: #6ea42b;
+  background: #98d035;
+  border-color: #7fb22b;
 }
 
 .pm-primaryBtn:active {
@@ -74,11 +74,11 @@
   display: flex;
   justify-content: center;
   width: 100%;
-  background: #ffffff;
-  border: 1px solid #c7c7c7;
+  background: #f8fafc;
+  border: 0;
   border-radius: 16px;
   padding: 14px 16px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 .pm-centerControls,
@@ -121,7 +121,7 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid #c7c7c7;
+  border: 0;
   border-radius: 12px;
   padding: 6px 10px;
   background: #fff;
@@ -139,8 +139,15 @@
   border-radius: 10px;
   padding: 6px 10px;
   min-width: 220px;
+  outline: none;
+  box-shadow: none;
 }
 
+.pm-input:focus {
+  outline: none;
+  box-shadow: none;
+  border-color: #c7c7c7;
+}
 .pm-subtitle {
   margin: 0;
   font-size: 18px;
@@ -297,6 +304,7 @@
   border-collapse: collapse;
   table-layout: fixed;
   background: #fff;
+  min-width: 840px;
 }
 
 .pm-table th,
@@ -315,6 +323,8 @@
 
 .pm-sortable {
   cursor: pointer;
+  position: relative;
+  padding-right: 22px;
 }
 
 .pm-sortable:hover {
@@ -323,7 +333,32 @@
 
 .pm-sortable.is-asc,
 .pm-sortable.is-desc {
-  background: #d9e8f6;
+  background: #aacdec;
+}
+
+.pm-sortable::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.pm-sortable.is-asc::after {
+  content: "▲";
+}
+
+.pm-sortable.is-desc::after {
+  content: "▼";
+}
+
+#pmProjectsTable,
+#pmTasksTable,
+#pmProjectHealthTable,
+#pmOverdueTasksTable {
+  overflow-x: auto;
 }
 
 .pm-pill {
