@@ -117,6 +117,31 @@
     return parts.join("&");
   }
 
+  function showTransferDebug(msg) {
+    if (!msg) return;
+    if (!document || !document.body) {
+      window.__pmTransferDebug = msg;
+      return;
+    }
+    var el = document.getElementById("pmTransferDebug");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "pmTransferDebug";
+      el.style.cssText =
+        "position:fixed;right:16px;bottom:16px;z-index:9999;background:#111;color:#fff;padding:8px 10px;border-radius:6px;font-size:12px;max-width:300px;box-shadow:0 2px 8px rgba(0,0,0,0.25)";
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+  }
+
+  function flushTransferDebug() {
+    if (window.__pmTransferDebug) {
+      var msg = window.__pmTransferDebug;
+      window.__pmTransferDebug = "";
+      showTransferDebug(msg);
+    }
+  }
+
   function getQueryParam(name) {
     var search = window.location.search || "";
     if (!search) return "";
@@ -877,8 +902,10 @@
     sourceId = String(sourceId || "").trim();
     if (!sourceId) return;
 
+    showTransferDebug("Transfer detected for sandbox " + sourceId);
     state.transferInProgress = true;
     try {
+      showTransferDebug("Creating task for sandbox " + sourceId);
       var newRecordID = await createTaskRecord();
       await setSandboxTicketIndicator(newRecordID, sourceId);
 
@@ -895,7 +922,9 @@
         "Task " + newRecordID,
         "index.php?a=printview&recordID=" + encodeURIComponent(newRecordID),
       );
+      showTransferDebug("Transfer complete. Task " + newRecordID);
     } catch (e) {
+      showTransferDebug("Transfer failed. Check console for details.");
       console.error("Transfer from sandbox failed.", e);
     } finally {
       state.transferInProgress = false;
@@ -2232,6 +2261,7 @@
 
   async function main() {
     try {
+      flushTransferDebug();
       wireTabs();
       wireTaskViewToggle();
       wireSortingDelegation();
