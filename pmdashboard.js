@@ -237,6 +237,64 @@
     if (field) state.csrfField = field;
   }
 
+  function fetchCSRFTokenFromIframe(url) {
+    return new Promise(function (resolve) {
+      if (!document || !document.body || !url) return resolve("");
+      var iframe = document.createElement("iframe");
+      var done = false;
+      iframe.style.cssText =
+        "position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;border:0;opacity:0;";
+      var sep = url.indexOf("?") === -1 ? "?" : "&";
+      iframe.src = url + sep + "csrfProbe=1&ts=" + Date.now();
+
+      function finish(token) {
+        if (done) return;
+        done = true;
+        try {
+          iframe.remove();
+        } catch (e0) {
+          try {
+            if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+          } catch (e1) {}
+        }
+        resolve(token || "");
+      }
+
+      iframe.addEventListener("load", function () {
+        var token = "";
+        try {
+          var doc = iframe.contentDocument || iframe.contentWindow.document;
+          if (doc) {
+            var input =
+              doc.querySelector("input[name='CSRFToken']") ||
+              doc.querySelector("input[name='csrf_token']") ||
+              doc.querySelector("input[name='csrfToken']");
+            if (input && input.value) token = input.value;
+
+            if (!token) {
+              var meta = doc.querySelector("meta[name='csrf-token']");
+              if (meta) token = meta.getAttribute("content") || "";
+            }
+          }
+          if (!token && iframe.contentWindow) {
+            if (iframe.contentWindow.CSRFToken)
+              token = iframe.contentWindow.CSRFToken;
+            else if (iframe.contentWindow.csrfToken)
+              token = iframe.contentWindow.csrfToken;
+          }
+        } catch (e2) {}
+        if (token) cacheCSRF(token, "CSRFToken");
+        finish(token);
+      });
+
+      setTimeout(function () {
+        finish("");
+      }, 6000);
+
+      document.body.appendChild(iframe);
+    });
+  }
+
   async function ensureCSRFToken(recordID) {
     if (state.csrfToken) return state.csrfToken;
 
@@ -301,13 +359,18 @@
       console.warn("CSRF fetch failed (START_PROJECT_URL).", e2);
     }
 
+    try {
+      var t3 = await fetchCSRFTokenFromIframe(START_TASK_URL);
+      if (t3) return t3;
+    } catch (e3) {}
+
     if (recordID) {
       try {
         var viewUrl =
           "index.php?a=view&recordID=" + encodeURIComponent(recordID);
-        var t3 = await fetchAndExtract(viewUrl, "view form");
-        if (t3) return t3;
-      } catch (e3) {
+        var t4 = await fetchAndExtract(viewUrl, "view form");
+        if (t4) return t4;
+      } catch (e4) {
         console.warn("CSRF fetch failed (view form).", e3);
       }
     }
