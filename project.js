@@ -1930,6 +1930,7 @@
   function wireAddButtons() {
     var p = document.getElementById("pmAddProjectBtn");
     var t = document.getElementById("pmAddTaskBtn");
+    var inbox = document.getElementById("pmViewInboxBtn");
     if (p)
       p.addEventListener("click", function () {
         openModal("New Project", START_PROJECT_URL);
@@ -1937,6 +1938,10 @@
     if (t)
       t.addEventListener("click", function () {
         openModal("New Task", START_TASK_URL);
+      });
+    if (inbox)
+      inbox.addEventListener("click", function () {
+        openModal("Inbox", "report.php?a=LEAF_Inbox");
       });
   }
 
