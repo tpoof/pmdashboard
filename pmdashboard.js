@@ -815,9 +815,6 @@
           getPriorityPill(t.priority) +
           "</td>" +
           "<td>" +
-          sandboxTicketLink(t.sandboxTicket) +
-          "</td>" +
-          "<td>" +
           safe(t.category) +
           "</td>" +
           "<td>" +
@@ -830,6 +827,9 @@
           overdueClass +
           '">' +
           safe(t.due) +
+          "</td>" +
+          "<td>" +
+          sandboxTicketLink(t.sandboxTicket) +
           "</td>" +
           "</tr>"
         );
@@ -845,11 +845,11 @@
       '<th class="pm-sortable" data-sort="status" data-type="string">Status</th>' +
       '<th class="pm-sortable" data-sort="dependencies" data-type="string">Dependencies</th>' +
       '<th class="pm-sortable" data-sort="priority" data-type="string">Priority</th>' +
-      "<th>Ticket</th>" +
       '<th class="pm-sortable" data-sort="category" data-type="string">Category</th>' +
       '<th class="pm-sortable" data-sort="assignedTo" data-type="string">Assigned To</th>' +
       '<th class="pm-sortable" data-sort="start" data-type="date">Start</th>' +
       '<th class="pm-sortable" data-sort="due" data-type="date">Due</th>' +
+      '<th class="pm-sortable" data-sort="sandboxTicket" data-type="string">Ticket</th>' +
       "</tr></thead>" +
       "<tbody>" +
       rows +
@@ -1161,9 +1161,6 @@
               "<div><strong>Priority:</strong> " +
               getPriorityPill(t.priority) +
               "</div>" +
-              (ticketLink
-                ? "<div><strong>Ticket:</strong> " + ticketLink + "</div>"
-                : "") +
               "<div><strong>Dependencies:</strong> " +
               renderDepsList(t.depIds) +
               "</div>" +
@@ -1176,6 +1173,9 @@
               "<div><strong>Due:</strong> " +
               safe(t.due) +
               "</div>" +
+              (ticketLink
+                ? "<div><strong>Ticket:</strong> " + ticketLink + "</div>"
+                : "") +
               "</div>" +
               "</div>"
             );
@@ -1467,7 +1467,12 @@
   }
 
   function getTicketImportedDate(t) {
-    return mmddyyyyToDate(t.start) || null;
+    var d = mmddyyyyToDate(t.start) || parseDateLoose(t.start);
+    if (d) return d;
+    d = mmddyyyyToDate(t.createdAt) || parseDateLoose(t.createdAt);
+    if (d) return d;
+    d = mmddyyyyToDate(t.due) || parseDateLoose(t.due);
+    return d || null;
   }
 
   function wireTabs() {
