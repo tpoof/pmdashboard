@@ -1821,7 +1821,11 @@
       quarters[q] += 1;
     });
 
-    var statusLabels = getKanbanColumnsOrdered().slice();
+    var statusLabels = getKanbanColumnsOrdered()
+      .slice()
+      .filter(function (label) {
+        return !isArchivedStatus(label);
+      });
     Object.keys(byStatus).forEach(function (k) {
       if (statusLabels.indexOf(k) === -1) statusLabels.push(k);
     });
