@@ -575,7 +575,11 @@
       row.creationDate ||
       row.date ||
       "";
-    var submittedAt = extractRowDate(row);
+    var ticketDate =
+      row.date ||
+      (row.meta ? row.meta.date : "") ||
+      (row.metadata ? row.metadata.date : "") ||
+      "";
 
     // Prefer raw access first, then s1 string fallback
     var depsRawAny = extractRawIndicator(row, TASK_IND.dependencies);
@@ -605,7 +609,7 @@
       category: extractFromS1(row, TASK_IND.category),
       sandboxTicket: extractFromS1(row, TASK_IND.sandboxTicket),
       createdAt: createdAt,
-      submittedAt: submittedAt,
+      ticketDate: ticketDate,
       dependenciesRaw: depsRaw,
       depIds: depIds,
       href: recordID
@@ -633,11 +637,18 @@
     var terms = Array.isArray(extraTerms) ? extraTerms.slice() : [];
     terms.push({ id: "deleted", operator: "=", match: 0, gate: "AND" });
     var q = { terms: terms, joins: [], sort: {}, getData: getData.map(String) };
+    var filterData = ["recordID"];
+    if (arguments.length > 2 && Array.isArray(arguments[2])) {
+      arguments[2].forEach(function (v) {
+        if (v && filterData.indexOf(v) === -1) filterData.push(String(v));
+      });
+    }
     return (
       BASE_QUERY_ENDPOINT +
       "?q=" +
       encodeURIComponent(JSON.stringify(q)) +
-      "&x-filterData=recordID,"
+      "&x-filterData=" +
+      encodeURIComponent(filterData.join(","))
     );
   }
 
@@ -657,42 +668,6 @@
     return isNaN(d.getTime()) ? null : d;
   }
 
-  function extractRowDate(row) {
-    if (!row || typeof row !== "object") return "";
-    var candidates = [
-      row.date,
-      row.dateSubmitted,
-      row.submitted,
-      row.submittedAt,
-      row.submissionDate,
-      row.dateInitiated,
-      row.dateCreated,
-      row.createdAt,
-      row.created,
-      row.creationDate,
-    ];
-    if (row.meta) {
-      candidates.push(
-        row.meta.date,
-        row.meta.submitted,
-        row.meta.dateSubmitted,
-        row.meta.dateCreated,
-      );
-    }
-    if (row.metadata) {
-      candidates.push(
-        row.metadata.date,
-        row.metadata.submitted,
-        row.metadata.dateSubmitted,
-        row.metadata.dateCreated,
-      );
-    }
-    for (var i = 0; i < candidates.length; i++) {
-      if (candidates[i] != null && candidates[i] !== "") return candidates[i];
-    }
-    return "";
-  }
-
   function parseEpochDate(val) {
     if (val == null || val === "") return null;
     var n = Number(val);
@@ -700,10 +675,6 @@
     if (n > 0 && n < 1000000000000) return new Date(n * 1000);
     if (n >= 1000000000000) return new Date(n);
     return null;
-  }
-
-  function parseSubmittedDate(val) {
-    return parseEpochDate(val) || mmddyyyyToDate(val) || parseDateLoose(val);
   }
 
   function compareValues(a, b, dir, type) {
@@ -1518,7 +1489,12 @@
   }
 
   function getTicketImportedDate(t) {
-    return parseSubmittedDate(t.submittedAt);
+    var d = parseEpochDate(t.ticketDate);
+    if (d) return d;
+    d = parseDateLoose(t.ticketDate);
+    if (d) return d;
+    d = mmddyyyyToDate(t.ticketDate);
+    return d || null;
   }
 
   function wireTabs() {
@@ -2631,9 +2607,9 @@
           TASK_IND.startDate,
           TASK_IND.dueDate,
           TASK_IND.sandboxTicket,
-          "date",
         ],
         [],
+        ["date"],
       );
 
       var results = await Promise.all([
