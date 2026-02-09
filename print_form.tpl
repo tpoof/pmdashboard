@@ -40,10 +40,29 @@
     </div>
 </div>
 
+<style type="text/css">
+    .pm-transfer-btn {
+        background: #c5ee93;
+        color: #000;
+    }
+    .pm-transfer-btn:hover,
+    .pm-transfer-btn:focus {
+        background: #7fb135;
+        color: #000;
+    }
+</style>
+
 <!-- Toolbar -->
 <!-- Toolbar -->
 <div id="toolbar" class="toolbar_right toolbar noprint">
     <div id="tools" class="tools">
+        <!--{if $is_admin == true}-->
+            <button type="button" class="tools pm-transfer-btn" onclick="transferToPMDashboard()" title="Transfer to LEAF Projects">
+                <img src="dynicons/?img=go-next.svg&amp;w=32" alt="" aria-hidden="true" style="vertical-align: middle" /> Transfer to LEAF Projects
+            </button>
+            <br />
+            <br />
+        <!--{/if}-->
         <h1>Tools</h1>
         <!--{if $submitted == 0}-->
             <button type="button" class="tools" onclick="window.location='?a=view&amp;recordID=<!--{$recordID|strip_tags}-->'"><img
@@ -76,9 +95,6 @@
         <button  type="button" class="tools" onclick="copyRequest()" title="Copy Request"
             style="vertical-align: middle; background-image: url(dynicons/?img=edit-copy.svg&amp;w=32); background-repeat: no-repeat; background-position: left; text-align: left; text-indent: 35px; height: 38px">
             Copy Request</button>
-        <!--{if $is_admin == true}-->
-            <button type="button" class="tools" onclick="transferToPMDashboard()">Transfer to PM Dashboard</button>
-        <!--{/if}-->
         <br />
         <br />
         <!--{if $submitted == 0 || $is_admin}-->

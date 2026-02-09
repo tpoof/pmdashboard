@@ -10,12 +10,26 @@
 
 <!--{if $is_admin == true}-->
 <div class="noprint" style="margin: 8px 0;">
-    <button type="button" class="tools" onclick="transferToPMDashboard()">Transfer to PM Dashboard</button>
+    <button type="button" class="tools pm-transfer-btn" onclick="transferToPMDashboard()" title="Transfer to LEAF Projects">
+        <img src="dynicons/?img=go-next.svg&amp;w=32" alt="" aria-hidden="true" style="vertical-align: middle" /> Transfer to LEAF Projects
+    </button>
 </div>
 <!--{/if}-->
 
 <div id="formcontent"><div style="border: 2px solid black; text-align: center; font-size: 24px; font-weight: bold; background: white; padding: 16px; width: 95%">Loading... <img src="images/largespinner.gif" alt="" /></div></div>
 </div>
+
+<style type="text/css">
+    .pm-transfer-btn {
+        background: #c5ee93;
+        color: #000;
+    }
+    .pm-transfer-btn:hover,
+    .pm-transfer-btn:focus {
+        background: #7fb135;
+        color: #000;
+    }
+</style>
 
 <!-- DIALOG BOXES -->
 <div id="formContainer"></div>
