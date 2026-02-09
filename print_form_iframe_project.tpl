@@ -57,11 +57,129 @@ function wireSandboxTicket148() {
     });
 }
 
+function decodeEntities(text) {
+    var ta = document.createElement("textarea");
+    ta.innerHTML = String(text || "");
+    return ta.value;
+}
+
+function parseDependenciesValue(raw) {
+    var text = String(raw || "").trim();
+    if (!text) return [];
+    try {
+        var parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) return parsed;
+    } catch (e1) {}
+    try {
+        var decoded = decodeEntities(text);
+        var parsed2 = JSON.parse(decoded);
+        if (Array.isArray(parsed2)) return parsed2;
+    } catch (e2) {}
+    return [];
+}
+
+function extractDependencyRows(items) {
+    if (!items || !items.length) return [];
+    return items
+        .map(function(item) {
+            if (item == null) return null;
+            if (typeof item === "string" || typeof item === "number") {
+                return { id: String(item).trim(), title: "" };
+            }
+            if (typeof item === "object") {
+                var id =
+                    item.id ||
+                    item.recordID ||
+                    item.recordId ||
+                    item.ID ||
+                    "";
+                var title =
+                    item.title ||
+                    item.name ||
+                    item.label ||
+                    item.description ||
+                    "";
+                return { id: String(id || "").trim(), title: String(title || "") };
+            }
+            return null;
+        })
+        .filter(function(row) {
+            return row && row.id;
+        });
+}
+
+function buildDependenciesTable(rows) {
+    var table = document.createElement("table");
+    table.className = "agenda pm-deps-table";
+    table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
+
+    var hasTitle = rows.some(function(r) {
+        return r.title;
+    });
+
+    var thead = document.createElement("thead");
+    var headRow = document.createElement("tr");
+    var thId = document.createElement("th");
+    thId.textContent = "Dependency ID";
+    headRow.appendChild(thId);
+    if (hasTitle) {
+        var thTitle = document.createElement("th");
+        thTitle.textContent = "Title";
+        headRow.appendChild(thTitle);
+    }
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement("tbody");
+    rows.forEach(function(r) {
+        var tr = document.createElement("tr");
+        var tdId = document.createElement("td");
+        var link = document.createElement("a");
+        link.href =
+            "index.php?a=printview&recordID=" + encodeURIComponent(r.id);
+        link.textContent = r.id;
+        tdId.appendChild(link);
+        tr.appendChild(tdId);
+        if (hasTitle) {
+            var tdTitle = document.createElement("td");
+            tdTitle.textContent = r.title || "";
+            tr.appendChild(tdTitle);
+        }
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    return table;
+}
+
+function wireDependencies146() {
+    var nodes = document.querySelectorAll(
+        "[id^='data_146_'], [id^='xhrIndicator_146_']"
+    );
+    if (!nodes || !nodes.length) return;
+    nodes.forEach(function(el) {
+        if (!el || el.getAttribute("data-pm-deps-rendered") === "1") return;
+        var raw = "";
+        if (el.tagName === "TEXTAREA") {
+            raw = el.value || "";
+        } else {
+            raw = el.textContent || "";
+        }
+        var rows = extractDependencyRows(parseDependenciesValue(raw));
+        if (!rows.length) return;
+        var table = buildDependenciesTable(rows);
+        el.innerHTML = "";
+        el.appendChild(table);
+        el.setAttribute("data-pm-deps-rendered", "1");
+    });
+}
+
 function initSandboxTicketWatcher() {
     var target = document.getElementById("formcontent");
     if (!target || target.__pmSandboxObserver) return;
     var observer = new MutationObserver(function() {
         wireSandboxTicket148();
+        wireDependencies146();
     });
     observer.observe(target, {
         childList: true,
@@ -148,6 +266,7 @@ function getIndicator(indicatorID, series) {
                 $("#xhrIndicator_" + indicatorID + "_" + series).fadeIn(250);
             });
             wireSandboxTicket148();
+            wireDependencies146();
         },
         cache: false
     });
@@ -200,6 +319,7 @@ function openContent(url) {
                 });
     		});
             wireSandboxTicket148();
+            wireDependencies146();
     	},
     	error: function(res) {
     		$('#formcontent').empty().html(res);
