@@ -836,11 +836,15 @@
 
   async function createTaskRecord() {
     var token = await ensureCSRFToken();
-    if (!token) throw new Error("Missing CSRFToken");
     var tokenField = state.csrfField || getCSRFFieldName();
 
     var fd = new FormData();
-    fd.append(tokenField, token);
+    if (token) {
+      fd.append(tokenField, token);
+    } else {
+      console.warn("Missing CSRFToken. Attempting create without token.");
+      showTransferDebug("Missing CSRFToken. Attempting create without token.");
+    }
     fd.append("numform_c9014", "1");
     fd.append("title", "Record");
 
@@ -867,7 +871,6 @@
   async function setSandboxTicketIndicator(recordID, sourceId) {
     if (!recordID) throw new Error("Missing recordID");
     var token = await ensureCSRFToken(recordID);
-    if (!token) throw new Error("Missing CSRFToken");
     var tokenField = state.csrfField || getCSRFFieldName();
 
     var url = FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordID);
@@ -876,17 +879,26 @@
       series: 1,
     };
     bodyObj[TASK_IND.sandboxTicket] = "Sandbox Ticket #" + sourceId;
-    bodyObj[tokenField] = token;
+    if (token) {
+      bodyObj[tokenField] = token;
+    } else {
+      console.warn("Missing CSRFToken. Attempting update without token.");
+      showTransferDebug("Missing CSRFToken. Attempting update without token.");
+    }
     var body = encodeFormBody(bodyObj);
+
+    var headers = {
+      "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "x-requested-with": "XMLHttpRequest",
+    };
+    if (token) {
+      headers["x-csrf-token"] = token;
+      headers["x-xsrf-token"] = token;
+    }
 
     var r = await fetch(url, {
       method: "POST",
-      headers: {
-        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "x-requested-with": "XMLHttpRequest",
-        "x-csrf-token": token,
-        "x-xsrf-token": token,
-      },
+      headers: headers,
       credentials: "include",
       body: body,
     });
