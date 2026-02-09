@@ -575,6 +575,14 @@
       row.creationDate ||
       row.date ||
       "";
+    var submittedAt =
+      row.date ||
+      row.dateSubmitted ||
+      row.submitted ||
+      row.submittedDate ||
+      row.submissionDate ||
+      row.dateInitiated ||
+      "";
 
     // Prefer raw access first, then s1 string fallback
     var depsRawAny = extractRawIndicator(row, TASK_IND.dependencies);
@@ -604,6 +612,7 @@
       category: extractFromS1(row, TASK_IND.category),
       sandboxTicket: extractFromS1(row, TASK_IND.sandboxTicket),
       createdAt: createdAt,
+      submittedAt: submittedAt,
       dependenciesRaw: depsRaw,
       depIds: depIds,
       href: recordID
@@ -653,6 +662,19 @@
     if (!val) return null;
     var d = new Date(val);
     return isNaN(d.getTime()) ? null : d;
+  }
+
+  function parseEpochDate(val) {
+    if (val == null || val === "") return null;
+    var n = Number(val);
+    if (isNaN(n)) return null;
+    if (n > 0 && n < 1000000000000) return new Date(n * 1000);
+    if (n >= 1000000000000) return new Date(n);
+    return null;
+  }
+
+  function parseSubmittedDate(val) {
+    return parseEpochDate(val) || mmddyyyyToDate(val) || parseDateLoose(val);
   }
 
   function compareValues(a, b, dir, type) {
@@ -1467,12 +1489,7 @@
   }
 
   function getTicketImportedDate(t) {
-    var d = mmddyyyyToDate(t.start) || parseDateLoose(t.start);
-    if (d) return d;
-    d = mmddyyyyToDate(t.createdAt) || parseDateLoose(t.createdAt);
-    if (d) return d;
-    d = mmddyyyyToDate(t.due) || parseDateLoose(t.due);
-    return d || null;
+    return parseSubmittedDate(t.submittedAt);
   }
 
   function wireTabs() {
