@@ -69,16 +69,18 @@
   border-color: #aacdec;
 }
 
-.pm-inboxBtn {
-  background: #f0f0f0;
-  border-color: #c8c8c8;
-  color: #111;
+.pm-primaryBtn.pm-inboxBtn,
+#pmViewInboxBtn {
+  background: #f0f0f0 !important;
+  border-color: #c8c8c8 !important;
+  color: #111 !important;
 }
 
-.pm-inboxBtn:hover {
-  background: #5c5c5c;
-  border-color: #5c5c5c;
-  color: #fff;
+.pm-primaryBtn.pm-inboxBtn:hover,
+#pmViewInboxBtn:hover {
+  background: #5c5c5c !important;
+  border-color: #5c5c5c !important;
+  color: #fff !important;
 }
 
 .pm-controls {
