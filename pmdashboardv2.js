@@ -576,6 +576,7 @@
     var el = document.getElementById("pmTasksTable");
     if (!el) return;
 
+    var now = new Date();
     var rows = tasks
       .slice(0, 500)
       .map(function (t) {
@@ -599,6 +600,8 @@
             safe(t.recordID) +
             "</a>"
           : safe(t.recordID);
+
+        var overdueClass = isOverdueTask(t, now) ? "pm-overdueRed" : "";
 
         return (
           "<tr>" +
@@ -629,7 +632,9 @@
           "<td>" +
           safe(t.start) +
           "</td>" +
-          "<td>" +
+          '<td class="' +
+          overdueClass +
+          '">' +
           safe(t.due) +
           "</td>" +
           "</tr>"
@@ -777,7 +782,9 @@
     var board = document.getElementById("pmKanbanBoard");
     if (!board) return;
 
-    var cols = getKanbanColumnsOrdered();
+    var cols = getKanbanColumnsOrdered().filter(function (col) {
+      return String(col || "").toLowerCase().indexOf("archive") === -1;
+    });
     var grouped = {};
     cols.forEach(function (c) {
       grouped[c] = [];
