@@ -1490,12 +1490,20 @@
 
     renderProjectHealthSticky(activeTab, selectedProjectKey);
 
+    var tasksNoArchive = tasksFiltered.filter(function (t) {
+      return !isArchivedStatus(t.status);
+    });
+
+    var tasksSearchNoArchive = tasksSearchFiltered.filter(function (t) {
+      return !isArchivedStatus(t.status);
+    });
+
     if (renderOnlyCurrentTabFirst) {
       if (activeTab === "projects") renderProjectsTable(projectsFiltered);
       if (activeTab === "tasks") {
         renderTasksTable(tasksFiltered);
         if (tasksView === "kanban") renderKanban(tasksFiltered);
-        if (tasksView === "gantt") renderGantt(tasksFiltered);
+        if (tasksView === "gantt") renderGantt(tasksNoArchive);
       }
     } else {
       renderProjectsTable(projectsFiltered);
@@ -1503,8 +1511,8 @@
       if (activeTab === "tasks" && tasksView === "kanban")
         renderKanban(tasksFiltered);
       if (activeTab === "tasks" && tasksView === "gantt")
-        renderGantt(tasksFiltered);
-      if (activeTab === "analytics") renderAnalytics(tasksSearchFiltered);
+        renderGantt(tasksNoArchive);
+      if (activeTab === "analytics") renderAnalytics(tasksSearchNoArchive);
     }
   }
 
@@ -1611,7 +1619,7 @@
       );
       var clientHeight = window.innerHeight || document.documentElement.clientHeight;
       var needsScroll = scrollHeight - clientHeight > 80;
-      btn.classList.toggle("is-visible", needsScroll && scrollTop > 0);
+      btn.classList.toggle("is-visible", needsScroll && scrollTop > 80);
     }
 
     btn.addEventListener("click", function () {
