@@ -628,7 +628,7 @@
       BASE_QUERY_ENDPOINT +
       "?q=" +
       encodeURIComponent(JSON.stringify(q)) +
-      "&x-filterData=recordID,"
+      "&x-filterData=recordID,date"
     );
   }
 
@@ -1472,8 +1472,25 @@
     return mmddyyyyToDate(t.due) || mmddyyyyToDate(t.start) || null;
   }
 
+  function parseLeafDate(value) {
+    if (value == null || value === "") return null;
+    if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+    var str = String(value).trim();
+    if (!str) return null;
+
+    if (/^\d+$/.test(str)) {
+      var num = Number(str);
+      if (!isFinite(num)) return null;
+      if (num < 1000000000000) num = num * 1000;
+      var d = new Date(num);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    return mmddyyyyToDate(str) || parseDateLoose(str);
+  }
+
   function getTicketImportedDate(t) {
-    return mmddyyyyToDate(t.start) || null;
+    return parseLeafDate(t.createdAt || t.start) || null;
   }
 
   function wireTabs() {
