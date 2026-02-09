@@ -11,36 +11,36 @@
 
   // Task form indicator IDs
   var TASK_IND = {
-    projectKey: 128,
-    title: 129,
-    status: 130,
-    assignedTo: 131,
-    startDate: 132,
-    dueDate: 133,
-    priority: 140,
-    category: 145,
-    dependencies: 146,
-    sandboxTicket: 148,
+    projectKey: 8,
+    title: 9,
+    status: 10,
+    assignedTo: 11,
+    startDate: 12,
+    dueDate: 13,
+    priority: 14,
+    category: 16,
+    dependencies: 17,
+    sandboxTicket: 18,
   };
 
   // Project form indicator IDs
   var PROJECT_IND = {
-    projectKey: 135,
-    projectName: 136,
-    description: 137,
-    owner: 138,
-    projectStatus: 139,
+    projectKey: 2,
+    projectName: 3,
+    description: 4,
+    owner: 5,
+    projectStatus: 6,
   };
 
   // Endpoints
   var BASE_QUERY_ENDPOINT =
-    "https://leaf.va.gov/platform/sl_projects/api/form/query/";
+    "https://leaf.va.gov/platform/projects/api/form/query/";
   var FORM_POST_ENDPOINT_PREFIX =
-    "https://leaf.va.gov/platform/sl_projects/api/form/";
+    "https://leaf.va.gov/platform/projects/api/form/";
   var START_PROJECT_URL =
-    "https://leaf.va.gov/platform/sl_projects/report.php?a=LEAF_Start_Request&id=form_7f573";
+    "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_55445";
   var START_TASK_URL =
-    "https://leaf.va.gov/platform/sl_projects/report.php?a=LEAF_Start_Request&id=form_c9014";
+    "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_9b302";
 
   // Persistence keys
   var STORAGE_KEYS = {
@@ -526,7 +526,7 @@
     if (!id) return "";
     var label = "Sandbox Ticket #" + id;
     var href =
-      "/platform/sl_sandbox/index.php?a=printview&recordID=" +
+      "/platform/support/index.php?a=printview&recordID=" +
       encodeURIComponent(id);
     return (
       '<a href="' +
@@ -950,7 +950,7 @@
 
     var url = FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordID);
     var bodyObj = {
-      130: newStatus,
+      10: newStatus,
       recordID: recordID,
       series: 1,
     };
@@ -984,7 +984,7 @@
       console.warn("Missing CSRFToken. Attempting create without token.");
       showTransferDebug("Missing CSRFToken. Attempting create without token.");
     }
-    fd.append("numform_c9014", "1");
+    fd.append("numform_9b302", "1");
     fd.append("title", "Record");
 
     var headers = { "x-requested-with": "XMLHttpRequest" };
@@ -993,7 +993,7 @@
       headers["x-xsrf-token"] = token;
     }
 
-    var r = await fetch("/platform/sl_projects/api/form/new", {
+    var r = await fetch("/platform/projects/api/form/new", {
       method: "POST",
       credentials: "include",
       headers: headers,
@@ -2616,12 +2616,12 @@
       var taskRowsAll = coerceRows(tasksJson) || [];
 
       var projectRows = projectRowsAll.filter(function (r) {
-        return hasAnyS1Value(r, [135, 136, 137, 138, 139]);
+        return hasAnyS1Value(r, [2, 3, 4, 5, 6]);
       });
       var taskRows = taskRowsAll.filter(function (r) {
         return hasAnyS1Value(
           r,
-          [128, 129, 130, 131, 132, 133, 140, 145, 146, 148],
+          [8, 9, 10, 11, 12, 13, 14, 16, 17, 18],
         );
       });
 

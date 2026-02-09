@@ -45,7 +45,7 @@ function wireSandboxTicket148() {
         if (!match) return;
         var ticketId = match[1];
         var url =
-            "/platform/sl_sandbox/index.php?a=printview&recordID=" +
+            "/platform/support/index.php?a=printview&recordID=" +
             encodeURIComponent(ticketId);
         var link = document.createElement("a");
         link.href = "#";

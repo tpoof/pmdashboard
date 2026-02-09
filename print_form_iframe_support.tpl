@@ -55,7 +55,7 @@ function transferToPMDashboard() {
     var id = params.get("recordID");
     if (!id) return;
     window.location.href =
-        "/platform/sl_projects/report.php?a=pm_dashboard&tab=tasks&transferFromSandbox=" +
+        "/platform/projects/report.php?a=dashboard&tab=tasks&transferFromSandbox=" +
         encodeURIComponent(id);
 }
 
@@ -69,7 +69,7 @@ function wireSandboxTicket148() {
         if (!match) return;
         var ticketId = match[1];
         var url =
-            "/platform/sl_sandbox/index.php?a=printview&recordID=" +
+            "/platform/support/index.php?a=printview&recordID=" +
             encodeURIComponent(ticketId);
         var link = document.createElement("a");
         link.href = "#";
