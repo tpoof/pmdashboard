@@ -224,21 +224,14 @@
     if (metaMatch && metaMatch[1])
       return { token: metaMatch[1], field: "CSRFToken" };
 
-    var jsMatch = src.match(
-      /CSRFToken\s*[:=]\s*["']([^"']+)["']/i,
-    );
-    if (jsMatch && jsMatch[1])
-      return { token: jsMatch[1], field: "CSRFToken" };
+    var jsMatch = src.match(/CSRFToken\s*[:=]\s*["']([^"']+)["']/i);
+    if (jsMatch && jsMatch[1]) return { token: jsMatch[1], field: "CSRFToken" };
 
-    var jsAltMatch = src.match(
-      /csrf_token\s*[:=]\s*["']([^"']+)["']/i,
-    );
+    var jsAltMatch = src.match(/csrf_token\s*[:=]\s*["']([^"']+)["']/i);
     if (jsAltMatch && jsAltMatch[1])
       return { token: jsAltMatch[1], field: "csrf_token" };
 
-    var jsAltMatch2 = src.match(
-      /csrfToken\s*[:=]\s*["']([^"']+)["']/i,
-    );
+    var jsAltMatch2 = src.match(/csrfToken\s*[:=]\s*["']([^"']+)["']/i);
     if (jsAltMatch2 && jsAltMatch2[1])
       return { token: jsAltMatch2[1], field: "csrfToken" };
 
@@ -575,11 +568,6 @@
       row.creationDate ||
       row.date ||
       "";
-    var ticketDate =
-      row.date ||
-      (row.meta ? row.meta.date : "") ||
-      (row.metadata ? row.metadata.date : "") ||
-      "";
 
     // Prefer raw access first, then s1 string fallback
     var depsRawAny = extractRawIndicator(row, TASK_IND.dependencies);
@@ -609,7 +597,6 @@
       category: extractFromS1(row, TASK_IND.category),
       sandboxTicket: extractFromS1(row, TASK_IND.sandboxTicket),
       createdAt: createdAt,
-      ticketDate: ticketDate,
       dependenciesRaw: depsRaw,
       depIds: depIds,
       href: recordID
@@ -637,18 +624,11 @@
     var terms = Array.isArray(extraTerms) ? extraTerms.slice() : [];
     terms.push({ id: "deleted", operator: "=", match: 0, gate: "AND" });
     var q = { terms: terms, joins: [], sort: {}, getData: getData.map(String) };
-    var filterData = ["recordID"];
-    if (arguments.length > 2 && Array.isArray(arguments[2])) {
-      arguments[2].forEach(function (v) {
-        if (v && filterData.indexOf(v) === -1) filterData.push(String(v));
-      });
-    }
     return (
       BASE_QUERY_ENDPOINT +
       "?q=" +
       encodeURIComponent(JSON.stringify(q)) +
-      "&x-filterData=" +
-      encodeURIComponent(filterData.join(","))
+      "&x-filterData=recordID,"
     );
   }
 
@@ -666,15 +646,6 @@
     if (!val) return null;
     var d = new Date(val);
     return isNaN(d.getTime()) ? null : d;
-  }
-
-  function parseEpochDate(val) {
-    if (val == null || val === "") return null;
-    var n = Number(val);
-    if (isNaN(n)) return null;
-    if (n > 0 && n < 1000000000000) return new Date(n * 1000);
-    if (n >= 1000000000000) return new Date(n);
-    return null;
   }
 
   function compareValues(a, b, dir, type) {
@@ -1038,7 +1009,9 @@
     } catch (e) {
       newId = text;
     }
-    newId = String(newId || "").trim().replace(/^\"|\"$/g, "");
+    newId = String(newId || "")
+      .trim()
+      .replace(/^\"|\"$/g, "");
     if (!newId) throw new Error("Missing recordID");
     return newId;
   }
@@ -1123,7 +1096,11 @@
     if (!board) return;
 
     var cols = getKanbanColumnsOrdered().filter(function (col) {
-      return String(col || "").toLowerCase().indexOf("archive") === -1;
+      return (
+        String(col || "")
+          .toLowerCase()
+          .indexOf("archive") === -1
+      );
     });
     var grouped = {};
     cols.forEach(function (c) {
@@ -1340,7 +1317,11 @@
           widthPct = (durationDays / rangeDays) * 100;
           if (widthPct < 1.5) widthPct = 1.5;
           barStyle =
-            "left:" + leftPct.toFixed(2) + "%;width:" + widthPct.toFixed(2) + "%;";
+            "left:" +
+            leftPct.toFixed(2) +
+            "%;width:" +
+            widthPct.toFixed(2) +
+            "%;";
         }
 
         var title = safe(t.title || "(No title)");
@@ -1474,14 +1455,17 @@
 
   function isOverdueTask(t, now) {
     var st = String(t.status || "").toLowerCase();
-    if (isCompletedStatus(st) || st.indexOf("archive") !== -1)
-      return false;
+    if (isCompletedStatus(st) || st.indexOf("archive") !== -1) return false;
     var due = mmddyyyyToDate(t.due);
     return !!(due && due.getTime() < now.getTime());
   }
 
   function isArchivedStatus(status) {
-    return String(status || "").toLowerCase().indexOf("archive") !== -1;
+    return (
+      String(status || "")
+        .toLowerCase()
+        .indexOf("archive") !== -1
+    );
   }
 
   function getCompletionDateForTask(t) {
@@ -1489,11 +1473,11 @@
   }
 
   function getTicketImportedDate(t) {
-    var d = parseEpochDate(t.ticketDate);
+    var d = mmddyyyyToDate(t.start) || parseDateLoose(t.start);
     if (d) return d;
-    d = parseDateLoose(t.ticketDate);
+    d = mmddyyyyToDate(t.createdAt) || parseDateLoose(t.createdAt);
     if (d) return d;
-    d = mmddyyyyToDate(t.ticketDate);
+    d = mmddyyyyToDate(t.due) || parseDateLoose(t.due);
     return d || null;
   }
 
@@ -1990,7 +1974,8 @@
         document.body.scrollHeight,
         document.documentElement.scrollHeight,
       );
-      var clientHeight = window.innerHeight || document.documentElement.clientHeight;
+      var clientHeight =
+        window.innerHeight || document.documentElement.clientHeight;
       var needsScroll = scrollHeight - clientHeight > 80;
       btn.classList.toggle("is-visible", needsScroll && scrollTop > 120);
     }
@@ -2215,8 +2200,7 @@
       { value: "Q3", label: "Q3" },
       { value: "Q4", label: "Q4" },
     ];
-    if (!state.analyticsCategoryQuarter)
-      state.analyticsCategoryQuarter = "all";
+    if (!state.analyticsCategoryQuarter) state.analyticsCategoryQuarter = "all";
     if (
       !quarterOptions.some(function (q) {
         return q.value === state.analyticsCategoryQuarter;
@@ -2432,9 +2416,7 @@
             "Nov",
             "Dec",
           ],
-          datasets: [
-            { label: "Tickets imported", data: ticketCounts },
-          ],
+          datasets: [{ label: "Tickets imported", data: ticketCounts }],
         },
         options: { responsive: true, maintainAspectRatio: false },
       });
@@ -2609,7 +2591,6 @@
           TASK_IND.sandboxTicket,
         ],
         [],
-        ["date"],
       );
 
       var results = await Promise.all([
@@ -2626,7 +2607,10 @@
         return hasAnyS1Value(r, [135, 136, 137, 138, 139]);
       });
       var taskRows = taskRowsAll.filter(function (r) {
-        return hasAnyS1Value(r, [128, 129, 130, 131, 132, 133, 140, 145, 146, 148]);
+        return hasAnyS1Value(
+          r,
+          [128, 129, 130, 131, 132, 133, 140, 145, 146, 148],
+        );
       });
 
       state.projectsAll = projectRows.map(normalizeProject);
