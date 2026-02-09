@@ -704,6 +704,8 @@
     });
 
     var compPct = total ? Math.round((completed / total) * 100) : 0;
+    var compClass =
+      compPct === 100 ? "pm-healthValue pm-completeGreen" : "pm-healthValue";
     var overdueClass =
       overdue > 0 ? "pm-healthValue pm-overdueRed" : "pm-healthValue";
 
@@ -722,7 +724,9 @@
       '<div class="pm-healthCell"><span class="pm-healthLabel">Completed:</span> <span class="pm-healthValue">' +
       completed +
       "</span></div>" +
-      '<div class="pm-healthCell"><span class="pm-healthLabel">Completed percent:</span> <span class="pm-healthValue">' +
+      '<div class="pm-healthCell"><span class="pm-healthLabel">Completed percent:</span> <span class="' +
+      compClass +
+      '">' +
       compPct +
       "%</span></div>" +
       '<div class="pm-healthCell"><span class="pm-healthLabel">Overdue:</span> <span class="' +
@@ -751,10 +755,13 @@
     });
 
     Object.keys(found).forEach(function (st) {
+      if (isArchivedStatus(st)) return;
       if (cols.indexOf(st) === -1) cols.push(st);
     });
 
-    return cols;
+    return cols.filter(function (st) {
+      return !isArchivedStatus(st);
+    });
   }
 
   async function updateTaskStatus(recordID, newStatus) {
@@ -1619,7 +1626,7 @@
       );
       var clientHeight = window.innerHeight || document.documentElement.clientHeight;
       var needsScroll = scrollHeight - clientHeight > 80;
-      btn.classList.toggle("is-visible", needsScroll && scrollTop > 80);
+      btn.classList.toggle("is-visible", needsScroll && scrollTop > 120);
     }
 
     btn.addEventListener("click", function () {
@@ -1996,6 +2003,7 @@
       .map(function (pk) {
         var h = health[pk];
         var compPct = h.total ? Math.round((h.completed / h.total) * 100) : 0;
+        var compClass = compPct === 100 ? "pm-completeGreen" : "";
 
         var overdueCell =
           h.overdue > 0
@@ -2009,7 +2017,9 @@
           h.total +
           "</td><td>" +
           h.completed +
-          "</td><td>" +
+          "</td><td class='" +
+          compClass +
+          "'>" +
           compPct +
           "%</td>" +
           overdueCell +

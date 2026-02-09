@@ -262,6 +262,10 @@
   color: #ff4040;
 }
 
+.pm-completeGreen {
+  color: #719f2a;
+}
+
 .pm-healthSticky {
   position: sticky;
   top: 12px;
@@ -672,15 +676,18 @@
   font-weight: 900;
   line-height: 1;
   text-align: center;
-  display: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
   z-index: 1200;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .pm-jumpTop.is-visible {
-  display: inline-flex;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .pm-jumpTop:hover {
