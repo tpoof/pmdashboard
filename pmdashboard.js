@@ -2321,9 +2321,10 @@
       requestAnimationFrame(function () {
         applySearchAndFilters(false);
       });
-      await handleTransferFromSandbox();
     } catch (e) {
       console.error("Failed to load data.", e);
+    } finally {
+      await handleTransferFromSandbox();
     }
   }
 

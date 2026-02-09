@@ -41,28 +41,31 @@
 </div>
 
 <style type="text/css">
+    .pm-transfer-wrap {
+        padding-bottom: 12px;
+    }
     .pm-transfer-btn {
-        background: #c5ee93;
-        color: #000;
+        background: #c5ee93 !important;
+        color: #000 !important;
     }
     .pm-transfer-btn:hover,
     .pm-transfer-btn:focus {
-        background: #7fb135;
-        color: #000;
+        background: #7fb135 !important;
+        color: #000 !important;
     }
 </style>
 
 <!-- Toolbar -->
 <!-- Toolbar -->
 <div id="toolbar" class="toolbar_right toolbar noprint">
-    <div id="tools" class="tools">
-        <!--{if $is_admin == true}-->
-            <button type="button" class="tools pm-transfer-btn" onclick="transferToPMDashboard()" title="Transfer to LEAF Projects">
+    <!--{if $is_admin == true}-->
+        <div class="pm-transfer-wrap">
+            <button type="button" class="pm-transfer-btn" onclick="transferToPMDashboard()" title="Transfer to LEAF Projects">
                 <img src="dynicons/?img=go-next.svg&amp;w=32" alt="" aria-hidden="true" style="vertical-align: middle" /> Transfer to LEAF Projects
             </button>
-            <br />
-            <br />
-        <!--{/if}-->
+        </div>
+    <!--{/if}-->
+    <div id="tools" class="tools">
         <h1>Tools</h1>
         <!--{if $submitted == 0}-->
             <button type="button" class="tools" onclick="window.location='?a=view&amp;recordID=<!--{$recordID|strip_tags}-->'"><img
