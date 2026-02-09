@@ -137,6 +137,7 @@ function getIndicator(indicatorID, series) {
             $("#xhrIndicator_" + indicatorID + "_" + series).fadeOut(250, function() {
                 $("#xhrIndicator_" + indicatorID + "_" + series).fadeIn(250);
             });
+            wireSandboxTicket148();
         },
         cache: false
     });

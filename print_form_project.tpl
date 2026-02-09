@@ -435,6 +435,7 @@ function doSubmit(recordID) {
                     xhrIndicator.fadeIn(250);
                 });
                 handlePrintConditionalIndicators(formPrintConditions);
+                wireSandboxTicket148();
             },
             error: function(res) {
                 console.log(res);
@@ -779,6 +780,7 @@ function doSubmit(recordID) {
                         });
                     });
                     handlePrintConditionalIndicators(formPrintConditions);
+                    wireSandboxTicket148();
                 },
                 error: function(res) {
                     //$('#formcontent').empty().html(res);
