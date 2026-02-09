@@ -575,14 +575,7 @@
       row.creationDate ||
       row.date ||
       "";
-    var submittedAt =
-      row.date ||
-      row.dateSubmitted ||
-      row.submitted ||
-      row.submittedDate ||
-      row.submissionDate ||
-      row.dateInitiated ||
-      "";
+    var submittedAt = extractRowDate(row);
 
     // Prefer raw access first, then s1 string fallback
     var depsRawAny = extractRawIndicator(row, TASK_IND.dependencies);
@@ -662,6 +655,42 @@
     if (!val) return null;
     var d = new Date(val);
     return isNaN(d.getTime()) ? null : d;
+  }
+
+  function extractRowDate(row) {
+    if (!row || typeof row !== "object") return "";
+    var candidates = [
+      row.date,
+      row.dateSubmitted,
+      row.submitted,
+      row.submittedAt,
+      row.submissionDate,
+      row.dateInitiated,
+      row.dateCreated,
+      row.createdAt,
+      row.created,
+      row.creationDate,
+    ];
+    if (row.meta) {
+      candidates.push(
+        row.meta.date,
+        row.meta.submitted,
+        row.meta.dateSubmitted,
+        row.meta.dateCreated,
+      );
+    }
+    if (row.metadata) {
+      candidates.push(
+        row.metadata.date,
+        row.metadata.submitted,
+        row.metadata.dateSubmitted,
+        row.metadata.dateCreated,
+      );
+    }
+    for (var i = 0; i < candidates.length; i++) {
+      if (candidates[i] != null && candidates[i] !== "") return candidates[i];
+    }
+    return "";
   }
 
   function parseEpochDate(val) {
@@ -2602,6 +2631,7 @@
           TASK_IND.startDate,
           TASK_IND.dueDate,
           TASK_IND.sandboxTicket,
+          "date",
         ],
         [],
       );
