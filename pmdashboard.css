@@ -638,8 +638,29 @@
   border-bottom: 1px solid #d7d7d7;
 }
 
+.pm-modalActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .pm-modalTitle {
   font-weight: 900;
+}
+
+.pm-modalOpenTab {
+  border: 1px solid #8daed3;
+  background: #f5f9ff;
+  color: #17324d;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pm-modalOpenTab:hover,
+.pm-modalOpenTab:focus {
+  background: #d9e8f6;
 }
 
 .pm-modalClose {

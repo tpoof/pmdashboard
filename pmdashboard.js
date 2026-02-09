@@ -96,9 +96,11 @@
     var modal = document.getElementById("pmModal");
     var frame = document.getElementById("pmModalFrame");
     var titleEl = document.getElementById("pmModalTitle");
+    var openTabBtn = document.getElementById("pmModalOpenTabBtn");
     if (!modal || !frame || !titleEl) return;
     titleEl.textContent = title || "Details";
     frame.src = url;
+    if (openTabBtn) openTabBtn.setAttribute("data-url", url || "");
     modal.style.display = "block";
     modal.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
@@ -107,8 +109,10 @@
   function closeModal() {
     var modal = document.getElementById("pmModal");
     var frame = document.getElementById("pmModalFrame");
+    var openTabBtn = document.getElementById("pmModalOpenTabBtn");
     if (!modal || !frame) return;
     frame.src = "about:blank";
+    if (openTabBtn) openTabBtn.setAttribute("data-url", "");
     modal.style.display = "none";
     modal.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
@@ -515,6 +519,33 @@
     );
   }
 
+  function getSandboxTicketId(value) {
+    var text = String(value || "").trim();
+    if (!text) return "";
+    var match = text.match(/Sandbox\s*Ticket\s*#(\d+)/i);
+    if (match) return match[1];
+    match = text.match(/#(\d+)/);
+    return match ? match[1] : "";
+  }
+
+  function sandboxTicketLink(value) {
+    var id = getSandboxTicketId(value);
+    if (!id) return "";
+    var label = "Sandbox Ticket #" + id;
+    var href =
+      "/platform/sl_sandbox/index.php?a=printview&recordID=" +
+      encodeURIComponent(id);
+    return (
+      '<a href="' +
+      safe(href) +
+      '" class="pm-recordLink" data-title="' +
+      safe(label) +
+      '">' +
+      safe(label) +
+      "</a>"
+    );
+  }
+
   function renderDepsList(depIds) {
     if (!depIds || !depIds.length) return '<span class="pm-muted">None</span>';
     return (
@@ -784,7 +815,7 @@
           getPriorityPill(t.priority) +
           "</td>" +
           "<td>" +
-          (String(t.sandboxTicket || "").trim() ? "&#10003;" : "") +
+          sandboxTicketLink(t.sandboxTicket) +
           "</td>" +
           "<td>" +
           safe(t.category) +
@@ -1110,6 +1141,7 @@
                 safe(t.recordID) +
                 "</a>"
               : safe(t.recordID);
+            var ticketLink = sandboxTicketLink(t.sandboxTicket);
 
             return (
               "" +
@@ -1129,9 +1161,9 @@
               "<div><strong>Priority:</strong> " +
               getPriorityPill(t.priority) +
               "</div>" +
-              "<div><strong>Ticket:</strong> " +
-              (String(t.sandboxTicket || "").trim() ? "&#10003;" : "") +
-              "</div>" +
+              (ticketLink
+                ? "<div><strong>Ticket:</strong> " + ticketLink + "</div>"
+                : "") +
               "<div><strong>Dependencies:</strong> " +
               renderDepsList(t.depIds) +
               "</div>" +
@@ -1292,7 +1324,7 @@
         var title = safe(t.title || "(No title)");
         var pk = safe(t.projectKey || "");
         var id = safe(t.recordID || "");
-        var ticketFlag = String(t.sandboxTicket || "").trim() ? "✓" : "";
+        var ticketLink = sandboxTicketLink(t.sandboxTicket);
         var dateLabel =
           safe(t.start || "No start") + " → " + safe(t.due || "No due");
 
@@ -1310,7 +1342,7 @@
           id +
           " · Project: " +
           pk +
-          (ticketFlag ? " · Ticket: " + ticketFlag : "") +
+          (ticketLink ? " · " + ticketLink : "") +
           "</div>" +
           '<div class="pm-ganttBarWrap">' +
           '<div class="pm-ganttBar ' +
@@ -1850,7 +1882,14 @@
   function wireModalControls() {
     var modal = document.getElementById("pmModal");
     var closeBtn = document.getElementById("pmModalCloseBtn");
+    var openTabBtn = document.getElementById("pmModalOpenTabBtn");
     if (closeBtn) closeBtn.addEventListener("click", closeModal);
+    if (openTabBtn)
+      openTabBtn.addEventListener("click", function () {
+        var url = openTabBtn.getAttribute("data-url") || "";
+        if (!url) return;
+        window.open(url, "_blank", "noopener");
+      });
 
     if (modal) {
       modal.addEventListener("click", function (e) {
