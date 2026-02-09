@@ -112,13 +112,33 @@
       if (v) return v;
     }
 
+    var input =
+      document.querySelector("input[name='CSRFToken']") ||
+      document.querySelector("input[name='csrf_token']") ||
+      document.querySelector("input[name='csrfToken']");
+    if (input && input.value) return input.value;
+
     if (typeof window !== "undefined" && window.CSRFToken)
       return window.CSRFToken;
 
-    var m = document.cookie.match(/(?:^|;\\s*)CSRFToken=([^;]+)/);
-    if (m && m[1]) return decodeURIComponent(m[1]);
+    var cookieNames = ["CSRFToken", "csrf_token", "XSRF-TOKEN"];
+    for (var i = 0; i < cookieNames.length; i++) {
+      var name = cookieNames[i];
+      var re = new RegExp("(?:^|;\\\\s*)" + name + "=([^;]+)");
+      var m = document.cookie.match(re);
+      if (m && m[1]) return decodeURIComponent(m[1]);
+    }
 
     return CSRFToken || "";
+  }
+
+  function getCSRFFieldName() {
+    var input =
+      document.querySelector("input[name='CSRFToken']") ||
+      document.querySelector("input[name='csrf_token']") ||
+      document.querySelector("input[name='csrfToken']");
+    if (input && input.name) return input.name;
+    return "CSRFToken";
   }
 
   async function fetchJSON(url) {
@@ -601,14 +621,16 @@
     if (!recordID) throw new Error("Missing recordID");
     var token = getCSRFToken();
     if (!token) throw new Error("Missing CSRFToken");
+    var tokenField = getCSRFFieldName();
 
     var url = FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordID);
-    var body = encodeFormBody({
+    var bodyObj = {
       130: newStatus,
       recordID: recordID,
       series: 1,
-      CSRFToken: token,
-    });
+    };
+    bodyObj[tokenField] = token;
+    var body = encodeFormBody(bodyObj);
 
     var r = await fetch(url, {
       method: "POST",
@@ -616,6 +638,7 @@
         "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
         "x-requested-with": "XMLHttpRequest",
         "x-csrf-token": token,
+        "x-xsrf-token": token,
       },
       credentials: "include",
       body: body,
@@ -1384,6 +1407,35 @@
       });
   }
 
+  function wireDebugUpdateButton() {
+    var btn = document.getElementById("pmDebugUpdateBtn");
+    if (!btn) return;
+    btn.addEventListener("click", async function () {
+      var defaultId = "";
+      var card = document.querySelector(".pm-card[data-taskid]");
+      if (card) defaultId = card.getAttribute("data-taskid") || "";
+      if (!defaultId && state.tasksAll.length)
+        defaultId = state.tasksAll[0].recordID || "";
+
+      var id = prompt("Record ID to update?", defaultId);
+      if (!id) return;
+      var status = prompt("New status?", "In Progress");
+      if (!status) return;
+
+      try {
+        await updateTaskStatus(id, status);
+        var idx = state.tasksAll.findIndex(function (t) {
+          return String(t.recordID) === String(id);
+        });
+        if (idx !== -1) state.tasksAll[idx].status = status;
+        applySearchAndFilters(true);
+        alert("Update ok.");
+      } catch (err) {
+        alert("Update failed. " + String(err));
+      }
+    });
+  }
+
   function renderAnalytics(tasks) {
     if (typeof Chart === "undefined") {
       var note = document.querySelector(".pm-analyticsNote");
@@ -1626,6 +1678,7 @@
       wireRecordModalLinks();
       wireModalControls();
       wireAddButtons();
+      wireDebugUpdateButton();
 
       var projectsUrl = buildQueryUrl(
         [

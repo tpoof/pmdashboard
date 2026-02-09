@@ -141,6 +141,12 @@
   margin: 18px 0 10px 0;
 }
 
+.pm-panelActions {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .pm-filtersWrap {
   margin-top: 10px;
   margin-bottom: 10px;
