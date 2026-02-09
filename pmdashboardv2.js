@@ -58,6 +58,8 @@
     csrfToken: "",
     csrfField: "CSRFToken",
     analyticsYear: "",
+    analyticsCategoryYear: "",
+    analyticsCategoryQuarter: "",
     sort: {
       projects: { key: null, dir: 1, type: "string" },
       tasks: { key: null, dir: 1, type: "string" },
@@ -67,6 +69,7 @@
       projectKey: null,
       dueBuckets: null,
       completedByQuarter: null,
+      completedByCategory: null,
       priority: null,
     },
   };
@@ -1566,6 +1569,24 @@
     });
   }
 
+  function wireAnalyticsCategoryFilters() {
+    var yearSel = document.getElementById("pmAnalyticsCategoryYearSelect");
+    var quarterSel = document.getElementById(
+      "pmAnalyticsCategoryQuarterSelect",
+    );
+    if (!yearSel || !quarterSel) return;
+
+    yearSel.addEventListener("change", function () {
+      state.analyticsCategoryYear = yearSel.value || "";
+      applySearchAndFilters(false);
+    });
+
+    quarterSel.addEventListener("change", function () {
+      state.analyticsCategoryQuarter = quarterSel.value || "";
+      applySearchAndFilters(false);
+    });
+  }
+
   function wireJumpToTop() {
     var btn = document.getElementById("pmJumpTopBtn");
     if (!btn) return;
@@ -1615,6 +1636,10 @@
       state.charts.completedByQuarter.destroy();
       state.charts.completedByQuarter = null;
     }
+    if (state.charts.completedByCategory) {
+      state.charts.completedByCategory.destroy();
+      state.charts.completedByCategory = null;
+    }
     if (state.charts.priority) {
       state.charts.priority.destroy();
       state.charts.priority = null;
@@ -1652,6 +1677,12 @@
     });
 
     var yearSelect = document.getElementById("pmAnalyticsYearSelect");
+    var catYearSelect = document.getElementById(
+      "pmAnalyticsCategoryYearSelect",
+    );
+    var catQuarterSelect = document.getElementById(
+      "pmAnalyticsCategoryQuarterSelect",
+    );
     var completedTasks = tasks.filter(function (t) {
       return isCompletedStatus(t.status);
     });
@@ -1699,6 +1730,63 @@
         .join("");
     }
 
+    if (!state.analyticsCategoryYear) {
+      state.analyticsCategoryYear = String(completedYears[0]);
+    }
+    if (completedYears.indexOf(Number(state.analyticsCategoryYear)) === -1) {
+      state.analyticsCategoryYear = String(completedYears[0]);
+    }
+
+    if (catYearSelect) {
+      catYearSelect.innerHTML = completedYears
+        .map(function (y) {
+          return (
+            '<option value="' +
+            y +
+            '"' +
+            (String(y) === String(state.analyticsCategoryYear)
+              ? " selected"
+              : "") +
+            ">" +
+            y +
+            "</option>"
+          );
+        })
+        .join("");
+    }
+
+    var quarterOptions = [
+      { value: "all", label: "All" },
+      { value: "Q1", label: "Q1" },
+      { value: "Q2", label: "Q2" },
+      { value: "Q3", label: "Q3" },
+      { value: "Q4", label: "Q4" },
+    ];
+    if (!state.analyticsCategoryQuarter)
+      state.analyticsCategoryQuarter = "all";
+    if (
+      !quarterOptions.some(function (q) {
+        return q.value === state.analyticsCategoryQuarter;
+      })
+    ) {
+      state.analyticsCategoryQuarter = "all";
+    }
+    if (catQuarterSelect) {
+      catQuarterSelect.innerHTML = quarterOptions
+        .map(function (q) {
+          return (
+            '<option value="' +
+            q.value +
+            '"' +
+            (q.value === state.analyticsCategoryQuarter ? " selected" : "") +
+            ">" +
+            q.label +
+            "</option>"
+          );
+        })
+        .join("");
+    }
+
     var selectedYear = Number(state.analyticsYear);
     var quarters = [0, 0, 0, 0];
     completedTasks.forEach(function (t) {
@@ -1724,6 +1812,43 @@
         data: {
           labels: ["Q1", "Q2", "Q3", "Q4"],
           datasets: [{ label: "Completed tasks", data: quarters }],
+        },
+        options: { responsive: true, maintainAspectRatio: false },
+      });
+    }
+
+    var catYear = Number(state.analyticsCategoryYear);
+    var catQuarter = state.analyticsCategoryQuarter;
+    var catCounts = {};
+    completedTasks.forEach(function (t) {
+      var due = mmddyyyyToDate(t.due);
+      if (!due || due.getFullYear() !== catYear) return;
+      var qIdx = Math.floor(due.getMonth() / 3);
+      var qName = "Q" + (qIdx + 1);
+      if (catQuarter !== "all" && qName !== catQuarter) return;
+      var cat = String(t.category || "").trim() || "Unspecified";
+      catCounts[cat] = (catCounts[cat] || 0) + 1;
+    });
+
+    var catLabels = Object.keys(catCounts).sort(function (a, b) {
+      return a.localeCompare(b);
+    });
+    var catData = catLabels.map(function (k) {
+      return catCounts[k];
+    });
+
+    var ctxCat = document.getElementById("pmChartCompletedByCategory");
+    if (ctxCat) {
+      state.charts.completedByCategory = new Chart(ctxCat, {
+        type: "bar",
+        data: {
+          labels: catLabels.length ? catLabels : ["No data"],
+          datasets: [
+            {
+              label: "Completed tasks",
+              data: catLabels.length ? catData : [0],
+            },
+          ],
         },
         options: { responsive: true, maintainAspectRatio: false },
       });
@@ -1799,11 +1924,16 @@
 
     var ctx3 = document.getElementById("pmChartDueBuckets");
     if (ctx3) {
+      var dueColors = bucketLabels.map(function (label) {
+        return label === "Overdue" ? "#ff4040" : "#aacdec";
+      });
       state.charts.dueBuckets = new Chart(ctx3, {
         type: "bar",
         data: {
           labels: bucketLabels,
-          datasets: [{ label: "Tasks", data: bucketData }],
+          datasets: [
+            { label: "Tasks", data: bucketData, backgroundColor: dueColors },
+          ],
         },
         options: { responsive: true, maintainAspectRatio: false },
       });
@@ -1943,6 +2073,7 @@
       wireModalControls();
       wireAddButtons();
       wireAnalyticsYearFilter();
+      wireAnalyticsCategoryFilters();
       wireJumpToTop();
 
       var projectsUrl = buildQueryUrl(

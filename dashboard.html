@@ -186,6 +186,31 @@
       </div>
 
       <div class="pm-chartCard">
+        <div class="pm-chartHeader">
+          <div class="pm-chartTitle">Completed tasks by category</div>
+          <div class="pm-chartControls">
+            <label class="pm-label" for="pmAnalyticsCategoryYearSelect">
+              Year
+            </label>
+            <select
+              id="pmAnalyticsCategoryYearSelect"
+              class="pm-select"
+            ></select>
+            <label class="pm-label" for="pmAnalyticsCategoryQuarterSelect">
+              Quarter
+            </label>
+            <select
+              id="pmAnalyticsCategoryQuarterSelect"
+              class="pm-select"
+            ></select>
+          </div>
+        </div>
+        <div class="pm-chartBox">
+          <canvas id="pmChartCompletedByCategory"></canvas>
+        </div>
+      </div>
+
+      <div class="pm-chartCard">
         <div class="pm-chartTitle">Tasks by priority</div>
         <div class="pm-chartBox">
           <canvas id="pmChartTasksByPriority"></canvas>
