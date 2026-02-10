@@ -1,0 +1,38 @@
+<div style="margin: 8px 0;">
+  <button type="button" id="copy_1_to_2">Copy Field 1 to Field 2</button>
+</div>
+
+<script>
+(function () {
+  function findInput(indicatorId) {
+    // Common LEAF patterns; keep the first match that exists.
+    var candidates = [
+      '[data-indicator-id="' + indicatorId + '"] textarea',
+      '[data-indicator-id="' + indicatorId + '"] input, [data-indicator-id="' + indicatorId + '"] textarea',
+      '#indicator' + indicatorId + ' textarea',
+      '#indicator' + indicatorId + ' input, #indicator' + indicatorId + ' textarea'
+    ];
+    for (var i = 0; i < candidates.length; i++) {
+      var el = document.querySelector(candidates[i]);
+      if (el) return el;
+    }
+    return null;
+  }
+
+  var btn = document.getElementById('copy_1_to_2');
+  if (!btn) return;
+
+  btn.addEventListener('click', function () {
+    var from = findInput(1);
+    var to = findInput(2);
+    if (!from || !to) {
+      alert('Could not find field 1 or field 2. Check the selectors.');
+      return;
+    }
+    to.value = from.value || '';
+    // Trigger change/input in case LEAF listens to events
+    to.dispatchEvent(new Event('input', { bubbles: true }));
+    to.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+})();
+</script>
