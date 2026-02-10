@@ -1,27 +1,87 @@
 <!--{if $empMembership['groupID'][1]}-->
-<div class="container" style="margin-bottom: 12px;">
-    <nav id="nav" class="navbar navbar-expand-lg navbar-black">
-        <div class="container-fluid">
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon">...</span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownOne" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Menu One
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdownOne">
-                            <li><a class="dropdown-item" href="#">Data Element Repository Report</a></li>
-                            <li><a class="dropdown-item" href="#">SORN Repository Report</a></li>
-                            <li><a class="dropdown-item" href="#">Quarterly Review Date Report</a></li>                            
-                        </ul>
-                    </li>
-                </ul>
-            </div>
+<style>
+    .privacy-nav {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 8px 12px;
+        border: 1px solid #d7dce2;
+        border-radius: 10px;
+        background: #f9fbfd;
+        margin-bottom: 12px;
+    }
+    .privacy-nav__brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #007050;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .privacy-nav__spacer {
+        flex: 1 1 auto;
+    }
+    .privacy-nav__dropdown {
+        position: relative;
+    }
+    .privacy-nav__toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border: 1px solid #c9d2dc;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #1f2933;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .privacy-nav__menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        min-width: 260px;
+        padding: 6px;
+        border: 1px solid #c9d2dc;
+        border-radius: 10px;
+        background: #ffffff;
+        box-shadow: 0 10px 30px rgba(14, 21, 31, 0.12);
+        display: none;
+        z-index: 10;
+    }
+    .privacy-nav__menu.is-open {
+        display: block;
+    }
+    .privacy-nav__item {
+        display: block;
+        padding: 8px 10px;
+        border-radius: 8px;
+        color: #0f172a;
+        text-decoration: none;
+        font-size: 0.95rem;
+    }
+    .privacy-nav__item:hover,
+    .privacy-nav__item:focus {
+        background: #eef4fb;
+        text-decoration: none;
+    }
+</style>
+<div class="privacy-nav" role="navigation" aria-label="Privacy search navigation">
+    <a class="privacy-nav__brand" href="#" title="LEAF">
+        <span class="material-icons d-inline-block mr-1">home</span>
+        <span>&nbsp;LEAF</span>
+    </a>
+    <div class="privacy-nav__spacer"></div>
+    <div class="privacy-nav__dropdown">
+        <button type="button" class="privacy-nav__toggle" aria-controls="privacyDropdownOne" aria-expanded="false">
+            Menu One <span aria-hidden="true">▼</span>
+        </button>
+        <div id="privacyDropdownOne" class="privacy-nav__menu" role="menu">
+            <a class="privacy-nav__item" href="#" role="menuitem">Data Element Repository Report</a>
+            <a class="privacy-nav__item" href="#" role="menuitem">SORN Repository Report</a>
+            <a class="privacy-nav__item" href="#" role="menuitem">Quarterly Review Date Report</a>
         </div>
-    </nav>
+    </div>
 </div>
 <section style="display: flex; flex-direction: column; width: fit-content;">
     <div id="searchContainer"></div>
@@ -293,7 +353,52 @@ function main() {
     document.querySelector('#searchContainer_getMoreResults').removeAttribute('disabled');
 }
 
-document.addEventListener('DOMContentLoaded', main);
+function initPrivacyNav() {
+    const nav = document.querySelector('.privacy-nav');
+    if(!nav) {
+        return;
+    }
+
+    const toggle = nav.querySelector('.privacy-nav__toggle');
+    const menu = nav.querySelector('.privacy-nav__menu');
+    if(!toggle || !menu) {
+        return;
+    }
+
+    function closeMenu() {
+        menu.classList.remove('is-open');
+        toggle.setAttribute('aria-expanded', 'false');
+    }
+
+    toggle.addEventListener('click', function(event) {
+        event.preventDefault();
+        const isOpen = menu.classList.contains('is-open');
+        if(isOpen) {
+            closeMenu();
+        }
+        else {
+            menu.classList.add('is-open');
+            toggle.setAttribute('aria-expanded', 'true');
+        }
+    });
+
+    document.addEventListener('click', function(event) {
+        if(!nav.contains(event.target)) {
+            closeMenu();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if(event.key === 'Escape') {
+            closeMenu();
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initPrivacyNav();
+    main();
+});
 </script>
 <!--{else}-->
 <div class="alert">This view is restricted to authorized users.</div>
