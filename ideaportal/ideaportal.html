@@ -4,7 +4,45 @@
 <div class="ip-wrap">
   <div class="ip-header">
     <h2 class="ip-title">LEAF Idea Portal - Concept</h2>
-    <div class="ip-actions">
+  </div>
+
+  <div class="ip-tabsRow">
+    <div class="ip-tabs" role="tablist" aria-label="Idea views">
+      <button
+        class="ip-tab is-active"
+        id="all-tab"
+        data-ip-tab="all"
+        role="tab"
+        aria-controls="panel-all"
+        aria-selected="true"
+        type="button"
+      >
+        All Ideas
+      </button>
+      <button
+        class="ip-tab"
+        id="top-tab"
+        data-ip-tab="top"
+        role="tab"
+        aria-controls="panel-top"
+        aria-selected="false"
+        type="button"
+      >
+        Top 10 Ideas
+      </button>
+      <button
+        class="ip-tab"
+        id="my-tab"
+        data-ip-tab="my"
+        role="tab"
+        aria-controls="panel-my"
+        aria-selected="false"
+        type="button"
+      >
+        My Ideas
+      </button>
+    </div>
+    <div class="ip-tabsActions">
       <button
         class="ip-btn ip-btn--primary"
         data-ip-open="addIdeaModal"
@@ -13,42 +51,6 @@
         Add Idea
       </button>
     </div>
-  </div>
-
-  <div class="ip-tabs" role="tablist" aria-label="Idea views">
-    <button
-      class="ip-tab is-active"
-      id="all-tab"
-      data-ip-tab="all"
-      role="tab"
-      aria-controls="panel-all"
-      aria-selected="true"
-      type="button"
-    >
-      All Ideas
-    </button>
-    <button
-      class="ip-tab"
-      id="top-tab"
-      data-ip-tab="top"
-      role="tab"
-      aria-controls="panel-top"
-      aria-selected="false"
-      type="button"
-    >
-      Top 10 Ideas
-    </button>
-    <button
-      class="ip-tab"
-      id="my-tab"
-      data-ip-tab="my"
-      role="tab"
-      aria-controls="panel-my"
-      aria-selected="false"
-      type="button"
-    >
-      My Ideas
-    </button>
   </div>
 
   <div
@@ -292,6 +294,15 @@
     </div>
   </div>
 </div>
+
+<button
+  type="button"
+  class="ip-jumpTop"
+  id="ipJumpTopBtn"
+  aria-label="Jump to top"
+>
+  ↑
+</button>
 
 <script>
   window.leafIdeaPortal = {

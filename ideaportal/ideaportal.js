@@ -131,6 +131,31 @@ function bindRecordModal() {
   });
 }
 
+function wireJumpToTop() {
+  var btn = document.getElementById("ipJumpTopBtn");
+  if (!btn) return;
+
+  function updateVisibility() {
+    var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    var scrollHeight = Math.max(
+      document.body.scrollHeight,
+      document.documentElement.scrollHeight,
+    );
+    var clientHeight =
+      window.innerHeight || document.documentElement.clientHeight;
+    var needsScroll = scrollHeight - clientHeight > 80;
+    btn.classList.toggle("is-visible", needsScroll && scrollTop > 120);
+  }
+
+  btn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  window.addEventListener("scroll", updateVisibility, { passive: true });
+  window.addEventListener("resize", updateVisibility);
+  updateVisibility();
+}
+
 function bindSortHandlers() {
   $(".ip-sortable").off("click").on("click", function () {
     const key = $(this).data("sort");
@@ -584,6 +609,7 @@ $(document).ready(function () {
   bindTabs();
   bindRecordModal();
   bindSortHandlers();
+  wireJumpToTop();
   updateTable();
 
   $("#fileInput").on("change", function () {

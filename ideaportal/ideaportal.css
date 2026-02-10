@@ -25,16 +25,17 @@
 
 .ip-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
   margin-bottom: 20px;
+  text-align: center;
 }
 
 .ip-title {
   margin: 0;
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 700;
 }
 
@@ -45,20 +46,20 @@
 }
 
 .ip-btn {
-  border: 1px solid #7fb22b;
-  background: #ddf9c7;
+  border: 1px solid #aacdec;
+  background: #d9e8f6;
   color: #111111;
   padding: 10px 14px;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 800;
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
 }
 
 .ip-btn:hover {
-  background: #98d035;
-  border-color: #7fb22b;
+  background: #aacdec;
+  border-color: #8fb8db;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
 }
 
@@ -67,31 +68,31 @@
 }
 
 .ip-btn--primary {
-  background: #ddf9c7;
-  border-color: #7fb22b;
+  background: #d9e8f6;
+  border-color: #aacdec;
   color: #111111;
 }
 
 .ip-btn--primary:hover {
-  background: #98d035;
-  border-color: #7fb22b;
-  box-shadow: 0 6px 16px rgba(127, 178, 43, 0.25);
+  background: #aacdec;
+  border-color: #8fb8db;
+  box-shadow: 0 6px 16px rgba(143, 184, 219, 0.35);
 }
 
 .ip-btn--ghost {
-  background: transparent;
-  border-color: #c7c7c7;
+  background: #d9e8f6;
+  border-color: #aacdec;
   color: #111111;
 }
 
 .ip-btn--ghost:hover {
-  background: #f0f0f0;
-  border-color: #c8c8c8;
+  background: #aacdec;
+  border-color: #8fb8db;
 }
 
 .ip-btn--ghost:active {
-  background: #e5e5e5;
-  border-color: #c8c8c8;
+  background: #d9e8f6;
+  border-color: #aacdec;
 }
 
 .ip-btn--icon {
@@ -110,7 +111,19 @@
   background: var(--ip-bg);
   border-radius: 999px;
   border: 1px solid var(--ip-border);
+}
+
+.ip-tabsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.ip-tabsActions {
+  margin-left: auto;
 }
 
 .ip-tab {
@@ -119,7 +132,7 @@
   padding: 8px 16px;
   border-radius: 999px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 16px;
   cursor: pointer;
   color: var(--ip-muted);
 }
@@ -148,7 +161,7 @@
 }
 
 .ip-tableTitle {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   margin-bottom: 16px;
 }
@@ -161,7 +174,7 @@
 }
 
 .ip-searchLabel {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--ip-muted);
 }
@@ -175,7 +188,7 @@
   border: 1px solid var(--ip-border);
   border-radius: 10px;
   padding: 9px 12px;
-  font-size: 14px;
+  font-size: 16px;
   font-family: inherit;
 }
 
@@ -195,7 +208,7 @@
   table-layout: fixed;
   background: #ffffff;
   min-width: 840px;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .ip-table th,
@@ -290,7 +303,7 @@
   align-items: center;
   padding: 3px 10px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   background: #e2e8f0;
   color: #1e293b;
@@ -364,7 +377,7 @@
 
 .ip-modal__title {
   margin: 0;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
 }
 
@@ -416,7 +429,7 @@
 }
 
 .ip-recordModal__title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
 }
 
@@ -448,7 +461,7 @@
 }
 
 .ip-label {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--ip-muted);
 }
@@ -456,7 +469,7 @@
 .ip-error {
   display: none;
   color: #b91c1c;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .ip-form.was-validated .ip-input:invalid + .ip-error {
@@ -464,7 +477,7 @@
 }
 
 .ip-fileInput {
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .ip-fileList {
@@ -481,7 +494,7 @@
   color: #1e3a8a;
   border-radius: 10px;
   padding: 10px 12px;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .ip-table td a {
@@ -493,15 +506,65 @@
   text-decoration: underline;
 }
 
+.ip-jumpTop {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid #aacdec;
+  background: #d9e8f6;
+  color: #111;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+  z-index: 1200;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ip-jumpTop.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ip-jumpTop:hover {
+  background: #aacdec;
+  border-color: #8fb8db;
+}
+
+.ip-jumpTop:active {
+  background: #d9e8f6;
+  border-color: #aacdec;
+}
+
 @media (max-width: 780px) {
   .ip-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
   }
 
   .ip-tabs {
     width: 100%;
     flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .ip-tabsRow {
+    justify-content: center;
+  }
+
+  .ip-tabsActions {
+    width: 100%;
+    display: flex;
+    justify-content: center;
   }
 
   .ip-table {
