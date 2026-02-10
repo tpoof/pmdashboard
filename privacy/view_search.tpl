@@ -10,17 +10,6 @@
         background: #f9fbfd;
         margin-bottom: 12px;
     }
-    .privacy-nav__brand {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        color: #007050;
-        text-decoration: none;
-        font-weight: 600;
-    }
-    .privacy-nav__spacer {
-        flex: 1 1 auto;
-    }
     .privacy-nav__dropdown {
         position: relative;
     }
@@ -67,11 +56,7 @@
     }
 </style>
 <div class="privacy-nav" role="navigation" aria-label="Privacy search navigation">
-    <a class="privacy-nav__brand" href="#" title="LEAF">
-        <span class="material-icons d-inline-block mr-1">home</span>
-        <span>&nbsp;LEAF</span>
-    </a>
-    <div class="privacy-nav__spacer"></div>
+    <strong>Internal Reports:</strong>
     <div class="privacy-nav__dropdown">
         <button type="button" class="privacy-nav__toggle" aria-controls="privacyDropdownOne" aria-expanded="false">
             Menu One <span aria-hidden="true">▼</span>
