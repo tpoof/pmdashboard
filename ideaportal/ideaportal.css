@@ -95,6 +95,16 @@
   border-color: #aacdec;
 }
 
+.ip-share {
+  background: transparent;
+  border-color: #c7c7c7;
+}
+
+.ip-share:hover {
+  background: #f3f3f3;
+  border-color: #c7c7c7;
+}
+
 .ip-btn--icon {
   width: 34px;
   height: 34px;
