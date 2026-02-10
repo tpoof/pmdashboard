@@ -206,8 +206,8 @@
 
 <script>
   window.leafIdeaPortal = {
-    userID: "<!--{$userID}-->",
-    csrfToken: "<!--{$CSRFToken}-->",
+    userID: "<!--{$userID|unescape|escape:'quotes'}-->",
+    csrfToken: "<!--{$CSRFToken|unescape|escape:'quotes'}-->",
   };
 </script>
 <script src="ideaportal.js"></script>

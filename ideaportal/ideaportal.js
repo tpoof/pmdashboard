@@ -1,8 +1,13 @@
 let ideas = [];
 let voteCounts = {};
 const portalConfig = window.leafIdeaPortal || {};
-let userID = portalConfig.userID || "";
-let csrfToken = portalConfig.csrfToken || "";
+
+function sanitizeLeafValue(value) {
+  return String(value || "").replace(/<!--|-->/g, "").trim();
+}
+
+let userID = sanitizeLeafValue(portalConfig.userID);
+let csrfToken = sanitizeLeafValue(portalConfig.csrfToken);
 let userVotes = {};
 let votingInProgress = false;
 
@@ -159,8 +164,24 @@ function fetchVotesData(ideas) {
 }
 
 function fetchUserSubmissions() {
+  if (!userID) {
+    $("#myResults").html("<tr><td colspan='5'>No user ID found</td></tr>");
+    return;
+  }
+
+  const query = {
+    terms: [
+      { id: "userID", operator: "=", match: userID, gate: "AND" },
+      { id: "categoryID", operator: "=", match: "form_a9c92", gate: "AND" },
+      { id: "deleted", operator: "=", match: 0, gate: "AND" },
+    ],
+    joins: [],
+    sort: {},
+  };
+  const queryString = encodeURIComponent(JSON.stringify(query));
+
   $.ajax({
-    url: `https://leaf.va.gov/VISN20/648/Javascript_Examples/api/form/query/?q={"terms":[{"id":"userID","operator":"=","match":"${userID}","gate":"AND"},{"id":"categoryID","operator":"=","match":"form_a9c92","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{}}&x-filterData=recordID,title,created_date`,
+    url: `https://leaf.va.gov/VISN20/648/Javascript_Examples/api/form/query/?q=${queryString}&x-filterData=recordID,title,created_date,userID`,
     type: "GET",
     cache: false,
     async: false,
@@ -171,6 +192,9 @@ function fetchUserSubmissions() {
     },
     error: function (xhr, status, error) {
       console.error("AJAX Error: ", status, error);
+      $("#myResults").html(
+        "<tr><td colspan='5'>Error loading user ideas</td></tr>",
+      );
     },
   });
 }
