@@ -45,19 +45,20 @@
 }
 
 .ip-btn {
-  border: 1px solid var(--ip-border);
-  background: #ffffff;
-  color: var(--ip-text);
-  padding: 9px 14px;
+  border: 1px solid #7fb22b;
+  background: #ddf9c7;
+  color: #111111;
+  padding: 10px 14px;
   border-radius: 10px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 800;
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
 }
 
 .ip-btn:hover {
-  border-color: #94a3b8;
+  background: #98d035;
+  border-color: #7fb22b;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
 }
 
@@ -66,17 +67,31 @@
 }
 
 .ip-btn--primary {
-  background: var(--ip-accent);
-  border-color: var(--ip-accent);
-  color: #ffffff;
+  background: #ddf9c7;
+  border-color: #7fb22b;
+  color: #111111;
 }
 
 .ip-btn--primary:hover {
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
+  background: #98d035;
+  border-color: #7fb22b;
+  box-shadow: 0 6px 16px rgba(127, 178, 43, 0.25);
 }
 
 .ip-btn--ghost {
-  background: transparent;
+  background: #d9e8f6;
+  border-color: #aacdec;
+  color: #111111;
+}
+
+.ip-btn--ghost:hover {
+  background: #aacdec;
+  border-color: #8fb8db;
+}
+
+.ip-btn--ghost:active {
+  background: #d9e8f6;
+  border-color: #aacdec;
 }
 
 .ip-btn--icon {
@@ -129,6 +144,7 @@
   padding: 20px;
   box-shadow: var(--ip-shadow);
   border: 1px solid var(--ip-border);
+  overflow-x: auto;
 }
 
 .ip-tableTitle {
@@ -176,23 +192,63 @@
 .ip-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
+  background: #ffffff;
+  min-width: 840px;
   font-size: 14px;
 }
 
 .ip-table th,
 .ip-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid #e2e8f0;
+  border: 1px solid #d7d7d7;
+  padding: 10px;
+  vertical-align: top;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
   text-align: left;
 }
 
 .ip-table th {
-  background: #f1f5f9;
+  background: #d9e8f6;
   font-weight: 700;
+  user-select: none;
 }
 
 .ip-table tbody tr:hover {
   background: #f8fafc;
+}
+
+.ip-sortable {
+  cursor: pointer;
+  position: relative;
+  padding-right: 22px;
+}
+
+.ip-sortable:hover {
+  background: #aacdec;
+}
+
+.ip-sortable.is-asc,
+.ip-sortable.is-desc {
+  background: #aacdec;
+}
+
+.ip-sortable::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.ip-sortable.is-asc::after {
+  content: "▲";
+}
+
+.ip-sortable.is-desc::after {
+  content: "▼";
 }
 
 .ip-col-actions {
@@ -202,6 +258,16 @@
 .ip-table .ip-actionsCell {
   display: inline-flex;
   gap: 8px;
+}
+
+.ip-upvote.is-voted {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ip-upvote:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .ip-badge {

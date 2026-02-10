@@ -60,7 +60,6 @@
     <div class="ip-tableWrap">
       <div class="ip-tableTitle">All Ideas</div>
       <div class="ip-search" id="ipSearchSection">
-        <label class="ip-searchLabel" for="searchInput">Search ideas</label>
         <div class="ip-searchField">
           <input
             type="text"
@@ -70,17 +69,17 @@
           />
         </div>
       </div>
-      <table id="tblIdeas" class="ip-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Title</th>
-            <th>Category</th>
-            <th>Status</th>
-            <th>Votes</th>
-            <th class="ip-col-actions">Actions</th>
-          </tr>
-        </thead>
+          <table id="tblIdeas" class="ip-table">
+            <thead>
+              <tr>
+                <th class="ip-sortable" data-sort="id">ID</th>
+                <th class="ip-sortable" data-sort="title">Title</th>
+                <th class="ip-sortable" data-sort="category">Category</th>
+                <th class="ip-sortable" data-sort="status">Status</th>
+                <th class="ip-sortable" data-sort="votes">Votes</th>
+                <th class="ip-col-actions">Actions</th>
+              </tr>
+            </thead>
         <tbody id="results"></tbody>
       </table>
     </div>
@@ -94,17 +93,17 @@
   >
     <div class="ip-tableWrap">
       <div class="ip-tableTitle">Top 10 Ideas</div>
-      <table id="tblTopIdeas" class="ip-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Title</th>
-            <th>Category</th>
-            <th>Status</th>
-            <th>Votes</th>
-            <th class="ip-col-actions">Actions</th>
-          </tr>
-        </thead>
+          <table id="tblTopIdeas" class="ip-table">
+            <thead>
+              <tr>
+                <th class="ip-sortable" data-sort="id">ID</th>
+                <th class="ip-sortable" data-sort="title">Title</th>
+                <th class="ip-sortable" data-sort="category">Category</th>
+                <th class="ip-sortable" data-sort="status">Status</th>
+                <th class="ip-sortable" data-sort="votes">Votes</th>
+                <th class="ip-col-actions">Actions</th>
+              </tr>
+            </thead>
         <tbody id="topResults"></tbody>
       </table>
     </div>
@@ -113,16 +112,16 @@
   <div class="ip-panel" id="panel-my" role="tabpanel" aria-labelledby="my-tab">
     <div class="ip-tableWrap">
       <div class="ip-tableTitle">My Ideas</div>
-      <table id="tblMyIdeas" class="ip-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Title</th>
-            <th>Category</th>
-            <th>Status</th>
-            <th>Votes</th>
-          </tr>
-        </thead>
+          <table id="tblMyIdeas" class="ip-table">
+            <thead>
+              <tr>
+                <th class="ip-sortable" data-sort="id">ID</th>
+                <th class="ip-sortable" data-sort="title">Title</th>
+                <th class="ip-sortable" data-sort="category">Category</th>
+                <th class="ip-sortable" data-sort="status">Status</th>
+                <th class="ip-sortable" data-sort="votes">Votes</th>
+              </tr>
+            </thead>
         <tbody id="myResults"></tbody>
       </table>
     </div>

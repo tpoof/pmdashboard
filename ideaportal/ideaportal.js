@@ -10,6 +10,13 @@ let userID = sanitizeLeafValue(portalConfig.userID);
 let csrfToken = sanitizeLeafValue(portalConfig.csrfToken);
 let userVotes = {};
 let votingInProgress = false;
+let myIdeasCache = [];
+
+const sortState = {
+  tblIdeas: { key: "", dir: "asc" },
+  tblTopIdeas: { key: "", dir: "desc" },
+  tblMyIdeas: { key: "", dir: "asc" },
+};
 
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
@@ -54,11 +61,35 @@ function bindTabs() {
   });
 }
 
+function bindSortHandlers() {
+  $(".ip-sortable").off("click").on("click", function () {
+    const key = $(this).data("sort");
+    const tableId = $(this).closest("table").attr("id");
+    if (!tableId || !key) return;
+
+    setSortState(tableId, key);
+    applySortClasses(tableId);
+
+    if (tableId === "tblIdeas") {
+      populateTables(ideas, voteCounts);
+    } else if (tableId === "tblTopIdeas") {
+      populateTop10Ideas(voteCounts);
+    } else if (tableId === "tblMyIdeas") {
+      populateUserSubmissions(myIdeasCache, voteCounts);
+    }
+  });
+}
+
 function IdeaVotes(ideanum) {
   if (votingInProgress) return;
+  if (userVotes[ideanum]) {
+    alert("You already voted on this idea.");
+    return;
+  }
   votingInProgress = true;
 
   userVotes[ideanum] = true;
+  setVotedState(ideanum, true);
 
   $.ajax({
     type: "POST",
@@ -80,11 +111,15 @@ function IdeaVotes(ideanum) {
         updateTable();
       } else {
         alert("Error processing vote.");
+        userVotes[ideanum] = false;
+        setVotedState(ideanum, false);
       }
       votingInProgress = false;
     },
     error: function () {
       alert("Error processing vote.");
+      userVotes[ideanum] = false;
+      setVotedState(ideanum, false);
       votingInProgress = false;
     },
     cache: false,
@@ -108,8 +143,41 @@ function attachEventListeners() {
   });
 
   $(".ip-upvote").on("click", function () {
+    if ($(this).prop("disabled")) {
+      return;
+    }
     let ideanum = $(this).data("record-id");
     IdeaVotes(ideanum);
+  });
+}
+
+function setVotedState(ideanum, isVoted) {
+  const buttons = $(`.ip-upvote[data-record-id='${ideanum}']`);
+  buttons.prop("disabled", isVoted);
+  buttons.toggleClass("is-voted", isVoted);
+}
+
+function setSortState(tableId, key) {
+  const state = sortState[tableId] || { key: "", dir: "asc" };
+  if (state.key === key) {
+    state.dir = state.dir === "asc" ? "desc" : "asc";
+  } else {
+    state.key = key;
+    state.dir = "asc";
+  }
+  sortState[tableId] = state;
+}
+
+function applySortClasses(tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const state = sortState[tableId];
+  table.querySelectorAll(".ip-sortable").forEach((th) => {
+    th.classList.remove("is-asc", "is-desc");
+    const key = th.getAttribute("data-sort");
+    if (state && key === state.key) {
+      th.classList.add(state.dir === "asc" ? "is-asc" : "is-desc");
+    }
   });
 }
 
@@ -152,13 +220,18 @@ function fetchVotesData(ideas) {
     dataType: "json",
     success: function (voteData) {
       voteCounts = {};
+      userVotes = {};
 
       Object.values(voteData).forEach((vote) => {
         let ideanum = vote.s1["id25"];
+        let voter = vote.s1["id26"];
         if (voteCounts[ideanum]) {
           voteCounts[ideanum]++;
         } else {
           voteCounts[ideanum] = 1;
+        }
+        if (voter && voter === userID) {
+          userVotes[ideanum] = true;
         }
       });
 
@@ -205,10 +278,12 @@ function fetchUserSubmissions() {
       });
       if (userIdeas.length === 0) {
         const fallbackIdeas = filterIdeasByUser();
-        populateUserSubmissions(fallbackIdeas, voteCounts);
+        myIdeasCache = fallbackIdeas;
+        populateUserSubmissions(myIdeasCache, voteCounts);
         return;
       }
-      populateUserSubmissions(userIdeas, voteCounts);
+      myIdeasCache = userIdeas;
+      populateUserSubmissions(myIdeasCache, voteCounts);
     },
     error: function (xhr, status, error) {
       console.error("AJAX Error: ", status, error);
@@ -246,23 +321,76 @@ function getIdeaField(idea, s1Key, fallbackKey) {
   return "";
 }
 
+function normalizeStatusLabel(status) {
+  if (!status) return "";
+  if (status.indexOf("(") >= 0 && status.indexOf(")") >= 0) {
+    return status.replace("(", "").replace(")", "").trim();
+  }
+  return status;
+}
+
+function getIdeaSortValue(idea, key, votes) {
+  if (!idea) return "";
+  switch (key) {
+    case "id":
+      return Number(idea.recordID) || 0;
+    case "title":
+      return String(getIdeaField(idea, "id13", "title") || "");
+    case "category":
+      return String(getIdeaField(idea, "id16", "category") || "");
+    case "status":
+      return String(normalizeStatusLabel(getIdeaField(idea, "id20", "status")));
+    case "votes":
+      return votes[idea.recordID] || 0;
+    default:
+      return "";
+  }
+}
+
+function sortIdeasList(list, votes, state) {
+  if (!state || !state.key) return list;
+  const direction = state.dir === "desc" ? -1 : 1;
+  const safeList = list.filter((item) => item && item.recordID);
+  return [...safeList].sort((a, b) => {
+    const aVal = getIdeaSortValue(a, state.key, votes);
+    const bVal = getIdeaSortValue(b, state.key, votes);
+    const aNum = typeof aVal === "number";
+    const bNum = typeof bVal === "number";
+    if (aNum && bNum) {
+      return (aVal - bVal) * direction;
+    }
+    return (
+      String(aVal).localeCompare(String(bVal), undefined, {
+        numeric: true,
+        sensitivity: "base",
+      }) * direction
+    );
+  });
+}
+
 function populateUserSubmissions(userIdeas, voteCounts) {
+  $("#myResults").html("");
   if (userIdeas.length === 0) {
     $("#myResults").append("<tr><td colspan='5'>No ideas submitted</td></tr>");
     return;
   }
 
-  userIdeas.forEach((idea) => {
+  const sortedIdeas = sortIdeasList(
+    userIdeas,
+    voteCounts,
+    sortState.tblMyIdeas,
+  );
+
+  applySortClasses("tblMyIdeas");
+
+  sortedIdeas.forEach((idea) => {
     if (!idea || !idea.recordID) {
       return;
     }
     var recordID = idea.recordID;
     var title = getIdeaField(idea, "id13", "title");
     var category = getIdeaField(idea, "id16", "category");
-    var status = getIdeaField(idea, "id20", "status");
-    if (status.indexOf("(") >= 0 && status.indexOf(")") >= 0) {
-      status = status.replace("(", "").replace(")", "").trim();
-    }
+    var status = normalizeStatusLabel(getIdeaField(idea, "id20", "status"));
 
     var statusBadgeClass = getStatusBadgeClass(status);
     var votes = voteCounts[recordID] || 0;
@@ -278,22 +406,31 @@ function populateUserSubmissions(userIdeas, voteCounts) {
 }
 
 function populateTables(ideas, voteCounts) {
+  $("#results").html("");
   if (ideas.length === 0) {
     $("#results").append("<tr><td colspan='6'>No data found</td></tr>");
   } else {
-    ideas.forEach((idea) => {
+    const sortedIdeas = sortIdeasList(
+      ideas,
+      voteCounts,
+      sortState.tblIdeas,
+    );
+
+    applySortClasses("tblIdeas");
+
+    sortedIdeas.forEach((idea) => {
       var recordID = idea.recordID;
       var title = idea.s1["id13"];
       var category = idea.s1["id16"];
-      var status = idea.s1["id20"];
-      if (status.indexOf("(") >= 0 && status.indexOf(")") >= 0) {
-        status = status.replace("(", "").replace(")", "").trim();
-      }
+      var status = normalizeStatusLabel(idea.s1["id20"]);
 
       var statusBadgeClass = getStatusBadgeClass(status);
       var votes = voteCounts[recordID] || 0;
+      var isVoted = userVotes[recordID] === true;
       var actionsCell = `<td class="ip-actionsCell">
-<button class='ip-btn ip-btn--ghost ip-upvote' data-record-id='${recordID}'>Upvote</button>
+<button class='ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}' data-record-id='${recordID}' ${isVoted ? "disabled" : ""} aria-label='Upvote'>
+<span aria-hidden='true'>&#128077;</span>
+</button>
 <button class='ip-btn ip-btn--ghost ip-share' data-record-link='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>Share</button>
     </td>`;
 
@@ -315,13 +452,18 @@ ${actionsCell}
 function populateTop10Ideas(voteCounts) {
   $("#topResults").html("");
 
-  let sortedIdeas = ideas.sort((a, b) => {
+  let sortedIdeas = [...ideas].sort((a, b) => {
     let aVotes = voteCounts[a.recordID] || 0;
     let bVotes = voteCounts[b.recordID] || 0;
     return bVotes - aVotes;
   });
 
   let top10 = sortedIdeas.slice(0, 10);
+  if (sortState.tblTopIdeas.key) {
+    top10 = sortIdeasList(top10, voteCounts, sortState.tblTopIdeas);
+  }
+
+  applySortClasses("tblTopIdeas");
 
   if (top10.length === 0) {
     $("#topResults").append("<tr><td colspan='6'>No data found</td></tr>");
@@ -330,16 +472,15 @@ function populateTop10Ideas(voteCounts) {
       var recordID = idea.recordID;
       var title = idea.s1["id13"];
       var category = idea.s1["id16"];
-      var status = idea.s1["id20"];
-
-      if (status.indexOf("(") >= 0 && status.indexOf(")") >= 0) {
-        status = status.replace("(", "").replace(")", "").trim();
-      }
+      var status = normalizeStatusLabel(idea.s1["id20"]);
 
       var statusBadgeClass = getStatusBadgeClass(status);
       var votes = voteCounts[recordID] || 0;
+      var isVoted = userVotes[recordID] === true;
       var actionsCell = `<td class="ip-actionsCell">
-<button class='ip-btn ip-btn--ghost ip-upvote' data-record-id='${recordID}'>Upvote</button>
+<button class='ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}' data-record-id='${recordID}' ${isVoted ? "disabled" : ""} aria-label='Upvote'>
+<span aria-hidden='true'>&#128077;</span>
+</button>
 <button class='ip-btn ip-btn--ghost ip-share' data-record-link='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>Share</button>
     </td>`;
 
@@ -360,6 +501,7 @@ ${actionsCell}
 $(document).ready(function () {
   bindModalEvents();
   bindTabs();
+  bindSortHandlers();
   updateTable();
 
   $("#fileInput").on("change", function () {

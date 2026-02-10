@@ -6,11 +6,39 @@
       '[data-indicator-id="' + indicatorId + '"] textarea',
       '[data-indicator-id="' + indicatorId + '"] input, [data-indicator-id="' + indicatorId + '"] textarea',
       '#indicator' + indicatorId + ' textarea',
-      '#indicator' + indicatorId + ' input, #indicator' + indicatorId + ' textarea'
+      '#indicator' + indicatorId + ' input, #indicator' + indicatorId + ' textarea',
+      '#indicator_' + indicatorId + ' textarea',
+      '#indicator_' + indicatorId + ' input, #indicator_' + indicatorId + ' textarea',
+      '#indicatorID' + indicatorId + ' textarea',
+      '#indicatorID' + indicatorId + ' input, #indicatorID' + indicatorId + ' textarea'
     ];
     for (var i = 0; i < candidates.length; i++) {
       var el = document.querySelector(candidates[i]);
       if (el) return el;
+    }
+    // Fallback: scan inputs/textareas for indicator ID in name/id
+    var nodes = document.querySelectorAll('input, textarea');
+    var needle = String(indicatorId);
+    for (var j = 0; j < nodes.length; j++) {
+      var n = nodes[j];
+      var name = (n.getAttribute('name') || '').toLowerCase();
+      var id = (n.getAttribute('id') || '').toLowerCase();
+      if (
+        name.includes('indicator') || id.includes('indicator') ||
+        name.includes('indicatorid') || id.includes('indicatorid')
+      ) {
+        if (
+          name.includes('indicatorid[' + needle + ']') ||
+          name.includes('indicatorid:' + needle) ||
+          name.includes('indicatorid_' + needle) ||
+          name.includes('indicator' + needle) ||
+          id.includes('indicatorid' + needle) ||
+          id.includes('indicator_' + needle) ||
+          id.includes('indicator' + needle)
+        ) {
+          return n;
+        }
+      }
     }
     return null;
   }
@@ -26,16 +54,41 @@
   }
 
   function init() {
-    var from = findInput(1);
-    var to = findInput(2);
-    if (!from || !to) return;
+    var lastValue = null;
 
-    // Initial sync
-    copyValue();
+    function tryBind() {
+      var from = findInput(1);
+      var to = findInput(2);
+      if (!from || !to) return false;
 
-    // Keep synced on user input or programmatic changes that trigger input/change
-    from.addEventListener('input', copyValue);
-    from.addEventListener('change', copyValue);
+      // Initial sync
+      copyValue();
+
+      // Keep synced on user input or programmatic changes that trigger input/change
+      from.addEventListener('input', copyValue);
+      from.addEventListener('change', copyValue);
+
+      // Poll to catch programmatic updates that don't emit events
+      setInterval(function () {
+        if (!from || !to) return;
+        if (from.value !== lastValue) {
+          lastValue = from.value;
+          to.value = from.value || '';
+          to.dispatchEvent(new Event('input', { bubbles: true }));
+          to.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }, 400);
+
+      return true;
+    }
+
+    // Try immediately and then a few times in case LEAF renders late
+    if (tryBind()) return;
+    var attempts = 0;
+    var timer = setInterval(function () {
+      attempts += 1;
+      if (tryBind() || attempts > 30) clearInterval(timer);
+    }, 300);
   }
 
   if (document.readyState === 'loading') {
