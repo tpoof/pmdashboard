@@ -83,7 +83,7 @@
             <a class="privacy-nav__item" href="#" role="menuitem">Quarterly Review Date</a>
         </div>
     </div>
-    <a class="privacy-nav__link" href="#">Menu Two</a>
+    <a class="privacy-nav__link" href="#" target="_blank" rel="noopener">Menu Two</a>
 </div>
 <section style="display: flex; flex-direction: column; width: fit-content;">
     <div id="searchContainer"></div>
