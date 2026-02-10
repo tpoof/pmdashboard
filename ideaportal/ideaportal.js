@@ -185,17 +185,24 @@ function fetchUserSubmissions() {
     ],
     joins: [],
     sort: {},
+    getData: ["16", "13", "20"],
   };
   const queryString = encodeURIComponent(JSON.stringify(query));
 
   $.ajax({
-    url: `https://leaf.va.gov/VISN20/648/Javascript_Examples/api/form/query/?q=${queryString}&x-filterData=recordID,title,created_date,userID,initiator`,
+    url: `https://leaf.va.gov/VISN20/648/Javascript_Examples/api/form/query/?q=${queryString}&x-filterData=recordID,title,created_date,userID`,
     type: "GET",
     cache: false,
     async: false,
     dataType: "json",
     success: function (data) {
-      let userIdeas = Object.values(data);
+      let userIdeas = Object.values(data).map((idea) => {
+        if (!idea.s1 && idea.recordID) {
+          const match = ideas.find((item) => item.recordID === idea.recordID);
+          return match ? match : idea;
+        }
+        return idea;
+      });
       if (userIdeas.length === 0) {
         const fallbackIdeas = filterIdeasByUser();
         populateUserSubmissions(fallbackIdeas, voteCounts);
@@ -229,6 +236,16 @@ function getStatusBadgeClass(status) {
   }
 }
 
+function getIdeaField(idea, s1Key, fallbackKey) {
+  if (idea.s1 && idea.s1[s1Key] !== undefined) {
+    return idea.s1[s1Key];
+  }
+  if (fallbackKey && idea[fallbackKey] !== undefined) {
+    return idea[fallbackKey];
+  }
+  return "";
+}
+
 function populateUserSubmissions(userIdeas, voteCounts) {
   if (userIdeas.length === 0) {
     $("#myResults").append("<tr><td colspan='5'>No ideas submitted</td></tr>");
@@ -236,10 +253,13 @@ function populateUserSubmissions(userIdeas, voteCounts) {
   }
 
   userIdeas.forEach((idea) => {
+    if (!idea || !idea.recordID) {
+      return;
+    }
     var recordID = idea.recordID;
-    var title = idea.s1["id13"];
-    var category = idea.s1["id16"];
-    var status = idea.s1["id20"];
+    var title = getIdeaField(idea, "id13", "title");
+    var category = getIdeaField(idea, "id16", "category");
+    var status = getIdeaField(idea, "id20", "status");
     if (status.indexOf("(") >= 0 && status.indexOf(")") >= 0) {
       status = status.replace("(", "").replace(")", "").trim();
     }
