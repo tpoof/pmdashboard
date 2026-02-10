@@ -2,33 +2,53 @@
   (function () {
     "use strict";
 
-    // Copy from indicator 1 to indicator 2 (multi-line text)
-    var SOURCE_SEL = 'input[name="1"], textarea[name="1"]';
-    var TARGET_SEL = 'input[name="2"], textarea[name="2"]';
+    // Copy from indicator 1 to indicator 2
+    var START_SEL = 'input[name="1"]';
+    var TARGET_SEL = 'input[name="2"]';
 
     function notify(el) {
       if (!el) return;
       el.dispatchEvent(new Event("input", { bubbles: true }));
       el.dispatchEvent(new Event("change", { bubbles: true }));
+
+      if (window.jQuery && window.jQuery.fn && window.jQuery.fn.datepicker) {
+        try { window.jQuery(el).datepicker("setDate", el.value); } catch (e) {}
+      }
     }
 
-    function copyValue() {
-      var sourceEl = document.querySelector(SOURCE_SEL);
+    function copyDate() {
+      var startEl = document.querySelector(START_SEL);
       var targetEl = document.querySelector(TARGET_SEL);
-      if (!sourceEl || !targetEl) return;
-      if (!sourceEl.value) return;
+      if (!startEl || !targetEl) return;
+      if (!startEl.value) return;
 
-      targetEl.value = sourceEl.value;
+      targetEl.value = startEl.value;
       notify(targetEl);
     }
 
-    function hookSourceInput() {
-      var sourceEl = document.querySelector(SOURCE_SEL);
-      if (!sourceEl) return;
+    function hookStartInput() {
+      var startEl = document.querySelector(START_SEL);
+      if (!startEl) return;
 
-      sourceEl.addEventListener("input", copyValue, true);
-      sourceEl.addEventListener("change", copyValue, true);
-      sourceEl.addEventListener("blur", copyValue, true);
+      startEl.addEventListener("change", copyDate, true);
+      startEl.addEventListener("blur", copyDate, true);
+
+      if (window.jQuery && window.jQuery.fn && window.jQuery.fn.datepicker) {
+        try {
+          var $ = window.jQuery;
+          var $start = $(startEl);
+
+          var existing = null;
+          try { existing = $start.datepicker("option", "onSelect"); } catch (e) {}
+
+          try {
+            $start.datepicker("option", "onSelect", function (dateText, inst) {
+              try { if (typeof existing === "function") existing.call(this, dateText, inst); } catch (e) {}
+              copyDate();
+            });
+          } catch (e) {}
+        } catch (e) {}
+      }
     }
 
     function isSubmitEndpoint(url) {
@@ -41,7 +61,7 @@
     }
 
     function hookSubmitClicks() {
-      document.addEventListener("pointerdown", copyValue, true);
+      document.addEventListener("pointerdown", copyDate, true);
 
       document.addEventListener("click", function (e) {
         var t = e.target;
@@ -49,19 +69,19 @@
         if (t.matches('button, input[type="button"], input[type="submit"]')) {
           var label = (t.innerText || t.value || "").toLowerCase();
           if (label.includes("submit") || label.includes("save")) {
-            copyValue();
+            copyDate();
           }
         }
       }, true);
     }
 
     function hookFetchAndXHRForRefresh() {
-      if (window.fetch && !window.fetch.__leafFieldCopyHooked) {
+      if (window.fetch && !window.fetch.__leafDateCopyHooked) {
         var origFetch = window.fetch;
         window.fetch = function (input, init) {
           var url = (typeof input === "string") ? input : (input && input.url);
 
-          try { if (url && isSubmitEndpoint(url)) copyValue(); } catch (e) {}
+          try { if (url && isSubmitEndpoint(url)) copyDate(); } catch (e) {}
 
           return origFetch.apply(this, arguments).then(function (resp) {
             try {
@@ -74,10 +94,10 @@
             return resp;
           });
         };
-        window.fetch.__leafFieldCopyHooked = true;
+        window.fetch.__leafDateCopyHooked = true;
       }
 
-      if (window.XMLHttpRequest && !window.XMLHttpRequest.__leafFieldCopyHooked) {
+      if (window.XMLHttpRequest && !window.XMLHttpRequest.__leafDateCopyHooked) {
         var OriginalXHR = window.XMLHttpRequest;
 
         function WrappedXHR() {
@@ -93,7 +113,7 @@
           xhr.send = function (body) {
             try {
               if (xhr.__leafUrl && isSubmitEndpoint(xhr.__leafUrl)) {
-                copyValue();
+                copyDate();
                 xhr.addEventListener("load", function () {
                   try {
                     if (xhr.status >= 200 && xhr.status < 300) {
@@ -113,15 +133,15 @@
 
         WrappedXHR.prototype = OriginalXHR.prototype;
         window.XMLHttpRequest = WrappedXHR;
-        window.XMLHttpRequest.__leafFieldCopyHooked = true;
+        window.XMLHttpRequest.__leafDateCopyHooked = true;
       }
     }
 
     function init() {
-      hookSourceInput();
+      hookStartInput();
       hookSubmitClicks();
       hookFetchAndXHRForRefresh();
-      copyValue();
+      copyDate();
     }
 
     if (document.readyState === "loading") {
