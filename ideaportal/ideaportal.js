@@ -371,7 +371,7 @@ function sortIdeasList(list, votes, state) {
 function populateUserSubmissions(userIdeas, voteCounts) {
   $("#myResults").html("");
   if (userIdeas.length === 0) {
-    $("#myResults").append("<tr><td colspan='5'>No ideas submitted</td></tr>");
+    $("#myResults").append("<tr><td colspan='6'>No ideas submitted</td></tr>");
     return;
   }
 
@@ -394,6 +394,13 @@ function populateUserSubmissions(userIdeas, voteCounts) {
 
     var statusBadgeClass = getStatusBadgeClass(status);
     var votes = voteCounts[recordID] || 0;
+    var isVoted = userVotes[recordID] === true;
+    var actionsCell = `<td class="ip-actionsCell">
+<button class='ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}' data-record-id='${recordID}' ${isVoted ? "disabled" : ""} aria-label='Upvote'>
+<span aria-hidden='true'>&#128077;</span>
+</button>
+<button class='ip-btn ip-btn--ghost ip-share' data-record-link='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>Share</button>
+    </td>`;
 
     $("#myResults").append(`<tr>
 <td><a target='_blank' href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
@@ -401,6 +408,7 @@ function populateUserSubmissions(userIdeas, voteCounts) {
 <td>${category}</td>
 <td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
 <td>${votes}</td>
+${actionsCell}
     </tr>`);
   });
 }
