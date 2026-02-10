@@ -25,6 +25,22 @@
         font-weight: 600;
         cursor: pointer;
     }
+    .privacy-nav__link {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border: 1px solid #c9d2dc;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #1f2933;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .privacy-nav__link:hover,
+    .privacy-nav__link:focus {
+        background: #eef4fb;
+        text-decoration: none;
+    }
     .privacy-nav__menu {
         position: absolute;
         top: calc(100% + 6px);
@@ -59,14 +75,15 @@
     <strong>Internal Reports:</strong>
     <div class="privacy-nav__dropdown">
         <button type="button" class="privacy-nav__toggle" aria-controls="privacyDropdownOne" aria-expanded="false">
-            Menu One <span aria-hidden="true">▼</span>
+            Elements Repository <span aria-hidden="true">▼</span>
         </button>
         <div id="privacyDropdownOne" class="privacy-nav__menu" role="menu">
-            <a class="privacy-nav__item" href="#" role="menuitem">Data Element Repository Report</a>
-            <a class="privacy-nav__item" href="#" role="menuitem">SORN Repository Report</a>
-            <a class="privacy-nav__item" href="#" role="menuitem">Quarterly Review Date Report</a>
+            <a class="privacy-nav__item" href="#" role="menuitem">Data Element Repository</a>
+            <a class="privacy-nav__item" href="#" role="menuitem">SORN Repository</a>
+            <a class="privacy-nav__item" href="#" role="menuitem">Quarterly Review Date</a>
         </div>
     </div>
+    <a class="privacy-nav__link" href="#">Menu Two</a>
 </div>
 <section style="display: flex; flex-direction: column; width: fit-content;">
     <div id="searchContainer"></div>
@@ -386,5 +403,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <!--{else}-->
-<div class="alert">This view is restricted to authorized users.</div>
 <!--{/if}-->
