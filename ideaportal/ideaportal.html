@@ -254,6 +254,45 @@
   </div>
 </div>
 
+<div class="ip-recordModal" id="ipRecordModal" aria-hidden="true">
+  <div class="ip-recordModal__backdrop" data-ip-record-close="1"></div>
+  <div
+    class="ip-recordModal__dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Idea details"
+  >
+    <div class="ip-recordModal__header">
+      <div class="ip-recordModal__title" id="ipRecordModalTitle">Idea Details</div>
+      <div class="ip-recordModal__actions">
+        <button
+          type="button"
+          class="ip-btn ip-btn--ghost ip-recordModal__openTab"
+          id="ipRecordModalOpenTabBtn"
+          aria-label="Open in new tab"
+        >
+          Open in new tab
+        </button>
+        <button
+          type="button"
+          class="ip-btn ip-btn--ghost ip-btn--icon ip-recordModal__close"
+          id="ipRecordModalCloseBtn"
+          aria-label="Close"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+    <div class="ip-recordModal__body">
+      <iframe
+        id="ipRecordModalFrame"
+        class="ip-recordModal__frame"
+        title="LEAF content"
+      ></iframe>
+    </div>
+  </div>
+</div>
+
 <script>
   window.leafIdeaPortal = {
     userID: "<!--{$userID|unescape|escape:'quotes'}-->",

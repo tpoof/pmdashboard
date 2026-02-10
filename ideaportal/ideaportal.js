@@ -61,6 +61,76 @@ function bindTabs() {
   });
 }
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function openRecordModal(title, url) {
+  const modal = document.getElementById("ipRecordModal");
+  const frame = document.getElementById("ipRecordModalFrame");
+  const titleEl = document.getElementById("ipRecordModalTitle");
+  const openTabBtn = document.getElementById("ipRecordModalOpenTabBtn");
+  if (!modal || !frame || !titleEl) return;
+  titleEl.textContent = title || "Idea Details";
+  frame.src = url;
+  if (openTabBtn) openTabBtn.setAttribute("data-url", url || "");
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function closeRecordModal() {
+  const modal = document.getElementById("ipRecordModal");
+  const frame = document.getElementById("ipRecordModalFrame");
+  const openTabBtn = document.getElementById("ipRecordModalOpenTabBtn");
+  if (!modal || !frame) return;
+  frame.src = "about:blank";
+  if (openTabBtn) openTabBtn.setAttribute("data-url", "");
+  modal.classList.remove("is-open");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+function bindRecordModal() {
+  document.addEventListener("click", function (e) {
+    const link = e.target.closest("a.ip-recordLink");
+    if (!link) return;
+    e.preventDefault();
+    const url = link.getAttribute("href");
+    const title = link.getAttribute("data-title") || "Idea Details";
+    if (url) openRecordModal(title, url);
+  });
+
+  const closeBtn = document.getElementById("ipRecordModalCloseBtn");
+  const openTabBtn = document.getElementById("ipRecordModalOpenTabBtn");
+  const modal = document.getElementById("ipRecordModal");
+
+  if (closeBtn) closeBtn.addEventListener("click", closeRecordModal);
+  if (openTabBtn)
+    openTabBtn.addEventListener("click", function () {
+      const url = openTabBtn.getAttribute("data-url") || "";
+      if (!url) return;
+      window.open(url, "_blank", "noopener");
+    });
+
+  if (modal) {
+    modal.addEventListener("click", function (e) {
+      const t = e.target;
+      if (t && t.getAttribute && t.getAttribute("data-ip-record-close") === "1")
+        closeRecordModal();
+    });
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeRecordModal();
+  });
+}
+
 function bindSortHandlers() {
   $(".ip-sortable").off("click").on("click", function () {
     const key = $(this).data("sort");
@@ -389,6 +459,7 @@ function populateUserSubmissions(userIdeas, voteCounts) {
     }
     var recordID = idea.recordID;
     var title = getIdeaField(idea, "id13", "title");
+    var safeTitle = escapeHtml(title);
     var category = getIdeaField(idea, "id16", "category");
     var status = normalizeStatusLabel(getIdeaField(idea, "id20", "status"));
 
@@ -403,8 +474,8 @@ function populateUserSubmissions(userIdeas, voteCounts) {
     </td>`;
 
     $("#myResults").append(`<tr>
-<td><a target='_blank' href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
-<td>${title}</td>
+<td><a class="ip-recordLink" data-title="${safeTitle}" href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
+<td>${safeTitle}</td>
 <td>${category}</td>
 <td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
 <td>${votes}</td>
@@ -429,6 +500,7 @@ function populateTables(ideas, voteCounts) {
     sortedIdeas.forEach((idea) => {
       var recordID = idea.recordID;
       var title = idea.s1["id13"];
+      var safeTitle = escapeHtml(title);
       var category = idea.s1["id16"];
       var status = normalizeStatusLabel(idea.s1["id20"]);
 
@@ -443,8 +515,8 @@ function populateTables(ideas, voteCounts) {
     </td>`;
 
       $("#results").append(`<tr>
-<td><a target='_blank' href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
-<td>${title}</td>
+<td><a class="ip-recordLink" data-title="${safeTitle}" href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
+<td>${safeTitle}</td>
 <td>${category}</td>
 <td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
 <td>${votes}</td>
@@ -479,6 +551,7 @@ function populateTop10Ideas(voteCounts) {
     top10.forEach((idea) => {
       var recordID = idea.recordID;
       var title = idea.s1["id13"];
+      var safeTitle = escapeHtml(title);
       var category = idea.s1["id16"];
       var status = normalizeStatusLabel(idea.s1["id20"]);
 
@@ -493,8 +566,8 @@ function populateTop10Ideas(voteCounts) {
     </td>`;
 
       $("#topResults").append(`<tr>
-<td><a target='_blank' href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
-<td>${title}</td>
+<td><a class="ip-recordLink" data-title="${safeTitle}" href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
+<td>${safeTitle}</td>
 <td>${category}</td>
 <td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
 <td>${votes}</td>
@@ -509,6 +582,7 @@ ${actionsCell}
 $(document).ready(function () {
   bindModalEvents();
   bindTabs();
+  bindRecordModal();
   bindSortHandlers();
   updateTable();
 
