@@ -181,7 +181,42 @@ function fetchUserSubmissions() {
   const queryString = encodeURIComponent(JSON.stringify(query));
 
   $.ajax({
-    url: `https://leaf.va.gov/VISN20/648/Javascript_Examples/api/form/query/?q=${queryString}&x-filterData=recordID,title,created_date,userID`,
+    url: `https://leaf.va.gov/VISN20/648/Javascript_Examples/api/form/query/?q=${queryString}&x-filterData=recordID,title,created_date,userID,initiator`,
+    type: "GET",
+    cache: false,
+    async: false,
+    dataType: "json",
+    success: function (data) {
+      let userIdeas = Object.values(data);
+      if (userIdeas.length === 0) {
+        fetchUserSubmissionsByInitiator();
+        return;
+      }
+      populateUserSubmissions(userIdeas, voteCounts);
+    },
+    error: function (xhr, status, error) {
+      console.error("AJAX Error: ", status, error);
+      $("#myResults").html(
+        "<tr><td colspan='5'>Error loading user ideas</td></tr>",
+      );
+    },
+  });
+}
+
+function fetchUserSubmissionsByInitiator() {
+  const query = {
+    terms: [
+      { id: "initiator", operator: "=", match: userID, gate: "AND" },
+      { id: "categoryID", operator: "=", match: "form_a9c92", gate: "AND" },
+      { id: "deleted", operator: "=", match: 0, gate: "AND" },
+    ],
+    joins: [],
+    sort: {},
+  };
+  const queryString = encodeURIComponent(JSON.stringify(query));
+
+  $.ajax({
+    url: `https://leaf.va.gov/VISN20/648/Javascript_Examples/api/form/query/?q=${queryString}&x-filterData=recordID,title,created_date,initiator`,
     type: "GET",
     cache: false,
     async: false,
