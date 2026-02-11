@@ -1,3 +1,4 @@
+<!--{if $is_admin}-->
 <!-- form -->
 <br />
 <div class="printmainform" style="border-bottom: 0px; min-height: 64px">
@@ -34,6 +35,7 @@
 <div class="tags<!--{if count($tags) == 0}--> noprint<!--{/if}-->" id="tags" style="border: 1px solid black; padding: 2px; text-align: right" role="status" aria-live="polite">
     <!--{include file="print_form_ajax_tags.tpl" tags=$tags}-->
 </div>
+<!--{/if}-->
 
 <div class="printmainform">
     <!--{include file=$printSubindicatorsTemplate form=$form orgchartPath=$orgchartPath}-->
