@@ -7,6 +7,16 @@
     <hr />
 <!--{/if}-->
 
+<!--{if !$is_admin}-->
+<style>
+  #requestTitle,
+  #requestInfo,
+  #tags {
+    display: none !important;
+  }
+</style>
+<!--{/if}-->
+
 <!-- Main content area (anything under the heading) -->
 <div id="maincontent">
     <div id="workflow_body">
