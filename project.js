@@ -524,7 +524,7 @@
   function sandboxTicketLink(value) {
     var id = getSandboxTicketId(value);
     if (!id) return "";
-    var label = "Support Ticket #" + id;
+    var label = "#" + id;
     var href =
       "/platform/support/index.php?a=printview&recordID=" +
       encodeURIComponent(id);
@@ -1026,7 +1026,7 @@
       recordID: recordID,
       series: 1,
     };
-    bodyObj[TASK_IND.sandboxTicket] = "Support Ticket #" + sourceId;
+    bodyObj[TASK_IND.sandboxTicket] = "#" + sourceId;
     if (token) {
       bodyObj[tokenField] = token;
     } else {
