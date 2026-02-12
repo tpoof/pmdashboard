@@ -51,7 +51,7 @@ function wireSandboxTicket18() {
         link.href = "#";
         link.className = "pmSandboxLink";
         link.setAttribute("data-sandbox-url", url);
-        link.textContent = "Sandbox Ticket #" + ticketId;
+        link.textContent = "Support Ticket #" + ticketId;
         el.innerHTML = "";
         el.appendChild(link);
     });
