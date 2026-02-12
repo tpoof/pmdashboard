@@ -1,0 +1,1341 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+<!------------------ Custom styles ------------------>
+<style>
+    :root {
+        color-scheme: light;
+        --lp-bg: #f6f8fb;
+        --lp-panel: #ffffff;
+        --lp-border: #cfd7e3;
+        --lp-text: #0f172a;
+        --lp-muted: #475569;
+        --lp-accent: #2563eb;
+        --lp-accent-strong: #1d4ed8;
+        --lp-accent-weak: #dbeafe;
+        --lp-success: #7fb22b;
+        --lp-warning-bg: #fff2cc;
+        --lp-warning-border: #f1d08a;
+        --lp-warning-text: #7a4a00;
+        --lp-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        --lp-radius: 14px;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--lp-text);
+        background: var(--lp-bg);
+    }
+
+    a {
+        color: var(--lp-accent);
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    #header {
+        display: none !important;
+    }
+
+    img {
+        pointer-events: none; /* prevents drag & drop */
+        -webkit-user-drag: none; /* disables dragging */
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        width: 100%;
+    }
+
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+    }
+
+    .justify-content-center {
+        justify-content: center;
+    }
+
+    .align-items-center {
+        align-items: center;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .text-primary {
+        color: var(--lp-accent);
+    }
+
+    .text-secondary {
+        color: var(--lp-muted);
+    }
+
+    .fw-bold {
+        font-weight: 700;
+    }
+
+    .lead {
+        font-size: 1.1rem;
+        color: var(--lp-muted);
+    }
+
+    .small {
+        font-size: 0.9rem;
+        color: var(--lp-muted);
+    }
+
+    .col-12 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .col {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .col-lg {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    @media (min-width: 768px) {
+        .order-md-1 {
+            order: 1;
+        }
+
+        .order-md-2 {
+            order: 2;
+        }
+
+        .col-md-4 {
+            flex: 0 0 33.333%;
+            max-width: 33.333%;
+        }
+
+        .col-md-5 {
+            flex: 0 0 41.666%;
+            max-width: 41.666%;
+        }
+
+        .col-md-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .col-md-7 {
+            flex: 0 0 58.333%;
+            max-width: 58.333%;
+        }
+    }
+
+    @media (min-width: 992px) {
+        .col-lg {
+            flex: 1 1 0;
+            max-width: 100%;
+        }
+    }
+
+    .pt-5 {
+        padding-top: 3rem;
+    }
+
+    .p-5 {
+        padding: 3rem;
+    }
+
+    .p-4 {
+        padding: 1.5rem;
+    }
+
+    .mt-1 {
+        margin-top: 0.25rem;
+    }
+
+    .mt-3 {
+        margin-top: 1rem;
+    }
+
+    .mb-2 {
+        margin-bottom: 0.5rem;
+    }
+
+    .mb-3 {
+        margin-bottom: 1rem;
+    }
+
+    .mb-4 {
+        margin-bottom: 1.5rem;
+    }
+
+    .my-3 {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .my-5 {
+        margin-top: 3rem;
+        margin-bottom: 3rem;
+    }
+
+    .m-auto {
+        margin: auto;
+    }
+
+    .mx-auto {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .bg-light {
+        background: #f8fafc;
+        border-radius: var(--lp-radius);
+    }
+
+    .shadow {
+        box-shadow: var(--lp-shadow);
+    }
+
+    .img-fluid {
+        max-width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        border: 1px solid var(--lp-border);
+        padding: 10px 16px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        background: var(--lp-panel);
+        color: var(--lp-text);
+        transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease, border-color 0.1s ease;
+    }
+
+    .btn:hover {
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+    }
+
+    .btn:active {
+        transform: translateY(1px);
+    }
+
+    .btn-primary {
+        background: var(--lp-accent);
+        border-color: var(--lp-accent);
+        color: #ffffff;
+    }
+
+    .btn-primary:hover {
+        background: var(--lp-accent-strong);
+        border-color: var(--lp-accent-strong);
+    }
+
+    .btn-outline-primary {
+        background: transparent;
+        border-color: var(--lp-accent);
+        color: var(--lp-accent);
+    }
+
+    .btn-outline-primary:hover {
+        background: var(--lp-accent-weak);
+        border-color: var(--lp-accent);
+    }
+
+    .btn-light-subtle {
+        background: #eef4ff;
+        border-color: #c7d7f8;
+        color: var(--lp-text);
+    }
+
+    .btn-light-subtle:hover {
+        background: #dde9ff;
+        border-color: #b7c8f0;
+    }
+
+    .d-none {
+        display: none !important;
+    }
+
+    .btn-lg {
+        padding: 14px 20px;
+        font-size: 1.05rem;
+    }
+
+    .btn-sm {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+    }
+
+    .alert {
+        position: relative;
+        padding: 14px 48px 14px 16px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        box-shadow: var(--lp-shadow);
+        background: var(--lp-panel);
+    }
+
+    .alert-warning {
+        background: var(--lp-warning-bg);
+        border-color: var(--lp-warning-border);
+        color: var(--lp-warning-text);
+    }
+
+    .btn-close {
+        position: absolute;
+        top: 8px;
+        right: 12px;
+        border: none;
+        background: transparent;
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+        color: inherit;
+    }
+
+    .card {
+        border-radius: 14px;
+        border: 1px solid var(--lp-border);
+        overflow: hidden;
+        background: var(--lp-panel);
+        box-shadow: var(--lp-shadow);
+    }
+
+    .card-body {
+        padding: 16px;
+    }
+
+    .card-title {
+        margin: 10px 0 0 0;
+        font-weight: 700;
+    }
+
+    .list-group {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .list-group-item {
+        padding: 10px 14px;
+        border-top: 1px solid var(--lp-border);
+        background: var(--lp-panel);
+    }
+
+    .list-group-flush .list-group-item:first-child {
+        border-top: none;
+    }
+
+    .buttonNorm {
+        text-decoration: none;
+    }
+
+    #firstVisit p,
+    #firstVisit li,
+    #welcomeBack p,
+    #welcomeBack li {
+        font-size: 1rem;
+        line-height: 2rem;
+    }
+
+    .dropdown-item-container {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+    }
+    .dropdown-item-icon {
+        font-size: 24px;
+        margin-right: 10px;
+    }
+    .dropdown-item-content {
+        display: flex;
+        flex-direction: column;
+    }
+    .dropdown-item:hover {
+        background-color: #f8f8f8;
+    }
+    .dropdown-item:hover .dropdown-item-icon,
+    .dropdown-item:hover .dropdown-item-title,
+    .dropdown-item:hover .dropdown-item-description {
+        color: #007bff; /* Change color on hover */
+    }
+    .dropdown-item-title {
+        font-weight: 600;
+    }
+    .dropdown-item-description {
+        font-size: 14px;
+        color: #6c757d;
+    }
+
+    .feature-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        background-color: var(--lp-panel);
+        border-radius: var(--lp-radius);
+        border: 1px solid var(--lp-border);
+        box-shadow: var(--lp-shadow);
+        margin: 15px 0;
+    }
+
+    .feature-content-wrapper {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .feature-icon {
+        font-size: 48px;
+        margin-right: 15px;
+        color: var(--lp-accent);
+    }
+
+    .feature-content {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1; /* Ensure it takes remaining space */
+    }
+
+    .feature-title {
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .feature-description {
+        font-size: 14px;
+        color: var(--lp-muted);
+    }
+
+    .feature-image img {
+        margin-top: 10px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .btn-steps {
+        width: 100%;
+        gap: 8px;
+    }
+
+    @media (min-width: 768px) {
+        .btn-steps {
+            width: auto;
+        }
+    }
+
+
+    .result-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .result-title {
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .result-text {
+        font-size: 14px;
+        color: var(--lp-muted);
+    }
+    .alt-result-container {
+        flex-direction: row-reverse;
+    }
+    .result-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+        padding: 10px;
+        background: var(--lp-panel);
+        border: 1px solid var(--lp-border);
+        border-radius: var(--lp-radius);
+        box-shadow: var(--lp-shadow);
+    }
+    .result-icon {
+        margin-right: 30px;
+        margin-left: 30px;
+        color: var(--lp-accent);
+    }
+    .result-content {
+        text-align: left;
+    }
+
+    .cta-container {
+        background-color: var(--lp-accent);
+        color: white;
+        padding: 20px;
+        border-radius: var(--lp-radius);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+    .cta-text {
+        font-size: 24px;
+        font-weight: bold;
+    }
+    .cta-button {
+        background-color: white;
+        color: var(--lp-accent);
+        border: none;
+        padding: 15px 30px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        text-transform: uppercase;
+        cursor: pointer;
+    }
+    .cta-button:hover {
+        background-color: #005b99;
+        color: white;
+    }
+</style>
+
+<!------------- Navbar------------------>
+<div id="navbar-container"></div>
+<script src="./files/navbar.js"></script>
+
+<!-- Under Construction Note -->
+<div style="margin-top: 70px; padding: 1rem;">
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <strong>NOTE:</strong> This page is under construction.
+        <button type="button" class="btn-close" data-close="alert" aria-label="Close">&times;</button>
+    </div>
+</div>
+
+<!--------------- Welcome -------------->
+
+<div id="firstVisit" class="container pt-5">
+    <div class="row justify-content-center align-items-center">
+        <!-- Image on the right -->
+        <div class="col-12 col-md-6 order-md-2">
+            <img src="./files/mockup-transparent-v2.png" class="img-fluid" alt="platform overview">
+
+            <!--------------- Launchpad Search Widget Placeholder ----->
+            <p class="mt-3">Your LEAF Site creation history:</p>
+            <button id="btn_user_requests" class="btn btn-outline-primary btn-sm mb-2" type="button" style="display:none;" onclick="toggleRequestDisplay()" aria-expanded="false">View Your Feedback History</button>
+            <div class="container mt-1 mb-4" id="results_user_requests" style="display:none;">
+                <!--{include file=$tpl_search is_service_chief=$is_service_chief is_admin=$is_admin empUID=$empUID userID=$userID}-->
+                <div id="searchCount"></div>
+                <br>
+            </div>
+        </div>
+        <!-- Content on the left -->
+        <div class="col-12 col-md-6 order-md-1">
+            <p style="font-size: 250%; font-weight: bold">
+                Help modernize VA.
+            </p>
+            <p>
+                Improve your processes with our powerful workflow and form system.
+            </p>
+            <br><br>
+            <a href="?a=newform" class="buttonNorm btn btn-primary btn-lg" style="font-size: 140%; padding: 16px">🚀 Get started</a>
+            <br><br>
+            <p style="font-size: 100%">
+                Join us for a demo on the <a href="https://dvagov.sharepoint.com/sites/vhaleaf/SitePages/LEAF-Academy.aspx?source=https%3A%2F%2Fdvagov.sharepoint.com%2Fsites%2Fvhaleaf%2FSitePages%2FForms%2FByAuthor.aspx">first Thursday</a> of every month
+            </p>
+        </div>
+    </div>
+</div>
+
+<div id="welcomeBack" class="container pt-5" style="display: none;">
+    <div class="row justify-content-center align-items-center">
+        <div class="col-12">
+            <h2 class="text-primary text-center">Welcome back!</h2>
+            <p>How can we help?</p>
+            <ul>
+                <li><a href="report.php?a=Start_new_site">I need a new LEAF site</a></li>
+                <li><a href="/platform/service_requests_launchpad/">I need help with LEAF</a></li>
+                <li><a href="report.php?a=Find_my_site">I'm looking for a site</a></li>
+            </ul>
+
+            <p class="text-center small">Join our <a href="https://leaf.va.gov/platform/CoP/">Community of Practice</a> for insights and tips!</p>
+        </div>
+    </div>
+</div>
+
+
+<!--------------- Interactive Toggles -------------->
+
+<div class="container bg-light justify-content-center m-auto p-5">
+    <h1 class="mb-3 text-center">Build your forms, workflows, and reports in a few easy steps.</h1>
+    <div id="steps" class="row justify-content-center text-center">
+
+        <!----------------- Design Forms -------------->
+        <div class="col-lg">
+            <button class="btn btn-lg btn-primary shadow btn-steps p-4 my-3" onclick="activate_step(this, 'step_forms')">
+                <i class="bi bi-ui-radios"></i> Design Forms</button>
+        </div>
+
+        <!----------------- Design Workflows -------------->
+        <div class="col-lg">
+            <button class="btn btn-lg btn-light-subtle shadow btn-steps p-4 my-3" onclick="activate_step(this, 'step_workflows')">
+                <i class="bi bi-diagram-2"></i> Build Workflows</button>
+        </div>
+
+        <!----------------- Run Analytics -------------->
+        <div class="col-lg">
+            <button class="btn btn-lg btn-light-subtle shadow btn-steps p-4 my-3" onclick="activate_step(this, 'step_analytics')">
+                <i class="bi bi-clipboard-data"></i> Run Analytics</button>
+        </div>
+    </div>
+
+    <!----------------- Description container -------------->
+    <div id="steps_desc_container" class="row justify-content-center m-auto p-5">
+
+        <!----------------- Description: Design Forms -------------->
+        <div id="step_forms" class="row step_description">
+            <div class="col-lg">
+                <h2 class="text-primary">Design Forms</h2>
+                <p class="lead">Our user-friendly, drag-and-drop Form Editor helps to
+                    create a custom Form for your process.</p>
+                <ul>
+                    <li>Dozens of question formats to choose from</li>
+                    <li>Toggle questions on/off depending on previous question responses</li>
+                    <li>Integration with the Active Directory</li>
+                </ul>
+            </div>
+            <div class="col">
+                <img src="./files/graphics-form.png" alt="form editor" width="500" height="275">
+            </div>
+        </div>
+
+        <!----------------- Description: Design Workflows -------------->
+        <div id="step_workflows" class="row step_description d-none">
+            <div class="col-lg">
+                <h2 class="text-primary">Build Workflows</h2>
+                <p class="lead">Integrated, interactive flowcharts customizable for each Form.</p>
+                <ul>
+                    <li>Notify requestors and approvers every time something happens, so they're up to date</li>
+                    <li>Clear organization of responsibile owners of each step in a process</li>
+                    <li>Sub-Forms and workspaces available for multi-part processes</li>
+                </ul>
+            </div>
+            <div class="col">
+                <img src="./files/graphics-workflow.png" alt="workflow editor" width="500" height="275">
+            </div>
+        </div>
+
+        <!----------------- Description: Run Analytics -------------->
+        <div id="step_analytics" class="row step_description d-none">
+            <div class="col-lg">
+                <h2 class="text-primary">Run Analytics</h2>
+                <p class="lead">Use powerful tools such as the Report Builder, Timeline Explorer, and Data Visualizer
+                    to gain insights and make informed decisions.</p>
+
+                <ul>
+                    <li><b>Report Builder</b> - A robust tool that lets you drill down to important data, with options to export and integrate with Excel</li>
+                    <li><b>Timeline Explorer</b> - Step-by-step and form-by-form tracking of turnaround times. Find the gaps and delays in your processes at a glance.</li>
+                    <li><b>Data Visualizer</b> - See patterns in what your requestors/submitters are entering in your Forms.</li>
+                </ul>
+            </div>
+            <div class="col">
+                <img src="./files/graphics-analytics.png" alt="data analysis" width="500" height="275">
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!----------------- Features container -------------->
+<div id="container_features" class="container p-5">
+    <h1 class="mb-3 text-center">Intuitive Built-In Tools.<span class="text-primary fw-bold"> Powerful Results.</span></h1>
+
+    <div class="row">
+        <!-- Integrated Form Library -->
+        <div class="col-md-4">
+            <div class="feature-container">
+                <div class="feature-content-wrapper">
+                    <div class="feature-icon">
+                        <i class="bi bi-ui-checks"></i>
+                    </div>
+                    <div class="feature-content">
+                        <div class="feature-title">Integrated Form Library</div>
+                        <div class="feature-description">One-click option to use or import form templates.</div>
+                    </div>
+                </div>
+                <div class="feature-image center">
+                    <img src="./files/graphics-formlib.jpg" loading="lazy" alt="Integrated Form Library" style="width: 300px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Inbox Management -->
+        <div class="col-md-4">
+            <div class="feature-container">
+                <div class="feature-content-wrapper">
+                    <div class="feature-icon">
+                        <i class="bi bi-envelope-fill"></i>
+                    </div>
+                    <div class="feature-content">
+                        <div class="feature-title">Inbox Management</div>
+                        <div class="feature-description">Centralize and organize all your pending requests efficiently.</div>
+                    </div>
+                </div>
+                <div class="feature-image center">
+                    <img src="./files/graphics-inbox.jpg" loading="lazy" alt="Inbox Management" style="width: 300px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- User Access Groups -->
+        <div class="col-md-4">
+            <div class="feature-container">
+                <div class="feature-content-wrapper">
+                    <div class="feature-icon">
+                        <i class="bi bi-person-fill-gear"></i>
+                    </div>
+                    <div class="feature-content">
+                        <div class="feature-title">User Access Groups</div>
+                        <div class="feature-description">Easily manage user roles and permissions.</div>
+                    </div>
+                </div>
+                <div class="feature-image center">
+                    <img src="./files/graphics-usergroups.jpg" loading="lazy" alt="User Access Groups" style="width: 300px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Automated Emails -->
+        <div class="col-md-4">
+            <div class="feature-container">
+                <div class="feature-content-wrapper">
+                    <div class="feature-icon">
+                        <i class="bi bi-envelope-at"></i>
+                    </div>
+                    <div class="feature-content">
+                        <div class="feature-title">Automated Emails</div>
+                        <div class="feature-description">Send personalized emails automatically.</div>
+                    </div>
+                </div>
+                <div class="feature-image center">
+                    <img src="./files/graphics-email.jpg" loading="lazy" alt="Automated Emails" style="width: 300px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Oversight Tools -->
+        <div class="col-md-4">
+            <div class="feature-container">
+                <div class="feature-content-wrapper">
+                    <div class="feature-icon">
+                        <i class="bi bi-clipboard-data"></i>
+                    </div>
+                    <div class="feature-content">
+                        <div class="feature-title">Admin Oversight Tools</div>
+                        <div class="feature-description">Monitor site performance and streamline tasks.</div>
+                    </div>
+                </div>
+                <div class="feature-image center">
+                    <img src="./files/graphic-admin-tools.png" loading="lazy" alt="Admin Oversight Tools" style="width: 300px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Privacy -->
+        <div class="col-md-4">
+            <div class="feature-container">
+                <div class="feature-content-wrapper">
+                    <div class="feature-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <div class="feature-content">
+                        <div class="feature-title">Built-in Data Protections</div>
+                        <div class="feature-description">Certified safeguards for PHI/PII with LEAF-S certification</div>
+                    </div>
+                </div>
+                <div class="feature-image center">
+                    <img src="./files/graphics-privacy.jpg" loading="lazy" alt="Privacy" style="width: 300px;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!----------------- Use cases container (save)
+<div id="container_usecases" class="container row justify-content-center m-auto p-5">
+<center><h1>OPTION 1:
+<p>LEAF Across All Business Lines</h1>
+<p class="lead ">Real uses for LEAF successfully implemented by users across VA.</p></center>
+<div class="row row-cols-3">
+
+<div class="col">
+<div class="card">
+<div class="card-body text-center" style="background-color:#d9e8f6">
+<i class="bi bi-heart-pulse fs-1"></i>
+<h5 class="card-title">Clinical</h5>
+</div>
+<ul class="list-group list-group-flush text-center">
+<li class="list-group-item">Clinic Profile Management</li>
+<li class="list-group-item">Eligibility & Enrollment</li>
+<li class="list-group-item">Infection Prevention & Control</li>
+<li class="list-group-item">Pharmacy Supply Orders</li>
+<li class="list-group-item">Clinical Equipment Tracking</li>
+</ul>
+</div>
+</div>
+
+<div class="col">
+<div class="card">
+<div class="card-body text-center" style="background-color:#73b3e7">
+<i class="bi bi-envelope-paper fs-1"></i>
+<h5 class="card-title">Administrative</h5>
+</div>
+<ul class="list-group list-group-flush text-center">
+<li class="list-group-item">Action Item & Suspense Tracking</li>
+<li class="list-group-item">Timekeeping & Payroll</li>
+<li class="list-group-item">Onboarding & Offboarding</li>
+<li class="list-group-item">Conference & Travel</li>
+<li class="list-group-item">Human Resources Management</li>
+</ul>
+</div>
+</div>
+
+<div class="col">
+<div class="card">
+<div class="card-body text-center" style="background-color:#5dc0d1">
+<i class="bi bi-building-gear fs-1"></i>
+<h5 class="card-title">Facility Support</h5>
+</div>
+<ul class="list-group list-group-flush text-center">
+<li class="list-group-item">Pest Control Management</li>
+<li class="list-group-item">Work Order Submissions</li>
+<li class="list-group-item">Equipment Moves</li>
+<li class="list-group-item">Procurement & Contract Requests</li>
+<li class="list-group-item">Inspection Tracking & Return to Occupancy</li>
+</ul>
+</div>
+</div>
+
+
+</div>
+</div>
+-------------->
+
+<!-----------------Enterprise Scalability -------------->
+<div id="container_usecases" class="container row justify-content-center m-auto p-5">
+    <h1 class="mb-3 text-center">Enterprise Scalability and<span class="text-primary fw-bold">  Endless Possibilities.</span></h1>
+    <br><br>
+    <!--<p class="lead ">LEAF successfully implemented across VA</p></center>-->
+    <div class="row">
+
+        <!-------------- Card container ---------------->
+        <div class="col-lg">
+            <div class="card">
+                <div class="card-body text-center" style="background-color:#d9e8f6">
+                    <i class="bi bi-hospital" style="font-size: 48px; width: 48px; height: 48px;"></i>
+                    <h5 class="card-title">Facility Support</h5>
+                </div>
+                <ul class="list-group list-group-flush text-center">
+                    <li class="list-group-item">Clinic Profile Management</li>
+                    <li class="list-group-item">Eligibility & Enrollment</li>
+                    <li class="list-group-item">Onboarding & Offboarding</li>
+                    <li class="list-group-item">Conference & Travel</li>
+                    <li class="list-group-item">Work Order Submissions</li>
+                    <li class="list-group-item"><i>... and many more!</i></li>
+                </ul>
+            </div>
+        </div>
+        <!--------------- End card container -------------->
+
+
+        <!-------------- Card container ---------------->
+        <div class="col-lg">
+            <div class="card">
+                <div class="card-body text-center" style="background-color:#73b3e7">
+                    <i class="bi bi-diagram-3" style="font-size: 48px; width: 48px; height: 48px;"></i>
+                    <h5 class="card-title">Regional Support</h5>
+                </div>
+                <ul class="list-group list-group-flush text-center">
+                    <li class="list-group-item">VISN Network Office</li>
+                    <li class="list-group-item">Human Resources Management</li>
+                    <li class="list-group-item">VBA Regional Offices</li>
+                    <li class="list-group-item">Veterans Affairs Supportive Housing (VASH)</li>
+                    <li class="list-group-item">Memorial Service Networks (MSNs)</li>
+                    <li class="list-group-item"><i>... and many more!</i></li>
+                </ul>
+            </div>
+        </div>
+        <!--------------- End card container -------------->
+
+
+        <!-------------- Card container ---------------->
+        <div class="col-lg">
+            <div class="card">
+                <div class="card-body text-center" style="background-color:#5dc0d1">
+                    <i class="bi bi-globe-americas" style="font-size: 48px; width: 48px; height: 48px;"></i>
+                    <h5 class="card-title">National Support</h5>
+                </div>
+                <ul class="list-group list-group-flush text-center">
+                    <li class="list-group-item">VA Central Office (Headquarters)</li>
+                    <li class="list-group-item">Office of the Secretary of Veterans Affairs</li>
+                    <li class="list-group-item">Office of Inpector General</li>
+                    <li class="list-group-item">Office of General Counsel</li>
+                    <li class="list-group-item">VHA Shark Tank</li>
+                    <li class="list-group-item"><i>... and many more!</i></li>
+                </ul>
+            </div>
+        </div>
+        <!--------------- End card container -------------->
+
+    </div>
+</div>
+
+
+
+<!-----------------Results  [result-container alt-result-container mx-auto]---------------->
+<div class="container my-5 text-center">
+    <h1 class="result-header">Digital Transformation with Lasting Impact.</h1>
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="result-container mx-auto">
+                <div class="result-icon">
+                    <i class="bi bi-calendar-week" style="font-size: 48px; width: 48px; height: 48px;"></i>
+                </div>
+                <div class="result-content">
+                    <div class="result-title">Faster hiring decisions at Salisbury VAMC</div>
+                    <div class="result-text">26 days saved between initial request and decision.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="result-container mx-auto">
+                <div class="result-icon">
+                    <i class="bi bi-arrow-down-right-square" style="font-size: 48px; width: 48px; height: 48px;"></i>
+                </div>
+                <div class="result-content">
+                    <div class="result-title">Reduced delays and errors at Boston VAHCS</div>
+                    <div class="result-text">Completed 19 days quicker with no missing documents.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="result-container mx-auto">
+                <div class="result-icon">
+                    <i class="bi bi-card-checklist" style="font-size: 48px; width: 48px; height: 48px;"></i>
+                </div>
+                <div class="result-content">
+                    <div class="result-title">Modernized digital process at Miami VAMC</div>
+                    <div class="result-text">Reduced Veteran enrollment turnaround by 3 days.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="result-container mx-auto">
+                <div class="result-icon">
+                    <i class="bi bi-diagram-2" style="font-size: 48px; width: 48px; height: 48px;"></i>
+                </div>
+                <div class="result-content">
+                    <div class="result-title">Standardized healthcare coding in VISN 10</div>
+                    <div class="result-text">Reduced number of portals by 72%.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action -->
+
+<div class="container content-container">
+    <div id="CTA" class="cta-container">
+        <div class="cta-text">
+            See the platform in action for yourself!
+        </div>
+        <button class="cta-button">Watch a Demo</button>
+    </div>
+</div>
+
+<!----------------------------------------------------------------------------------------------------------------------------------------------------------------->
+
+<script>
+
+    document.querySelectorAll('[data-close="alert"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const alert = btn.closest('.alert');
+            if(alert) {
+                alert.remove();
+            }
+        });
+    });
+
+    document.addEventListener('contextmenu', event => {
+        if (event.target.tagName === 'IMG') {
+            event.preventDefault(); // disable right-click
+        }
+    });
+
+    document.addEventListener('dragstart', event => {
+        if (event.target.tagName === 'IMG') {
+            event.preventDefault(); // prevent drag & drop
+        }
+    });
+
+    let buttons_steps;
+    let descriptions_steps;
+
+    function activate_step(target_button, target_step) {
+        reset_buttons();
+        reset_steps();
+        target_button.classList.remove('btn-light-subtle');
+        target_button.classList.add('btn-primary');
+        (document.getElementById('' + target_step)).classList.remove('d-none');
+    }
+
+    function reset_steps() {
+        descriptions_steps = document.getElementsByClassName('step_description');
+        for (var i = 0; i < descriptions_steps.length; i++) {
+            descriptions_steps[i].classList.add('d-none');
+        }
+    }
+
+    function reset_buttons() {
+        buttons_steps = (document.getElementById('steps')).querySelectorAll('button');
+        buttons_steps.forEach(el => el.classList.remove('btn-primary'));
+        buttons_steps.forEach(el => el.classList.add('btn-light-subtle'));
+    }
+</script>
+
+<!--User Request Script-->
+<script>
+    function toggleRequestDisplay() {
+        const curDisplay = $('#results_user_requests').css('display');
+        const newDisplay = curDisplay === 'none' ? 'block' : 'none';
+        $('#results_user_requests').css({
+            'display': newDisplay
+        });
+        $('#btn_user_requests').attr('aria-expanded', newDisplay !== 'none');
+        $('#btn_user_requests').text(newDisplay === 'none' ? 'View Your Feedback History' : 'Hide Your Feedback History');
+    }
+
+    function renderResult(leafSearch, res, showResolved = false) {
+        if(Object.keys(res)?.length > 0) {
+            $('#btn_user_requests, #results_user_requests').css({
+                'display': 'block'
+            });
+            $('#btn_user_requests').text('Hide Your Feedback History');
+            $('#btn_user_requests').attr('aria-expanded', true);
+        }
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+        let grid = new LeafFormGrid(leafSearch.getResultContainerID(), {readOnly: true});
+        grid.hideIndex();
+        grid.setDataBlob(res);
+        grid.setHeaders([
+            {
+                name: 'Date',
+                indicatorID: 'date',
+                editable: false,
+                callback: function(data, blob) {
+                    let date = new Date(blob[data.recordID].date * 1000);
+                    let now = new Date();
+                    let year = now.getFullYear() != date.getFullYear() ? ' ' + date.getFullYear() : '';
+                    let formattedDate = months[date.getMonth()] + ' ' + parseFloat(date.getDate()) + year;
+                    document.querySelector(`#${data.cellContainerID}`).innerHTML = formattedDate;
+                    if(blob[data.recordID].userID == "<!--{$userID|unescape|escape:'quotes'}-->") {
+                        document.querySelector(`#${data.cellContainerID}`).style.backgroundColor = '#feffd1';
+                    }
+                }
+            },
+            {
+                name: 'Title',
+                indicatorID: 'title',
+                callback: function(data, blob) {
+                    let types = '';
+                    for(let i in blob[data.recordID].categoryNames) {
+                        if(blob[data.recordID].categoryNames[i] != '') {
+                            types += blob[data.recordID].categoryNames[i] + ' | ';
+                        }
+                    }
+                    types = types.substr(0, types.length - 3);
+
+                    priority = '';
+                    priorityStyle = '';
+                    if(blob[data.recordID].priority == -10) {
+                        priority = '<span style="color: red"> ( Emergency ) </span>';
+                        priorityStyle = ' style="background-color: red; color: black"';
+                    }
+                    document.querySelector(`#${data.cellContainerID}`).innerHTML =
+                        `<span class="browsecounter">
+<a ${priorityStyle} href="index.php?a=printview&recordID=${data.recordID}" tabindex="-1">${data.recordID}</a>
+        </span>
+<a href="index.php?a=printview&recordID=${data.recordID}">${blob[data.recordID].title}</a><br />
+<span class="browsetypes">${types}</span>${priority}`;
+                    document.querySelector(`#${data.cellContainerID}`).addEventListener('click', function() {
+                        window.location = 'index.php?a=printview&recordID='+data.recordID;
+                    });
+                }
+            },
+            {
+                name: 'Initiator',
+                indicatorID: 'initiator',
+                editable: false,
+                callback: function(data, blob) {
+                    $('#'+data.cellContainerID).html(blob[data.recordID].lastName + ', ' + blob[data.recordID].firstName);
+                    if(blob[data.recordID].userID == '<!--{$userID}-->') {
+                        $('#'+data.cellContainerID).css('background-color', '#feffd1');
+                    }
+                }
+            },
+            {
+                name: 'Status',
+                indicatorID: 'currentStatus',
+                editable: false,
+                callback: function(data, blob) {
+                    let waitText = blob[data.recordID].blockingStepID == 0 ? 'Pending ' : 'Waiting for ';
+                    let status = '';
+                    if(blob[data.recordID].stepID == null && blob[data.recordID].submitted == '0') {
+                        if(blob[data.recordID].lastStatus == null) {
+                            status = '<span style="color: #e00000">Not Submitted</span>';
+                        } else {
+                            status = '<span style="color: #e00000">Pending Re-submission</span>';
+                        }
+                    } else if(blob[data.recordID].stepID == null) {
+                        let lastStatus = blob[data.recordID].lastStatus;
+                        if(lastStatus == '') {
+                            lastStatus = '<a href="index.php?a=printview&recordID='+ data.recordID +'">Check Status</a>';
+                        }
+                        status = '<span style="font-weight: bold">' + lastStatus + '</span>';
+                    } else {
+                        status = waitText + blob[data.recordID].stepTitle;
+                    }
+                    if(blob[data.recordID].deleted > 0) {
+                        status += ', Cancelled';
+                    }
+                    document.querySelector(`#${data.cellContainerID}`).innerHTML = status;
+                    if(blob[data.recordID].userID == '<!--{$userID|unescape|escape:'quotes'}-->') {
+                        document.querySelector(`#${data.cellContainerID}`).style.backgroundColor = '#feffd1';
+                    }
+                }
+            }
+        ]);
+        grid.setPostProcessDataFunc(function(data) {
+            let data2 = [];
+            for(let i in data) {
+                <!--{if !$is_admin}-->
+                    if(data[i].submitted == '0'
+                       && data[i].userID == '<!--{$userID|unescape|escape:'quotes'}-->') {
+                        data2.push(data[i]);
+                    }
+                else if(data[i].submitted != '0') {
+                    data2.push(data[i]);
+                }
+                <!--{else}-->
+                    data2.push(data[i]);
+                <!--{/if}-->
+                    }
+                return data2;
+            });
+
+            let tGridData = [];
+            for(let i in res) {
+                if(showResolved || !(res[i].submitted > 0 && res[i].stepID === null)) {
+                    tGridData.push(res[i]);
+                }
+            }
+            grid.setData(tGridData);
+            grid.sort('recordID', 'desc');
+            grid.renderBody();
+            grid.announceResults();
+            $('#searchContainer > div:first-child').css('display','none');
+            $('tbody td[colspan="4"]').text("No Pending Requests");
+    }
+
+    function runQuery() {
+        let query = new LeafFormQuery();
+        query.addTerm('userID', '=', "<!--{$userID|unescape|escape:'quotes'}-->");
+
+        let abortController = new AbortController();
+        let leafSearch = new LeafFormSearch('searchContainer');
+        leafSearch.setJsPath('<!--{$app_js_path}-->');
+        leafSearch.setOrgchartPath('<!--{$orgchartPath}-->');
+
+        let extendedQueryState = 0;
+        let loadAllResults = false;
+        let showResolved = false;
+        let foundOwnRequest = false;
+        let resultSet = {}; // current results
+        let offset = 0; // current database offset index
+        let batchSize = 50;
+        let abortSearch = false;
+        let scrollY = 0; // track scroll position for more seamless UX when loading more records
+
+        document.addEventListener('click', abortSearchListener );
+        function abortSearchListener(event) {
+            let element = event.target;
+            if(element.id == 'btn_abortSearch' ) {
+                abortController.abort();
+                abortSearch = true;
+                document.getElementById('btn_abortSearch').style.display = 'none';
+            }
+        }
+        // On the first visit, if no results are owned by the user, append their results
+        query.onSuccess(function(res, resStatus, resJqXHR) {
+            resultSet = Object.assign(resultSet, res);
+
+            // find records owned by user
+            if(extendedQueryState == 0) {
+                for(let i in res) {
+                    if(res[i].userID == "<!--{$userID|unescape|escape:'quotes'}-->") {
+                        foundOwnRequest = true;
+                        break;
+                    }
+                }
+            }
+
+            // append user's records if none were found earlier
+            if(extendedQueryState == 0
+               && foundOwnRequest == false
+               && leafSearch.getSearchInput() == '') {
+                extendedQueryState = 1;
+                query.addTerm('userID', '=', "<!--{$userID|unescape|escape:'quotes'}-->");
+                query.execute();
+                return false;
+            }
+
+            // incrementally load records
+            if((Object.keys(res).length == batchSize || resJqXHR.getResponseHeader('leaf-query') == 'continue')
+               && loadAllResults
+               && !abortSearch) {
+
+                document.querySelector('#' + leafSearch.getResultContainerID()).innerHTML = `<h3>Searching ${offset}+ possible records...</h3><p><button id="btn_abortSearch" class="buttonNorm">Stop searching for more</button></p>`;
+                document.querySelector('#btn_abortSearch').addEventListener('click', function() {
+                    abortSearch = true;
+                });
+                offset += batchSize;
+                query.setLimit(offset, batchSize);
+                query.execute();
+                return;
+            } else {
+                //$('tfoot[id^="LeafFormGrid"]').html('<tr><td colspan="4" style="padding: 8px; background-color: #feffd1; font-size: 120%; font-weight: bold">Search Stopped</td></tr>');
+            }
+
+            renderResult(leafSearch, resultSet, showResolved);
+            window.scrollTo(0, scrollY);
+
+            // UI for "show more results" button
+            let btnAbort = document.getElementById('btn_abortSearch');
+            let btnMore = document.querySelector('#searchContainer_getMoreResults');
+            if(btnMore !== null) {
+                btnMore.style.display = !loadAllResults ? 'inline' : 'none';
+            }
+            if(btnAbort !== null) {
+                btnAbort.style.display = 'none';
+            }
+        });
+
+
+        leafSearch.setSearchFunc(function(txt) {
+            // prep new search
+            query.clearTerms();
+            query.addTerm('userID', '=', "<!--{$userID|unescape|escape:'quotes'}-->");
+
+            resultSet = {};
+            offset = 0;
+            loadAllResults = false;
+            scrollY = 0;
+            abortSearch = false;
+
+            let isJSON = true;
+            let advSearch = {};
+            try {
+                advSearch = JSON.parse(txt);
+            }
+            catch(err) {
+                isJSON = false;
+            }
+
+            txt = txt.trim();
+            if(txt == '' || txt == 'undefined' || txt == undefined) {
+                query.addTerm('title', 'LIKE', '*');
+            } else if(!isNaN(parseFloat(txt)) && isFinite(txt)) { // check if numeric
+                query.addTerm('recordID', '=', txt);
+            } else if(isJSON) {
+                for(let i in advSearch) {
+                    if(advSearch[i].id != 'data'
+                       && advSearch[i].id != 'dependencyID') {
+                        query.addTerm(advSearch[i].id, advSearch[i].operator, advSearch[i].match, advSearch[i].gate);
+                    }
+                    else {
+                        query.addDataTerm(advSearch[i].id, advSearch[i].indicatorID, advSearch[i].operator, advSearch[i].match, advSearch[i].gate);
+                    }
+                }
+            } else {
+                query.addTerm('title', 'LIKE', '*' + txt + '*');
+            }
+
+            // check if the user wants to search for cancelled requests
+            let hasDeleteQuery = false;
+            for(let i in query.getQuery().terms) {
+                if(query.getQuery().terms[i].id == 'stepID'
+                   && query.getQuery().terms[i].operator == '='
+                   && query.getQuery().terms[i].match == 'deleted') {
+                    hasDeleteQuery = true;
+                    break;
+                }
+            }
+
+            // hide cancelled requests by default
+            if(!hasDeleteQuery) {
+                query.addTerm('deleted', '=', 0);
+            }
+
+            query.setLimit(batchSize);
+            query.join('status');
+            query.join('categoryName');
+            query.join('initiatorName');
+            query.sort('date', 'DESC');
+            return query.execute();
+        });
+        leafSearch.init();
+        document.querySelector('#' + leafSearch.getResultContainerID()).innerHTML = '<h3>Searching for records...</h3>';
+
+        document.querySelector('#searchContainer_getMoreResults').addEventListener('click', function() {
+            loadAllResults = true;
+            showResolved = true;
+            scrollY = window.scrollY;
+            if(leafSearch.getSearchInput() == '') {
+                let tQuery = query.getQuery();
+                query.setQuery(tQuery);
+            }
+            offset += batchSize;
+            query.setAbortSignal(abortController.signal);
+            query.setLimit(offset, batchSize);
+            query.execute();
+        });
+    }
+
+    function main() {
+        runQuery();
+        const username = $('#headerHelp > b').text();
+        $('#span_user_name').text(username);
+    }
+
+
+    document.addEventListener('DOMContentLoaded', main);
+</script>
