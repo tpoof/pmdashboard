@@ -871,7 +871,7 @@
   .cta-button {
     background-color: white;
     color: var(--lp-accent);
-    border: none;
+    border: 1px solid transparent;
     padding: 15px 30px;
     font-size: 18px;
     font-weight: bold;
@@ -880,8 +880,9 @@
     cursor: pointer;
   }
   .cta-button:hover {
-    background-color: #005b99;
-    color: white;
+    background: var(--lp-accent-weak);
+    color: #111;
+    border-color: var(--lp-accent);
   }
 
   .lp-jumpTop {
