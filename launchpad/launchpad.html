@@ -32,6 +32,7 @@
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     color: var(--lp-text);
     background: var(--lp-bg);
+    font-size: 125%;
   }
 
   a {
@@ -86,12 +87,12 @@
   }
 
   .lead {
-    font-size: 1.1rem;
+    font-size: 1em;
     color: var(--lp-muted);
   }
 
   .small {
-    font-size: 0.9rem;
+    font-size: 0.9em;
     color: var(--lp-muted);
   }
 
@@ -263,21 +264,6 @@
     border-color: var(--lp-accent);
   }
 
-  .btn-light-subtle {
-    background: #eef4ff;
-    border-color: #c7d7f8;
-    color: var(--lp-text);
-  }
-
-  .btn-light-subtle:hover {
-    background: #dde9ff;
-    border-color: #b7c8f0;
-  }
-
-  .d-none {
-    display: none !important;
-  }
-
   .btn-lg {
     padding: 14px 20px;
     font-size: 1.05rem;
@@ -356,8 +342,8 @@
   #firstVisit li,
   #welcomeBack p,
   #welcomeBack li {
-    font-size: 1rem;
-    line-height: 2rem;
+    font-size: 1em;
+    line-height: 2em;
   }
 
   .feature-container {
@@ -396,26 +382,8 @@
   }
 
   .feature-description {
-    font-size: 14px;
+    font-size: 1em;
     color: var(--lp-muted);
-  }
-
-  .feature-image img {
-    margin-top: 10px;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .btn-steps {
-    width: 100%;
-    gap: 8px;
-  }
-
-  @media (min-width: 768px) {
-    .btn-steps {
-      width: auto;
-    }
   }
 
   .result-header {
@@ -427,7 +395,7 @@
     font-weight: bold;
   }
   .result-text {
-    font-size: 14px;
+    font-size: 1em;
     color: var(--lp-muted);
   }
   .result-container {
@@ -480,6 +448,48 @@
   .cta-button:hover {
     background-color: #005b99;
     color: white;
+  }
+
+  .section-divider {
+    padding: 40px;
+  }
+
+  .section-divider::before {
+    content: "";
+    display: block;
+    height: 1px;
+    background: var(--lp-border);
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    justify-content: center;
+  }
+
+  @media (max-width: 900px) {
+    .features-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .features-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+
+  @media (max-width: 700px) {
+    .results-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 </style>
 
@@ -547,6 +557,18 @@
         style="font-size: 140%; padding: 16px"
         >🚀 Get started</a
       >
+      <p class="mt-3">
+        Looking for an existing LEAF site?
+        <a href="report.php?a=Find_my_site">Find a LEAF Site</a>
+      </p>
+      <p class="small">
+        Join us for a demo on the
+        <a
+          href="https://dvagov.sharepoint.com/sites/vhaleaf/SitePages/LEAF-Academy.aspx?source=https%3A%2F%2Fdvagov.sharepoint.com%2Fsites%2Fvhaleaf%2FSitePages%2FForms%2FByAuthor.aspx"
+          >first Thursday</a
+        >
+        of every month.
+      </p>
     </div>
   </div>
 </div>
@@ -580,40 +602,10 @@
 <!--------------------- Intro--------------------->
 
 <div class="container bg-light justify-content-center m-auto p-5">
+  <div class="section-divider"></div>
   <h1 class="mb-3 text-center">
     Build your forms, workflows, and reports in a few easy steps.
   </h1>
-  <div id="steps" class="row justify-content-center text-center">
-    <!----------------- Design Forms -------------->
-    <div class="col-lg">
-      <button
-        class="btn btn-lg btn-primary shadow btn-steps p-4 my-3"
-        onclick="activate_step(this, 'step_forms')"
-      >
-        <i class="bi bi-ui-radios"></i> Design Forms
-      </button>
-    </div>
-
-    <!----------------- Design Workflows -------------->
-    <div class="col-lg">
-      <button
-        class="btn btn-lg btn-light-subtle shadow btn-steps p-4 my-3"
-        onclick="activate_step(this, 'step_workflows')"
-      >
-        <i class="bi bi-diagram-2"></i> Build Workflows
-      </button>
-    </div>
-
-    <!----------------- Run Analytics -------------->
-    <div class="col-lg">
-      <button
-        class="btn btn-lg btn-light-subtle shadow btn-steps p-4 my-3"
-        onclick="activate_step(this, 'step_analytics')"
-      >
-        <i class="bi bi-clipboard-data"></i> Run Analytics
-      </button>
-    </div>
-  </div>
 
   <!----------------- Description container -------------->
   <div id="steps_desc_container" class="row justify-content-center m-auto p-5">
@@ -644,7 +636,7 @@
     </div>
 
     <!----------------- Description: Design Workflows -------------->
-    <div id="step_workflows" class="row step_description d-none">
+    <div id="step_workflows" class="row step_description">
       <div class="col-lg">
         <h2 class="text-primary">Build Workflows</h2>
         <p class="lead">
@@ -672,7 +664,7 @@
     </div>
 
     <!----------------- Description: Run Analytics -------------->
-    <div id="step_analytics" class="row step_description d-none">
+    <div id="step_analytics" class="row step_description">
       <div class="col-lg">
         <h2 class="text-primary">Run Analytics</h2>
         <p class="lead">
@@ -710,159 +702,100 @@
 
 <!----------------- Features container -------------->
 <div id="container_features" class="container p-5">
+  <div class="section-divider"></div>
   <h1 class="mb-3 text-center">
     Intuitive Built-In Tools.<span class="text-primary fw-bold">
       Powerful Results.</span
     >
   </h1>
 
-  <div class="row">
+  <div class="features-grid">
     <!-- Integrated Form Library -->
-    <div class="col-md-4">
-      <div class="feature-container">
-        <div class="feature-content-wrapper">
-          <div class="feature-icon">
-            <i class="bi bi-ui-checks"></i>
-          </div>
-          <div class="feature-content">
-            <div class="feature-title">Integrated Form Library</div>
-            <div class="feature-description">
-              One-click option to use or import form templates.
-            </div>
-          </div>
+    <div class="feature-container">
+      <div class="feature-content-wrapper">
+        <div class="feature-icon">
+          <i class="bi bi-ui-checks"></i>
         </div>
-        <div class="feature-image center">
-          <img
-            src="./files/graphics-formlib.jpg"
-            loading="lazy"
-            alt="Integrated Form Library"
-            style="width: 300px"
-          />
+        <div class="feature-content">
+          <div class="feature-title">Integrated Form Library</div>
+          <div class="feature-description">
+            One-click option to use or import form templates.
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Inbox Management -->
-    <div class="col-md-4">
-      <div class="feature-container">
-        <div class="feature-content-wrapper">
-          <div class="feature-icon">
-            <i class="bi bi-envelope-fill"></i>
-          </div>
-          <div class="feature-content">
-            <div class="feature-title">Inbox Management</div>
-            <div class="feature-description">
-              Centralize and organize all your pending requests efficiently.
-            </div>
-          </div>
+    <div class="feature-container">
+      <div class="feature-content-wrapper">
+        <div class="feature-icon">
+          <i class="bi bi-envelope-fill"></i>
         </div>
-        <div class="feature-image center">
-          <img
-            src="./files/graphics-inbox.jpg"
-            loading="lazy"
-            alt="Inbox Management"
-            style="width: 300px"
-          />
+        <div class="feature-content">
+          <div class="feature-title">Inbox Management</div>
+          <div class="feature-description">
+            Centralize and organize all your pending requests efficiently.
+          </div>
         </div>
       </div>
     </div>
 
     <!-- User Access Groups -->
-    <div class="col-md-4">
-      <div class="feature-container">
-        <div class="feature-content-wrapper">
-          <div class="feature-icon">
-            <i class="bi bi-person-fill-gear"></i>
-          </div>
-          <div class="feature-content">
-            <div class="feature-title">User Access Groups</div>
-            <div class="feature-description">
-              Easily manage user roles and permissions.
-            </div>
-          </div>
+    <div class="feature-container">
+      <div class="feature-content-wrapper">
+        <div class="feature-icon">
+          <i class="bi bi-person-fill-gear"></i>
         </div>
-        <div class="feature-image center">
-          <img
-            src="./files/graphics-usergroups.jpg"
-            loading="lazy"
-            alt="User Access Groups"
-            style="width: 300px"
-          />
+        <div class="feature-content">
+          <div class="feature-title">User Access Groups</div>
+          <div class="feature-description">
+            Easily manage user roles and permissions.
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Automated Emails -->
-    <div class="col-md-4">
-      <div class="feature-container">
-        <div class="feature-content-wrapper">
-          <div class="feature-icon">
-            <i class="bi bi-envelope-at"></i>
-          </div>
-          <div class="feature-content">
-            <div class="feature-title">Automated Emails</div>
-            <div class="feature-description">
-              Send personalized emails automatically.
-            </div>
-          </div>
+    <div class="feature-container">
+      <div class="feature-content-wrapper">
+        <div class="feature-icon">
+          <i class="bi bi-envelope-at"></i>
         </div>
-        <div class="feature-image center">
-          <img
-            src="./files/graphics-email.jpg"
-            loading="lazy"
-            alt="Automated Emails"
-            style="width: 300px"
-          />
+        <div class="feature-content">
+          <div class="feature-title">Automated Emails</div>
+          <div class="feature-description">
+            Send personalized emails automatically.
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Admin Oversight Tools -->
-    <div class="col-md-4">
-      <div class="feature-container">
-        <div class="feature-content-wrapper">
-          <div class="feature-icon">
-            <i class="bi bi-clipboard-data"></i>
-          </div>
-          <div class="feature-content">
-            <div class="feature-title">Admin Oversight Tools</div>
-            <div class="feature-description">
-              Monitor site performance and streamline tasks.
-            </div>
-          </div>
+    <div class="feature-container">
+      <div class="feature-content-wrapper">
+        <div class="feature-icon">
+          <i class="bi bi-clipboard-data"></i>
         </div>
-        <div class="feature-image center">
-          <img
-            src="./files/graphic-admin-tools.png"
-            loading="lazy"
-            alt="Admin Oversight Tools"
-            style="width: 300px"
-          />
+        <div class="feature-content">
+          <div class="feature-title">Admin Oversight Tools</div>
+          <div class="feature-description">
+            Monitor site performance and streamline tasks.
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Privacy -->
-    <div class="col-md-4">
-      <div class="feature-container">
-        <div class="feature-content-wrapper">
-          <div class="feature-icon">
-            <i class="bi bi-shield-check"></i>
-          </div>
-          <div class="feature-content">
-            <div class="feature-title">Built-in Data Protections</div>
-            <div class="feature-description">
-              Certified safeguards for PHI/PII with LEAF-S certification
-            </div>
-          </div>
+    <div class="feature-container">
+      <div class="feature-content-wrapper">
+        <div class="feature-icon">
+          <i class="bi bi-shield-check"></i>
         </div>
-        <div class="feature-image center">
-          <img
-            src="./files/graphics-privacy.jpg"
-            loading="lazy"
-            alt="Privacy"
-            style="width: 300px"
-          />
+        <div class="feature-content">
+          <div class="feature-title">Built-in Data Protections</div>
+          <div class="feature-description">
+            Certified safeguards for PHI/PII with LEAF-S certification
+          </div>
         </div>
       </div>
     </div>
@@ -874,6 +807,7 @@
   id="container_usecases"
   class="container row justify-content-center m-auto p-5"
 >
+  <div class="section-divider"></div>
   <h1 class="mb-3 text-center">
     Enterprise Scalability and<span class="text-primary fw-bold">
       Endless Possibilities.</span
@@ -956,9 +890,10 @@
 
 <!-----------------Results  [result-container alt-result-container mx-auto]---------------->
 <div class="container my-5 text-center">
+  <div class="section-divider"></div>
   <h1 class="result-header">Digital Transformation with Lasting Impact.</h1>
-  <div class="row">
-    <div class="col-md-6 mb-4">
+  <div class="results-grid">
+    <div>
       <div class="result-container mx-auto">
         <div class="result-icon">
           <i
@@ -977,7 +912,7 @@
       </div>
     </div>
 
-    <div class="col-md-6 mb-4">
+    <div>
       <div class="result-container mx-auto">
         <div class="result-icon">
           <i
@@ -996,7 +931,7 @@
       </div>
     </div>
 
-    <div class="col-md-6 mb-4">
+    <div>
       <div class="result-container mx-auto">
         <div class="result-icon">
           <i
@@ -1015,7 +950,7 @@
       </div>
     </div>
 
-    <div class="col-md-6 mb-4">
+    <div>
       <div class="result-container mx-auto">
         <div class="result-icon">
           <i
@@ -1067,29 +1002,6 @@
     }
   });
 
-  let buttons_steps;
-  let descriptions_steps;
-
-  function activate_step(target_button, target_step) {
-    reset_buttons();
-    reset_steps();
-    target_button.classList.remove("btn-light-subtle");
-    target_button.classList.add("btn-primary");
-    document.getElementById("" + target_step).classList.remove("d-none");
-  }
-
-  function reset_steps() {
-    descriptions_steps = document.getElementsByClassName("step_description");
-    for (var i = 0; i < descriptions_steps.length; i++) {
-      descriptions_steps[i].classList.add("d-none");
-    }
-  }
-
-  function reset_buttons() {
-    buttons_steps = document.getElementById("steps").querySelectorAll("button");
-    buttons_steps.forEach((el) => el.classList.remove("btn-primary"));
-    buttons_steps.forEach((el) => el.classList.add("btn-light-subtle"));
-  }
 </script>
 
 <!--User Request Script-->
