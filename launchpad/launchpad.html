@@ -1,64 +1,3 @@
-<script>
-  // Shortened links:
-  // Link names should only have one word to avoid confusion (e.g. don't need to explain whether something has spaces)
-  let links = {
-    go: {
-      teams:
-        "https://teams.microsoft.com/l/team/19%3aVVK_SN9d7f5QaTBELBbp63xihDMZ2tJUjuZsXXKjadY1%40thread.tacv2/conversations?groupId=56e12324-7248-4ed5-a983-613c9bf3acad&tenantId=e95f1b23-abaf-45ee-821d-b7ab251ab3bf",
-      community:
-        "https://teams.microsoft.com/l/team/19%3aVVK_SN9d7f5QaTBELBbp63xihDMZ2tJUjuZsXXKjadY1%40thread.tacv2/conversations?groupId=56e12324-7248-4ed5-a983-613c9bf3acad&tenantId=e95f1b23-abaf-45ee-821d-b7ab251ab3bf",
-      idea: "https://apps.gov.powerapps.us/play/e/default-e95f1b23-abaf-45ee-821d-b7ab251ab3bf/a/8a87ef38-6266-4445-84ae-8f22eb332dac?tenantId=e95f1b23-abaf-45ee-821d-b7ab251ab3bf#",
-    },
-    link: {
-      help: "https://leaf.va.gov/platform/service_requests_launchpad/",
-    },
-    help: {
-      "": "https://leaf.va.gov/platform/service_requests_launchpad/",
-      library:
-        "https://leaf.va.gov/platform/help_library/report.php?a=Search_Help_Library",
-    },
-    cop: {
-      future:
-        "https://dvagov.sharepoint.com/sites/vhaleaf/_layouts/15/Events.aspx?ListGuid=0211bbd1-6f6d-4883-a58a-0f2b0e3e1a89&Category=Biweekly%20Open%20Office%20Hours",
-      officehour:
-        "https://teams.microsoft.com/l/channel/19%3A31818766bbbc477db8898a6f45bc8ffd%40thread.tacv2/LEAF%20Biweekly%20Open%20Office%20Hours%20-%20CoP?groupId=56e12324-7248-4ed5-a983-613c9bf3acad",
-    },
-    privacy: {
-      resources: "https://leaf.va.gov/platform/privacy/report.php?a=resources",
-      va: "https://department.va.gov/privacy/",
-      find_officer:
-        "https://dvagov.sharepoint.com/sites/OITPrivacyHub/SitePages/Privacy-Officer-Locator-Resources.aspx",
-      sharepoint: "https://dvagov.sharepoint.com/sites/OITPrivacyHub",
-    },
-  };
-
-  // TODO: server needs to retain GET params when redirecting from leaf.va.gov/ to leaf.va.gov/launchpad
-  let urlParams = new URLSearchParams(window.location.search);
-  for (let i in links) {
-    if (
-      urlParams.get(i) != undefined &&
-      links[i][urlParams.get(i)] != undefined
-    ) {
-      window.location = links[i][urlParams.get(i)];
-    }
-  }
-
-  // backward compatibility (old format)
-  links.goto = links.go;
-
-  let hashCode = window.location.hash.substring(1);
-  let linkTerms = hashCode.split("=");
-  if (linkTerms[1] == undefined) {
-    linkTerms[1] = "";
-  }
-  if (
-    links[linkTerms[0]] != undefined &&
-    links[linkTerms[0]][linkTerms[1]] != undefined
-  ) {
-    window.location = links[linkTerms[0]][linkTerms[1]];
-  }
-</script>
-
 <link
   rel="stylesheet"
   href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
@@ -102,10 +41,6 @@
 
   a:hover {
     text-decoration: underline;
-  }
-
-  #header {
-    display: none !important;
   }
 
   img {
@@ -425,7 +360,6 @@
     line-height: 2rem;
   }
 
-
   .feature-container {
     display: flex;
     flex-direction: column;
@@ -578,9 +512,28 @@
         id="results_user_requests"
         style="display: none"
       >
-        <!--{include file=$tpl_search is_service_chief=$is_service_chief is_admin=$is_admin empUID=$empUID userID=$userID}-->
-        <div id="searchCount"></div>
-        <br />
+        <section style="display: flex; flex-direction: column; width: 100%">
+          <div id="searchContainer"></div>
+          <div style="display: flex; gap: 8px; align-items: center">
+            <button
+              id="btn_abortSearch"
+              class="buttonNorm btn btn-outline-primary btn-sm"
+              type="button"
+              style="display: none"
+            >
+              Stop searching for more
+            </button>
+            <button
+              id="searchContainer_getMoreResults"
+              class="buttonNorm btn btn-outline-primary btn-sm"
+              style="display: none"
+              type="button"
+              disabled
+            >
+              Show more records
+            </button>
+          </div>
+        </section>
       </div>
     </div>
     <!-- Content on the left -->
@@ -1288,7 +1241,7 @@
           }
           document.querySelector("#" + data.cellContainerID).innerHTML =
             '<span class="browsecounter">' +
-            '<a ' +
+            "<a " +
             priorityStyle +
             ' href="index.php?a=printview&recordID=' +
             data.recordID +
