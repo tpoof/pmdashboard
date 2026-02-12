@@ -2,496 +2,6 @@
   rel="stylesheet"
   href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
 />
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!------------------ Custom styles ------------------>
-<style>
-  :root {
-    color-scheme: light;
-    --lp-bg: #f6f8fb;
-    --lp-panel: #ffffff;
-    --lp-border: #cfd7e3;
-    --lp-text: #0f172a;
-    --lp-muted: #475569;
-    --lp-accent: #2563eb;
-    --lp-accent-strong: #1d4ed8;
-    --lp-accent-weak: #dbeafe;
-    --lp-warning-bg: #fff2cc;
-    --lp-warning-border: #f1d08a;
-    --lp-warning-text: #7a4a00;
-    --lp-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-    --lp-radius: 14px;
-  }
-
-  * {
-    box-sizing: border-box;
-  }
-
-  body {
-    margin: 0;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    color: var(--lp-text);
-    background: var(--lp-bg);
-    font-size: 125%;
-  }
-
-  a {
-    color: var(--lp-accent);
-    text-decoration: none;
-  }
-
-  a:hover {
-    text-decoration: underline;
-  }
-
-  img {
-    pointer-events: none; /* prevents drag & drop */
-    -webkit-user-drag: none; /* disables dragging */
-  }
-
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-    width: 100%;
-  }
-
-  .row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 24px;
-  }
-
-  .justify-content-center {
-    justify-content: center;
-  }
-
-  .align-items-center {
-    align-items: center;
-  }
-
-  .text-center {
-    text-align: center;
-  }
-
-  .text-primary {
-    color: var(--lp-accent);
-  }
-
-  .text-secondary {
-    color: var(--lp-muted);
-  }
-
-  .fw-bold {
-    font-weight: 700;
-  }
-
-  .lead {
-    font-size: 1em;
-    color: var(--lp-muted);
-  }
-
-  .small {
-    font-size: 0.9em;
-    color: var(--lp-muted);
-  }
-
-  .col-12 {
-    flex: 0 0 100%;
-    max-width: 100%;
-  }
-
-  .col {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
-  .col-lg {
-    flex: 0 0 100%;
-    max-width: 100%;
-  }
-
-  @media (min-width: 768px) {
-    .order-md-1 {
-      order: 1;
-    }
-
-    .order-md-2 {
-      order: 2;
-    }
-
-    .col-md-4 {
-      flex: 0 0 33.333%;
-      max-width: 33.333%;
-    }
-
-    .col-md-5 {
-      flex: 0 0 41.666%;
-      max-width: 41.666%;
-    }
-
-    .col-md-6 {
-      flex: 0 0 50%;
-      max-width: 50%;
-    }
-
-    .col-md-7 {
-      flex: 0 0 58.333%;
-      max-width: 58.333%;
-    }
-  }
-
-  @media (min-width: 992px) {
-    .col-lg {
-      flex: 1 1 0;
-      max-width: 100%;
-    }
-  }
-
-  .pt-5 {
-    padding-top: 3rem;
-  }
-
-  .p-5 {
-    padding: 3rem;
-  }
-
-  .p-4 {
-    padding: 1.5rem;
-  }
-
-  .mt-1 {
-    margin-top: 0.25rem;
-  }
-
-  .mt-3 {
-    margin-top: 1rem;
-  }
-
-  .mb-2 {
-    margin-bottom: 0.5rem;
-  }
-
-  .mb-3 {
-    margin-bottom: 1rem;
-  }
-
-  .mb-4 {
-    margin-bottom: 1.5rem;
-  }
-
-  .my-3 {
-    margin-top: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .my-5 {
-    margin-top: 3rem;
-    margin-bottom: 3rem;
-  }
-
-  .m-auto {
-    margin: auto;
-  }
-
-  .mx-auto {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .bg-light {
-    background: #f8fafc;
-    border-radius: var(--lp-radius);
-  }
-
-  .shadow {
-    box-shadow: var(--lp-shadow);
-  }
-
-  .img-fluid {
-    max-width: 100%;
-    height: auto;
-    display: block;
-  }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    border: 1px solid var(--lp-border);
-    padding: 10px 16px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    text-decoration: none;
-    background: var(--lp-panel);
-    color: var(--lp-text);
-    transition:
-      transform 0.1s ease,
-      box-shadow 0.1s ease,
-      background 0.1s ease,
-      border-color 0.1s ease;
-  }
-
-  .btn:hover {
-    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
-  }
-
-  .btn:active {
-    transform: translateY(1px);
-  }
-
-  .btn-primary {
-    background: var(--lp-accent);
-    border-color: var(--lp-accent);
-    color: #ffffff;
-  }
-
-  .btn-primary:hover {
-    background: var(--lp-accent-strong);
-    border-color: var(--lp-accent-strong);
-  }
-
-  .btn-outline-primary {
-    background: transparent;
-    border-color: var(--lp-accent);
-    color: var(--lp-accent);
-  }
-
-  .btn-outline-primary:hover {
-    background: var(--lp-accent-weak);
-    border-color: var(--lp-accent);
-  }
-
-  .btn-lg {
-    padding: 14px 20px;
-    font-size: 1.05rem;
-  }
-
-  .btn-sm {
-    padding: 6px 10px;
-    font-size: 0.85rem;
-  }
-
-  .alert {
-    position: relative;
-    padding: 14px 48px 14px 16px;
-    border-radius: 12px;
-    border: 1px solid transparent;
-    box-shadow: var(--lp-shadow);
-    background: var(--lp-panel);
-  }
-
-  .alert-warning {
-    background: var(--lp-warning-bg);
-    border-color: var(--lp-warning-border);
-    color: var(--lp-warning-text);
-  }
-
-  .btn-close {
-    position: absolute;
-    top: 8px;
-    right: 12px;
-    border: none;
-    background: transparent;
-    font-size: 20px;
-    line-height: 1;
-    cursor: pointer;
-    color: inherit;
-  }
-
-  .card {
-    border-radius: 14px;
-    border: 1px solid var(--lp-border);
-    overflow: hidden;
-    background: var(--lp-panel);
-    box-shadow: var(--lp-shadow);
-  }
-
-  .card-body {
-    padding: 16px;
-  }
-
-  .card-title {
-    margin: 10px 0 0 0;
-    font-weight: 700;
-  }
-
-  .list-group {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .list-group-item {
-    padding: 10px 14px;
-    border-top: 1px solid var(--lp-border);
-    background: var(--lp-panel);
-  }
-
-  .list-group-flush .list-group-item:first-child {
-    border-top: none;
-  }
-
-  .buttonNorm {
-    text-decoration: none;
-  }
-
-  #firstVisit p,
-  #firstVisit li,
-  #welcomeBack p,
-  #welcomeBack li {
-    font-size: 1em;
-    line-height: 2em;
-  }
-
-  .feature-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    background-color: var(--lp-panel);
-    border-radius: var(--lp-radius);
-    border: 1px solid var(--lp-border);
-    box-shadow: var(--lp-shadow);
-    margin: 15px 0;
-  }
-
-  .feature-content-wrapper {
-    display: flex;
-    align-items: center;
-    width: 100%;
-  }
-
-  .feature-icon {
-    font-size: 48px;
-    margin-right: 15px;
-    color: var(--lp-accent);
-  }
-
-  .feature-content {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1; /* Ensure it takes remaining space */
-  }
-
-  .feature-title {
-    font-size: 18px;
-    font-weight: 600;
-  }
-
-  .feature-description {
-    font-size: 1em;
-    color: var(--lp-muted);
-  }
-
-  .result-header {
-    text-align: center;
-    margin-bottom: 30px;
-  }
-  .result-title {
-    font-size: 18px;
-    font-weight: bold;
-  }
-  .result-text {
-    font-size: 1em;
-    color: var(--lp-muted);
-  }
-  .result-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 15px;
-    padding: 10px;
-    background: var(--lp-panel);
-    border: 1px solid var(--lp-border);
-    border-radius: var(--lp-radius);
-    box-shadow: var(--lp-shadow);
-  }
-  .result-icon {
-    margin-right: 30px;
-    margin-left: 30px;
-    color: var(--lp-accent);
-  }
-  .result-content {
-    text-align: left;
-  }
-
-  .cta-container {
-    background-color: var(--lp-accent);
-    color: white;
-    padding: 20px;
-    border-radius: var(--lp-radius);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin-top: 20px;
-  }
-  .cta-text {
-    font-size: 24px;
-    font-weight: bold;
-  }
-  .cta-button {
-    background-color: white;
-    color: var(--lp-accent);
-    border: none;
-    padding: 15px 30px;
-    font-size: 18px;
-    font-weight: bold;
-    border-radius: 10px;
-    text-transform: uppercase;
-    cursor: pointer;
-  }
-  .cta-button:hover {
-    background-color: #005b99;
-    color: white;
-  }
-
-  .section-divider {
-    padding: 40px;
-  }
-
-  .section-divider::before {
-    content: "";
-    display: block;
-    height: 1px;
-    background: var(--lp-border);
-  }
-
-  .features-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 24px;
-    justify-content: center;
-  }
-
-  @media (max-width: 900px) {
-    .features-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 640px) {
-    .features-grid {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-
-  .results-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px;
-  }
-
-  @media (max-width: 700px) {
-    .results-grid {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-</style>
 
 <!--------------- Welcome -------------->
 
@@ -637,7 +147,7 @@
 
     <!----------------- Description: Design Workflows -------------->
     <div id="step_workflows" class="row step_description">
-      <div class="col-lg">
+      <div class="col-lg order-md-2">
         <h2 class="text-primary">Build Workflows</h2>
         <p class="lead">
           Integrated, interactive flowcharts customizable for each Form.
@@ -653,7 +163,7 @@
           <li>Sub-Forms and workspaces available for multi-part processes</li>
         </ul>
       </div>
-      <div class="col">
+      <div class="col order-md-1">
         <img
           src="./files/graphics-workflow.png"
           alt="workflow editor"
@@ -978,18 +488,487 @@
   </div>
 </div>
 
+<button class="lp-jumpTop" id="lpJumpTopBtn" aria-label="Jump to top">
+  <i class="bi bi-arrow-up"></i>
+</button>
+
+<!------------------ Custom styles ------------------>
+<style>
+  :root {
+    color-scheme: light;
+    --lp-bg: #f6f8fb;
+    --lp-panel: #ffffff;
+    --lp-border: #cfd7e3;
+    --lp-text: #0f172a;
+    --lp-muted: #475569;
+    --lp-accent: #2563eb;
+    --lp-accent-strong: #1d4ed8;
+    --lp-accent-weak: #dbeafe;
+    --lp-warning-bg: #fff2cc;
+    --lp-warning-border: #f1d08a;
+    --lp-warning-text: #7a4a00;
+    --lp-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    --lp-radius: 14px;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--lp-text);
+    background: var(--lp-bg);
+    font-size: 125%;
+  }
+
+  a {
+    color: var(--lp-accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  img {
+    pointer-events: none; /* prevents drag & drop */
+    -webkit-user-drag: none; /* disables dragging */
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    width: 100%;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+
+  .justify-content-center {
+    justify-content: center;
+  }
+
+  .align-items-center {
+    align-items: center;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .text-primary {
+    color: var(--lp-accent);
+  }
+
+  .fw-bold {
+    font-weight: 700;
+  }
+
+  .lead {
+    font-size: 1em;
+    color: var(--lp-muted);
+  }
+
+  .small {
+    font-size: 0.9em;
+    color: var(--lp-muted);
+  }
+
+  .col-12 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .col {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .col-lg {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  @media (min-width: 768px) {
+    .order-md-1 {
+      order: 1;
+    }
+
+    .order-md-2 {
+      order: 2;
+    }
+
+    .col-md-6 {
+      flex: 0 0 50%;
+      max-width: 50%;
+    }
+
+  }
+
+  @media (min-width: 992px) {
+    .col-lg {
+      flex: 1 1 0;
+      max-width: 100%;
+    }
+  }
+
+  .pt-5 {
+    padding-top: 3rem;
+  }
+
+  .p-5 {
+    padding: 3rem;
+  }
+
+
+  .mt-1 {
+    margin-top: 0.25rem;
+  }
+
+  .mt-3 {
+    margin-top: 1rem;
+  }
+
+  .mb-2 {
+    margin-bottom: 0.5rem;
+  }
+
+  .mb-3 {
+    margin-bottom: 1rem;
+  }
+
+  .mb-4 {
+    margin-bottom: 1.5rem;
+  }
+
+
+  .my-5 {
+    margin-top: 3rem;
+    margin-bottom: 3rem;
+  }
+
+  .m-auto {
+    margin: auto;
+  }
+
+  .mx-auto {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .bg-light {
+    background: #f8fafc;
+    border-radius: var(--lp-radius);
+  }
+
+  .img-fluid {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid var(--lp-border);
+    padding: 10px 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    background: var(--lp-panel);
+    color: var(--lp-text);
+    transition:
+      transform 0.1s ease,
+      box-shadow 0.1s ease,
+      background 0.1s ease,
+      border-color 0.1s ease;
+  }
+
+  .btn:hover {
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+  }
+
+  .btn:active {
+    transform: translateY(1px);
+  }
+
+  .btn-primary {
+    background: var(--lp-accent);
+    border-color: var(--lp-accent);
+    color: #ffffff;
+  }
+
+  .btn-primary:hover {
+    background: var(--lp-accent-strong);
+    border-color: var(--lp-accent-strong);
+  }
+
+  .btn-outline-primary {
+    background: transparent;
+    border-color: var(--lp-accent);
+    color: var(--lp-accent);
+  }
+
+  .btn-outline-primary:hover {
+    background: var(--lp-accent-weak);
+    border-color: var(--lp-accent);
+  }
+
+  .btn-lg {
+    padding: 14px 20px;
+    font-size: 1.05rem;
+  }
+
+  .btn-sm {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+
+
+  .card {
+    border-radius: 14px;
+    border: 1px solid var(--lp-border);
+    overflow: hidden;
+    background: var(--lp-panel);
+    box-shadow: var(--lp-shadow);
+  }
+
+  .card-body {
+    padding: 16px;
+  }
+
+  .card-title {
+    margin: 10px 0 0 0;
+    font-weight: 700;
+  }
+
+  .list-group {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .list-group-item {
+    padding: 10px 14px;
+    border-top: 1px solid var(--lp-border);
+    background: var(--lp-panel);
+  }
+
+  .list-group-flush .list-group-item:first-child {
+    border-top: none;
+  }
+
+  .buttonNorm {
+    text-decoration: none;
+  }
+
+  #firstVisit p,
+  #firstVisit li,
+  #welcomeBack p,
+  #welcomeBack li {
+    font-size: 1em;
+    line-height: 2em;
+  }
+
+  .feature-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background-color: var(--lp-panel);
+    border-radius: var(--lp-radius);
+    border: 1px solid var(--lp-border);
+    box-shadow: var(--lp-shadow);
+    margin: 15px 0;
+  }
+
+  .feature-content-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  .feature-icon {
+    font-size: 48px;
+    margin-right: 15px;
+    color: var(--lp-accent);
+  }
+
+  .feature-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Ensure it takes remaining space */
+  }
+
+  .feature-title {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .feature-description {
+    font-size: 1em;
+    color: var(--lp-muted);
+  }
+
+  .result-header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  .result-title {
+    font-size: 18px;
+    font-weight: bold;
+  }
+  .result-text {
+    font-size: 1em;
+    color: var(--lp-muted);
+  }
+  .result-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: var(--lp-panel);
+    border: 1px solid var(--lp-border);
+    border-radius: var(--lp-radius);
+    box-shadow: var(--lp-shadow);
+    width: 100%;
+  }
+  .result-icon {
+    margin-right: 30px;
+    margin-left: 30px;
+    color: var(--lp-accent);
+  }
+  .result-content {
+    text-align: left;
+  }
+
+  .cta-container {
+    background-color: var(--lp-accent);
+    color: white;
+    padding: 20px;
+    border-radius: var(--lp-radius);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  .cta-text {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  .cta-button {
+    background-color: white;
+    color: var(--lp-accent);
+    border: none;
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 10px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .cta-button:hover {
+    background-color: #005b99;
+    color: white;
+  }
+
+  .lp-jumpTop {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    border: 1px solid var(--lp-accent);
+    background: var(--lp-accent-weak);
+    color: #111;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: 900;
+    line-height: 1;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+    z-index: 1200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
+  .lp-jumpTop.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .lp-jumpTop:hover {
+    background: var(--lp-accent);
+    color: #fff;
+  }
+
+  .lp-jumpTop:active {
+    transform: translateY(1px);
+  }
+
+  .section-divider {
+    padding: 40px;
+  }
+
+  .section-divider::before {
+    content: "";
+    display: block;
+    height: 1px;
+    background: var(--lp-border);
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    justify-content: center;
+  }
+
+  @media (max-width: 900px) {
+    .features-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .features-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+
+  @media (max-width: 700px) {
+    .results-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
+
 <!----------------------------------------------------------------------------------------------------------------------------------------------------------------->
 
 <script>
-  document.querySelectorAll('[data-close="alert"]').forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const alert = btn.closest(".alert");
-      if (alert) {
-        alert.remove();
-      }
-    });
-  });
-
   document.addEventListener("contextmenu", (event) => {
     if (event.target.tagName === "IMG") {
       event.preventDefault(); // disable right-click
@@ -1002,414 +981,30 @@
     }
   });
 
-</script>
+  function wireJumpToTop() {
+    var btn = document.getElementById("lpJumpTopBtn");
+    if (!btn) return;
 
-<!--User Request Script-->
-<script>
-  function toggleRequestDisplay() {
-    const curDisplay = $("#results_user_requests").css("display");
-    const newDisplay = curDisplay === "none" ? "block" : "none";
-    $("#results_user_requests").css({
-      display: newDisplay,
-    });
-    $("#btn_user_requests").attr("aria-expanded", newDisplay !== "none");
-    $("#btn_user_requests").text(
-      newDisplay === "none"
-        ? "View Your Feedback History"
-        : "Hide Your Feedback History",
-    );
-  }
-
-  function renderResult(leafSearch, res, showResolved = false) {
-    if (Object.keys(res)?.length > 0) {
-      $("#btn_user_requests, #results_user_requests").css({
-        display: "block",
-      });
-      $("#btn_user_requests").text("Hide Your Feedback History");
-      $("#btn_user_requests").attr("aria-expanded", true);
+    function updateVisibility() {
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      var scrollHeight = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+      );
+      var clientHeight =
+        window.innerHeight || document.documentElement.clientHeight;
+      var needsScroll = scrollHeight - clientHeight > 80;
+      btn.classList.toggle("is-visible", needsScroll && scrollTop > 120);
     }
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "June",
-      "July",
-      "Aug",
-      "Sept",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    let grid = new LeafFormGrid(leafSearch.getResultContainerID(), {
-      readOnly: true,
-    });
-    grid.hideIndex();
-    grid.setDataBlob(res);
-    grid.setHeaders([
-      {
-        name: "Date",
-        indicatorID: "date",
-        editable: false,
-        callback: function (data, blob) {
-          let date = new Date(blob[data.recordID].date * 1000);
-          let now = new Date();
-          let year =
-            now.getFullYear() != date.getFullYear()
-              ? " " + date.getFullYear()
-              : "";
-          let formattedDate =
-            months[date.getMonth()] + " " + parseFloat(date.getDate()) + year;
-          document.querySelector("#" + data.cellContainerID).innerHTML =
-            formattedDate;
-          if (
-            blob[data.recordID].userID ==
-            "<!--{$userID|unescape|escape:'quotes'}-->"
-          ) {
-            document.querySelector(
-              "#" + data.cellContainerID,
-            ).style.backgroundColor = "#feffd1";
-          }
-        },
-      },
-      {
-        name: "Title",
-        indicatorID: "title",
-        callback: function (data, blob) {
-          let types = "";
-          for (let i in blob[data.recordID].categoryNames) {
-            if (blob[data.recordID].categoryNames[i] != "") {
-              types += blob[data.recordID].categoryNames[i] + " | ";
-            }
-          }
-          types = types.substr(0, types.length - 3);
 
-          priority = "";
-          priorityStyle = "";
-          if (blob[data.recordID].priority == -10) {
-            priority = '<span style="color: red"> ( Emergency ) </span>';
-            priorityStyle = ' style="background-color: red; color: black"';
-          }
-          document.querySelector("#" + data.cellContainerID).innerHTML =
-            '<span class="browsecounter">' +
-            "<a " +
-            priorityStyle +
-            ' href="index.php?a=printview&recordID=' +
-            data.recordID +
-            '" tabindex="-1">' +
-            data.recordID +
-            "</a>" +
-            "</span>" +
-            '<a href="index.php?a=printview&recordID=' +
-            data.recordID +
-            '">' +
-            blob[data.recordID].title +
-            "</a><br />" +
-            '<span class="browsetypes">' +
-            types +
-            "</span>" +
-            priority;
-          document
-            .querySelector("#" + data.cellContainerID)
-            .addEventListener("click", function () {
-              window.location =
-                "index.php?a=printview&recordID=" + data.recordID;
-            });
-        },
-      },
-      {
-        name: "Initiator",
-        indicatorID: "initiator",
-        editable: false,
-        callback: function (data, blob) {
-          $("#" + data.cellContainerID).html(
-            blob[data.recordID].lastName + ", " + blob[data.recordID].firstName,
-          );
-          if (blob[data.recordID].userID == "<!--{$userID}-->") {
-            $("#" + data.cellContainerID).css("background-color", "#feffd1");
-          }
-        },
-      },
-      {
-        name: "Status",
-        indicatorID: "currentStatus",
-        editable: false,
-        callback: function (data, blob) {
-          let waitText =
-            blob[data.recordID].blockingStepID == 0
-              ? "Pending "
-              : "Waiting for ";
-          let status = "";
-          if (
-            blob[data.recordID].stepID == null &&
-            blob[data.recordID].submitted == "0"
-          ) {
-            if (blob[data.recordID].lastStatus == null) {
-              status = '<span style="color: #e00000">Not Submitted</span>';
-            } else {
-              status =
-                '<span style="color: #e00000">Pending Re-submission</span>';
-            }
-          } else if (blob[data.recordID].stepID == null) {
-            let lastStatus = blob[data.recordID].lastStatus;
-            if (lastStatus == "") {
-              lastStatus =
-                '<a href="index.php?a=printview&recordID=' +
-                data.recordID +
-                '">Check Status</a>';
-            }
-            status =
-              '<span style="font-weight: bold">' + lastStatus + "</span>";
-          } else {
-            status = waitText + blob[data.recordID].stepTitle;
-          }
-          if (blob[data.recordID].deleted > 0) {
-            status += ", Cancelled";
-          }
-          document.querySelector("#" + data.cellContainerID).innerHTML = status;
-          if (
-            blob[data.recordID].userID ==
-            "<!--{$userID|unescape|escape:'quotes'}-->"
-          ) {
-            document.querySelector(
-              "#" + data.cellContainerID,
-            ).style.backgroundColor = "#feffd1";
-          }
-        },
-      },
-    ]);
-    grid.setPostProcessDataFunc(function (data) {
-      let data2 = [];
-      for (let i in data) {
-        <!--{if !$is_admin}-->
-        if (
-          data[i].submitted == "0" &&
-          data[i].userID == "<!--{$userID|unescape|escape:'quotes'}-->"
-        ) {
-          data2.push(data[i]);
-        } else if (data[i].submitted != "0") {
-          data2.push(data[i]);
-        }
-        <!--{else}-->
-        data2.push(data[i]);
-        <!--{/if}-->
-      }
-      return data2;
+    btn.addEventListener("click", function () {
+      window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
-    let tGridData = [];
-    for (let i in res) {
-      if (showResolved || !(res[i].submitted > 0 && res[i].stepID === null)) {
-        tGridData.push(res[i]);
-      }
-    }
-    grid.setData(tGridData);
-    grid.sort("recordID", "desc");
-    grid.renderBody();
-    grid.announceResults();
-    $("#searchContainer > div:first-child").css("display", "none");
-    $('tbody td[colspan="4"]').text("No Pending Requests");
+    window.addEventListener("scroll", updateVisibility, { passive: true });
+    window.addEventListener("resize", updateVisibility);
+    updateVisibility();
   }
 
-  function runQuery() {
-    let query = new LeafFormQuery();
-    query.addTerm("userID", "=", "<!--{$userID|unescape|escape:'quotes'}-->");
-
-    let abortController = new AbortController();
-    let leafSearch = new LeafFormSearch("searchContainer");
-    leafSearch.setJsPath("<!--{$app_js_path}-->");
-    leafSearch.setOrgchartPath("<!--{$orgchartPath}-->");
-
-    let extendedQueryState = 0;
-    let loadAllResults = false;
-    let showResolved = false;
-    let foundOwnRequest = false;
-    let resultSet = {}; // current results
-    let offset = 0; // current database offset index
-    let batchSize = 50;
-    let abortSearch = false;
-    let scrollY = 0; // track scroll position for more seamless UX when loading more records
-
-    document.addEventListener("click", abortSearchListener);
-    function abortSearchListener(event) {
-      let element = event.target;
-      if (element.id == "btn_abortSearch") {
-        abortController.abort();
-        abortSearch = true;
-        document.getElementById("btn_abortSearch").style.display = "none";
-      }
-    }
-    // On the first visit, if no results are owned by the user, append their results
-    query.onSuccess(function (res, resStatus, resJqXHR) {
-      resultSet = Object.assign(resultSet, res);
-
-      // find records owned by user
-      if (extendedQueryState == 0) {
-        for (let i in res) {
-          if (res[i].userID == "<!--{$userID|unescape|escape:'quotes'}-->") {
-            foundOwnRequest = true;
-            break;
-          }
-        }
-      }
-
-      // append user's records if none were found earlier
-      if (
-        extendedQueryState == 0 &&
-        foundOwnRequest == false &&
-        leafSearch.getSearchInput() == ""
-      ) {
-        extendedQueryState = 1;
-        query.addTerm(
-          "userID",
-          "=",
-          "<!--{$userID|unescape|escape:'quotes'}-->",
-        );
-        query.execute();
-        return false;
-      }
-
-      // incrementally load records
-      if (
-        (Object.keys(res).length == batchSize ||
-          resJqXHR.getResponseHeader("leaf-query") == "continue") &&
-        loadAllResults &&
-        !abortSearch
-      ) {
-        document.querySelector(
-          "#" + leafSearch.getResultContainerID(),
-        ).innerHTML =
-          "<h3>Searching " +
-          offset +
-          "+ possible records...</h3>" +
-          '<p><button id="btn_abortSearch" class="buttonNorm">Stop searching for more</button></p>';
-        document
-          .querySelector("#btn_abortSearch")
-          .addEventListener("click", function () {
-            abortSearch = true;
-          });
-        offset += batchSize;
-        query.setLimit(offset, batchSize);
-        query.execute();
-        return;
-      } else {
-        //$('tfoot[id^="LeafFormGrid"]').html('<tr><td colspan="4" style="padding: 8px; background-color: #feffd1; font-size: 120%; font-weight: bold">Search Stopped</td></tr>');
-      }
-
-      renderResult(leafSearch, resultSet, showResolved);
-      window.scrollTo(0, scrollY);
-
-      // UI for "show more results" button
-      let btnAbort = document.getElementById("btn_abortSearch");
-      let btnMore = document.querySelector("#searchContainer_getMoreResults");
-      if (btnMore !== null) {
-        btnMore.style.display = !loadAllResults ? "inline" : "none";
-      }
-      if (btnAbort !== null) {
-        btnAbort.style.display = "none";
-      }
-    });
-
-    leafSearch.setSearchFunc(function (txt) {
-      // prep new search
-      query.clearTerms();
-      query.addTerm("userID", "=", "<!--{$userID|unescape|escape:'quotes'}-->");
-
-      resultSet = {};
-      offset = 0;
-      loadAllResults = false;
-      scrollY = 0;
-      abortSearch = false;
-
-      let isJSON = true;
-      let advSearch = {};
-      try {
-        advSearch = JSON.parse(txt);
-      } catch (err) {
-        isJSON = false;
-      }
-
-      txt = txt.trim();
-      if (txt == "" || txt == "undefined" || txt == undefined) {
-        query.addTerm("title", "LIKE", "*");
-      } else if (!isNaN(parseFloat(txt)) && isFinite(txt)) {
-        // check if numeric
-        query.addTerm("recordID", "=", txt);
-      } else if (isJSON) {
-        for (let i in advSearch) {
-          if (advSearch[i].id != "data" && advSearch[i].id != "dependencyID") {
-            query.addTerm(
-              advSearch[i].id,
-              advSearch[i].operator,
-              advSearch[i].match,
-              advSearch[i].gate,
-            );
-          } else {
-            query.addDataTerm(
-              advSearch[i].id,
-              advSearch[i].indicatorID,
-              advSearch[i].operator,
-              advSearch[i].match,
-              advSearch[i].gate,
-            );
-          }
-        }
-      } else {
-        query.addTerm("title", "LIKE", "*" + txt + "*");
-      }
-
-      // check if the user wants to search for cancelled requests
-      let hasDeleteQuery = false;
-      for (let i in query.getQuery().terms) {
-        if (
-          query.getQuery().terms[i].id == "stepID" &&
-          query.getQuery().terms[i].operator == "=" &&
-          query.getQuery().terms[i].match == "deleted"
-        ) {
-          hasDeleteQuery = true;
-          break;
-        }
-      }
-
-      // hide cancelled requests by default
-      if (!hasDeleteQuery) {
-        query.addTerm("deleted", "=", 0);
-      }
-
-      query.setLimit(batchSize);
-      query.join("status");
-      query.join("categoryName");
-      query.join("initiatorName");
-      query.sort("date", "DESC");
-      return query.execute();
-    });
-    leafSearch.init();
-    document.querySelector("#" + leafSearch.getResultContainerID()).innerHTML =
-      "<h3>Searching for records...</h3>";
-
-    document
-      .querySelector("#searchContainer_getMoreResults")
-      .addEventListener("click", function () {
-        loadAllResults = true;
-        showResolved = true;
-        scrollY = window.scrollY;
-        if (leafSearch.getSearchInput() == "") {
-          let tQuery = query.getQuery();
-          query.setQuery(tQuery);
-        }
-        offset += batchSize;
-        query.setAbortSignal(abortController.signal);
-        query.setLimit(offset, batchSize);
-        query.execute();
-      });
-  }
-
-  function main() {
-    runQuery();
-    const username = $("#headerHelp > b").text();
-    $("#span_user_name").text(username);
-  }
-
-  document.addEventListener("DOMContentLoaded", main);
+  wireJumpToTop();
 </script>
