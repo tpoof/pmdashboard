@@ -6,492 +6,500 @@
 <!--------------- Welcome -------------->
 
 <div class="lp-scope">
-<div id="firstVisit" class="container pt-5">
-  <div class="row justify-content-center align-items-center">
-    <!-- Image on the right -->
-    <div class="col-12 col-md-6 order-md-2">
-      <img
-        src="./files/mockup-transparent-v2.png"
-        class="img-fluid"
-        alt="platform overview"
-      />
+  <div id="firstVisit" class="container pt-5">
+    <div class="row justify-content-center align-items-center">
+      <!-- Image on the right -->
+      <div class="col-12 col-md-6 order-md-2">
+        <img
+          src="./files/mockup-transparent-v2.png"
+          class="img-fluid"
+          alt="platform overview"
+        />
 
-      <!--------------- Launchpad Search Widget Placeholder ----->
-      <p class="mt-3">Your LEAF Site creation history:</p>
-      <button
-        id="btn_user_requests"
-        class="btn btn-outline-primary btn-sm mb-2"
-        type="button"
-        style="display: none"
-        onclick="toggleRequestDisplay()"
-        aria-expanded="false"
-      >
-        View Your Feedback History
-      </button>
-      <div
-        class="container mt-1 mb-4"
-        id="results_user_requests"
-        style="display: none"
-      >
-        <section style="display: flex; flex-direction: column; width: 100%">
-          <div id="searchContainer"></div>
-          <div style="display: flex; gap: 8px; align-items: center">
-            <button
-              id="btn_abortSearch"
-              class="buttonNorm btn btn-outline-primary btn-sm"
-              type="button"
-              style="display: none"
-            >
-              Stop searching for more
-            </button>
-            <button
-              id="searchContainer_getMoreResults"
-              class="buttonNorm btn btn-outline-primary btn-sm"
-              style="display: none"
-              type="button"
-              disabled
-            >
-              Show more records
-            </button>
-          </div>
-        </section>
-      </div>
-    </div>
-    <!-- Content on the left -->
-    <div class="col-12 col-md-6 order-md-1">
-      <p style="font-size: 250%; font-weight: bold">Help modernize VA.</p>
-      <p>Improve your processes with our powerful workflow and form system.</p>
-      <br /><br />
-      <a
-        href="?a=newform"
-        class="buttonNorm btn btn-primary btn-lg"
-        style="font-size: 140%; padding: 16px"
-        >🚀 Get started</a
-      >
-      <p class="mt-3">
-        Looking for an existing LEAF site?
-        <a href="report.php?a=Find_my_site">Find a LEAF Site</a>
-      </p>
-      <p class="small">
-        Join us for a demo on the
-        <a
-          href="https://dvagov.sharepoint.com/sites/vhaleaf/SitePages/LEAF-Academy.aspx?source=https%3A%2F%2Fdvagov.sharepoint.com%2Fsites%2Fvhaleaf%2FSitePages%2FForms%2FByAuthor.aspx"
-          >first Thursday</a
+        <!--------------- Launchpad Search Widget Placeholder ----->
+        <p class="mt-3">Your LEAF Site creation history:</p>
+        <button
+          id="btn_user_requests"
+          class="btn btn-outline-primary btn-sm mb-2"
+          type="button"
+          style="display: none"
+          onclick="toggleRequestDisplay()"
+          aria-expanded="false"
         >
-        of every month.
-      </p>
-    </div>
-  </div>
-</div>
-
-<div id="welcomeBack" class="container pt-5" style="display: none">
-  <div class="row justify-content-center align-items-center">
-    <div class="col-12">
-      <h2 class="text-primary text-center">Welcome back!</h2>
-      <p>How can we help?</p>
-      <ul>
-        <li>
-          <a href="report.php?a=Start_new_site">I need a new LEAF site</a>
-        </li>
-        <li>
-          <a href="/platform/service_requests_launchpad/"
-            >I need help with LEAF</a
+          View Your Feedback History
+        </button>
+        <div
+          class="container mt-1 mb-4"
+          id="results_user_requests"
+          style="display: none"
+        >
+          <section style="display: flex; flex-direction: column; width: 100%">
+            <div id="searchContainer"></div>
+            <div style="display: flex; gap: 8px; align-items: center">
+              <button
+                id="btn_abortSearch"
+                class="buttonNorm btn btn-outline-primary btn-sm"
+                type="button"
+                style="display: none"
+              >
+                Stop searching for more
+              </button>
+              <button
+                id="searchContainer_getMoreResults"
+                class="buttonNorm btn btn-outline-primary btn-sm"
+                style="display: none"
+                type="button"
+                disabled
+              >
+                Show more records
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+      <!-- Content on the left -->
+      <div class="col-12 col-md-6 order-md-1">
+        <p style="font-size: 250%; font-weight: bold">Help modernize VA.</p>
+        <p>
+          Improve your processes with our powerful workflow and form system.
+        </p>
+        <br /><br />
+        <a
+          href="?a=newform"
+          class="buttonNorm btn btn-primary btn-lg"
+          style="font-size: 140%; padding: 16px"
+          >🚀 Get started</a
+        >
+        <p class="mt-3">
+          Looking for an existing LEAF site?
+          <a href="report.php?a=Find_my_site">Find a LEAF Site</a>
+        </p>
+        <p class="small">
+          Join us for a demo on the
+          <a
+            href="https://dvagov.sharepoint.com/sites/vhaleaf/SitePages/LEAF-Academy.aspx?source=https%3A%2F%2Fdvagov.sharepoint.com%2Fsites%2Fvhaleaf%2FSitePages%2FForms%2FByAuthor.aspx"
+            >first Thursday</a
           >
-        </li>
-        <li><a href="report.php?a=Find_my_site">I'm looking for a site</a></li>
-      </ul>
-
-      <p class="text-center small">
-        Join our
-        <a href="https://leaf.va.gov/platform/CoP/">Community of Practice</a>
-        for insights and tips!
-      </p>
-    </div>
-  </div>
-</div>
-
-<!--------------------- Intro--------------------->
-
-<div class="container bg-light justify-content-center m-auto p-5">
-  <div class="section-divider"></div>
-  <h1 class="mb-3 text-center">
-    Build your forms, workflows, and reports in a few easy steps.
-  </h1>
-
-  <!----------------- Description container -------------->
-  <div id="steps_desc_container" class="row justify-content-center m-auto p-5">
-    <!----------------- Description: Design Forms -------------->
-    <div id="step_forms" class="row step_description">
-      <div class="col-lg">
-        <h2 class="text-primary">Design Forms</h2>
-        <p class="lead">
-          Our user-friendly, drag-and-drop Form Editor helps to create a custom
-          Form for your process.
+          of every month.
         </p>
-        <ul>
-          <li>Dozens of question formats to choose from</li>
-          <li>
-            Toggle questions on/off depending on previous question responses
-          </li>
-          <li>Integration with the Active Directory</li>
-        </ul>
-      </div>
-      <div class="col">
-        <img
-          src="./files/graphics-form.png"
-          alt="form editor"
-          width="500"
-          height="275"
-        />
-      </div>
-    </div>
-
-    <!----------------- Description: Design Workflows -------------->
-    <div id="step_workflows" class="row step_description">
-      <div class="col-lg order-md-2">
-        <h2 class="text-primary">Build Workflows</h2>
-        <p class="lead">
-          Integrated, interactive flowcharts customizable for each Form.
-        </p>
-        <ul>
-          <li>
-            Notify requestors and approvers every time something happens, so
-            they're up to date
-          </li>
-          <li>
-            Clear organization of responsibile owners of each step in a process
-          </li>
-          <li>Sub-Forms and workspaces available for multi-part processes</li>
-        </ul>
-      </div>
-      <div class="col order-md-1">
-        <img
-          src="./files/graphics-workflow.png"
-          alt="workflow editor"
-          width="500"
-          height="275"
-        />
-      </div>
-    </div>
-
-    <!----------------- Description: Run Analytics -------------->
-    <div id="step_analytics" class="row step_description">
-      <div class="col-lg">
-        <h2 class="text-primary">Run Analytics</h2>
-        <p class="lead">
-          Use powerful tools such as the Report Builder, Timeline Explorer, and
-          Data Visualizer to gain insights and make informed decisions.
-        </p>
-
-        <ul>
-          <li>
-            <b>Report Builder</b> - A robust tool that lets you drill down to
-            important data, with options to export and integrate with Excel
-          </li>
-          <li>
-            <b>Timeline Explorer</b> - Step-by-step and form-by-form tracking of
-            turnaround times. Find the gaps and delays in your processes at a
-            glance.
-          </li>
-          <li>
-            <b>Data Visualizer</b> - See patterns in what your
-            requestors/submitters are entering in your Forms.
-          </li>
-        </ul>
-      </div>
-      <div class="col">
-        <img
-          src="./files/graphics-analytics.png"
-          alt="data analysis"
-          width="500"
-          height="275"
-        />
       </div>
     </div>
   </div>
-</div>
 
-<!----------------- Features container -------------->
-<div id="container_features" class="container p-5">
-  <div class="section-divider"></div>
-  <h1 class="mb-3 text-center">
-    Intuitive Built-In Tools.<span class="text-primary fw-bold">
-      Powerful Results.</span
+  <div id="welcomeBack" class="container pt-5" style="display: none">
+    <div class="row justify-content-center align-items-center">
+      <div class="col-12">
+        <h2 class="text-primary text-center">Welcome back!</h2>
+        <p>How can we help?</p>
+        <ul>
+          <li>
+            <a href="report.php?a=Start_new_site">I need a new LEAF site</a>
+          </li>
+          <li>
+            <a href="/platform/service_requests_launchpad/"
+              >I need help with LEAF</a
+            >
+          </li>
+          <li>
+            <a href="report.php?a=Find_my_site">I'm looking for a site</a>
+          </li>
+        </ul>
+
+        <p class="text-center small">
+          Join our
+          <a href="https://leaf.va.gov/platform/CoP/">Community of Practice</a>
+          for insights and tips!
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!--------------------- Intro--------------------->
+
+  <div class="container bg-light justify-content-center m-auto p-5">
+    <div class="section-divider"></div>
+    <h1 class="mb-3 text-center">
+      Build your forms, workflows, and reports in a few easy steps.
+    </h1>
+
+    <!----------------- Description container -------------->
+    <div
+      id="steps_desc_container"
+      class="row justify-content-center m-auto p-5"
     >
-  </h1>
-
-  <div class="features-grid">
-    <!-- Integrated Form Library -->
-    <div class="feature-container">
-      <div class="feature-content-wrapper">
-        <div class="feature-icon">
-          <i class="bi bi-ui-checks"></i>
+      <!----------------- Description: Design Forms -------------->
+      <div id="step_forms" class="row step_description">
+        <div class="col-lg">
+          <h2 class="text-primary">Design Forms</h2>
+          <p class="lead">
+            Our user-friendly, drag-and-drop Form Editor helps to create a
+            custom Form for your process.
+          </p>
+          <ul>
+            <li>Dozens of question formats to choose from</li>
+            <li>
+              Toggle questions on/off depending on previous question responses
+            </li>
+            <li>Integration with the Active Directory</li>
+          </ul>
         </div>
-        <div class="feature-content">
-          <div class="feature-title">Integrated Form Library</div>
-          <div class="feature-description">
-            One-click option to use or import form templates.
-          </div>
+        <div class="col">
+          <img
+            src="./files/graphics-form.png"
+            alt="form editor"
+            width="500"
+            height="275"
+          />
+        </div>
+      </div>
+
+      <!----------------- Description: Design Workflows -------------->
+      <div id="step_workflows" class="row step_description">
+        <div class="col-lg order-md-2">
+          <h2 class="text-primary">Build Workflows</h2>
+          <p class="lead">
+            Integrated, interactive flowcharts customizable for each Form.
+          </p>
+          <ul>
+            <li>
+              Notify requestors and approvers every time something happens, so
+              they're up to date
+            </li>
+            <li>
+              Clear organization of responsibile owners of each step in a
+              process
+            </li>
+            <li>Sub-Forms and workspaces available for multi-part processes</li>
+          </ul>
+        </div>
+        <div class="col order-md-1">
+          <img
+            src="./files/graphics-workflow.png"
+            alt="workflow editor"
+            width="500"
+            height="275"
+          />
+        </div>
+      </div>
+
+      <!----------------- Description: Run Analytics -------------->
+      <div id="step_analytics" class="row step_description">
+        <div class="col-lg">
+          <h2 class="text-primary">Run Analytics</h2>
+          <p class="lead">
+            Use powerful tools such as the Report Builder, Timeline Explorer,
+            and Data Visualizer to gain insights and make informed decisions.
+          </p>
+
+          <ul>
+            <li>
+              <b>Report Builder</b> - A robust tool that lets you drill down to
+              important data, with options to export and integrate with Excel
+            </li>
+            <li>
+              <b>Timeline Explorer</b> - Step-by-step and form-by-form tracking
+              of turnaround times. Find the gaps and delays in your processes at
+              a glance.
+            </li>
+            <li>
+              <b>Data Visualizer</b> - See patterns in what your
+              requestors/submitters are entering in your Forms.
+            </li>
+          </ul>
+        </div>
+        <div class="col">
+          <img
+            src="./files/graphics-analytics.png"
+            alt="data analysis"
+            width="500"
+            height="275"
+          />
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Inbox Management -->
-    <div class="feature-container">
-      <div class="feature-content-wrapper">
-        <div class="feature-icon">
-          <i class="bi bi-envelope-fill"></i>
-        </div>
-        <div class="feature-content">
-          <div class="feature-title">Inbox Management</div>
-          <div class="feature-description">
-            Centralize and organize all your pending requests efficiently.
+  <!----------------- Features container -------------->
+  <div id="container_features" class="container p-5">
+    <div class="section-divider"></div>
+    <h1 class="mb-3 text-center">
+      Intuitive Built-In Tools.<span class="text-primary fw-bold">
+        Powerful Results.</span
+      >
+    </h1>
+
+    <div class="features-grid">
+      <!-- Integrated Form Library -->
+      <div class="feature-container">
+        <div class="feature-content-wrapper">
+          <div class="feature-icon">
+            <i class="bi bi-ui-checks"></i>
+          </div>
+          <div class="feature-content">
+            <div class="feature-title">Integrated Form Library</div>
+            <div class="feature-description">
+              One-click option to use or import form templates.
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- User Access Groups -->
-    <div class="feature-container">
-      <div class="feature-content-wrapper">
-        <div class="feature-icon">
-          <i class="bi bi-person-fill-gear"></i>
-        </div>
-        <div class="feature-content">
-          <div class="feature-title">User Access Groups</div>
-          <div class="feature-description">
-            Easily manage user roles and permissions.
+      <!-- Inbox Management -->
+      <div class="feature-container">
+        <div class="feature-content-wrapper">
+          <div class="feature-icon">
+            <i class="bi bi-envelope-fill"></i>
+          </div>
+          <div class="feature-content">
+            <div class="feature-title">Inbox Management</div>
+            <div class="feature-description">
+              Centralize and organize all your pending requests efficiently.
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Automated Emails -->
-    <div class="feature-container">
-      <div class="feature-content-wrapper">
-        <div class="feature-icon">
-          <i class="bi bi-envelope-at"></i>
-        </div>
-        <div class="feature-content">
-          <div class="feature-title">Automated Emails</div>
-          <div class="feature-description">
-            Send personalized emails automatically.
+      <!-- User Access Groups -->
+      <div class="feature-container">
+        <div class="feature-content-wrapper">
+          <div class="feature-icon">
+            <i class="bi bi-person-fill-gear"></i>
+          </div>
+          <div class="feature-content">
+            <div class="feature-title">User Access Groups</div>
+            <div class="feature-description">
+              Easily manage user roles and permissions.
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Admin Oversight Tools -->
-    <div class="feature-container">
-      <div class="feature-content-wrapper">
-        <div class="feature-icon">
-          <i class="bi bi-clipboard-data"></i>
-        </div>
-        <div class="feature-content">
-          <div class="feature-title">Admin Oversight Tools</div>
-          <div class="feature-description">
-            Monitor site performance and streamline tasks.
+      <!-- Automated Emails -->
+      <div class="feature-container">
+        <div class="feature-content-wrapper">
+          <div class="feature-icon">
+            <i class="bi bi-envelope-at"></i>
+          </div>
+          <div class="feature-content">
+            <div class="feature-title">Automated Emails</div>
+            <div class="feature-description">
+              Send personalized emails automatically.
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Privacy -->
-    <div class="feature-container">
-      <div class="feature-content-wrapper">
-        <div class="feature-icon">
-          <i class="bi bi-shield-check"></i>
+      <!-- Admin Oversight Tools -->
+      <div class="feature-container">
+        <div class="feature-content-wrapper">
+          <div class="feature-icon">
+            <i class="bi bi-clipboard-data"></i>
+          </div>
+          <div class="feature-content">
+            <div class="feature-title">Admin Oversight Tools</div>
+            <div class="feature-description">
+              Monitor site performance and streamline tasks.
+            </div>
+          </div>
         </div>
-        <div class="feature-content">
-          <div class="feature-title">Built-in Data Protections</div>
-          <div class="feature-description">
-            Certified safeguards for PHI/PII with LEAF-S certification
+      </div>
+
+      <!-- Privacy -->
+      <div class="feature-container">
+        <div class="feature-content-wrapper">
+          <div class="feature-icon">
+            <i class="bi bi-shield-check"></i>
+          </div>
+          <div class="feature-content">
+            <div class="feature-title">Built-in Data Protections</div>
+            <div class="feature-description">
+              Certified safeguards for PHI/PII with LEAF-S certification
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-----------------Enterprise Scalability -------------->
-<div
-  id="container_usecases"
-  class="container row justify-content-center m-auto p-5"
->
-  <div class="section-divider"></div>
-  <h1 class="mb-3 text-center">
-    Enterprise Scalability and<span class="text-primary fw-bold">
-      Endless Possibilities.</span
-    >
-  </h1>
-  <br /><br />
-  <!--<p class="lead ">LEAF successfully implemented across VA</p></center>-->
-  <div class="row">
-    <!-------------- Card container ---------------->
-    <div class="col-lg">
-      <div class="card">
-        <div class="card-body text-center" style="background-color: #d9e8f6">
-          <i
-            class="bi bi-hospital"
-            style="font-size: 48px; width: 48px; height: 48px"
-          ></i>
-          <h5 class="card-title">Facility Support</h5>
-        </div>
-        <ul class="list-group list-group-flush text-center">
-          <li class="list-group-item">Clinic Profile Management</li>
-          <li class="list-group-item">Eligibility & Enrollment</li>
-          <li class="list-group-item">Onboarding & Offboarding</li>
-          <li class="list-group-item">Conference & Travel</li>
-          <li class="list-group-item">Work Order Submissions</li>
-          <li class="list-group-item"><i>... and many more!</i></li>
-        </ul>
-      </div>
-    </div>
-    <!--------------- End card container -------------->
-
-    <!-------------- Card container ---------------->
-    <div class="col-lg">
-      <div class="card">
-        <div class="card-body text-center" style="background-color: #73b3e7">
-          <i
-            class="bi bi-diagram-3"
-            style="font-size: 48px; width: 48px; height: 48px"
-          ></i>
-          <h5 class="card-title">Regional Support</h5>
-        </div>
-        <ul class="list-group list-group-flush text-center">
-          <li class="list-group-item">VISN Network Office</li>
-          <li class="list-group-item">Human Resources Management</li>
-          <li class="list-group-item">VBA Regional Offices</li>
-          <li class="list-group-item">
-            Veterans Affairs Supportive Housing (VASH)
-          </li>
-          <li class="list-group-item">Memorial Service Networks (MSNs)</li>
-          <li class="list-group-item"><i>... and many more!</i></li>
-        </ul>
-      </div>
-    </div>
-    <!--------------- End card container -------------->
-
-    <!-------------- Card container ---------------->
-    <div class="col-lg">
-      <div class="card">
-        <div class="card-body text-center" style="background-color: #5dc0d1">
-          <i
-            class="bi bi-globe-americas"
-            style="font-size: 48px; width: 48px; height: 48px"
-          ></i>
-          <h5 class="card-title">National Support</h5>
-        </div>
-        <ul class="list-group list-group-flush text-center">
-          <li class="list-group-item">VA Central Office (Headquarters)</li>
-          <li class="list-group-item">
-            Office of the Secretary of Veterans Affairs
-          </li>
-          <li class="list-group-item">Office of Inpector General</li>
-          <li class="list-group-item">Office of General Counsel</li>
-          <li class="list-group-item">VHA Shark Tank</li>
-          <li class="list-group-item"><i>... and many more!</i></li>
-        </ul>
-      </div>
-    </div>
-    <!--------------- End card container -------------->
-  </div>
-</div>
-
-<!-----------------Results  [result-container alt-result-container mx-auto]---------------->
-<div class="container my-5 text-center">
-  <div class="section-divider"></div>
-  <h1 class="result-header">Digital Transformation with Lasting Impact.</h1>
-  <div class="results-grid">
-    <div>
-      <div class="result-container mx-auto">
-        <div class="result-icon">
-          <i
-            class="bi bi-calendar-week"
-            style="font-size: 48px; width: 48px; height: 48px"
-          ></i>
-        </div>
-        <div class="result-content">
-          <div class="result-title">
-            Faster hiring decisions at Salisbury VAMC
+  <!-----------------Enterprise Scalability -------------->
+  <div
+    id="container_usecases"
+    class="container row justify-content-center m-auto p-5"
+  >
+    <div class="section-divider"></div>
+    <h1 class="mb-3 text-center">
+      Enterprise Scalability and<span class="text-primary fw-bold">
+        Endless Possibilities.</span
+      >
+    </h1>
+    <br /><br />
+    <!--<p class="lead ">LEAF successfully implemented across VA</p></center>-->
+    <div class="row">
+      <!-------------- Card container ---------------->
+      <div class="col-lg">
+        <div class="card">
+          <div class="card-body text-center" style="background-color: #d9e8f6">
+            <i
+              class="bi bi-hospital"
+              style="font-size: 48px; width: 48px; height: 48px"
+            ></i>
+            <h5 class="card-title">Facility Support</h5>
           </div>
-          <div class="result-text">
-            26 days saved between initial request and decision.
-          </div>
+          <ul class="list-group list-group-flush text-center">
+            <li class="list-group-item">Clinic Profile Management</li>
+            <li class="list-group-item">Eligibility & Enrollment</li>
+            <li class="list-group-item">Onboarding & Offboarding</li>
+            <li class="list-group-item">Conference & Travel</li>
+            <li class="list-group-item">Work Order Submissions</li>
+            <li class="list-group-item"><i>... and many more!</i></li>
+          </ul>
         </div>
       </div>
-    </div>
+      <!--------------- End card container -------------->
 
-    <div>
-      <div class="result-container mx-auto">
-        <div class="result-icon">
-          <i
-            class="bi bi-arrow-down-right-square"
-            style="font-size: 48px; width: 48px; height: 48px"
-          ></i>
-        </div>
-        <div class="result-content">
-          <div class="result-title">
-            Reduced delays and errors at Boston VAHCS
+      <!-------------- Card container ---------------->
+      <div class="col-lg">
+        <div class="card">
+          <div class="card-body text-center" style="background-color: #73b3e7">
+            <i
+              class="bi bi-diagram-3"
+              style="font-size: 48px; width: 48px; height: 48px"
+            ></i>
+            <h5 class="card-title">Regional Support</h5>
           </div>
-          <div class="result-text">
-            Completed 19 days quicker with no missing documents.
-          </div>
+          <ul class="list-group list-group-flush text-center">
+            <li class="list-group-item">VISN Network Office</li>
+            <li class="list-group-item">Human Resources Management</li>
+            <li class="list-group-item">VBA Regional Offices</li>
+            <li class="list-group-item">
+              Veterans Affairs Supportive Housing (VASH)
+            </li>
+            <li class="list-group-item">Memorial Service Networks (MSNs)</li>
+            <li class="list-group-item"><i>... and many more!</i></li>
+          </ul>
         </div>
       </div>
-    </div>
+      <!--------------- End card container -------------->
 
-    <div>
-      <div class="result-container mx-auto">
-        <div class="result-icon">
-          <i
-            class="bi bi-card-checklist"
-            style="font-size: 48px; width: 48px; height: 48px"
-          ></i>
-        </div>
-        <div class="result-content">
-          <div class="result-title">
-            Modernized digital process at Miami VAMC
+      <!-------------- Card container ---------------->
+      <div class="col-lg">
+        <div class="card">
+          <div class="card-body text-center" style="background-color: #5dc0d1">
+            <i
+              class="bi bi-globe-americas"
+              style="font-size: 48px; width: 48px; height: 48px"
+            ></i>
+            <h5 class="card-title">National Support</h5>
           </div>
-          <div class="result-text">
-            Reduced Veteran enrollment turnaround by 3 days.
-          </div>
+          <ul class="list-group list-group-flush text-center">
+            <li class="list-group-item">VA Central Office (Headquarters)</li>
+            <li class="list-group-item">
+              Office of the Secretary of Veterans Affairs
+            </li>
+            <li class="list-group-item">Office of Inpector General</li>
+            <li class="list-group-item">Office of General Counsel</li>
+            <li class="list-group-item">VHA Shark Tank</li>
+            <li class="list-group-item"><i>... and many more!</i></li>
+          </ul>
         </div>
       </div>
-    </div>
-
-    <div>
-      <div class="result-container mx-auto">
-        <div class="result-icon">
-          <i
-            class="bi bi-diagram-2"
-            style="font-size: 48px; width: 48px; height: 48px"
-          ></i>
-        </div>
-        <div class="result-content">
-          <div class="result-title">
-            Standardized healthcare coding in VISN 10
-          </div>
-          <div class="result-text">Reduced number of portals by 72%.</div>
-        </div>
-      </div>
+      <!--------------- End card container -------------->
     </div>
   </div>
-</div>
 
-<!-- Call to Action -->
+  <!-----------------Results  [result-container alt-result-container mx-auto]---------------->
+  <div class="container my-5 text-center">
+    <div class="section-divider"></div>
+    <h1 class="result-header">Digital Transformation with Lasting Impact.</h1>
+    <div class="results-grid">
+      <div>
+        <div class="result-container mx-auto">
+          <div class="result-icon">
+            <i
+              class="bi bi-calendar-week"
+              style="font-size: 48px; width: 48px; height: 48px"
+            ></i>
+          </div>
+          <div class="result-content">
+            <div class="result-title">
+              Faster hiring decisions at Salisbury VAMC
+            </div>
+            <div class="result-text">
+              26 days saved between initial request and decision.
+            </div>
+          </div>
+        </div>
+      </div>
 
-<div class="container content-container">
-  <div id="CTA" class="cta-container">
-    <div class="cta-text">See the platform in action for yourself!</div>
-    <button class="cta-button">Watch a Demo</button>
+      <div>
+        <div class="result-container mx-auto">
+          <div class="result-icon">
+            <i
+              class="bi bi-arrow-down-right-square"
+              style="font-size: 48px; width: 48px; height: 48px"
+            ></i>
+          </div>
+          <div class="result-content">
+            <div class="result-title">
+              Reduced delays and errors at Boston VAHCS
+            </div>
+            <div class="result-text">
+              Completed 19 days quicker with no missing documents.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="result-container mx-auto">
+          <div class="result-icon">
+            <i
+              class="bi bi-card-checklist"
+              style="font-size: 48px; width: 48px; height: 48px"
+            ></i>
+          </div>
+          <div class="result-content">
+            <div class="result-title">
+              Modernized digital process at Miami VAMC
+            </div>
+            <div class="result-text">
+              Reduced Veteran enrollment turnaround by 3 days.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="result-container mx-auto">
+          <div class="result-icon">
+            <i
+              class="bi bi-diagram-2"
+              style="font-size: 48px; width: 48px; height: 48px"
+            ></i>
+          </div>
+          <div class="result-content">
+            <div class="result-title">
+              Standardized healthcare coding in VISN 10
+            </div>
+            <div class="result-text">Reduced number of portals by 72%.</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
 
-<button class="lp-jumpTop" id="lpJumpTopBtn" aria-label="Jump to top">
-  <i class="bi bi-arrow-up"></i>
-</button>
+  <!-- Call to Action -->
+
+  <div class="container content-container">
+    <div id="CTA" class="cta-container">
+      <div class="cta-text">See the platform in action for yourself!</div>
+      <button class="cta-button">Watch a Demo</button>
+    </div>
+  </div>
+
+  <button class="lp-jumpTop" id="lpJumpTopBtn" aria-label="Jump to top">
+    <i class="bi bi-arrow-up"></i>
+  </button>
 </div>
 
 <!------------------ Custom styles ------------------>
@@ -613,7 +621,6 @@
       flex: 0 0 50%;
       max-width: 50%;
     }
-
   }
 
   @media (min-width: 992px) {
@@ -630,7 +637,6 @@
   .p-5 {
     padding: 3rem;
   }
-
 
   .mt-1 {
     margin-top: 0.25rem;
@@ -651,7 +657,6 @@
   .mb-4 {
     margin-bottom: 1.5rem;
   }
-
 
   .my-5 {
     margin-top: 3rem;
@@ -737,7 +742,6 @@
     padding: 6px 10px;
     font-size: 0.85rem;
   }
-
 
   .card {
     border-radius: 14px;
@@ -912,7 +916,9 @@
     z-index: 1200;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.15s ease, transform 0.15s ease;
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease;
   }
 
   .lp-jumpTop.is-visible {
@@ -969,6 +975,16 @@
     .results-grid {
       grid-template-columns: minmax(0, 1fr);
     }
+  }
+
+  #steps_desc_container {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .step_description {
+    width: 100%;
   }
 </style>
 
