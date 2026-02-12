@@ -251,8 +251,8 @@ function transferToPMDashboard() {
         encodeURIComponent(id);
 }
 
-function wireSandboxTicket148() {
-    var nodes = document.querySelectorAll("[id^='xhrIndicator_148_']");
+function wireSandboxTicket18() {
+    var nodes = document.querySelectorAll("[id^='xhrIndicator_18_']");
     if (!nodes || !nodes.length) return;
     nodes.forEach(function(el) {
         if (!el || el.querySelector("a.pmSandboxLink")) return;
@@ -261,7 +261,7 @@ function wireSandboxTicket148() {
         if (!match) return;
         var ticketId = match[1];
         var url =
-            "/platform/sl_sandbox/index.php?a=printview&recordID=" +
+            "/platform/support/index.php?a=printview&recordID=" +
             encodeURIComponent(ticketId);
         var link = document.createElement("a");
         link.href = "#";
@@ -277,7 +277,7 @@ function initSandboxTicketWatcher() {
     var target = document.getElementById("formcontent");
     if (!target || target.__pmSandboxObserver) return;
     var observer = new MutationObserver(function() {
-        wireSandboxTicket148();
+        wireSandboxTicket18();
     });
     observer.observe(target, {
         childList: true,
@@ -739,7 +739,7 @@ function doSubmit(recordID) {
                     });
                 });
                 handlePrintConditionalIndicators(formPrintConditions);
-                wireSandboxTicket148();
+                wireSandboxTicket18();
             },
             error: function(res) {
                 $('#formcontent').empty().html(res);
@@ -776,7 +776,7 @@ function doSubmit(recordID) {
                     });
                 });
                 handlePrintConditionalIndicators(formPrintConditions);
-                wireSandboxTicket148();
+                wireSandboxTicket18();
             },
             error: function(res) {
                 $('#formcontent').empty().html(res);

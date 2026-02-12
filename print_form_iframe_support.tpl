@@ -8,7 +8,7 @@
 <!-- Main content area (anything under the heading) -->
 <div id="maincontent" style="width: 99%">
 
-<!--{if $is_admin == true}-->
+<!--{if $empMembership['groupID'][226]}-->
 <div class="noprint pm-transfer-wrap">
     <button type="button" class="tools pm-transfer-btn" onclick="transferToPMDashboard()" title="Transfer to LEAF Projects">
         <img src="dynicons/?img=go-next.svg&amp;w=32" alt="" aria-hidden="true" style="vertical-align: middle" /> Transfer to LEAF Projects
