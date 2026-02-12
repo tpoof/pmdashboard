@@ -35,8 +35,8 @@ var recordID = <!--{$recordID}-->;
 var serviceID = <!--{$serviceID}-->;
 var CSRFToken = '<!--{$CSRFToken}-->';
 
-function wireSandboxTicket148() {
-    var nodes = document.querySelectorAll("[id^='xhrIndicator_148_']");
+function wireSandboxTicket18() {
+    var nodes = document.querySelectorAll("[id^='xhrIndicator_18_']");
     if (!nodes || !nodes.length) return;
     nodes.forEach(function(el) {
         if (!el || el.querySelector("a.pmSandboxLink")) return;
@@ -152,9 +152,9 @@ function buildDependenciesTable(rows) {
     return table;
 }
 
-function wireDependencies146() {
+function wireDependencies17() {
     var nodes = document.querySelectorAll(
-        "[id^='data_146_'], [id^='xhrIndicator_146_']"
+        "[id^='data_17_'], [id^='xhrIndicator_17_']"
     );
     if (!nodes || !nodes.length) return;
     nodes.forEach(function(el) {
@@ -178,8 +178,8 @@ function initSandboxTicketWatcher() {
     var target = document.getElementById("formcontent");
     if (!target || target.__pmSandboxObserver) return;
     var observer = new MutationObserver(function() {
-        wireSandboxTicket148();
-        wireDependencies146();
+        wireSandboxTicket18();
+        wireDependencies17();
     });
     observer.observe(target, {
         childList: true,
@@ -265,8 +265,8 @@ function getIndicator(indicatorID, series) {
             $("#xhrIndicator_" + indicatorID + "_" + series).fadeOut(250, function() {
                 $("#xhrIndicator_" + indicatorID + "_" + series).fadeIn(250);
             });
-            wireSandboxTicket148();
-            wireDependencies146();
+            wireSandboxTicket18();
+            wireDependencies17();
         },
         cache: false
     });
@@ -318,8 +318,8 @@ function openContent(url) {
     				}
                 });
     		});
-            wireSandboxTicket148();
-            wireDependencies146();
+            wireSandboxTicket18();
+            wireDependencies17();
     	},
     	error: function(res) {
     		$('#formcontent').empty().html(res);
