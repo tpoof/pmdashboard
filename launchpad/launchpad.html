@@ -32,7 +32,6 @@
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     color: var(--lp-text);
     background: var(--lp-bg);
-    font-size: 125%;
   }
 
   a {
@@ -87,7 +86,7 @@
   }
 
   .lead {
-    font-size: 1em;
+    font-size: 1.1rem;
     color: var(--lp-muted);
   }
 
@@ -397,7 +396,7 @@
   }
 
   .feature-description {
-    font-size: 1em;
+    font-size: 14px;
     color: var(--lp-muted);
   }
 
@@ -428,7 +427,7 @@
     font-weight: bold;
   }
   .result-text {
-    font-size: 1em;
+    font-size: 14px;
     color: var(--lp-muted);
   }
   .result-container {
@@ -481,48 +480,6 @@
   .cta-button:hover {
     background-color: #005b99;
     color: white;
-  }
-
-  .section-divider {
-    padding: 40px 0;
-  }
-
-  .section-divider::before {
-    content: "";
-    display: block;
-    height: 1px;
-    background: var(--lp-border);
-  }
-
-  .features-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 24px;
-    justify-content: center;
-  }
-
-  @media (max-width: 900px) {
-    .features-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 640px) {
-    .features-grid {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-
-  .results-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px;
-  }
-
-  @media (max-width: 700px) {
-    .results-grid {
-      grid-template-columns: minmax(0, 1fr);
-    }
   }
 </style>
 
@@ -620,10 +577,9 @@
   </div>
 </div>
 
-<!--------------- Interactive Toggles -------------->
+<!--------------------- Intro--------------------->
 
 <div class="container bg-light justify-content-center m-auto p-5">
-  <div class="section-divider"></div>
   <h1 class="mb-3 text-center">
     Build your forms, workflows, and reports in a few easy steps.
   </h1>
@@ -754,16 +710,15 @@
 
 <!----------------- Features container -------------->
 <div id="container_features" class="container p-5">
-  <div class="section-divider"></div>
   <h1 class="mb-3 text-center">
     Intuitive Built-In Tools.<span class="text-primary fw-bold">
       Powerful Results.</span
     >
   </h1>
 
-  <div class="features-grid">
+  <div class="row">
     <!-- Integrated Form Library -->
-    <div>
+    <div class="col-md-4">
       <div class="feature-container">
         <div class="feature-content-wrapper">
           <div class="feature-icon">
@@ -788,7 +743,7 @@
     </div>
 
     <!-- Inbox Management -->
-    <div>
+    <div class="col-md-4">
       <div class="feature-container">
         <div class="feature-content-wrapper">
           <div class="feature-icon">
@@ -813,7 +768,7 @@
     </div>
 
     <!-- User Access Groups -->
-    <div>
+    <div class="col-md-4">
       <div class="feature-container">
         <div class="feature-content-wrapper">
           <div class="feature-icon">
@@ -838,7 +793,7 @@
     </div>
 
     <!-- Automated Emails -->
-    <div>
+    <div class="col-md-4">
       <div class="feature-container">
         <div class="feature-content-wrapper">
           <div class="feature-icon">
@@ -863,7 +818,7 @@
     </div>
 
     <!-- Admin Oversight Tools -->
-    <div>
+    <div class="col-md-4">
       <div class="feature-container">
         <div class="feature-content-wrapper">
           <div class="feature-icon">
@@ -888,7 +843,7 @@
     </div>
 
     <!-- Privacy -->
-    <div>
+    <div class="col-md-4">
       <div class="feature-container">
         <div class="feature-content-wrapper">
           <div class="feature-icon">
@@ -914,72 +869,11 @@
   </div>
 </div>
 
-<!----------------- Use cases container (save)
-<div id="container_usecases" class="container row justify-content-center m-auto p-5">
-<center><h1>OPTION 1:
-<p>LEAF Across All Business Lines</h1>
-<p class="lead ">Real uses for LEAF successfully implemented by users across VA.</p></center>
-<div class="row row-cols-3">
-
-<div class="col">
-<div class="card">
-<div class="card-body text-center" style="background-color:#d9e8f6">
-<i class="bi bi-heart-pulse fs-1"></i>
-<h5 class="card-title">Clinical</h5>
-</div>
-<ul class="list-group list-group-flush text-center">
-<li class="list-group-item">Clinic Profile Management</li>
-<li class="list-group-item">Eligibility & Enrollment</li>
-<li class="list-group-item">Infection Prevention & Control</li>
-<li class="list-group-item">Pharmacy Supply Orders</li>
-<li class="list-group-item">Clinical Equipment Tracking</li>
-</ul>
-</div>
-</div>
-
-<div class="col">
-<div class="card">
-<div class="card-body text-center" style="background-color:#73b3e7">
-<i class="bi bi-envelope-paper fs-1"></i>
-<h5 class="card-title">Administrative</h5>
-</div>
-<ul class="list-group list-group-flush text-center">
-<li class="list-group-item">Action Item & Suspense Tracking</li>
-<li class="list-group-item">Timekeeping & Payroll</li>
-<li class="list-group-item">Onboarding & Offboarding</li>
-<li class="list-group-item">Conference & Travel</li>
-<li class="list-group-item">Human Resources Management</li>
-</ul>
-</div>
-</div>
-
-<div class="col">
-<div class="card">
-<div class="card-body text-center" style="background-color:#5dc0d1">
-<i class="bi bi-building-gear fs-1"></i>
-<h5 class="card-title">Facility Support</h5>
-</div>
-<ul class="list-group list-group-flush text-center">
-<li class="list-group-item">Pest Control Management</li>
-<li class="list-group-item">Work Order Submissions</li>
-<li class="list-group-item">Equipment Moves</li>
-<li class="list-group-item">Procurement & Contract Requests</li>
-<li class="list-group-item">Inspection Tracking & Return to Occupancy</li>
-</ul>
-</div>
-</div>
-
-
-</div>
-</div>
--------------->
-
 <!-----------------Enterprise Scalability -------------->
 <div
   id="container_usecases"
   class="container row justify-content-center m-auto p-5"
 >
-  <div class="section-divider"></div>
   <h1 class="mb-3 text-center">
     Enterprise Scalability and<span class="text-primary fw-bold">
       Endless Possibilities.</span
@@ -1062,10 +956,9 @@
 
 <!-----------------Results  [result-container alt-result-container mx-auto]---------------->
 <div class="container my-5 text-center">
-  <div class="section-divider"></div>
   <h1 class="result-header">Digital Transformation with Lasting Impact.</h1>
-  <div class="results-grid">
-    <div>
+  <div class="row">
+    <div class="col-md-6 mb-4">
       <div class="result-container mx-auto">
         <div class="result-icon">
           <i
@@ -1084,7 +977,7 @@
       </div>
     </div>
 
-    <div>
+    <div class="col-md-6 mb-4">
       <div class="result-container mx-auto">
         <div class="result-icon">
           <i
@@ -1103,7 +996,7 @@
       </div>
     </div>
 
-    <div>
+    <div class="col-md-6 mb-4">
       <div class="result-container mx-auto">
         <div class="result-icon">
           <i
@@ -1122,7 +1015,7 @@
       </div>
     </div>
 
-    <div>
+    <div class="col-md-6 mb-4">
       <div class="result-container mx-auto">
         <div class="result-icon">
           <i
