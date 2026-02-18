@@ -30,6 +30,14 @@
       </button>
     </div>
 
+    <!--{if $empMembership['groupID'][388]}-->
+    <div class="pm-actionsRow">
+      <button type="button" class="pm-primaryBtn" id="pmAddOkrBtn">
+        + OKR
+      </button>
+    </div>
+    <!--{/if}-->
+
     <div class="pm-controls">
       <div class="pm-centerControls">
         <div class="pm-tabs" role="tablist" aria-label="PM tabs">
@@ -71,7 +79,24 @@
     <div class="pm-panelHeader">
       <h2 class="pm-subtitle">Projects</h2>
     </div>
-    <div id="pmProjectsTable"></div>
+    <div class="pm-viewRow">
+      <div class="pm-viewBtns">
+        <span class="pm-viewLabel">View:</span>
+        <button type="button" id="pmProjectViewTableBtn" class="pm-tab">
+          Table
+        </button>
+        <button type="button" id="pmProjectViewOkrsBtn" class="pm-tab">
+          OKRs
+        </button>
+      </div>
+    </div>
+
+    <div id="pmProjectsTableWrap">
+      <div id="pmProjectsTable"></div>
+    </div>
+    <div id="pmOkrsTableWrap" style="display: none">
+      <div id="pmOkrsTable"></div>
+    </div>
   </section>
 
   <section id="pmTab-tasks" class="pm-panel" role="tabpanel">

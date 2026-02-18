@@ -32,6 +32,14 @@
     projectStatus: 6,
   };
 
+  // OKR indicator IDs (Project form)
+  var OKR_IND = {
+    okrKey: 23,
+    objective: 24,
+    startDate: 25,
+    endDate: 26,
+  };
+
   // Endpoints
   var BASE_QUERY_ENDPOINT =
     "https://leaf.va.gov/platform/projects/api/form/query/";
@@ -41,11 +49,14 @@
     "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_55445";
   var START_TASK_URL =
     "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_9b302";
+  var START_OKR_URL =
+    "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_a2b55&title=OKR";
 
   // Persistence keys
   var STORAGE_KEYS = {
     activeTab: "pm_active_tab",
     tasksView: "pm_tasks_view",
+    projectsView: "pm_projects_view",
   };
 
   // Fallback drives Kanban column order even when zero tasks
@@ -649,6 +660,10 @@
       description: extractFromS1(row, PROJECT_IND.description),
       owner: extractFromS1(row, PROJECT_IND.owner),
       projectStatus: extractFromS1(row, PROJECT_IND.projectStatus),
+      okrKey: extractFromS1(row, OKR_IND.okrKey),
+      okrObjective: extractFromS1(row, OKR_IND.objective),
+      okrStartDate: extractFromS1(row, OKR_IND.startDate),
+      okrEndDate: extractFromS1(row, OKR_IND.endDate),
       href: recordID
         ? "index.php?a=printview&recordID=" + encodeURIComponent(recordID)
         : "",
@@ -681,6 +696,12 @@
     if (!val) return null;
     var d = new Date(val);
     return isNaN(d.getTime()) ? null : d;
+  }
+
+  function formatDateCell(value) {
+    var d = parseDateLoose(value);
+    if (d) return formatDateShort(d);
+    return String(value || "").trim();
   }
 
   function compareValues(a, b, dir, type) {
@@ -738,6 +759,15 @@
     if (!el) return;
 
     var rows = projects
+      .filter(function (p) {
+        return (
+          String(p.projectKey || "").trim() ||
+          String(p.projectName || "").trim() ||
+          String(p.description || "").trim() ||
+          String(p.owner || "").trim() ||
+          String(p.projectStatus || "").trim()
+        );
+      })
       .slice(0, 500)
       .map(function (p) {
         var pkHref = getProjectRecordHrefFromKey(p.projectKey) || p.href;
@@ -789,6 +819,55 @@
 
     var s = state.sort.projects;
     setSortIndicator("pmProjectsTable", s.key, s.dir);
+  }
+
+  function renderOkrsTable(projects) {
+    var el = document.getElementById("pmOkrsTable");
+    if (!el) return;
+
+    var okrRows = (projects || []).filter(function (p) {
+      return (
+        String(p.okrKey || "").trim() ||
+        String(p.okrObjective || "").trim() ||
+        String(p.okrStartDate || "").trim() ||
+        String(p.okrEndDate || "").trim()
+      );
+    });
+
+    var rows = okrRows
+      .slice(0, 500)
+      .map(function (p) {
+        return (
+          "<tr>" +
+          "<td>" +
+          safe(p.okrKey) +
+          "</td>" +
+          "<td>" +
+          safe(p.okrObjective) +
+          "</td>" +
+          "<td>" +
+          safe(formatDateCell(p.okrStartDate)) +
+          "</td>" +
+          "<td>" +
+          safe(formatDateCell(p.okrEndDate)) +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+
+    el.innerHTML =
+      '<table class="pm-table">' +
+      "<thead><tr>" +
+      "<th>OKR Key</th>" +
+      "<th>Objective</th>" +
+      "<th>Start Date</th>" +
+      "<th>End Date</th>" +
+      "</tr></thead>" +
+      "<tbody>" +
+      (rows || "<tr><td colspan='4'>No OKRs found</td></tr>") +
+      "</tbody>" +
+      "</table>";
   }
 
   function renderTasksTable(tasks) {
@@ -1618,6 +1697,35 @@
     setView(initial);
   }
 
+  function wireProjectViewToggle() {
+    var btnTable = document.getElementById("pmProjectViewTableBtn");
+    var btnOkrs = document.getElementById("pmProjectViewOkrsBtn");
+    var wrapTable = document.getElementById("pmProjectsTableWrap");
+    var wrapOkrs = document.getElementById("pmOkrsTableWrap");
+    if (!btnTable || !btnOkrs || !wrapTable || !wrapOkrs) return;
+
+    function setView(view) {
+      wrapTable.style.display = view === "table" ? "block" : "none";
+      wrapOkrs.style.display = view === "okrs" ? "block" : "none";
+
+      btnTable.classList.toggle("is-active", view === "table");
+      btnOkrs.classList.toggle("is-active", view === "okrs");
+
+      localStorage.setItem(STORAGE_KEYS.projectsView, view);
+      applySearchAndFilters(true);
+    }
+
+    btnTable.addEventListener("click", function () {
+      setView("table");
+    });
+    btnOkrs.addEventListener("click", function () {
+      setView("okrs");
+    });
+
+    var initial = localStorage.getItem(STORAGE_KEYS.projectsView) || "table";
+    setView(initial);
+  }
+
   function wireSortingDelegation() {
     var projectsContainer = document.getElementById("pmProjectsTable");
     if (projectsContainer) {
@@ -1798,7 +1906,15 @@
         " " +
         p.owner +
         " " +
-        p.projectStatus
+        p.projectStatus +
+        " " +
+        p.okrKey +
+        " " +
+        p.okrObjective +
+        " " +
+        p.okrStartDate +
+        " " +
+        p.okrEndDate
       ).toLowerCase();
       return matchesQuery(hay, q, qCompact) || recordMatch(p.recordID);
     });
@@ -1829,6 +1945,8 @@
 
     var activeTab = localStorage.getItem(STORAGE_KEYS.activeTab) || "projects";
     var tasksView = localStorage.getItem(STORAGE_KEYS.tasksView) || "table";
+    var projectsView =
+      localStorage.getItem(STORAGE_KEYS.projectsView) || "table";
 
     var tasksFiltered = tasksSearchFiltered;
     if (activeTab === "tasks") {
@@ -1883,14 +2001,18 @@
     });
 
     if (renderOnlyCurrentTabFirst) {
-      if (activeTab === "projects") renderProjectsTable(projectsFiltered);
+      if (activeTab === "projects") {
+        if (projectsView === "okrs") renderOkrsTable(projectsFiltered);
+        else renderProjectsTable(projectsFiltered);
+      }
       if (activeTab === "tasks") {
         renderTasksTable(tasksFiltered);
         if (tasksView === "kanban") renderKanban(tasksFiltered);
         if (tasksView === "gantt") renderGantt(tasksNoArchive);
       }
     } else {
-      renderProjectsTable(projectsFiltered);
+      if (projectsView === "okrs") renderOkrsTable(projectsFiltered);
+      else renderProjectsTable(projectsFiltered);
       renderTasksTable(tasksFiltered);
       if (activeTab === "tasks" && tasksView === "kanban")
         renderKanban(tasksFiltered);
@@ -1974,6 +2096,7 @@
     var p = document.getElementById("pmAddProjectBtn");
     var t = document.getElementById("pmAddTaskBtn");
     var inbox = document.getElementById("pmViewInboxBtn");
+    var okr = document.getElementById("pmAddOkrBtn");
     if (p)
       p.addEventListener("click", function () {
         openModal("New Project", START_PROJECT_URL);
@@ -1985,6 +2108,10 @@
     if (inbox)
       inbox.addEventListener("click", function () {
         openModal("Inbox", "report.php?a=LEAF_Inbox");
+      });
+    if (okr)
+      okr.addEventListener("click", function () {
+        openModal("Add OKR", START_OKR_URL);
       });
   }
 
@@ -2614,6 +2741,7 @@
       flushTransferDebug();
       wireTabs();
       wireTaskViewToggle();
+      wireProjectViewToggle();
       wireSortingDelegation();
       wireClearFilters();
       wireRecordModalLinks();
@@ -2632,6 +2760,10 @@
           PROJECT_IND.description,
           PROJECT_IND.owner,
           PROJECT_IND.projectStatus,
+          OKR_IND.okrKey,
+          OKR_IND.objective,
+          OKR_IND.startDate,
+          OKR_IND.endDate,
         ],
         [],
       );
@@ -2664,7 +2796,7 @@
       var taskRowsAll = coerceRows(tasksJson) || [];
 
       var projectRows = projectRowsAll.filter(function (r) {
-        return hasAnyS1Value(r, [2, 3, 4, 5, 6]);
+        return hasAnyS1Value(r, [2, 3, 4, 5, 6, 23, 24, 25, 26]);
       });
       var taskRows = taskRowsAll.filter(function (r) {
         return hasAnyS1Value(
