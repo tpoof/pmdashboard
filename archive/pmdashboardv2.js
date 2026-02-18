@@ -4,7 +4,7 @@
 
   // Task form indicator IDs
   var TASK_IND = {
-    projectKey: 128,
+    projectKey: 28,
     title: 129,
     status: 130,
     assignedTo: 131,
@@ -17,8 +17,8 @@
 
   // Project form indicator IDs
   var PROJECT_IND = {
-    projectKey: 135,
-    projectName: 136,
+    projectKey: 23,
+    projectName: 24,
     description: 137,
     owner: 138,
     projectStatus: 139,
@@ -2162,10 +2162,10 @@
       var taskRowsAll = coerceRows(tasksJson) || [];
 
       var projectRows = projectRowsAll.filter(function (r) {
-        return hasAnyS1Value(r, [135, 136, 137, 138, 139]);
+        return hasAnyS1Value(r, [23, 24, 137, 138, 139]);
       });
       var taskRows = taskRowsAll.filter(function (r) {
-        return hasAnyS1Value(r, [128, 129, 130, 131, 132, 133, 140, 145, 146]);
+        return hasAnyS1Value(r, [28, 129, 130, 131, 132, 133, 140, 145, 146]);
       });
 
       state.projectsAll = projectRows.map(normalizeProject);

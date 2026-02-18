@@ -1,39 +1,39 @@
-<div id="pkWrap128" style="max-width: 820px;">
+<div id="pkWrap28" style="max-width: 820px;">
   <div style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap;">
     <div style="flex:1; min-width: 260px;">
       <div style="font-weight:600; margin-bottom:0.25rem;">OKR</div>
-      <input id="pkSearch128" type="text" autocomplete="off" placeholder="Search OKR key or name"
+      <input id="pkSearch28" type="text" autocomplete="off" placeholder="Search OKR key or name"
         style="width:100%; padding:0.45rem 0.55rem; border:1px solid #c9c9c9; border-radius:0.5rem;">
     </div>
 
     <div style="display:flex; gap:0.5rem; align-items:center;">
-      <button type="button" id="pkClear128" class="buttonNorm" style="white-space:nowrap;">Clear</button>
+      <button type="button" id="pkClear28" class="buttonNorm" style="white-space:nowrap;">Clear</button>
     </div>
   </div>
 
-  <div id="pkMsg128" style="margin-top:0.5rem; font-size:0.9rem;"></div>
+  <div id="pkMsg28" style="margin-top:0.5rem; font-size:0.9rem;"></div>
 
   <div style="margin-top:0.6rem;">
     <div style="font-weight:600; margin-bottom:0.35rem;">Available OKRs</div>
-    <div id="pkList128"
+    <div id="pkList28"
       style="border:1px solid #d9d9d9; border-radius:0.6rem; padding:0.6rem; min-height: 140px; max-height: 320px; overflow:auto; background:#fff;">
     </div>
   </div>
 
   <div style="margin-top:0.75rem;">
     <div style="font-weight:600; margin-bottom:0.35rem;">Selected OKR</div>
-    <div id="pkSelected128"
+    <div id="pkSelected28"
       style="border:1px solid #d9d9d9; border-radius:0.6rem; padding:0.6rem; background:#fff;">
     </div>
   </div>
 </div>
 
 <style>
-  /* Hide only the real OKR-bound field for indicator 128 (keeps custom UI visible) */
-  .response.blockIndicator_128 [name="128"] { display:none !important; }
-  .response.blockIndicator_128 textarea[name="128"],
-  .response.blockIndicator_128 input[name="128"],
-  .response.blockIndicator_128 select[name="128"] { display:none !important; }
+  /* Hide only the real OKR-bound field for indicator 28 (keeps custom UI visible) */
+  .response.blockIndicator_28 [name="28"] { display:none !important; }
+  .response.blockIndicator_28 textarea[name="28"],
+  .response.blockIndicator_28 input[name="28"],
+  .response.blockIndicator_28 select[name="28"] { display:none !important; }
 </style>
 
 <script>
@@ -48,12 +48,12 @@
   // Endpoints
   const BASE_QUERY_ENDPOINT = "https://leaf.va.gov/platform/projects/api/form/query/";
 
-  const wrap = document.getElementById("pkWrap128");
-  const searchEl = document.getElementById("pkSearch128");
-  const listEl = document.getElementById("pkList128");
-  const selectedEl = document.getElementById("pkSelected128");
-  const msgEl = document.getElementById("pkMsg128");
-  const clearBtn = document.getElementById("pkClear128");
+  const wrap = document.getElementById("pkWrap28");
+  const searchEl = document.getElementById("pkSearch28");
+  const listEl = document.getElementById("pkList28");
+  const selectedEl = document.getElementById("pkSelected28");
+  const msgEl = document.getElementById("pkMsg28");
+  const clearBtn = document.getElementById("pkClear28");
   if (!wrap || !searchEl || !listEl || !selectedEl || !msgEl || !clearBtn) return;
 
   function setMsg(text, kind) {
@@ -70,7 +70,7 @@
       .replaceAll("'", "&#039;");
   }
 
-  // Bind to the real OKR field for this indicator (128)
+  // Bind to the real OKR field for this indicator (28)
   function findOkrBoundField() {
     const within = wrap.closest(".response") || wrap.parentElement;
     let el = within ? within.querySelector('[name="' + TARGET_IND + '"]') : null;
@@ -163,11 +163,11 @@
           <div style="font-weight:700;">${safe(label)}</div>
           <div style="opacity:0.85; font-size:0.9rem;">Stored value: ${safe(val)}</div>
         </div>
-        <button type="button" class="buttonNorm" id="pkClearSelected128" style="white-space:nowrap;">Remove</button>
+        <button type="button" class="buttonNorm" id="pkClearSelected28" style="white-space:nowrap;">Remove</button>
       </div>
     `;
 
-    const btn = document.getElementById("pkClearSelected128");
+    const btn = document.getElementById("pkClearSelected28");
     if (btn) btn.addEventListener("click", () => {
       writeValue("");
       renderAll();
@@ -192,7 +192,7 @@
       const checked = String(current) === String(okr.key);
       return `
         <label style="display:flex; gap:0.5rem; align-items:flex-start; padding:0.3rem 0; border-bottom:1px solid #f0f0f0; cursor:pointer;">
-          <input type="radio" name="pkRadio128" class="pkRadio128" data-key="${safe(okr.key)}" ${checked ? "checked" : ""} style="margin-top:0.2rem;">
+          <input type="radio" name="pkRadio28" class="pkRadio28" data-key="${safe(okr.key)}" ${checked ? "checked" : ""} style="margin-top:0.2rem;">
           <div style="min-width:0;">
             <div style="font-weight:600;">${safe(okr.key)}</div>
             <div style="opacity:0.9; word-break:break-word;">${safe(okr.name || "")}</div>
@@ -201,7 +201,7 @@
       `;
     }).join("");
 
-    listEl.querySelectorAll(".pkRadio128").forEach(r => {
+    listEl.querySelectorAll(".pkRadio28").forEach(r => {
       r.addEventListener("change", () => {
         const key = String(r.getAttribute("data-key") || "");
         writeValue(key);
