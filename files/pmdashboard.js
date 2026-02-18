@@ -512,31 +512,67 @@
     );
   }
 
-  function getSupportTicketId(value) {
+  function parseSupportTicket(value) {
     var text = String(value || "").trim();
-    if (!text) return "";
-    var match = text.match(/Support\s*Ticket\s*#(\d+)/i);
-    if (match) return match[1];
+    if (!text) return { id: "", type: "" };
+    var match = text.match(/^(Support|UX)\s*Ticket\s*#(\d+)/i);
+    if (match) return { id: match[2], type: match[1].toLowerCase() };
     match = text.match(/#(\d+)/);
-    return match ? match[1] : "";
+    return { id: match ? match[1] : "", type: "" };
+  }
+
+  function getSupportTicketId(value) {
+    return parseSupportTicket(value).id;
   }
 
   function supportTicketLink(value) {
-    var id = getSupportTicketId(value);
+    var parsed = parseSupportTicket(value);
+    var id = parsed.id;
     if (!id) return "";
-    var label = "Support Ticket #" + id;
-    var href =
-      "/platform/sl_sandbox/index.php?a=printview&recordID=" +
-      encodeURIComponent(id);
+    var label = "#" + id;
+    var title = parsed.type
+      ? (parsed.type === "ux" ? "UX Ticket #" : "Support Ticket #") + id
+      : "Ticket #" + id;
+    var hrefBase =
+      parsed.type === "ux"
+        ? "/platform/ux/index.php?a=printview&recordID="
+        : "/platform/support/index.php?a=printview&recordID=";
+    var href = hrefBase + encodeURIComponent(id);
     return (
       '<a href="' +
       safe(href) +
       '" class="pm-recordLink" data-title="' +
-      safe(label) +
+      safe(title) +
       '">' +
       safe(label) +
       "</a>"
     );
+  }
+
+  function backfillSupportTicketLabels(tasks) {
+    if (!tasks || !tasks.length) return;
+    if (window.__pmSupportTicketBackfillRan) return;
+    var pending = tasks
+      .map(function (t) {
+        var parsed = parseSupportTicket(t.supportTicket);
+        if (!parsed.id || parsed.type) return null;
+        return { recordID: t.recordID, id: parsed.id };
+      })
+      .filter(Boolean);
+
+    if (!pending.length) return;
+    window.__pmSupportTicketBackfillRan = true;
+
+    var maxUpdates = 25;
+    if (pending.length > maxUpdates) pending = pending.slice(0, maxUpdates);
+
+    pending.reduce(function (p, item) {
+      return p.then(function () {
+        return setSupportTicketIndicator(item.recordID, item.id, "support").catch(
+          function () {},
+        );
+      });
+    }, Promise.resolve());
   }
 
   function renderDepsList(depIds) {
@@ -1016,7 +1052,7 @@
     return newId;
   }
 
-  async function setSupportTicketIndicator(recordID, sourceId) {
+  async function setSupportTicketIndicator(recordID, sourceId, sourceType) {
     if (!recordID) throw new Error("Missing recordID");
     var token = await ensureCSRFToken(recordID);
     var tokenField = state.csrfField || getCSRFFieldName();
@@ -1026,7 +1062,8 @@
       recordID: recordID,
       series: 1,
     };
-    bodyObj[TASK_IND.supportTicket] = "Support Ticket #" + sourceId;
+    var label = (sourceType === "ux" ? "UX Ticket #" : "Support Ticket #") + sourceId;
+    bodyObj[TASK_IND.supportTicket] = label;
     if (token) {
       bodyObj[tokenField] = token;
     } else {
@@ -1057,22 +1094,27 @@
 
   async function handleTransferFromSupport() {
     if (state.transferInProgress) return;
-    var sourceId =
-      getQueryParam("transferFromSupport") || getQueryParam("transferFromUX");
+    var supportId = getQueryParam("transferFromSupport");
+    var uxId = getQueryParam("transferFromUX");
+    var legacyId = getQueryParam("transferFromSandbox");
+    var sourceId = supportId || uxId || legacyId;
+    var sourceType = uxId ? "ux" : "support";
+    var sourceLabel = sourceType === "ux" ? "UX" : "Support";
     if (!sourceId) return;
     sourceId = String(sourceId || "").trim();
     if (!sourceId) return;
 
-    showTransferDebug("Transfer detected for support " + sourceId);
+    showTransferDebug("Transfer detected for " + sourceLabel + " " + sourceId);
     state.transferInProgress = true;
     try {
       showTransferDebug("Creating task for support " + sourceId);
       var newRecordID = await createTaskRecord();
-      await setSupportTicketIndicator(newRecordID, sourceId);
+      await setSupportTicketIndicator(newRecordID, sourceId, sourceType);
 
       var params = new URLSearchParams(window.location.search || "");
       params.delete("transferFromUX");
       params.delete("transferFromSupport");
+      params.delete("transferFromSandbox");
       var nextUrl =
         window.location.pathname +
         (params.toString() ? "?" + params.toString() : "") +
@@ -1087,7 +1129,7 @@
       showTransferDebug("Transfer complete. Task " + newRecordID);
     } catch (e) {
       showTransferDebug("Transfer failed. Check console for details.");
-      console.error("Transfer from support failed.", e);
+      console.error("Transfer from " + sourceLabel + " failed.", e);
     } finally {
       state.transferInProgress = false;
     }
@@ -2629,6 +2671,7 @@
 
       state.projectsAll = projectRows.map(normalizeProject);
       state.tasksAll = taskRows.map(normalizeTask);
+      backfillSupportTicketLabels(state.tasksAll);
 
       state.projectKeyToRecordID = {};
       state.projectKeyToTitle = {};
