@@ -517,8 +517,7 @@
     if (!text) return { id: "", type: "" };
     var match = text.match(/^(Support|UX)\s*Ticket\s*#(\d+)/i);
     if (match) return { id: match[2], type: match[1].toLowerCase() };
-    match = text.match(/#(\d+)/);
-    return { id: match ? match[1] : "", type: "" };
+    return { id: "", type: "" };
   }
 
   function getSupportTicketId(value) {

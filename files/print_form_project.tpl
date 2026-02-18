@@ -234,17 +234,24 @@ function wireSandboxTicket148() {
     nodes.forEach(function(el) {
         if (!el || el.querySelector("a.pmSandboxLink")) return;
         var text = (el.textContent || "").trim();
-        var match = text.match(/Sandbox\s*Ticket\s*#(\d+)/i);
+        var match = text.match(/^(Support|UX)\s*Ticket\s*#(\d+)/i);
+        var ticketType = "support";
+        var ticketId = "";
         if (!match) return;
-        var ticketId = match[1];
-        var url =
-            "/platform/sl_sandbox/index.php?a=printview&recordID=" +
-            encodeURIComponent(ticketId);
+        ticketType = match[1].toLowerCase();
+        ticketId = match[2];
+        var urlBase =
+            ticketType === "ux"
+                ? "/platform/ux/index.php?a=printview&recordID="
+                : "/platform/support/index.php?a=printview&recordID=";
+        var url = urlBase + encodeURIComponent(ticketId);
         var link = document.createElement("a");
         link.href = "#";
         link.className = "pmSandboxLink";
         link.setAttribute("data-sandbox-url", url);
-        link.textContent = "Sandbox Ticket #" + ticketId;
+        link.textContent =
+            (ticketType === "ux" ? "UX Ticket #" : "Support Ticket #") +
+            ticketId;
         el.innerHTML = "";
         el.appendChild(link);
     });
