@@ -1,8 +1,8 @@
 <div id="pkWrap128" style="max-width: 820px;">
   <div style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap;">
     <div style="flex:1; min-width: 260px;">
-      <div style="font-weight:600; margin-bottom:0.25rem;">Project</div>
-      <input id="pkSearch128" type="text" autocomplete="off" placeholder="Search project key or name"
+      <div style="font-weight:600; margin-bottom:0.25rem;">OKR</div>
+      <input id="pkSearch128" type="text" autocomplete="off" placeholder="Search OKR key or name"
         style="width:100%; padding:0.45rem 0.55rem; border:1px solid #c9c9c9; border-radius:0.5rem;">
     </div>
 
@@ -14,14 +14,14 @@
   <div id="pkMsg128" style="margin-top:0.5rem; font-size:0.9rem;"></div>
 
   <div style="margin-top:0.6rem;">
-    <div style="font-weight:600; margin-bottom:0.35rem;">Available projects</div>
+    <div style="font-weight:600; margin-bottom:0.35rem;">Available OKRs</div>
     <div id="pkList128"
       style="border:1px solid #d9d9d9; border-radius:0.6rem; padding:0.6rem; min-height: 140px; max-height: 320px; overflow:auto; background:#fff;">
     </div>
   </div>
 
   <div style="margin-top:0.75rem;">
-    <div style="font-weight:600; margin-bottom:0.35rem;">Selected</div>
+    <div style="font-weight:600; margin-bottom:0.35rem;">Selected OKR</div>
     <div id="pkSelected128"
       style="border:1px solid #d9d9d9; border-radius:0.6rem; padding:0.6rem; background:#fff;">
     </div>
@@ -38,15 +38,15 @@
 
 <script>
 (function () {
-  // Task field being programmed (this is where we store the selected project key)
-  const TARGET_IND = 128;
+  // Task field being programmed (this is where we store the selected OKR key)
+  const TARGET_IND = 28;
 
-  // Project form fields
-  const PROJECT_KEY_IND = 135;
-  const PROJECT_NAME_IND = 136;
+  // OKR form fields
+  const OKR_KEY_IND = 23;
+  const OKR_NAME_IND = 24;
 
   // Endpoints
-  const BASE_QUERY_ENDPOINT = "https://leaf.va.gov/platform/sl_projects/api/form/query/";
+  const BASE_QUERY_ENDPOINT = "https://leaf.va.gov/platform/projects/api/form/query/";
 
   const wrap = document.getElementById("pkWrap128");
   const searchEl = document.getElementById("pkSearch128");
@@ -128,31 +128,31 @@
     return false;
   }
 
-  function buildProjectsQueryUrl() {
+  function buildOkrsQueryUrl() {
     const q = {
       terms: [{ id: "deleted", operator: "=", match: 0, gate: "AND" }],
       joins: [],
       sort: {},
-      getData: [String(PROJECT_KEY_IND), String(PROJECT_NAME_IND)]
+      getData: [String(OKR_KEY_IND), String(OKR_NAME_IND)]
     };
     return BASE_QUERY_ENDPOINT + "?q=" + encodeURIComponent(JSON.stringify(q)) + "&x-filterData=recordID,";
   }
 
-  let projects = []; // { key, name }
+  let okrs = []; // { key, name }
 
-  function matchesSearch(p, q) {
+  function matchesSearch(okr, q) {
     if (!q) return true;
-    const hay = (String(p.key) + " " + String(p.name)).toLowerCase();
+    const hay = (String(okr.key) + " " + String(okr.name)).toLowerCase();
     return hay.includes(q);
   }
 
   function renderSelected() {
     const val = readValue();
     if (!val) {
-      selectedEl.innerHTML = '<div style="opacity:0.75;">No project selected</div>';
+      selectedEl.innerHTML = '<div style="opacity:0.75;">No OKR selected</div>';
       return;
     }
-    const found = projects.find(p => String(p.key) === String(val));
+    const found = okrs.find(okr => String(okr.key) === String(val));
     const label = found
       ? (found.key + (found.name ? (" | " + found.name) : ""))
       : val;
@@ -176,26 +176,26 @@
 
   function renderList() {
     const q = String(searchEl.value || "").trim().toLowerCase();
-    const visible = projects
-      .filter(p => matchesSearch(p, q))
+    const visible = okrs
+      .filter(okr => matchesSearch(okr, q))
       .sort((a, b) => String(a.key).localeCompare(String(b.key), undefined, { numeric: true, sensitivity: "base" }));
 
     if (visible.length === 0) {
-      listEl.innerHTML = '<div style="opacity:0.75;">No projects match your search</div>';
+      listEl.innerHTML = '<div style="opacity:0.75;">No OKRs match your search</div>';
       return;
     }
 
     const current = readValue();
 
-    listEl.innerHTML = visible.map(p => {
-      const label = p.key + (p.name ? (" | " + p.name) : "");
-      const checked = String(current) === String(p.key);
+    listEl.innerHTML = visible.map(okr => {
+      const label = okr.key + (okr.name ? (" | " + okr.name) : "");
+      const checked = String(current) === String(okr.key);
       return `
         <label style="display:flex; gap:0.5rem; align-items:flex-start; padding:0.3rem 0; border-bottom:1px solid #f0f0f0; cursor:pointer;">
-          <input type="radio" name="pkRadio128" class="pkRadio128" data-key="${safe(p.key)}" ${checked ? "checked" : ""} style="margin-top:0.2rem;">
+          <input type="radio" name="pkRadio128" class="pkRadio128" data-key="${safe(okr.key)}" ${checked ? "checked" : ""} style="margin-top:0.2rem;">
           <div style="min-width:0;">
-            <div style="font-weight:600;">${safe(p.key)}</div>
-            <div style="opacity:0.9; word-break:break-word;">${safe(p.name || "")}</div>
+            <div style="font-weight:600;">${safe(okr.key)}</div>
+            <div style="opacity:0.9; word-break:break-word;">${safe(okr.name || "")}</div>
           </div>
         </label>
       `;
@@ -215,28 +215,28 @@
     renderSelected();
   }
 
-  async function loadProjects() {
+  async function loadOkrs() {
     if (!okrFieldEl) {
       setMsg("Could not find the real OKR field for this indicator. The custom selector must bind to the platform input to persist.", "error");
       return;
     }
 
-    setMsg("Loading projects...", "");
-    const url = buildProjectsQueryUrl();
+    setMsg("Loading OKRs...", "");
+    const url = buildOkrsQueryUrl();
     const r = await fetch(url, { credentials: "include" });
-    if (!r.ok) throw new Error("Project list fetch failed. HTTP " + r.status);
+    if (!r.ok) throw new Error("OKR list fetch failed. HTTP " + r.status);
     const json = await r.json();
     const rows = coerceRows(json);
 
-    projects = rows
-      .filter(row => hasAnyS1Value(row, [PROJECT_KEY_IND, PROJECT_NAME_IND]))
+    okrs = rows
+      .filter(row => hasAnyS1Value(row, [OKR_KEY_IND, OKR_NAME_IND]))
       .map(row => ({
-        key: extractFromS1(row, PROJECT_KEY_IND),
-        name: extractFromS1(row, PROJECT_NAME_IND)
+        key: extractFromS1(row, OKR_KEY_IND),
+        name: extractFromS1(row, OKR_NAME_IND)
       }))
-      .filter(p => p.key);
+      .filter(okr => okr.key);
 
-    setMsg("Loaded " + projects.length + " projects.", "ok");
+    setMsg("Loaded " + okrs.length + " OKRs.", "ok");
     renderAll();
   }
 
@@ -248,6 +248,6 @@
 
   searchEl.addEventListener("input", renderList);
 
-  loadProjects().catch(err => setMsg(String(err), "error"));
+  loadOkrs().catch(err => setMsg(String(err), "error"));
 })();
 </script>
