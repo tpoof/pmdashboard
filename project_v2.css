@@ -35,6 +35,10 @@
   margin-bottom: 8px;
 }
 
+.pm-actionsLabel {
+  font-weight: 800;
+}
+
 .pm-primaryBtn {
   background: #ddf9c7;
   border: 1px solid #7fb22b;

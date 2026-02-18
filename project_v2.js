@@ -38,6 +38,7 @@
     objective: 24,
     startDate: 25,
     endDate: 26,
+    fiscalYear: 33,
   };
 
   // Endpoints
@@ -84,6 +85,7 @@
     sort: {
       projects: { key: null, dir: 1, type: "string" },
       tasks: { key: null, dir: 1, type: "string" },
+      okrs: { key: null, dir: 1, type: "string" },
     },
     charts: {
       status: null,
@@ -664,6 +666,7 @@
       okrObjective: extractFromS1(row, OKR_IND.objective),
       okrStartDate: extractFromS1(row, OKR_IND.startDate),
       okrEndDate: extractFromS1(row, OKR_IND.endDate),
+      okrFiscalYear: extractFromS1(row, OKR_IND.fiscalYear),
       href: recordID
         ? "index.php?a=printview&recordID=" + encodeURIComponent(recordID)
         : "",
@@ -830,17 +833,28 @@
         String(p.okrKey || "").trim() ||
         String(p.okrObjective || "").trim() ||
         String(p.okrStartDate || "").trim() ||
-        String(p.okrEndDate || "").trim()
+        String(p.okrEndDate || "").trim() ||
+        String(p.okrFiscalYear || "").trim()
       );
     });
+
+    if (state.sort.okrs.key) {
+      var so = state.sort.okrs;
+      okrRows = okrRows.slice().sort(function (a, b) {
+        return compareValues(a[so.key], b[so.key], so.dir, so.type);
+      });
+    }
 
     var rows = okrRows
       .slice(0, 500)
       .map(function (p) {
+        var okrLink = p.okrKey
+          ? recordLink(p.okrKey, "OKR " + p.okrKey)
+          : "";
         return (
           "<tr>" +
           "<td>" +
-          safe(p.okrKey) +
+          (okrLink || safe(p.okrKey)) +
           "</td>" +
           "<td>" +
           safe(p.okrObjective) +
@@ -851,6 +865,9 @@
           "<td>" +
           safe(formatDateCell(p.okrEndDate)) +
           "</td>" +
+          "<td>" +
+          safe(p.okrFiscalYear) +
+          "</td>" +
           "</tr>"
         );
       })
@@ -859,15 +876,19 @@
     el.innerHTML =
       '<table class="pm-table">' +
       "<thead><tr>" +
-      "<th>OKR Key</th>" +
-      "<th>Objective</th>" +
-      "<th>Start Date</th>" +
-      "<th>End Date</th>" +
+      '<th class="pm-sortable" data-sort="okrKey" data-type="number">OKR Key</th>' +
+      '<th class="pm-sortable" data-sort="okrObjective" data-type="string">Objective</th>' +
+      '<th class="pm-sortable" data-sort="okrStartDate" data-type="date">Start Date</th>' +
+      '<th class="pm-sortable" data-sort="okrEndDate" data-type="date">End Date</th>' +
+      '<th class="pm-sortable" data-sort="okrFiscalYear" data-type="string">Fiscal Year</th>' +
       "</tr></thead>" +
       "<tbody>" +
-      (rows || "<tr><td colspan='4'>No OKRs found</td></tr>") +
+      (rows || "<tr><td colspan='5'>No OKRs found</td></tr>") +
       "</tbody>" +
       "</table>";
+
+    var s = state.sort.okrs;
+    setSortIndicator("pmOkrsTable", s.key, s.dir);
   }
 
   function renderTasksTable(tasks) {
@@ -1768,6 +1789,27 @@
         applySearchAndFilters(true);
       });
     }
+
+    var okrsContainer = document.getElementById("pmOkrsTable");
+    if (okrsContainer) {
+      okrsContainer.addEventListener("click", function (e) {
+        var th = e.target.closest(".pm-sortable");
+        if (!th) return;
+        var key = th.getAttribute("data-sort");
+        var type = th.getAttribute("data-type") || "string";
+        if (!key) return;
+
+        var s3 = state.sort.okrs;
+        if (s3.key === key) s3.dir *= -1;
+        else {
+          s3.key = key;
+          s3.dir = 1;
+          s3.type = type;
+        }
+
+        applySearchAndFilters(true);
+      });
+    }
   }
 
   function populateProjectKeyDropdown(projects) {
@@ -1914,7 +1956,9 @@
         " " +
         p.okrStartDate +
         " " +
-        p.okrEndDate
+        p.okrEndDate +
+        " " +
+        p.okrFiscalYear
       ).toLowerCase();
       return matchesQuery(hay, q, qCompact) || recordMatch(p.recordID);
     });
@@ -2764,6 +2808,7 @@
           OKR_IND.objective,
           OKR_IND.startDate,
           OKR_IND.endDate,
+          OKR_IND.fiscalYear,
         ],
         [],
       );
@@ -2796,7 +2841,7 @@
       var taskRowsAll = coerceRows(tasksJson) || [];
 
       var projectRows = projectRowsAll.filter(function (r) {
-        return hasAnyS1Value(r, [2, 3, 4, 5, 6, 23, 24, 25, 26]);
+        return hasAnyS1Value(r, [2, 3, 4, 5, 6, 23, 24, 25, 26, 33]);
       });
       var taskRows = taskRowsAll.filter(function (r) {
         return hasAnyS1Value(
