@@ -55,17 +55,17 @@ function transferToPMDashboard() {
     var id = params.get("recordID");
     if (!id) return;
     window.location.href =
-        "https://leaf.va.gov/platform/projects/?tab=tasks&transferFromSandbox=" +
+        "https://leaf.va.gov/platform/projects/?tab=tasks&transferFromUX=" +
         encodeURIComponent(id);
 }
 
-function wireSandboxTicket148() {
-    var nodes = document.querySelectorAll("[id^='xhrIndicator_148_']");
+function wireUXTicket18() {
+    var nodes = document.querySelectorAll("[id^='xhrIndicator_18_']");
     if (!nodes || !nodes.length) return;
     nodes.forEach(function(el) {
-        if (!el || el.querySelector("a.pmSandboxLink")) return;
+        if (!el || el.querySelector("a.pmUXLink")) return;
         var text = (el.textContent || "").trim();
-        var match = text.match(/Support\s*Ticket\s*#(\d+)/i);
+        var match = text.match(/UX\s*Ticket\s*#(\d+)/i);
         if (!match) return;
         var ticketId = match[1];
         var url =
@@ -73,42 +73,42 @@ function wireSandboxTicket148() {
             encodeURIComponent(ticketId);
         var link = document.createElement("a");
         link.href = "#";
-        link.className = "pmSandboxLink";
-        link.setAttribute("data-sandbox-url", url);
-        link.textContent = "Support Ticket #" + ticketId;
+        link.className = "pmUXLink";
+        link.setAttribute("data-ux-url", url);
+        link.textContent = "UX Ticket #" + ticketId;
         el.innerHTML = "";
         el.appendChild(link);
     });
 }
 
-function initSandboxTicketWatcher() {
+function initUXTicketWatcher() {
     var target = document.getElementById("formcontent");
-    if (!target || target.__pmSandboxObserver) return;
+    if (!target || target.__pmUXObserver) return;
     var observer = new MutationObserver(function() {
-        wireSandboxTicket148();
+        wireUXTicket18();
     });
     observer.observe(target, {
         childList: true,
         subtree: true,
         characterData: true
     });
-    target.__pmSandboxObserver = observer;
+    target.__pmUXObserver = observer;
 }
 
 document.addEventListener("click", function(event) {
-    var link = event.target.closest("a.pmSandboxLink");
+    var link = event.target.closest("a.pmUXLink");
     if (!link) return;
     event.preventDefault();
-    var sandboxUrl = link.getAttribute("data-sandbox-url") || "";
-    if (!sandboxUrl) return;
+    var uxUrl = link.getAttribute("data-ux-url") || "";
+    if (!uxUrl) return;
     var linkText = (link.textContent || "").trim();
     if (window.parent && window.parent !== window) {
         window.parent.postMessage(
-            { type: "pm-open-modal", title: linkText, url: sandboxUrl },
+            { type: "pm-open-modal", title: linkText, url: uxUrl },
             window.location.origin
         );
     } else {
-        window.location.href = sandboxUrl;
+        window.location.href = uxUrl;
     }
 });
 
@@ -222,7 +222,7 @@ function openContent(url) {
     				}
                 });
     		});
-            wireSandboxTicket148();
+            wireUXTicket18();
     	},
     	error: function(res) {
     		$('#formcontent').empty().html(res);
@@ -256,7 +256,7 @@ $(function() {
     openContent('ajaxIndex.php?a=internalonlyview&recordID=<!--{$recordID|strip_tags}-->&childCategoryID=<!--{$childCategoryID}-->');
     <!--{/if}-->
 
-    initSandboxTicketWatcher();
+    initUXTicketWatcher();
 });
 
 </script>
