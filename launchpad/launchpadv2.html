@@ -1,0 +1,1042 @@
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+/>
+
+<!--------------- Welcome -------------->
+
+<div class="lp-scope">
+  <div id="firstVisit" class="container pt-5">
+    <div class="row justify-content-center align-items-center">
+      <!-- Image on the right -->
+      <div class="col-12 col-md-6 order-md-2">
+        <img
+          src="./files/mockup-transparent-v2.png"
+          class="img-fluid"
+          alt="platform overview"
+        />
+
+        <!--------------- Launchpad Search Widget ----->
+        <div class="lp-launchpad-cta">
+          <div class="lp-launchpad-card">
+            <h2 class="mb-2">Help modernize VA.</h2>
+            <p class="lead">
+              Improve your processes with our powerful workflow and form system.
+            </p>
+            <div class="lp-launchpad-actions">
+              <a href="?a=newform" class="btn btn-primary btn-lg buttonNorm"
+                >🚀 Get started</a
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="section group is-hidden" id="welcomeBack">
+          <div class="col span_2_of_5">
+            <div class="p-3">
+              <p class="center lp-hero-title">Welcome back!</p>
+
+              <p>How can we help?</p>
+              <ul>
+                <li>
+                  <a href="report.php?a=Start_new_site"
+                    >I need a new LEAF site</a
+                  >
+                </li>
+                <li>
+                  <a href="/platform/service_requests_launchpad/"
+                    >I need help with LEAF</a
+                  >
+                </li>
+                <li>
+                  <a href="report.php?a=Find_my_site">I'm looking for a site</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="col span_3_of_5">
+            <p>Here's the LEAF web sites you've requested:</p>
+            <div id="searchWidget">
+              <div class="lp-search-card">
+                <!--{include file=$tpl_search is_service_chief=$is_service_chief is_admin=$is_admin empUID=$empUID userID=$userID}-->
+                <div id="searchCount"></div>
+                <br />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!--------------------- Intro--------------------->
+
+        <div class="container bg-light justify-content-center m-auto p-5">
+          <div class="section-divider"></div>
+          <h1 class="mb-3 text-center">
+            Build your forms, workflows, and reports in a few easy steps.
+          </h1>
+
+          <!----------------- Description container -------------->
+          <div
+            id="steps_desc_container"
+            class="row justify-content-center m-auto p-5"
+          >
+            <!----------------- Description: Design Forms -------------->
+            <div id="step_forms" class="row step_description">
+              <div class="col-lg">
+                <h2 class="text-primary">Design Forms</h2>
+                <p class="lead">
+                  Our user-friendly, drag-and-drop Form Editor helps to create a
+                  custom Form for your process.
+                </p>
+                <ul>
+                  <li>Dozens of question formats to choose from</li>
+                  <li>
+                    Toggle questions on/off depending on previous question
+                    responses
+                  </li>
+                  <li>Integration with the Active Directory</li>
+                </ul>
+              </div>
+              <div class="col">
+                <img
+                  src="./files/graphics-form.png"
+                  alt="form editor"
+                  width="500"
+                  height="275"
+                />
+              </div>
+            </div>
+
+            <!----------------- Description: Design Workflows -------------->
+            <div id="step_workflows" class="row step_description">
+              <div class="col-lg order-md-2">
+                <h2 class="text-primary">Build Workflows</h2>
+                <p class="lead">
+                  Integrated, interactive flowcharts customizable for each Form.
+                </p>
+                <ul>
+                  <li>
+                    Notify requestors and approvers every time something
+                    happens, so they're up to date
+                  </li>
+                  <li>
+                    Clear organization of responsibile owners of each step in a
+                    process
+                  </li>
+                  <li>
+                    Sub-Forms and workspaces available for multi-part processes
+                  </li>
+                </ul>
+              </div>
+              <div class="col order-md-1">
+                <img
+                  src="./files/graphics-workflow.png"
+                  alt="workflow editor"
+                  width="500"
+                  height="275"
+                />
+              </div>
+            </div>
+
+            <!----------------- Description: Run Analytics -------------->
+            <div id="step_analytics" class="row step_description">
+              <div class="col-lg">
+                <h2 class="text-primary">Run Analytics</h2>
+                <p class="lead">
+                  Use powerful tools such as the Report Builder, Timeline
+                  Explorer, and Data Visualizer to gain insights and make
+                  informed decisions.
+                </p>
+
+                <ul>
+                  <li>
+                    <b>Report Builder</b> - A robust tool that lets you drill
+                    down to important data, with options to export and integrate
+                    with Excel
+                  </li>
+                  <li>
+                    <b>Timeline Explorer</b> - Step-by-step and form-by-form
+                    tracking of turnaround times. Find the gaps and delays in
+                    your processes at a glance.
+                  </li>
+                  <li>
+                    <b>Data Visualizer</b> - See patterns in what your
+                    requestors/submitters are entering in your Forms.
+                  </li>
+                </ul>
+              </div>
+              <div class="col">
+                <img
+                  src="./files/graphics-analytics.png"
+                  alt="data analysis"
+                  width="500"
+                  height="275"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!----------------- Features container -------------->
+        <div id="container_features" class="container p-5">
+          <div class="section-divider"></div>
+          <h1 class="mb-3 text-center">
+            Intuitive Built-In Tools.<span class="text-primary fw-bold">
+              Powerful Results.</span
+            >
+          </h1>
+
+          <div class="features-grid">
+            <!-- Integrated Form Library -->
+            <div class="feature-container">
+              <div class="feature-content-wrapper">
+                <div class="feature-icon">
+                  <i class="bi bi-ui-checks"></i>
+                </div>
+                <div class="feature-content">
+                  <div class="feature-title">Integrated Form Library</div>
+                  <div class="feature-description">
+                    One-click option to use or import form templates.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Inbox Management -->
+            <div class="feature-container">
+              <div class="feature-content-wrapper">
+                <div class="feature-icon">
+                  <i class="bi bi-envelope-fill"></i>
+                </div>
+                <div class="feature-content">
+                  <div class="feature-title">Inbox Management</div>
+                  <div class="feature-description">
+                    Centralize and organize all your pending requests
+                    efficiently.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- User Access Groups -->
+            <div class="feature-container">
+              <div class="feature-content-wrapper">
+                <div class="feature-icon">
+                  <i class="bi bi-person-fill-gear"></i>
+                </div>
+                <div class="feature-content">
+                  <div class="feature-title">User Access Groups</div>
+                  <div class="feature-description">
+                    Easily manage user roles and permissions.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Automated Emails -->
+            <div class="feature-container">
+              <div class="feature-content-wrapper">
+                <div class="feature-icon">
+                  <i class="bi bi-envelope-at"></i>
+                </div>
+                <div class="feature-content">
+                  <div class="feature-title">Automated Emails</div>
+                  <div class="feature-description">
+                    Send personalized emails automatically.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Admin Oversight Tools -->
+            <div class="feature-container">
+              <div class="feature-content-wrapper">
+                <div class="feature-icon">
+                  <i class="bi bi-clipboard-data"></i>
+                </div>
+                <div class="feature-content">
+                  <div class="feature-title">Admin Oversight Tools</div>
+                  <div class="feature-description">
+                    Monitor site performance and streamline tasks.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Privacy -->
+            <div class="feature-container">
+              <div class="feature-content-wrapper">
+                <div class="feature-icon">
+                  <i class="bi bi-shield-check"></i>
+                </div>
+                <div class="feature-content">
+                  <div class="feature-title">Built-in Data Protections</div>
+                  <div class="feature-description">
+                    Certified safeguards for PHI/PII with LEAF-S certification
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-----------------Enterprise Scalability -------------->
+        <div
+          id="container_usecases"
+          class="container row justify-content-center m-auto p-5"
+        >
+          <div class="section-divider"></div>
+          <h1 class="mb-3 text-center">
+            Enterprise Scalability and<span class="text-primary fw-bold">
+              Endless Possibilities.</span
+            >
+          </h1>
+          <br /><br />
+          <!--<p class="lead ">LEAF successfully implemented across VA</p></center>-->
+          <div class="row">
+            <!-------------- Card container ---------------->
+            <div class="col-lg">
+              <div class="card">
+                <div
+                  class="card-body text-center lp-card-head lp-card-head--sky"
+                >
+                  <i class="bi bi-hospital lp-icon-48"></i>
+                  <h5 class="card-title">Facility Support</h5>
+                </div>
+                <ul class="list-group list-group-flush text-center">
+                  <li class="list-group-item">Clinic Profile Management</li>
+                  <li class="list-group-item">Eligibility & Enrollment</li>
+                  <li class="list-group-item">Onboarding & Offboarding</li>
+                  <li class="list-group-item">Conference & Travel</li>
+                  <li class="list-group-item">Work Order Submissions</li>
+                  <li class="list-group-item"><i>... and many more!</i></li>
+                </ul>
+              </div>
+            </div>
+            <!--------------- End card container -------------->
+
+            <!-------------- Card container ---------------->
+            <div class="col-lg">
+              <div class="card">
+                <div
+                  class="card-body text-center lp-card-head lp-card-head--blue"
+                >
+                  <i class="bi bi-diagram-3 lp-icon-48"></i>
+                  <h5 class="card-title">Regional Support</h5>
+                </div>
+                <ul class="list-group list-group-flush text-center">
+                  <li class="list-group-item">VISN Network Office</li>
+                  <li class="list-group-item">Human Resources Management</li>
+                  <li class="list-group-item">VBA Regional Offices</li>
+                  <li class="list-group-item">
+                    Veterans Affairs Supportive Housing (VASH)
+                  </li>
+                  <li class="list-group-item">
+                    Memorial Service Networks (MSNs)
+                  </li>
+                  <li class="list-group-item"><i>... and many more!</i></li>
+                </ul>
+              </div>
+            </div>
+            <!--------------- End card container -------------->
+
+            <!-------------- Card container ---------------->
+            <div class="col-lg">
+              <div class="card">
+                <div
+                  class="card-body text-center lp-card-head lp-card-head--teal"
+                >
+                  <i class="bi bi-globe-americas lp-icon-48"></i>
+                  <h5 class="card-title">National Support</h5>
+                </div>
+                <ul class="list-group list-group-flush text-center">
+                  <li class="list-group-item">
+                    VA Central Office (Headquarters)
+                  </li>
+                  <li class="list-group-item">
+                    Office of the Secretary of Veterans Affairs
+                  </li>
+                  <li class="list-group-item">Office of Inpector General</li>
+                  <li class="list-group-item">Office of General Counsel</li>
+                  <li class="list-group-item">VHA Shark Tank</li>
+                  <li class="list-group-item"><i>... and many more!</i></li>
+                </ul>
+              </div>
+            </div>
+            <!--------------- End card container -------------->
+          </div>
+        </div>
+
+        <!-----------------Results  [result-container alt-result-container mx-auto]---------------->
+        <div class="container my-5 text-center">
+          <div class="section-divider"></div>
+          <h1 class="result-header">
+            Digital Transformation with Lasting Impact.
+          </h1>
+          <div class="results-grid">
+            <div>
+              <div class="result-container mx-auto">
+                <div class="result-icon">
+                  <i class="bi bi-calendar-week lp-icon-48"></i>
+                </div>
+                <div class="result-content">
+                  <div class="result-title">
+                    Faster hiring decisions at Salisbury VAMC
+                  </div>
+                  <div class="result-text">
+                    26 days saved between initial request and decision.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="result-container mx-auto">
+                <div class="result-icon">
+                  <i class="bi bi-arrow-down-right-square lp-icon-48"></i>
+                </div>
+                <div class="result-content">
+                  <div class="result-title">
+                    Reduced delays and errors at Boston VAHCS
+                  </div>
+                  <div class="result-text">
+                    Completed 19 days quicker with no missing documents.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="result-container mx-auto">
+                <div class="result-icon">
+                  <i class="bi bi-card-checklist lp-icon-48"></i>
+                </div>
+                <div class="result-content">
+                  <div class="result-title">
+                    Modernized digital process at Miami VAMC
+                  </div>
+                  <div class="result-text">
+                    Reduced Veteran enrollment turnaround by 3 days.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="result-container mx-auto">
+                <div class="result-icon">
+                  <i class="bi bi-diagram-2 lp-icon-48"></i>
+                </div>
+                <div class="result-content">
+                  <div class="result-title">
+                    Standardized healthcare coding in VISN 10
+                  </div>
+                  <div class="result-text">
+                    Reduced number of portals by 72%.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Call to Action -->
+
+        <div class="container content-container">
+          <div id="CTA" class="cta-container">
+            <div class="cta-text">See the platform in action for yourself!</div>
+            <button class="cta-button">Watch a Demo</button>
+          </div>
+        </div>
+
+        <button class="lp-jumpTop" id="lpJumpTopBtn" aria-label="Jump to top">
+          <i class="bi bi-arrow-up"></i>
+        </button>
+      </div>
+
+      <!------------------ Custom styles ------------------>
+      <style>
+        :root {
+          color-scheme: light;
+          --lp-bg: #f6f8fb;
+          --lp-panel: #ffffff;
+          --lp-border: #cfd7e3;
+          --lp-text: #0f172a;
+          --lp-muted: #475569;
+          --lp-accent: #2563eb;
+          --lp-accent-strong: #1d4ed8;
+          --lp-accent-weak: #dbeafe;
+          --lp-warning-bg: #fff2cc;
+          --lp-warning-border: #f1d08a;
+          --lp-warning-text: #7a4a00;
+          --lp-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+          --lp-radius: 14px;
+        }
+
+        * {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 0;
+          background: var(--lp-bg);
+        }
+
+        .lp-scope {
+          font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+          color: var(--lp-text);
+          font-size: 125%;
+        }
+
+        a {
+          color: var(--lp-accent);
+          text-decoration: none;
+        }
+
+        a:hover {
+          text-decoration: underline;
+        }
+
+        img {
+          pointer-events: none; /* prevents drag & drop */
+          -webkit-user-drag: none; /* disables dragging */
+        }
+
+        .container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 20px;
+          width: 100%;
+        }
+
+        .row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 24px;
+        }
+
+        .justify-content-center {
+          justify-content: center;
+        }
+
+        .align-items-center {
+          align-items: center;
+        }
+
+        .col-12 {
+          flex: 0 0 100%;
+          max-width: 100%;
+        }
+
+        .col {
+          flex: 1 1 0;
+          min-width: 0;
+        }
+
+        .col-lg {
+          flex: 0 0 100%;
+          max-width: 100%;
+        }
+
+        @media (min-width: 768px) {
+          .order-md-1 {
+            order: 1;
+          }
+
+          .order-md-2 {
+            order: 2;
+          }
+
+          .col-md-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+          }
+        }
+
+        @media (min-width: 992px) {
+          .col-lg {
+            flex: 1 1 0;
+            max-width: 100%;
+          }
+        }
+
+        .center,
+        .text-center {
+          text-align: center;
+        }
+
+        .text-primary {
+          color: var(--lp-accent);
+        }
+
+        .fw-bold {
+          font-weight: 700;
+        }
+
+        .lead {
+          font-size: 1em;
+          color: var(--lp-muted);
+        }
+
+        .small {
+          font-size: 0.9em;
+          color: var(--lp-muted);
+        }
+
+        .is-hidden {
+          display: none;
+        }
+
+        .pt-5 {
+          padding-top: 3rem;
+        }
+
+        .p-3 {
+          padding: 1rem;
+        }
+
+        .p-5 {
+          padding: 3rem;
+        }
+
+        .mb-2 {
+          margin-bottom: 0.5rem;
+        }
+
+        .mb-3 {
+          margin-bottom: 1rem;
+        }
+
+        .my-5 {
+          margin-top: 3rem;
+          margin-bottom: 3rem;
+        }
+
+        .m-auto {
+          margin: auto;
+        }
+
+        .mx-auto {
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        .bg-light {
+          background: #f8fafc;
+          border-radius: var(--lp-radius);
+        }
+
+        .img-fluid {
+          max-width: 100%;
+          height: auto;
+          display: block;
+        }
+
+        .btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+          border: 1px solid var(--lp-border);
+          padding: 10px 16px;
+          font-size: 1rem;
+          font-weight: 700;
+          cursor: pointer;
+          text-decoration: none;
+          background: var(--lp-panel);
+          color: var(--lp-text);
+          transition:
+            transform 0.1s ease,
+            box-shadow 0.1s ease,
+            background 0.1s ease,
+            border-color 0.1s ease;
+        }
+
+        .btn:hover {
+          box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+        }
+
+        .btn:active {
+          transform: translateY(1px);
+        }
+
+        .btn-primary {
+          background: var(--lp-accent);
+          border-color: var(--lp-accent);
+          color: #ffffff;
+        }
+
+        .btn-primary:hover {
+          background: var(--lp-accent-strong);
+          border-color: var(--lp-accent-strong);
+        }
+
+        .btn-lg {
+          padding: 14px 20px;
+          font-size: 1.05rem;
+        }
+
+        .buttonNorm {
+          text-decoration: none;
+        }
+
+        .card {
+          border-radius: 14px;
+          border: 1px solid var(--lp-border);
+          overflow: hidden;
+          background: var(--lp-panel);
+          box-shadow: var(--lp-shadow);
+        }
+
+        .card-body {
+          padding: 16px;
+        }
+
+        .card-title {
+          margin: 10px 0 0 0;
+          font-weight: 700;
+        }
+
+        .list-group {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+
+        .list-group-item {
+          padding: 10px 14px;
+          border-top: 1px solid var(--lp-border);
+          background: var(--lp-panel);
+        }
+
+        .list-group-flush .list-group-item:first-child {
+          border-top: none;
+        }
+
+        .lp-card-head {
+          border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .lp-card-head--sky {
+          background-color: #d9e8f6;
+        }
+
+        .lp-card-head--blue {
+          background-color: #73b3e7;
+        }
+
+        .lp-card-head--teal {
+          background-color: #5dc0d1;
+        }
+
+        .lp-icon-48 {
+          font-size: 48px;
+          width: 48px;
+          height: 48px;
+        }
+
+        .lp-launchpad-cta {
+          margin-top: 24px;
+        }
+
+        .lp-launchpad-card {
+          background: var(--lp-panel);
+          border: 1px solid var(--lp-border);
+          border-radius: var(--lp-radius);
+          box-shadow: var(--lp-shadow);
+          padding: 32px;
+          text-align: center;
+        }
+
+        .lp-launchpad-card h2 {
+          margin: 0 0 8px;
+        }
+
+        .lp-launchpad-actions {
+          display: flex;
+          justify-content: center;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin: 18px 0 12px;
+        }
+
+        .lp-launchpad-footnote {
+          margin: 0;
+        }
+
+        .lp-hero-title {
+          font-size: 2.5em;
+        }
+
+        .lp-search-card {
+          background-color: #ffffff;
+          border: 1px solid #000000;
+          padding: 8px;
+          box-shadow: 0 2px 4px #8e8e8e;
+          margin: auto;
+        }
+
+        #firstVisit p,
+        #firstVisit li,
+        #welcomeBack p,
+        #welcomeBack li {
+          font-size: 1em;
+          line-height: 2em;
+        }
+
+        .feature-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 20px;
+          background-color: var(--lp-panel);
+          border-radius: var(--lp-radius);
+          border: 1px solid var(--lp-border);
+          box-shadow: var(--lp-shadow);
+          margin: 15px 0;
+        }
+
+        .feature-content-wrapper {
+          display: flex;
+          align-items: center;
+          width: 100%;
+        }
+
+        .feature-icon {
+          font-size: 48px;
+          margin-right: 15px;
+          color: var(--lp-accent);
+        }
+
+        .feature-content {
+          display: flex;
+          flex-direction: column;
+          flex-grow: 1; /* Ensure it takes remaining space */
+        }
+
+        .feature-title {
+          font-size: 18px;
+          font-weight: 600;
+        }
+
+        .feature-description {
+          font-size: 1em;
+          color: var(--lp-muted);
+        }
+
+        .result-header {
+          text-align: center;
+          margin-bottom: 30px;
+        }
+
+        .result-title {
+          font-size: 18px;
+          font-weight: bold;
+        }
+
+        .result-text {
+          font-size: 1em;
+          color: var(--lp-muted);
+        }
+
+        .result-container {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          margin-bottom: 15px;
+          padding: 10px;
+          background: var(--lp-panel);
+          border: 1px solid var(--lp-border);
+          border-radius: var(--lp-radius);
+          box-shadow: var(--lp-shadow);
+          width: 100%;
+        }
+
+        .result-icon {
+          margin-right: 30px;
+          margin-left: 30px;
+          color: var(--lp-accent);
+        }
+
+        .result-content {
+          text-align: left;
+        }
+
+        .cta-container {
+          background-color: var(--lp-accent);
+          color: white;
+          padding: 20px;
+          border-radius: var(--lp-radius);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 16px;
+          flex-wrap: wrap;
+          margin-top: 20px;
+        }
+
+        .cta-text {
+          font-size: 24px;
+          font-weight: bold;
+        }
+
+        .cta-button {
+          background-color: white;
+          color: var(--lp-accent);
+          border: 1px solid transparent;
+          padding: 15px 30px;
+          font-size: 18px;
+          font-weight: bold;
+          border-radius: 10px;
+          text-transform: uppercase;
+          cursor: pointer;
+        }
+
+        .cta-button:hover {
+          background: var(--lp-accent-weak);
+          color: #111;
+          border-color: var(--lp-accent);
+        }
+
+        .lp-jumpTop {
+          position: fixed;
+          right: 24px;
+          bottom: 24px;
+          width: 46px;
+          height: 46px;
+          border-radius: 999px;
+          border: 1px solid var(--lp-accent);
+          background: var(--lp-accent-weak);
+          color: #111;
+          cursor: pointer;
+          font-size: 20px;
+          font-weight: 900;
+          line-height: 1;
+          text-align: center;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+          z-index: 1200;
+          opacity: 0;
+          pointer-events: none;
+          transition:
+            opacity 0.15s ease,
+            transform 0.15s ease;
+        }
+
+        .lp-jumpTop.is-visible {
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        .lp-jumpTop:hover {
+          background: var(--lp-accent);
+          color: #fff;
+        }
+
+        .lp-jumpTop:active {
+          transform: translateY(1px);
+        }
+
+        .section-divider {
+          padding: 40px;
+        }
+
+        .section-divider::before {
+          content: "";
+          display: block;
+          height: 1px;
+          background: var(--lp-border);
+        }
+
+        .features-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 24px;
+          justify-content: center;
+        }
+
+        .results-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+          .features-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 700px) {
+          .results-grid {
+            grid-template-columns: minmax(0, 1fr);
+          }
+        }
+
+        @media (max-width: 640px) {
+          .features-grid {
+            grid-template-columns: minmax(0, 1fr);
+          }
+        }
+
+        #steps_desc_container {
+          flex-direction: column;
+          align-items: stretch;
+          width: 100%;
+        }
+
+        .step_description {
+          width: 100%;
+        }
+      </style>
+
+      <!----------------------------------------------------------------------------------------------------------------------------------------------------------------->
+
+      <script>
+        document.addEventListener("contextmenu", (event) => {
+          if (event.target.tagName === "IMG") {
+            event.preventDefault(); // disable right-click
+          }
+        });
+
+        document.addEventListener("dragstart", (event) => {
+          if (event.target.tagName === "IMG") {
+            event.preventDefault(); // prevent drag & drop
+          }
+        });
+
+        function wireJumpToTop() {
+          var btn = document.getElementById("lpJumpTopBtn");
+          if (!btn) return;
+
+          function updateVisibility() {
+            var scrollTop =
+              window.pageYOffset || document.documentElement.scrollTop;
+            var scrollHeight = Math.max(
+              document.body.scrollHeight,
+              document.documentElement.scrollHeight,
+            );
+            var clientHeight =
+              window.innerHeight || document.documentElement.clientHeight;
+            var needsScroll = scrollHeight - clientHeight > 80;
+            btn.classList.toggle("is-visible", needsScroll && scrollTop > 120);
+          }
+
+          btn.addEventListener("click", function () {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+
+          window.addEventListener("scroll", updateVisibility, {
+            passive: true,
+          });
+          window.addEventListener("resize", updateVisibility);
+          updateVisibility();
+        }
+
+        wireJumpToTop();
+      </script>
+    </div>
+  </div>
+</div>

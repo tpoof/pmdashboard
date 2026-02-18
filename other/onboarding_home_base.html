@@ -1,0 +1,1549 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LEAF Onboarding Home Base</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --card: #ffffff;
+      --text: #1b2430;
+      --muted: #5b6472;
+      --border: #e2e6ec;
+      --accent: #2a5c91;
+      --accent-soft: #e6f0fb;
+      --success: #2f8f4e;
+      --gold: #c7922e;
+      --gold-soft: #f6e7c6;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(180deg, #f9fafc 0%, #eef2f6 100%);
+      color: var(--text);
+    }
+
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 30px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.6;
+      max-width: 760px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .completion-banner {
+      width: 100%;
+      padding: 12px 18px;
+      background: var(--success);
+      font-size: 14px;
+      color: #fff;
+      text-align: center;
+      border-radius: 8px;
+    }
+
+    .completion-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .completion-actions label {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .completion-actions input {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      min-width: 220px;
+    }
+
+    .gold-button {
+      background: #ffbe2e;
+      color: #1f1a0d;
+      border: 1px solid #e0a821;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 8px 20px rgba(199, 146, 46, 0.2);
+    }
+
+    .gold-button:hover {
+      background: #ffd45c;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .is-hidden {
+      display: none;
+    }
+
+    .core-pattern {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .pattern-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .pattern-button {
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s ease, border 0.2s ease;
+    }
+
+    .pattern-button.active {
+      background: var(--accent-soft);
+      border-color: #c6dbf2;
+      color: #204973;
+      font-weight: 600;
+    }
+
+    .pattern-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+
+    .pattern-panel p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .progress-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .phase {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .phase-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .phase-title {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .phase-progress {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .phase-shift {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #eef2f6;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 8px 0 10px;
+    }
+
+    .progress-bar span {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+      border-radius: 999px;
+      width: 0;
+      transition: width 0.3s ease;
+    }
+
+    .phase.is-complete .progress-bar span {
+      background: var(--success);
+    }
+
+    .phase.is-complete .phase-progress {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .checklist {
+      display: grid;
+      gap: 12px;
+    }
+
+    .task {
+      display: grid;
+      gap: 8px;
+    }
+
+    .checklist label {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .task-text {
+      transition: color 0.2s ease;
+    }
+
+    .checklist input[type="checkbox"]:checked + .task-text {
+      color: var(--success);
+      text-decoration: line-through;
+    }
+
+    .checklist input[type="checkbox"] {
+      margin-top: 2px;
+    }
+
+    .task-note {
+      margin: 0 0 0 26px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .task-prompt {
+      margin-left: 26px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .task-prompt label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .task-prompt textarea {
+      min-height: 80px;
+      background: #fafbfe;
+    }
+
+    .inline-inputs {
+      margin-left: 26px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+    }
+
+    .inline-inputs input {
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .subchecklist {
+      margin-left: 26px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .phase-notes {
+      display: grid;
+      gap: 8px;
+      padding-top: 14px;
+      margin-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .phase-notes textarea {
+      min-height: 90px;
+      background: #fafbfe;
+    }
+
+    .notes-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .secondary-button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .secondary-button:hover {
+      background: #2f6aa6;
+    }
+
+    .notes-status {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .locked .phase-content {
+      display: none;
+    }
+
+    .locked .locked-message {
+      display: block;
+    }
+
+    .unlocked .locked-message {
+      display: none;
+    }
+
+    .locked-message {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .collapse {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fbfcfe;
+    }
+
+    .collapse-toggle {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .collapse-toggle span {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .collapse-panel {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.35s ease, opacity 0.25s ease;
+      background: #fff;
+    }
+
+    .collapse-panel-content {
+      padding: 16px 18px 20px;
+      display: grid;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .collapse-panel-content ul {
+      margin: 6px 0 0 18px;
+      padding: 0;
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+    }
+
+    .related {
+      font-size: 13px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+    }
+
+    .collapse.is-open .collapse-panel {
+      opacity: 1;
+    }
+
+    .gold-log {
+      display: grid;
+      gap: 12px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 140px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+    }
+
+    .button-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .primary-button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .save-status {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .troubleshoot-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .summary-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .summary-grid label {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .summary-grid input {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .summary-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+    }
+
+    .summary-row strong {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .summary-details {
+      display: grid;
+      gap: 18px;
+    }
+
+    .summary-block {
+      display: grid;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
+    .summary-block:first-child {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .summary-list {
+      margin: 0 0 0 18px;
+      padding: 0;
+      display: grid;
+      gap: 6px;
+      color: var(--text);
+    }
+
+    .summary-text {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    .summary-subsection {
+      display: grid;
+      gap: 6px;
+    }
+
+    .summary-architect-message {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      background: #fff;
+    }
+
+    .print-show {
+      display: none;
+    }
+
+    .print-only {
+      display: none;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        color: #000;
+      }
+
+      .page {
+        padding: 0;
+      }
+
+      .card {
+        box-shadow: none;
+        border: none;
+        padding: 0;
+      }
+
+      .no-print,
+      button,
+      input[type="checkbox"],
+      textarea,
+      .collapse-toggle,
+      .notes-actions,
+      .task-prompt,
+      .inline-inputs {
+        display: none !important;
+      }
+
+      .print-only {
+        display: block;
+      }
+
+      .print-show {
+        display: block !important;
+      }
+
+      .summary-grid input {
+        display: none;
+      }
+
+      .summary-block {
+        border-top: 1px solid #ccc;
+      }
+
+      .summary-architect-message {
+        border: 1px solid #ccc;
+      }
+
+      .print-header {
+        margin-bottom: 18px;
+      }
+
+      .print-header h1 {
+        margin: 0 0 6px;
+        font-size: 22px;
+      }
+
+      .print-meta {
+        display: grid;
+        gap: 4px;
+        font-size: 13px;
+        color: #222;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        padding: 32px 18px 60px;
+      }
+
+      header h1 {
+        font-size: 26px;
+      }
+
+      .pattern-row {
+        gap: 8px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="print-only print-header">
+    <h1>LEAF Onboarding Completion Record</h1>
+    <div class="print-meta">
+      <div>Employee Name: <span id="print-name"></span></div>
+      <div>Date Generated: <span id="print-date"></span></div>
+    </div>
+  </div>
+
+  <div class="page">
+    <header class="no-print">
+      <h1>LEAF Onboarding Home Base</h1>
+      <p>
+        A focused home base for learning how LEAF turns complex VA operations into clear, accountable action.
+        Forms, workflows, and analytics are the heart. User Groups and Nexus are the routing brain.
+      </p>
+    </header>
+
+    <div class="completion-banner is-hidden no-print" id="completion-banner">
+      Congratulations, you completed every task and achieved LEAF Architect level!
+    </div>
+
+    <div class="completion-actions is-hidden no-print" id="completion-actions">
+      <label for="employee-name">
+        Employee Name
+        <input id="employee-name" type="text" placeholder="Enter your name">
+      </label>
+      <button class="gold-button" id="export-pdf-top" type="button">Export as PDF</button>
+    </div>
+
+    <section class="core-pattern no-print" aria-label="Core pattern">
+      <div>
+        <h2>Core Pattern</h2>
+        <p class="muted">Every LEAF build follows this pattern across forms, workflows, analytics, and routing through User Groups and Nexus.</p>
+      </div>
+      <div class="pattern-row" id="pattern-buttons"></div>
+      <div class="pattern-panel" id="pattern-panel"></div>
+    </section>
+
+    <section class="card no-print" aria-label="Platform building blocks">
+      <div>
+        <h2>Platform Building Blocks</h2>
+        <p class="muted">The parts of LEAF that shape operations, routing, and accountability.</p>
+      </div>
+      <div class="collapse" data-collapse>
+        <button class="collapse-toggle" type="button" aria-expanded="false">
+          Forms
+          <span>Structured intake</span>
+        </button>
+        <div class="collapse-panel">
+          <div class="collapse-panel-content">
+            <div><strong>What it is:</strong> The structured entry point where business intent becomes data.</div>
+            <div><strong>Why it matters for business operations:</strong> Clear forms protect data quality and reduce rework.</div>
+            <div><strong>What good looks like:</strong></div>
+            <ul>
+              <li>Purpose is explicit and tied to ownership.</li>
+              <li>Required fields capture only what is needed.</li>
+              <li>Help text removes guesswork at submission.</li>
+            </ul>
+            <div class="related"><strong>Related Phase Exercises:</strong> Crawl core pattern map and scavenger hunt. Walk define data points and build the form. Run conditional logic for data quality. Fly template reuse.</div>
+          </div>
+        </div>
+      </div>
+      <div class="collapse" data-collapse>
+        <button class="collapse-toggle" type="button" aria-expanded="false">
+          Workflows
+          <span>Accountable steps</span>
+        </button>
+        <div class="collapse-panel">
+          <div class="collapse-panel-content">
+            <div><strong>What it is:</strong> The sequence of steps that moves work from intake to completion.</div>
+            <div><strong>Why it matters for business operations:</strong> It makes ownership and handoffs visible.</div>
+            <div><strong>What good looks like:</strong></div>
+            <ul>
+              <li>Each step has a clear owner and exit criteria.</li>
+              <li>Status names match real business language.</li>
+              <li>Routing points are simple and predictable.</li>
+            </ul>
+            <div class="related"><strong>Related Phase Exercises:</strong> Crawl map workflow stages. Walk create workflow statuses and validate flow. Run tighten routing and reduce noise. Fly standards for reuse.</div>
+          </div>
+        </div>
+      </div>
+      <div class="collapse" data-collapse>
+        <button class="collapse-toggle" type="button" aria-expanded="false">
+          Analytics and Reports
+          <span>Operational signal</span>
+        </button>
+        <div class="collapse-panel">
+          <div class="collapse-panel-content">
+            <div><strong>What it is:</strong> The reporting layer that turns work into measurable outcomes.</div>
+            <div><strong>Why it matters for business operations:</strong> It provides reliable insight for staffing, risk, and service levels.</div>
+            <div><strong>What good looks like:</strong></div>
+            <ul>
+              <li>Metrics align with workflow stages and definitions.</li>
+              <li>Filters are explicit and consistently applied.</li>
+              <li>Reports answer a decision, not a curiosity.</li>
+            </ul>
+            <div class="related"><strong>Related Phase Exercises:</strong> Crawl scavenger hunt analytics. Walk build a basic report. Run export and refine messy data. Fly portfolio level analytics.</div>
+          </div>
+        </div>
+      </div>
+      <div class="collapse" data-collapse>
+        <button class="collapse-toggle" type="button" aria-expanded="false">
+          User Groups and Nexus
+          <span>Routing brain</span>
+        </button>
+        <div class="collapse-panel">
+          <div class="collapse-panel-content">
+            <div><strong>What it is:</strong> User Groups define ownership and access, and Nexus applies routing rules using that context.</div>
+            <div><strong>Why it matters for business operations:</strong> It determines who can act and where work goes. Poor group design creates routing ambiguity and privacy risk.</div>
+            <div><strong>What good looks like:</strong></div>
+            <ul>
+              <li>Group design produces predictable accountability.</li>
+              <li>Nexus rules are specific and ordered intentionally.</li>
+              <li>Routing stays explainable and protected.</li>
+            </ul>
+            <div class="related"><strong>Related Phase Exercises:</strong> Walk set User Groups and configure Nexus. Run org chart selector and Reviewers group. Fly facility org chart and permissions alignment.</div>
+          </div>
+        </div>
+      </div>
+      <div class="collapse" data-collapse>
+        <button class="collapse-toggle" type="button" aria-expanded="false">
+          Admin Panel
+          <span>Governance controls</span>
+        </button>
+        <div class="collapse-panel">
+          <div class="collapse-panel-content">
+            <div><strong>What it is:</strong> The governance layer for defaults, templates, and system rules.</div>
+            <div><strong>Why it matters for business operations:</strong> It keeps standards consistent across sites and teams.</div>
+            <div><strong>What good looks like:</strong></div>
+            <ul>
+              <li>Templates support reuse over one-off builds.</li>
+              <li>Notification rules stay focused and minimal.</li>
+              <li>Utilities like File Manager remain organized and secondary.</li>
+            </ul>
+            <div class="related"><strong>Related Phase Exercises:</strong> Crawl scavenger hunt admin panel. Walk update site description. Run notification audit. Fly governance standards.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card no-print" aria-label="Learning path and progress">
+      <div>
+        <h2>Learning Path and Progress</h2>
+        <p class="muted">Each phase includes exercises, prompts, and notes in one place.</p>
+      </div>
+      <div class="progress-grid" id="progress-tracker"></div>
+    </section>
+
+    <section class="card no-print" aria-label="Tips if you are stuck">
+      <div>
+        <h2>Tips if you are stuck</h2>
+        <p class="muted">Use these checks to diagnose the pattern before deeper audits.</p>
+      </div>
+      <div class="troubleshoot-grid">
+        <div class="collapse" data-collapse>
+          <button class="collapse-toggle" type="button" aria-expanded="false">
+            Data looks wrong
+            <span>Form or Analytics and Reports</span>
+          </button>
+          <div class="collapse-panel">
+            <div class="collapse-panel-content">
+              <div>Are required fields truly required and validated?</div>
+              <div>Are statuses too free form or duplicated?</div>
+              <div>Is reporting pulling the intended dataset and timeframe?</div>
+              <div>Are defaults overwriting real input?</div>
+              <div>Are users bypassing structured fields with notes or uploads?</div>
+            </div>
+          </div>
+        </div>
+        <div class="collapse" data-collapse>
+          <button class="collapse-toggle" type="button" aria-expanded="false">
+            Routing looks wrong
+            <span>Workflow or Permissions, often User Groups and Nexus</span>
+          </button>
+          <div class="collapse-panel">
+            <div class="collapse-panel-content">
+              <div>Which Nexus rule fires first and is it too broad?</div>
+              <div>Do User Groups match actual owners of the step?</div>
+              <div>Is there a clear fallback path with accountable ownership?</div>
+              <div>Are handoffs tied to status changes or manual workarounds?</div>
+              <div>Is the workflow missing a decision point that routes correctly?</div>
+            </div>
+          </div>
+        </div>
+        <div class="collapse" data-collapse>
+          <button class="collapse-toggle" type="button" aria-expanded="false">
+            People look confused
+            <span>Help text, Notifications, or too many statuses</span>
+          </button>
+          <div class="collapse-panel">
+            <div class="collapse-panel-content">
+              <div>Do status labels reflect real business language?</div>
+              <div>Is help text answering the top questions at entry?</div>
+              <div>Are notifications telling people exactly what action is needed?</div>
+              <div>Are there too many statuses for the size of the team?</div>
+              <div>Is ownership visible at each step?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card no-print" aria-label="Gold log">
+      <div>
+        <h2>Gold Log</h2>
+        <p class="muted">Use this for cross phase patterns and surprises worth sharing with the team. Phase Notes stay with each phase.</p>
+      </div>
+      <div class="gold-log">
+        <textarea id="gold-log" placeholder="Capture cross cutting patterns, surprises, and decisions to share."></textarea>
+        <div class="button-row">
+          <button class="primary-button" id="save-log" type="button">Save</button>
+          <span class="save-status" id="save-status" aria-live="polite"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card print-show is-hidden" aria-label="Completion summary and documentation">
+      <div>
+        <h2>Completion Summary and Documentation</h2>
+        <p class="muted">A read-only record compiled from your progress, notes, and logs.</p>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-row">
+          <span>Employee Name</span>
+          <strong id="summary-name"></strong>
+        </div>
+        <div class="summary-row">
+          <span>Date generated</span>
+          <strong id="summary-date"></strong>
+        </div>
+        <div class="summary-row">
+          <span>Overall completion</span>
+          <strong id="summary-overall"></strong>
+        </div>
+        <div class="summary-row">
+          <span>Learning path status</span>
+          <strong id="summary-status"></strong>
+        </div>
+        <div class="summary-row">
+          <span>Architect Level Achieved</span>
+          <strong id="summary-architect"></strong>
+        </div>
+      </div>
+      <div class="summary-details" id="summary-details"></div>
+      <div id="summary-architect-message" class="summary-architect-message is-hidden">
+        <h3>Architect Level Achieved</h3>
+        <p class="summary-text">You completed the full learning path and built the habits that make LEAF scalable and trustworthy. Save your Completion Record for documentation.</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const corePattern = [
+      {
+        key: "form",
+        label: "Form",
+        definition: "Controls how business intent becomes structured input and protects data quality. It matters because workflows and analytics depend on consistent fields.",
+        example: "An intake form that captures purpose, urgency, ownership, and required evidence.",
+        failure: "Fields are optional or ambiguous, so submissions become inconsistent."
+      },
+      {
+        key: "workflow",
+        label: "Workflow",
+        definition: "Controls the sequence of accountable steps and protects handoffs. It matters because routing and approvals need a clear path.",
+        example: "Intake, triage, execution, and validation with clear ownership at each stage.",
+        failure: "Steps are unclear or overloaded, so work stalls and ownership blurs."
+      },
+      {
+        key: "permissions",
+        label: "Permissions",
+        definition: "Controls who can view, edit, and act and protects privacy. User Groups define the context and Nexus applies routing rules with it.",
+        example: "Only the intake team can edit new submissions while approvers can release work.",
+        failure: "Access groups are too broad or too narrow, blocking progress or exposing data."
+      },
+      {
+        key: "notifications",
+        label: "Notifications",
+        definition: "Controls how attention is directed and protects focus. It matters because people must act at the right moment without noise.",
+        example: "Owners are notified only when a request enters their queue or needs approval.",
+        failure: "Alerts fire for everything or nothing, so people ignore them."
+      },
+      {
+        key: "reporting",
+        label: "Reporting",
+        definition: "Controls how outcomes are measured and protects decision quality. It matters because analytics guide staffing, risk, and service levels.",
+        example: "A weekly report showing cycle time and backlog by request type.",
+        failure: "Filters or definitions are wrong, so metrics mislead."
+      }
+    ];
+
+    const phases = [
+      {
+        id: "crawl",
+        title: "Crawl",
+        capability: "From user to system thinker. Understand the Core Pattern and the platform building blocks.",
+        tasks: [
+          {
+            id: "core-pattern-map",
+            text: "Sketch or list the five components of the Core Pattern.",
+            prompt: {
+              type: "textarea",
+              label: "Your Core Pattern Map"
+            }
+          },
+          {
+            id: "scavenger-hunt",
+            text: "Complete the Environment Scavenger Hunt:",
+            subitems: [
+              { id: "forms", text: "Forms" },
+              { id: "workflows", text: "Workflows" },
+              { id: "analytics", text: "Analytics and Reports" },
+              { id: "groups-nexus", text: "User Groups and Nexus" },
+              { id: "admin", text: "Admin Panel" }
+            ]
+          }
+        ]
+      },
+      {
+        id: "walk",
+        title: "Walk",
+        capability: "From system thinker to builder. Apply the Core Pattern end to end.",
+        tasks: [
+          { id: "request-site", text: "Request a new site named \"[Your Name] Sandbox\"." },
+          { id: "update-description", text: "Update the Site Description and clarify the business purpose." },
+          {
+            id: "data-points",
+            text: "Define 5 structured data points before building the form.",
+            prompt: {
+              type: "inputs",
+              count: 5
+            }
+          },
+          { id: "build-form", text: "Build the form using Form Builder and add Help Text to at least one field." },
+          { id: "workflow-status", text: "Create workflow statuses: New → In Progress → Review → Complete." },
+          { id: "test-request", text: "Submit a test request and validate the full flow." }
+        ]
+      },
+      {
+        id: "run",
+        title: "Run",
+        capability: "From builder to optimizer. Reduce noise, improve clarity, and strengthen routing and analytics.",
+        tasks: [
+          {
+            id: "conditional-logic",
+            text: "Add conditional logic to reduce unnecessary data collection.",
+            note: "Example: Show Justification only when Priority equals High."
+          },
+          { id: "org-chart", text: "Insert an Org Chart Selector to support routing context." },
+          { id: "reviewers-group", text: "Create a Reviewers user group and assign a team member." },
+          { id: "notification-audit", text: "Conduct a Notification Audit and streamline emails to critical events only." },
+          { id: "email-variables", text: "Verify email variables such as {{RequestLink}}." },
+          {
+            id: "report-export",
+            text: "Build and export a report, then return to refine messy statuses or free text fields."
+          }
+        ]
+      },
+      {
+        id: "fly",
+        title: "Fly",
+        capability: "From optimizer to architect. Build reusable systems.",
+        tasks: [
+          { id: "second-site", text: "Request a second site: UX Intake - [YourName]." },
+          { id: "form-library", text: "Use Form Library to import a standard template instead of building from scratch." },
+          { id: "sitemap", text: "Create a Sitemap linking UX Projects and UX Intake." },
+          { id: "unified-inbox", text: "Use Unified Inbox to manage both sites." },
+          { id: "email-template", text: "Customize a routing email to include a Quickstart link." },
+          { id: "facility-org", text: "Build a facility org chart in Nexus and connect roles to permissions." }
+        ]
+      }
+    ];
+
+    const progressStateKey = "leaf_onboarding_progress_v1";
+    const goldLogKey = "leaf_onboarding_gold_log_v1";
+    const employeeNameKey = "leaf_onboarding_employee_name_v1";
+    const phaseNotesKey = (phaseId) => `leaf_onboarding_phase_notes_v1_${phaseId}`;
+    const promptKey = (phaseId, taskId, suffix = "") => `leaf_onboarding_prompt_v1_${phaseId}_${taskId}${suffix}`;
+
+    const loadState = (key, fallback) => {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (error) {
+        return fallback;
+      }
+    };
+
+    const saveState = (key, value) => {
+      localStorage.setItem(key, JSON.stringify(value));
+    };
+
+    const progressState = loadState(progressStateKey, {});
+
+    const patternButtons = document.getElementById("pattern-buttons");
+    const patternPanel = document.getElementById("pattern-panel");
+    const summaryArchitectMessage = document.getElementById("summary-architect-message");
+    const completionBanner = document.getElementById("completion-banner");
+    const completionActions = document.getElementById("completion-actions");
+
+    const summaryDate = document.getElementById("summary-date");
+    const summaryName = document.getElementById("summary-name");
+    const summaryOverall = document.getElementById("summary-overall");
+    const summaryStatus = document.getElementById("summary-status");
+    const summaryArchitect = document.getElementById("summary-architect");
+    const summaryDetails = document.getElementById("summary-details");
+
+    const employeeNameInput = document.getElementById("employee-name");
+    const printName = document.getElementById("print-name");
+    const printDate = document.getElementById("print-date");
+
+    const renderPattern = (activeKey) => {
+      patternButtons.innerHTML = "";
+      patternPanel.innerHTML = "";
+
+      corePattern.forEach((item) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "pattern-button" + (item.key === activeKey ? " active" : "");
+        button.textContent = item.label;
+        button.addEventListener("click", () => renderPattern(item.key));
+        patternButtons.appendChild(button);
+      });
+
+      const active = corePattern.find((item) => item.key === activeKey) || corePattern[0];
+
+      const blocks = [
+        { title: "Definition", text: active.definition },
+        { title: "LEAF Use Case", text: active.example },
+        { title: "Common Pain Points", text: active.failure }
+      ];
+
+      blocks.forEach((block) => {
+        const wrapper = document.createElement("div");
+        const heading = document.createElement("h3");
+        heading.textContent = block.title;
+        const para = document.createElement("p");
+        para.textContent = block.text;
+        wrapper.appendChild(heading);
+        wrapper.appendChild(para);
+        patternPanel.appendChild(wrapper);
+      });
+    };
+
+    const progressContainer = document.getElementById("progress-tracker");
+
+    const getPhaseCheckboxIds = (phase) => {
+      const ids = [];
+      phase.tasks.forEach((task) => {
+        const taskId = `${phase.id}-${task.id}`;
+        ids.push(taskId);
+        if (task.subitems) {
+          task.subitems.forEach((sub) => {
+            ids.push(`${taskId}-${sub.id}`);
+          });
+        }
+      });
+      return ids;
+    };
+
+    const getPhaseCompletion = (phase) => {
+      const ids = getPhaseCheckboxIds(phase);
+      const total = ids.length;
+      const done = ids.reduce((count, id) => (progressState[id] ? count + 1 : count), 0);
+      const percent = total ? Math.round((done / total) * 100) : 0;
+      return { done, total, percent };
+    };
+
+    const getOverallCompletion = (phaseStats) => {
+      const totals = phaseStats.reduce(
+        (acc, stat) => ({ done: acc.done + stat.done, total: acc.total + stat.total }),
+        { done: 0, total: 0 }
+      );
+      return totals.total ? Math.round((totals.done / totals.total) * 100) : 0;
+    };
+
+    const createCheckbox = (id, text, onChange) => {
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = Boolean(progressState[id]);
+      input.addEventListener("change", () => {
+        progressState[id] = input.checked;
+        saveState(progressStateKey, progressState);
+        onChange();
+      });
+      const span = document.createElement("span");
+      span.className = "task-text";
+      span.textContent = text;
+      label.appendChild(input);
+      label.appendChild(span);
+      return label;
+    };
+
+    const renderPrompt = (phase, task, container) => {
+      if (!task.prompt) {
+        return;
+      }
+      if (task.prompt.type === "textarea") {
+        const promptWrap = document.createElement("div");
+        promptWrap.className = "task-prompt";
+
+        const label = document.createElement("label");
+        label.textContent = task.prompt.label;
+
+        const area = document.createElement("textarea");
+        area.value = localStorage.getItem(promptKey(phase.id, task.id)) || "";
+        area.addEventListener("input", () => {
+          localStorage.setItem(promptKey(phase.id, task.id), area.value);
+        });
+
+        promptWrap.appendChild(label);
+        promptWrap.appendChild(area);
+        container.appendChild(promptWrap);
+      }
+      if (task.prompt.type === "inputs") {
+        const inputsWrap = document.createElement("div");
+        inputsWrap.className = "inline-inputs";
+        const count = task.prompt.count || 5;
+        for (let i = 0; i < count; i += 1) {
+          const input = document.createElement("input");
+          input.type = "text";
+          input.placeholder = `Data point ${i + 1}`;
+          input.value = localStorage.getItem(promptKey(phase.id, task.id, `_${i}`)) || "";
+          input.addEventListener("input", () => {
+            localStorage.setItem(promptKey(phase.id, task.id, `_${i}`), input.value);
+          });
+          inputsWrap.appendChild(input);
+        }
+        container.appendChild(inputsWrap);
+      }
+    };
+
+    const createSummaryRow = (label, value) => {
+      const row = document.createElement("div");
+      row.className = "summary-row";
+      const span = document.createElement("span");
+      span.textContent = label;
+      const strong = document.createElement("strong");
+      strong.textContent = value;
+      row.appendChild(span);
+      row.appendChild(strong);
+      return row;
+    };
+
+    const collectCompletedTasks = (phase) => {
+      const items = [];
+      phase.tasks.forEach((task) => {
+        const taskId = `${phase.id}-${task.id}`;
+        if (progressState[taskId]) {
+          items.push(task.text);
+        }
+        if (task.subitems) {
+          const prefix = task.text.replace(/:$/, "");
+          task.subitems.forEach((sub) => {
+            const subId = `${taskId}-${sub.id}`;
+            if (progressState[subId]) {
+              items.push(`${prefix}: ${sub.text}`);
+            }
+          });
+        }
+      });
+      return items;
+    };
+
+    const buildSummary = (phaseStats) => {
+      const overallPercent = getOverallCompletion(phaseStats);
+      summaryOverall.textContent = `${overallPercent}%`;
+
+      const allComplete = phaseStats.every((stat) => stat.percent === 100);
+      summaryStatus.textContent = allComplete ? "Learning path complete" : "Learning path in progress";
+      summaryArchitect.textContent = allComplete ? "Yes" : "Not yet";
+
+      summaryArchitectMessage.classList.toggle("is-hidden", !allComplete);
+      completionBanner.classList.toggle("is-hidden", !allComplete);
+      completionActions.classList.toggle("is-hidden", !allComplete);
+
+      const dateText = new Date().toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      });
+      summaryDate.textContent = dateText;
+      printDate.textContent = dateText;
+
+      const employeeName = employeeNameInput.value.trim();
+      printName.textContent = employeeName || "Not provided";
+      summaryName.textContent = employeeName || "Not provided";
+
+      summaryDetails.innerHTML = "";
+
+      const phaseBlock = document.createElement("div");
+      phaseBlock.className = "summary-block";
+      const phaseTitle = document.createElement("h3");
+      phaseTitle.textContent = "Phase completion";
+      phaseBlock.appendChild(phaseTitle);
+      phaseStats.forEach((stat, index) => {
+        phaseBlock.appendChild(createSummaryRow(phases[index].title, `${stat.percent}%`));
+      });
+
+      const taskBlock = document.createElement("div");
+      taskBlock.className = "summary-block";
+      const taskTitle = document.createElement("h3");
+      taskTitle.textContent = "Completed tasks by phase";
+      taskBlock.appendChild(taskTitle);
+      phases.forEach((phase) => {
+        const section = document.createElement("div");
+        section.className = "summary-subsection";
+        const heading = document.createElement("h4");
+        heading.textContent = phase.title;
+        section.appendChild(heading);
+
+        const items = collectCompletedTasks(phase);
+        if (items.length === 0) {
+          const empty = document.createElement("p");
+          empty.className = "muted";
+          empty.textContent = "No completed tasks yet.";
+          section.appendChild(empty);
+        } else {
+          const list = document.createElement("ul");
+          list.className = "summary-list";
+          items.forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = item;
+            list.appendChild(li);
+          });
+          section.appendChild(list);
+        }
+        taskBlock.appendChild(section);
+      });
+
+      const notesBlock = document.createElement("div");
+      notesBlock.className = "summary-block";
+      const notesTitle = document.createElement("h3");
+      notesTitle.textContent = "Phase notes";
+      notesBlock.appendChild(notesTitle);
+      phases.forEach((phase) => {
+        const section = document.createElement("div");
+        section.className = "summary-subsection";
+        const heading = document.createElement("h4");
+        heading.textContent = phase.title;
+        section.appendChild(heading);
+        const noteText = localStorage.getItem(phaseNotesKey(phase.id)) || "";
+        const note = document.createElement("p");
+        note.className = "summary-text";
+        note.textContent = noteText.trim() ? noteText.trim() : "No notes yet.";
+        section.appendChild(note);
+        notesBlock.appendChild(section);
+      });
+
+      const goldBlock = document.createElement("div");
+      goldBlock.className = "summary-block";
+      const goldTitle = document.createElement("h3");
+      goldTitle.textContent = "Gold Log";
+      goldBlock.appendChild(goldTitle);
+      const goldText = localStorage.getItem(goldLogKey) || "";
+      const goldPara = document.createElement("p");
+      goldPara.className = "summary-text";
+      goldPara.textContent = goldText.trim() ? goldText.trim() : "No entries yet.";
+      goldBlock.appendChild(goldPara);
+
+      summaryDetails.appendChild(phaseBlock);
+      summaryDetails.appendChild(taskBlock);
+      summaryDetails.appendChild(notesBlock);
+      summaryDetails.appendChild(goldBlock);
+    };
+
+    const syncParentChecks = () => {
+      let changed = false;
+      phases.forEach((phase) => {
+        phase.tasks.forEach((task) => {
+          if (!task.subitems) {
+            return;
+          }
+          const parentId = `${phase.id}-${task.id}`;
+          const allComplete = task.subitems.every((sub) => progressState[`${parentId}-${sub.id}`]);
+          if (progressState[parentId] !== allComplete) {
+            progressState[parentId] = allComplete;
+            changed = true;
+          }
+        });
+      });
+      if (changed) {
+        saveState(progressStateKey, progressState);
+      }
+    };
+
+    const renderProgress = () => {
+      syncParentChecks();
+      progressContainer.innerHTML = "";
+
+      const phaseStats = phases.map((phase) => getPhaseCompletion(phase));
+      const unlockedFlags = phases.map((phase, index) => index === 0 || phaseStats[index - 1].percent === 100);
+
+      phases.forEach((phase, index) => {
+        const stats = phaseStats[index];
+        const phaseEl = document.createElement("div");
+        phaseEl.className = `phase ${unlockedFlags[index] ? "unlocked" : "locked"}${stats.percent === 100 ? " is-complete" : ""}`;
+
+        const header = document.createElement("div");
+        header.className = "phase-header";
+
+        const title = document.createElement("div");
+        title.className = "phase-title";
+        title.textContent = phase.title;
+
+        const percent = document.createElement("div");
+        percent.className = "phase-progress";
+        percent.textContent = `${stats.percent}% complete`;
+
+        const lockedMessage = document.createElement("p");
+        lockedMessage.className = "locked-message";
+        lockedMessage.textContent = "Complete the previous phase to unlock this section.";
+
+        const shift = document.createElement("p");
+        shift.className = "phase-shift";
+        shift.textContent = `Capability Shift: ${phase.capability}`;
+
+        const bar = document.createElement("div");
+        bar.className = "progress-bar";
+        const barFill = document.createElement("span");
+        barFill.style.width = `${stats.percent}%`;
+        bar.appendChild(barFill);
+
+        header.appendChild(title);
+        header.appendChild(percent);
+
+        const content = document.createElement("div");
+        content.className = "phase-content";
+
+        const list = document.createElement("div");
+        list.className = "checklist";
+
+        phase.tasks.forEach((task) => {
+          const taskId = `${phase.id}-${task.id}`;
+          const taskWrap = document.createElement("div");
+          taskWrap.className = "task";
+          const label = createCheckbox(taskId, task.text, renderProgress);
+          taskWrap.appendChild(label);
+
+          if (task.note) {
+            const note = document.createElement("p");
+            note.className = "task-note";
+            note.textContent = task.note;
+            taskWrap.appendChild(note);
+          }
+
+          renderPrompt(phase, task, taskWrap);
+
+          if (task.subitems) {
+            const sublist = document.createElement("div");
+            sublist.className = "subchecklist";
+            task.subitems.forEach((sub) => {
+              const subId = `${taskId}-${sub.id}`;
+              const subLabel = createCheckbox(subId, sub.text, renderProgress);
+              sublist.appendChild(subLabel);
+            });
+            taskWrap.appendChild(sublist);
+          }
+
+          list.appendChild(taskWrap);
+        });
+
+        const notesWrap = document.createElement("div");
+        notesWrap.className = "phase-notes";
+
+        const notesLabel = document.createElement("h3");
+        notesLabel.textContent = "Phase Notes";
+
+        const notesHelper = document.createElement("p");
+        notesHelper.className = "muted";
+        notesHelper.textContent = "Capture what you learned, what surprised you, and what patterns you are beginning to see.";
+
+        const notesArea = document.createElement("textarea");
+        notesArea.setAttribute("aria-label", `Notes for ${phase.title}`);
+        notesArea.value = localStorage.getItem(phaseNotesKey(phase.id)) || "";
+
+        const notesActions = document.createElement("div");
+        notesActions.className = "notes-actions";
+        const notesButton = document.createElement("button");
+        notesButton.type = "button";
+        notesButton.className = "secondary-button";
+        notesButton.textContent = "Save";
+        const notesStatus = document.createElement("span");
+        notesStatus.className = "notes-status";
+        notesStatus.setAttribute("aria-live", "polite");
+
+        notesButton.addEventListener("click", () => {
+          localStorage.setItem(phaseNotesKey(phase.id), notesArea.value.trim());
+          const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+          notesStatus.textContent = `Saved at ${timestamp}`;
+          buildSummary(phases.map((current) => getPhaseCompletion(current)));
+        });
+
+        notesActions.appendChild(notesButton);
+        notesActions.appendChild(notesStatus);
+
+        notesWrap.appendChild(notesLabel);
+        notesWrap.appendChild(notesHelper);
+        notesWrap.appendChild(notesArea);
+        notesWrap.appendChild(notesActions);
+
+        content.appendChild(shift);
+        content.appendChild(bar);
+        content.appendChild(list);
+        content.appendChild(notesWrap);
+
+        phaseEl.appendChild(header);
+        phaseEl.appendChild(lockedMessage);
+        phaseEl.appendChild(content);
+        progressContainer.appendChild(phaseEl);
+      });
+
+      buildSummary(phaseStats);
+    };
+
+    const setupCollapsibles = () => {
+      document.querySelectorAll("[data-collapse]").forEach((collapse) => {
+        const button = collapse.querySelector(".collapse-toggle");
+        const panel = collapse.querySelector(".collapse-panel");
+
+        const closePanel = () => {
+          panel.style.maxHeight = "0px";
+          panel.style.opacity = "0";
+        };
+
+        closePanel();
+
+        button.addEventListener("click", () => {
+          const isOpen = collapse.classList.toggle("is-open");
+          button.setAttribute("aria-expanded", String(isOpen));
+          if (isOpen) {
+            panel.style.maxHeight = panel.scrollHeight + "px";
+            panel.style.opacity = "1";
+          } else {
+            closePanel();
+          }
+        });
+      });
+    };
+
+    const goldLog = document.getElementById("gold-log");
+    const saveLogButton = document.getElementById("save-log");
+    const saveStatus = document.getElementById("save-status");
+    const exportPdfButton = document.getElementById("export-pdf-top");
+
+    const loadGoldLog = () => {
+      const saved = localStorage.getItem(goldLogKey);
+      goldLog.value = saved ? saved : "";
+    };
+
+    saveLogButton.addEventListener("click", () => {
+      localStorage.setItem(goldLogKey, goldLog.value.trim());
+      const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      saveStatus.textContent = `Saved at ${timestamp}`;
+      buildSummary(phases.map((current) => getPhaseCompletion(current)));
+    });
+
+    employeeNameInput.value = localStorage.getItem(employeeNameKey) || "";
+    printName.textContent = employeeNameInput.value.trim() || "Not provided";
+
+    employeeNameInput.addEventListener("input", () => {
+      localStorage.setItem(employeeNameKey, employeeNameInput.value.trim());
+      printName.textContent = employeeNameInput.value.trim() || "Not provided";
+      buildSummary(phases.map((current) => getPhaseCompletion(current)));
+    });
+
+    exportPdfButton.addEventListener("click", () => {
+      window.print();
+    });
+
+    renderPattern("form");
+    renderProgress();
+    setupCollapsibles();
+    loadGoldLog();
+  </script>
+</body>
+</html>

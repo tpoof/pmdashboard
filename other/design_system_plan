@@ -1,0 +1,325 @@
+Design System Introduction Plan      
+                                                                           
+  Guiding Principles
+                                                                                                         
+  - No rewrites. Wrap and formalize what already exists.
+  - CSS-first. Tokens and components start as CSS, consumed by Smarty templates and JS alike.            
+  - Additive only in Phase 1. No existing class names change, no existing files break.
+  - One source of truth. Tokens file is consumed by both legacy CSS and Vue SCSS.
+
+  ---
+  Phase 1: Foundation (Low-Risk)
+
+  Goal: Establish a token file, document conventions, and ship 3 CSS-level shared components that
+  formalize patterns already in use.
+
+  1a. Design Tokens
+
+  Extract the hardcoded values already scattered across the codebase into a single CSS custom properties
+  file.
+
+  New file: app/libs/css/leaf-tokens.css
+
+  Source values from:
+
+  Current location: LEAF_Request_Portal/css/style.css:1-6
+  What to extract: #f3f3f3 (bg), verdana (font), 12px (base size)
+  ────────────────────────────────────────
+  Current location: LEAF_Request_Portal/css/style.css:25-31
+  What to extract: #004b76 (link), #f04e0b (link-hover)
+  ────────────────────────────────────────
+  Current location: docker/vue-app/src/sass/leaf.scss:3-7
+  What to extract: #dfe1e2 (gray), #008a17 (btn-green), #005EA2 (navy)
+  ────────────────────────────────────────
+  Current location: LEAF_Request_Portal/js/vue_conditions_editor/LEAF_conditions_editor.css:3-7
+  What to extract: --charcoal, --dark-navy, --base-navy, --cyan, --lt-cyan
+  ────────────────────────────────────────
+  Current location: LEAF_Request_Portal/css/style.css:72-79
+  What to extract: border colors, input padding, focus ring color (#47e)
+
+  Token categories: color, typography, spacing, border-radius, shadow, z-index layers.
+
+  Files touched:
+  - app/libs/css/leaf-tokens.css (new, ~80 lines)
+  - LEAF_Request_Portal/templates/main.tpl (add one @import line at position 16)
+  - LEAF_Nexus/templates/main.tpl (add one @import line at position 19)
+  - docker/vue-app/src/sass/leaf.scss (replace 5 hardcoded $vars with CSS var() references)
+
+  Not touched: No existing class definitions change. Tokens are defined in :root; nothing consumes them
+  yet except the 3 new components below.
+
+  1b. Conventions Document
+
+  New file: docs/ui-conventions.md
+
+  Contents:
+  - Token naming scheme (--leaf-color-*, --leaf-space-*, --leaf-font-*)
+  - Component class naming: leaf-{component} prefix (e.g., leaf-btn, leaf-dialog, leaf-grid)
+  - Rule: new UI must use tokens; legacy UI migrates opportunistically
+  - Decision record: why CSS custom properties (not SCSS-only), why not USWDS-the-package
+
+  1c. Three Shared Components
+
+  All three formalize patterns that already exist. They are new CSS classes that wrap existing behavior,
+  not JS rewrites.
+
+  Component 1: leaf-btn
+
+  Formalizes the buttonNorm pattern used in 15+ templates.
+
+  New file: app/libs/css/components/leaf-btn.css (~60 lines)
+
+  Variants: leaf-btn (default/outline), leaf-btn--primary (filled navy), leaf-btn--danger (red),
+  leaf-btn--icon (with dynicon img). All consume tokens.
+
+  Migration path: existing buttonNorm class continues to work. New code uses leaf-btn. A one-line alias
+  (buttonNorm { @extend... }) is NOT added yet -- that's Phase 2.
+
+  Files touched to demonstrate:
+  - app/libs/css/components/leaf-btn.css (new)
+  - LEAF_Request_Portal/templates/main.tpl (add @import)
+  - LEAF_Request_Portal/templates/menu.tpl (add leaf-btn alongside existing buttonNorm on 3 buttons as
+  proof-of-concept)
+
+  Component 2: leaf-dialog
+
+  Formalizes the chrome around dialogController.js + generic_xhrDialog.tpl.
+
+  New file: app/libs/css/components/leaf-dialog.css (~80 lines)
+
+  Provides: .leaf-dialog, .leaf-dialog__header, .leaf-dialog__body, .leaf-dialog__footer,
+  .leaf-dialog__btn-save, .leaf-dialog__btn-cancel. Consumes tokens for colors, spacing, border-radius,
+  shadow.
+
+  Does NOT replace dialogController.js logic. The JS constructor gets a 2-line patch to add these classes
+   to the elements it already creates.
+
+  Files touched:
+  - app/libs/css/components/leaf-dialog.css (new)
+  - LEAF_Request_Portal/js/dialogController.js (~line 29-34: add classList.add('leaf-dialog') to the
+  container element)
+  - LEAF_Request_Portal/templates/site_elements/generic_xhrDialog.tpl (add class names alongside existing
+   inline styles)
+
+  Component 3: leaf-grid
+
+  Formalizes the table styling in LeafFormGrid.
+
+  New file: app/libs/css/components/leaf-grid.css (~70 lines)
+
+  Provides: .leaf-grid (already exists as leaf_grid!), .leaf-grid__header, .leaf-grid__row,
+  .leaf-grid__cell, .leaf-grid__toolbar. Consumes tokens.
+
+  The class leaf_grid is already applied by formGrid.js:45. This component formalizes and extends it with
+   token-based values.
+
+  Files touched:
+  - app/libs/css/components/leaf-grid.css (new)
+  - app/libs/js/LEAF/formGrid.js (~line 45: update class from leaf_grid to leaf_grid leaf-grid)
+  - LEAF_Request_Portal/css/style.css (no change -- existing leaf_grid styles remain, new leaf-grid
+  styles layer on top)
+
+  Phase 1 Success Metrics
+
+  Metric: Token coverage
+  How to measure: grep -r 'var(--leaf-' app/libs/css/components/ | wc -l
+  Target: Every property in the 3 component files uses a token (0 hardcoded colors)
+  ────────────────────────────────────────
+  Metric: No regressions
+  How to measure: Existing automated tests pass (LEAF-Automated-Tests/)
+  Target: 100% pass rate, identical to pre-change
+  ────────────────────────────────────────
+  Metric: Visual parity
+  How to measure: Side-by-side screenshot comparison of 5 key pages (homepage, search, inbox, form view,
+    admin)
+  Target: No visible difference on existing pages
+  ────────────────────────────────────────
+  Metric: Adoption proof
+  How to measure: 3 templates use leaf-btn class
+  Target: Confirmed via grep
+  ────────────────────────────────────────
+  Metric: Doc exists
+  How to measure: docs/ui-conventions.md reviewed by team
+  Target: Merged to master
+
+  Estimated blast radius: 8 files modified, 4 files created, 0 files deleted.
+
+  ---
+  Phase 2: Adoption & Migration
+
+  Goal: Migrate the top-traffic pages to tokens, add 3 more components, introduce automated guardrails.
+
+  2a. Token Migration (CSS files)
+
+  Replace hardcoded color/spacing values in the 4 main CSS files with var(--leaf-*) references.
+
+  Files touched:
+  - LEAF_Request_Portal/css/style.css (~50 replacements)
+  - LEAF_Nexus/css/style.css (~30 replacements)
+  - LEAF_Request_Portal/admin/css/style.css (~20 replacements)
+  - LEAF_Request_Portal/admin/css/mod_workflow.css
+  - LEAF_Request_Portal/admin/css/mod_form.css
+  - LEAF_Request_Portal/css/view.css
+
+  2b. Three More Components
+
+  Component: leaf-form-field
+  Formalizes: Input + label pattern in LEAF_Request_Portal/css/style.css:42-79 (.item label, input,
+    leaf_check)
+  Key file: app/libs/css/components/leaf-form-field.css
+  ────────────────────────────────────────
+  Component: leaf-nav
+  Formalizes: Header menu pattern in LEAF_Request_Portal/templates/menu.tpl + popup logic
+  Key file: app/libs/css/components/leaf-nav.css
+  ────────────────────────────────────────
+  Component: leaf-alert
+  Formalizes: The .alert class used in main.tpl:103,117 for status/error messages
+  Key file: app/libs/css/components/leaf-alert.css
+
+  2c. Alias Legacy Classes
+
+  Add backward-compatible mappings so existing markup automatically picks up new styles:
+
+  /* app/libs/css/leaf-compat.css */
+  .buttonNorm { /* inherits leaf-btn properties */ }
+
+  This is the moment buttonNorm starts consuming tokens without any template changes.
+
+  2d. Lint Rule
+
+  Add a pre-commit or CI check:
+  - New CSS rule: Flag any new hardcoded hex color in app/libs/css/ or */css/ files that isn't a token
+  reference.
+  - Tool: stylelint with declaration-property-value-disallowed-list or a simple grep-based script in
+  scripts/.
+
+  Phase 2 Success Metrics
+
+  Metric: Token adoption in legacy CSS
+  How to measure: grep -c 'var(--leaf-' LEAF_Request_Portal/css/style.css
+  Target: >80% of color declarations use tokens
+  ────────────────────────────────────────
+  Metric: Hardcoded colors remaining
+  How to measure: grep -cE '#[0-9a-fA-F]{3,8}' LEAF_Request_Portal/css/style.css
+  Target: <20 remaining (down from ~80)
+  ────────────────────────────────────────
+  Metric: Component count
+  How to measure: ls app/libs/css/components/ | wc -l
+  Target: 6 component files
+  ────────────────────────────────────────
+  Metric: Lint passing
+  How to measure: CI job exits 0
+  Target: No new hardcoded colors in PRs
+  ────────────────────────────────────────
+  Metric: Visual parity
+  How to measure: Automated screenshot diff (5 pages)
+  Target: <0.5% pixel difference
+
+  Estimated blast radius: ~10 existing CSS files modified, 4 new files created.
+
+  ---
+  Phase 3: Governance & Scale
+
+  Goal: Make the design system self-sustaining. Bridge the gap between legacy JS components and Vue
+  components. Enable teams to build consistent UI without reading source.
+
+  3a. Living Reference Page
+
+  New file: LEAF_Request_Portal/admin/templates/mod_design_system.tpl
+
+  An admin panel page that renders every leaf-* component with live examples, built using the same Smarty
+   template system the app uses. Not a separate docs site -- it's a LEAF page, proving the components
+  work in-context.
+
+  3b. Vue Component Parity
+
+  Ensure the 3 shared Vue components in docker/vue-app/src/common/components/ consume the same
+  leaf-tokens.css tokens.
+
+  Files touched:
+  - docker/vue-app/src/common/LEAF_Vue_Dialog__Common.scss (replace hardcoded values with var(--leaf-*))
+  - docker/vue-app/src/sass/leaf.scss (import leaf-tokens.css)
+  - docker/vue-app/src/sass/leaf-colors.scss (map USWDS utility classes to tokens where overlapping)
+
+  3c. Remaining Component Library
+
+  Add formalized CSS for remaining repeated patterns:
+
+  ┌─────────────────┬─────────────────────────────────────────────────────────┐
+  │    Component    │                     Source pattern                      │
+  ├─────────────────┼─────────────────────────────────────────────────────────┤
+  │ leaf-card       │ Report/inbox item containers                            │
+  ├─────────────────┼─────────────────────────────────────────────────────────┤
+  │ leaf-badge      │ Status indicators in inbox                              │
+  ├─────────────────┼─────────────────────────────────────────────────────────┤
+  │ leaf-tabs       │ Tab switching in form views                             │
+  ├─────────────────┼─────────────────────────────────────────────────────────┤
+  │ leaf-spinner    │ Loading indicator (app/libs/smarty/loading_spinner.tpl) │
+  ├─────────────────┼─────────────────────────────────────────────────────────┤
+  │ leaf-breadcrumb │ Navigation trail in admin                               │
+  └─────────────────┴─────────────────────────────────────────────────────────┘
+
+  3d. Deprecation Annotations
+
+  Add comments to legacy classes marking them for eventual removal:
+
+  /* @deprecated Use .leaf-btn instead. See docs/ui-conventions.md */
+  .buttonNorm { ... }
+
+  3e. Contribution Guardrails
+
+  - CONTRIBUTING.md updated with: "New UI must use leaf-* components and --leaf-* tokens"
+  - PR template checkbox: "UI changes use design system tokens"
+  - stylelint config committed at repo root
+
+  Phase 3 Success Metrics
+
+  Metric: Component count
+  How to measure: ls app/libs/css/components/
+  Target: 11+ component files
+  ────────────────────────────────────────
+  Metric: Token-only new code
+  How to measure: git diff --stat on PRs touching CSS
+  Target: 0 new hardcoded colors in any PR
+  ────────────────────────────────────────
+  Metric: Vue-legacy parity
+  How to measure: Visual comparison of Vue dialog vs legacy dialog
+  Target: Identical appearance
+  ────────────────────────────────────────
+  Metric: Reference page
+  How to measure: mod_design_system.tpl exists and renders
+  Target: Accessible at /admin/?a=design_system
+  ────────────────────────────────────────
+  Metric: Team adoption
+  How to measure: Survey or PR review audit
+  Target: >90% of new UI PRs use leaf-* classes
+  ────────────────────────────────────────
+  Metric: Deprecated class usage trending down
+  How to measure: grep -rc 'buttonNorm' LEAF_Request_Portal/templates/
+  Target: Decreasing quarter-over-quarter
+
+  ---
+  Summary Table
+
+  ┌───────────────┬──────────────────────────────┬──────────────────────────┬──────────────────────────┐
+  │               │           Phase 1            │         Phase 2          │         Phase 3          │
+  ├───────────────┼──────────────────────────────┼──────────────────────────┼──────────────────────────┤
+  │ Risk          │ Minimal (additive only)      │ Low (CSS value swaps)    │ Medium (governance       │
+  │               │                              │                          │ change)                  │
+  ├───────────────┼──────────────────────────────┼──────────────────────────┼──────────────────────────┤
+  │ Files created │ 4 new + 1 doc                │ 4 new                    │ 6+ new                   │
+  ├───────────────┼──────────────────────────────┼──────────────────────────┼──────────────────────────┤
+  │ Files         │ 8                            │ ~10                      │ ~10                      │
+  │ modified      │                              │                          │                          │
+  ├───────────────┼──────────────────────────────┼──────────────────────────┼──────────────────────────┤
+  │               │                              │ 3 more (form-field, nav, │ 5 more (card, badge,     │
+  │ Components    │ 3 (btn, dialog, grid)        │  alert)                  │ tabs, spinner,           │
+  │               │                              │                          │ breadcrumb)              │
+  ├───────────────┼──────────────────────────────┼──────────────────────────┼──────────────────────────┤
+  │ Key           │ leaf-tokens.css +            │ Legacy CSS migrated to   │ Living reference page +  │
+  │ deliverable   │ conventions doc              │ tokens + lint            │ Vue parity               │
+  ├───────────────┼──────────────────────────────┼──────────────────────────┼──────────────────────────┤
+  │ Gate to next  │ 0 visual regressions, team   │ >80% token adoption in   │ --                       │
+  │ phase         │ signs off on conventions     │ portal CSS, lint green   │                          │
+  └───────────────┴──────────────────────────────┴──────────────────────────┴──────────────────────────┘
+
