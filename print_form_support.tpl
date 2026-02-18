@@ -247,7 +247,7 @@ function transferToPMDashboard() {
     var id = params.get("recordID");
     if (!id) return;
     window.location.href =
-        "https://leaf.va.gov/platform/projects/?tab=tasks&transferFromSandbox=" +
+        "https://leaf.va.gov/platform/projects/?tab=tasks&transferFromSupport=" +
         encodeURIComponent(id);
 }
 

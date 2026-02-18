@@ -20,7 +20,7 @@
     priority: 140,
     category: 145,
     dependencies: 146,
-    sandboxTicket: 148,
+    supportTicket: 148,
   };
 
   // Project form indicator IDs
@@ -512,19 +512,19 @@
     );
   }
 
-  function getSandboxTicketId(value) {
+  function getSupportTicketId(value) {
     var text = String(value || "").trim();
     if (!text) return "";
-    var match = text.match(/Sandbox\s*Ticket\s*#(\d+)/i);
+    var match = text.match(/Support\s*Ticket\s*#(\d+)/i);
     if (match) return match[1];
     match = text.match(/#(\d+)/);
     return match ? match[1] : "";
   }
 
-  function sandboxTicketLink(value) {
-    var id = getSandboxTicketId(value);
+  function supportTicketLink(value) {
+    var id = getSupportTicketId(value);
     if (!id) return "";
-    var label = "Sandbox Ticket #" + id;
+    var label = "Support Ticket #" + id;
     var href =
       "/platform/sl_sandbox/index.php?a=printview&recordID=" +
       encodeURIComponent(id);
@@ -595,7 +595,7 @@
       due: extractFromS1(row, TASK_IND.dueDate),
       priority: extractFromS1(row, TASK_IND.priority),
       category: extractFromS1(row, TASK_IND.category),
-      sandboxTicket: extractFromS1(row, TASK_IND.sandboxTicket),
+      supportTicket: extractFromS1(row, TASK_IND.supportTicket),
       createdAt: createdAt,
       dependenciesRaw: depsRaw,
       depIds: depIds,
@@ -822,7 +822,7 @@
           safe(t.due) +
           "</td>" +
           "<td>" +
-          sandboxTicketLink(t.sandboxTicket) +
+          supportTicketLink(t.supportTicket) +
           "</td>" +
           "</tr>"
         );
@@ -842,7 +842,7 @@
       '<th class="pm-sortable" data-sort="assignedTo" data-type="string">Assigned To</th>' +
       '<th class="pm-sortable" data-sort="start" data-type="date">Start</th>' +
       '<th class="pm-sortable" data-sort="due" data-type="date">Due</th>' +
-      '<th class="pm-sortable" data-sort="sandboxTicket" data-type="string">Ticket</th>' +
+      '<th class="pm-sortable" data-sort="supportTicket" data-type="string">Ticket</th>' +
       "</tr></thead>" +
       "<tbody>" +
       rows +
@@ -1016,7 +1016,7 @@
     return newId;
   }
 
-  async function setSandboxTicketIndicator(recordID, sourceId) {
+  async function setSupportTicketIndicator(recordID, sourceId) {
     if (!recordID) throw new Error("Missing recordID");
     var token = await ensureCSRFToken(recordID);
     var tokenField = state.csrfField || getCSRFFieldName();
@@ -1026,7 +1026,7 @@
       recordID: recordID,
       series: 1,
     };
-    bodyObj[TASK_IND.sandboxTicket] = "Sandbox Ticket #" + sourceId;
+    bodyObj[TASK_IND.supportTicket] = "Support Ticket #" + sourceId;
     if (token) {
       bodyObj[tokenField] = token;
     } else {
@@ -1055,22 +1055,24 @@
     return true;
   }
 
-  async function handleTransferFromSandbox() {
+  async function handleTransferFromSupport() {
     if (state.transferInProgress) return;
-    var sourceId = getQueryParam("transferFromSandbox");
+    var sourceId =
+      getQueryParam("transferFromSupport") || getQueryParam("transferFromUX");
     if (!sourceId) return;
     sourceId = String(sourceId || "").trim();
     if (!sourceId) return;
 
-    showTransferDebug("Transfer detected for sandbox " + sourceId);
+    showTransferDebug("Transfer detected for support " + sourceId);
     state.transferInProgress = true;
     try {
-      showTransferDebug("Creating task for sandbox " + sourceId);
+      showTransferDebug("Creating task for support " + sourceId);
       var newRecordID = await createTaskRecord();
-      await setSandboxTicketIndicator(newRecordID, sourceId);
+      await setSupportTicketIndicator(newRecordID, sourceId);
 
       var params = new URLSearchParams(window.location.search || "");
-      params.delete("transferFromSandbox");
+      params.delete("transferFromUX");
+      params.delete("transferFromSupport");
       var nextUrl =
         window.location.pathname +
         (params.toString() ? "?" + params.toString() : "") +
@@ -1085,7 +1087,7 @@
       showTransferDebug("Transfer complete. Task " + newRecordID);
     } catch (e) {
       showTransferDebug("Transfer failed. Check console for details.");
-      console.error("Transfer from sandbox failed.", e);
+      console.error("Transfer from support failed.", e);
     } finally {
       state.transferInProgress = false;
     }
@@ -1140,7 +1142,7 @@
                 safe(t.recordID) +
                 "</a>"
               : safe(t.recordID);
-            var ticketLink = sandboxTicketLink(t.sandboxTicket);
+            var ticketLink = supportTicketLink(t.supportTicket);
 
             return (
               "" +
@@ -1327,7 +1329,7 @@
         var title = safe(t.title || "(No title)");
         var pk = safe(t.projectKey || "");
         var id = safe(t.recordID || "");
-        var ticketLink = sandboxTicketLink(t.sandboxTicket);
+        var ticketLink = supportTicketLink(t.supportTicket);
         var dateLabel =
           safe(t.start || "No start") + " → " + safe(t.due || "No due");
 
@@ -1890,7 +1892,7 @@
     });
   }
 
-  function wireSandboxMessageListener() {
+  function wireSupportMessageListener() {
     window.addEventListener("message", function (event) {
       if (event.origin !== window.location.origin) return;
       var data = event.data || {};
@@ -2158,7 +2160,7 @@
     }
 
     var ticketTasks = analyticsTasks.filter(function (t) {
-      return !!String(t.sandboxTicket || "").trim();
+      return !!String(t.supportTicket || "").trim();
     });
 
     var ticketYears = Array.from(
@@ -2569,7 +2571,7 @@
       wireSortingDelegation();
       wireClearFilters();
       wireRecordModalLinks();
-      wireSandboxMessageListener();
+      wireSupportMessageListener();
       wireModalControls();
       wireAddButtons();
       wireAnalyticsYearFilter();
@@ -2600,7 +2602,7 @@
           TASK_IND.assignedTo,
           TASK_IND.startDate,
           TASK_IND.dueDate,
-          TASK_IND.sandboxTicket,
+          TASK_IND.supportTicket,
         ],
         [],
       );
@@ -2673,11 +2675,11 @@
     } catch (e) {
       console.error("Failed to load data.", e);
     } finally {
-      await handleTransferFromSandbox();
+      await handleTransferFromSupport();
     }
   }
 
-  handleTransferFromSandbox();
-  window.addEventListener("load", handleTransferFromSandbox);
+  handleTransferFromSupport();
+  window.addEventListener("load", handleTransferFromSupport);
   document.addEventListener("DOMContentLoaded", main);
 })();
