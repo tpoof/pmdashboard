@@ -1,0 +1,326 @@
+<div class="pm-wrap">
+  <span
+    id="pmEnv"
+    data-csrf="{$CSRFToken}"
+    data-csrf-alt="{$csrf_token}"
+    data-csrf2="{$csrfToken}"
+    style="display: none"
+  ></span>
+
+  <div class="pm-header">
+    <h1 class="pm-title">LEAF Project Dashboard</h1>
+
+    <div class="pm-actionsRow">
+      <button
+        type="button"
+        class="pm-primaryBtn pm-primaryBtnBlue"
+        id="pmAddProjectBtn"
+      >
+        + Project
+      </button>
+      <button type="button" class="pm-primaryBtn" id="pmAddTaskBtn">
+        + Task
+      </button>
+      <button
+        type="button"
+        class="pm-primaryBtn pm-inboxBtn"
+        id="pmViewInboxBtn"
+      >
+        View Inbox
+      </button>
+    </div>
+
+    <div class="pm-controls">
+      <div class="pm-centerControls">
+        <div class="pm-tabs" role="tablist" aria-label="PM tabs">
+          <button
+            type="button"
+            class="pm-tab"
+            data-tab="projects"
+            aria-selected="false"
+          >
+            Projects
+          </button>
+          <button
+            type="button"
+            class="pm-tab"
+            data-tab="tasks"
+            aria-selected="false"
+          >
+            Tasks
+          </button>
+          <button
+            type="button"
+            class="pm-tab"
+            data-tab="analytics"
+            aria-selected="false"
+          >
+            Analytics
+          </button>
+        </div>
+
+        <div class="pm-filters">
+          <label class="pm-label" for="pmSearchInput">Search</label>
+          <input id="pmSearchInput" class="pm-input" type="text" value="" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section id="pmTab-projects" class="pm-panel" role="tabpanel">
+    <div class="pm-panelHeader">
+      <h2 class="pm-subtitle">Projects</h2>
+    </div>
+    <div id="pmProjectsTable"></div>
+  </section>
+
+  <section id="pmTab-tasks" class="pm-panel" role="tabpanel">
+    <div class="pm-panelHeader">
+      <h2 class="pm-subtitle">Tasks</h2>
+    </div>
+
+    <div class="pm-filterRow">
+      <div class="pm-field pm-filterHeader">
+        <div class="pm-filterHeaderLabel">Filter by</div>
+      </div>
+      <div class="pm-field">
+        <label class="pm-label" for="pmProjectKeySelect">Project</label>
+        <select id="pmProjectKeySelect" class="pm-select">
+          <option value="">All Projects</option>
+        </select>
+      </div>
+
+      <div class="pm-field">
+        <label class="pm-label" for="pmStatusSelect">Status</label>
+        <select id="pmStatusSelect" class="pm-select">
+          <option value="">All Statuses</option>
+        </select>
+      </div>
+
+      <div class="pm-field">
+        <label class="pm-label" for="pmAssigneeSelect">Assigned To</label>
+        <select id="pmAssigneeSelect" class="pm-select">
+          <option value="">All Assignees</option>
+        </select>
+      </div>
+
+      <div class="pm-field">
+        <label class="pm-label" for="pmCategorySelect">Category</label>
+        <select id="pmCategorySelect" class="pm-select">
+          <option value="">All Categories</option>
+        </select>
+      </div>
+
+      <div class="pm-field">
+        <label class="pm-label" for="pmPrioritySelect">Priority</label>
+        <select id="pmPrioritySelect" class="pm-select">
+          <option value="">All Priorities</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
+      </div>
+      <div class="pm-field pm-fieldInlineBtn">
+        <button type="button" class="pm-ghostBtn" id="pmClearFiltersBtn_tasks">
+          Clear all filters
+        </button>
+      </div>
+    </div>
+
+    <div class="pm-viewRow">
+      <div class="pm-viewBtns">
+        <span class="pm-viewLabel">View</span>
+        <button type="button" id="pmViewTableBtn" class="pm-tab">Table</button>
+        <button type="button" id="pmViewKanbanBtn" class="pm-tab">
+          Kanban
+        </button>
+        <button type="button" id="pmViewGanttBtn" class="pm-tab">Gantt</button>
+      </div>
+    </div>
+
+    <div
+      id="pmProjectHealthSticky"
+      class="pm-healthSticky"
+      style="display: none"
+    >
+      <div class="pm-healthInner"></div>
+    </div>
+
+    <div id="pmTasksTableWrap">
+      <div id="pmTasksTable"></div>
+    </div>
+
+    <div id="pmKanbanWrap" style="display: none">
+      <div class="pm-kanbanHint">
+        Drag a task card to a new status column to update the task.
+      </div>
+      <div id="pmKanbanBoard" class="pm-kanban"></div>
+    </div>
+
+    <div id="pmGanttWrap" style="display: none">
+      <div class="pm-ganttMeta" id="pmGanttMeta"></div>
+      <div id="pmGanttBoard" class="pm-gantt">
+        <div id="pmGanttInner"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pmTab-analytics" class="pm-panel" role="tabpanel">
+    <h2 class="pm-subtitle">Analytics</h2>
+    <div class="pm-analyticsNote">
+      Charts are calculated from the same live task records shown in the Tasks
+      tab.
+    </div>
+
+    <div class="pm-analyticsTables">
+      <div class="pm-tableCard">
+        <div class="pm-chartTitle">Project health rollup</div>
+        <div id="pmProjectHealthTable"></div>
+      </div>
+
+      <div class="pm-tableCard">
+        <div class="pm-chartTitle">Overdue tasks</div>
+        <div id="pmOverdueTasksTable"></div>
+      </div>
+    </div>
+
+    <div class="pm-analyticsGrid">
+      <div class="pm-chartCard">
+        <div class="pm-chartTitle">Due date buckets</div>
+        <div class="pm-chartBox">
+          <canvas id="pmChartDueBuckets"></canvas>
+        </div>
+      </div>
+
+      <div class="pm-chartCard">
+        <div class="pm-chartHeader">
+          <div class="pm-chartTitle">Completed tasks by quarter</div>
+          <div class="pm-chartControls">
+            <label class="pm-label" for="pmAnalyticsYearSelect">Year</label>
+            <select id="pmAnalyticsYearSelect" class="pm-select"></select>
+          </div>
+        </div>
+        <div class="pm-chartBox">
+          <canvas id="pmChartCompletedByQuarter"></canvas>
+        </div>
+      </div>
+
+      <div class="pm-chartCard">
+        <div class="pm-chartHeader">
+          <div class="pm-chartTitle">Completed tasks by category</div>
+          <div class="pm-chartControls">
+            <label class="pm-label" for="pmAnalyticsCategoryYearSelect">
+              Year
+            </label>
+            <select
+              id="pmAnalyticsCategoryYearSelect"
+              class="pm-select"
+            ></select>
+            <label class="pm-label" for="pmAnalyticsCategoryQuarterSelect">
+              Quarter
+            </label>
+            <select
+              id="pmAnalyticsCategoryQuarterSelect"
+              class="pm-select"
+            ></select>
+          </div>
+        </div>
+        <div class="pm-chartBox">
+          <canvas id="pmChartCompletedByCategory"></canvas>
+        </div>
+      </div>
+
+      <div class="pm-chartCard">
+        <div class="pm-chartTitle">Tasks by priority</div>
+        <div class="pm-chartBox">
+          <canvas id="pmChartTasksByPriority"></canvas>
+        </div>
+      </div>
+
+      <div class="pm-chartCard">
+        <div class="pm-chartTitle">Tasks by Status</div>
+        <div class="pm-chartBox">
+          <canvas id="pmChartTasksByStatus"></canvas>
+        </div>
+      </div>
+
+      <div class="pm-chartCard">
+        <div class="pm-chartTitle">Tasks per Project Key</div>
+        <div class="pm-chartBox">
+          <canvas id="pmChartTasksByProject"></canvas>
+        </div>
+      </div>
+
+      <div class="pm-chartCard">
+        <div class="pm-chartHeader">
+          <div class="pm-chartTitle">Tickets imported by month</div>
+          <div class="pm-chartControls">
+            <label class="pm-label" for="pmAnalyticsTicketsYearSelect">
+              Year
+            </label>
+            <select
+              id="pmAnalyticsTicketsYearSelect"
+              class="pm-select"
+            ></select>
+          </div>
+        </div>
+        <div class="pm-chartBox">
+          <canvas id="pmChartTicketsImported"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="pmModal" class="pm-modal" aria-hidden="true" style="display: none">
+    <div class="pm-modalBackdrop" data-close="1"></div>
+    <div
+      class="pm-modalDialog"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Modal"
+    >
+      <div class="pm-modalHeader">
+        <div class="pm-modalTitle" id="pmModalTitle">Details</div>
+        <div class="pm-modalActions">
+          <button
+            type="button"
+            class="pm-modalOpenTab"
+            id="pmModalOpenTabBtn"
+            aria-label="Open in new tab"
+          >
+            Open in new tab
+          </button>
+          <button
+            type="button"
+            class="pm-modalClose"
+            id="pmModalCloseBtn"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+      <div class="pm-modalBody">
+        <iframe
+          id="pmModalFrame"
+          class="pm-modalFrame"
+          title="LEAF content"
+        ></iframe>
+      </div>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    class="pm-jumpTop"
+    id="pmJumpTopBtn"
+    aria-label="Jump to top"
+  >
+    ↑
+  </button>
+</div>
+
+<link rel="stylesheet" href="./project_v2.css" />
+
+<script src="./files/chart.js"></script>
+<script src="./project_v2.js"></script>
