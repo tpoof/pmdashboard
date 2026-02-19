@@ -486,8 +486,9 @@
 }
 
 .pm-table {
-  width: max-content;
-  min-width: 100%;
+  display: inline-table;
+  width: auto;
+  max-width: none;
   border-collapse: collapse;
   table-layout: auto;
   background: #fff;
