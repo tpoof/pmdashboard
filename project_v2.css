@@ -578,11 +578,20 @@
   justify-content: center;
 }
 
+#pmOkrsTable {
+  display: flex;
+  justify-content: center;
+}
+
 #pmProjectsTable .pm-table {
   margin: 0 auto;
 }
 
 #pmTasksTable .pm-table {
+  margin: 0 auto;
+}
+
+#pmOkrsTable .pm-table {
   margin: 0 auto;
 }
 
@@ -783,6 +792,12 @@
   margin: 8px 0 14px 0;
   opacity: 0.9;
   font-weight: 700;
+}
+
+.pm-analyticsFilters {
+  display: flex;
+  justify-content: flex-start;
+  margin: 4px 0 10px;
 }
 
 .pm-analyticsTables {

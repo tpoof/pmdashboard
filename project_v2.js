@@ -85,6 +85,7 @@
     analyticsCategoryYear: "",
     analyticsCategoryQuarter: "",
     analyticsTicketsYear: "",
+    analyticsGeneralYear: "",
     sort: {
       projects: { key: null, dir: 1, type: "string" },
       tasks: { key: null, dir: 1, type: "string" },
@@ -98,6 +99,7 @@
       completedByCategory: null,
       priority: null,
       ticketsImported: null,
+      projectsByType: null,
       okrAchieved: null,
       okrTasks: null,
     },
@@ -700,6 +702,15 @@
 
   function normalizeProject(row) {
     var recordID = getRecordID(row);
+    var createdAt =
+      row.dateInitiated ||
+      row.dateSubmitted ||
+      row.submitted ||
+      row.dateCreated ||
+      row.created ||
+      row.creationDate ||
+      row.date ||
+      "";
     return {
       recordID: recordID,
       projectKey: extractFromS1(row, PROJECT_IND.projectKey),
@@ -714,6 +725,7 @@
       okrStartDate: extractFromS1(row, OKR_IND.startDate),
       okrEndDate: extractFromS1(row, OKR_IND.endDate),
       okrFiscalYear: extractFromS1(row, OKR_IND.fiscalYear),
+      createdAt: createdAt,
       href: recordID
         ? "index.php?a=printview&recordID=" + encodeURIComponent(recordID)
         : "",
@@ -2058,6 +2070,14 @@
     return mmddyyyyToDate(str) || parseDateLoose(str);
   }
 
+  function getTaskGeneralDate(t) {
+    return parseLeafDate(t.due || t.start || t.createdAt) || null;
+  }
+
+  function getProjectGeneralDate(p) {
+    return parseLeafDate(p.createdAt) || null;
+  }
+
   function getTicketImportedDate(t) {
     return parseLeafDate(t.createdAt || t.start) || null;
   }
@@ -2704,6 +2724,15 @@
     });
   }
 
+  function wireAnalyticsGeneralYearFilter() {
+    var sel = document.getElementById("pmAnalyticsGeneralYearSelect");
+    if (!sel) return;
+    sel.addEventListener("change", function () {
+      state.analyticsGeneralYear = sel.value || "";
+      applySearchAndFilters(false);
+    });
+  }
+
   function wireJumpToTop() {
     var btn = document.getElementById("pmJumpTopBtn");
     if (!btn) return;
@@ -2741,6 +2770,8 @@
     var analyticsTasks = (tasks || []).filter(function (t) {
       return !isArchivedStatus(t.status);
     });
+    var analyticsProjects = (state.projectsAll || []).slice();
+    var now = new Date();
 
     if (state.charts.status) {
       state.charts.status.destroy();
@@ -2770,10 +2801,78 @@
       state.charts.ticketsImported.destroy();
       state.charts.ticketsImported = null;
     }
+    if (state.charts.projectsByType) {
+      state.charts.projectsByType.destroy();
+      state.charts.projectsByType = null;
+    }
+
+    var generalYearSelect = document.getElementById(
+      "pmAnalyticsGeneralYearSelect",
+    );
+    var generalYears = Array.from(
+      new Set(
+        analyticsTasks
+          .map(function (t) {
+            var d = getTaskGeneralDate(t);
+            return d ? d.getFullYear() : null;
+          })
+          .concat(
+            analyticsProjects.map(function (p) {
+              var d = getProjectGeneralDate(p);
+              return d ? d.getFullYear() : null;
+            }),
+          )
+          .filter(function (y) {
+            return y != null;
+          }),
+      ),
+    ).sort(function (a, b) {
+      return b - a;
+    });
+
+    if (!generalYears.length) {
+      generalYears = [now.getFullYear()];
+    }
+
+    if (!state.analyticsGeneralYear) {
+      state.analyticsGeneralYear = String(generalYears[0]);
+    }
+    if (generalYears.indexOf(Number(state.analyticsGeneralYear)) === -1) {
+      state.analyticsGeneralYear = String(generalYears[0]);
+    }
+
+    if (generalYearSelect) {
+      generalYearSelect.innerHTML = generalYears
+        .map(function (y) {
+          return (
+            '<option value="' +
+            y +
+            '"' +
+            (String(y) === String(state.analyticsGeneralYear)
+              ? " selected"
+              : "") +
+            ">" +
+            y +
+            "</option>"
+          );
+        })
+        .join("");
+    }
+
+    var selectedGeneralYear = Number(state.analyticsGeneralYear);
+    var tasksForGeneralCharts = analyticsTasks.filter(function (t) {
+      var d = getTaskGeneralDate(t);
+      if (!d || isNaN(d.getTime())) return false;
+      return d.getFullYear() === selectedGeneralYear;
+    });
+    var projectsForGeneralCharts = analyticsProjects.filter(function (p) {
+      var d = getProjectGeneralDate(p);
+      if (!d || isNaN(d.getTime())) return false;
+      return d.getFullYear() === selectedGeneralYear;
+    });
 
     var byStatus = {};
     var byProject = {};
-    var now = new Date();
     var buckets = {
       Overdue: 0,
       "Due in 7 days": 0,
@@ -2782,7 +2881,7 @@
       "No due date": 0,
     };
 
-    analyticsTasks.forEach(function (t) {
+    tasksForGeneralCharts.forEach(function (t) {
       var st = normalizeStatus(t.status);
       if (isArchivedStatus(st)) return;
       byStatus[st] = (byStatus[st] || 0) + 1;
@@ -3037,7 +3136,7 @@
     }
 
     var priorityCounts = { High: 0, Medium: 0, Low: 0, Unspecified: 0 };
-    analyticsTasks.forEach(function (t) {
+    tasksForGeneralCharts.forEach(function (t) {
       var p = String(t.priority || "").trim();
       if (!p) priorityCounts.Unspecified += 1;
       else if (p.toLowerCase() === "high") priorityCounts.High += 1;
@@ -3157,6 +3256,36 @@
             "Dec",
           ],
           datasets: [{ label: "Tickets imported", data: ticketCounts }],
+        },
+        options: { responsive: true, maintainAspectRatio: false },
+      });
+    }
+
+    var projectTypeCounts = {};
+    projectsForGeneralCharts.forEach(function (p) {
+      var pt = String(p.projectType || "").trim() || "Unspecified";
+      projectTypeCounts[pt] = (projectTypeCounts[pt] || 0) + 1;
+    });
+
+    var typeLabels = Object.keys(projectTypeCounts).sort(function (a, b) {
+      return a.localeCompare(b);
+    });
+    var typeData = typeLabels.map(function (k) {
+      return projectTypeCounts[k];
+    });
+
+    var ctxProjType = document.getElementById("pmChartProjectsByType");
+    if (ctxProjType) {
+      state.charts.projectsByType = new Chart(ctxProjType, {
+        type: "bar",
+        data: {
+          labels: typeLabels.length ? typeLabels : ["No data"],
+          datasets: [
+            {
+              label: "Projects",
+              data: typeLabels.length ? typeData : [0],
+            },
+          ],
         },
         options: { responsive: true, maintainAspectRatio: false },
       });
@@ -3306,6 +3435,7 @@
       wireAnalyticsYearFilter();
       wireAnalyticsCategoryFilters();
       wireAnalyticsTicketsYearFilter();
+      wireAnalyticsGeneralYearFilter();
       wireJumpToTop();
 
       var projectsUrl = buildQueryUrl(
