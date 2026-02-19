@@ -16,7 +16,7 @@
   <div style="margin-top:0.6rem;">
     <div style="font-weight:600; margin-bottom:0.35rem;">Available OKRs</div>
     <div id="pkList30"
-      style="border:1px solid #d9d9d9; border-radius:0.6rem; padding:0.6rem; min-height: 140px; max-height: 320px; overflow:auto; background:#fff;">
+      style="border:1px solid #d9d9d9; border-radius:0.6rem; padding:0.6rem; min-height: 140px; max-height: 260px; overflow-y:auto; background:#fff;">
     </div>
   </div>
 
