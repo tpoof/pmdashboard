@@ -102,22 +102,24 @@
 .pm-controls {
   padding-top: 40px;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   width: 100%;
   background: #f8fafc;
   border: 0;
   border-radius: 16px;
   padding: 14px 16px;
   box-shadow: none;
+  text-align: left;
 }
 
 .pm-centerControls,
 .pm-navRow {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 18px;
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .pm-tabs {

@@ -1069,15 +1069,29 @@
               item.tasks
                 .map(function (t) {
                   var title = String(t.title || "").trim();
-                  var taskLabel = title || (t.recordID ? "Task " + t.recordID : "Task");
+                  var taskLabel =
+                    title || (t.recordID ? "Task " + t.recordID : "Task");
                   var projectLabel = getProjectLabelFromKey(t.projectKey);
                   var isComplete = isCompletedStatus(t.status);
                   var statusLabel = isComplete
                     ? '<span class="pm-completeGreen">Completed</span>'
                     : '<span class="pm-okrStatusOpen">In progress</span>';
+                  var taskHref = t.recordID
+                    ? "index.php?a=printview&recordID=" +
+                      encodeURIComponent(t.recordID)
+                    : "";
+                  var taskLink = taskHref
+                    ? '<a href="' +
+                      safe(taskHref) +
+                      '" class="pm-recordLink" data-title="' +
+                      safe("Task " + t.recordID) +
+                      '">' +
+                      safe(taskLabel) +
+                      "</a>"
+                    : safe(taskLabel);
                   return (
                     "<li class='pm-okrItem'>" +
-                    safe(taskLabel) +
+                    taskLink +
                     " — " +
                     safe(projectLabel) +
                     " (" +
@@ -1095,11 +1109,25 @@
               item.completedTasks
                 .map(function (t) {
                   var title = String(t.title || "").trim();
-                  var taskLabel = title || (t.recordID ? "Task " + t.recordID : "Task");
+                  var taskLabel =
+                    title || (t.recordID ? "Task " + t.recordID : "Task");
                   var projectLabel = getProjectLabelFromKey(t.projectKey);
+                  var taskHref = t.recordID
+                    ? "index.php?a=printview&recordID=" +
+                      encodeURIComponent(t.recordID)
+                    : "";
+                  var taskLink = taskHref
+                    ? '<a href="' +
+                      safe(taskHref) +
+                      '" class="pm-recordLink" data-title="' +
+                      safe("Task " + t.recordID) +
+                      '">' +
+                      safe(taskLabel) +
+                      "</a>"
+                    : safe(taskLabel);
                   return (
                     "<li class='pm-okrItem'>" +
-                    safe(taskLabel) +
+                    taskLink +
                     " — " +
                     safe(projectLabel) +
                     "</li>"
