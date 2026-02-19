@@ -31,7 +31,7 @@
     </div>
 
     <!--{if $empMembership['groupID'][388]}-->
-    <div class="pm-actionsRow">
+    <div class="pm-actionsRow pm-actionsRowSpaced">
       <span class="pm-actionsLabel">Leadership Actions:</span>
       <button type="button" class="pm-primaryBtn" id="pmAddOkrBtn">
         + OKR
@@ -80,61 +80,8 @@
     <div class="pm-panelHeader">
       <h2 class="pm-subtitle">Projects</h2>
     </div>
-    <div class="pm-viewRow">
-      <div class="pm-viewBtns">
-        <span class="pm-viewLabel">View:</span>
-        <button type="button" id="pmProjectViewTableBtn" class="pm-tab">
-          Project Table
-        </button>
-        <button type="button" id="pmProjectViewOkrsBtn" class="pm-tab">
-          OKRs
-        </button>
-      </div>
-    </div>
-
-    <div id="pmOkrsRollup" class="pm-okrsRollup" style="display: none">
-      <div class="pm-okrsHeader">
-        <h3 class="pm-okrsTitle">OKR Health Roll-up</h3>
-      </div>
-      <div class="pm-okrsCharts pm-analyticsGrid">
-        <div class="pm-chartCard">
-          <div class="pm-chartTitle">% OKR Achieved</div>
-          <div class="pm-chartBox pm-okrsChartBox">
-            <canvas id="pmChartOkrAchieved"></canvas>
-          </div>
-        </div>
-        <div class="pm-chartCard">
-          <div class="pm-chartTitle">Completed vs Remaining Tasks</div>
-          <div class="pm-chartBox pm-okrsChartBox">
-            <canvas id="pmChartOkrTasks"></canvas>
-          </div>
-        </div>
-      </div>
-      <div id="pmOkrsSummary" class="pm-okrsSummary"></div>
-    </div>
-
-    <div id="pmOkrsFilterRow" class="pm-filterRow" style="display: none">
-      <div class="pm-field pm-filterHeader">
-        <div class="pm-filterHeaderLabel">Filter by</div>
-      </div>
-      <div class="pm-field">
-        <label class="pm-label" for="pmOkrFiscalYearSelect">Fiscal Year</label>
-        <select id="pmOkrFiscalYearSelect" class="pm-select">
-          <option value="">All Fiscal Years</option>
-        </select>
-      </div>
-      <div class="pm-field pm-fieldInlineBtn">
-        <button type="button" class="pm-ghostBtn" id="pmClearFiltersBtn_okrs">
-          Clear all filters
-        </button>
-      </div>
-    </div>
-
     <div id="pmProjectsTableWrap">
       <div id="pmProjectsTable"></div>
-    </div>
-    <div id="pmOkrsTableWrap" style="display: none">
-      <div id="pmOkrsTable"></div>
     </div>
   </section>
 
@@ -233,106 +180,164 @@
 
   <section id="pmTab-analytics" class="pm-panel" role="tabpanel">
     <h2 class="pm-subtitle">Analytics</h2>
-    <div class="pm-analyticsNote">
-      Charts are calculated from the same live task records shown in the Tasks
-      tab.
-    </div>
-
-    <div class="pm-analyticsTables">
-      <div class="pm-tableCard">
-        <div class="pm-chartTitle">Project health rollup</div>
-        <div id="pmProjectHealthTable"></div>
-      </div>
-
-      <div class="pm-tableCard">
-        <div class="pm-chartTitle">Overdue tasks</div>
-        <div id="pmOverdueTasksTable"></div>
+    <div class="pm-viewRow">
+      <div class="pm-viewBtns">
+        <span class="pm-viewLabel">View:</span>
+        <button type="button" id="pmAnalyticsViewMainBtn" class="pm-tab">
+          Project &amp; Tasks Analytics
+        </button>
+        <button type="button" id="pmAnalyticsViewOkrsBtn" class="pm-tab">
+          OKRs
+        </button>
       </div>
     </div>
 
-    <div class="pm-analyticsGrid">
-      <div class="pm-chartCard">
-        <div class="pm-chartTitle">Due date buckets</div>
-        <div class="pm-chartBox">
-          <canvas id="pmChartDueBuckets"></canvas>
+    <div id="pmAnalyticsWrap">
+      <div class="pm-analyticsNote">
+        Charts are calculated from the same live task records shown in the Tasks
+        tab.
+      </div>
+
+      <div class="pm-analyticsTables">
+        <div class="pm-tableCard">
+          <div class="pm-chartTitle">Project health rollup</div>
+          <div id="pmProjectHealthTable"></div>
+        </div>
+
+        <div class="pm-tableCard">
+          <div class="pm-chartTitle">Overdue tasks</div>
+          <div id="pmOverdueTasksTable"></div>
         </div>
       </div>
 
-      <div class="pm-chartCard">
-        <div class="pm-chartHeader">
-          <div class="pm-chartTitle">Completed tasks by quarter</div>
-          <div class="pm-chartControls">
-            <label class="pm-label" for="pmAnalyticsYearSelect">Year</label>
-            <select id="pmAnalyticsYearSelect" class="pm-select"></select>
+      <div class="pm-analyticsGrid">
+        <div class="pm-chartCard">
+          <div class="pm-chartTitle">Due date buckets</div>
+          <div class="pm-chartBox">
+            <canvas id="pmChartDueBuckets"></canvas>
           </div>
         </div>
-        <div class="pm-chartBox">
-          <canvas id="pmChartCompletedByQuarter"></canvas>
-        </div>
-      </div>
 
-      <div class="pm-chartCard">
-        <div class="pm-chartHeader">
-          <div class="pm-chartTitle">Completed tasks by category</div>
-          <div class="pm-chartControls">
-            <label class="pm-label" for="pmAnalyticsCategoryYearSelect">
-              Year
-            </label>
-            <select
-              id="pmAnalyticsCategoryYearSelect"
-              class="pm-select"
-            ></select>
-            <label class="pm-label" for="pmAnalyticsCategoryQuarterSelect">
-              Quarter
-            </label>
-            <select
-              id="pmAnalyticsCategoryQuarterSelect"
-              class="pm-select"
-            ></select>
+        <div class="pm-chartCard">
+          <div class="pm-chartHeader">
+            <div class="pm-chartTitle">Completed tasks by quarter</div>
+            <div class="pm-chartControls">
+              <label class="pm-label" for="pmAnalyticsYearSelect">Year</label>
+              <select id="pmAnalyticsYearSelect" class="pm-select"></select>
+            </div>
+          </div>
+          <div class="pm-chartBox">
+            <canvas id="pmChartCompletedByQuarter"></canvas>
           </div>
         </div>
-        <div class="pm-chartBox">
-          <canvas id="pmChartCompletedByCategory"></canvas>
-        </div>
-      </div>
 
-      <div class="pm-chartCard">
-        <div class="pm-chartTitle">Tasks by priority</div>
-        <div class="pm-chartBox">
-          <canvas id="pmChartTasksByPriority"></canvas>
-        </div>
-      </div>
-
-      <div class="pm-chartCard">
-        <div class="pm-chartTitle">Tasks by Status</div>
-        <div class="pm-chartBox">
-          <canvas id="pmChartTasksByStatus"></canvas>
-        </div>
-      </div>
-
-      <div class="pm-chartCard">
-        <div class="pm-chartTitle">Tasks per Project Key</div>
-        <div class="pm-chartBox">
-          <canvas id="pmChartTasksByProject"></canvas>
-        </div>
-      </div>
-
-      <div class="pm-chartCard">
-        <div class="pm-chartHeader">
-          <div class="pm-chartTitle">Tickets imported by month</div>
-          <div class="pm-chartControls">
-            <label class="pm-label" for="pmAnalyticsTicketsYearSelect">
-              Year
-            </label>
-            <select
-              id="pmAnalyticsTicketsYearSelect"
-              class="pm-select"
-            ></select>
+        <div class="pm-chartCard">
+          <div class="pm-chartHeader">
+            <div class="pm-chartTitle">Completed tasks by category</div>
+            <div class="pm-chartControls">
+              <label class="pm-label" for="pmAnalyticsCategoryYearSelect">
+                Year
+              </label>
+              <select
+                id="pmAnalyticsCategoryYearSelect"
+                class="pm-select"
+              ></select>
+              <label class="pm-label" for="pmAnalyticsCategoryQuarterSelect">
+                Quarter
+              </label>
+              <select
+                id="pmAnalyticsCategoryQuarterSelect"
+                class="pm-select"
+              ></select>
+            </div>
+          </div>
+          <div class="pm-chartBox">
+            <canvas id="pmChartCompletedByCategory"></canvas>
           </div>
         </div>
-        <div class="pm-chartBox">
-          <canvas id="pmChartTicketsImported"></canvas>
+
+        <div class="pm-chartCard">
+          <div class="pm-chartTitle">Tasks by priority</div>
+          <div class="pm-chartBox">
+            <canvas id="pmChartTasksByPriority"></canvas>
+          </div>
         </div>
+
+        <div class="pm-chartCard">
+          <div class="pm-chartTitle">Tasks by Status</div>
+          <div class="pm-chartBox">
+            <canvas id="pmChartTasksByStatus"></canvas>
+          </div>
+        </div>
+
+        <div class="pm-chartCard">
+          <div class="pm-chartTitle">Tasks per Project Key</div>
+          <div class="pm-chartBox">
+            <canvas id="pmChartTasksByProject"></canvas>
+          </div>
+        </div>
+
+        <div class="pm-chartCard">
+          <div class="pm-chartHeader">
+            <div class="pm-chartTitle">Tickets imported by month</div>
+            <div class="pm-chartControls">
+              <label class="pm-label" for="pmAnalyticsTicketsYearSelect">
+                Year
+              </label>
+              <select
+                id="pmAnalyticsTicketsYearSelect"
+                class="pm-select"
+              ></select>
+            </div>
+          </div>
+          <div class="pm-chartBox">
+            <canvas id="pmChartTicketsImported"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="pmOkrsAnalyticsWrap" style="display: none">
+      <div id="pmOkrsRollup" class="pm-okrsRollup">
+        <div class="pm-okrsHeader">
+          <h3 class="pm-okrsTitle">OKR Health Roll-up</h3>
+        </div>
+        <div class="pm-okrsCharts pm-analyticsGrid">
+          <div class="pm-chartCard">
+            <div class="pm-chartTitle">% OKR Achieved</div>
+            <div class="pm-chartBox pm-okrsChartBox">
+              <canvas id="pmChartOkrAchieved"></canvas>
+            </div>
+          </div>
+          <div class="pm-chartCard">
+            <div class="pm-chartTitle">Completed vs Remaining Tasks</div>
+            <div class="pm-chartBox pm-okrsChartBox">
+              <canvas id="pmChartOkrTasks"></canvas>
+            </div>
+          </div>
+        </div>
+        <div id="pmOkrsSummary" class="pm-okrsSummary"></div>
+      </div>
+
+      <div id="pmOkrsFilterRow" class="pm-filterRow">
+        <div class="pm-field pm-filterHeader">
+          <div class="pm-filterHeaderLabel">Filter by</div>
+        </div>
+        <div class="pm-field">
+          <label class="pm-label" for="pmOkrFiscalYearSelect">Fiscal Year</label>
+          <select id="pmOkrFiscalYearSelect" class="pm-select">
+            <option value="">All Fiscal Years</option>
+          </select>
+        </div>
+        <div class="pm-field pm-fieldInlineBtn">
+          <button type="button" class="pm-ghostBtn" id="pmClearFiltersBtn_okrs">
+            Clear all filters
+          </button>
+        </div>
+      </div>
+
+      <div id="pmOkrsTableWrap">
+        <div id="pmOkrsTable"></div>
       </div>
     </div>
   </section>

@@ -35,6 +35,10 @@
   margin-bottom: 8px;
 }
 
+.pm-actionsRowSpaced {
+  margin-bottom: 16px;
+}
+
 .pm-actionsLabel {
   font-weight: 800;
 }

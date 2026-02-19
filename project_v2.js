@@ -59,7 +59,7 @@
   var STORAGE_KEYS = {
     activeTab: "pm_active_tab",
     tasksView: "pm_tasks_view",
-    projectsView: "pm_projects_view",
+    analyticsView: "pm_analytics_view",
   };
 
   // Fallback drives Kanban column order even when zero tasks
@@ -2130,36 +2130,32 @@
     setView(initial);
   }
 
-  function wireProjectViewToggle() {
-    var btnTable = document.getElementById("pmProjectViewTableBtn");
-    var btnOkrs = document.getElementById("pmProjectViewOkrsBtn");
-    var wrapTable = document.getElementById("pmProjectsTableWrap");
-    var wrapOkrs = document.getElementById("pmOkrsTableWrap");
-    var filterRow = document.getElementById("pmOkrsFilterRow");
-    var rollup = document.getElementById("pmOkrsRollup");
-    if (!btnTable || !btnOkrs || !wrapTable || !wrapOkrs) return;
+  function wireAnalyticsViewToggle() {
+    var btnMain = document.getElementById("pmAnalyticsViewMainBtn");
+    var btnOkrs = document.getElementById("pmAnalyticsViewOkrsBtn");
+    var wrapMain = document.getElementById("pmAnalyticsWrap");
+    var wrapOkrs = document.getElementById("pmOkrsAnalyticsWrap");
+    if (!btnMain || !btnOkrs || !wrapMain || !wrapOkrs) return;
 
     function setView(view) {
-      wrapTable.style.display = view === "table" ? "block" : "none";
+      wrapMain.style.display = view === "main" ? "block" : "none";
       wrapOkrs.style.display = view === "okrs" ? "block" : "none";
-      if (filterRow) filterRow.style.display = view === "okrs" ? "flex" : "none";
-      if (rollup) rollup.style.display = view === "okrs" ? "flex" : "none";
 
-      btnTable.classList.toggle("is-active", view === "table");
+      btnMain.classList.toggle("is-active", view === "main");
       btnOkrs.classList.toggle("is-active", view === "okrs");
 
-      localStorage.setItem(STORAGE_KEYS.projectsView, view);
+      localStorage.setItem(STORAGE_KEYS.analyticsView, view);
       applySearchAndFilters(true);
     }
 
-    btnTable.addEventListener("click", function () {
-      setView("table");
+    btnMain.addEventListener("click", function () {
+      setView("main");
     });
     btnOkrs.addEventListener("click", function () {
       setView("okrs");
     });
 
-    var initial = localStorage.getItem(STORAGE_KEYS.projectsView) || "table";
+    var initial = localStorage.getItem(STORAGE_KEYS.analyticsView) || "main";
     setView(initial);
   }
 
@@ -2434,11 +2430,11 @@
 
     var activeTab = localStorage.getItem(STORAGE_KEYS.activeTab) || "projects";
     var tasksView = localStorage.getItem(STORAGE_KEYS.tasksView) || "table";
-    var projectsView =
-      localStorage.getItem(STORAGE_KEYS.projectsView) || "table";
+    var analyticsView =
+      localStorage.getItem(STORAGE_KEYS.analyticsView) || "main";
 
     var okrFiltered = projectsFiltered;
-    if (projectsView === "okrs" && selectedOkrFiscalYear) {
+    if (analyticsView === "okrs" && selectedOkrFiscalYear) {
       okrFiltered = projectsFiltered.filter(function (p) {
         return (
           String(p.okrFiscalYear || "").trim() === selectedOkrFiscalYear
@@ -2500,32 +2496,36 @@
 
     if (renderOnlyCurrentTabFirst) {
       if (activeTab === "projects") {
-        if (projectsView === "okrs") {
-          renderOkrsRollup(okrFiltered, projectsFiltered, tasksSearchFiltered);
-          renderOkrsTable(okrFiltered);
-        } else {
-          renderProjectsTable(projectsFiltered);
-        }
+        renderProjectsTable(projectsFiltered);
       }
       if (activeTab === "tasks") {
         renderTasksTable(tasksFiltered);
         if (tasksView === "kanban") renderKanban(tasksFiltered);
         if (tasksView === "gantt") renderGantt(tasksNoArchive);
       }
-    } else {
-      if (projectsView === "okrs") {
-        if (activeTab === "projects")
+      if (activeTab === "analytics") {
+        if (analyticsView === "okrs") {
           renderOkrsRollup(okrFiltered, projectsFiltered, tasksSearchFiltered);
-        renderOkrsTable(okrFiltered);
-      } else {
-        renderProjectsTable(projectsFiltered);
+          renderOkrsTable(okrFiltered);
+        } else {
+          renderAnalytics(tasksSearchNoArchive);
+        }
       }
+    } else {
+      renderProjectsTable(projectsFiltered);
       renderTasksTable(tasksFiltered);
       if (activeTab === "tasks" && tasksView === "kanban")
         renderKanban(tasksFiltered);
       if (activeTab === "tasks" && tasksView === "gantt")
         renderGantt(tasksNoArchive);
-      if (activeTab === "analytics") renderAnalytics(tasksSearchNoArchive);
+      if (activeTab === "analytics") {
+        if (analyticsView === "okrs") {
+          renderOkrsRollup(okrFiltered, projectsFiltered, tasksSearchFiltered);
+          renderOkrsTable(okrFiltered);
+        } else {
+          renderAnalytics(tasksSearchNoArchive);
+        }
+      }
     }
   }
 
@@ -3278,7 +3278,7 @@
       flushTransferDebug();
       wireTabs();
       wireTaskViewToggle();
-      wireProjectViewToggle();
+      wireAnalyticsViewToggle();
       wireSortingDelegation();
       wireClearFilters();
       wireOkrFilters();
