@@ -221,6 +221,7 @@
   flex-wrap: wrap;
   gap: 12px;
   align-items: flex-end;
+  justify-content: center;
   border: 1px solid #d7d7d7;
   border-radius: 12px;
   padding: 12px 14px;
@@ -506,6 +507,8 @@
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
+  max-width: 320px;
+  width: 320px;
 }
 
 .pm-table thead th {
