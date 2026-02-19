@@ -11,34 +11,52 @@
   <div class="pm-header">
     <h1 class="pm-title">LEAF Project Dashboard</h1>
 
-    <!--{if $empMembership['groupID'][12]}-->
-    <div class="pm-actionsRow">
-      <button
-        type="button"
-        class="pm-primaryBtn pm-primaryBtnBlue"
-        id="pmAddProjectBtn"
-      >
-        + Project
-      </button>
-      <button type="button" class="pm-primaryBtn" id="pmAddTaskBtn">
-        + Task
-      </button>
-      <button
-        type="button"
-        class="pm-primaryBtn pm-inboxBtn"
-        id="pmViewInboxBtn"
-      >
+    <!--{if $empMembership['groupID'][12] || $empMembership['groupID'][388]}-->
+    <div class="pm-actionsRow pm-actionsRowSpaced">
+      <div class="pm-addMenu">
+        <button
+          type="button"
+          class="pm-primaryBtn pm-addBtn"
+          id="pmAddMenuBtn"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          aria-controls="pmAddMenuList"
+        >
+          Add
+        </button>
+        <div
+          class="pm-addMenuPopover"
+          id="pmAddMenuList"
+          role="menu"
+          aria-label="Add menu"
+          aria-orientation="vertical"
+          hidden
+        >
+          <!--{if $empMembership['groupID'][12]}-->
+          <button type="button" class="pm-menuItem" role="menuitem" data-action="project">
+            + Project
+          </button>
+          <button type="button" class="pm-menuItem" role="menuitem" data-action="task">
+            + Task
+          </button>
+          <!--{/if}-->
+          <!--{if $empMembership['groupID'][388]}-->
+          <button type="button" class="pm-menuItem" role="menuitem" data-action="objective">
+            + Objective
+          </button>
+          <!--{/if}-->
+          <!--{if $empMembership['groupID'][12]}-->
+          <button type="button" class="pm-menuItem" role="menuitem" data-action="keyResult">
+            + Key Result
+          </button>
+          <!--{/if}-->
+        </div>
+      </div>
+      <!--{if $empMembership['groupID'][12]}-->
+      <button type="button" class="pm-ghostBtn pm-inboxBtn" id="pmViewInboxBtn">
         View Inbox
       </button>
-    </div>
-    <!--{/if}-->
-
-    <!--{if $empMembership['groupID'][388]}-->
-    <div class="pm-actionsRow pm-actionsRowSpaced">
-      <span class="pm-actionsLabel">Leadership Actions:</span>
-      <button type="button" class="pm-primaryBtn" id="pmAddOkrBtn">
-        + OKR
-      </button>
+      <!--{/if}-->
     </div>
     <!--{/if}-->
 

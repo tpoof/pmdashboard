@@ -56,6 +56,8 @@
     "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_9b302&title=Task";
   var START_OKR_URL =
     "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_a2b55&title=OKR";
+  var START_KEY_RESULT_URL =
+    "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_6530b&title=Key+Result";
 
   // Persistence keys
   var STORAGE_KEYS = {
@@ -3032,26 +3034,141 @@
   }
 
   function wireAddButtons() {
-    var p = document.getElementById("pmAddProjectBtn");
-    var t = document.getElementById("pmAddTaskBtn");
     var inbox = document.getElementById("pmViewInboxBtn");
-    var okr = document.getElementById("pmAddOkrBtn");
-    if (p)
-      p.addEventListener("click", function () {
-        openModal("New Project", START_PROJECT_URL);
-      });
-    if (t)
-      t.addEventListener("click", function () {
-        openModal("New Task", START_TASK_URL);
-      });
     if (inbox)
       inbox.addEventListener("click", function () {
         openModal("Inbox", "report.php?a=LEAF_Inbox");
       });
-    if (okr)
-      okr.addEventListener("click", function () {
-        openModal("Add OKR", START_OKR_URL);
+
+    var menuBtn = document.getElementById("pmAddMenuBtn");
+    var menu = document.getElementById("pmAddMenuList");
+    if (!menuBtn || !menu) return;
+
+    var items = Array.from(menu.querySelectorAll(".pm-menuItem"));
+    if (!items.length) return;
+    var activeIndex = 0;
+    var isOpen = false;
+
+    items.forEach(function (item, idx) {
+      item.setAttribute("tabindex", "-1");
+      item.addEventListener("focus", function () {
+        activeIndex = idx;
       });
+    });
+
+    function focusItem(index) {
+      if (!items.length) return;
+      activeIndex = Math.max(0, Math.min(index, items.length - 1));
+      items.forEach(function (item, idx) {
+        item.setAttribute("tabindex", idx === activeIndex ? "0" : "-1");
+      });
+      items[activeIndex].focus();
+    }
+
+    function openMenu(focusIndex) {
+      if (isOpen) return;
+      isOpen = true;
+      menu.hidden = false;
+      menuBtn.setAttribute("aria-expanded", "true");
+      focusItem(
+        typeof focusIndex === "number" ? focusIndex : Math.max(0, activeIndex),
+      );
+      document.addEventListener("click", onDocumentClick, true);
+      document.addEventListener("keydown", onDocumentKeydown);
+    }
+
+    function closeMenu(returnFocus) {
+      if (!isOpen) return;
+      isOpen = false;
+      menu.hidden = true;
+      menuBtn.setAttribute("aria-expanded", "false");
+      items.forEach(function (item) {
+        item.setAttribute("tabindex", "-1");
+      });
+      document.removeEventListener("click", onDocumentClick, true);
+      document.removeEventListener("keydown", onDocumentKeydown);
+      if (returnFocus) menuBtn.focus();
+    }
+
+    function launchAction(action) {
+      if (action === "project")
+        openModal("New Project", START_PROJECT_URL);
+      else if (action === "task") openModal("New Task", START_TASK_URL);
+      else if (action === "objective")
+        openModal("Add Objective", START_OKR_URL);
+      else if (action === "keyResult")
+        openModal("Add Key Result", START_KEY_RESULT_URL);
+    }
+
+    function activateItem(item) {
+      if (!item || !item.classList || !item.classList.contains("pm-menuItem"))
+        return;
+      var action = item.getAttribute("data-action") || "";
+      closeMenu(true);
+      if (action) launchAction(action);
+    }
+
+    function onDocumentClick(e) {
+      if (
+        e.target === menuBtn ||
+        menu.contains(e.target) ||
+        menuBtn.contains(e.target)
+      )
+        return;
+      closeMenu(true);
+    }
+
+    function onDocumentKeydown(e) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeMenu(true);
+      }
+    }
+
+    menuBtn.addEventListener("click", function () {
+      if (isOpen) closeMenu(true);
+      else openMenu(0);
+    });
+
+    menuBtn.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openMenu(0);
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        openMenu(items.length - 1);
+      }
+    });
+
+    menu.addEventListener("keydown", function (e) {
+      if (!isOpen) return;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        focusItem((activeIndex + 1) % items.length);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        focusItem((activeIndex - 1 + items.length) % items.length);
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        focusItem(0);
+      } else if (e.key === "End") {
+        e.preventDefault();
+        focusItem(items.length - 1);
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        activateItem(document.activeElement);
+      } else if (e.key === "Tab") {
+        closeMenu(false);
+      }
+    });
+
+    menu.addEventListener("click", function (e) {
+      var item = e.target.closest(".pm-menuItem");
+      if (!item) return;
+      e.preventDefault();
+      activateItem(item);
+    });
   }
 
   function wireAnalyticsSharedFilters() {
