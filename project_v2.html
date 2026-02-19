@@ -1,3 +1,4 @@
+<!--{if $empMembership['groupID'][432]}--> 
 <div class="pm-wrap">
   <span
     id="pmEnv"
@@ -10,6 +11,7 @@
   <div class="pm-header">
     <h1 class="pm-title">LEAF Project Dashboard</h1>
 
+    <!--{if $empMembership['groupID'][242]}--> 
     <div class="pm-actionsRow">
       <button
         type="button"
@@ -29,6 +31,7 @@
         View Inbox
       </button>
     </div>
+    <!--{/if}-->
 
     <!--{if $empMembership['groupID'][388]}-->
     <div class="pm-actionsRow pm-actionsRowSpaced">
@@ -287,6 +290,7 @@
           </div>
         </div>
       </div>
+    </div>
 
     <div id="pmOkrsAnalyticsWrap" style="display: none">
       <div id="pmOkrsRollup" class="pm-okrsRollup">
@@ -386,3 +390,5 @@
 
 <script src="./files/chart.js"></script>
 <script src="./files/project_v2.js"></script>
+<!--{else}-->
+<!--{/if}-->
