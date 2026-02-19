@@ -512,6 +512,15 @@
   width: 320px;
 }
 
+.pm-wrapColLong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  hyphens: auto;
+  max-width: 420px;
+  width: 420px;
+}
+
 .pm-table thead th {
   background: #d9e8f6;
   user-select: none;

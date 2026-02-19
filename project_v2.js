@@ -837,7 +837,7 @@
           '<td class="pm-wrapCol">' +
           safe(p.projectName) +
           "</td>" +
-          '<td class="pm-wrapCol">' +
+          '<td class="pm-wrapColLong">' +
           safe(p.description) +
           "</td>" +
           "<td>" +
@@ -856,7 +856,7 @@
       "<thead><tr>" +
       '<th class="pm-sortable" data-sort="projectKey" data-type="string">Project Key</th>' +
       '<th class="pm-sortable pm-wrapCol" data-sort="projectName" data-type="string">Project Name</th>' +
-      '<th class="pm-sortable pm-wrapCol" data-sort="description" data-type="string">Description</th>' +
+      '<th class="pm-sortable pm-wrapColLong" data-sort="description" data-type="string">Description</th>' +
       '<th class="pm-sortable" data-sort="owner" data-type="string">Owner</th>' +
       '<th class="pm-sortable" data-sort="projectStatus" data-type="string">Status</th>' +
       "</tr></thead>" +
