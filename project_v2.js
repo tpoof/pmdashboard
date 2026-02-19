@@ -1058,7 +1058,7 @@
           var totalTasksText = String(item.totalTasks || 0);
           var completedTasksText = String(item.completedTasksCount || 0);
           var pctClass = "pm-okrPct";
-          if (!item.totalTasks) pctClass += " pm-okrPct--none";
+          if (pctValue <= 0) pctClass += " pm-okrPct--none";
           else if (pctValue >= 100) pctClass += " pm-okrPct--complete";
 
           var projectList = item.projects.length
