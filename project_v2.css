@@ -288,6 +288,122 @@
   padding: 0 10px 0 6px;
 }
 
+.pm-okrsRollup {
+  margin: 8px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pm-okrsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pm-okrsTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.pm-okrsChartBox {
+  height: 220px;
+}
+
+.pm-okrsSummary {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.pm-okrCard {
+  border: 1px solid #d7d7d7;
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+}
+
+.pm-okrHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.pm-okrKey {
+  font-weight: 900;
+  font-size: 1.05rem;
+}
+
+.pm-okrPct {
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #d9e8f6;
+  border: 1px solid #aacdec;
+}
+
+.pm-okrMetrics {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.pm-okrMetric {
+  border: 1px dashed #d7d7d7;
+  border-radius: 10px;
+  padding: 8px;
+  background: #f8fafc;
+}
+
+.pm-okrMetricLabel {
+  font-weight: 800;
+}
+
+.pm-okrMetricValue {
+  font-size: 1.1rem;
+  font-weight: 900;
+  margin: 4px 0 6px;
+}
+
+.pm-okrToggle {
+  border: 1px solid #c7c7c7;
+  border-radius: 8px;
+  background: #fff;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.pm-okrToggle:hover {
+  background: #f0f0f0;
+}
+
+.pm-okrDetails {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid #d7d7d7;
+  border-radius: 10px;
+  background: #fff;
+  display: none;
+}
+
+.pm-okrList {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.pm-okrItem {
+  margin: 4px 0;
+}
+
+.pm-okrStatusOpen {
+  color: #555;
+  font-weight: 700;
+}
+
 .pm-overdueRed {
   color: #ff4040;
 }
@@ -390,6 +506,7 @@
 
 #pmProjectsTable,
 #pmTasksTable,
+#pmOkrsTable,
 #pmProjectHealthTable,
 #pmOverdueTasksTable {
   overflow-x: auto;

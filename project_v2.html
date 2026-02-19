@@ -92,6 +92,27 @@
       </div>
     </div>
 
+    <div id="pmOkrsRollup" class="pm-okrsRollup" style="display: none">
+      <div class="pm-okrsHeader">
+        <h3 class="pm-okrsTitle">OKR Health Roll-up</h3>
+      </div>
+      <div class="pm-okrsCharts pm-analyticsGrid">
+        <div class="pm-chartCard">
+          <div class="pm-chartTitle">% OKR Achieved</div>
+          <div class="pm-chartBox pm-okrsChartBox">
+            <canvas id="pmChartOkrAchieved"></canvas>
+          </div>
+        </div>
+        <div class="pm-chartCard">
+          <div class="pm-chartTitle">Completed vs Remaining Tasks</div>
+          <div class="pm-chartBox pm-okrsChartBox">
+            <canvas id="pmChartOkrTasks"></canvas>
+          </div>
+        </div>
+      </div>
+      <div id="pmOkrsSummary" class="pm-okrsSummary"></div>
+    </div>
+
     <div id="pmOkrsFilterRow" class="pm-filterRow" style="display: none">
       <div class="pm-field pm-filterHeader">
         <div class="pm-filterHeaderLabel">Filter by</div>
@@ -120,6 +141,19 @@
   <section id="pmTab-tasks" class="pm-panel" role="tabpanel">
     <div class="pm-panelHeader">
       <h2 class="pm-subtitle">Tasks</h2>
+    </div>
+
+    <div class="pm-viewRow">
+      <div class="pm-viewBtns">
+        <span class="pm-viewLabel">View:</span>
+        <button type="button" id="pmViewTableBtn" class="pm-tab">
+          Task Table
+        </button>
+        <button type="button" id="pmViewKanbanBtn" class="pm-tab">
+          Kanban
+        </button>
+        <button type="button" id="pmViewGanttBtn" class="pm-tab">Gantt</button>
+      </div>
     </div>
 
     <div class="pm-filterRow">
@@ -167,19 +201,6 @@
         <button type="button" class="pm-ghostBtn" id="pmClearFiltersBtn_tasks">
           Clear all filters
         </button>
-      </div>
-    </div>
-
-    <div class="pm-viewRow">
-      <div class="pm-viewBtns">
-        <span class="pm-viewLabel">View:</span>
-        <button type="button" id="pmViewTableBtn" class="pm-tab">
-          Task Table
-        </button>
-        <button type="button" id="pmViewKanbanBtn" class="pm-tab">
-          Kanban
-        </button>
-        <button type="button" id="pmViewGanttBtn" class="pm-tab">Gantt</button>
       </div>
     </div>
 
@@ -365,7 +386,7 @@
   </button>
 </div>
 
-<link rel="stylesheet" href="./project_v2.css" />
+<link rel="stylesheet" href="./files/project_v2.css" />
 
 <script src="./files/chart.js"></script>
-<script src="./project_v2.js"></script>
+<script src="./files/project_v2.js"></script>

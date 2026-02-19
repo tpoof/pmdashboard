@@ -21,6 +21,7 @@
     category: 16,
     dependencies: 17,
     supportTicket: 18,
+    okrAssociation: 30,
   };
 
   // Project form indicator IDs
@@ -30,6 +31,7 @@
     description: 4,
     owner: 5,
     projectStatus: 6,
+    okrAssociation: 29,
   };
 
   // OKR indicator IDs (Project form)
@@ -95,6 +97,8 @@
       completedByCategory: null,
       priority: null,
       ticketsImported: null,
+      okrAchieved: null,
+      okrTasks: null,
     },
   };
 
@@ -549,6 +553,12 @@
     );
   }
 
+  function normalizeOkrKey(val) {
+    var key = String(val || "").trim();
+    if (!key) return "";
+    return key.toUpperCase();
+  }
+
   function parseSupportTicket(value) {
     var text = String(value || "").trim();
     if (!text) return { id: "", type: "" };
@@ -668,6 +678,7 @@
       priority: extractFromS1(row, TASK_IND.priority),
       category: extractFromS1(row, TASK_IND.category),
       supportTicket: extractFromS1(row, TASK_IND.supportTicket),
+      okrAssociation: extractFromS1(row, TASK_IND.okrAssociation),
       createdAt: createdAt,
       dependenciesRaw: depsRaw,
       depIds: depIds,
@@ -686,6 +697,7 @@
       description: extractFromS1(row, PROJECT_IND.description),
       owner: extractFromS1(row, PROJECT_IND.owner),
       projectStatus: extractFromS1(row, PROJECT_IND.projectStatus),
+      okrAssociation: extractFromS1(row, PROJECT_IND.okrAssociation),
       okrKey: extractFromS1(row, OKR_IND.okrKey),
       okrObjective: extractFromS1(row, OKR_IND.objective),
       okrStartDate: extractFromS1(row, OKR_IND.startDate),
@@ -917,6 +929,324 @@
 
     var s = state.sort.okrs;
     setSortIndicator("pmOkrsTable", s.key, s.dir);
+  }
+
+  function getProjectLabel(p) {
+    var key = String(p.projectKey || "").trim();
+    var name = String(p.projectName || "").trim();
+    if (key && name) return key + " | " + name;
+    return key || name || "Untitled project";
+  }
+
+  function getProjectLabelFromKey(projectKey) {
+    var key = String(projectKey || "").trim();
+    var name = key ? state.projectKeyToTitle[key] || "" : "";
+    if (key && name) return key + " | " + name;
+    return key || name || "Unknown project";
+  }
+
+  function makeSafeId(val) {
+    return String(val || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+  }
+
+  function buildOkrRollup(okrRecords, projects, tasks) {
+    var map = {};
+    function ensure(key, display) {
+      if (!key) return;
+      if (!map[key]) {
+        map[key] = {
+          key: key,
+          displayKey: display || key,
+          projects: [],
+          tasks: [],
+          completedTasks: [],
+        };
+      } else if (display && !map[key].displayKey) {
+        map[key].displayKey = display;
+      }
+    }
+
+    (okrRecords || []).forEach(function (r) {
+      var key = normalizeOkrKey(r.okrKey);
+      if (!key) return;
+      ensure(key, r.okrKey);
+    });
+
+    var hasOkrKeys = Object.keys(map).length > 0;
+
+    (projects || []).forEach(function (p) {
+      var key = normalizeOkrKey(p.okrAssociation);
+      if (!key) return;
+      if (!hasOkrKeys) ensure(key, key);
+      if (!map[key]) return;
+      map[key].projects.push(p);
+    });
+
+    (tasks || []).forEach(function (t) {
+      var key = normalizeOkrKey(t.okrAssociation);
+      if (!key) return;
+      if (!hasOkrKeys) ensure(key, key);
+      if (!map[key]) return;
+      map[key].tasks.push(t);
+      if (isCompletedStatus(t.status)) map[key].completedTasks.push(t);
+    });
+
+    var keys = Object.keys(map).sort(function (a, b) {
+      return a.localeCompare(b, undefined, { numeric: true });
+    });
+
+    var items = keys.map(function (key) {
+      var entry = map[key];
+      var total = entry.tasks.length;
+      var completed = entry.completedTasks.length;
+      var percent = total ? Math.round((completed / total) * 100) : 0;
+      return {
+        key: entry.key,
+        displayKey: entry.displayKey || entry.key,
+        projects: entry.projects,
+        tasks: entry.tasks,
+        completedTasks: entry.completedTasks,
+        totalTasks: total,
+        completedTasksCount: completed,
+        remainingTasksCount: Math.max(total - completed, 0),
+        percent: percent,
+      };
+    });
+
+    return { keys: keys, items: items };
+  }
+
+  function renderOkrsRollup(okrRecords, projects, tasks) {
+    var wrap = document.getElementById("pmOkrsRollup");
+    var summary = document.getElementById("pmOkrsSummary");
+    if (!wrap || !summary) return;
+
+    var rollup = buildOkrRollup(okrRecords, projects, tasks);
+    var items = rollup.items || [];
+
+    if (!items.length) {
+      summary.innerHTML =
+        "<div class='pm-okrCard'>No OKRs found for roll-up.</div>";
+    } else {
+      summary.innerHTML = items
+        .map(function (item) {
+          var keyId = makeSafeId(item.key || item.displayKey);
+          var projId = "pmOkrProjects-" + keyId;
+          var tasksId = "pmOkrTasks-" + keyId;
+          var completedId = "pmOkrCompleted-" + keyId;
+
+          var projectList = item.projects.length
+            ? "<ul class='pm-okrList'>" +
+              item.projects
+                .map(function (p) {
+                  var label = getProjectLabel(p);
+                  var href =
+                    getProjectRecordHrefFromKey(p.projectKey) ||
+                    (p.recordID
+                      ? "index.php?a=printview&recordID=" +
+                        encodeURIComponent(p.recordID)
+                      : "");
+                  var link = href
+                    ? '<a href="' +
+                      safe(href) +
+                      '" class="pm-recordLink" data-title="' +
+                      safe("Project " + (p.projectKey || p.recordID || "")) +
+                      '">' +
+                      safe(label) +
+                      "</a>"
+                    : safe(label);
+                  return "<li class='pm-okrItem'>" + link + "</li>";
+                })
+                .join("") +
+              "</ul>"
+            : "<div class='pm-okrItem'>No associated projects.</div>";
+
+          var taskList = item.tasks.length
+            ? "<ul class='pm-okrList'>" +
+              item.tasks
+                .map(function (t) {
+                  var title = String(t.title || "").trim();
+                  var taskLabel = title || (t.recordID ? "Task " + t.recordID : "Task");
+                  var projectLabel = getProjectLabelFromKey(t.projectKey);
+                  var isComplete = isCompletedStatus(t.status);
+                  var statusLabel = isComplete
+                    ? '<span class="pm-completeGreen">Completed</span>'
+                    : '<span class="pm-okrStatusOpen">In progress</span>';
+                  return (
+                    "<li class='pm-okrItem'>" +
+                    safe(taskLabel) +
+                    " — " +
+                    safe(projectLabel) +
+                    " (" +
+                    statusLabel +
+                    ")" +
+                    "</li>"
+                  );
+                })
+                .join("") +
+              "</ul>"
+            : "<div class='pm-okrItem'>No associated tasks.</div>";
+
+          var completedList = item.completedTasks.length
+            ? "<ul class='pm-okrList'>" +
+              item.completedTasks
+                .map(function (t) {
+                  var title = String(t.title || "").trim();
+                  var taskLabel = title || (t.recordID ? "Task " + t.recordID : "Task");
+                  var projectLabel = getProjectLabelFromKey(t.projectKey);
+                  return (
+                    "<li class='pm-okrItem'>" +
+                    safe(taskLabel) +
+                    " — " +
+                    safe(projectLabel) +
+                    "</li>"
+                  );
+                })
+                .join("") +
+              "</ul>"
+            : "<div class='pm-okrItem'>No completed tasks.</div>";
+
+          return (
+            "<div class='pm-okrCard'>" +
+            "<div class='pm-okrHeader'>" +
+            "<div class='pm-okrKey'>" +
+            safe(item.displayKey || item.key) +
+            "</div>" +
+            "<div class='pm-okrPct'>" +
+            safe(item.percent) +
+            "%</div>" +
+            "</div>" +
+            "<div class='pm-okrMetrics'>" +
+            "<div class='pm-okrMetric'>" +
+            "<div class='pm-okrMetricLabel'>Projects</div>" +
+            "<div class='pm-okrMetricValue'>" +
+            safe(item.projects.length) +
+            "</div>" +
+            "<button class='pm-okrToggle' data-target='" +
+            projId +
+            "'>Expand</button>" +
+            "<div class='pm-okrDetails' id='" +
+            projId +
+            "'>" +
+            projectList +
+            "</div>" +
+            "</div>" +
+            "<div class='pm-okrMetric'>" +
+            "<div class='pm-okrMetricLabel'>Total Tasks</div>" +
+            "<div class='pm-okrMetricValue'>" +
+            safe(item.totalTasks) +
+            "</div>" +
+            "<button class='pm-okrToggle' data-target='" +
+            tasksId +
+            "'>Expand</button>" +
+            "<div class='pm-okrDetails' id='" +
+            tasksId +
+            "'>" +
+            taskList +
+            "</div>" +
+            "</div>" +
+            "<div class='pm-okrMetric'>" +
+            "<div class='pm-okrMetricLabel'>Completed Tasks</div>" +
+            "<div class='pm-okrMetricValue'>" +
+            safe(item.completedTasksCount) +
+            "</div>" +
+            "<button class='pm-okrToggle' data-target='" +
+            completedId +
+            "'>Expand</button>" +
+            "<div class='pm-okrDetails' id='" +
+            completedId +
+            "'>" +
+            completedList +
+            "</div>" +
+            "</div>" +
+            "</div>" +
+            "</div>"
+          );
+        })
+        .join("");
+    }
+
+    var labels = items.map(function (i) {
+      return i.displayKey || i.key;
+    });
+    var percentData = items.map(function (i) {
+      return i.percent || 0;
+    });
+    var completedData = items.map(function (i) {
+      return i.completedTasksCount || 0;
+    });
+    var remainingData = items.map(function (i) {
+      return i.remainingTasksCount || 0;
+    });
+
+    if (state.charts.okrAchieved) {
+      state.charts.okrAchieved.destroy();
+      state.charts.okrAchieved = null;
+    }
+    if (state.charts.okrTasks) {
+      state.charts.okrTasks.destroy();
+      state.charts.okrTasks = null;
+    }
+
+    var ctxAchieved = document.getElementById("pmChartOkrAchieved");
+    if (ctxAchieved && window.Chart) {
+      state.charts.okrAchieved = new Chart(ctxAchieved, {
+        type: "bar",
+        data: {
+          labels: labels.length ? labels : ["No OKRs"],
+          datasets: [
+            {
+              label: "% Achieved",
+              data: labels.length ? percentData : [0],
+              backgroundColor: "#aacdec",
+            },
+          ],
+        },
+        options: { responsive: true, maintainAspectRatio: false },
+      });
+    }
+
+    var ctxTasks = document.getElementById("pmChartOkrTasks");
+    if (ctxTasks && window.Chart) {
+      var stackedOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+      };
+      if (Chart && Chart.version && String(Chart.version).startsWith("2")) {
+        stackedOptions.scales = {
+          xAxes: [{ stacked: true }],
+          yAxes: [{ stacked: true, ticks: { beginAtZero: true } }],
+        };
+      } else {
+        stackedOptions.scales = {
+          x: { stacked: true },
+          y: { stacked: true, beginAtZero: true },
+        };
+      }
+
+      state.charts.okrTasks = new Chart(ctxTasks, {
+        type: "bar",
+        data: {
+          labels: labels.length ? labels : ["No OKRs"],
+          datasets: [
+            {
+              label: "Completed",
+              data: labels.length ? completedData : [0],
+              backgroundColor: "#719f2a",
+            },
+            {
+              label: "Remaining",
+              data: labels.length ? remainingData : [0],
+              backgroundColor: "#e6c74c",
+            },
+          ],
+        },
+        options: stackedOptions,
+      });
+    }
   }
 
   function renderTasksTable(tasks) {
@@ -1752,12 +2082,14 @@
     var wrapTable = document.getElementById("pmProjectsTableWrap");
     var wrapOkrs = document.getElementById("pmOkrsTableWrap");
     var filterRow = document.getElementById("pmOkrsFilterRow");
+    var rollup = document.getElementById("pmOkrsRollup");
     if (!btnTable || !btnOkrs || !wrapTable || !wrapOkrs) return;
 
     function setView(view) {
       wrapTable.style.display = view === "table" ? "block" : "none";
       wrapOkrs.style.display = view === "okrs" ? "block" : "none";
       if (filterRow) filterRow.style.display = view === "okrs" ? "flex" : "none";
+      if (rollup) rollup.style.display = view === "okrs" ? "flex" : "none";
 
       btnTable.classList.toggle("is-active", view === "table");
       btnOkrs.classList.toggle("is-active", view === "okrs");
@@ -2013,7 +2345,9 @@
         " " +
         p.okrEndDate +
         " " +
-        p.okrFiscalYear
+        p.okrFiscalYear +
+        " " +
+        p.okrAssociation
       ).toLowerCase();
       return matchesQuery(hay, q, qCompact) || recordMatch(p.recordID);
     });
@@ -2036,7 +2370,9 @@
         " " +
         t.start +
         " " +
-        t.due
+        t.due +
+        " " +
+        t.okrAssociation
       ).toLowerCase();
 
       return matchesQuery(hay, q, qCompact) || recordMatch(t.recordID);
@@ -2110,8 +2446,12 @@
 
     if (renderOnlyCurrentTabFirst) {
       if (activeTab === "projects") {
-        if (projectsView === "okrs") renderOkrsTable(okrFiltered);
-        else renderProjectsTable(projectsFiltered);
+        if (projectsView === "okrs") {
+          renderOkrsRollup(okrFiltered, projectsFiltered, tasksSearchFiltered);
+          renderOkrsTable(okrFiltered);
+        } else {
+          renderProjectsTable(projectsFiltered);
+        }
       }
       if (activeTab === "tasks") {
         renderTasksTable(tasksFiltered);
@@ -2119,8 +2459,13 @@
         if (tasksView === "gantt") renderGantt(tasksNoArchive);
       }
     } else {
-      if (projectsView === "okrs") renderOkrsTable(okrFiltered);
-      else renderProjectsTable(projectsFiltered);
+      if (projectsView === "okrs") {
+        if (activeTab === "projects")
+          renderOkrsRollup(okrFiltered, projectsFiltered, tasksSearchFiltered);
+        renderOkrsTable(okrFiltered);
+      } else {
+        renderProjectsTable(projectsFiltered);
+      }
       renderTasksTable(tasksFiltered);
       if (activeTab === "tasks" && tasksView === "kanban")
         renderKanban(tasksFiltered);
@@ -2164,6 +2509,22 @@
         if (sel) sel.value = "";
         applySearchAndFilters(true);
       });
+  }
+
+  function wireOkrRollupToggle() {
+    var wrap = document.getElementById("pmOkrsSummary");
+    if (!wrap) return;
+    wrap.addEventListener("click", function (e) {
+      var btn = e.target.closest(".pm-okrToggle");
+      if (!btn) return;
+      var targetId = btn.getAttribute("data-target") || "";
+      if (!targetId) return;
+      var panel = document.getElementById(targetId);
+      if (!panel) return;
+      var isOpen = panel.style.display === "block";
+      panel.style.display = isOpen ? "none" : "block";
+      btn.textContent = isOpen ? "Expand" : "Collapse";
+    });
   }
 
   function wireRecordModalLinks() {
@@ -2867,6 +3228,7 @@
       wireSortingDelegation();
       wireClearFilters();
       wireOkrFilters();
+      wireOkrRollupToggle();
       wireRecordModalLinks();
       wireSupportMessageListener();
       wireModalControls();
@@ -2883,6 +3245,7 @@
           PROJECT_IND.description,
           PROJECT_IND.owner,
           PROJECT_IND.projectStatus,
+          PROJECT_IND.okrAssociation,
           OKR_IND.okrKey,
           OKR_IND.objective,
           OKR_IND.startDate,
@@ -2905,6 +3268,7 @@
           TASK_IND.startDate,
           TASK_IND.dueDate,
           TASK_IND.supportTicket,
+          TASK_IND.okrAssociation,
         ],
         [],
       );
@@ -2920,12 +3284,12 @@
       var taskRowsAll = coerceRows(tasksJson) || [];
 
       var projectRows = projectRowsAll.filter(function (r) {
-        return hasAnyS1Value(r, [2, 3, 4, 5, 6, 23, 24, 25, 26, 33]);
+        return hasAnyS1Value(r, [2, 3, 4, 5, 6, 23, 24, 25, 26, 29, 33]);
       });
       var taskRows = taskRowsAll.filter(function (r) {
         return hasAnyS1Value(
           r,
-          [8, 9, 10, 11, 12, 13, 14, 16, 17, 18],
+          [8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 30],
         );
       });
 
