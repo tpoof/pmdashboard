@@ -852,8 +852,10 @@
           "<td>" +
           pkLink +
           "</td>" +
-          '<td class="pm-wrapCol">' +
+          "<td>" +
+          '<div class="pm-wrapCol">' +
           safe(p.projectName) +
+          "</div>" +
           "</td>" +
           "<td>" +
           '<div class="pm-wrapColLong">' +
