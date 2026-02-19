@@ -1224,7 +1224,7 @@
     }
 
     var labels = items.map(function (i) {
-      return i.displayKey || i.key;
+      return i.key || i.displayKey;
     });
     var percentData = items.map(function (i) {
       return i.percent || 0;
