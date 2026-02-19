@@ -828,6 +828,13 @@
     return String(value || "").trim();
   }
 
+  function formatProjectTypeLabel(value) {
+    var pt = String(value || "").trim() || "Unspecified";
+    var dashIdx = pt.indexOf("-");
+    if (dashIdx !== -1) pt = pt.slice(0, dashIdx).trim();
+    return pt || "Unspecified";
+  }
+
   function setChartSummary(id, text) {
     var el = document.getElementById(id);
     if (el) el.textContent = text || "";
@@ -925,31 +932,43 @@
       })
       .slice(0, 500)
       .map(function (p) {
+        var projectKeyText = String(p.projectKey || "").trim();
+        var projectNameText = String(p.projectName || "").trim();
         var pkHref = getProjectRecordHrefFromKey(p.projectKey) || p.href;
         var pkLink = pkHref
           ? '<a href="' +
             safe(pkHref) +
             '" class="pm-recordLink" data-title="' +
-            safe("Project " + p.projectKey) +
+            safe("Project " + projectKeyText) +
+            '" title="' +
+            safeAttr(projectKeyText) +
             '">' +
-            safe(p.projectKey) +
+            safe(projectKeyText) +
             "</a>"
-          : safe(p.projectKey);
+          : '<span class="pm-colKeyText" tabindex="0" title="' +
+            safeAttr(projectKeyText) +
+            '">' +
+            safe(projectKeyText) +
+            "</span>";
         var okrLink = p.okrAssociation
           ? okrRecordLink(p.okrAssociation, p.okrAssociation)
           : "";
 
         return (
           "<tr>" +
-          "<td>" +
+          '<td class="pm-colKey">' +
           pkLink +
           "</td>" +
-          "<td>" +
-          '<div class="pm-wrapCol">' +
-          safe(p.projectName) +
+          '<td class="pm-colName">' +
+          '<div class="pm-wrapCol pm-colNameText" tabindex="0" title="' +
+          safeAttr(projectNameText) +
+          '" aria-label="' +
+          safeAttr(projectNameText || "Project name") +
+          '">' +
+          safe(projectNameText) +
           "</div>" +
           "</td>" +
-          "<td>" +
+          '<td class="pm-colDesc">' +
           '<div class="pm-wrapColLong">' +
           safe(p.description) +
           "</div>" +
@@ -967,7 +986,7 @@
           (okrLink || safe(p.okrAssociation)) +
           "</td>" +
           "<td>" +
-          safe(p.projectType) +
+          safe(formatProjectTypeLabel(p.projectType)) +
           "</td>" +
           "</tr>"
         );
@@ -977,9 +996,9 @@
     el.innerHTML =
       '<table class="pm-table">' +
       "<thead><tr>" +
-      '<th scope="col" class="pm-sortable" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>' +
-      '<th scope="col" class="pm-sortable pm-wrapCol" data-sort="projectName" data-type="string"><button type="button" class="pm-sortBtn">Project Name</button></th>' +
-      '<th scope="col" class="pm-sortable pm-wrapColLong" data-sort="description" data-type="string"><button type="button" class="pm-sortBtn">Description</button></th>' +
+      '<th scope="col" class="pm-sortable pm-colKey" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>' +
+      '<th scope="col" class="pm-sortable pm-colName" data-sort="projectName" data-type="string"><button type="button" class="pm-sortBtn">Project Name</button></th>' +
+      '<th scope="col" class="pm-sortable pm-colDesc" data-sort="description" data-type="string"><button type="button" class="pm-sortBtn">Description</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="owner" data-type="string"><button type="button" class="pm-sortBtn">Owner</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="projectFiscalYear" data-type="string"><button type="button" class="pm-sortBtn">FY</button></th>' +
@@ -1415,10 +1434,13 @@
       state.charts.okrTasks = null;
     }
 
-    var ctxAchieved = document.getElementById("pmChartOkrAchieved");
+    var ctxAchieved = sizeChartBox(
+      "pmChartOkrAchieved",
+      labels.length || 1,
+    );
     if (ctxAchieved && window.Chart) {
       state.charts.okrAchieved = new Chart(ctxAchieved, {
-        type: "bar",
+        type: getHorizontalBarType(),
         data: {
           labels: labels.length ? labels : ["No OKRs"],
           datasets: [
@@ -1429,30 +1451,14 @@
             },
           ],
         },
-        options: { responsive: true, maintainAspectRatio: false },
+        options: buildHorizontalBarOptions(),
       });
     }
 
-    var ctxTasks = document.getElementById("pmChartOkrTasks");
+    var ctxTasks = sizeChartBox("pmChartOkrTasks", labels.length || 1);
     if (ctxTasks && window.Chart) {
-      var stackedOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-      };
-      if (Chart && Chart.version && String(Chart.version).startsWith("2")) {
-        stackedOptions.scales = {
-          xAxes: [{ stacked: true }],
-          yAxes: [{ stacked: true, ticks: { beginAtZero: true } }],
-        };
-      } else {
-        stackedOptions.scales = {
-          x: { stacked: true },
-          y: { stacked: true, beginAtZero: true },
-        };
-      }
-
       state.charts.okrTasks = new Chart(ctxTasks, {
-        type: "bar",
+        type: getHorizontalBarType(),
         data: {
           labels: labels.length ? labels : ["No OKRs"],
           datasets: [
@@ -1468,7 +1474,7 @@
             },
           ],
         },
-        options: stackedOptions,
+        options: buildStackedHorizontalOptions(),
       });
     }
   }
@@ -2604,7 +2610,7 @@
       return a.localeCompare(b, undefined, { numeric: true });
     });
 
-    sel.innerHTML = '<option value="">All FY</option>';
+    sel.innerHTML = '<option value="">All Fiscal Years</option>';
     vals.forEach(function (v) {
       var opt = document.createElement("option");
       opt.value = v;
@@ -3214,6 +3220,71 @@
     updateVisibility();
   }
 
+  function isChartV2() {
+    return !!(
+      window.Chart &&
+      Chart.version &&
+      String(Chart.version).startsWith("2")
+    );
+  }
+
+  function getHorizontalBarType() {
+    return isChartV2() ? "horizontalBar" : "bar";
+  }
+
+  function buildHorizontalBarOptions() {
+    var options = { responsive: true, maintainAspectRatio: false };
+    if (isChartV2()) {
+      options.scales = {
+        xAxes: [{ ticks: { beginAtZero: true } }],
+        yAxes: [{ ticks: { autoSkip: false } }],
+      };
+    } else {
+      options.indexAxis = "y";
+      options.scales = {
+        x: { beginAtZero: true },
+        y: { ticks: { autoSkip: false } },
+      };
+    }
+    return options;
+  }
+
+  function buildStackedHorizontalOptions() {
+    var options = buildHorizontalBarOptions();
+    if (isChartV2()) {
+      options.scales.xAxes[0].stacked = true;
+      options.scales.yAxes[0].stacked = true;
+    } else {
+      options.scales.x.stacked = true;
+      options.scales.y.stacked = true;
+    }
+    return options;
+  }
+
+  function sizeChartBox(canvasId, itemCount, config) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return null;
+    var box = canvas.closest(".pm-chartBox");
+    var inner = canvas.closest(".pm-chartInner") || box;
+    var minHeight = (config && config.minHeight) || 220;
+    var baseHeight = (config && config.baseHeight) || 80;
+    var rowHeight = (config && config.rowHeight) || 28;
+    var maxHeight = (config && config.maxHeight) || 520;
+    var count = Math.max(1, Number(itemCount) || 0);
+    var contentHeight = Math.max(minHeight, baseHeight + count * rowHeight);
+    var containerHeight = Math.min(contentHeight, maxHeight);
+
+    if (box) {
+      box.style.height = containerHeight + "px";
+      box.style.maxHeight = maxHeight + "px";
+      box.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
+    }
+    if (inner && inner !== box) {
+      inner.style.height = contentHeight + "px";
+    }
+    return canvas;
+  }
+
   function renderAnalytics(tasks) {
     if (typeof Chart === "undefined") {
       var note = document.querySelector(".pm-analyticsNote");
@@ -3306,38 +3377,52 @@
     }
 
     if (!state.analyticsGeneralYear) {
-      state.analyticsGeneralYear = String(generalYears[0]);
+      state.analyticsGeneralYear = "all";
     }
-    if (generalYears.indexOf(Number(state.analyticsGeneralYear)) === -1) {
-      state.analyticsGeneralYear = String(generalYears[0]);
+    if (
+      state.analyticsGeneralYear !== "all" &&
+      generalYears.indexOf(Number(state.analyticsGeneralYear)) === -1
+    ) {
+      state.analyticsGeneralYear = "all";
     }
 
     if (generalYearSelect) {
-      generalYearSelect.innerHTML = generalYears
-        .map(function (y) {
-          return (
-            '<option value="' +
-            y +
-            '"' +
-            (String(y) === String(state.analyticsGeneralYear)
-              ? " selected"
-              : "") +
-            ">" +
-            y +
-            "</option>"
-          );
-        })
-        .join("");
+      generalYearSelect.innerHTML =
+        '<option value="all"' +
+        (state.analyticsGeneralYear === "all" ? " selected" : "") +
+        ">All Years</option>" +
+        generalYears
+          .map(function (y) {
+            return (
+              '<option value="' +
+              y +
+              '"' +
+              (String(y) === String(state.analyticsGeneralYear)
+                ? " selected"
+                : "") +
+              ">" +
+              y +
+              "</option>"
+            );
+          })
+          .join("");
     }
 
-    var selectedGeneralYear = Number(state.analyticsGeneralYear);
+    var isAllYears = state.analyticsGeneralYear === "all";
+    var selectedGeneralYear = isAllYears
+      ? null
+      : Number(state.analyticsGeneralYear);
     var selectedGeneralQuarter = state.analyticsGeneralQuarter || "all";
     var filterLabel =
-      "Year " +
-      selectedGeneralYear +
+      (isAllYears ? "All years" : "Year " + selectedGeneralYear) +
       (selectedGeneralQuarter === "all"
         ? ", all quarters"
         : ", " + selectedGeneralQuarter);
+    function inSelectedYear(d) {
+      if (!d || isNaN(d.getTime())) return false;
+      if (isAllYears) return true;
+      return d.getFullYear() === selectedGeneralYear;
+    }
     function inSelectedQuarter(d) {
       if (!d || isNaN(d.getTime())) return false;
       if (selectedGeneralQuarter === "all") return true;
@@ -3347,16 +3432,12 @@
     var tasksForGeneralCharts = analyticsTasks.filter(function (t) {
       var d = getTaskGeneralDate(t);
       if (!d || isNaN(d.getTime())) return false;
-      return (
-        d.getFullYear() === selectedGeneralYear && inSelectedQuarter(d)
-      );
+      return inSelectedYear(d) && inSelectedQuarter(d);
     });
     var projectsForGeneralCharts = analyticsProjects.filter(function (p) {
       var d = getProjectGeneralDate(p);
       if (!d || isNaN(d.getTime())) return false;
-      return (
-        d.getFullYear() === selectedGeneralYear && inSelectedQuarter(d)
-      );
+      return inSelectedYear(d) && inSelectedQuarter(d);
     });
 
     var byStatus = {};
@@ -3392,6 +3473,11 @@
 
     var completedTasks = analyticsTasks.filter(function (t) {
       return isCompletedStatus(t.status);
+    });
+    var completedTasksForCharts = completedTasks.filter(function (t) {
+      var date = getCompletionDateForTask(t);
+      if (!date || isNaN(date.getTime())) return false;
+      return inSelectedYear(date) && inSelectedQuarter(date);
     });
 
     var completedYears = Array.from(
@@ -3469,13 +3555,10 @@
         .join("");
     }
 
-    var selectedYear = Number(state.analyticsGeneralYear);
     var quarters = [0, 0, 0, 0];
-    completedTasks.forEach(function (t) {
+    completedTasksForCharts.forEach(function (t) {
       var date = getCompletionDateForTask(t);
       if (!date) return;
-      if (date.getFullYear() !== selectedYear) return;
-      if (!inSelectedQuarter(date)) return;
       var q = Math.floor(date.getMonth() / 3);
       quarters[q] += 1;
     });
@@ -3507,27 +3590,20 @@
         summarizeLabelData(statusLabels, statusData),
     );
 
-    var ctxQuarter = document.getElementById("pmChartCompletedByQuarter");
+    var ctxQuarter = sizeChartBox("pmChartCompletedByQuarter", 4);
     if (ctxQuarter) {
       state.charts.completedByQuarter = new Chart(ctxQuarter, {
-        type: "bar",
+        type: getHorizontalBarType(),
         data: {
           labels: ["Q1", "Q2", "Q3", "Q4"],
           datasets: [{ label: "Completed tasks", data: quarters }],
         },
-        options: { responsive: true, maintainAspectRatio: false },
+        options: buildHorizontalBarOptions(),
       });
     }
 
-    var catYear = Number(state.analyticsGeneralYear);
-    var catQuarter = state.analyticsGeneralQuarter;
     var catCounts = {};
-    completedTasks.forEach(function (t) {
-      var date = getCompletionDateForTask(t);
-      if (!date || date.getFullYear() !== catYear) return;
-      var qIdx = Math.floor(date.getMonth() / 3);
-      var qName = "Q" + (qIdx + 1);
-      if (catQuarter !== "all" && qName !== catQuarter) return;
+    completedTasksForCharts.forEach(function (t) {
       var cat = String(t.category || "").trim() || "Unspecified";
       catCounts[cat] = (catCounts[cat] || 0) + 1;
     });
@@ -3548,10 +3624,13 @@
           : "No data."),
     );
 
-    var ctxCat = document.getElementById("pmChartCompletedByCategory");
+    var ctxCat = sizeChartBox(
+      "pmChartCompletedByCategory",
+      catLabels.length || 1,
+    );
     if (ctxCat) {
       state.charts.completedByCategory = new Chart(ctxCat, {
-        type: "bar",
+        type: getHorizontalBarType(),
         data: {
           labels: catLabels.length ? catLabels : ["No data"],
           datasets: [
@@ -3561,7 +3640,7 @@
             },
           ],
         },
-        options: { responsive: true, maintainAspectRatio: false },
+        options: buildHorizontalBarOptions(),
       });
     }
 
@@ -3587,32 +3666,39 @@
         summarizeLabelData(priorityLabels, priorityData),
     );
 
-    var ctxPriority = document.getElementById("pmChartTasksByPriority");
+    var ctxPriority = sizeChartBox(
+      "pmChartTasksByPriority",
+      priorityLabels.length,
+    );
     if (ctxPriority) {
+      var priorityColors = ["#f2938c", "#e6c74c", "#aacdec", "#cfcfcf"];
       state.charts.priority = new Chart(ctxPriority, {
-        type: "doughnut",
+        type: getHorizontalBarType(),
         data: {
           labels: priorityLabels,
           datasets: [
             {
+              label: "Tasks",
               data: priorityData,
-              backgroundColor: ["#f2938c", "#e6c74c", "#aacdec", "#cfcfcf"],
+              backgroundColor: priorityColors,
+              borderColor: priorityColors,
+              borderWidth: 1,
             },
           ],
         },
-        options: { responsive: true, maintainAspectRatio: false },
+        options: buildHorizontalBarOptions(),
       });
     }
 
-    var ctx1 = document.getElementById("pmChartTasksByStatus");
+    var ctx1 = sizeChartBox("pmChartTasksByStatus", statusLabels.length);
     if (ctx1) {
       state.charts.status = new Chart(ctx1, {
-        type: "bar",
+        type: getHorizontalBarType(),
         data: {
           labels: statusLabels,
           datasets: [{ label: "Tasks", data: statusData }],
         },
-        options: { responsive: true, maintainAspectRatio: false },
+        options: buildHorizontalBarOptions(),
       });
     }
 
@@ -3632,15 +3718,18 @@
           : "No data."),
     );
 
-    var ctx2 = document.getElementById("pmChartTasksByProject");
+    var ctx2 = sizeChartBox(
+      "pmChartTasksByProject",
+      projLabels.length || 1,
+    );
     if (ctx2) {
       state.charts.projectKey = new Chart(ctx2, {
-        type: "bar",
+        type: getHorizontalBarType(),
         data: {
           labels: projLabels,
           datasets: [{ label: "Tasks", data: projData }],
         },
-        options: { responsive: true, maintainAspectRatio: false },
+        options: buildHorizontalBarOptions(),
       });
     }
 
@@ -3656,7 +3745,7 @@
         summarizeLabelData(bucketLabels, bucketData),
     );
 
-    var ctx3 = document.getElementById("pmChartDueBuckets");
+    var ctx3 = sizeChartBox("pmChartDueBuckets", bucketLabels.length);
     if (ctx3) {
       var dueColors = bucketLabels.map(function (label) {
         return String(label).toLowerCase() === "overdue"
@@ -3664,7 +3753,7 @@
           : "#aacdec";
       });
       state.charts.dueBuckets = new Chart(ctx3, {
-        type: "bar",
+        type: getHorizontalBarType(),
         data: {
           labels: bucketLabels,
           datasets: [
@@ -3677,15 +3766,14 @@
             },
           ],
         },
-        options: { responsive: true, maintainAspectRatio: false },
+        options: buildHorizontalBarOptions(),
       });
     }
 
-    var ticketYear = Number(state.analyticsGeneralYear);
     var ticketCounts = new Array(12).fill(0);
     ticketTasks.forEach(function (t) {
       var date = getTicketImportedDate(t);
-      if (!date || date.getFullYear() !== ticketYear) return;
+      if (!date || !inSelectedYear(date)) return;
       if (!inSelectedQuarter(date)) return;
       ticketCounts[date.getMonth()] += 1;
     });
@@ -3711,26 +3799,24 @@
         summarizeLabelData(ticketLabels, ticketCounts),
     );
 
-    var ctxTickets = document.getElementById("pmChartTicketsImported");
+    var ctxTickets = sizeChartBox(
+      "pmChartTicketsImported",
+      ticketLabels.length,
+    );
     if (ctxTickets) {
       state.charts.ticketsImported = new Chart(ctxTickets, {
-        type: "bar",
+        type: getHorizontalBarType(),
         data: {
           labels: ticketLabels,
           datasets: [{ label: "Tickets imported", data: ticketCounts }],
         },
-        options: { responsive: true, maintainAspectRatio: false },
+        options: buildHorizontalBarOptions(),
       });
     }
 
     var projectTypeCounts = {};
     projectsForGeneralCharts.forEach(function (p) {
-      var pt = String(p.projectType || "").trim() || "Unspecified";
-      var dashIdx = pt.indexOf("-");
-      if (dashIdx !== -1) {
-        pt = pt.slice(0, dashIdx).trim();
-      }
-      if (!pt) pt = "Unspecified";
+      var pt = formatProjectTypeLabel(p.projectType);
       projectTypeCounts[pt] = (projectTypeCounts[pt] || 0) + 1;
     });
 
@@ -3750,10 +3836,13 @@
           : "No data."),
     );
 
-    var ctxProjType = document.getElementById("pmChartProjectsByType");
+    var ctxProjType = sizeChartBox(
+      "pmChartProjectsByType",
+      typeLabels.length || 1,
+    );
     if (ctxProjType) {
       state.charts.projectsByType = new Chart(ctxProjType, {
-        type: "bar",
+        type: getHorizontalBarType(),
         data: {
           labels: typeLabels.length ? typeLabels : ["No data"],
           datasets: [
@@ -3763,7 +3852,7 @@
             },
           ],
         },
-        options: { responsive: true, maintainAspectRatio: false },
+        options: buildHorizontalBarOptions(),
       });
     }
 
@@ -3822,7 +3911,7 @@
         "</table>";
     }
 
-    var overdueTasks = analyticsTasks
+    var overdueTasks = tasksForGeneralCharts
       .filter(function (t) {
         return isOverdueTask(t, now);
       })

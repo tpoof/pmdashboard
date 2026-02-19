@@ -436,7 +436,7 @@ body {
 }
 
 .pm-okrsChartBox {
-  height: 220px;
+  min-height: 220px;
 }
 
 .pm-okrsSummary {
@@ -624,6 +624,42 @@ body {
   padding: var(--space-2) var(--space-3);
   vertical-align: top;
   white-space: nowrap;
+}
+
+.pm-colKey {
+  width: 140px;
+  min-width: 120px;
+  white-space: nowrap;
+}
+
+.pm-colKeyText {
+  white-space: nowrap;
+}
+
+.pm-colName {
+  width: 320px;
+  min-width: 240px;
+  white-space: normal;
+}
+
+.pm-colName .pm-wrapCol {
+  max-width: none;
+  width: auto;
+}
+
+.pm-colNameText {
+  display: block;
+}
+
+.pm-colDesc {
+  width: 260px;
+  min-width: 200px;
+  white-space: normal;
+}
+
+.pm-colDesc .pm-wrapColLong {
+  max-width: none;
+  width: auto;
 }
 
 .pm-wrapCol {
@@ -1009,7 +1045,13 @@ body {
 
 .pm-chartBox {
   position: relative;
-  height: 280px;
+  min-height: 240px;
+  max-height: 520px;
+  overflow: auto;
+}
+
+.pm-chartInner {
+  width: 100%;
 }
 
 .pm-chartBox canvas {

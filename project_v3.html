@@ -11,7 +11,7 @@
   <div class="pm-header">
     <h1 class="pm-title">LEAF Project Dashboard</h1>
 
-    <!--{if $empMembership['groupID'][12] || $empMembership['groupID'][388]}-->
+    <!--{if $empMembership['groupID'][12]}-->
     <div class="pm-actionsRow pm-actionsRowSpaced">
       <div class="pm-addMenu">
         <button
@@ -32,27 +32,40 @@
           aria-orientation="vertical"
           hidden
         >
-          <!--{if $empMembership['groupID'][12]}-->
-          <button type="button" class="pm-menuItem" role="menuitem" data-action="project">
+          <button
+            type="button"
+            class="pm-menuItem"
+            role="menuitem"
+            data-action="project"
+          >
             + Project
           </button>
-          <button type="button" class="pm-menuItem" role="menuitem" data-action="task">
+          <button
+            type="button"
+            class="pm-menuItem"
+            role="menuitem"
+            data-action="task"
+          >
             + Task
           </button>
-          <!--{/if}-->
-          <!--{if $empMembership['groupID'][388]}-->
-          <button type="button" class="pm-menuItem" role="menuitem" data-action="objective">
+          <button
+            type="button"
+            class="pm-menuItem"
+            role="menuitem"
+            data-action="objective"
+          >
             + Objective
           </button>
-          <!--{/if}-->
-          <!--{if $empMembership['groupID'][12]}-->
-          <button type="button" class="pm-menuItem" role="menuitem" data-action="keyResult">
+          <button
+            type="button"
+            class="pm-menuItem"
+            role="menuitem"
+            data-action="keyResult"
+          >
             + Key Result
           </button>
-          <!--{/if}-->
         </div>
       </div>
-      <!--{if $empMembership['groupID'][12]}-->
       <button type="button" class="pm-ghostBtn pm-inboxBtn" id="pmViewInboxBtn">
         View Inbox
       </button>
@@ -124,9 +137,11 @@
         <div class="pm-filterHeaderLabel">Filter by</div>
       </div>
       <div class="pm-field">
-        <label class="pm-label" for="pmProjectFiscalYearSelect">FY</label>
+        <label class="pm-label" for="pmProjectFiscalYearSelect"
+          >Fiscal Year</label
+        >
         <select id="pmProjectFiscalYearSelect" class="pm-select">
-          <option value="">All FY</option>
+          <option value="">All Fiscal Years</option>
         </select>
       </div>
     </div>
@@ -358,12 +373,14 @@
         <div class="pm-chartCard">
           <div class="pm-chartTitle">Due date buckets</div>
           <div class="pm-chartBox">
-            <canvas
-              id="pmChartDueBuckets"
-              role="img"
-              aria-describedby="pmChartDueBucketsDesc"
-            ></canvas>
-            <div class="pm-srOnly" id="pmChartDueBucketsDesc"></div>
+            <div class="pm-chartInner">
+              <canvas
+                id="pmChartDueBuckets"
+                role="img"
+                aria-describedby="pmChartDueBucketsDesc"
+              ></canvas>
+              <div class="pm-srOnly" id="pmChartDueBucketsDesc"></div>
+            </div>
           </div>
         </div>
 
@@ -372,12 +389,14 @@
             <div class="pm-chartTitle">Completed tasks by quarter</div>
           </div>
           <div class="pm-chartBox">
-            <canvas
-              id="pmChartCompletedByQuarter"
-              role="img"
-              aria-describedby="pmChartCompletedByQuarterDesc"
-            ></canvas>
-            <div class="pm-srOnly" id="pmChartCompletedByQuarterDesc"></div>
+            <div class="pm-chartInner">
+              <canvas
+                id="pmChartCompletedByQuarter"
+                role="img"
+                aria-describedby="pmChartCompletedByQuarterDesc"
+              ></canvas>
+              <div class="pm-srOnly" id="pmChartCompletedByQuarterDesc"></div>
+            </div>
           </div>
         </div>
 
@@ -386,48 +405,56 @@
             <div class="pm-chartTitle">Completed tasks by category</div>
           </div>
           <div class="pm-chartBox">
-            <canvas
-              id="pmChartCompletedByCategory"
-              role="img"
-              aria-describedby="pmChartCompletedByCategoryDesc"
-            ></canvas>
-            <div class="pm-srOnly" id="pmChartCompletedByCategoryDesc"></div>
+            <div class="pm-chartInner">
+              <canvas
+                id="pmChartCompletedByCategory"
+                role="img"
+                aria-describedby="pmChartCompletedByCategoryDesc"
+              ></canvas>
+              <div class="pm-srOnly" id="pmChartCompletedByCategoryDesc"></div>
+            </div>
           </div>
         </div>
 
         <div class="pm-chartCard">
           <div class="pm-chartTitle">Tasks by priority</div>
           <div class="pm-chartBox">
-            <canvas
-              id="pmChartTasksByPriority"
-              role="img"
-              aria-describedby="pmChartTasksByPriorityDesc"
-            ></canvas>
-            <div class="pm-srOnly" id="pmChartTasksByPriorityDesc"></div>
+            <div class="pm-chartInner">
+              <canvas
+                id="pmChartTasksByPriority"
+                role="img"
+                aria-describedby="pmChartTasksByPriorityDesc"
+              ></canvas>
+              <div class="pm-srOnly" id="pmChartTasksByPriorityDesc"></div>
+            </div>
           </div>
         </div>
 
         <div class="pm-chartCard">
           <div class="pm-chartTitle">Tasks by Status</div>
           <div class="pm-chartBox">
-            <canvas
-              id="pmChartTasksByStatus"
-              role="img"
-              aria-describedby="pmChartTasksByStatusDesc"
-            ></canvas>
-            <div class="pm-srOnly" id="pmChartTasksByStatusDesc"></div>
+            <div class="pm-chartInner">
+              <canvas
+                id="pmChartTasksByStatus"
+                role="img"
+                aria-describedby="pmChartTasksByStatusDesc"
+              ></canvas>
+              <div class="pm-srOnly" id="pmChartTasksByStatusDesc"></div>
+            </div>
           </div>
         </div>
 
         <div class="pm-chartCard">
           <div class="pm-chartTitle">Tasks per Project Key</div>
           <div class="pm-chartBox">
-            <canvas
-              id="pmChartTasksByProject"
-              role="img"
-              aria-describedby="pmChartTasksByProjectDesc"
-            ></canvas>
-            <div class="pm-srOnly" id="pmChartTasksByProjectDesc"></div>
+            <div class="pm-chartInner">
+              <canvas
+                id="pmChartTasksByProject"
+                role="img"
+                aria-describedby="pmChartTasksByProjectDesc"
+              ></canvas>
+              <div class="pm-srOnly" id="pmChartTasksByProjectDesc"></div>
+            </div>
           </div>
         </div>
 
@@ -436,24 +463,28 @@
             <div class="pm-chartTitle">Tickets imported by month</div>
           </div>
           <div class="pm-chartBox">
-            <canvas
-              id="pmChartTicketsImported"
-              role="img"
-              aria-describedby="pmChartTicketsImportedDesc"
-            ></canvas>
-            <div class="pm-srOnly" id="pmChartTicketsImportedDesc"></div>
+            <div class="pm-chartInner">
+              <canvas
+                id="pmChartTicketsImported"
+                role="img"
+                aria-describedby="pmChartTicketsImportedDesc"
+              ></canvas>
+              <div class="pm-srOnly" id="pmChartTicketsImportedDesc"></div>
+            </div>
           </div>
         </div>
 
         <div class="pm-chartCard">
           <div class="pm-chartTitle">Projects by Project Type</div>
           <div class="pm-chartBox">
-            <canvas
-              id="pmChartProjectsByType"
-              role="img"
-              aria-describedby="pmChartProjectsByTypeDesc"
-            ></canvas>
-            <div class="pm-srOnly" id="pmChartProjectsByTypeDesc"></div>
+            <div class="pm-chartInner">
+              <canvas
+                id="pmChartProjectsByType"
+                role="img"
+                aria-describedby="pmChartProjectsByTypeDesc"
+              ></canvas>
+              <div class="pm-srOnly" id="pmChartProjectsByTypeDesc"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -474,23 +505,27 @@
           <div class="pm-chartCard">
             <div class="pm-chartTitle">% OKR Achieved</div>
             <div class="pm-chartBox pm-okrsChartBox">
-              <canvas
-                id="pmChartOkrAchieved"
-                role="img"
-                aria-describedby="pmChartOkrAchievedDesc"
-              ></canvas>
-              <div class="pm-srOnly" id="pmChartOkrAchievedDesc"></div>
+              <div class="pm-chartInner">
+                <canvas
+                  id="pmChartOkrAchieved"
+                  role="img"
+                  aria-describedby="pmChartOkrAchievedDesc"
+                ></canvas>
+                <div class="pm-srOnly" id="pmChartOkrAchievedDesc"></div>
+              </div>
             </div>
           </div>
           <div class="pm-chartCard">
             <div class="pm-chartTitle">Completed vs Remaining Tasks</div>
             <div class="pm-chartBox pm-okrsChartBox">
-              <canvas
-                id="pmChartOkrTasks"
-                role="img"
-                aria-describedby="pmChartOkrTasksDesc"
-              ></canvas>
-              <div class="pm-srOnly" id="pmChartOkrTasksDesc"></div>
+              <div class="pm-chartInner">
+                <canvas
+                  id="pmChartOkrTasks"
+                  role="img"
+                  aria-describedby="pmChartOkrTasksDesc"
+                ></canvas>
+                <div class="pm-srOnly" id="pmChartOkrTasksDesc"></div>
+              </div>
             </div>
           </div>
         </div>
