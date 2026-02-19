@@ -86,6 +86,7 @@
     analyticsCategoryQuarter: "",
     analyticsTicketsYear: "",
     analyticsGeneralYear: "",
+    analyticsGeneralQuarter: "",
     sort: {
       projects: { key: null, dir: 1, type: "string" },
       tasks: { key: null, dir: 1, type: "string" },
@@ -2688,49 +2689,19 @@
       });
   }
 
-  function wireAnalyticsYearFilter() {
-    var sel = document.getElementById("pmAnalyticsYearSelect");
-    if (!sel) return;
-    sel.addEventListener("change", function () {
-      state.analyticsYear = sel.value || "";
-      applySearchAndFilters(false);
-    });
-  }
-
-  function wireAnalyticsCategoryFilters() {
-    var yearSel = document.getElementById("pmAnalyticsCategoryYearSelect");
-    var quarterSel = document.getElementById(
-      "pmAnalyticsCategoryQuarterSelect",
-    );
-    if (!yearSel || !quarterSel) return;
-
-    yearSel.addEventListener("change", function () {
-      state.analyticsCategoryYear = yearSel.value || "";
-      applySearchAndFilters(false);
-    });
-
-    quarterSel.addEventListener("change", function () {
-      state.analyticsCategoryQuarter = quarterSel.value || "";
-      applySearchAndFilters(false);
-    });
-  }
-
-  function wireAnalyticsTicketsYearFilter() {
-    var sel = document.getElementById("pmAnalyticsTicketsYearSelect");
-    if (!sel) return;
-    sel.addEventListener("change", function () {
-      state.analyticsTicketsYear = sel.value || "";
-      applySearchAndFilters(false);
-    });
-  }
-
-  function wireAnalyticsGeneralYearFilter() {
-    var sel = document.getElementById("pmAnalyticsGeneralYearSelect");
-    if (!sel) return;
-    sel.addEventListener("change", function () {
-      state.analyticsGeneralYear = sel.value || "";
-      applySearchAndFilters(false);
-    });
+  function wireAnalyticsSharedFilters() {
+    var yearSel = document.getElementById("pmAnalyticsGeneralYearSelect");
+    var quarterSel = document.getElementById("pmAnalyticsGeneralQuarterSelect");
+    if (yearSel)
+      yearSel.addEventListener("change", function () {
+        state.analyticsGeneralYear = yearSel.value || "";
+        applySearchAndFilters(false);
+      });
+    if (quarterSel)
+      quarterSel.addEventListener("change", function () {
+        state.analyticsGeneralQuarter = quarterSel.value || "";
+        applySearchAndFilters(false);
+      });
   }
 
   function wireJumpToTop() {
@@ -2809,6 +2780,9 @@
     var generalYearSelect = document.getElementById(
       "pmAnalyticsGeneralYearSelect",
     );
+    var generalQuarterSelect = document.getElementById(
+      "pmAnalyticsGeneralQuarterSelect",
+    );
     var generalYears = Array.from(
       new Set(
         analyticsTasks
@@ -2860,15 +2834,26 @@
     }
 
     var selectedGeneralYear = Number(state.analyticsGeneralYear);
+    var selectedGeneralQuarter = state.analyticsGeneralQuarter || "all";
+    function inSelectedQuarter(d) {
+      if (!d || isNaN(d.getTime())) return false;
+      if (selectedGeneralQuarter === "all") return true;
+      var q = Math.floor(d.getMonth() / 3) + 1;
+      return selectedGeneralQuarter === "Q" + q;
+    }
     var tasksForGeneralCharts = analyticsTasks.filter(function (t) {
       var d = getTaskGeneralDate(t);
       if (!d || isNaN(d.getTime())) return false;
-      return d.getFullYear() === selectedGeneralYear;
+      return (
+        d.getFullYear() === selectedGeneralYear && inSelectedQuarter(d)
+      );
     });
     var projectsForGeneralCharts = analyticsProjects.filter(function (p) {
       var d = getProjectGeneralDate(p);
       if (!d || isNaN(d.getTime())) return false;
-      return d.getFullYear() === selectedGeneralYear;
+      return (
+        d.getFullYear() === selectedGeneralYear && inSelectedQuarter(d)
+      );
     });
 
     var byStatus = {};
@@ -2902,16 +2887,6 @@
       else buckets["Due later"] += 1;
     });
 
-    var yearSelect = document.getElementById("pmAnalyticsYearSelect");
-    var catYearSelect = document.getElementById(
-      "pmAnalyticsCategoryYearSelect",
-    );
-    var catQuarterSelect = document.getElementById(
-      "pmAnalyticsCategoryQuarterSelect",
-    );
-    var ticketsYearSelect = document.getElementById(
-      "pmAnalyticsTicketsYearSelect",
-    );
     var completedTasks = analyticsTasks.filter(function (t) {
       return isCompletedStatus(t.status);
     });
@@ -2935,54 +2910,6 @@
       completedYears = [now.getFullYear()];
     }
 
-    if (!state.analyticsYear) {
-      state.analyticsYear = String(completedYears[0]);
-    }
-
-    if (completedYears.indexOf(Number(state.analyticsYear)) === -1) {
-      state.analyticsYear = String(completedYears[0]);
-    }
-
-    if (yearSelect) {
-      yearSelect.innerHTML = completedYears
-        .map(function (y) {
-          return (
-            '<option value="' +
-            y +
-            '"' +
-            (String(y) === String(state.analyticsYear) ? " selected" : "") +
-            ">" +
-            y +
-            "</option>"
-          );
-        })
-        .join("");
-    }
-
-    if (!state.analyticsCategoryYear) {
-      state.analyticsCategoryYear = String(completedYears[0]);
-    }
-    if (completedYears.indexOf(Number(state.analyticsCategoryYear)) === -1) {
-      state.analyticsCategoryYear = String(completedYears[0]);
-    }
-
-    if (catYearSelect) {
-      catYearSelect.innerHTML = completedYears
-        .map(function (y) {
-          return (
-            '<option value="' +
-            y +
-            '"' +
-            (String(y) === String(state.analyticsCategoryYear)
-              ? " selected"
-              : "") +
-            ">" +
-            y +
-            "</option>"
-          );
-        })
-        .join("");
-    }
 
     var ticketTasks = analyticsTasks.filter(function (t) {
       return !!String(t.supportTicket || "").trim();
@@ -3007,30 +2934,6 @@
       ticketYears = [now.getFullYear()];
     }
 
-    if (!state.analyticsTicketsYear) {
-      state.analyticsTicketsYear = String(ticketYears[0]);
-    }
-    if (ticketYears.indexOf(Number(state.analyticsTicketsYear)) === -1) {
-      state.analyticsTicketsYear = String(ticketYears[0]);
-    }
-
-    if (ticketsYearSelect) {
-      ticketsYearSelect.innerHTML = ticketYears
-        .map(function (y) {
-          return (
-            '<option value="' +
-            y +
-            '"' +
-            (String(y) === String(state.analyticsTicketsYear)
-              ? " selected"
-              : "") +
-            ">" +
-            y +
-            "</option>"
-          );
-        })
-        .join("");
-    }
 
     var quarterOptions = [
       { value: "all", label: "All" },
@@ -3039,22 +2942,22 @@
       { value: "Q3", label: "Q3" },
       { value: "Q4", label: "Q4" },
     ];
-    if (!state.analyticsCategoryQuarter) state.analyticsCategoryQuarter = "all";
+    if (!state.analyticsGeneralQuarter) state.analyticsGeneralQuarter = "all";
     if (
       !quarterOptions.some(function (q) {
-        return q.value === state.analyticsCategoryQuarter;
+        return q.value === state.analyticsGeneralQuarter;
       })
     ) {
-      state.analyticsCategoryQuarter = "all";
+      state.analyticsGeneralQuarter = "all";
     }
-    if (catQuarterSelect) {
-      catQuarterSelect.innerHTML = quarterOptions
+    if (generalQuarterSelect) {
+      generalQuarterSelect.innerHTML = quarterOptions
         .map(function (q) {
           return (
             '<option value="' +
             q.value +
             '"' +
-            (q.value === state.analyticsCategoryQuarter ? " selected" : "") +
+            (q.value === state.analyticsGeneralQuarter ? " selected" : "") +
             ">" +
             q.label +
             "</option>"
@@ -3063,12 +2966,13 @@
         .join("");
     }
 
-    var selectedYear = Number(state.analyticsYear);
+    var selectedYear = Number(state.analyticsGeneralYear);
     var quarters = [0, 0, 0, 0];
     completedTasks.forEach(function (t) {
       var date = getCompletionDateForTask(t);
       if (!date) return;
       if (date.getFullYear() !== selectedYear) return;
+      if (!inSelectedQuarter(date)) return;
       var q = Math.floor(date.getMonth() / 3);
       quarters[q] += 1;
     });
@@ -3098,8 +3002,8 @@
       });
     }
 
-    var catYear = Number(state.analyticsCategoryYear);
-    var catQuarter = state.analyticsCategoryQuarter;
+    var catYear = Number(state.analyticsGeneralYear);
+    var catQuarter = state.analyticsGeneralQuarter;
     var catCounts = {};
     completedTasks.forEach(function (t) {
       var date = getCompletionDateForTask(t);
@@ -3228,11 +3132,12 @@
       });
     }
 
-    var ticketYear = Number(state.analyticsTicketsYear);
+    var ticketYear = Number(state.analyticsGeneralYear);
     var ticketCounts = new Array(12).fill(0);
     ticketTasks.forEach(function (t) {
       var date = getTicketImportedDate(t);
       if (!date || date.getFullYear() !== ticketYear) return;
+      if (!inSelectedQuarter(date)) return;
       ticketCounts[date.getMonth()] += 1;
     });
 
@@ -3432,10 +3337,7 @@
       wireSupportMessageListener();
       wireModalControls();
       wireAddButtons();
-      wireAnalyticsYearFilter();
-      wireAnalyticsCategoryFilters();
-      wireAnalyticsTicketsYearFilter();
-      wireAnalyticsGeneralYearFilter();
+      wireAnalyticsSharedFilters();
       wireJumpToTop();
 
       var projectsUrl = buildQueryUrl(

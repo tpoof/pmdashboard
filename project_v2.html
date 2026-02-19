@@ -197,6 +197,13 @@
         <div class="pm-chartControls">
           <label class="pm-label" for="pmAnalyticsGeneralYearSelect">Year</label>
           <select id="pmAnalyticsGeneralYearSelect" class="pm-select"></select>
+          <label class="pm-label" for="pmAnalyticsGeneralQuarterSelect">
+            Quarter
+          </label>
+          <select
+            id="pmAnalyticsGeneralQuarterSelect"
+            class="pm-select"
+          ></select>
         </div>
       </div>
 
@@ -228,10 +235,6 @@
         <div class="pm-chartCard">
           <div class="pm-chartHeader">
             <div class="pm-chartTitle">Completed tasks by quarter</div>
-            <div class="pm-chartControls">
-              <label class="pm-label" for="pmAnalyticsYearSelect">Year</label>
-              <select id="pmAnalyticsYearSelect" class="pm-select"></select>
-            </div>
           </div>
           <div class="pm-chartBox">
             <canvas id="pmChartCompletedByQuarter"></canvas>
@@ -241,22 +244,6 @@
         <div class="pm-chartCard">
           <div class="pm-chartHeader">
             <div class="pm-chartTitle">Completed tasks by category</div>
-            <div class="pm-chartControls">
-              <label class="pm-label" for="pmAnalyticsCategoryYearSelect">
-                Year
-              </label>
-              <select
-                id="pmAnalyticsCategoryYearSelect"
-                class="pm-select"
-              ></select>
-              <label class="pm-label" for="pmAnalyticsCategoryQuarterSelect">
-                Quarter
-              </label>
-              <select
-                id="pmAnalyticsCategoryQuarterSelect"
-                class="pm-select"
-              ></select>
-            </div>
           </div>
           <div class="pm-chartBox">
             <canvas id="pmChartCompletedByCategory"></canvas>
@@ -284,32 +271,22 @@
           </div>
         </div>
 
-      <div class="pm-chartCard">
-        <div class="pm-chartHeader">
-          <div class="pm-chartTitle">Tickets imported by month</div>
-            <div class="pm-chartControls">
-              <label class="pm-label" for="pmAnalyticsTicketsYearSelect">
-                Year
-              </label>
-              <select
-                id="pmAnalyticsTicketsYearSelect"
-                class="pm-select"
-              ></select>
-            </div>
+        <div class="pm-chartCard">
+          <div class="pm-chartHeader">
+            <div class="pm-chartTitle">Tickets imported by month</div>
           </div>
           <div class="pm-chartBox">
             <canvas id="pmChartTicketsImported"></canvas>
           </div>
         </div>
-      </div>
 
-      <div class="pm-chartCard">
-        <div class="pm-chartTitle">Projects by Project Type</div>
-        <div class="pm-chartBox">
-          <canvas id="pmChartProjectsByType"></canvas>
+        <div class="pm-chartCard">
+          <div class="pm-chartTitle">Projects by Project Type</div>
+          <div class="pm-chartBox">
+            <canvas id="pmChartProjectsByType"></canvas>
+          </div>
         </div>
       </div>
-    </div>
 
     <div id="pmOkrsAnalyticsWrap" style="display: none">
       <div id="pmOkrsRollup" class="pm-okrsRollup">
