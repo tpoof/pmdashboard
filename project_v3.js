@@ -9,6 +9,8 @@
       "";
   }
 
+  const DEBUG_PROJECT_TYPE = false;
+
   // Task form indicator IDs
   var TASK_IND = {
     projectKey: 8,
@@ -829,10 +831,13 @@
   }
 
   function formatProjectTypeLabel(value) {
-    var pt = String(value || "").trim() || "Unspecified";
-    var dashIdx = pt.indexOf("-");
-    if (dashIdx !== -1) pt = pt.slice(0, dashIdx).trim();
-    return pt || "Unspecified";
+    var raw = String(value || "").trim();
+    if (!raw) return "Unknown";
+    var normalized = raw.replace(/\u2013|\u2014/g, "-");
+    var dashIdx = normalized.indexOf("-");
+    if (dashIdx !== -1) normalized = normalized.slice(0, dashIdx);
+    var label = normalized.trim();
+    return label || "Unknown";
   }
 
   function setChartSummary(id, text) {
@@ -3815,17 +3820,32 @@
     }
 
     var projectTypeCounts = {};
+    var projectTypeSample = [];
     projectsForGeneralCharts.forEach(function (p) {
-      var pt = formatProjectTypeLabel(p.projectType);
-      projectTypeCounts[pt] = (projectTypeCounts[pt] || 0) + 1;
+      var rawType = String(p.projectType || "").trim();
+      if (!rawType) rawType = "Unknown";
+      if (projectTypeSample.length < 10) projectTypeSample.push(rawType);
+      projectTypeCounts[rawType] = (projectTypeCounts[rawType] || 0) + 1;
     });
 
-    var typeLabels = Object.keys(projectTypeCounts).sort(function (a, b) {
+    var rawTypeKeys = Object.keys(projectTypeCounts).sort(function (a, b) {
       return a.localeCompare(b);
     });
-    var typeData = typeLabels.map(function (k) {
+    var typeLabels = rawTypeKeys.map(function (k) {
+      return formatProjectTypeLabel(k);
+    });
+    var typeData = rawTypeKeys.map(function (k) {
       return projectTypeCounts[k];
     });
+    if (DEBUG_PROJECT_TYPE) {
+      var formattedSample = projectTypeSample.map(function (v) {
+        return formatProjectTypeLabel(v);
+      });
+      var distinctLabels = Array.from(new Set(typeLabels));
+      console.log("[ProjectType] raw sample:", projectTypeSample);
+      console.log("[ProjectType] formatted sample:", formattedSample);
+      console.log("[ProjectType] chart labels:", distinctLabels);
+    }
     setChartSummary(
       "pmChartProjectsByTypeDesc",
       "Projects by project type (" +
