@@ -1037,6 +1037,11 @@
           var projId = "pmOkrProjects-" + keyId;
           var tasksId = "pmOkrTasks-" + keyId;
           var completedId = "pmOkrCompleted-" + keyId;
+          var pctValue = Number(item.percent);
+          if (!isFinite(pctValue)) pctValue = 0;
+          var pctClass = "pm-okrPct";
+          if (!item.totalTasks) pctClass += " pm-okrPct--none";
+          else if (pctValue >= 100) pctClass += " pm-okrPct--complete";
 
           var projectList = item.projects.length
             ? "<ul class='pm-okrList'>" +
@@ -1143,8 +1148,10 @@
             "<div class='pm-okrKey'>" +
             safe(item.displayKey || item.key) +
             "</div>" +
-            "<div class='pm-okrPct'>" +
-            safe(item.percent) +
+            "<div class='" +
+            pctClass +
+            "'>" +
+            safe(pctValue) +
             "%</div>" +
             "</div>" +
             "<div class='pm-okrMetrics'>" +

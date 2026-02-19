@@ -270,7 +270,7 @@
   margin-top: 12px;
   margin-bottom: 16px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .pm-viewBtns {
@@ -345,6 +345,18 @@
   border-radius: 999px;
   background: #d9e8f6;
   border: 1px solid #aacdec;
+}
+
+.pm-okrPct--none {
+  background: #ff4040;
+  border-color: #ff4040;
+  color: #fff;
+}
+
+.pm-okrPct--complete {
+  background: #719f2a;
+  border-color: #719f2a;
+  color: #fff;
 }
 
 .pm-okrMetrics {
