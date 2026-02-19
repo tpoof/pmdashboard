@@ -914,12 +914,11 @@
     var rows = okrRows
       .slice(0, 500)
       .map(function (p) {
-        var okrDisplay = formatOkrDisplay(p.okrKey, p.okrObjective);
-        var okrLink = p.okrKey ? okrRecordLink(p.okrKey, okrDisplay) : "";
+        var okrLink = p.okrKey ? okrRecordLink(p.okrKey, p.okrKey) : "";
         return (
           "<tr>" +
           "<td>" +
-          (okrLink || safe(okrDisplay || p.okrKey)) +
+          (okrLink || safe(p.okrKey)) +
           "</td>" +
           "<td>" +
           safe(p.okrObjective) +
