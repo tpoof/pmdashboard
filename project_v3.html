@@ -11,7 +11,7 @@
   <div class="pm-header">
     <h1 class="pm-title">LEAF Project Dashboard</h1>
 
-    <!--{if $empMembership['groupID'][432]}-->
+    <!--{if $empMembership['groupID'][12]}-->
     <div class="pm-actionsRow">
       <button
         type="button"
@@ -50,6 +50,10 @@
             class="pm-tab"
             data-tab="projects"
             aria-selected="false"
+            role="tab"
+            aria-controls="pmTab-projects"
+            id="pmTabBtn-projects"
+            tabindex="-1"
           >
             Projects
           </button>
@@ -58,6 +62,10 @@
             class="pm-tab"
             data-tab="tasks"
             aria-selected="false"
+            role="tab"
+            aria-controls="pmTab-tasks"
+            id="pmTabBtn-tasks"
+            tabindex="-1"
           >
             Tasks
           </button>
@@ -66,6 +74,10 @@
             class="pm-tab"
             data-tab="analytics"
             aria-selected="false"
+            role="tab"
+            aria-controls="pmTab-analytics"
+            id="pmTabBtn-analytics"
+            tabindex="-1"
           >
             Analytics
           </button>
@@ -79,30 +91,79 @@
     </div>
   </div>
 
-  <section id="pmTab-projects" class="pm-panel" role="tabpanel">
+  <section
+    id="pmTab-projects"
+    class="pm-panel"
+    role="tabpanel"
+    aria-labelledby="pmTabBtn-projects"
+    aria-hidden="true"
+  >
     <div class="pm-panelHeader">
       <h2 class="pm-subtitle">Projects</h2>
+    </div>
+    <div class="pm-filterRow">
+      <div class="pm-field pm-filterHeader">
+        <div class="pm-filterHeaderLabel">Filter by</div>
+      </div>
+      <div class="pm-field">
+        <label class="pm-label" for="pmProjectFiscalYearSelect">FY</label>
+        <select id="pmProjectFiscalYearSelect" class="pm-select">
+          <option value="">All FY</option>
+        </select>
+      </div>
     </div>
     <div id="pmProjectsTableWrap">
       <div id="pmProjectsTable"></div>
     </div>
   </section>
 
-  <section id="pmTab-tasks" class="pm-panel" role="tabpanel">
+  <section
+    id="pmTab-tasks"
+    class="pm-panel"
+    role="tabpanel"
+    aria-labelledby="pmTabBtn-tasks"
+    aria-hidden="true"
+  >
     <div class="pm-panelHeader">
       <h2 class="pm-subtitle">Tasks</h2>
     </div>
 
     <div class="pm-viewRow">
-      <div class="pm-viewBtns">
-        <span class="pm-viewLabel">View:</span>
-        <button type="button" id="pmViewTableBtn" class="pm-tab">
+      <div class="pm-viewBtns" role="tablist" aria-label="Tasks view">
+        <span class="pm-viewLabel" aria-hidden="true">View:</span>
+        <button
+          type="button"
+          id="pmViewTableBtn"
+          class="pm-tab"
+          role="tab"
+          aria-controls="pmTasksTableWrap"
+          aria-selected="false"
+          tabindex="-1"
+        >
           Task Table
         </button>
-        <button type="button" id="pmViewKanbanBtn" class="pm-tab">
+        <button
+          type="button"
+          id="pmViewKanbanBtn"
+          class="pm-tab"
+          role="tab"
+          aria-controls="pmKanbanWrap"
+          aria-selected="false"
+          tabindex="-1"
+        >
           Kanban
         </button>
-        <button type="button" id="pmViewGanttBtn" class="pm-tab">Gantt</button>
+        <button
+          type="button"
+          id="pmViewGanttBtn"
+          class="pm-tab"
+          role="tab"
+          aria-controls="pmGanttWrap"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Gantt
+        </button>
       </div>
     </div>
 
@@ -162,18 +223,37 @@
       <div class="pm-healthInner"></div>
     </div>
 
-    <div id="pmTasksTableWrap">
+    <div
+      id="pmTasksTableWrap"
+      role="tabpanel"
+      aria-labelledby="pmViewTableBtn"
+      aria-hidden="true"
+    >
       <div id="pmTasksTable"></div>
     </div>
 
-    <div id="pmKanbanWrap" style="display: none">
-      <div class="pm-kanbanHint">
-        Drag a task card to a new status column to update the task.
+    <div
+      id="pmKanbanWrap"
+      role="tabpanel"
+      aria-labelledby="pmViewKanbanBtn"
+      aria-hidden="true"
+      style="display: none"
+    >
+      <div class="pm-kanbanHint" id="pmKanbanHint">
+        Drag a task card to a new status column to update the task. Keyboard:
+        focus a card and press Shift+Left/Right to move it.
       </div>
+      <div class="pm-srOnly" id="pmKanbanStatusMsg" aria-live="polite"></div>
       <div id="pmKanbanBoard" class="pm-kanban"></div>
     </div>
 
-    <div id="pmGanttWrap" style="display: none">
+    <div
+      id="pmGanttWrap"
+      role="tabpanel"
+      aria-labelledby="pmViewGanttBtn"
+      aria-hidden="true"
+      style="display: none"
+    >
       <div class="pm-ganttMeta" id="pmGanttMeta"></div>
       <div id="pmGanttBoard" class="pm-gantt">
         <div id="pmGanttInner"></div>
@@ -181,21 +261,48 @@
     </div>
   </section>
 
-  <section id="pmTab-analytics" class="pm-panel" role="tabpanel">
+  <section
+    id="pmTab-analytics"
+    class="pm-panel"
+    role="tabpanel"
+    aria-labelledby="pmTabBtn-analytics"
+    aria-hidden="true"
+  >
     <h2 class="pm-subtitle">Analytics</h2>
     <div class="pm-viewRow">
-      <div class="pm-viewBtns">
-        <span class="pm-viewLabel">View:</span>
-        <button type="button" id="pmAnalyticsViewMainBtn" class="pm-tab">
+      <div class="pm-viewBtns" role="tablist" aria-label="Analytics view">
+        <span class="pm-viewLabel" aria-hidden="true">View:</span>
+        <button
+          type="button"
+          id="pmAnalyticsViewMainBtn"
+          class="pm-tab"
+          role="tab"
+          aria-controls="pmAnalyticsWrap"
+          aria-selected="false"
+          tabindex="-1"
+        >
           Project Analytics
         </button>
-        <button type="button" id="pmAnalyticsViewOkrsBtn" class="pm-tab">
+        <button
+          type="button"
+          id="pmAnalyticsViewOkrsBtn"
+          class="pm-tab"
+          role="tab"
+          aria-controls="pmOkrsAnalyticsWrap"
+          aria-selected="false"
+          tabindex="-1"
+        >
           OKRs
         </button>
       </div>
     </div>
 
-    <div id="pmAnalyticsWrap">
+    <div
+      id="pmAnalyticsWrap"
+      role="tabpanel"
+      aria-labelledby="pmAnalyticsViewMainBtn"
+      aria-hidden="true"
+    >
       <div class="pm-analyticsFilters">
         <div class="pm-chartControls">
           <label class="pm-label" for="pmAnalyticsGeneralYearSelect"
@@ -233,7 +340,12 @@
         <div class="pm-chartCard">
           <div class="pm-chartTitle">Due date buckets</div>
           <div class="pm-chartBox">
-            <canvas id="pmChartDueBuckets"></canvas>
+            <canvas
+              id="pmChartDueBuckets"
+              role="img"
+              aria-describedby="pmChartDueBucketsDesc"
+            ></canvas>
+            <div class="pm-srOnly" id="pmChartDueBucketsDesc"></div>
           </div>
         </div>
 
@@ -242,7 +354,12 @@
             <div class="pm-chartTitle">Completed tasks by quarter</div>
           </div>
           <div class="pm-chartBox">
-            <canvas id="pmChartCompletedByQuarter"></canvas>
+            <canvas
+              id="pmChartCompletedByQuarter"
+              role="img"
+              aria-describedby="pmChartCompletedByQuarterDesc"
+            ></canvas>
+            <div class="pm-srOnly" id="pmChartCompletedByQuarterDesc"></div>
           </div>
         </div>
 
@@ -251,28 +368,48 @@
             <div class="pm-chartTitle">Completed tasks by category</div>
           </div>
           <div class="pm-chartBox">
-            <canvas id="pmChartCompletedByCategory"></canvas>
+            <canvas
+              id="pmChartCompletedByCategory"
+              role="img"
+              aria-describedby="pmChartCompletedByCategoryDesc"
+            ></canvas>
+            <div class="pm-srOnly" id="pmChartCompletedByCategoryDesc"></div>
           </div>
         </div>
 
         <div class="pm-chartCard">
           <div class="pm-chartTitle">Tasks by priority</div>
           <div class="pm-chartBox">
-            <canvas id="pmChartTasksByPriority"></canvas>
+            <canvas
+              id="pmChartTasksByPriority"
+              role="img"
+              aria-describedby="pmChartTasksByPriorityDesc"
+            ></canvas>
+            <div class="pm-srOnly" id="pmChartTasksByPriorityDesc"></div>
           </div>
         </div>
 
         <div class="pm-chartCard">
           <div class="pm-chartTitle">Tasks by Status</div>
           <div class="pm-chartBox">
-            <canvas id="pmChartTasksByStatus"></canvas>
+            <canvas
+              id="pmChartTasksByStatus"
+              role="img"
+              aria-describedby="pmChartTasksByStatusDesc"
+            ></canvas>
+            <div class="pm-srOnly" id="pmChartTasksByStatusDesc"></div>
           </div>
         </div>
 
         <div class="pm-chartCard">
           <div class="pm-chartTitle">Tasks per Project Key</div>
           <div class="pm-chartBox">
-            <canvas id="pmChartTasksByProject"></canvas>
+            <canvas
+              id="pmChartTasksByProject"
+              role="img"
+              aria-describedby="pmChartTasksByProjectDesc"
+            ></canvas>
+            <div class="pm-srOnly" id="pmChartTasksByProjectDesc"></div>
           </div>
         </div>
 
@@ -281,20 +418,36 @@
             <div class="pm-chartTitle">Tickets imported by month</div>
           </div>
           <div class="pm-chartBox">
-            <canvas id="pmChartTicketsImported"></canvas>
+            <canvas
+              id="pmChartTicketsImported"
+              role="img"
+              aria-describedby="pmChartTicketsImportedDesc"
+            ></canvas>
+            <div class="pm-srOnly" id="pmChartTicketsImportedDesc"></div>
           </div>
         </div>
 
         <div class="pm-chartCard">
           <div class="pm-chartTitle">Projects by Project Type</div>
           <div class="pm-chartBox">
-            <canvas id="pmChartProjectsByType"></canvas>
+            <canvas
+              id="pmChartProjectsByType"
+              role="img"
+              aria-describedby="pmChartProjectsByTypeDesc"
+            ></canvas>
+            <div class="pm-srOnly" id="pmChartProjectsByTypeDesc"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <div id="pmOkrsAnalyticsWrap" style="display: none">
+    <div
+      id="pmOkrsAnalyticsWrap"
+      role="tabpanel"
+      aria-labelledby="pmAnalyticsViewOkrsBtn"
+      aria-hidden="true"
+      style="display: none"
+    >
       <div id="pmOkrsRollup" class="pm-okrsRollup">
         <div class="pm-okrsHeader">
           <h3 class="pm-okrsTitle">OKR Health Roll-up</h3>
@@ -303,13 +456,23 @@
           <div class="pm-chartCard">
             <div class="pm-chartTitle">% OKR Achieved</div>
             <div class="pm-chartBox pm-okrsChartBox">
-              <canvas id="pmChartOkrAchieved"></canvas>
+              <canvas
+                id="pmChartOkrAchieved"
+                role="img"
+                aria-describedby="pmChartOkrAchievedDesc"
+              ></canvas>
+              <div class="pm-srOnly" id="pmChartOkrAchievedDesc"></div>
             </div>
           </div>
           <div class="pm-chartCard">
             <div class="pm-chartTitle">Completed vs Remaining Tasks</div>
             <div class="pm-chartBox pm-okrsChartBox">
-              <canvas id="pmChartOkrTasks"></canvas>
+              <canvas
+                id="pmChartOkrTasks"
+                role="img"
+                aria-describedby="pmChartOkrTasksDesc"
+              ></canvas>
+              <div class="pm-srOnly" id="pmChartOkrTasksDesc"></div>
             </div>
           </div>
         </div>
@@ -347,7 +510,7 @@
       class="pm-modalDialog"
       role="dialog"
       aria-modal="true"
-      aria-label="Modal"
+      aria-labelledby="pmModalTitle"
     >
       <div class="pm-modalHeader">
         <div class="pm-modalTitle" id="pmModalTitle">Details</div>
@@ -385,6 +548,8 @@
     class="pm-jumpTop"
     id="pmJumpTopBtn"
     aria-label="Jump to top"
+    aria-hidden="true"
+    tabindex="-1"
   >
     ↑
   </button>

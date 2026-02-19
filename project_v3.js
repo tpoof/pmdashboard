@@ -31,6 +31,7 @@
     description: 4,
     owner: 5,
     projectStatus: 6,
+    projectFiscalYear: 38,
     okrAssociation: 29,
     projectType: 32,
   };
@@ -50,9 +51,9 @@
   var FORM_POST_ENDPOINT_PREFIX =
     "https://leaf.va.gov/platform/projects/api/form/";
   var START_PROJECT_URL =
-    "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_55445";
+    "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_55445&title=Project";
   var START_TASK_URL =
-    "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_9b302";
+    "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_9b302&title=Task";
   var START_OKR_URL =
     "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_a2b55&title=OKR";
 
@@ -81,6 +82,7 @@
     csrfToken: "",
     csrfField: "CSRFToken",
     transferInProgress: false,
+    kanbanColumns: [],
     analyticsYear: "",
     analyticsCategoryYear: "",
     analyticsCategoryQuarter: "",
@@ -113,18 +115,68 @@
       .replaceAll(">", "&gt;");
   }
 
+  function safeAttr(s) {
+    return safe(s).replaceAll('"', "&quot;");
+  }
+
+  var lastFocusedElement = null;
+
+  // Accessibility: keep focus inside the modal while it is open.
+  function getFocusableElements(container) {
+    if (!container) return [];
+    var selectors =
+      'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),iframe,[tabindex]:not([tabindex="-1"])';
+    return Array.from(container.querySelectorAll(selectors)).filter(function (
+      el,
+    ) {
+      if (el.getAttribute("aria-hidden") === "true") return false;
+      return !!(el.offsetParent || el === document.activeElement);
+    });
+  }
+
+  function toggleAppInert(isInert) {
+    var app = document.querySelector(".pm-wrap");
+    if (!app) return;
+    Array.from(app.children).forEach(function (child) {
+      if (!child || child.id === "pmModal") return;
+      if (isInert) {
+        child.setAttribute("aria-hidden", "true");
+        child.setAttribute("inert", "");
+      } else {
+        child.removeAttribute("aria-hidden");
+        child.removeAttribute("inert");
+      }
+    });
+  }
+
+  function isModalOpen() {
+    var modal = document.getElementById("pmModal");
+    return !!(modal && modal.getAttribute("aria-hidden") === "false");
+  }
+
   function openModal(title, url) {
     var modal = document.getElementById("pmModal");
     var frame = document.getElementById("pmModalFrame");
     var titleEl = document.getElementById("pmModalTitle");
     var openTabBtn = document.getElementById("pmModalOpenTabBtn");
+    var closeBtn = document.getElementById("pmModalCloseBtn");
     if (!modal || !frame || !titleEl) return;
     titleEl.textContent = title || "Details";
     frame.src = url;
+    frame.setAttribute(
+      "title",
+      title ? "LEAF content - " + String(title) : "LEAF content",
+    );
     if (openTabBtn) openTabBtn.setAttribute("data-url", url || "");
+    lastFocusedElement = document.activeElement;
     modal.style.display = "block";
     modal.setAttribute("aria-hidden", "false");
+    toggleAppInert(true);
     document.body.style.overflow = "hidden";
+    requestAnimationFrame(function () {
+      if (closeBtn) closeBtn.focus();
+      else modal.focus();
+    });
   }
 
   function closeModal() {
@@ -133,10 +185,16 @@
     var openTabBtn = document.getElementById("pmModalOpenTabBtn");
     if (!modal || !frame) return;
     frame.src = "about:blank";
+    frame.setAttribute("title", "LEAF content");
     if (openTabBtn) openTabBtn.setAttribute("data-url", "");
     modal.style.display = "none";
     modal.setAttribute("aria-hidden", "true");
+    toggleAppInert(false);
     document.body.style.overflow = "";
+    if (lastFocusedElement && document.contains(lastFocusedElement)) {
+      lastFocusedElement.focus();
+    }
+    lastFocusedElement = null;
   }
 
   function encodeFormBody(obj) {
@@ -719,6 +777,7 @@
       description: extractFromS1(row, PROJECT_IND.description),
       owner: extractFromS1(row, PROJECT_IND.owner),
       projectStatus: extractFromS1(row, PROJECT_IND.projectStatus),
+      projectFiscalYear: extractFromS1(row, PROJECT_IND.projectFiscalYear),
       okrAssociation: extractFromS1(row, PROJECT_IND.okrAssociation),
       projectType: extractFromS1(row, PROJECT_IND.projectType),
       okrKey: extractFromS1(row, OKR_IND.okrKey),
@@ -767,6 +826,33 @@
     return String(value || "").trim();
   }
 
+  function setChartSummary(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text || "";
+  }
+
+  function summarizeLabelData(labels, data) {
+    if (!labels || !labels.length || !data || !data.length) return "No data.";
+    return labels
+      .map(function (label, idx) {
+        var v = data[idx];
+        if (v == null || isNaN(v)) v = 0;
+        return label + ": " + v;
+      })
+      .join("; ");
+  }
+
+  function summarizeStacked(labels, dataA, dataB, labelA, labelB) {
+    if (!labels || !labels.length) return "No data.";
+    return labels
+      .map(function (label, idx) {
+        var a = dataA && dataA[idx] != null ? dataA[idx] : 0;
+        var b = dataB && dataB[idx] != null ? dataB[idx] : 0;
+        return label + ": " + labelA + " " + a + ", " + labelB + " " + b;
+      })
+      .join("; ");
+  }
+
   function compareValues(a, b, dir, type) {
     if (type === "number") return dir * ((Number(a) || 0) - (Number(b) || 0));
     if (type === "date") {
@@ -792,8 +878,12 @@
     container.querySelectorAll(".pm-sortable").forEach(function (th) {
       th.classList.remove("is-asc", "is-desc");
       var key = th.getAttribute("data-sort");
-      if (key && key === activeKey)
+      var ariaSort = "none";
+      if (key && key === activeKey) {
         th.classList.add(dir === 1 ? "is-asc" : "is-desc");
+        ariaSort = dir === 1 ? "ascending" : "descending";
+      }
+      th.setAttribute("aria-sort", ariaSort);
     });
   }
 
@@ -869,6 +959,9 @@
           safe(p.projectStatus) +
           "</td>" +
           "<td>" +
+          safe(p.projectFiscalYear) +
+          "</td>" +
+          "<td>" +
           (okrLink || safe(p.okrAssociation)) +
           "</td>" +
           "<td>" +
@@ -882,13 +975,14 @@
     el.innerHTML =
       '<table class="pm-table">' +
       "<thead><tr>" +
-      '<th class="pm-sortable" data-sort="projectKey" data-type="string">Project Key</th>' +
-      '<th class="pm-sortable pm-wrapCol" data-sort="projectName" data-type="string">Project Name</th>' +
-      '<th class="pm-sortable pm-wrapColLong" data-sort="description" data-type="string">Description</th>' +
-      '<th class="pm-sortable" data-sort="owner" data-type="string">Owner</th>' +
-      '<th class="pm-sortable" data-sort="projectStatus" data-type="string">Status</th>' +
-      '<th class="pm-sortable" data-sort="okrAssociation" data-type="string">OKR</th>' +
-      '<th class="pm-sortable" data-sort="projectType" data-type="string">Project Type</th>' +
+      '<th scope="col" class="pm-sortable" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>' +
+      '<th scope="col" class="pm-sortable pm-wrapCol" data-sort="projectName" data-type="string"><button type="button" class="pm-sortBtn">Project Name</button></th>' +
+      '<th scope="col" class="pm-sortable pm-wrapColLong" data-sort="description" data-type="string"><button type="button" class="pm-sortBtn">Description</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="owner" data-type="string"><button type="button" class="pm-sortBtn">Owner</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="projectFiscalYear" data-type="string"><button type="button" class="pm-sortBtn">FY</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="okrAssociation" data-type="string"><button type="button" class="pm-sortBtn">OKR</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="projectType" data-type="string"><button type="button" class="pm-sortBtn">Project Type</button></th>' +
       "</tr></thead>" +
       "<tbody>" +
       rows +
@@ -955,11 +1049,11 @@
     el.innerHTML =
       '<table class="pm-table">' +
       "<thead><tr>" +
-      '<th class="pm-sortable" data-sort="okrKey" data-type="number">OKR Key</th>' +
-      '<th class="pm-sortable" data-sort="okrObjective" data-type="string">Objective</th>' +
-      '<th class="pm-sortable" data-sort="okrStartDate" data-type="date">Start Date</th>' +
-      '<th class="pm-sortable" data-sort="okrEndDate" data-type="date">End Date</th>' +
-      '<th class="pm-sortable" data-sort="okrFiscalYear" data-type="string">Fiscal Year</th>' +
+      '<th scope="col" class="pm-sortable" data-sort="okrKey" data-type="number"><button type="button" class="pm-sortBtn">OKR Key</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="okrObjective" data-type="string"><button type="button" class="pm-sortBtn">Objective</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="okrStartDate" data-type="date"><button type="button" class="pm-sortBtn">Start Date</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="okrEndDate" data-type="date"><button type="button" class="pm-sortBtn">End Date</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="okrFiscalYear" data-type="string"><button type="button" class="pm-sortBtn">Fiscal Year</button></th>' +
       "</tr></thead>" +
       "<tbody>" +
       (rows || "<tr><td colspan='5'>No OKRs found</td></tr>") +
@@ -1087,6 +1181,7 @@
           var totalTasksText = String(item.totalTasks || 0);
           var completedTasksText = String(item.completedTasksCount || 0);
           var pctClass = "pm-okrPct";
+          var okrLabel = safeAttr(item.displayKey || item.key || "");
           if (item.completedTasksCount === 0)
             pctClass += " pm-okrPct--none";
           else if (pctValue >= 100) pctClass += " pm-okrPct--complete";
@@ -1208,12 +1303,20 @@
             "<div class='pm-okrMetricValue'>" +
             projectCountText +
             "</div>" +
-            "<button class='pm-okrToggle' data-target='" +
+            "<button type='button' class='pm-okrToggle' data-target='" +
             projId +
+            "' data-label='Projects' data-okr='" +
+            okrLabel +
+            "' aria-expanded='false' aria-controls='" +
+            projId +
+            "' aria-label='Expand Projects for OKR " +
+            okrLabel +
             "'>Expand</button>" +
             "<div class='pm-okrDetails' id='" +
             projId +
-            "'>" +
+            "' role='region' aria-label='Projects for OKR " +
+            okrLabel +
+            "' aria-hidden='true' hidden>" +
             projectList +
             "</div>" +
             "</div>" +
@@ -1222,12 +1325,20 @@
             "<div class='pm-okrMetricValue'>" +
             totalTasksText +
             "</div>" +
-            "<button class='pm-okrToggle' data-target='" +
+            "<button type='button' class='pm-okrToggle' data-target='" +
             tasksId +
+            "' data-label='Total Tasks' data-okr='" +
+            okrLabel +
+            "' aria-expanded='false' aria-controls='" +
+            tasksId +
+            "' aria-label='Expand Total Tasks for OKR " +
+            okrLabel +
             "'>Expand</button>" +
             "<div class='pm-okrDetails' id='" +
             tasksId +
-            "'>" +
+            "' role='region' aria-label='Total Tasks for OKR " +
+            okrLabel +
+            "' aria-hidden='true' hidden>" +
             taskList +
             "</div>" +
             "</div>" +
@@ -1236,12 +1347,20 @@
             "<div class='pm-okrMetricValue'>" +
             completedTasksText +
             "</div>" +
-            "<button class='pm-okrToggle' data-target='" +
+            "<button type='button' class='pm-okrToggle' data-target='" +
             completedId +
+            "' data-label='Completed Tasks' data-okr='" +
+            okrLabel +
+            "' aria-expanded='false' aria-controls='" +
+            completedId +
+            "' aria-label='Expand Completed Tasks for OKR " +
+            okrLabel +
             "'>Expand</button>" +
             "<div class='pm-okrDetails' id='" +
             completedId +
-            "'>" +
+            "' role='region' aria-label='Completed Tasks for OKR " +
+            okrLabel +
+            "' aria-hidden='true' hidden>" +
             completedList +
             "</div>" +
             "</div>" +
@@ -1264,6 +1383,26 @@
     var remainingData = items.map(function (i) {
       return i.remainingTasksCount || 0;
     });
+    setChartSummary(
+      "pmChartOkrAchievedDesc",
+      "OKR percent achieved: " +
+        (labels.length
+          ? summarizeLabelData(labels, percentData)
+          : "No data."),
+    );
+    setChartSummary(
+      "pmChartOkrTasksDesc",
+      "OKR tasks completed vs remaining: " +
+        (labels.length
+          ? summarizeStacked(
+              labels,
+              completedData,
+              remainingData,
+              "Completed",
+              "Remaining",
+            )
+          : "No data."),
+    );
 
     if (state.charts.okrAchieved) {
       state.charts.okrAchieved.destroy();
@@ -1408,17 +1547,17 @@
     el.innerHTML =
       '<table class="pm-table">' +
       "<thead><tr>" +
-      '<th class="pm-sortable" data-sort="projectKey" data-type="string">Project Key</th>' +
-      '<th class="pm-sortable" data-sort="recordID" data-type="number">Task ID</th>' +
-      '<th class="pm-sortable pm-wrapCol" data-sort="title" data-type="string">Title</th>' +
-      '<th class="pm-sortable" data-sort="status" data-type="string">Status</th>' +
-      '<th class="pm-sortable" data-sort="dependencies" data-type="string">Dependencies</th>' +
-      '<th class="pm-sortable" data-sort="priority" data-type="string">Priority</th>' +
-      '<th class="pm-sortable" data-sort="category" data-type="string">Category</th>' +
-      '<th class="pm-sortable" data-sort="assignedTo" data-type="string">Assigned To</th>' +
-      '<th class="pm-sortable" data-sort="start" data-type="date">Start</th>' +
-      '<th class="pm-sortable" data-sort="due" data-type="date">Due</th>' +
-      '<th class="pm-sortable" data-sort="supportTicket" data-type="string">Ticket</th>' +
+      '<th scope="col" class="pm-sortable" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="recordID" data-type="number"><button type="button" class="pm-sortBtn">Task ID</button></th>' +
+      '<th scope="col" class="pm-sortable pm-wrapCol" data-sort="title" data-type="string"><button type="button" class="pm-sortBtn">Title</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="status" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="dependencies" data-type="string"><button type="button" class="pm-sortBtn">Dependencies</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="priority" data-type="string"><button type="button" class="pm-sortBtn">Priority</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="category" data-type="string"><button type="button" class="pm-sortBtn">Category</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="assignedTo" data-type="string"><button type="button" class="pm-sortBtn">Assigned To</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="start" data-type="date"><button type="button" class="pm-sortBtn">Start</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="due" data-type="date"><button type="button" class="pm-sortBtn">Due</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="supportTicket" data-type="string"><button type="button" class="pm-sortBtn">Ticket</button></th>' +
       "</tr></thead>" +
       "<tbody>" +
       rows +
@@ -1686,6 +1825,7 @@
           .indexOf("archive") === -1
       );
     });
+    state.kanbanColumns = cols.slice();
     var grouped = {};
     cols.forEach(function (c) {
       grouped[c] = [];
@@ -1726,11 +1866,23 @@
               : '<span class="pm-taskIdBadge">' + safe(t.recordID) + "</span>";
             var ticketLink = supportTicketLink(t.supportTicket);
 
+            var cardLabel =
+              "Task " +
+              String(t.recordID || "") +
+              ": " +
+              String(t.title || "(No title)") +
+              ". Status " +
+              String(col || "");
+
             return (
               "" +
               '<div class="pm-card" draggable="true" data-taskid="' +
               safe(t.recordID) +
-              '">' +
+              '" data-status="' +
+              safe(col) +
+              '" tabindex="0" role="group" aria-label="' +
+              safeAttr(cardLabel) +
+              '" aria-describedby="pmKanbanHint">' +
               '<div class="pm-card-title">' +
               safe(t.title || "(No title)") +
               "</div>" +
@@ -1784,6 +1936,21 @@
       .join("");
 
     wireKanbanDnD();
+  }
+
+  function announceKanbanStatus(msg) {
+    var el = document.getElementById("pmKanbanStatusMsg");
+    if (el) el.textContent = msg || "";
+  }
+
+  function focusKanbanCard(taskId) {
+    if (!taskId) return;
+    var selector =
+      '.pm-card[data-taskid="' +
+      String(taskId).replace(/"/g, '\\"') +
+      '"]';
+    var card = document.querySelector(selector);
+    if (card) card.focus();
   }
 
   function formatDateShort(d) {
@@ -1967,6 +2134,49 @@
               b.classList.remove("is-over");
             });
         });
+
+        card.addEventListener("keydown", async function (e) {
+          if (!e.shiftKey) return;
+          if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+          e.preventDefault();
+
+          var cols = state.kanbanColumns || [];
+          var currentStatus = card.getAttribute("data-status") || "";
+          var idxCol = cols.indexOf(currentStatus);
+          if (idxCol === -1) return;
+          var nextIdx = e.key === "ArrowLeft" ? idxCol - 1 : idxCol + 1;
+          if (nextIdx < 0 || nextIdx >= cols.length) return;
+
+          var newStatus = cols[nextIdx];
+          var id = card.getAttribute("data-taskid");
+          if (!id || !newStatus) return;
+
+          var idx = state.tasksAll.findIndex(function (t) {
+            return String(t.recordID) === String(id);
+          });
+          if (idx === -1) return;
+
+          var oldStatus = state.tasksAll[idx].status;
+          state.tasksAll[idx].status = newStatus;
+          applySearchAndFilters(true);
+          announceKanbanStatus(
+            "Moved task " + id + " to " + newStatus + ".",
+          );
+          requestAnimationFrame(function () {
+            focusKanbanCard(id);
+          });
+
+          try {
+            await updateTaskStatus(id, newStatus);
+          } catch (err3) {
+            state.tasksAll[idx].status = oldStatus;
+            applySearchAndFilters(true);
+            announceKanbanStatus(
+              "Could not update task " + id + ". " + String(err3),
+            );
+            alert("Could not update task status. " + String(err3));
+          }
+        });
       });
 
     document.querySelectorAll(".pm-kanban-col-body").forEach(function (body) {
@@ -2085,11 +2295,42 @@
     return parseLeafDate(t.createdAt || t.start) || null;
   }
 
+  // Accessibility: enable keyboard navigation in tablists.
+  function handleTablistKeydown(e, tabs, activate) {
+    var keys = [
+      "ArrowLeft",
+      "ArrowRight",
+      "ArrowUp",
+      "ArrowDown",
+      "Home",
+      "End",
+    ];
+    if (keys.indexOf(e.key) === -1) return;
+    var idx = tabs.indexOf(e.currentTarget);
+    if (idx === -1) return;
+    var nextIdx = idx;
+    if (e.key === "Home") nextIdx = 0;
+    else if (e.key === "End") nextIdx = tabs.length - 1;
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp")
+      nextIdx = (idx - 1 + tabs.length) % tabs.length;
+    else if (e.key === "ArrowRight" || e.key === "ArrowDown")
+      nextIdx = (idx + 1) % tabs.length;
+    if (nextIdx === idx) return;
+    e.preventDefault();
+    tabs[nextIdx].focus();
+    activate(tabs[nextIdx]);
+  }
+
   function wireTabs() {
     var tabs = Array.from(document.querySelectorAll(".pm-tab[data-tab]"));
     tabs.forEach(function (btn) {
       btn.addEventListener("click", function () {
         setActiveTab(btn.getAttribute("data-tab"));
+      });
+      btn.addEventListener("keydown", function (e) {
+        handleTablistKeydown(e, tabs, function (tab) {
+          setActiveTab(tab.getAttribute("data-tab"));
+        });
       });
     });
   }
@@ -2099,6 +2340,7 @@
     tabs.forEach(function (b) {
       b.classList.remove("is-active");
       b.setAttribute("aria-selected", "false");
+      b.setAttribute("tabindex", "-1");
     });
 
     var target = tabs.find(function (b) {
@@ -2107,10 +2349,13 @@
     if (target) {
       target.classList.add("is-active");
       target.setAttribute("aria-selected", "true");
+      target.setAttribute("tabindex", "0");
     }
 
     document.querySelectorAll(".pm-panel").forEach(function (p) {
-      p.classList.remove("is-active");
+      var isActive = p.id === "pmTab-" + tabName;
+      p.classList.toggle("is-active", isActive);
+      p.setAttribute("aria-hidden", isActive ? "false" : "true");
     });
     var panel = document.getElementById("pmTab-" + tabName);
     if (panel) panel.classList.add("is-active");
@@ -2141,13 +2386,33 @@
       return;
 
     function setView(view) {
-      wrapTable.style.display = view === "table" ? "block" : "none";
-      wrapKanban.style.display = view === "kanban" ? "block" : "none";
-      wrapGantt.style.display = view === "gantt" ? "block" : "none";
+      var isTable = view === "table";
+      var isKanban = view === "kanban";
+      var isGantt = view === "gantt";
 
-      btnTable.classList.toggle("is-active", view === "table");
-      btnKanban.classList.toggle("is-active", view === "kanban");
-      btnGantt.classList.toggle("is-active", view === "gantt");
+      wrapTable.style.display = isTable ? "block" : "none";
+      wrapKanban.style.display = isKanban ? "block" : "none";
+      wrapGantt.style.display = isGantt ? "block" : "none";
+
+      wrapTable.hidden = !isTable;
+      wrapKanban.hidden = !isKanban;
+      wrapGantt.hidden = !isGantt;
+
+      wrapTable.setAttribute("aria-hidden", isTable ? "false" : "true");
+      wrapKanban.setAttribute("aria-hidden", isKanban ? "false" : "true");
+      wrapGantt.setAttribute("aria-hidden", isGantt ? "false" : "true");
+
+      btnTable.classList.toggle("is-active", isTable);
+      btnKanban.classList.toggle("is-active", isKanban);
+      btnGantt.classList.toggle("is-active", isGantt);
+
+      btnTable.setAttribute("aria-selected", isTable ? "true" : "false");
+      btnKanban.setAttribute("aria-selected", isKanban ? "true" : "false");
+      btnGantt.setAttribute("aria-selected", isGantt ? "true" : "false");
+
+      btnTable.setAttribute("tabindex", isTable ? "0" : "-1");
+      btnKanban.setAttribute("tabindex", isKanban ? "0" : "-1");
+      btnGantt.setAttribute("tabindex", isGantt ? "0" : "-1");
 
       localStorage.setItem(STORAGE_KEYS.tasksView, view);
       applySearchAndFilters(true);
@@ -2163,6 +2428,17 @@
       setView("gantt");
     });
 
+    var tabs = [btnTable, btnKanban, btnGantt];
+    tabs.forEach(function (btn) {
+      btn.addEventListener("keydown", function (e) {
+        handleTablistKeydown(e, tabs, function (tab) {
+          if (tab === btnTable) setView("table");
+          else if (tab === btnKanban) setView("kanban");
+          else setView("gantt");
+        });
+      });
+    });
+
     var initial = localStorage.getItem(STORAGE_KEYS.tasksView) || "table";
     setView(initial);
   }
@@ -2175,11 +2451,26 @@
     if (!btnMain || !btnOkrs || !wrapMain || !wrapOkrs) return;
 
     function setView(view) {
-      wrapMain.style.display = view === "main" ? "block" : "none";
-      wrapOkrs.style.display = view === "okrs" ? "block" : "none";
+      var isMain = view === "main";
+      var isOkrs = view === "okrs";
 
-      btnMain.classList.toggle("is-active", view === "main");
-      btnOkrs.classList.toggle("is-active", view === "okrs");
+      wrapMain.style.display = isMain ? "block" : "none";
+      wrapOkrs.style.display = isOkrs ? "block" : "none";
+
+      wrapMain.hidden = !isMain;
+      wrapOkrs.hidden = !isOkrs;
+
+      wrapMain.setAttribute("aria-hidden", isMain ? "false" : "true");
+      wrapOkrs.setAttribute("aria-hidden", isOkrs ? "false" : "true");
+
+      btnMain.classList.toggle("is-active", isMain);
+      btnOkrs.classList.toggle("is-active", isOkrs);
+
+      btnMain.setAttribute("aria-selected", isMain ? "true" : "false");
+      btnOkrs.setAttribute("aria-selected", isOkrs ? "true" : "false");
+
+      btnMain.setAttribute("tabindex", isMain ? "0" : "-1");
+      btnOkrs.setAttribute("tabindex", isOkrs ? "0" : "-1");
 
       localStorage.setItem(STORAGE_KEYS.analyticsView, view);
       applySearchAndFilters(true);
@@ -2190,6 +2481,15 @@
     });
     btnOkrs.addEventListener("click", function () {
       setView("okrs");
+    });
+
+    var tabs = [btnMain, btnOkrs];
+    tabs.forEach(function (btn) {
+      btn.addEventListener("keydown", function (e) {
+        handleTablistKeydown(e, tabs, function (tab) {
+          setView(tab === btnMain ? "main" : "okrs");
+        });
+      });
     });
 
     var initial = localStorage.getItem(STORAGE_KEYS.analyticsView) || "main";
@@ -2283,6 +2583,30 @@
         p.projectKey && p.projectName
           ? p.projectKey + " | " + p.projectName
           : p.projectKey || p.projectName || "";
+      sel.appendChild(opt);
+    });
+  }
+
+  function populateProjectFiscalYearDropdown(projects) {
+    var sel = document.getElementById("pmProjectFiscalYearSelect");
+    if (!sel) return;
+    var vals = Array.from(
+      new Set(
+        (projects || [])
+          .map(function (p) {
+            return String(p.projectFiscalYear || "").trim();
+          })
+          .filter(Boolean),
+      ),
+    ).sort(function (a, b) {
+      return a.localeCompare(b, undefined, { numeric: true });
+    });
+
+    sel.innerHTML = '<option value="">All FY</option>';
+    vals.forEach(function (v) {
+      var opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
       sel.appendChild(opt);
     });
   }
@@ -2400,6 +2724,7 @@
     var q = getSearchQuery();
     var qCompact = normalizeForSearch(q);
     var selectedProjectKey = getSelected("pmProjectKeySelect");
+    var selectedProjectFiscalYear = getSelected("pmProjectFiscalYearSelect");
     var selectedStatus = getSelected("pmStatusSelect");
     var selectedAssignee = getSelected("pmAssigneeSelect");
     var selectedPriority = getSelected("pmPrioritySelect");
@@ -2424,6 +2749,8 @@
         " " +
         p.projectStatus +
         " " +
+        p.projectFiscalYear +
+        " " +
         p.okrKey +
         " " +
         p.okrObjective +
@@ -2440,6 +2767,16 @@
       ).toLowerCase();
       return matchesQuery(hay, q, qCompact) || recordMatch(p.recordID);
     });
+
+    var projectsTableFiltered = projectsFiltered;
+    if (selectedProjectFiscalYear) {
+      projectsTableFiltered = projectsFiltered.filter(function (p) {
+        return (
+          String(p.projectFiscalYear || "").trim() ===
+          selectedProjectFiscalYear
+        );
+      });
+    }
 
     var tasksSearchFiltered = state.tasksAll.filter(function (t) {
       var hay = (
@@ -2535,7 +2872,7 @@
 
     if (renderOnlyCurrentTabFirst) {
       if (activeTab === "projects") {
-        renderProjectsTable(projectsFiltered);
+        renderProjectsTable(projectsTableFiltered);
       }
       if (activeTab === "tasks") {
         renderTasksTable(tasksFiltered);
@@ -2551,7 +2888,7 @@
         }
       }
     } else {
-      renderProjectsTable(projectsFiltered);
+      renderProjectsTable(projectsTableFiltered);
       renderTasksTable(tasksFiltered);
       if (activeTab === "tasks" && tasksView === "kanban")
         renderKanban(tasksFiltered);
@@ -2614,9 +2951,18 @@
       if (!targetId) return;
       var panel = document.getElementById(targetId);
       if (!panel) return;
-      var isOpen = panel.style.display === "block";
-      panel.style.display = isOpen ? "none" : "block";
+      var isOpen = !panel.hasAttribute("hidden");
+      panel.toggleAttribute("hidden", isOpen);
+      panel.setAttribute("aria-hidden", isOpen ? "true" : "false");
+      btn.setAttribute("aria-expanded", isOpen ? "false" : "true");
       btn.textContent = isOpen ? "Expand" : "Collapse";
+      var label = btn.getAttribute("data-label") || "Details";
+      var okr = btn.getAttribute("data-okr") || "";
+      var action = isOpen ? "Expand" : "Collapse";
+      btn.setAttribute(
+        "aria-label",
+        action + " " + label + (okr ? " for OKR " + okr : ""),
+      );
     });
   }
 
@@ -2664,7 +3010,24 @@
     }
 
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") closeModal();
+      if (!isModalOpen()) return;
+      if (e.key === "Escape") {
+        closeModal();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      var modalEl = document.getElementById("pmModal");
+      var focusable = getFocusableElements(modalEl);
+      if (!focusable.length) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     });
   }
 
@@ -2719,7 +3082,10 @@
       var clientHeight =
         window.innerHeight || document.documentElement.clientHeight;
       var needsScroll = scrollHeight - clientHeight > 80;
-      btn.classList.toggle("is-visible", needsScroll && scrollTop > 120);
+      var isVisible = needsScroll && scrollTop > 120;
+      btn.classList.toggle("is-visible", isVisible);
+      btn.setAttribute("aria-hidden", isVisible ? "false" : "true");
+      btn.setAttribute("tabindex", isVisible ? "0" : "-1");
     }
 
     btn.addEventListener("click", function () {
@@ -2737,6 +3103,18 @@
       if (note)
         note.textContent =
           "Charts unavailable because Chart.js did not load in this environment.";
+      [
+        "pmChartDueBucketsDesc",
+        "pmChartCompletedByQuarterDesc",
+        "pmChartCompletedByCategoryDesc",
+        "pmChartTasksByPriorityDesc",
+        "pmChartTasksByStatusDesc",
+        "pmChartTasksByProjectDesc",
+        "pmChartTicketsImportedDesc",
+        "pmChartProjectsByTypeDesc",
+      ].forEach(function (id) {
+        setChartSummary(id, "Charts unavailable.");
+      });
       return;
     }
 
@@ -2837,6 +3215,12 @@
 
     var selectedGeneralYear = Number(state.analyticsGeneralYear);
     var selectedGeneralQuarter = state.analyticsGeneralQuarter || "all";
+    var filterLabel =
+      "Year " +
+      selectedGeneralYear +
+      (selectedGeneralQuarter === "all"
+        ? ", all quarters"
+        : ", " + selectedGeneralQuarter);
     function inSelectedQuarter(d) {
       if (!d || isNaN(d.getTime())) return false;
       if (selectedGeneralQuarter === "all") return true;
@@ -2978,6 +3362,13 @@
       var q = Math.floor(date.getMonth() / 3);
       quarters[q] += 1;
     });
+    setChartSummary(
+      "pmChartCompletedByQuarterDesc",
+      "Completed tasks by quarter (" +
+        filterLabel +
+        "): " +
+        summarizeLabelData(["Q1", "Q2", "Q3", "Q4"], quarters),
+    );
 
     var statusLabels = getKanbanColumnsOrdered()
       .slice()
@@ -2991,6 +3382,13 @@
     var statusData = statusLabels.map(function (k) {
       return byStatus[k] || 0;
     });
+    setChartSummary(
+      "pmChartTasksByStatusDesc",
+      "Tasks by status (" +
+        filterLabel +
+        "): " +
+        summarizeLabelData(statusLabels, statusData),
+    );
 
     var ctxQuarter = document.getElementById("pmChartCompletedByQuarter");
     if (ctxQuarter) {
@@ -3023,6 +3421,15 @@
     var catData = catLabels.map(function (k) {
       return catCounts[k];
     });
+    setChartSummary(
+      "pmChartCompletedByCategoryDesc",
+      "Completed tasks by category (" +
+        filterLabel +
+        "): " +
+        (catLabels.length
+          ? summarizeLabelData(catLabels, catData)
+          : "No data."),
+    );
 
     var ctxCat = document.getElementById("pmChartCompletedByCategory");
     if (ctxCat) {
@@ -3055,6 +3462,13 @@
     var priorityData = priorityLabels.map(function (k) {
       return priorityCounts[k];
     });
+    setChartSummary(
+      "pmChartTasksByPriorityDesc",
+      "Tasks by priority (" +
+        filterLabel +
+        "): " +
+        summarizeLabelData(priorityLabels, priorityData),
+    );
 
     var ctxPriority = document.getElementById("pmChartTasksByPriority");
     if (ctxPriority) {
@@ -3091,6 +3505,15 @@
     var projData = projLabels.map(function (k) {
       return byProject[k] || 0;
     });
+    setChartSummary(
+      "pmChartTasksByProjectDesc",
+      "Tasks per project key (" +
+        filterLabel +
+        "): " +
+        (projLabels.length
+          ? summarizeLabelData(projLabels, projData)
+          : "No data."),
+    );
 
     var ctx2 = document.getElementById("pmChartTasksByProject");
     if (ctx2) {
@@ -3108,6 +3531,13 @@
     var bucketData = bucketLabels.map(function (k) {
       return buckets[k];
     });
+    setChartSummary(
+      "pmChartDueBucketsDesc",
+      "Due date buckets (" +
+        filterLabel +
+        "): " +
+        summarizeLabelData(bucketLabels, bucketData),
+    );
 
     var ctx3 = document.getElementById("pmChartDueBuckets");
     if (ctx3) {
@@ -3142,26 +3572,34 @@
       if (!inSelectedQuarter(date)) return;
       ticketCounts[date.getMonth()] += 1;
     });
+    var ticketLabels = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    setChartSummary(
+      "pmChartTicketsImportedDesc",
+      "Tickets imported by month (" +
+        filterLabel +
+        "): " +
+        summarizeLabelData(ticketLabels, ticketCounts),
+    );
 
     var ctxTickets = document.getElementById("pmChartTicketsImported");
     if (ctxTickets) {
       state.charts.ticketsImported = new Chart(ctxTickets, {
         type: "bar",
         data: {
-          labels: [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-          ],
+          labels: ticketLabels,
           datasets: [{ label: "Tickets imported", data: ticketCounts }],
         },
         options: { responsive: true, maintainAspectRatio: false },
@@ -3171,6 +3609,11 @@
     var projectTypeCounts = {};
     projectsForGeneralCharts.forEach(function (p) {
       var pt = String(p.projectType || "").trim() || "Unspecified";
+      var dashIdx = pt.indexOf("-");
+      if (dashIdx !== -1) {
+        pt = pt.slice(0, dashIdx).trim();
+      }
+      if (!pt) pt = "Unspecified";
       projectTypeCounts[pt] = (projectTypeCounts[pt] || 0) + 1;
     });
 
@@ -3180,6 +3623,15 @@
     var typeData = typeLabels.map(function (k) {
       return projectTypeCounts[k];
     });
+    setChartSummary(
+      "pmChartProjectsByTypeDesc",
+      "Projects by project type (" +
+        filterLabel +
+        "): " +
+        (typeLabels.length
+          ? summarizeLabelData(typeLabels, typeData)
+          : "No data."),
+    );
 
     var ctxProjType = document.getElementById("pmChartProjectsByType");
     if (ctxProjType) {
@@ -3199,7 +3651,7 @@
     }
 
     var health = {};
-    analyticsTasks.forEach(function (t) {
+    tasksForGeneralCharts.forEach(function (t) {
       var pk = String(t.projectKey || "").trim() || "(Blank)";
       if (!health[pk]) health[pk] = { total: 0, overdue: 0, completed: 0 };
       health[pk].total += 1;
@@ -3349,6 +3801,7 @@
           PROJECT_IND.description,
           PROJECT_IND.owner,
           PROJECT_IND.projectStatus,
+          PROJECT_IND.projectFiscalYear,
           PROJECT_IND.okrAssociation,
           PROJECT_IND.projectType,
           OKR_IND.okrKey,
@@ -3389,7 +3842,10 @@
       var taskRowsAll = coerceRows(tasksJson) || [];
 
       var projectRows = projectRowsAll.filter(function (r) {
-        return hasAnyS1Value(r, [2, 3, 4, 5, 6, 23, 24, 25, 26, 29, 32, 33]);
+        return hasAnyS1Value(
+          r,
+          [2, 3, 4, 5, 6, 23, 24, 25, 26, 29, 32, 33, 38],
+        );
       });
       var taskRows = taskRowsAll.filter(function (r) {
         return hasAnyS1Value(
@@ -3414,6 +3870,7 @@
       });
 
       populateProjectKeyDropdown(state.projectsAll);
+      populateProjectFiscalYearDropdown(state.projectsAll);
       populateOkrFiscalYearDropdown(state.projectsAll);
       populateAssigneeDropdown(state.tasksAll);
       populateCategoryDropdown(state.tasksAll);
@@ -3422,6 +3879,7 @@
       [
         "pmSearchInput",
         "pmProjectKeySelect",
+        "pmProjectFiscalYearSelect",
         "pmStatusSelect",
         "pmAssigneeSelect",
         "pmPrioritySelect",
