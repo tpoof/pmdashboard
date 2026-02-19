@@ -837,8 +837,10 @@
           '<td class="pm-wrapCol">' +
           safe(p.projectName) +
           "</td>" +
-          '<td class="pm-wrapColLong">' +
+          "<td>" +
+          '<div class="pm-wrapColLong">' +
           safe(p.description) +
+          "</div>" +
           "</td>" +
           "<td>" +
           safe(p.owner) +

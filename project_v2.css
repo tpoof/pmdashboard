@@ -513,6 +513,7 @@
 }
 
 .pm-wrapColLong {
+  display: block;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-all;
