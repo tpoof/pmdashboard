@@ -507,6 +507,7 @@
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
+  hyphens: auto;
   max-width: 320px;
   width: 320px;
 }
@@ -557,9 +558,18 @@
   overflow-x: auto;
 }
 
+#pmProjectsTable {
+  display: flex;
+  justify-content: center;
+}
+
 #pmTasksTable {
   display: flex;
   justify-content: center;
+}
+
+#pmProjectsTable .pm-table {
+  margin: 0 auto;
 }
 
 #pmTasksTable .pm-table {
