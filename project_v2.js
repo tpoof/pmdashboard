@@ -32,6 +32,7 @@
     owner: 5,
     projectStatus: 6,
     okrAssociation: 29,
+    projectType: 32,
   };
 
   // OKR indicator IDs (Project form)
@@ -707,6 +708,7 @@
       owner: extractFromS1(row, PROJECT_IND.owner),
       projectStatus: extractFromS1(row, PROJECT_IND.projectStatus),
       okrAssociation: extractFromS1(row, PROJECT_IND.okrAssociation),
+      projectType: extractFromS1(row, PROJECT_IND.projectType),
       okrKey: extractFromS1(row, OKR_IND.okrKey),
       okrObjective: extractFromS1(row, OKR_IND.objective),
       okrStartDate: extractFromS1(row, OKR_IND.startDate),
@@ -828,6 +830,9 @@
             safe(p.projectKey) +
             "</a>"
           : safe(p.projectKey);
+        var okrLink = p.okrAssociation
+          ? okrRecordLink(p.okrAssociation, p.okrAssociation)
+          : "";
 
         return (
           "<tr>" +
@@ -848,6 +853,12 @@
           "<td>" +
           safe(p.projectStatus) +
           "</td>" +
+          "<td>" +
+          (okrLink || safe(p.okrAssociation)) +
+          "</td>" +
+          "<td>" +
+          safe(p.projectType) +
+          "</td>" +
           "</tr>"
         );
       })
@@ -861,6 +872,8 @@
       '<th class="pm-sortable pm-wrapColLong" data-sort="description" data-type="string">Description</th>' +
       '<th class="pm-sortable" data-sort="owner" data-type="string">Owner</th>' +
       '<th class="pm-sortable" data-sort="projectStatus" data-type="string">Status</th>' +
+      '<th class="pm-sortable" data-sort="okrAssociation" data-type="string">OKR</th>' +
+      '<th class="pm-sortable" data-sort="projectType" data-type="string">Project Type</th>' +
       "</tr></thead>" +
       "<tbody>" +
       rows +
@@ -2399,7 +2412,9 @@
         " " +
         p.okrFiscalYear +
         " " +
-        p.okrAssociation
+        p.okrAssociation +
+        " " +
+        p.projectType
       ).toLowerCase();
       return matchesQuery(hay, q, qCompact) || recordMatch(p.recordID);
     });
@@ -3302,6 +3317,7 @@
           PROJECT_IND.owner,
           PROJECT_IND.projectStatus,
           PROJECT_IND.okrAssociation,
+          PROJECT_IND.projectType,
           OKR_IND.okrKey,
           OKR_IND.objective,
           OKR_IND.startDate,
@@ -3340,7 +3356,7 @@
       var taskRowsAll = coerceRows(tasksJson) || [];
 
       var projectRows = projectRowsAll.filter(function (r) {
-        return hasAnyS1Value(r, [2, 3, 4, 5, 6, 23, 24, 25, 26, 29, 33]);
+        return hasAnyS1Value(r, [2, 3, 4, 5, 6, 23, 24, 25, 26, 29, 32, 33]);
       });
       var taskRows = taskRowsAll.filter(function (r) {
         return hasAnyS1Value(
