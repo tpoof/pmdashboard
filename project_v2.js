@@ -538,17 +538,26 @@
     return String(num);
   }
 
-  function okrRecordLink(okrKey) {
+  function formatOkrDisplay(okrKey, okrObjective) {
+    var key = String(okrKey || "").trim();
+    var obj = String(okrObjective || "").trim();
+    if (!key) return obj;
+    if (!obj) return key;
+    return key + " - " + obj;
+  }
+
+  function okrRecordLink(okrKey, displayText) {
     var id = getOkrRecordId(okrKey);
     if (!id) return "";
     var href = "index.php?a=printview&recordID=" + encodeURIComponent(id);
+    var label = displayText || okrKey;
     return (
       '<a href="' +
       safe(href) +
       '" class="pm-recordLink" data-title="' +
-      safe("OKR " + id) +
+      safe(displayText || "OKR " + id) +
       '">' +
-      safe(okrKey) +
+      safe(label) +
       "</a>"
     );
   }
@@ -890,11 +899,12 @@
     var rows = okrRows
       .slice(0, 500)
       .map(function (p) {
-        var okrLink = p.okrKey ? okrRecordLink(p.okrKey) : "";
+        var okrDisplay = formatOkrDisplay(p.okrKey, p.okrObjective);
+        var okrLink = p.okrKey ? okrRecordLink(p.okrKey, okrDisplay) : "";
         return (
           "<tr>" +
           "<td>" +
-          (okrLink || safe(p.okrKey)) +
+          (okrLink || safe(okrDisplay || p.okrKey)) +
           "</td>" +
           "<td>" +
           safe(p.okrObjective) +
@@ -964,15 +974,19 @@
           tasks: [],
           completedTasks: [],
         };
-      } else if (display && !map[key].displayKey) {
-        map[key].displayKey = display;
+      } else if (display) {
+        if (!map[key].displayKey) {
+          map[key].displayKey = display;
+        } else if (map[key].displayKey === key && display !== key) {
+          map[key].displayKey = display;
+        }
       }
     }
 
     (okrRecords || []).forEach(function (r) {
       var key = normalizeOkrKey(r.okrKey);
       if (!key) return;
-      ensure(key, r.okrKey);
+      ensure(key, formatOkrDisplay(r.okrKey, r.okrObjective));
     });
 
     var hasOkrKeys = Object.keys(map).length > 0;
@@ -1039,6 +1053,10 @@
           var completedId = "pmOkrCompleted-" + keyId;
           var pctValue = Number(item.percent);
           if (!isFinite(pctValue)) pctValue = 0;
+          var pctText = String(pctValue);
+          var projectCountText = String(item.projects.length || 0);
+          var totalTasksText = String(item.totalTasks || 0);
+          var completedTasksText = String(item.completedTasksCount || 0);
           var pctClass = "pm-okrPct";
           if (!item.totalTasks) pctClass += " pm-okrPct--none";
           else if (pctValue >= 100) pctClass += " pm-okrPct--complete";
@@ -1151,14 +1169,14 @@
             "<div class='" +
             pctClass +
             "'>" +
-            safe(pctValue) +
+            pctText +
             "%</div>" +
             "</div>" +
             "<div class='pm-okrMetrics'>" +
             "<div class='pm-okrMetric'>" +
             "<div class='pm-okrMetricLabel'>Projects</div>" +
             "<div class='pm-okrMetricValue'>" +
-            safe(item.projects.length) +
+            projectCountText +
             "</div>" +
             "<button class='pm-okrToggle' data-target='" +
             projId +
@@ -1172,7 +1190,7 @@
             "<div class='pm-okrMetric'>" +
             "<div class='pm-okrMetricLabel'>Total Tasks</div>" +
             "<div class='pm-okrMetricValue'>" +
-            safe(item.totalTasks) +
+            totalTasksText +
             "</div>" +
             "<button class='pm-okrToggle' data-target='" +
             tasksId +
@@ -1186,7 +1204,7 @@
             "<div class='pm-okrMetric'>" +
             "<div class='pm-okrMetricLabel'>Completed Tasks</div>" +
             "<div class='pm-okrMetricValue'>" +
-            safe(item.completedTasksCount) +
+            completedTasksText +
             "</div>" +
             "<button class='pm-okrToggle' data-target='" +
             completedId +
