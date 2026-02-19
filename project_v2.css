@@ -488,7 +488,7 @@
 .pm-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: auto;
   background: #fff;
   min-width: 840px;
 }
@@ -570,6 +570,27 @@
 .pm-pill-low {
   background: #aacdec;
   color: #111;
+}
+
+.pm-taskIdBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  background: #5c5c5c;
+  color: #fff;
+  border-radius: 10px;
+  font-weight: 900;
+  font-size: 2em;
+  line-height: 1;
+  text-decoration: none;
+  text-align: center;
+}
+
+.pm-taskIdBadge:hover,
+.pm-taskIdBadge:focus {
+  background: #5c5c5c;
+  color: #fff;
 }
 
 .pm-recordLink {

@@ -1325,12 +1325,12 @@
         var taskLink = t.href
           ? '<a href="' +
             safe(t.href) +
-            '" class="pm-recordLink" data-title="' +
+            '" class="pm-recordLink pm-taskIdBadge" data-title="' +
             safe("Task " + t.recordID) +
             '">' +
             safe(t.recordID) +
             "</a>"
-          : safe(t.recordID);
+          : '<span class="pm-taskIdBadge">' + safe(t.recordID) + "</span>";
 
         var overdueClass = isOverdueTask(t, now) ? "pm-overdueRed" : "";
 
@@ -1689,12 +1689,12 @@
             var taskLink = taskHref
               ? '<a href="' +
                 safe(taskHref) +
-                '" class="pm-recordLink" data-title="' +
+                '" class="pm-recordLink pm-taskIdBadge" data-title="' +
                 safe("Task " + t.recordID) +
                 '">' +
                 safe(t.recordID) +
                 "</a>"
-              : safe(t.recordID);
+              : '<span class="pm-taskIdBadge">' + safe(t.recordID) + "</span>";
             var ticketLink = supportTicketLink(t.supportTicket);
 
             return (
