@@ -1,0 +1,253 @@
+<div id="pkWrap29" style="max-width: 820px;">
+  <div style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap;">
+    <div style="flex:1; min-width: 260px;">
+      <div style="font-weight:600; margin-bottom:0.25rem;">OKR</div>
+      <input id="pkSearch29" type="text" autocomplete="off" placeholder="Search OKR key or name"
+        style="width:100%; padding:0.45rem 0.55rem; border:1px solid #c9c9c9; border-radius:0.5rem;">
+    </div>
+
+    <div style="display:flex; gap:0.5rem; align-items:center;">
+      <button type="button" id="pkClear29" class="buttonNorm" style="white-space:nowrap;">Clear</button>
+    </div>
+  </div>
+
+  <div id="pkMsg29" style="margin-top:0.5rem; font-size:0.9rem;"></div>
+
+  <div style="margin-top:0.6rem;">
+    <div style="font-weight:600; margin-bottom:0.35rem;">Available OKRs</div>
+    <div id="pkList29"
+      style="border:1px solid #d9d9d9; border-radius:0.6rem; padding:0.6rem; min-height: 140px; max-height: 320px; overflow:auto; background:#fff;">
+    </div>
+  </div>
+
+  <div style="margin-top:0.75rem;">
+    <div style="font-weight:600; margin-bottom:0.35rem;">Selected OKR</div>
+    <div id="pkSelected29"
+      style="border:1px solid #d9d9d9; border-radius:0.6rem; padding:0.6rem; background:#fff;">
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Hide only the real OKR-bound field for indicator 29 (keeps custom UI visible) */
+  .response.blockIndicator_29 [name="29"] { display:none !important; }
+  .response.blockIndicator_29 textarea[name="29"],
+  .response.blockIndicator_29 input[name="29"],
+  .response.blockIndicator_29 select[name="29"] { display:none !important; }
+</style>
+
+<script>
+(function () {
+  // Task field being programmed (this is where we store the selected OKR key)
+  const TARGET_IND = 29;
+
+  // OKR form fields
+  const OKR_KEY_IND = 23;
+  const OKR_NAME_IND = 24;
+
+  // Endpoints
+  const BASE_QUERY_ENDPOINT = "https://leaf.va.gov/platform/projects/api/form/query/";
+
+  const wrap = document.getElementById("pkWrap29");
+  const searchEl = document.getElementById("pkSearch29");
+  const listEl = document.getElementById("pkList29");
+  const selectedEl = document.getElementById("pkSelected29");
+  const msgEl = document.getElementById("pkMsg29");
+  const clearBtn = document.getElementById("pkClear29");
+  if (!wrap || !searchEl || !listEl || !selectedEl || !msgEl || !clearBtn) return;
+
+  function setMsg(text, kind) {
+    msgEl.textContent = text || "";
+    msgEl.style.color = kind === "error" ? "#b50909" : (kind === "ok" ? "#008423" : "");
+  }
+
+  function safe(s) {
+    return String(s || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  // Bind to the real OKR field for this indicator (29)
+  function findOkrBoundField() {
+    const within = wrap.closest(".response") || wrap.parentElement;
+    let el = within ? within.querySelector('[name="' + TARGET_IND + '"]') : null;
+    if (!el) el = document.querySelector('[name="' + TARGET_IND + '"]');
+    return el;
+  }
+  const okrFieldEl = findOkrBoundField();
+
+  function writeValue(val) {
+    if (!okrFieldEl) return;
+    okrFieldEl.value = String(val || "");
+    okrFieldEl.dispatchEvent(new Event("input", { bubbles: true }));
+    okrFieldEl.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function readValue() {
+    return okrFieldEl ? String(okrFieldEl.value || "").trim() : "";
+  }
+
+  function coerceRows(json) {
+    if (Array.isArray(json)) return json;
+    if (json && typeof json === "object") {
+      if (Array.isArray(json.data)) return json.data;
+      if (Array.isArray(json.records)) return json.records;
+      if (Array.isArray(json.results)) return json.results;
+
+      const keys = Object.keys(json);
+      const keyed = keys.length && keys.every(k => /^\d+$/.test(k));
+      if (keyed) {
+        return keys.map(k => {
+          const row = json[k] || {};
+          if (!row.recordID && !row.recordId && !row.id) row.recordID = k;
+          return row;
+        });
+      }
+    }
+    return [];
+  }
+
+  function extractFromS1(row, indicatorId) {
+    if (!row || !row.s1) return "";
+    const key = "id" + String(indicatorId);
+    const v = row.s1[key];
+    if (v == null) return "";
+    return String(v).trim();
+  }
+
+  function hasAnyS1Value(row, indicatorIds) {
+    if (!row || !row.s1) return false;
+    for (let i = 0; i < indicatorIds.length; i++) {
+      const key = "id" + String(indicatorIds[i]);
+      const v = row.s1[key];
+      if (v !== null && v !== undefined && String(v).trim() !== "") return true;
+    }
+    return false;
+  }
+
+  function buildOkrsQueryUrl() {
+    const q = {
+      terms: [{ id: "deleted", operator: "=", match: 0, gate: "AND" }],
+      joins: [],
+      sort: {},
+      getData: [String(OKR_KEY_IND), String(OKR_NAME_IND)]
+    };
+    return BASE_QUERY_ENDPOINT + "?q=" + encodeURIComponent(JSON.stringify(q)) + "&x-filterData=recordID,";
+  }
+
+  let okrs = []; // { key, name }
+
+  function matchesSearch(okr, q) {
+    if (!q) return true;
+    const hay = (String(okr.key) + " " + String(okr.name)).toLowerCase();
+    return hay.includes(q);
+  }
+
+  function renderSelected() {
+    const val = readValue();
+    if (!val) {
+      selectedEl.innerHTML = '<div style="opacity:0.75;">No OKR selected</div>';
+      return;
+    }
+    const found = okrs.find(okr => String(okr.key) === String(val));
+    const label = found
+      ? (found.key + (found.name ? (" | " + found.name) : ""))
+      : val;
+
+    selectedEl.innerHTML = `
+      <div style="display:flex; justify-content:space-between; gap:0.75rem; align-items:flex-start;">
+        <div style="min-width:0;">
+          <div style="font-weight:700;">${safe(label)}</div>
+          <div style="opacity:0.85; font-size:0.9rem;">Stored value: ${safe(val)}</div>
+        </div>
+        <button type="button" class="buttonNorm" id="pkClearSelected29" style="white-space:nowrap;">Remove</button>
+      </div>
+    `;
+
+    const btn = document.getElementById("pkClearSelected29");
+    if (btn) btn.addEventListener("click", () => {
+      writeValue("");
+      renderAll();
+    });
+  }
+
+  function renderList() {
+    const q = String(searchEl.value || "").trim().toLowerCase();
+    const visible = okrs
+      .filter(okr => matchesSearch(okr, q))
+      .sort((a, b) => String(a.key).localeCompare(String(b.key), undefined, { numeric: true, sensitivity: "base" }));
+
+    if (visible.length === 0) {
+      listEl.innerHTML = '<div style="opacity:0.75;">No OKRs match your search</div>';
+      return;
+    }
+
+    const current = readValue();
+
+    listEl.innerHTML = visible.map(okr => {
+      const label = okr.key + (okr.name ? (" | " + okr.name) : "");
+      const checked = String(current) === String(okr.key);
+      return `
+        <label style="display:flex; gap:0.5rem; align-items:flex-start; padding:0.3rem 0; border-bottom:1px solid #f0f0f0; cursor:pointer;">
+          <input type="radio" name="pkRadio29" class="pkRadio29" data-key="${safe(okr.key)}" ${checked ? "checked" : ""} style="margin-top:0.2rem;">
+          <div style="min-width:0;">
+            <div style="font-weight:600;">${safe(okr.key)}</div>
+            <div style="opacity:0.9; word-break:break-word;">${safe(okr.name || "")}</div>
+          </div>
+        </label>
+      `;
+    }).join("");
+
+    listEl.querySelectorAll(".pkRadio29").forEach(r => {
+      r.addEventListener("change", () => {
+        const key = String(r.getAttribute("data-key") || "");
+        writeValue(key);
+        renderSelected();
+      });
+    });
+  }
+
+  function renderAll() {
+    renderList();
+    renderSelected();
+  }
+
+  async function loadOkrs() {
+    if (!okrFieldEl) {
+      setMsg("Could not find the real OKR field for this indicator. The custom selector must bind to the platform input to persist.", "error");
+      return;
+    }
+
+    setMsg("Loading OKRs...", "");
+    const url = buildOkrsQueryUrl();
+    const r = await fetch(url, { credentials: "include" });
+    if (!r.ok) throw new Error("OKR list fetch failed. HTTP " + r.status);
+    const json = await r.json();
+    const rows = coerceRows(json);
+
+    okrs = rows
+      .filter(row => hasAnyS1Value(row, [OKR_KEY_IND, OKR_NAME_IND]))
+      .map(row => ({
+        key: extractFromS1(row, OKR_KEY_IND),
+        name: extractFromS1(row, OKR_NAME_IND)
+      }))
+      .filter(okr => okr.key);
+
+    setMsg("Loaded " + okrs.length + " OKRs.", "ok");
+    renderAll();
+  }
+
+  clearBtn.addEventListener("click", () => {
+    writeValue("");
+    searchEl.value = "";
+    renderAll();
+  });
+
+  searchEl.addEventListener("input", renderList);
+
+  loadOkrs().catch(err => setMsg(String(err), "error"));
+})();
+</script>
