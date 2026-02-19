@@ -39,6 +39,18 @@
   font-weight: 800;
 }
 
+#pmAddOkrBtn {
+  background: #e5e4fa;
+  border-color: #a5a8eb;
+  color: #111;
+}
+
+#pmAddOkrBtn:hover {
+  background: #a5a8eb;
+  border-color: #a5a8eb;
+  color: #111;
+}
+
 .pm-primaryBtn {
   background: #ddf9c7;
   border: 1px solid #7fb22b;

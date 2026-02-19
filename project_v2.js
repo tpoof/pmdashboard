@@ -525,6 +525,30 @@
     );
   }
 
+  function getOkrRecordId(okrKey) {
+    var raw = String(okrKey || "");
+    var match = raw.match(/\d+/);
+    if (!match) return "";
+    var num = Number(match[0]);
+    if (!isFinite(num)) return "";
+    return String(num);
+  }
+
+  function okrRecordLink(okrKey) {
+    var id = getOkrRecordId(okrKey);
+    if (!id) return "";
+    var href = "index.php?a=printview&recordID=" + encodeURIComponent(id);
+    return (
+      '<a href="' +
+      safe(href) +
+      '" class="pm-recordLink" data-title="' +
+      safe("OKR " + id) +
+      '">' +
+      safe(okrKey) +
+      "</a>"
+    );
+  }
+
   function parseSupportTicket(value) {
     var text = String(value || "").trim();
     if (!text) return { id: "", type: "" };
@@ -841,16 +865,20 @@
     if (state.sort.okrs.key) {
       var so = state.sort.okrs;
       okrRows = okrRows.slice().sort(function (a, b) {
-        return compareValues(a[so.key], b[so.key], so.dir, so.type);
+        var av = a[so.key];
+        var bv = b[so.key];
+        if (so.key === "okrKey" && so.type === "number") {
+          av = getOkrRecordId(av);
+          bv = getOkrRecordId(bv);
+        }
+        return compareValues(av, bv, so.dir, so.type);
       });
     }
 
     var rows = okrRows
       .slice(0, 500)
       .map(function (p) {
-        var okrLink = p.okrKey
-          ? recordLink(p.okrKey, "OKR " + p.okrKey)
-          : "";
+        var okrLink = p.okrKey ? okrRecordLink(p.okrKey) : "";
         return (
           "<tr>" +
           "<td>" +
@@ -1723,11 +1751,13 @@
     var btnOkrs = document.getElementById("pmProjectViewOkrsBtn");
     var wrapTable = document.getElementById("pmProjectsTableWrap");
     var wrapOkrs = document.getElementById("pmOkrsTableWrap");
+    var filterRow = document.getElementById("pmOkrsFilterRow");
     if (!btnTable || !btnOkrs || !wrapTable || !wrapOkrs) return;
 
     function setView(view) {
       wrapTable.style.display = view === "table" ? "block" : "none";
       wrapOkrs.style.display = view === "okrs" ? "block" : "none";
+      if (filterRow) filterRow.style.display = view === "okrs" ? "flex" : "none";
 
       btnTable.classList.toggle("is-active", view === "table");
       btnOkrs.classList.toggle("is-active", view === "okrs");
@@ -1838,6 +1868,30 @@
     });
   }
 
+  function populateOkrFiscalYearDropdown(projects) {
+    var sel = document.getElementById("pmOkrFiscalYearSelect");
+    if (!sel) return;
+    var vals = Array.from(
+      new Set(
+        (projects || [])
+          .map(function (p) {
+            return String(p.okrFiscalYear || "").trim();
+          })
+          .filter(Boolean),
+      ),
+    ).sort(function (a, b) {
+      return a.localeCompare(b, undefined, { numeric: true });
+    });
+
+    sel.innerHTML = '<option value="">All Fiscal Years</option>';
+    vals.forEach(function (v) {
+      var opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      sel.appendChild(opt);
+    });
+  }
+
   function populateAssigneeDropdown(tasks) {
     var sel = document.getElementById("pmAssigneeSelect");
     if (!sel) return;
@@ -1931,6 +1985,7 @@
     var selectedAssignee = getSelected("pmAssigneeSelect");
     var selectedPriority = getSelected("pmPrioritySelect");
     var selectedCategory = getSelected("pmCategorySelect");
+    var selectedOkrFiscalYear = getSelected("pmOkrFiscalYearSelect");
 
     var recordMatch = function (recID) {
       return matchesQuery(recID, q, qCompact);
@@ -1992,6 +2047,15 @@
     var projectsView =
       localStorage.getItem(STORAGE_KEYS.projectsView) || "table";
 
+    var okrFiltered = projectsFiltered;
+    if (projectsView === "okrs" && selectedOkrFiscalYear) {
+      okrFiltered = projectsFiltered.filter(function (p) {
+        return (
+          String(p.okrFiscalYear || "").trim() === selectedOkrFiscalYear
+        );
+      });
+    }
+
     var tasksFiltered = tasksSearchFiltered;
     if (activeTab === "tasks") {
       tasksFiltered = tasksSearchFiltered.filter(function (t) {
@@ -2046,7 +2110,7 @@
 
     if (renderOnlyCurrentTabFirst) {
       if (activeTab === "projects") {
-        if (projectsView === "okrs") renderOkrsTable(projectsFiltered);
+        if (projectsView === "okrs") renderOkrsTable(okrFiltered);
         else renderProjectsTable(projectsFiltered);
       }
       if (activeTab === "tasks") {
@@ -2055,7 +2119,7 @@
         if (tasksView === "gantt") renderGantt(tasksNoArchive);
       }
     } else {
-      if (projectsView === "okrs") renderOkrsTable(projectsFiltered);
+      if (projectsView === "okrs") renderOkrsTable(okrFiltered);
       else renderProjectsTable(projectsFiltered);
       renderTasksTable(tasksFiltered);
       if (activeTab === "tasks" && tasksView === "kanban")
@@ -2086,6 +2150,20 @@
     var b2 = document.getElementById("pmClearFiltersBtn_tasks");
     if (b1) b1.addEventListener("click", clearAll);
     if (b2) b2.addEventListener("click", clearAll);
+  }
+
+  function wireOkrFilters() {
+    var sel = document.getElementById("pmOkrFiscalYearSelect");
+    var clearBtn = document.getElementById("pmClearFiltersBtn_okrs");
+    if (sel)
+      sel.addEventListener("change", function () {
+        applySearchAndFilters(true);
+      });
+    if (clearBtn)
+      clearBtn.addEventListener("click", function () {
+        if (sel) sel.value = "";
+        applySearchAndFilters(true);
+      });
   }
 
   function wireRecordModalLinks() {
@@ -2788,6 +2866,7 @@
       wireProjectViewToggle();
       wireSortingDelegation();
       wireClearFilters();
+      wireOkrFilters();
       wireRecordModalLinks();
       wireSupportMessageListener();
       wireModalControls();
@@ -2866,6 +2945,7 @@
       });
 
       populateProjectKeyDropdown(state.projectsAll);
+      populateOkrFiscalYearDropdown(state.projectsAll);
       populateAssigneeDropdown(state.tasksAll);
       populateCategoryDropdown(state.tasksAll);
       populateStatusDropdown(getKanbanColumnsOrdered());

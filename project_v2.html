@@ -33,11 +33,7 @@
     <!--{if $empMembership['groupID'][388]}-->
     <div class="pm-actionsRow">
       <span class="pm-actionsLabel">Leadership Actions:</span>
-      <button
-        type="button"
-        class="pm-primaryBtn pm-inboxBtn"
-        id="pmAddOkrBtn"
-      >
+      <button type="button" class="pm-primaryBtn" id="pmAddOkrBtn">
         + OKR
       </button>
     </div>
@@ -88,10 +84,27 @@
       <div class="pm-viewBtns">
         <span class="pm-viewLabel">View:</span>
         <button type="button" id="pmProjectViewTableBtn" class="pm-tab">
-          Table
+          Project Table
         </button>
         <button type="button" id="pmProjectViewOkrsBtn" class="pm-tab">
           OKRs
+        </button>
+      </div>
+    </div>
+
+    <div id="pmOkrsFilterRow" class="pm-filterRow" style="display: none">
+      <div class="pm-field pm-filterHeader">
+        <div class="pm-filterHeaderLabel">Filter by</div>
+      </div>
+      <div class="pm-field">
+        <label class="pm-label" for="pmOkrFiscalYearSelect">Fiscal Year</label>
+        <select id="pmOkrFiscalYearSelect" class="pm-select">
+          <option value="">All Fiscal Years</option>
+        </select>
+      </div>
+      <div class="pm-field pm-fieldInlineBtn">
+        <button type="button" class="pm-ghostBtn" id="pmClearFiltersBtn_okrs">
+          Clear all filters
         </button>
       </div>
     </div>
@@ -159,8 +172,10 @@
 
     <div class="pm-viewRow">
       <div class="pm-viewBtns">
-        <span class="pm-viewLabel">View</span>
-        <button type="button" id="pmViewTableBtn" class="pm-tab">Table</button>
+        <span class="pm-viewLabel">View:</span>
+        <button type="button" id="pmViewTableBtn" class="pm-tab">
+          Task Table
+        </button>
         <button type="button" id="pmViewKanbanBtn" class="pm-tab">
           Kanban
         </button>
