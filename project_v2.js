@@ -834,10 +834,10 @@
           "<td>" +
           pkLink +
           "</td>" +
-          "<td>" +
+          '<td class="pm-wrapCol">' +
           safe(p.projectName) +
           "</td>" +
-          "<td>" +
+          '<td class="pm-wrapCol">' +
           safe(p.description) +
           "</td>" +
           "<td>" +
@@ -855,8 +855,8 @@
       '<table class="pm-table">' +
       "<thead><tr>" +
       '<th class="pm-sortable" data-sort="projectKey" data-type="string">Project Key</th>' +
-      '<th class="pm-sortable" data-sort="projectName" data-type="string">Project Name</th>' +
-      '<th class="pm-sortable" data-sort="description" data-type="string">Description</th>' +
+      '<th class="pm-sortable pm-wrapCol" data-sort="projectName" data-type="string">Project Name</th>' +
+      '<th class="pm-sortable pm-wrapCol" data-sort="description" data-type="string">Description</th>' +
       '<th class="pm-sortable" data-sort="owner" data-type="string">Owner</th>' +
       '<th class="pm-sortable" data-sort="projectStatus" data-type="string">Status</th>' +
       "</tr></thead>" +
@@ -1342,7 +1342,7 @@
           "<td>" +
           taskLink +
           "</td>" +
-          "<td>" +
+          '<td class="pm-wrapCol">' +
           safe(t.title) +
           "</td>" +
           "<td>" +
@@ -1381,7 +1381,7 @@
       "<thead><tr>" +
       '<th class="pm-sortable" data-sort="projectKey" data-type="string">Project Key</th>' +
       '<th class="pm-sortable" data-sort="recordID" data-type="number">Task ID</th>' +
-      '<th class="pm-sortable" data-sort="title" data-type="string">Title</th>' +
+      '<th class="pm-sortable pm-wrapCol" data-sort="title" data-type="string">Title</th>' +
       '<th class="pm-sortable" data-sort="status" data-type="string">Status</th>' +
       '<th class="pm-sortable" data-sort="dependencies" data-type="string">Dependencies</th>' +
       '<th class="pm-sortable" data-sort="priority" data-type="string">Priority</th>' +

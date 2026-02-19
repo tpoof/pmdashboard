@@ -502,6 +502,12 @@
   white-space: nowrap;
 }
 
+.pm-wrapCol {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .pm-table thead th {
   background: #d9e8f6;
   user-select: none;
@@ -546,6 +552,15 @@
 #pmProjectHealthTable,
 #pmOverdueTasksTable {
   overflow-x: auto;
+}
+
+#pmTasksTable {
+  display: flex;
+  justify-content: center;
+}
+
+#pmTasksTable .pm-table {
+  margin: 0 auto;
 }
 
 .pm-pill {
