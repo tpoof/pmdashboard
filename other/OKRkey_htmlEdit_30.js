@@ -85,18 +85,21 @@
       .replaceAll("'", "&#039;");
   }
 
-  // Bind to the real OKR field for this indicator (30)
-  const okrFieldEl = findField(TARGET_IND);
+  // Lazily find the real OKR field each time (not cached at init — field may
+  // not exist in the DOM yet when the script first runs)
+  function getOkrFieldEl() { return findField(TARGET_IND); }
 
   function writeValue(val) {
-    if (!okrFieldEl) return;
-    okrFieldEl.value = String(val || "");
-    okrFieldEl.dispatchEvent(new Event("input", { bubbles: true }));
-    okrFieldEl.dispatchEvent(new Event("change", { bubbles: true }));
+    const el = getOkrFieldEl();
+    if (!el) return;
+    el.value = String(val || "");
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
   function readValue() {
-    return okrFieldEl ? String(okrFieldEl.value || "").trim() : "";
+    const el = getOkrFieldEl();
+    return el ? String(el.value || "").trim() : "";
   }
 
   function writeFieldByInd(indicatorId, val) {
@@ -292,7 +295,7 @@
   }
 
   async function loadOkrs() {
-    if (!okrFieldEl) {
+    if (!getOkrFieldEl()) {
       setMsg("Could not find the real OKR field for this indicator. The custom selector must bind to the platform input to persist.", "error");
       return;
     }
