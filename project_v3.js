@@ -3608,7 +3608,7 @@
       }
 
       var diff = Math.round((due.getTime() - now.getTime()) / 86400000);
-      if (diff < 0) buckets["Overdue"] += 1;
+      if (diff < 0 && !isCompletedStatus(t.status)) buckets["Overdue"] += 1;
       else if (diff <= 7) buckets["Due in 7 days"] += 1;
       else if (diff <= 30) buckets["Due in 30 days"] += 1;
       else buckets["Due later"] += 1;
