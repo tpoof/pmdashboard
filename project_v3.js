@@ -1054,16 +1054,13 @@
           safe(p.owner) +
           "</td>" +
           "<td>" +
-          safe(p.projectStatus) +
-          "</td>" +
-          "<td>" +
           safe(p.projectFiscalYear) +
           "</td>" +
           "<td>" +
           okrCombined +
           "</td>" +
           "<td>" +
-          safe(formatProjectTypeLabel(p.projectType)) +
+          safe(p.projectStatus) +
           "</td>" +
           "</tr>"
         );
@@ -1077,10 +1074,9 @@
       '<th scope="col" class="pm-sortable pm-colName" data-sort="projectName" data-type="string"><button type="button" class="pm-sortBtn">Project Name</button></th>' +
       '<th scope="col" class="pm-sortable pm-colDesc" data-sort="description" data-type="string"><button type="button" class="pm-sortBtn">Description</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="owner" data-type="string"><button type="button" class="pm-sortBtn">Owner</button></th>' +
-      '<th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="projectFiscalYear" data-type="string"><button type="button" class="pm-sortBtn">FY</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="okrAssociation" data-type="string"><button type="button" class="pm-sortBtn">OKR | Key Result</button></th>' +
-      '<th scope="col" class="pm-sortable" data-sort="projectType" data-type="string"><button type="button" class="pm-sortBtn">Project Type</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
       "</tr></thead>" +
       "<tbody>" +
       rows +
@@ -1346,12 +1342,11 @@
                   var krId =
                     "pmKr-" + makeSafeId(okrKey + "-" + kr.matchKey);
                   var projId = krId + "-projects";
-                  var taskId = krId + "-tasks";
                   var extraClass = idx > 2 ? " is-extra" : "";
                   var projList = kr.projects.length
-                    ? "<ul class='pm-okrList'>" +
+                    ? "<ul class='pm-krProjectList'>" +
                       kr.projects
-                        .map(function (p) {
+                        .map(function (p, projIdx) {
                           var pk = String(p.projectKey || "").trim();
                           var name = String(p.projectName || "").trim();
                           var label = name
@@ -1372,54 +1367,109 @@
                               safe(label) +
                               "</a>"
                             : safe(label);
-                          return "<li class='pm-okrItem'>" + link + "</li>";
-                        })
-                        .join("") +
-                      "</ul>"
-                    : "<div class='pm-okrItem'>No associated projects.</div>";
+                          var projectTasks = kr.tasks.filter(function (t) {
+                            return (
+                              String(t.projectKey || "").trim() === pk
+                            );
+                          });
+                          var completedProjectTasks = projectTasks.filter(
+                            function (t) {
+                              return isCompletedStatus(t.status);
+                            },
+                          ).length;
+                          var taskSummary =
+                            "Tasks: " +
+                            projectTasks.length +
+                            " total, " +
+                            completedProjectTasks +
+                            " completed";
+                          var projectTaskId =
+                            krId + "-project-" + projIdx + "-tasks";
+                          var taskList = projectTasks.length
+                            ? "<ul class='pm-krTaskList'>" +
+                              projectTasks
+                                .map(function (t) {
+                                  var title = String(t.title || "").trim();
+                                  var taskLabel =
+                                    title ||
+                                    (t.recordID
+                                      ? "Task " + t.recordID
+                                      : "Task");
+                                  var projectLabel = getProjectLabelFromKey(
+                                    t.projectKey,
+                                  );
+                                  var isComplete = isCompletedStatus(t.status);
+                                  var statusLabel = isComplete
+                                    ? '<span class="pm-completeGreen">Completed</span>'
+                                    : '<span class="pm-okrStatusOpen">In progress</span>';
+                                  var taskHref = t.recordID
+                                    ? "index.php?a=printview&recordID=" +
+                                      encodeURIComponent(t.recordID)
+                                    : "";
+                                  var taskLink = taskHref
+                                    ? '<a href="' +
+                                      safe(taskHref) +
+                                      '" class="pm-recordLink" data-title="' +
+                                      safe("Task " + t.recordID) +
+                                      '">' +
+                                      safe(taskLabel) +
+                                      "</a>"
+                                    : safe(taskLabel);
+                                  return (
+                                    "<li class='pm-okrItem'>" +
+                                    taskLink +
+                                    " — " +
+                                    safe(projectLabel) +
+                                    " (" +
+                                    statusLabel +
+                                    ")" +
+                                    "</li>"
+                                  );
+                                })
+                                .join("") +
+                              "</ul>"
+                            : "<div class='pm-okrItem'>No tasks for this project.</div>";
 
-                  var taskList = kr.tasks.length
-                    ? "<ul class='pm-okrList'>" +
-                      kr.tasks
-                        .map(function (t) {
-                          var title = String(t.title || "").trim();
-                          var taskLabel =
-                            title ||
-                            (t.recordID ? "Task " + t.recordID : "Task");
-                          var projectLabel = getProjectLabelFromKey(
-                            t.projectKey,
-                          );
-                          var isComplete = isCompletedStatus(t.status);
-                          var statusLabel = isComplete
-                            ? '<span class="pm-completeGreen">Completed</span>'
-                            : '<span class="pm-okrStatusOpen">In progress</span>';
-                          var taskHref = t.recordID
-                            ? "index.php?a=printview&recordID=" +
-                              encodeURIComponent(t.recordID)
-                            : "";
-                          var taskLink = taskHref
-                            ? '<a href="' +
-                              safe(taskHref) +
-                              '" class="pm-recordLink" data-title="' +
-                              safe("Task " + t.recordID) +
-                              '">' +
-                              safe(taskLabel) +
-                              "</a>"
-                            : safe(taskLabel);
                           return (
-                            "<li class='pm-okrItem'>" +
-                            taskLink +
-                            " — " +
-                            safe(projectLabel) +
-                            " (" +
-                            statusLabel +
-                            ")" +
+                            "<li class='pm-krProject'>" +
+                            "<div class='pm-krProjectRow'>" +
+                            "<div class='pm-krProjectName'>" +
+                            link +
+                            "</div>" +
+                            "<div class='pm-krProjectMeta'>" +
+                            safe(taskSummary) +
+                            "</div>" +
+                            "<button type='button' class='pm-okrToggle pm-krProjectToggle' data-target='" +
+                            projectTaskId +
+                            "' data-label='Tasks' data-okr='" +
+                            okrLabel +
+                            "' data-count='" +
+                            projectTasks.length +
+                            "' aria-expanded='false' aria-controls='" +
+                            projectTaskId +
+                            "' aria-label='Expand Tasks for OKR " +
+                            okrLabel +
+                            " key result " +
+                            safeAttr(kr.name) +
+                            "'>Tasks (" +
+                            projectTasks.length +
+                            ")</button>" +
+                            "</div>" +
+                            "<div class='pm-okrDetails' id='" +
+                            projectTaskId +
+                            "' role='region' aria-label='Tasks for OKR " +
+                            okrLabel +
+                            " key result " +
+                            safeAttr(kr.name) +
+                            "' aria-hidden='true' hidden>" +
+                            taskList +
+                            "</div>" +
                             "</li>"
                           );
                         })
                         .join("") +
                       "</ul>"
-                    : "<div class='pm-okrItem'>No associated tasks.</div>";
+                    : "<div class='pm-okrItem'>No associated projects.</div>";
 
                   return (
                     "<li class='pm-krItem" +
@@ -1456,21 +1506,6 @@
                     "'>Projects (" +
                     kr.projects.length +
                     ")</button>" +
-                    "<button type='button' class='pm-okrToggle' data-target='" +
-                    taskId +
-                    "' data-label='Tasks' data-okr='" +
-                    okrLabel +
-                    "' data-count='" +
-                    kr.tasks.length +
-                    "' aria-expanded='false' aria-controls='" +
-                    taskId +
-                    "' aria-label='Expand Tasks for OKR " +
-                    okrLabel +
-                    " key result " +
-                    safeAttr(kr.name) +
-                    "'>Tasks (" +
-                    kr.tasks.length +
-                    ")</button>" +
                     "</div>" +
                     "<div class='pm-okrDetails' id='" +
                     projId +
@@ -1480,15 +1515,6 @@
                     safeAttr(kr.name) +
                     "' aria-hidden='true' hidden>" +
                     projList +
-                    "</div>" +
-                    "<div class='pm-okrDetails' id='" +
-                    taskId +
-                    "' role='region' aria-label='Tasks for OKR " +
-                    okrLabel +
-                    " key result " +
-                    safeAttr(kr.name) +
-                    "' aria-hidden='true' hidden>" +
-                    taskList +
                     "</div>" +
                     "</li>"
                   );

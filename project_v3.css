@@ -594,6 +594,52 @@ body {
   display: block;
 }
 
+.pm-krProjectList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pm-krProject {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  background: var(--surface);
+}
+
+.pm-krProjectRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  justify-content: space-between;
+}
+
+.pm-krProjectName {
+  font-weight: 700;
+}
+
+.pm-krProjectMeta {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.pm-krProjectToggle {
+  margin-left: auto;
+}
+
+.pm-krTaskList {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .pm-krRow {
   display: flex;
   justify-content: space-between;
@@ -1399,24 +1445,19 @@ body.debug-layout .pm-tableWrap .pm-table {
 
 #pmProjectsTableWrap .pm-table th:nth-child(5),
 #pmProjectsTableWrap .pm-table td:nth-child(5) {
-  min-width: 120px;
+  min-width: 90px;
 }
 
 #pmProjectsTableWrap .pm-table th:nth-child(6),
 #pmProjectsTableWrap .pm-table td:nth-child(6) {
-  min-width: 90px;
-}
-
-#pmProjectsTableWrap .pm-table th:nth-child(7),
-#pmProjectsTableWrap .pm-table td:nth-child(7) {
   min-width: 200px;
   white-space: normal;
   overflow-wrap: anywhere;
 }
 
-#pmProjectsTableWrap .pm-table th:nth-child(8),
-#pmProjectsTableWrap .pm-table td:nth-child(8) {
-  min-width: 160px;
+#pmProjectsTableWrap .pm-table th:nth-child(7),
+#pmProjectsTableWrap .pm-table td:nth-child(7) {
+  min-width: 120px;
 }
 
 #pmProjectsTableWrap th[data-sort="okrAssociation"] .pm-sortBtn {
