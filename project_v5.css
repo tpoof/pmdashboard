@@ -775,8 +775,8 @@ body {
 
 .pm-wrapCol {
   white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
   hyphens: auto;
   max-width: 320px;
   width: 320px;
@@ -785,8 +785,8 @@ body {
 .pm-wrapColLong {
   display: block;
   white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-all;
+  overflow-wrap: break-word;
+  word-break: normal;
   hyphens: auto;
   max-width: 420px;
   width: 420px;
