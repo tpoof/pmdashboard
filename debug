@@ -7,3 +7,15 @@ console.log("39 elements:", document.querySelectorAll('[name="39"]').length);
 console.log("8:", document.querySelector('[name="8"]'));
 console.log("30:", document.querySelector('[name="30"]'));
 console.log("39:", document.querySelector('[name="39"]'));
+
+//
+
+const el8 = document.querySelector('[name="8"]');
+console.log("Project key raw value:", el8 ? el8.value : null);
+
+//
+
+const el30 = document.querySelector('[name="30"]');
+const el39 = document.querySelector('[name="39"]');
+console.log("OKR (30) value:", el30 ? el30.value : null);
+console.log("KR (39) value:", el39 ? el39.value : null);
