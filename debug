@@ -1,53 +1,13 @@
-// Look for any element containing "blockIndicator_8" pattern
-console.log(
-  "blockIndicator_8:",
-  document.querySelectorAll('[class*="blockIndicator_8"]').length,
+Array.from(document.querySelectorAll("input, select, textarea")).forEach(
+  (el) => {
+    console.log(
+      el.tagName,
+      "| name:",
+      el.name,
+      "| id:",
+      el.id,
+      "| class:",
+      el.className.substring(0, 60),
+    );
+  },
 );
-console.log(
-  "blockIndicator_30:",
-  document.querySelectorAll('[class*="blockIndicator_30"]').length,
-);
-console.log(
-  "blockIndicator_39:",
-  document.querySelectorAll('[class*="blockIndicator_39"]').length,
-);
-
-// Find inputs whose name includes 8, 30, or 39 anywhere
-console.log(
-  "name contains 8:",
-  [...document.querySelectorAll("input,select,textarea")]
-    .filter((e) => (e.name || "").includes("8"))
-    .slice(0, 10)
-    .map((e) => e.name),
-);
-console.log(
-  "name contains 30:",
-  [...document.querySelectorAll("input,select,textarea")]
-    .filter((e) => (e.name || "").includes("30"))
-    .slice(0, 10)
-    .map((e) => e.name),
-);
-console.log(
-  "name contains 39:",
-  [...document.querySelectorAll("input,select,textarea")]
-    .filter((e) => (e.name || "").includes("39"))
-    .slice(0, 10)
-    .map((e) => e.name),
-);
-
-//
-
-const fields = [...document.querySelectorAll("input,select,textarea")]
-  .filter((e) => e.name && e.type !== "hidden")
-  .map((e) => ({
-    tag: e.tagName.toLowerCase(),
-    type: e.type,
-    name: e.name,
-    id: e.id,
-    cls: e.className,
-  }));
-console.table(fields);
-
-//
-
-console.log("In iframe?", window.self !== window.top);
