@@ -45,6 +45,13 @@
   const OKR_KEY_IND = 23;
   const OKR_NAME_IND = 24;
 
+  // ── Autofill from project ──────────────────────────────────────────────────
+  const PROJECT_KEY_IND = 8;   // ind 8 on this form = selected project key
+  const PROJ_KEY_IND    = 2;   // ind 2 on project record = project key
+  const PROJ_OKR_IND    = 29;  // ind 29 on project record = OKR key
+  const PROJ_KR_IND     = 37;  // ind 37 on project record = KR name
+  const KR_TARGET_IND   = 39;  // ind 39 on this form = KR to auto-fill
+
   // Endpoints
   const BASE_QUERY_ENDPOINT = "https://leaf.va.gov/platform/projects/api/form/query/";
 
@@ -55,6 +62,14 @@
   const msgEl = document.getElementById("pkMsg30");
   const clearBtn = document.getElementById("pkClear30");
   if (!wrap || !searchEl || !listEl || !selectedEl || !msgEl || !clearBtn) return;
+
+  // ── Field finder — scoped to the same document this script runs in ─────────
+  function findField(indicatorId) {
+    const within = wrap.closest(".response") || wrap.parentElement;
+    let el = within ? within.querySelector('[name="' + indicatorId + '"]') : null;
+    if (!el) el = document.querySelector('[name="' + indicatorId + '"]');
+    return el;
+  }
 
   function setMsg(text, kind) {
     msgEl.textContent = text || "";
@@ -71,13 +86,7 @@
   }
 
   // Bind to the real OKR field for this indicator (30)
-  function findOkrBoundField() {
-    const within = wrap.closest(".response") || wrap.parentElement;
-    let el = within ? within.querySelector('[name="' + TARGET_IND + '"]') : null;
-    if (!el) el = document.querySelector('[name="' + TARGET_IND + '"]');
-    return el;
-  }
-  const okrFieldEl = findOkrBoundField();
+  const okrFieldEl = findField(TARGET_IND);
 
   function writeValue(val) {
     if (!okrFieldEl) return;
@@ -88,6 +97,19 @@
 
   function readValue() {
     return okrFieldEl ? String(okrFieldEl.value || "").trim() : "";
+  }
+
+  function writeFieldByInd(indicatorId, val) {
+    const el = findField(indicatorId);
+    if (!el) return;
+    el.value = String(val || "");
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function readFieldByInd(indicatorId) {
+    const el = findField(indicatorId);
+    return el ? String(el.value || "").trim() : "";
   }
 
   function coerceRows(json) {
@@ -128,6 +150,7 @@
     return false;
   }
 
+  // ── OKR list query ────────────────────────────────────────────────────────
   function buildOkrsQueryUrl() {
     const q = {
       terms: [{ id: "deleted", operator: "=", match: 0, gate: "AND" }],
@@ -138,7 +161,60 @@
     return BASE_QUERY_ENDPOINT + "?q=" + encodeURIComponent(JSON.stringify(q)) + "&x-filterData=recordID,";
   }
 
+  // ── Project query ─────────────────────────────────────────────────────────
+  function buildProjectQueryUrl(projectKey) {
+    const q = {
+      terms: [
+        { id: "deleted",            operator: "=", match: 0,          gate: "AND" },
+        { id: String(PROJ_KEY_IND), operator: "=", match: projectKey, gate: "AND" }
+      ],
+      joins: [],
+      sort: {},
+      getData: [String(PROJ_KEY_IND), String(PROJ_OKR_IND), String(PROJ_KR_IND)]
+    };
+    return BASE_QUERY_ENDPOINT + "?q=" + encodeURIComponent(JSON.stringify(q)) + "&x-filterData=recordID,";
+  }
+
   let okrs = []; // { key, name }
+
+  // ── Autofill from project key ─────────────────────────────────────────────
+  let lastSeenProjectKey = null;
+  let isFetchingProject = false;
+
+  function autofillFromProject(projectKey) {
+    if (!projectKey) {
+      writeValue("");
+      writeFieldByInd(KR_TARGET_IND, "");
+      renderAll();
+      return;
+    }
+    if (isFetchingProject) return;
+    isFetchingProject = true;
+
+    const url = buildProjectQueryUrl(projectKey);
+    fetch(url, { credentials: "include" })
+      .then(r => r.json())
+      .then(json => {
+        isFetchingProject = false;
+        const rows = coerceRows(json);
+        const match = rows.find(row => String(extractFromS1(row, PROJ_KEY_IND)) === String(projectKey));
+        if (!match) return;
+        const okrVal = extractFromS1(match, PROJ_OKR_IND);
+        const krVal  = extractFromS1(match, PROJ_KR_IND);
+        writeValue(okrVal);
+        writeFieldByInd(KR_TARGET_IND, krVal);
+        renderAll();
+      })
+      .catch(() => { isFetchingProject = false; });
+  }
+
+  function pollProjectKey() {
+    const current = readFieldByInd(PROJECT_KEY_IND);
+    if (current !== lastSeenProjectKey) {
+      lastSeenProjectKey = current;
+      autofillFromProject(current);
+    }
+  }
 
   function matchesSearch(okr, q) {
     if (!q) return true;
@@ -237,7 +313,14 @@
       .filter(okr => okr.key);
 
     setMsg("Loaded " + okrs.length + " OKRs.", "ok");
-    renderAll();
+
+    // Seed project key and autofill on load (edit mode)
+    lastSeenProjectKey = readFieldByInd(PROJECT_KEY_IND);
+    if (lastSeenProjectKey) autofillFromProject(lastSeenProjectKey);
+    else renderAll();
+
+    // Poll for project key changes every 500ms
+    setInterval(pollProjectKey, 500);
   }
 
   clearBtn.addEventListener("click", () => {
