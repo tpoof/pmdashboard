@@ -1,21 +1,53 @@
-// What elements exist for these indicator names?
-console.log("8 elements:", document.querySelectorAll('[name="8"]').length);
-console.log("30 elements:", document.querySelectorAll('[name="30"]').length);
-console.log("39 elements:", document.querySelectorAll('[name="39"]').length);
+// Look for any element containing "blockIndicator_8" pattern
+console.log(
+  "blockIndicator_8:",
+  document.querySelectorAll('[class*="blockIndicator_8"]').length,
+);
+console.log(
+  "blockIndicator_30:",
+  document.querySelectorAll('[class*="blockIndicator_30"]').length,
+);
+console.log(
+  "blockIndicator_39:",
+  document.querySelectorAll('[class*="blockIndicator_39"]').length,
+);
 
-// Print the elements so you can inspect type and structure
-console.log("8:", document.querySelector('[name="8"]'));
-console.log("30:", document.querySelector('[name="30"]'));
-console.log("39:", document.querySelector('[name="39"]'));
+// Find inputs whose name includes 8, 30, or 39 anywhere
+console.log(
+  "name contains 8:",
+  [...document.querySelectorAll("input,select,textarea")]
+    .filter((e) => (e.name || "").includes("8"))
+    .slice(0, 10)
+    .map((e) => e.name),
+);
+console.log(
+  "name contains 30:",
+  [...document.querySelectorAll("input,select,textarea")]
+    .filter((e) => (e.name || "").includes("30"))
+    .slice(0, 10)
+    .map((e) => e.name),
+);
+console.log(
+  "name contains 39:",
+  [...document.querySelectorAll("input,select,textarea")]
+    .filter((e) => (e.name || "").includes("39"))
+    .slice(0, 10)
+    .map((e) => e.name),
+);
 
 //
 
-const el8 = document.querySelector('[name="8"]');
-console.log("Project key raw value:", el8 ? el8.value : null);
+const fields = [...document.querySelectorAll("input,select,textarea")]
+  .filter((e) => e.name && e.type !== "hidden")
+  .map((e) => ({
+    tag: e.tagName.toLowerCase(),
+    type: e.type,
+    name: e.name,
+    id: e.id,
+    cls: e.className,
+  }));
+console.table(fields);
 
 //
 
-const el30 = document.querySelector('[name="30"]');
-const el39 = document.querySelector('[name="39"]');
-console.log("OKR (30) value:", el30 ? el30.value : null);
-console.log("KR (39) value:", el39 ? el39.value : null);
+console.log("In iframe?", window.self !== window.top);
