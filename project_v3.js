@@ -1188,6 +1188,15 @@
     var summary = document.getElementById("pmOkrsSummary");
     if (!wrap || !summary) return;
 
+    if (state.charts.okrAchieved) {
+      state.charts.okrAchieved.destroy();
+      state.charts.okrAchieved = null;
+    }
+    if (state.charts.okrTasks) {
+      state.charts.okrTasks.destroy();
+      state.charts.okrTasks = null;
+    }
+
     var okrMap = {};
     (okrRecords || []).forEach(function (r) {
       var key = normalizeOkrKey(r.okrKey);
@@ -1237,29 +1246,13 @@
     if (!okrKeys.length) {
       summary.innerHTML =
         "<div class='pm-okrCard'>No OKRs found for this Fiscal Year.</div>";
-      setChartSummary(
-        "pmChartOkrAchievedDesc",
-        "OKR completion by objective: No data.",
-      );
-      setChartSummary(
-        "pmChartOkrTasksDesc",
-        "Key Result completion: No data.",
-      );
-      if (state.charts.okrAchieved) {
-        state.charts.okrAchieved.destroy();
-        state.charts.okrAchieved = null;
-      }
-      if (state.charts.okrTasks) {
-        state.charts.okrTasks.destroy();
-        state.charts.okrTasks = null;
-      }
     } else {
-      var objectiveData = [];
-      var keyResultChartLabels = [];
-      var keyResultChartValues = [];
+      var initialCount = 8;
+      var stepCount = 8;
+      var visibleCount = Math.min(initialCount, okrKeys.length);
 
-      summary.innerHTML = okrKeys
-        .map(function (okrKey) {
+      var cardsHtml = okrKeys
+        .map(function (okrKey, idx) {
           var objective = okrMap[okrKey];
           var projectsForOkr = projectsByOkr[okrKey] || [];
           var tasksForOkr = tasksByOkr[okrKey] || [];
@@ -1304,8 +1297,6 @@
               var pct = totalTasks
                 ? Math.round((completedTasks / totalTasks) * 100)
                 : 0;
-              keyResultChartLabels.push(okrKey + " — " + krName);
-              keyResultChartValues.push(pct);
               return {
                 name: krName,
                 matchKey: matchKey,
@@ -1329,12 +1320,6 @@
               }, 0) / keyResultItems.length,
             );
           }
-
-          objectiveData.push({
-            label:
-              (objective.title || "Objective") + " (" + okrKey + ")",
-            value: avgPercent,
-          });
 
           var pctClass = "pm-okrPercentBadge";
           if (avgPercent === 0) pctClass += " pm-okrPercentBadge--none";
@@ -1460,6 +1445,8 @@
                     projId +
                     "' data-label='Projects' data-okr='" +
                     okrLabel +
+                    "' data-count='" +
+                    kr.projects.length +
                     "' aria-expanded='false' aria-controls='" +
                     projId +
                     "' aria-label='Expand Projects for OKR " +
@@ -1473,6 +1460,8 @@
                     taskId +
                     "' data-label='Tasks' data-okr='" +
                     okrLabel +
+                    "' data-count='" +
+                    kr.tasks.length +
                     "' aria-expanded='false' aria-controls='" +
                     taskId +
                     "' aria-label='Expand Tasks for OKR " +
@@ -1508,15 +1497,21 @@
               "</ul>"
             : "<div class='pm-krEmpty'>No Key Results found.</div>";
 
+          var okrKeyLink = okrRecordLink(okrKey, okrKey);
+
           return (
-            "<div class='pm-okrCard'>" +
+            "<div class='pm-okrCard" +
+            (idx >= visibleCount ? " is-hidden" : "") +
+            "' data-okr-index='" +
+            idx +
+            "'>" +
             "<div class='pm-okrCardHeader'>" +
             "<div class='pm-okrTitle'>" +
             safe(objective.title || "Untitled objective") +
             "</div>" +
             "<div class='pm-okrMeta'>" +
             "<span class='pm-okrKeyBadge'>" +
-            safe(okrKey) +
+            (okrKeyLink || safe(okrKey)) +
             "</span>" +
             "<span class='" +
             pctClass +
@@ -1546,80 +1541,18 @@
         })
         .join("");
 
-      var objectiveLabels = objectiveData.map(function (d) {
-        return d.label;
-      });
-      var objectiveValues = objectiveData.map(function (d) {
-        return d.value;
-      });
+      var showMoreBtn =
+        okrKeys.length > visibleCount
+          ? "<div class='pm-okrShowMore'><button type='button' class='pm-okrShowMoreBtn' data-visible='" +
+            visibleCount +
+            "' data-step='" +
+            stepCount +
+            "' data-total='" +
+            okrKeys.length +
+            "' aria-expanded='false'>Show more Objectives</button></div>"
+          : "";
 
-      setChartSummary(
-        "pmChartOkrAchievedDesc",
-        "OKR completion by objective: " +
-          (objectiveLabels.length
-            ? summarizeLabelData(objectiveLabels, objectiveValues)
-            : "No data."),
-      );
-      setChartSummary(
-        "pmChartOkrTasksDesc",
-        "Key Result completion: " +
-          (keyResultChartLabels.length
-            ? summarizeLabelData(keyResultChartLabels, keyResultChartValues)
-            : "No data."),
-      );
-
-      if (state.charts.okrAchieved) {
-        state.charts.okrAchieved.destroy();
-        state.charts.okrAchieved = null;
-      }
-      if (state.charts.okrTasks) {
-        state.charts.okrTasks.destroy();
-        state.charts.okrTasks = null;
-      }
-
-      var ctxAchieved = sizeChartBox(
-        "pmChartOkrAchieved",
-        objectiveLabels.length || 1,
-      );
-      if (ctxAchieved && window.Chart) {
-        state.charts.okrAchieved = new Chart(ctxAchieved, {
-          type: getHorizontalBarType(),
-          data: {
-            labels: objectiveLabels.length ? objectiveLabels : ["No OKRs"],
-            datasets: [
-              {
-                label: "% Complete",
-                data: objectiveLabels.length ? objectiveValues : [0],
-                backgroundColor: "#aacdec",
-              },
-            ],
-          },
-          options: buildHorizontalBarOptions(),
-        });
-      }
-
-      var ctxTasks = sizeChartBox(
-        "pmChartOkrTasks",
-        keyResultChartLabels.length || 1,
-      );
-      if (ctxTasks && window.Chart) {
-        state.charts.okrTasks = new Chart(ctxTasks, {
-          type: getHorizontalBarType(),
-          data: {
-            labels: keyResultChartLabels.length
-              ? keyResultChartLabels
-              : ["No Key Results"],
-            datasets: [
-              {
-                label: "% Complete",
-                data: keyResultChartLabels.length ? keyResultChartValues : [0],
-                backgroundColor: "#719f2a",
-              },
-            ],
-          },
-          options: buildHorizontalBarOptions(),
-        });
-      }
+      summary.innerHTML = cardsHtml + showMoreBtn;
     }
   }
 
@@ -3096,6 +3029,36 @@
     var wrap = document.getElementById("pmOkrsSummary");
     if (!wrap) return;
     wrap.addEventListener("click", function (e) {
+      var showMoreBtn = e.target.closest(".pm-okrShowMoreBtn");
+      if (showMoreBtn) {
+        var total = parseInt(
+          showMoreBtn.getAttribute("data-total") || "0",
+          10,
+        );
+        var step = parseInt(
+          showMoreBtn.getAttribute("data-step") || "8",
+          10,
+        );
+        var visible = parseInt(
+          showMoreBtn.getAttribute("data-visible") || "0",
+          10,
+        );
+        var cards = Array.from(wrap.querySelectorAll(".pm-okrCard"));
+        var nextVisible = Math.min(total, visible + step);
+        cards.forEach(function (card, idx) {
+          if (idx < nextVisible) card.classList.remove("is-hidden");
+        });
+        showMoreBtn.setAttribute("data-visible", String(nextVisible));
+        showMoreBtn.setAttribute(
+          "aria-expanded",
+          nextVisible >= total ? "true" : "false",
+        );
+        if (nextVisible >= total) {
+          var container = showMoreBtn.closest(".pm-okrShowMore");
+          if (container) container.remove();
+        }
+        return;
+      }
       var showAllBtn = e.target.closest(".pm-krToggleAll");
       if (showAllBtn) {
         var targetListId = showAllBtn.getAttribute("data-target") || "";
@@ -3118,10 +3081,13 @@
       panel.toggleAttribute("hidden", isOpen);
       panel.setAttribute("aria-hidden", isOpen ? "true" : "false");
       btn.setAttribute("aria-expanded", isOpen ? "false" : "true");
-      btn.textContent = isOpen ? "Expand" : "Collapse";
       var label = btn.getAttribute("data-label") || "Details";
+      var count = btn.getAttribute("data-count") || "0";
+      var collapsedLabel = label + " (" + count + ")";
+      var expandedLabel = "Hide " + label + " (" + count + ")";
+      btn.textContent = isOpen ? collapsedLabel : expandedLabel;
       var okr = btn.getAttribute("data-okr") || "";
-      var action = isOpen ? "Expand" : "Collapse";
+      var action = isOpen ? "Expand" : "Hide";
       btn.setAttribute(
         "aria-label",
         action + " " + label + (okr ? " for OKR " + okr : ""),
