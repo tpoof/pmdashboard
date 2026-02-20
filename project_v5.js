@@ -538,6 +538,13 @@
     if (!row) return null;
     var key = "id" + String(indicatorId);
     if (row.s1 && row.s1[key] != null) return row.s1[key];
+    var stepKeys = Object.keys(row).filter(function (k) {
+      return /^s\d+$/.test(k);
+    });
+    for (var i = 0; i < stepKeys.length; i++) {
+      var step = row[stepKeys[i]];
+      if (step && step[key] != null) return step[key];
+    }
     if (row[key] != null) return row[key];
     if (row.data && row.data[key] != null) return row.data[key];
     return null;
@@ -624,7 +631,10 @@
   function normalizeOkrKey(val) {
     var key = String(val || "").trim();
     if (!key) return "";
-    return key.toUpperCase();
+    var upper = key.toUpperCase();
+    var digits = upper.match(/\d+/);
+    if (digits && digits[0]) return "OKR-" + digits[0];
+    return upper;
   }
 
   function parseSupportTicket(value) {
@@ -793,8 +803,10 @@
     var recordID = getRecordID(row);
     return {
       recordID: recordID,
-      okrKey: extractFromS1(row, KEY_RESULT_IND.okrKey),
-      keyResultName: extractFromS1(row, KEY_RESULT_IND.name),
+      okrKey: String(extractRawIndicator(row, KEY_RESULT_IND.okrKey) || "").trim(),
+      keyResultName: String(
+        extractRawIndicator(row, KEY_RESULT_IND.name) || "",
+      ).trim(),
     };
   }
 
