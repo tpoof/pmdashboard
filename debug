@@ -1,0 +1,9 @@
+// What elements exist for these indicator names?
+console.log("8 elements:", document.querySelectorAll('[name="8"]').length);
+console.log("30 elements:", document.querySelectorAll('[name="30"]').length);
+console.log("39 elements:", document.querySelectorAll('[name="39"]').length);
+
+// Print the elements so you can inspect type and structure
+console.log("8:", document.querySelector('[name="8"]'));
+console.log("30:", document.querySelector('[name="30"]'));
+console.log("39:", document.querySelector('[name="39"]'));
