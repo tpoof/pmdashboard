@@ -252,6 +252,7 @@ body {
 .pm-ghostBtn:focus-visible,
 .pm-menuItem:focus-visible,
 .pm-okrToggle:focus-visible,
+.pm-krToggleAll:focus-visible,
 .pm-modalOpenTab:focus-visible,
 .pm-modalClose:focus-visible,
 .pm-jumpTop:focus-visible,
@@ -442,19 +443,7 @@ body {
 .pm-okrsSummary {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-@media (max-width: 1400px) {
-  .pm-okrsSummary {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 1100px) {
-  .pm-okrsSummary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 
 @media (max-width: 720px) {
@@ -471,60 +460,160 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-.pm-okrHeader {
+.pm-okrCardHeader {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.pm-okrKey {
+.pm-okrTitle {
   font-weight: 900;
   font-size: 1.05rem;
+  margin: 0;
 }
 
-.pm-okrPct {
+.pm-okrMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.pm-okrKeyBadge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pm-okrPercentBadge {
   font-weight: 900;
-  padding: 4px 10px;
+  padding: 2px 8px;
   border-radius: 999px;
   background: var(--accent-soft);
   border: 1px solid #aacdec;
+  color: var(--text);
 }
 
-.pm-okrPct--none {
+.pm-okrPercentBadge--none {
   background: #b00020;
   border-color: #b00020;
   color: #fff;
 }
 
-.pm-okrPct--complete {
+.pm-okrPercentBadge--complete {
   background: #2e7d32;
   border-color: #2e7d32;
   color: #fff;
 }
 
-.pm-okrMetrics {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+.pm-okrProgress {
+  margin: var(--space-2) 0 var(--space-3);
+  height: 8px;
+  background: var(--surface-alt);
+  border-radius: 999px;
+  overflow: hidden;
 }
 
-.pm-okrMetric {
-  border: 1px dashed var(--border);
+.pm-okrProgressBar {
+  height: 100%;
+  background: var(--accent-strong);
+}
+
+.pm-krSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pm-krHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pm-krHeaderTitle {
+  font-weight: 800;
+}
+
+.pm-krToggleAll {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 4px 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pm-krToggleAll:hover {
+  background: var(--surface-alt);
+}
+
+.pm-krList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pm-krItem {
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: var(--space-2);
   background: var(--surface-alt);
 }
 
-.pm-okrMetricLabel {
-  font-weight: 800;
+.pm-krItem.is-extra {
+  display: none;
 }
 
-.pm-okrMetricValue {
-  font-size: 1.1rem;
+.pm-krList.is-expanded .pm-krItem.is-extra {
+  display: block;
+}
+
+.pm-krRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.pm-krName {
+  font-weight: 700;
+}
+
+.pm-krStats {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.pm-krPercent {
   font-weight: 900;
-  margin: 4px 0 6px;
+}
+
+.pm-krCount {
+  color: var(--muted);
+}
+
+.pm-krToggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.pm-krEmpty {
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .pm-okrToggle {
