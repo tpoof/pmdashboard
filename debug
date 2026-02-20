@@ -1,9 +1,27 @@
-// Check all three fields are findable
-console.log("ind 8:", document.querySelector('[name="8"]')?.value);
-console.log("ind 30:", document.querySelector('[name="30"]'));
-console.log("ind 39:", document.querySelector('[name="39"]'));
-console.log("pkWrap30:", document.getElementById("pkWrap30"));
-console.log("response blocks:", document.querySelectorAll(".response").length);
+// 1. What project key does ind 8 have?
+document.querySelector('[name="8"]')?.value;
 
-// Check what .response contains pkWrap30
-document.getElementById("pkWrap30")?.closest(".response")?.className;
+// 2. What does the project query actually return?
+fetch(
+  "https://leaf.va.gov/platform/projects/api/form/query/?q=" +
+    encodeURIComponent(
+      JSON.stringify({
+        terms: [
+          { id: "deleted", operator: "=", match: 0, gate: "AND" },
+          {
+            id: "2",
+            operator: "=",
+            match: document.querySelector('[name="8"]')?.value,
+            gate: "AND",
+          },
+        ],
+        joins: [],
+        sort: {},
+        getData: ["2", "29", "37"],
+      }),
+    ) +
+    "&x-filterData=recordID,",
+  { credentials: "include" },
+)
+  .then((r) => r.json())
+  .then((d) => console.log(JSON.stringify(d)));
