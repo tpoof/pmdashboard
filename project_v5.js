@@ -2840,6 +2840,8 @@
         " " +
         p.okrAssociation +
         " " +
+        p.keyResultSelection +
+        " " +
         p.projectType
       ).toLowerCase();
       return matchesQuery(hay, q, qCompact) || recordMatch(p.recordID);
@@ -2865,7 +2867,9 @@
         " " +
         t.due +
         " " +
-        t.okrAssociation
+        t.okrAssociation +
+        " " +
+        t.keyResultSelection
       ).toLowerCase();
 
       return matchesQuery(hay, q, qCompact) || recordMatch(t.recordID);
