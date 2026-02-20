@@ -93,6 +93,7 @@
     analyticsTicketsYear: "",
     analyticsGeneralYear: "",
     analyticsGeneralQuarter: "",
+    dataReady: false,
     sort: {
       projects: { key: null, dir: 1, type: "string" },
       tasks: { key: null, dir: 1, type: "string" },
@@ -840,6 +841,47 @@
     if (dashIdx !== -1) normalized = normalized.slice(0, dashIdx);
     var label = normalized.trim();
     return label || "Unknown";
+  }
+
+  function buildProjectTypeChartData(projects) {
+    var counts = {};
+    var rawSample = [];
+    (projects || []).forEach(function (p) {
+      var rawType = String(p.projectType || "").trim();
+      if (!rawType) rawType = "Unknown";
+      if (rawSample.length < 10) rawSample.push(rawType);
+      counts[rawType] = (counts[rawType] || 0) + 1;
+    });
+
+    var rawKeys = Object.keys(counts).sort(function (a, b) {
+      return a.localeCompare(b);
+    });
+    var labels = rawKeys.map(function (k) {
+      return formatProjectTypeLabel(k);
+    });
+    var data = rawKeys.map(function (k) {
+      return counts[k];
+    });
+    var formattedSample = rawSample.map(function (v) {
+      return formatProjectTypeLabel(v);
+    });
+    var distinctLabels = Array.from(new Set(labels));
+
+    return {
+      rawKeys: rawKeys,
+      labels: labels,
+      data: data,
+      rawSample: rawSample,
+      formattedSample: formattedSample,
+      distinctLabels: distinctLabels,
+    };
+  }
+
+  function logProjectTypeDebug(payload) {
+    if (!DEBUG_PROJECT_TYPE) return;
+    console.log("[ProjectType] raw sample:", payload.rawSample);
+    console.log("[ProjectType] formatted sample:", payload.formattedSample);
+    console.log("[ProjectType] chart labels:", payload.distinctLabels);
   }
 
   function setChartSummary(id, text) {
@@ -2727,6 +2769,7 @@
   }
 
   function applySearchAndFilters(renderOnlyCurrentTabFirst) {
+    if (!state.dataReady) return;
     var q = getSearchQuery();
     var qCompact = normalizeForSearch(q);
     var selectedProjectKey = getSelected("pmProjectKeySelect");
@@ -2815,7 +2858,7 @@
       localStorage.getItem(STORAGE_KEYS.analyticsView) || "main";
 
     var okrFiltered = projectsFiltered;
-    if (analyticsView === "okrs" && selectedOkrFiscalYear) {
+    if (selectedOkrFiscalYear) {
       okrFiltered = projectsFiltered.filter(function (p) {
         return String(p.okrFiscalYear || "").trim() === selectedOkrFiscalYear;
       });
@@ -3803,33 +3846,10 @@
       });
     }
 
-    var projectTypeCounts = {};
-    var projectTypeSample = [];
-    projectsForGeneralCharts.forEach(function (p) {
-      var rawType = String(p.projectType || "").trim();
-      if (!rawType) rawType = "Unknown";
-      if (projectTypeSample.length < 10) projectTypeSample.push(rawType);
-      projectTypeCounts[rawType] = (projectTypeCounts[rawType] || 0) + 1;
-    });
-
-    var rawTypeKeys = Object.keys(projectTypeCounts).sort(function (a, b) {
-      return a.localeCompare(b);
-    });
-    var typeLabels = rawTypeKeys.map(function (k) {
-      return formatProjectTypeLabel(k);
-    });
-    var typeData = rawTypeKeys.map(function (k) {
-      return projectTypeCounts[k];
-    });
-    if (DEBUG_PROJECT_TYPE) {
-      var formattedSample = projectTypeSample.map(function (v) {
-        return formatProjectTypeLabel(v);
-      });
-      var distinctLabels = Array.from(new Set(typeLabels));
-      console.log("[ProjectType] raw sample:", projectTypeSample);
-      console.log("[ProjectType] formatted sample:", formattedSample);
-      console.log("[ProjectType] chart labels:", distinctLabels);
-    }
+    var projectTypeData = buildProjectTypeChartData(projectsForGeneralCharts);
+    var typeLabels = projectTypeData.labels;
+    var typeData = projectTypeData.data;
+    logProjectTypeDebug(projectTypeData);
     setChartSummary(
       "pmChartProjectsByTypeDesc",
       "Projects by project type (" +
@@ -4101,6 +4121,8 @@
           },
         );
       });
+
+      state.dataReady = true;
 
       var activeTab =
         localStorage.getItem(STORAGE_KEYS.activeTab) || "projects";

@@ -496,6 +496,25 @@
       aria-hidden="true"
       style="display: none"
     >
+      <div id="pmOkrsFilterRow" class="pm-filterRow">
+        <div class="pm-field pm-filterHeader">
+          <div class="pm-filterHeaderLabel">Filter by</div>
+        </div>
+        <div class="pm-field">
+          <label class="pm-label" for="pmOkrFiscalYearSelect"
+            >Fiscal Year</label
+          >
+          <select id="pmOkrFiscalYearSelect" class="pm-select">
+            <option value="">All Fiscal Years</option>
+          </select>
+        </div>
+        <div class="pm-field pm-fieldInlineBtn">
+          <button type="button" class="pm-ghostBtn" id="pmClearFiltersBtn_okrs">
+            Clear all filters
+          </button>
+        </div>
+      </div>
+
       <div id="pmOkrsRollup" class="pm-okrsRollup">
         <div class="pm-okrsHeader">
           <h3 class="pm-okrsTitle">OKR Health Roll-up</h3>
@@ -529,25 +548,6 @@
           </div>
         </div>
         <div id="pmOkrsSummary" class="pm-okrsSummary"></div>
-      </div>
-
-      <div id="pmOkrsFilterRow" class="pm-filterRow">
-        <div class="pm-field pm-filterHeader">
-          <div class="pm-filterHeaderLabel">Filter by</div>
-        </div>
-        <div class="pm-field">
-          <label class="pm-label" for="pmOkrFiscalYearSelect"
-            >Fiscal Year</label
-          >
-          <select id="pmOkrFiscalYearSelect" class="pm-select">
-            <option value="">All Fiscal Years</option>
-          </select>
-        </div>
-        <div class="pm-field pm-fieldInlineBtn">
-          <button type="button" class="pm-ghostBtn" id="pmClearFiltersBtn_okrs">
-            Clear all filters
-          </button>
-        </div>
       </div>
 
       <div id="pmOkrsTableWrap">

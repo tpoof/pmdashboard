@@ -652,14 +652,15 @@ body {
 }
 
 .pm-colDesc {
-  width: 260px;
-  min-width: 200px;
+  width: 520px;
+  min-width: 320px;
   white-space: normal;
 }
 
 .pm-colDesc .pm-wrapColLong {
   max-width: none;
   width: auto;
+  line-height: 1.4;
 }
 
 .pm-wrapCol {
