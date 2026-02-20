@@ -18,21 +18,27 @@
   var lastSeenProjectKey = null;
   var isFetching = false;
 
-  // ── Resolve the owning document from currentScript ────────────────────────
-  // htmlEdit scripts execute in the form's document context; anchoring off
-  // currentScript ensures we search the same document the script lives in.
-  var _scriptEl = document.currentScript;
-  var _ownerDoc = (_scriptEl && _scriptEl.ownerDocument) ? _scriptEl.ownerDocument : document;
+  // ── Resolve the correct document by anchoring off pkWrap30 ────────────────
+  // pkWrap30 is injected by OKRkey_htmlEdit_30.js into the same document as
+  // all the form fields. We use it to get the ownerDocument reliably since
+  // document.currentScript is null for platform-injected scripts.
+  function getOwnerDoc() {
+    var anchor = document.getElementById("pkWrap30");
+    if (anchor && anchor.ownerDocument) return anchor.ownerDocument;
+    // Fallback: search all same-origin frames for the anchor
+    var frames = window.frames;
+    for (var i = 0; i < frames.length; i++) {
+      try {
+        var d = frames[i].document;
+        if (d && d.getElementById("pkWrap30")) return d;
+      } catch (e) {}
+    }
+    return document;
+  }
 
   function findField(indicatorId) {
-    // First try scoping within the same .response block as this script
-    var scope = null;
-    if (_scriptEl) {
-      scope = _scriptEl.closest('.response') || _scriptEl.parentElement;
-    }
-    // For fields in OTHER .response blocks we must search the full owner doc
-    var el = _ownerDoc.querySelector('[name="' + indicatorId + '"]');
-    return el || null;
+    var d = getOwnerDoc();
+    return d.querySelector('[name="' + indicatorId + '"]') || null;
   }
 
   // ── Notify platform of value change ───────────────────────────────────────
@@ -204,7 +210,7 @@
     }
   }
 
-  // ── Init ──────────────────────────────────────────────────────────────────
+  // ── Init — wait for pkWrap30 to exist before starting ────────────────────
   function init() {
     hookFetchAndXHR();
     lastSeenProjectKey = readField(PROJECT_KEY_IND);
@@ -212,10 +218,23 @@
     setInterval(poll, POLL_INTERVAL);
   }
 
-  if (_ownerDoc.readyState === "loading") {
-    _ownerDoc.addEventListener("DOMContentLoaded", init);
+  // pkWrap30 may not exist yet if OKRkey_htmlEdit_30.js hasn't run;
+  // wait up to 5s for it to appear before starting.
+  function waitForAnchorThenInit() {
+    var attempts = 0;
+    var timer = setInterval(function () {
+      attempts++;
+      if (document.getElementById("pkWrap30") || attempts > 10) {
+        clearInterval(timer);
+        init();
+      }
+    }, 500);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", waitForAnchorThenInit);
   } else {
-    init();
+    waitForAnchorThenInit();
   }
 })();
 </script>
