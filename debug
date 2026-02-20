@@ -1,13 +1,11 @@
-Array.from(document.querySelectorAll("input, select, textarea")).forEach(
-  (el) => {
-    console.log(
-      el.tagName,
-      "| name:",
-      el.name,
-      "| id:",
-      el.id,
-      "| class:",
-      el.className.substring(0, 60),
-    );
-  },
-);
+Array.from(document.querySelectorAll("[name]")).forEach((el) => {
+  console.log(
+    el.tagName,
+    "| name:",
+    el.name,
+    "| id:",
+    el.id,
+    "| value:",
+    el.value,
+  );
+});
