@@ -726,8 +726,9 @@ body {
 }
 
 .pm-colName {
-  width: 320px;
+  width: auto;
   min-width: 240px;
+  max-width: 520px;
   white-space: normal;
 }
 
@@ -776,6 +777,37 @@ body {
   color: var(--text);
   font-weight: 700;
   user-select: none;
+}
+
+.pm-tableWrap {
+  overflow-x: auto;
+  max-width: 100%;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.pm-tableWrap:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+#pmProjectsTableWrap .pm-table {
+  min-width: 760px;
+}
+
+#pmTasksTableWrap .pm-table {
+  min-width: 1100px;
+}
+
+.pm-okrSep {
+  margin: 0 6px;
+  color: var(--muted);
+}
+
+.pm-okrFallback {
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .pm-sortable {

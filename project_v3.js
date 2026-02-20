@@ -1018,9 +1018,18 @@
             '">' +
             safe(projectKeyText) +
             "</span>";
-        var okrLink = p.okrAssociation
-          ? okrRecordLink(p.okrAssociation, p.okrAssociation)
-          : "";
+        var okrKeyText = String(p.okrAssociation || "").trim();
+        var krText = String(p.keyResultSelection || "").trim();
+        var okrLink = okrKeyText
+          ? okrRecordLink(okrKeyText, okrKeyText)
+          : "<span class='pm-okrFallback'>None</span>";
+        var krDisplay = krText
+          ? safe(krText)
+          : "<span class='pm-okrFallback'>No Key Result</span>";
+        var okrCombined =
+          okrLink +
+          ' <span class="pm-okrSep" aria-hidden="true">|</span> ' +
+          krDisplay;
 
         return (
           "<tr>" +
@@ -1051,7 +1060,7 @@
           safe(p.projectFiscalYear) +
           "</td>" +
           "<td>" +
-          (okrLink || safe(p.okrAssociation)) +
+          okrCombined +
           "</td>" +
           "<td>" +
           safe(formatProjectTypeLabel(p.projectType)) +
@@ -1070,7 +1079,7 @@
       '<th scope="col" class="pm-sortable" data-sort="owner" data-type="string"><button type="button" class="pm-sortBtn">Owner</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="projectFiscalYear" data-type="string"><button type="button" class="pm-sortBtn">FY</button></th>' +
-      '<th scope="col" class="pm-sortable" data-sort="okrAssociation" data-type="string"><button type="button" class="pm-sortBtn">OKR</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="okrAssociation" data-type="string"><button type="button" class="pm-sortBtn">OKR | Key Result</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="projectType" data-type="string"><button type="button" class="pm-sortBtn">Project Type</button></th>' +
       "</tr></thead>" +
       "<tbody>" +
