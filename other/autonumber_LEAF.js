@@ -2,21 +2,17 @@
   (function () {
     "use strict";
 
-    // Put your indicatorID here (the field that should store OKR-###)
-    var INDICATOR_ID = 23;
+    // Put your indicatorID here (the field that should store LEAF-###)
+    var INDICATOR_ID = 135;
 
-    function pad3(n) {
-      n = Number(n);
-      if (!Number.isFinite(n) || n < 0) return "000";
-      return String(n).padStart(3, "0");
-    }
-
-    function formatKeyFromRecordId(recordId) {
-      return "OKR-" + pad3(recordId);
+     function formatKeyFromRecordId(recordId) {
+      var n = Number(recordId);
+      if (!Number.isFinite(n) || n < 0) return "LEAF-0";
+      return "OKR-" + String(n);
     }
 
     function getIndicatorInput(indicatorId) {
-      // Most OKR indicators render as name="<id>" and id="<id>"
+      // Most LEAF indicators render as name="<id>" and id="<id>"
       return (
         document.querySelector('input[name="' + indicatorId + '"]') ||
         document.getElementById(String(indicatorId)) ||
@@ -61,7 +57,7 @@
       var rid = getRecordIdFromUrl();
       if (!rid) {
         // New record, ID not assigned yet
-        if (!input.value) input.value = "OKR-PENDING";
+        if (!input.value) input.value = "LEAF-PENDING";
         return;
       }
 
@@ -73,10 +69,10 @@
       }
     }
 
-    // Universal reload after submit for OKR api submit endpoint
+    // Universal reload after submit for LEAF api submit endpoint
     function installAutoReloadAfterSubmit() {
-      if (window.__okrAutoReloadAfterSubmitInstalled) return;
-      window.__okrAutoReloadAfterSubmitInstalled = true;
+      if (window.__leafAutoReloadAfterSubmitInstalled) return;
+      window.__leafAutoReloadAfterSubmitInstalled = true;
 
       var RELOAD_DELAY_MS = 900;
 
@@ -95,8 +91,8 @@
         }, RELOAD_DELAY_MS);
       }
 
-      // Watch for submit success and reload so the recordID exists and we can set OKR-###
-      if (window.fetch && !window.fetch.__okrAutoReloadHooked) {
+      // Watch for submit success and reload so the recordID exists and we can set LEAF-###
+      if (window.fetch && !window.fetch.__leafAutoReloadHooked) {
         var origFetch = window.fetch;
         window.fetch = function (input, init) {
           var url = (typeof input === "string") ? input : (input && input.url);
@@ -107,10 +103,10 @@
             return resp;
           });
         };
-        window.fetch.__okrAutoReloadHooked = true;
+        window.fetch.__leafAutoReloadHooked = true;
       }
 
-      if (window.XMLHttpRequest && !window.XMLHttpRequest.__okrAutoReloadHooked) {
+      if (window.XMLHttpRequest && !window.XMLHttpRequest.__leafAutoReloadHooked) {
         var OriginalXHR = window.XMLHttpRequest;
 
         function WrappedXHR() {
@@ -142,7 +138,7 @@
 
         WrappedXHR.prototype = OriginalXHR.prototype;
         window.XMLHttpRequest = WrappedXHR;
-        window.XMLHttpRequest.__okrAutoReloadHooked = true;
+        window.XMLHttpRequest.__leafAutoReloadHooked = true;
       }
     }
 
@@ -150,7 +146,7 @@
       installAutoReloadAfterSubmit();
       setKeyIfPossible();
 
-      // Also retry shortly after load in case OKR renders fields asynchronously
+      // Also retry shortly after load in case LEAF renders fields asynchronously
       setTimeout(setKeyIfPossible, 300);
       setTimeout(setKeyIfPossible, 900);
     }
