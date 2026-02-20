@@ -9,7 +9,7 @@
       "";
   }
 
-  const DEBUG_PROJECT_TYPE = false;
+  const DEBUG_PROJECT_TYPE = true;
 
   // Task form indicator IDs
   var TASK_IND = {
@@ -130,12 +130,12 @@
     if (!container) return [];
     var selectors =
       'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),iframe,[tabindex]:not([tabindex="-1"])';
-    return Array.from(container.querySelectorAll(selectors)).filter(function (
-      el,
-    ) {
-      if (el.getAttribute("aria-hidden") === "true") return false;
-      return !!(el.offsetParent || el === document.activeElement);
-    });
+    return Array.from(container.querySelectorAll(selectors)).filter(
+      function (el) {
+        if (el.getAttribute("aria-hidden") === "true") return false;
+        return !!(el.offsetParent || el === document.activeElement);
+      },
+    );
   }
 
   function toggleAppInert(isInert) {
@@ -689,9 +689,11 @@
 
     pending.reduce(function (p, item) {
       return p.then(function () {
-        return setSupportTicketIndicator(item.recordID, item.id, "support").catch(
-          function () {},
-        );
+        return setSupportTicketIndicator(
+          item.recordID,
+          item.id,
+          "support",
+        ).catch(function () {});
       });
     }, Promise.resolve());
   }
@@ -1208,8 +1210,7 @@
           var completedTasksText = String(item.completedTasksCount || 0);
           var pctClass = "pm-okrPct";
           var okrLabel = safeAttr(item.displayKey || item.key || "");
-          if (item.completedTasksCount === 0)
-            pctClass += " pm-okrPct--none";
+          if (item.completedTasksCount === 0) pctClass += " pm-okrPct--none";
           else if (pctValue >= 100) pctClass += " pm-okrPct--complete";
 
           var projectList = item.projects.length
@@ -1412,9 +1413,7 @@
     setChartSummary(
       "pmChartOkrAchievedDesc",
       "OKR percent achieved: " +
-        (labels.length
-          ? summarizeLabelData(labels, percentData)
-          : "No data."),
+        (labels.length ? summarizeLabelData(labels, percentData) : "No data."),
     );
     setChartSummary(
       "pmChartOkrTasksDesc",
@@ -1439,10 +1438,7 @@
       state.charts.okrTasks = null;
     }
 
-    var ctxAchieved = sizeChartBox(
-      "pmChartOkrAchieved",
-      labels.length || 1,
-    );
+    var ctxAchieved = sizeChartBox("pmChartOkrAchieved", labels.length || 1);
     if (ctxAchieved && window.Chart) {
       state.charts.okrAchieved = new Chart(ctxAchieved, {
         type: getHorizontalBarType(),
@@ -1754,7 +1750,8 @@
       recordID: recordID,
       series: 1,
     };
-    var label = (sourceType === "ux" ? "UX Ticket #" : "Support Ticket #") + sourceId;
+    var label =
+      (sourceType === "ux" ? "UX Ticket #" : "Support Ticket #") + sourceId;
     bodyObj[TASK_IND.supportTicket] = label;
     if (token) {
       bodyObj[tokenField] = token;
@@ -1959,9 +1956,7 @@
   function focusKanbanCard(taskId) {
     if (!taskId) return;
     var selector =
-      '.pm-card[data-taskid="' +
-      String(taskId).replace(/"/g, '\\"') +
-      '"]';
+      '.pm-card[data-taskid="' + String(taskId).replace(/"/g, '\\"') + '"]';
     var card = document.querySelector(selector);
     if (card) card.focus();
   }
@@ -2172,9 +2167,7 @@
           var oldStatus = state.tasksAll[idx].status;
           state.tasksAll[idx].status = newStatus;
           applySearchAndFilters(true);
-          announceKanbanStatus(
-            "Moved task " + id + " to " + newStatus + ".",
-          );
+          announceKanbanStatus("Moved task " + id + " to " + newStatus + ".");
           requestAnimationFrame(function () {
             focusKanbanCard(id);
           });
@@ -2785,8 +2778,7 @@
     if (selectedProjectFiscalYear) {
       projectsTableFiltered = projectsFiltered.filter(function (p) {
         return (
-          String(p.projectFiscalYear || "").trim() ===
-          selectedProjectFiscalYear
+          String(p.projectFiscalYear || "").trim() === selectedProjectFiscalYear
         );
       });
     }
@@ -2825,9 +2817,7 @@
     var okrFiltered = projectsFiltered;
     if (analyticsView === "okrs" && selectedOkrFiscalYear) {
       okrFiltered = projectsFiltered.filter(function (p) {
-        return (
-          String(p.okrFiscalYear || "").trim() === selectedOkrFiscalYear
-        );
+        return String(p.okrFiscalYear || "").trim() === selectedOkrFiscalYear;
       });
     }
 
@@ -3102,8 +3092,7 @@
     }
 
     function launchAction(action) {
-      if (action === "project")
-        openModal("New Project", START_PROJECT_URL);
+      if (action === "project") openModal("New Project", START_PROJECT_URL);
       else if (action === "task") openModal("New Task", START_TASK_URL);
       else if (action === "objective")
         openModal("Add Objective", START_OKR_URL);
@@ -3504,7 +3493,6 @@
       completedYears = [now.getFullYear()];
     }
 
-
     var ticketTasks = analyticsTasks.filter(function (t) {
       return !!String(t.supportTicket || "").trim();
     });
@@ -3527,7 +3515,6 @@
     if (!ticketYears.length) {
       ticketYears = [now.getFullYear()];
     }
-
 
     var quarterOptions = [
       { value: "all", label: "All" },
@@ -3723,10 +3710,7 @@
           : "No data."),
     );
 
-    var ctx2 = sizeChartBox(
-      "pmChartTasksByProject",
-      projLabels.length || 1,
-    );
+    var ctx2 = sizeChartBox("pmChartTasksByProject", projLabels.length || 1);
     if (ctx2) {
       state.charts.projectKey = new Chart(ctx2, {
         type: getHorizontalBarType(),
@@ -4074,10 +4058,7 @@
         );
       });
       var taskRows = taskRowsAll.filter(function (r) {
-        return hasAnyS1Value(
-          r,
-          [8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 30],
-        );
+        return hasAnyS1Value(r, [8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 30]);
       });
 
       state.projectsAll = projectRows.map(normalizeProject);
