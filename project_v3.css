@@ -7,6 +7,7 @@
   --space-6: 32px;
   --space-7: 40px;
   --space-8: 48px;
+  --pm-table-safe-left: 16px;
   --radius-sm: 10px;
   --radius-md: 12px;
   --radius-lg: 16px;
@@ -873,7 +874,7 @@ body {
   width: 100%;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
-  padding: 0;
+  padding: 0 0 0 var(--pm-table-safe-left);
   margin: 0;
   scroll-padding-left: 0;
 }
@@ -900,7 +901,7 @@ body {
 }
 
 .pm-tableWrap .pm-table {
-  margin-left: 0;
+  margin-left: calc(-1 * var(--pm-table-safe-left));
 }
 
 body.debug-layout .pm-tableShell {
