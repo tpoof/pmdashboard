@@ -79,8 +79,8 @@ function renderResult(leafSearch, res) {
                 .then(res => res.json())
                 .then(result => {
                     const record = result[data.recordID];
-                    const value = record && record.data && record.data[matchedIndicatorID]
-                        ? record.data[matchedIndicatorID].data
+                    const value = record && record.s1 && record.s1['id' + matchedIndicatorID]
+                        ? record.s1['id' + matchedIndicatorID]
                         : '';
                     document.querySelector(`#${data.cellContainerID}`).innerHTML = value;
                 })
