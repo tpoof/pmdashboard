@@ -599,6 +599,18 @@ body {
   font-weight: 700;
 }
 
+.pm-krHighlight {
+  display: inline-block;
+  padding: 2px 6px;
+  margin-left: -6px;
+  border-left: 3px solid #b7791f;
+  background: #fff4cc;
+  border-radius: 4px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 2px;
+}
+
 .pm-krStats {
   display: flex;
   gap: 6px;

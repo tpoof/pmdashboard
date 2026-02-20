@@ -1155,7 +1155,13 @@
       .replace(/(^-|-$)/g, "");
   }
 
-  function renderOkrsRollup(okrRecords, projects, tasks) {
+  function renderOkrsRollup(
+    okrRecords,
+    projects,
+    tasks,
+    searchQuery,
+    searchCompact,
+  ) {
     var wrap = document.getElementById("pmOkrsRollup");
     var summary = document.getElementById("pmOkrsSummary");
     if (!wrap || !summary) return;
@@ -1206,39 +1212,81 @@
       return a.localeCompare(b, undefined, { numeric: true });
     });
 
-    if (!okrKeys.length) {
+    var query = String(searchQuery || "").trim();
+    var queryCompact = searchCompact || normalizeForSearch(query);
+    var searchActive = !!query;
+
+    var okrEntries = okrKeys.map(function (okrKey) {
+      var objective = okrMap[okrKey];
+      var projectsForOkr = projectsByOkr[okrKey] || [];
+      var tasksForOkr = tasksByOkr[okrKey] || [];
+      var keyResultNameMap = keyResultsByOkr[okrKey]
+        ? Object.assign({}, keyResultsByOkr[okrKey])
+        : {};
+
+      if (!Object.keys(keyResultNameMap).length) {
+        projectsForOkr.forEach(function (p) {
+          var name = String(p.keyResultSelection || "").trim();
+          if (!name) return;
+          var matchKey = normalizeKeyResultMatch(name);
+          if (!keyResultNameMap[matchKey]) keyResultNameMap[matchKey] = name;
+        });
+        tasksForOkr.forEach(function (t) {
+          var name = String(t.keyResultSelection || "").trim();
+          if (!name) return;
+          var matchKey = normalizeKeyResultMatch(name);
+          if (!keyResultNameMap[matchKey]) keyResultNameMap[matchKey] = name;
+        });
+      }
+
+      var krMatchKeys = [];
+      if (searchActive) {
+        Object.keys(keyResultNameMap).forEach(function (matchKey) {
+          var name = keyResultNameMap[matchKey];
+          if (matchesQuery(name, query, queryCompact))
+            krMatchKeys.push(matchKey);
+        });
+      }
+
+      var objectiveMatch =
+        searchActive &&
+        (matchesQuery(objective.title, query, queryCompact) ||
+          matchesQuery(okrKey, query, queryCompact));
+      var include = !searchActive || objectiveMatch || krMatchKeys.length > 0;
+
+      return {
+        okrKey: okrKey,
+        objective: objective,
+        projectsForOkr: projectsForOkr,
+        tasksForOkr: tasksForOkr,
+        keyResultNameMap: keyResultNameMap,
+        krMatchKeys: krMatchKeys,
+        objectiveMatch: objectiveMatch,
+        include: include,
+      };
+    });
+
+    var okrEntriesFiltered = okrEntries.filter(function (entry) {
+      return entry.include;
+    });
+
+    if (!okrEntriesFiltered.length) {
       summary.innerHTML =
         "<div class='pm-okrCard'>No OKRs found for this Fiscal Year.</div>";
     } else {
       var initialCount = 8;
       var stepCount = 8;
-      var visibleCount = Math.min(initialCount, okrKeys.length);
+      var visibleCount = Math.min(initialCount, okrEntriesFiltered.length);
 
-      var cardsHtml = okrKeys
-        .map(function (okrKey, idx) {
-          var objective = okrMap[okrKey];
-          var projectsForOkr = projectsByOkr[okrKey] || [];
-          var tasksForOkr = tasksByOkr[okrKey] || [];
-          var keyResultNameMap = keyResultsByOkr[okrKey]
-            ? Object.assign({}, keyResultsByOkr[okrKey])
-            : {};
-
-          if (!Object.keys(keyResultNameMap).length) {
-            projectsForOkr.forEach(function (p) {
-              var name = String(p.keyResultSelection || "").trim();
-              if (!name) return;
-              var matchKey = normalizeKeyResultMatch(name);
-              if (!keyResultNameMap[matchKey])
-                keyResultNameMap[matchKey] = name;
-            });
-            tasksForOkr.forEach(function (t) {
-              var name = String(t.keyResultSelection || "").trim();
-              if (!name) return;
-              var matchKey = normalizeKeyResultMatch(name);
-              if (!keyResultNameMap[matchKey])
-                keyResultNameMap[matchKey] = name;
-            });
-          }
+      var cardsHtml = okrEntriesFiltered
+        .map(function (entry, idx) {
+          var okrKey = entry.okrKey;
+          var objective = entry.objective;
+          var projectsForOkr = entry.projectsForOkr;
+          var tasksForOkr = entry.tasksForOkr;
+          var keyResultNameMap = entry.keyResultNameMap;
+          var krMatchKeys = entry.krMatchKeys || [];
+          var forceExpand = searchActive && krMatchKeys.length > 0;
 
           var keyResultItems = Object.keys(keyResultNameMap)
             .map(function (matchKey) {
@@ -1297,11 +1345,17 @@
                 listId +
                 "' aria-controls='" +
                 listId +
-                "' aria-expanded='false'>Show all Key Results</button>"
+                "' aria-expanded='" +
+                (forceExpand ? "true" : "false") +
+                "'>" +
+                (forceExpand ? "Show fewer Key Results" : "Show all Key Results") +
+                "</button>"
               : "";
 
           var keyResultList = keyResultItems.length
-            ? "<ul class='pm-krList' id='" +
+            ? "<ul class='pm-krList" +
+              (forceExpand ? " is-expanded" : "") +
+              "' id='" +
               listId +
               "'>" +
               keyResultItems
@@ -1310,6 +1364,10 @@
                     "pmKr-" + makeSafeId(okrKey + "-" + kr.matchKey);
                   var projId = krId + "-projects";
                   var extraClass = idx > 2 ? " is-extra" : "";
+                  var krHighlight =
+                    searchActive && krMatchKeys.indexOf(kr.matchKey) !== -1
+                      ? " pm-krHighlight"
+                      : "";
                   var projList = kr.projects.length
                     ? "<ul class='pm-krProjectList'>" +
                       kr.projects
@@ -1443,7 +1501,9 @@
                     extraClass +
                     "'>" +
                     "<div class='pm-krRow'>" +
-                    "<div class='pm-krName'>" +
+                    "<div class='pm-krName" +
+                    krHighlight +
+                    "'>" +
                     safe(kr.name) +
                     "</div>" +
                     "<div class='pm-krStats'>" +
@@ -1532,13 +1592,13 @@
         .join("");
 
       var showMoreBtn =
-        okrKeys.length > visibleCount
+        okrEntriesFiltered.length > visibleCount
           ? "<div class='pm-okrShowMore'><button type='button' class='pm-okrShowMoreBtn' data-visible='" +
             visibleCount +
             "' data-step='" +
             stepCount +
             "' data-total='" +
-            okrKeys.length +
+            okrEntriesFiltered.length +
             "' aria-expanded='false'>Show more Objectives</button></div>"
           : "";
 
@@ -2887,6 +2947,14 @@
       });
     }
 
+    var okrBaseProjects = state.projectsAll;
+    if (selectedOkrFiscalYear) {
+      okrBaseProjects = okrBaseProjects.filter(function (p) {
+        return String(p.okrFiscalYear || "").trim() === selectedOkrFiscalYear;
+      });
+    }
+    var okrBaseTasks = state.tasksAll;
+
     var tasksFiltered = tasksSearchFiltered;
     if (activeTab === "tasks") {
       tasksFiltered = tasksSearchFiltered.filter(function (t) {
@@ -2959,7 +3027,13 @@
       }
       if (activeTab === "analytics") {
         if (analyticsView === "okrs") {
-          renderOkrsRollup(okrFiltered, projectsFiltered, tasksSearchFiltered);
+          renderOkrsRollup(
+            okrBaseProjects,
+            okrBaseProjects,
+            okrBaseTasks,
+            q,
+            qCompact,
+          );
           renderOkrsTable(okrFiltered);
         } else {
           renderAnalytics(tasksSearchNoArchive);
@@ -2974,7 +3048,13 @@
         renderGantt(tasksNoArchive);
       if (activeTab === "analytics") {
         if (analyticsView === "okrs") {
-          renderOkrsRollup(okrFiltered, projectsFiltered, tasksSearchFiltered);
+          renderOkrsRollup(
+            okrBaseProjects,
+            okrBaseProjects,
+            okrBaseTasks,
+            q,
+            qCompact,
+          );
           renderOkrsTable(okrFiltered);
         } else {
           renderAnalytics(tasksSearchNoArchive);
