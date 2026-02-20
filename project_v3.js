@@ -1483,11 +1483,6 @@
                     "<span class='pm-krPercent'>" +
                     kr.percent +
                     "%</span>" +
-                    "<span class='pm-krCount'>" +
-                    kr.completedTasks +
-                    "/" +
-                    kr.totalTasks +
-                    "</span>" +
                     "</div>" +
                     "</div>" +
                     "<div class='pm-krToggles'>" +
@@ -1557,7 +1552,9 @@
             "</div>" +
             "<div class='pm-krSection'>" +
             "<div class='pm-krHeader'>" +
-            "<div class='pm-krHeaderTitle'>Key Results</div>" +
+            "<div class='pm-krHeaderTitle'>Key Results (" +
+            keyResultItems.length +
+            ")</div>" +
             showAllBtn +
             "</div>" +
             keyResultList +
