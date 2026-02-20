@@ -8,7 +8,7 @@
      function formatKeyFromRecordId(recordId) {
       var n = Number(recordId);
       if (!Number.isFinite(n) || n < 0) return "LEAF-0";
-      return "OKR-" + String(n);
+      return "LEAF-" + String(n);
     }
 
     function getIndicatorInput(indicatorId) {
