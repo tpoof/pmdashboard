@@ -1,11 +1,9 @@
-Array.from(document.querySelectorAll("[name]")).forEach((el) => {
-  console.log(
-    el.tagName,
-    "| name:",
-    el.name,
-    "| id:",
-    el.id,
-    "| value:",
-    el.value,
-  );
-});
+// Check all three fields are findable
+console.log("ind 8:", document.querySelector('[name="8"]')?.value);
+console.log("ind 30:", document.querySelector('[name="30"]'));
+console.log("ind 39:", document.querySelector('[name="39"]'));
+console.log("pkWrap30:", document.getElementById("pkWrap30"));
+console.log("response blocks:", document.querySelectorAll(".response").length);
+
+// Check what .response contains pkWrap30
+document.getElementById("pkWrap30")?.closest(".response")?.className;
