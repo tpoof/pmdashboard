@@ -14,6 +14,12 @@
 
   var BASE_QUERY_ENDPOINT = "https://leaf.va.gov/platform/projects/api/form/query/";
 
+  // ── Polling interval (ms) — checks if ind 8 value changed ─────────────────
+  var POLL_INTERVAL = 500;
+
+  var lastSeenProjectKey = null;
+  var isFetching = false;
+
   // ── Notify platform of value change ───────────────────────────────────────
   function notify(el) {
     if (!el) return;
@@ -65,8 +71,8 @@
   function buildProjectQueryUrl(projectKey) {
     var q = {
       terms: [
-        { id: "deleted",          operator: "=",  match: 0,          gate: "AND" },
-        { id: String(PROJ_KEY_IND), operator: "=",  match: projectKey, gate: "AND" }
+        { id: "deleted",            operator: "=", match: 0,          gate: "AND" },
+        { id: String(PROJ_KEY_IND), operator: "=", match: projectKey, gate: "AND" }
       ],
       joins: [],
       sort: {},
@@ -84,7 +90,6 @@
       })
       .then(function (json) {
         var rows = coerceRows(json);
-        // Find the row whose project key matches
         var match = null;
         for (var i = 0; i < rows.length; i++) {
           var key = extractFromS1(rows[i], PROJ_KEY_IND);
@@ -96,20 +101,19 @@
   }
 
   // ── Main fill function ────────────────────────────────────────────────────
-  function fillFromProject() {
-    var projectKey = readField(PROJECT_KEY_SEL);
+  function fillFromProject(projectKey) {
     if (!projectKey) {
-      // No project selected — clear both fields
       writeField(OKR_SEL, "");
       writeField(KR_SEL,  "");
       return;
     }
 
+    if (isFetching) return;
+    isFetching = true;
+
     fetchProjectData(projectKey, function (err, row) {
-      if (err || !row) {
-        // Could not find project — leave fields as-is
-        return;
-      }
+      isFetching = false;
+      if (err || !row) return;
       var okrVal = extractFromS1(row, PROJ_OKR_IND);
       var krVal  = extractFromS1(row, PROJ_KR_IND);
       writeField(OKR_SEL, okrVal);
@@ -117,15 +121,16 @@
     });
   }
 
-  // ── Watch the project key field for changes ───────────────────────────────
-  function hookProjectField() {
-    var el = document.querySelector(PROJECT_KEY_SEL);
-    if (!el) return;
-    el.addEventListener("change", fillFromProject, true);
-    el.addEventListener("blur",   fillFromProject, true);
+  // ── Poll ind 8 for changes ────────────────────────────────────────────────
+  function poll() {
+    var current = readField(PROJECT_KEY_SEL);
+    if (current !== lastSeenProjectKey) {
+      lastSeenProjectKey = current;
+      fillFromProject(current);
+    }
   }
 
-  // ── Detect form submit to re-fill before save (mirrors working snippet) ───
+  // ── Detect form submit to re-fill before save ─────────────────────────────
   function isSubmitEndpoint(url) {
     try {
       var u = new URL(url, window.location.origin);
@@ -135,26 +140,12 @@
     }
   }
 
-  function hookSubmitClicks() {
-    document.addEventListener("pointerdown", fillFromProject, true);
-    document.addEventListener("click", function (e) {
-      var t = e.target;
-      if (!t) return;
-      if (t.matches('button, input[type="button"], input[type="submit"]')) {
-        var label = (t.innerText || t.value || "").toLowerCase();
-        if (label.includes("submit") || label.includes("save")) {
-          fillFromProject();
-        }
-      }
-    }, true);
-  }
-
   function hookFetchAndXHR() {
     if (window.fetch && !window.fetch.__autofillOkrKrHooked) {
       var origFetch = window.fetch;
       window.fetch = function (input, init) {
         var url = (typeof input === "string") ? input : (input && input.url);
-        try { if (url && isSubmitEndpoint(url)) fillFromProject(); } catch (e) {}
+        try { if (url && isSubmitEndpoint(url)) fillFromProject(readField(PROJECT_KEY_SEL)); } catch (e) {}
         return origFetch.apply(this, arguments).then(function (resp) {
           try {
             if (url && isSubmitEndpoint(url) && resp && resp.ok) {
@@ -180,7 +171,7 @@
         xhr.send = function (body) {
           try {
             if (xhr.__leafUrl && isSubmitEndpoint(xhr.__leafUrl)) {
-              fillFromProject();
+              fillFromProject(readField(PROJECT_KEY_SEL));
               xhr.addEventListener("load", function () {
                 try {
                   if (xhr.status >= 200 && xhr.status < 300) {
@@ -202,10 +193,13 @@
 
   // ── Init ──────────────────────────────────────────────────────────────────
   function init() {
-    hookProjectField();
-    hookSubmitClicks();
     hookFetchAndXHR();
-    fillFromProject(); // Run once on load for edit mode
+    // Seed last seen so we don't fire needlessly on first poll if already empty
+    lastSeenProjectKey = readField(PROJECT_KEY_SEL);
+    // Fill once immediately on load (edit mode)
+    if (lastSeenProjectKey) fillFromProject(lastSeenProjectKey);
+    // Poll every 500ms to catch custom picker writes
+    setInterval(poll, POLL_INTERVAL);
   }
 
   if (document.readyState === "loading") {
