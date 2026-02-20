@@ -63,7 +63,7 @@
   const clearBtn = document.getElementById("pkClear30");
   if (!wrap || !searchEl || !listEl || !selectedEl || !msgEl || !clearBtn) return;
 
-  // ── Field finder — scoped to the same document this script runs in ─────────
+  // ── Field finder ──────────────────────────────────────────────────────────
   function findField(indicatorId) {
     const within = wrap.closest(".response") || wrap.parentElement;
     let el = within ? within.querySelector('[name="' + indicatorId + '"]') : null;
@@ -85,8 +85,7 @@
       .replaceAll("'", "&#039;");
   }
 
-  // Lazily find the real OKR field each time (not cached at init — field may
-  // not exist in the DOM yet when the script first runs)
+  // Lazily find the real OKR field each time
   function getOkrFieldEl() { return findField(TARGET_IND); }
 
   function writeValue(val) {
@@ -121,7 +120,6 @@
       if (Array.isArray(json.data)) return json.data;
       if (Array.isArray(json.records)) return json.records;
       if (Array.isArray(json.results)) return json.results;
-
       const keys = Object.keys(json);
       const keyed = keys.length && keys.every(k => /^\d+$/.test(k));
       if (keyed) {
@@ -180,42 +178,72 @@
 
   let okrs = []; // { key, name }
 
-  // ── Autofill from project key ─────────────────────────────────────────────
-  let lastSeenProjectKey = null;
-  let isFetchingProject = false;
-
-  function autofillFromProject(projectKey) {
-    if (!projectKey) {
-      writeValue("");
-      writeFieldByInd(KR_TARGET_IND, "");
-      renderAll();
-      return;
-    }
-    if (isFetchingProject) return;
-    isFetchingProject = true;
-
-    const url = buildProjectQueryUrl(projectKey);
-    fetch(url, { credentials: "include" })
+  // ── Silently fill ind 30 and ind 39 from the project record ───────────────
+  function autofillFromProject(projectKey, callback) {
+    if (!projectKey) { if (callback) callback(); return; }
+    fetch(buildProjectQueryUrl(projectKey), { credentials: "include" })
       .then(r => r.json())
       .then(json => {
-        isFetchingProject = false;
         const rows = coerceRows(json);
         const match = rows.find(row => String(extractFromS1(row, PROJ_KEY_IND)) === String(projectKey));
-        if (!match) return;
-        const okrVal = extractFromS1(match, PROJ_OKR_IND);
-        const krVal  = extractFromS1(match, PROJ_KR_IND);
-        writeValue(okrVal);
-        writeFieldByInd(KR_TARGET_IND, krVal);
-        renderAll();
+        if (match) {
+          writeValue(extractFromS1(match, PROJ_OKR_IND));
+          writeFieldByInd(KR_TARGET_IND, extractFromS1(match, PROJ_KR_IND));
+          renderAll();
+        }
+        if (callback) callback();
       })
-      .catch(() => { isFetchingProject = false; });
+      .catch(() => { if (callback) callback(); });
   }
 
-  function pollProjectKey() {
-    const current = readFieldByInd(PROJECT_KEY_IND);
-    if (current !== lastSeenProjectKey) {
-      lastSeenProjectKey = current;
-      autofillFromProject(current);
+  // ── Submit hook — fill before save then let the submit proceed ────────────
+  function isSubmitEndpoint(url) {
+    try {
+      return /\/api\/form\/\d+\/submit\/?$/.test(new URL(url, window.location.origin).pathname);
+    } catch (e) {
+      return /\/api\/form\/\d+\/submit\/?/.test(String(url || ""));
+    }
+  }
+
+  function hookFetchAndXHR() {
+    if (window.fetch && !window.fetch.__autofillOkrKr30Hooked) {
+      const origFetch = window.fetch;
+      window.fetch = function (input, init) {
+        const url = (typeof input === "string") ? input : (input && input.url);
+        if (url && isSubmitEndpoint(url)) {
+          const projectKey = readFieldByInd(PROJECT_KEY_IND);
+          if (projectKey) {
+            // Fire-and-forget: write values synchronously from cache if possible,
+            // then let the fetch proceed normally
+            autofillFromProject(projectKey, null);
+          }
+        }
+        return origFetch.apply(this, arguments);
+      };
+      window.fetch.__autofillOkrKr30Hooked = true;
+    }
+
+    if (window.XMLHttpRequest && !window.XMLHttpRequest.__autofillOkrKr30Hooked) {
+      const OriginalXHR = window.XMLHttpRequest;
+      function WrappedXHR() {
+        const xhr = new OriginalXHR();
+        const origOpen = xhr.open.bind(xhr);
+        const origSend = xhr.send.bind(xhr);
+        xhr.open = function (method, url) {
+          xhr.__leafUrl = url;
+          return origOpen(method, url);
+        };
+        xhr.send = function (body) {
+          if (xhr.__leafUrl && isSubmitEndpoint(xhr.__leafUrl)) {
+            autofillFromProject(readFieldByInd(PROJECT_KEY_IND), null);
+          }
+          return origSend(body);
+        };
+        return xhr;
+      }
+      WrappedXHR.prototype = OriginalXHR.prototype;
+      window.XMLHttpRequest = WrappedXHR;
+      window.XMLHttpRequest.__autofillOkrKr30Hooked = true;
     }
   }
 
@@ -317,13 +345,12 @@
 
     setMsg("Loaded " + okrs.length + " OKRs.", "ok");
 
-    // Seed project key and autofill on load (edit mode)
-    lastSeenProjectKey = readFieldByInd(PROJECT_KEY_IND);
-    if (lastSeenProjectKey) autofillFromProject(lastSeenProjectKey);
-    else renderAll();
+    // On load: silently fill ind 30 + ind 39 from project, then render
+    const projectKey = readFieldByInd(PROJECT_KEY_IND);
+    autofillFromProject(projectKey, renderAll);
 
-    // Poll for project key changes every 500ms
-    setInterval(pollProjectKey, 500);
+    // Hook save to re-fill before submit
+    hookFetchAndXHR();
   }
 
   clearBtn.addEventListener("click", () => {
