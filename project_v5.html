@@ -1,4 +1,5 @@
 <!--{if $empMembership['groupID'][435]}-->
+<!-- Project Dashboard - READ ONLY user group. Granting people into this group will give them read only access. The team must also be added to this view as well though, as well as LEAF Team (group 12). -->
 <div class="pm-wrap">
   <span
     id="pmEnv"
@@ -12,6 +13,7 @@
     <h1 class="pm-title">LEAF Project Dashboard</h1>
 
     <!--{if $empMembership['groupID'][12]}-->
+    <!-- LEAF Team user group. Grant team members access to this group to be able to see the action buttons. -->
     <div class="pm-actionsRow pm-actionsRowSpaced">
       <div class="pm-addMenu">
         <button
@@ -359,6 +361,13 @@
             id="pmAnalyticsGeneralQuarterSelect"
             class="pm-select"
           ></select>
+          <button
+            type="button"
+            class="pm-ghostBtn"
+            id="pmAnalyticsClearFiltersBtn"
+          >
+            Clear all filters
+          </button>
         </div>
       </div>
 

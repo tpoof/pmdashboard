@@ -820,6 +820,15 @@
     return false;
   }
 
+  function hasAnyIndicatorValue(row, indicatorIds) {
+    if (!row) return false;
+    for (var i = 0; i < indicatorIds.length; i++) {
+      var v = extractRawIndicator(row, indicatorIds[i]);
+      if (v !== null && v !== undefined && String(v).trim() !== "") return true;
+    }
+    return false;
+  }
+
   function parseDateLoose(val) {
     if (!val) return null;
     var d = new Date(val);
@@ -3267,6 +3276,7 @@
   function wireAnalyticsSharedFilters() {
     var yearSel = document.getElementById("pmAnalyticsGeneralYearSelect");
     var quarterSel = document.getElementById("pmAnalyticsGeneralQuarterSelect");
+    var clearBtn = document.getElementById("pmAnalyticsClearFiltersBtn");
     if (yearSel)
       yearSel.addEventListener("change", function () {
         state.analyticsGeneralYear = yearSel.value || "";
@@ -3275,6 +3285,14 @@
     if (quarterSel)
       quarterSel.addEventListener("change", function () {
         state.analyticsGeneralQuarter = quarterSel.value || "";
+        applySearchAndFilters(false);
+      });
+    if (clearBtn)
+      clearBtn.addEventListener("click", function () {
+        if (yearSel) yearSel.value = "all";
+        if (quarterSel) quarterSel.value = "all";
+        state.analyticsGeneralYear = "all";
+        state.analyticsGeneralQuarter = "all";
         applySearchAndFilters(false);
       });
   }
@@ -3598,7 +3616,7 @@
     }
 
     var quarterOptions = [
-      { value: "all", label: "All" },
+      { value: "all", label: "All Quarters" },
       { value: "Q1", label: "Q1" },
       { value: "Q2", label: "Q2" },
       { value: "Q3", label: "Q3" },
@@ -4127,7 +4145,7 @@
       });
 
       var keyResultRows = projectRowsAll.filter(function (r) {
-        return hasAnyS1Value(r, [35, 36]);
+        return hasAnyIndicatorValue(r, [35, 36]);
       });
 
       state.projectsAll = projectRows.map(normalizeProject);
