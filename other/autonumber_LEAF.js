@@ -3,7 +3,7 @@
     "use strict";
 
     // Put your indicatorID here (the field that should store LEAF-###)
-    var INDICATOR_ID = 135;
+    var INDICATOR_ID = 2;
 
      function formatKeyFromRecordId(recordId) {
       var n = Number(recordId);
