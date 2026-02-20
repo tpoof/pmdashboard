@@ -1,23 +1,12 @@
-// 1. What project key does ind 8 have?
-document.querySelector('[name="8"]')?.value;
-
-// 2. What does the project query actually return?
+// Query without the project key filter — just get ALL project records and show their ind 2 values
 fetch(
   "https://leaf.va.gov/platform/projects/api/form/query/?q=" +
     encodeURIComponent(
       JSON.stringify({
-        terms: [
-          { id: "deleted", operator: "=", match: 0, gate: "AND" },
-          {
-            id: "2",
-            operator: "=",
-            match: document.querySelector('[name="8"]')?.value,
-            gate: "AND",
-          },
-        ],
+        terms: [{ id: "deleted", operator: "=", match: 0, gate: "AND" }],
         joins: [],
         sort: {},
-        getData: ["2", "29", "37"],
+        getData: ["2"],
       }),
     ) +
     "&x-filterData=recordID,",
