@@ -277,6 +277,10 @@ body {
   display: block;
 }
 
+.pm-panel {
+  overflow: visible;
+}
+
 .pm-panelHeader {
   display: flex;
   align-items: baseline;
@@ -444,19 +448,7 @@ body {
 .pm-okrsSummary {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-@media (max-width: 1200px) {
-  .pm-okrsSummary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 720px) {
-  .pm-okrsSummary {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: 1fr;
 }
 
 .pm-okrCard {
@@ -848,6 +840,31 @@ body {
   padding: 0;
   margin: 0;
   box-sizing: border-box;
+}
+
+.pm-tableShell > .pm-tableWrap {
+  margin-left: 0;
+  padding-left: 0;
+  transform: none;
+}
+
+.pm-tableWrap .pm-table {
+  margin-left: 0;
+}
+
+body.debug-layout .pm-tableShell {
+  outline: 2px dashed #f97316;
+  outline-offset: 2px;
+}
+
+body.debug-layout .pm-tableWrap {
+  outline: 2px dashed #0ea5e9;
+  outline-offset: 2px;
+}
+
+body.debug-layout .pm-tableWrap .pm-table {
+  outline: 2px dashed #10b981;
+  outline-offset: 2px;
 }
 
 #pmProjectsTableWrap .pm-table {
