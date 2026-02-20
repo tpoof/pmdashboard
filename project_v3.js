@@ -2817,15 +2817,6 @@
       return matchesQuery(hay, q, qCompact) || recordMatch(p.recordID);
     });
 
-    var projectsTableFiltered = projectsFiltered;
-    if (selectedProjectFiscalYear) {
-      projectsTableFiltered = projectsFiltered.filter(function (p) {
-        return (
-          String(p.projectFiscalYear || "").trim() === selectedProjectFiscalYear
-        );
-      });
-    }
-
     var tasksSearchFiltered = state.tasksAll.filter(function (t) {
       var hay = (
         t.projectKey +
@@ -2903,6 +2894,15 @@
       var st = state.sort.tasks;
       tasksFiltered = tasksFiltered.slice().sort(function (a, b) {
         return compareValues(a[st.key], b[st.key], st.dir, st.type);
+      });
+    }
+
+    var projectsTableFiltered = projectsFiltered;
+    if (selectedProjectFiscalYear) {
+      projectsTableFiltered = projectsFiltered.filter(function (p) {
+        return (
+          String(p.projectFiscalYear || "").trim() === selectedProjectFiscalYear
+        );
       });
     }
 
