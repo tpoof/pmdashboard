@@ -3,9 +3,9 @@
   "use strict";
 
   // ── Indicator IDs (this task form) ─────────────────────────────────────────
-  var PROJECT_KEY_SEL = '[name="8"]';   // Project key selected by user
-  var OKR_SEL         = '[name="30"]';  // OKR to auto-fill
-  var KR_SEL          = '[name="39"]';  // Key Result to auto-fill
+  var PROJECT_KEY_IND = 8;   // Project key selected by user
+  var OKR_IND         = 30;  // OKR to auto-fill
+  var KR_IND          = 39;  // Key Result to auto-fill
 
   // ── Project record indicator IDs ───────────────────────────────────────────
   var PROJ_KEY_IND = 2;   // Project key field inside project records
@@ -13,12 +13,27 @@
   var PROJ_KR_IND  = 37;  // KR value stored on the project record
 
   var BASE_QUERY_ENDPOINT = "https://leaf.va.gov/platform/projects/api/form/query/";
-
-  // ── Polling interval (ms) — checks if ind 8 value changed ─────────────────
   var POLL_INTERVAL = 500;
 
   var lastSeenProjectKey = null;
   var isFetching = false;
+
+  // ── Resolve the owning document from currentScript ────────────────────────
+  // htmlEdit scripts execute in the form's document context; anchoring off
+  // currentScript ensures we search the same document the script lives in.
+  var _scriptEl = document.currentScript;
+  var _ownerDoc = (_scriptEl && _scriptEl.ownerDocument) ? _scriptEl.ownerDocument : document;
+
+  function findField(indicatorId) {
+    // First try scoping within the same .response block as this script
+    var scope = null;
+    if (_scriptEl) {
+      scope = _scriptEl.closest('.response') || _scriptEl.parentElement;
+    }
+    // For fields in OTHER .response blocks we must search the full owner doc
+    var el = _ownerDoc.querySelector('[name="' + indicatorId + '"]');
+    return el || null;
+  }
 
   // ── Notify platform of value change ───────────────────────────────────────
   function notify(el) {
@@ -27,17 +42,15 @@
     el.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
-  // ── Write a value into a field and notify ─────────────────────────────────
-  function writeField(sel, val) {
-    var el = document.querySelector(sel);
+  function writeField(indicatorId, val) {
+    var el = findField(indicatorId);
     if (!el) return;
     el.value = String(val || "");
     notify(el);
   }
 
-  // ── Read a field value ────────────────────────────────────────────────────
-  function readField(sel) {
-    var el = document.querySelector(sel);
+  function readField(indicatorId) {
+    var el = findField(indicatorId);
     return el ? String(el.value || "").trim() : "";
   }
 
@@ -103,8 +116,8 @@
   // ── Main fill function ────────────────────────────────────────────────────
   function fillFromProject(projectKey) {
     if (!projectKey) {
-      writeField(OKR_SEL, "");
-      writeField(KR_SEL,  "");
+      writeField(OKR_IND, "");
+      writeField(KR_IND,  "");
       return;
     }
 
@@ -116,14 +129,14 @@
       if (err || !row) return;
       var okrVal = extractFromS1(row, PROJ_OKR_IND);
       var krVal  = extractFromS1(row, PROJ_KR_IND);
-      writeField(OKR_SEL, okrVal);
-      writeField(KR_SEL,  krVal);
+      writeField(OKR_IND, okrVal);
+      writeField(KR_IND,  krVal);
     });
   }
 
   // ── Poll ind 8 for changes ────────────────────────────────────────────────
   function poll() {
-    var current = readField(PROJECT_KEY_SEL);
+    var current = readField(PROJECT_KEY_IND);
     if (current !== lastSeenProjectKey) {
       lastSeenProjectKey = current;
       fillFromProject(current);
@@ -145,7 +158,7 @@
       var origFetch = window.fetch;
       window.fetch = function (input, init) {
         var url = (typeof input === "string") ? input : (input && input.url);
-        try { if (url && isSubmitEndpoint(url)) fillFromProject(readField(PROJECT_KEY_SEL)); } catch (e) {}
+        try { if (url && isSubmitEndpoint(url)) fillFromProject(readField(PROJECT_KEY_IND)); } catch (e) {}
         return origFetch.apply(this, arguments).then(function (resp) {
           try {
             if (url && isSubmitEndpoint(url) && resp && resp.ok) {
@@ -171,7 +184,7 @@
         xhr.send = function (body) {
           try {
             if (xhr.__leafUrl && isSubmitEndpoint(xhr.__leafUrl)) {
-              fillFromProject(readField(PROJECT_KEY_SEL));
+              fillFromProject(readField(PROJECT_KEY_IND));
               xhr.addEventListener("load", function () {
                 try {
                   if (xhr.status >= 200 && xhr.status < 300) {
@@ -194,16 +207,13 @@
   // ── Init ──────────────────────────────────────────────────────────────────
   function init() {
     hookFetchAndXHR();
-    // Seed last seen so we don't fire needlessly on first poll if already empty
-    lastSeenProjectKey = readField(PROJECT_KEY_SEL);
-    // Fill once immediately on load (edit mode)
+    lastSeenProjectKey = readField(PROJECT_KEY_IND);
     if (lastSeenProjectKey) fillFromProject(lastSeenProjectKey);
-    // Poll every 500ms to catch custom picker writes
     setInterval(poll, POLL_INTERVAL);
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+  if (_ownerDoc.readyState === "loading") {
+    _ownerDoc.addEventListener("DOMContentLoaded", init);
   } else {
     init();
   }
