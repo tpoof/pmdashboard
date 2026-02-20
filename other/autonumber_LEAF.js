@@ -16,6 +16,7 @@
       return (
         document.querySelector('input[name="' + indicatorId + '"]') ||
         document.getElementById(String(indicatorId)) ||
+        document.getElementById('data_' + indicatorId + '_1') ||
         document.querySelector('#xhrIndicator_' + indicatorId + '_1 input') ||
         null
       );
@@ -149,6 +150,8 @@
       // Also retry shortly after load in case LEAF renders fields asynchronously
       setTimeout(setKeyIfPossible, 300);
       setTimeout(setKeyIfPossible, 900);
+      setTimeout(setKeyIfPossible, 2000);
+      setTimeout(setKeyIfPossible, 4000);
     }
 
     if (document.readyState === "loading") {
