@@ -1182,6 +1182,7 @@
   ) {
     var wrap = document.getElementById("pmOkrsRollup");
     var summary = document.getElementById("pmOkrsSummary");
+    var indexWrap = document.getElementById("pmOkrIndex");
     if (!wrap || !summary) return;
 
     var okrMap = {};
@@ -1291,11 +1292,13 @@
     if (!okrEntriesFiltered.length) {
       summary.innerHTML =
         "<div class='pm-okrCard'>No OKRs found for this Fiscal Year.</div>";
+      if (indexWrap) indexWrap.innerHTML = "";
     } else {
       var initialCount = 8;
       var stepCount = 8;
       var visibleCount = Math.min(initialCount, okrEntriesFiltered.length);
 
+      var indexItems = [];
       var cardsHtml = okrEntriesFiltered
         .map(function (entry, idx) {
           var okrKey = entry.okrKey;
@@ -1304,7 +1307,10 @@
           var tasksForOkr = entry.tasksForOkr;
           var keyResultNameMap = entry.keyResultNameMap;
           var krMatchKeys = entry.krMatchKeys || [];
-          var forceExpand = searchActive && krMatchKeys.length > 0;
+          var forceExpandList = searchActive && krMatchKeys.length > 0;
+          var cardExpanded =
+            searchActive &&
+            (entry.objectiveMatch || (krMatchKeys && krMatchKeys.length > 0));
 
           var keyResultItems = Object.keys(keyResultNameMap)
             .map(function (matchKey) {
@@ -1390,12 +1396,42 @@
             );
           }
 
+          var okrProjectKeys = {};
+          keyResultItems.forEach(function (kr) {
+            (kr.projects || []).forEach(function (p) {
+              var pk = String(p.projectKey || "").trim();
+              var key =
+                pk || (p.recordID ? "rid:" + String(p.recordID).trim() : "");
+              if (key) okrProjectKeys[key] = true;
+            });
+          });
+          var okrProjectCount = Object.keys(okrProjectKeys).length;
+
+          var okrTaskKeys = {};
+          keyResultItems.forEach(function (kr) {
+            (kr.tasks || []).forEach(function (t) {
+              var key = getTaskDedupKey(t);
+              if (key) okrTaskKeys[key] = true;
+            });
+          });
+          var okrTaskCount = Object.keys(okrTaskKeys).length;
+
           var pctClass = "pm-okrPercentBadge";
           if (avgPercent === 0) pctClass += " pm-okrPercentBadge--none";
           else if (avgPercent >= 100)
             pctClass += " pm-okrPercentBadge--complete";
 
           var okrLabel = safeAttr(okrKey);
+          var okrKeyLink = okrRecordLink(okrKey, okrKey);
+          var cardId = "pmOkrCard-" + makeSafeId(okrKey);
+          var cardBodyId = cardId + "-body";
+
+          indexItems.push({
+            okrKey: okrKey,
+            title: objective.title,
+            percent: avgPercent,
+            cardId: cardId,
+          });
           var listId = "pmKrList-" + makeSafeId(okrKey);
           var showAllBtn =
             keyResultItems.length > 3
@@ -1404,15 +1440,17 @@
                 "' aria-controls='" +
                 listId +
                 "' aria-expanded='" +
-                (forceExpand ? "true" : "false") +
+                (forceExpandList ? "true" : "false") +
                 "'>" +
-                (forceExpand ? "Show fewer Key Results" : "Show all Key Results") +
+                (forceExpandList
+                  ? "Show fewer Key Results"
+                  : "Show all Key Results") +
                 "</button>"
               : "";
 
           var keyResultList = keyResultItems.length
             ? "<ul class='pm-krList" +
-              (forceExpand ? " is-expanded" : "") +
+              (forceExpandList ? " is-expanded" : "") +
               "' id='" +
               listId +
               "'>" +
@@ -1422,7 +1460,6 @@
                     "pmKr-" + makeSafeId(okrKey + "-" + kr.matchKey);
                   var projId = krId + "-projects";
                   var otherId = krId + "-other";
-                  var otherTipId = otherId + "-tip";
                   var extraClass = idx > 2 ? " is-extra" : "";
                   var krHighlight =
                     searchActive && krMatchKeys.indexOf(kr.matchKey) !== -1
@@ -1600,24 +1637,26 @@
                       "</ul>"
                     : "<div class='pm-okrItem'>No other contributing items.</div>";
 
-                  return (
-                    "<li class='pm-krItem" +
-                    extraClass +
-                    "'>" +
-                    "<div class='pm-krRow'>" +
-                    "<div class='pm-krName" +
-                    krHighlight +
-                    "'>" +
-                    safe(kr.name) +
-                    "</div>" +
-                    "<div class='pm-krStats'>" +
-                    "<span class='pm-krPercent'>" +
-                    kr.percent +
-                    "%</span>" +
-                    "</div>" +
-                    "</div>" +
-                    "<div class='pm-krToggles'>" +
-                    "<button type='button' class='pm-okrToggle' data-target='" +
+                  var exceptionCount = kr.otherTasks.length;
+                  var hasExceptions = exceptionCount > 0;
+                  var krDetailsId = krId + "-details";
+                  var exceptionBadge = hasExceptions
+                    ? "<span class='pm-krBadge'>Exceptions: " +
+                      exceptionCount +
+                      "</span>"
+                    : "";
+                  var countsLabel =
+                    "Tasks: " +
+                    kr.completedTasks +
+                    " / " +
+                    kr.totalTasks +
+                    " | Projects: " +
+                    kr.projects.length;
+                  var otherToggleClass =
+                    "pm-okrToggle pm-krOtherToggle" +
+                    (hasExceptions ? "" : " pm-krOtherToggle--muted");
+                  var projectsToggle =
+                    "<button type='button' class='pm-okrToggle pm-krProjectsToggle' data-target='" +
                     projId +
                     "' data-label='Projects' data-okr='" +
                     okrLabel +
@@ -1631,8 +1670,69 @@
                     safeAttr(kr.name) +
                     "'>Projects (" +
                     kr.projects.length +
-                    ")</button>" +
+                    ")</button>";
+                  var otherToggle =
+                    "<button type='button' class='" +
+                    otherToggleClass +
+                    "' data-target='" +
+                    otherId +
+                    "' data-label='Other contributing items' data-okr='" +
+                    okrLabel +
+                    "' data-count='" +
+                    exceptionCount +
+                    "' aria-expanded='false' aria-controls='" +
+                    otherId +
+                    "' aria-label='Expand Other contributing items for OKR " +
+                    okrLabel +
+                    " key result " +
+                    safeAttr(kr.name) +
+                    "'>Other contributing items (" +
+                    exceptionCount +
+                    ")</button>";
+
+                  return (
+                    "<li class='pm-krItem" +
+                    extraClass +
+                    "'>" +
+                    "<div class='pm-krRow" +
+                    (hasExceptions ? " pm-krRow--hasExceptions" : "") +
+                    "'>" +
+                    "<div class='pm-krName" +
+                    krHighlight +
+                    "'>" +
+                    safe(kr.name) +
                     "</div>" +
+                    "<div class='pm-krProgressWrap'>" +
+                    "<div class='pm-krProgress' aria-hidden='true'><div class='pm-krProgressBar' style='width:" +
+                    kr.percent +
+                    "%'></div></div>" +
+                    "<div class='pm-krPercent'>" +
+                    kr.percent +
+                    "%</div>" +
+                    "</div>" +
+                    "<div class='pm-krCounts'>" +
+                    safe(countsLabel) +
+                    "</div>" +
+                    "<div class='pm-krActions'>" +
+                    exceptionBadge +
+                    "<button type='button' class='pm-krRowToggle' data-target='" +
+                    krDetailsId +
+                    "' aria-expanded='false' aria-controls='" +
+                    krDetailsId +
+                    "' data-kr='" +
+                    safeAttr(kr.name) +
+                    "' aria-label='Expand details for key result " +
+                    safeAttr(kr.name) +
+                    "'>Details</button>" +
+                    "</div>" +
+                    "</div>" +
+                    "<div class='pm-okrDetails pm-krDetails' id='" +
+                    krDetailsId +
+                    "' role='region' aria-label='Details for key result " +
+                    safeAttr(kr.name) +
+                    "' aria-hidden='true' hidden>" +
+                    "<div class='pm-krDetailBlock'>" +
+                    projectsToggle +
                     "<div class='pm-okrDetails' id='" +
                     projId +
                     "' role='region' aria-label='Projects for OKR " +
@@ -1642,29 +1742,9 @@
                     "' aria-hidden='true' hidden>" +
                     projList +
                     "</div>" +
-                    "<div class='pm-krExtras'>" +
-                    "<div class='pm-tooltipWrap'>" +
-                    "<button type='button' class='pm-okrToggle pm-krOtherToggle' data-target='" +
-                    otherId +
-                    "' data-label='Other contributing items' data-okr='" +
-                    okrLabel +
-                    "' data-count='" +
-                    kr.otherTasks.length +
-                    "' aria-expanded='false' aria-controls='" +
-                    otherId +
-                    "' aria-describedby='" +
-                    otherTipId +
-                    "' aria-label='Expand Other contributing items for OKR " +
-                    okrLabel +
-                    " key result " +
-                    safeAttr(kr.name) +
-                    "'>Other contributing items (" +
-                    kr.otherTasks.length +
-                    ")</button>" +
-                    "<span class='pm-tooltip' role='tooltip' id='" +
-                    otherTipId +
-                    "'>Tasks tagged to this Key Result whose project is tagged to a different Key Result or is not set.</span>" +
                     "</div>" +
+                    "<div class='pm-krDetailBlock'>" +
+                    otherToggle +
                     "<div class='pm-okrDetails' id='" +
                     otherId +
                     "' role='region' aria-label='Other contributing items for OKR " +
@@ -1672,7 +1752,9 @@
                     " key result " +
                     safeAttr(kr.name) +
                     "' aria-hidden='true' hidden>" +
+                    "<div class='pm-okrHelper'>Tasks tagged to this Key Result whose project is tagged to a different Key Result or is not set.</div>" +
                     otherList +
+                    "</div>" +
                     "</div>" +
                     "</div>" +
                     "</li>"
@@ -1682,13 +1764,16 @@
               "</ul>"
             : "<div class='pm-krEmpty'>No Key Results found.</div>";
 
-          var okrKeyLink = okrRecordLink(okrKey, okrKey);
-
           return (
             "<div class='pm-okrCard" +
             (idx >= visibleCount ? " is-hidden" : "") +
+            (cardExpanded ? " is-expanded" : "") +
+            "' id='" +
+            cardId +
             "' data-okr-index='" +
             idx +
+            "' data-okr-key='" +
+            okrLabel +
             "'>" +
             "<div class='pm-okrCardHeader'>" +
             "<div class='pm-okrTitle'>" +
@@ -1714,6 +1799,42 @@
             avgPercent +
             "%'></div>" +
             "</div>" +
+            "<div class='pm-okrSummaryRow'>" +
+            "<div class='pm-okrStats'>" +
+            "<span class='pm-okrStat'>Key Results: " +
+            keyResultItems.length +
+            "</span>" +
+            "<span class='pm-okrStat'>Projects: " +
+            okrProjectCount +
+            "</span>" +
+            "<span class='pm-okrStat'>Tasks: " +
+            okrTaskCount +
+            "</span>" +
+            "</div>" +
+            "<button type='button' class='pm-okrCardToggle' data-target='" +
+            cardBodyId +
+            "' aria-expanded='" +
+            (cardExpanded ? "true" : "false") +
+            "' aria-controls='" +
+            cardBodyId +
+            "' data-okr='" +
+            okrLabel +
+            "' aria-label='" +
+            (cardExpanded ? "Collapse OKR " : "Expand OKR ") +
+            okrLabel +
+            "'>" +
+            (cardExpanded ? "Collapse" : "Expand") +
+            "</button>" +
+            "</div>" +
+            "<div class='pm-okrCardBody' id='" +
+            cardBodyId +
+            "' role='region' aria-label='Key Results for OKR " +
+            okrLabel +
+            "' aria-hidden='" +
+            (cardExpanded ? "false" : "true") +
+            "'" +
+            (cardExpanded ? "" : " hidden") +
+            ">" +
             "<div class='pm-krSection'>" +
             "<div class='pm-krHeader'>" +
             "<div class='pm-krHeaderTitle'>Key Results (" +
@@ -1722,6 +1843,7 @@
             showAllBtn +
             "</div>" +
             keyResultList +
+            "</div>" +
             "</div>" +
             "</div>"
           );
@@ -1738,6 +1860,44 @@
             okrEntriesFiltered.length +
             "' aria-expanded='false'>Show more Objectives</button></div>"
           : "";
+
+      if (indexWrap) {
+        var indexHtml =
+          "<div class='pm-okrIndexGrid'>" +
+          indexItems
+            .map(function (item) {
+              var title = item.title || "Untitled objective";
+              return (
+                "<div class='pm-okrIndexItem' role='button' tabindex='0' data-target='" +
+                item.cardId +
+                "' data-okr='" +
+                safeAttr(item.okrKey) +
+                "' aria-label='Jump to OKR " +
+                safeAttr(item.okrKey) +
+                "'>" +
+                "<div class='pm-okrIndexKey'>" +
+                safe(item.okrKey) +
+                "</div>" +
+                "<div class='pm-okrIndexTitle' title='" +
+                safeAttr(title) +
+                "'>" +
+                safe(title) +
+                "</div>" +
+                "<div class='pm-okrIndexProgressWrap'>" +
+                "<div class='pm-okrIndexProgress' aria-hidden='true'><div class='pm-okrIndexBar' style='width:" +
+                item.percent +
+                "%'></div></div>" +
+                "<div class='pm-okrIndexPercent'>" +
+                item.percent +
+                "%</div>" +
+                "</div>" +
+                "</div>"
+              );
+            })
+            .join("") +
+          "</div>";
+        indexWrap.innerHTML = indexHtml;
+      }
 
       summary.innerHTML = cardsHtml + showMoreBtn;
     }
@@ -3236,7 +3396,88 @@
 
   function wireOkrRollupToggle() {
     var wrap = document.getElementById("pmOkrsSummary");
+    var indexWrap = document.getElementById("pmOkrIndex");
     if (!wrap) return;
+
+    function setCardExpanded(card, expand) {
+      if (!card) return;
+      var toggle = card.querySelector(".pm-okrCardToggle");
+      if (!toggle) return;
+      var targetId = toggle.getAttribute("data-target") || "";
+      if (!targetId) return;
+      var panel = document.getElementById(targetId);
+      if (!panel) return;
+      var shouldExpand = expand != null ? expand : panel.hasAttribute("hidden");
+      panel.toggleAttribute("hidden", !shouldExpand);
+      panel.setAttribute("aria-hidden", shouldExpand ? "false" : "true");
+      toggle.setAttribute("aria-expanded", shouldExpand ? "true" : "false");
+      toggle.textContent = shouldExpand ? "Collapse" : "Expand";
+      card.classList.toggle("is-expanded", shouldExpand);
+      var okr = toggle.getAttribute("data-okr") || "";
+      var action = shouldExpand ? "Collapse" : "Expand";
+      toggle.setAttribute(
+        "aria-label",
+        action + (okr ? " OKR " + okr : " OKR"),
+      );
+    }
+
+    function revealCard(card) {
+      if (!card || !card.classList.contains("is-hidden")) return;
+      var showMoreBtn = wrap.querySelector(".pm-okrShowMoreBtn");
+      if (!showMoreBtn) {
+        card.classList.remove("is-hidden");
+        return;
+      }
+      var total = parseInt(showMoreBtn.getAttribute("data-total") || "0", 10);
+      var visible = parseInt(
+        showMoreBtn.getAttribute("data-visible") || "0",
+        10,
+      );
+      var idx = parseInt(card.getAttribute("data-okr-index") || "0", 10);
+      var nextVisible = Math.min(total, Math.max(visible, idx + 1));
+      var cards = Array.from(wrap.querySelectorAll(".pm-okrCard"));
+      cards.forEach(function (c, i) {
+        if (i < nextVisible) c.classList.remove("is-hidden");
+      });
+      showMoreBtn.setAttribute("data-visible", String(nextVisible));
+      showMoreBtn.setAttribute(
+        "aria-expanded",
+        nextVisible >= total ? "true" : "false",
+      );
+      if (nextVisible >= total) {
+        var container = showMoreBtn.closest(".pm-okrShowMore");
+        if (container) container.remove();
+      }
+    }
+
+    function activateIndexItem(item) {
+      if (!item) return;
+      var targetId = item.getAttribute("data-target") || "";
+      if (!targetId) return;
+      var card = document.getElementById(targetId);
+      if (!card) return;
+      revealCard(card);
+      setCardExpanded(card, true);
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
+      var toggle = card.querySelector(".pm-okrCardToggle");
+      if (toggle) toggle.focus({ preventScroll: true });
+    }
+
+    if (indexWrap) {
+      indexWrap.addEventListener("click", function (e) {
+        var item = e.target.closest(".pm-okrIndexItem");
+        if (!item) return;
+        activateIndexItem(item);
+      });
+      indexWrap.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        var item = e.target.closest(".pm-okrIndexItem");
+        if (!item) return;
+        e.preventDefault();
+        activateIndexItem(item);
+      });
+    }
+
     wrap.addEventListener("click", function (e) {
       var showMoreBtn = e.target.closest(".pm-okrShowMoreBtn");
       if (showMoreBtn) {
@@ -3278,6 +3519,31 @@
         showAllBtn.textContent = isExpanded
           ? "Show fewer Key Results"
           : "Show all Key Results";
+        return;
+      }
+      var cardToggle = e.target.closest(".pm-okrCardToggle");
+      if (cardToggle) {
+        var card = cardToggle.closest(".pm-okrCard");
+        setCardExpanded(card);
+        return;
+      }
+      var krToggle = e.target.closest(".pm-krRowToggle");
+      if (krToggle) {
+        var krTargetId = krToggle.getAttribute("data-target") || "";
+        if (!krTargetId) return;
+        var krPanel = document.getElementById(krTargetId);
+        if (!krPanel) return;
+        var krOpen = !krPanel.hasAttribute("hidden");
+        krPanel.toggleAttribute("hidden", krOpen);
+        krPanel.setAttribute("aria-hidden", krOpen ? "true" : "false");
+        krToggle.setAttribute("aria-expanded", krOpen ? "false" : "true");
+        krToggle.textContent = krOpen ? "Details" : "Hide details";
+        var krName = krToggle.getAttribute("data-kr") || "";
+        var krAction = krOpen ? "Expand" : "Hide";
+        krToggle.setAttribute(
+          "aria-label",
+          krAction + " details" + (krName ? " for " + krName : ""),
+        );
         return;
       }
       var btn = e.target.closest(".pm-okrToggle");
