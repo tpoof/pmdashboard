@@ -75,7 +75,7 @@
   const PROJECT_NAME_IND = 3;
  
   // Endpoints
-  const BASE_QUERY_ENDPOINT = https://leaf.va.gov/platform/projects/api/form/query/;
+  const BASE_QUERY_ENDPOINT = "https://leaf.va.gov/platform/projects/api/form/query/";
  
   const wrap = document.getElementById("pkWrap8");
   const searchEl = document.getElementById("pkSearch8");
