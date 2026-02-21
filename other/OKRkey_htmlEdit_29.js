@@ -1,29 +1,30 @@
 <div id="pkWrap29" style="max-width: 820px;">
-  <div style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap;">
-    <div style="flex:1; min-width: 260px;">
-      <div style="font-weight:600; margin-bottom:0.25rem;">OKR</div>
-      <input id="pkSearch29" type="text" autocomplete="off" placeholder="Search OKR key or name"
-        style="width:100%; padding:0.45rem 0.55rem; border:1px solid #c9c9c9; border-radius:0.5rem;">
-    </div>
-
-    <div style="display:flex; gap:0.5rem; align-items:center;">
-      <button type="button" id="pkClear29" class="buttonNorm" style="white-space:nowrap;">Clear</button>
-    </div>
+  <div id="pkSummary29" style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+    <div style="font-weight:600; min-width:120px;">OKR</div>
+    <div id="pkSummaryVal29" style="flex:1; min-width:200px; padding:0.25rem 0;">None selected</div>
+    <button type="button" id="pkToggle29" class="buttonNorm" aria-expanded="false" aria-controls="pkPanel29" style="white-space:nowrap;">Change</button>
   </div>
 
-  <div id="pkMsg29" style="margin-top:0.5rem; font-size:0.9rem;"></div>
+  <div id="pkPanel29" style="display:none; margin-top:0.6rem;">
+    <div style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap;">
+      <div style="flex:1; min-width: 260px;">
+        <input id="pkSearch29" type="text" autocomplete="off" placeholder="Search OKR key or name" aria-label="Search OKR key or name"
+          style="width:100%; padding:0.45rem 0.55rem; border:1px solid #c9c9c9; border-radius:0.5rem;">
+      </div>
 
-  <div style="margin-top:0.6rem;">
-    <div style="font-weight:600; margin-bottom:0.35rem;">Available OKRs</div>
-    <div id="pkList29"
-      style="border:1px solid #d9d9d9; border-radius:0.6rem; padding:0.6rem; min-height: 140px; max-height: 260px; overflow-y:auto; background:#fff;">
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        <button type="button" id="pkClear29" class="buttonNorm" style="white-space:nowrap;">Clear</button>
+        <button type="button" id="pkClose29" class="buttonNorm" style="white-space:nowrap;">Close</button>
+      </div>
     </div>
-  </div>
 
-  <div style="margin-top:0.75rem;">
-    <div style="font-weight:600; margin-bottom:0.35rem;">Selected OKR</div>
-    <div id="pkSelected29"
-      style="border:1px solid #d9d9d9; border-radius:0.6rem; padding:0.6rem; background:#fff;">
+    <div id="pkMsg29" style="margin-top:0.5rem; font-size:0.9rem;"></div>
+
+    <div style="margin-top:0.6rem;">
+      <div style="font-weight:600; margin-bottom:0.35rem;">Available OKRs</div>
+      <div id="pkList29"
+        style="border:1px solid #d9d9d9; border-radius:0.6rem; padding:0.6rem; min-height: 140px; max-height: 260px; overflow-y:auto; background:#fff;">
+      </div>
     </div>
   </div>
 </div>
@@ -51,10 +52,13 @@
   const wrap = document.getElementById("pkWrap29");
   const searchEl = document.getElementById("pkSearch29");
   const listEl = document.getElementById("pkList29");
-  const selectedEl = document.getElementById("pkSelected29");
+  const summaryValEl = document.getElementById("pkSummaryVal29");
   const msgEl = document.getElementById("pkMsg29");
   const clearBtn = document.getElementById("pkClear29");
-  if (!wrap || !searchEl || !listEl || !selectedEl || !msgEl || !clearBtn) return;
+  const toggleBtn = document.getElementById("pkToggle29");
+  const panelEl = document.getElementById("pkPanel29");
+  const closeBtn = document.getElementById("pkClose29");
+  if (!wrap || !searchEl || !listEl || !summaryValEl || !msgEl || !clearBtn || !toggleBtn || !panelEl || !closeBtn) return;
 
   function setMsg(text, kind) {
     msgEl.textContent = text || "";
@@ -146,32 +150,17 @@
     return hay.includes(q);
   }
 
-  function renderSelected() {
+  function renderSummary() {
     const val = readValue();
     if (!val) {
-      selectedEl.innerHTML = '<div style="opacity:0.75;">No OKR selected</div>';
+      summaryValEl.textContent = "None selected";
       return;
     }
     const found = okrs.find(okr => String(okr.key) === String(val));
     const label = found
       ? (found.key + (found.name ? (" | " + found.name) : ""))
       : val;
-
-    selectedEl.innerHTML = `
-      <div style="display:flex; justify-content:space-between; gap:0.75rem; align-items:flex-start;">
-        <div style="min-width:0;">
-          <div style="font-weight:700;">${safe(label)}</div>
-          <div style="opacity:0.85; font-size:0.9rem;">Stored value: ${safe(val)}</div>
-        </div>
-        <button type="button" class="buttonNorm" id="pkClearSelected29" style="white-space:nowrap;">Remove</button>
-      </div>
-    `;
-
-    const btn = document.getElementById("pkClearSelected29");
-    if (btn) btn.addEventListener("click", () => {
-      writeValue("");
-      renderAll();
-    });
+    summaryValEl.textContent = label;
   }
 
   function renderList() {
@@ -205,14 +194,20 @@
       r.addEventListener("change", () => {
         const key = String(r.getAttribute("data-key") || "");
         writeValue(key);
-        renderSelected();
+        renderSummary();
+        setExpanded(false);
       });
     });
   }
 
   function renderAll() {
-    renderList();
-    renderSelected();
+    if (panelEl.style.display !== "none") renderList();
+    renderSummary();
+  }
+
+  function setExpanded(isOpen) {
+    panelEl.style.display = isOpen ? "" : "none";
+    toggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
   }
 
   async function loadOkrs() {
@@ -244,6 +239,16 @@
     writeValue("");
     searchEl.value = "";
     renderAll();
+  });
+
+  toggleBtn.addEventListener("click", () => {
+    setExpanded(true);
+    searchEl.focus();
+    renderList();
+  });
+
+  closeBtn.addEventListener("click", () => {
+    setExpanded(false);
   });
 
   searchEl.addEventListener("input", renderList);

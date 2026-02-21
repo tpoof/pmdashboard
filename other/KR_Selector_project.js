@@ -2,32 +2,32 @@
 
   <!-- KR Section (conditionally shown when an OKR is selected in ind 29) -->
   <div id="krSection37" style="display:none;">
-
-    <div style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap;">
-      <div style="flex:1; min-width: 260px;">
-        <div style="font-weight:600; margin-bottom:0.25rem;">Key Result</div>
-        <input id="krSearch37" type="text" autocomplete="off" placeholder="Search Key Results"
-          style="width:100%; padding:0.45rem 0.55rem; border:1px solid #c9c9c9; border-radius:0.5rem;">
-      </div>
-
-      <div style="display:flex; gap:0.5rem; align-items:center;">
-        <button type="button" id="krClear37" class="buttonNorm" style="white-space:nowrap;">Clear</button>
-      </div>
+    <div id="krSummary37" style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+      <div style="font-weight:600; min-width:120px;">Key Result</div>
+      <div id="krSummaryVal37" style="flex:1; min-width:200px; padding:0.25rem 0;">None selected</div>
+      <button type="button" id="krToggle37" class="buttonNorm" aria-expanded="false" aria-controls="krPanel37" style="white-space:nowrap;">Change</button>
     </div>
 
-    <div id="krMsg37" style="margin-top:0.5rem; font-size:0.9rem;"></div>
+    <div id="krPanel37" style="display:none; margin-top:0.6rem;">
+      <div style="display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap;">
+        <div style="flex:1; min-width: 260px;">
+          <input id="krSearch37" type="text" autocomplete="off" placeholder="Search Key Results" aria-label="Search Key Results"
+            style="width:100%; padding:0.45rem 0.55rem; border:1px solid #c9c9c9; border-radius:0.5rem;">
+        </div>
 
-    <div style="margin-top:0.6rem;">
-      <div style="font-weight:600; margin-bottom:0.35rem;">Available Key Results</div>
-      <div id="krList37"
-        style="border:1px solid #d9d9d9; border-radius:0.6rem; padding:0.6rem; min-height: 140px; max-height: 320px; overflow:auto; background:#fff;">
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+          <button type="button" id="krClear37" class="buttonNorm" style="white-space:nowrap;">Clear</button>
+          <button type="button" id="krClose37" class="buttonNorm" style="white-space:nowrap;">Close</button>
+        </div>
       </div>
-    </div>
 
-    <div style="margin-top:0.75rem;">
-      <div style="font-weight:600; margin-bottom:0.35rem;">Selected Key Result</div>
-      <div id="krSelected37"
-        style="border:1px solid #d9d9d9; border-radius:0.6rem; padding:0.6rem; background:#fff;">
+      <div id="krMsg37" style="margin-top:0.5rem; font-size:0.9rem;"></div>
+
+      <div style="margin-top:0.6rem;">
+        <div style="font-weight:600; margin-bottom:0.35rem;">Available Key Results</div>
+        <div id="krList37"
+          style="border:1px solid #d9d9d9; border-radius:0.6rem; padding:0.6rem; min-height: 140px; max-height: 320px; overflow:auto; background:#fff;">
+        </div>
       </div>
     </div>
 
@@ -65,11 +65,14 @@
   const noOkrEl     = document.getElementById("krNoOkr37");
   const searchEl    = document.getElementById("krSearch37");
   const listEl      = document.getElementById("krList37");
-  const selectedEl  = document.getElementById("krSelected37");
+  const summaryValEl = document.getElementById("krSummaryVal37");
   const msgEl       = document.getElementById("krMsg37");
   const clearBtn    = document.getElementById("krClear37");
+  const toggleBtn   = document.getElementById("krToggle37");
+  const panelEl     = document.getElementById("krPanel37");
+  const closeBtn    = document.getElementById("krClose37");
 
-  if (!wrap || !section || !noOkrEl || !searchEl || !listEl || !selectedEl || !msgEl || !clearBtn) return;
+  if (!wrap || !section || !noOkrEl || !searchEl || !listEl || !summaryValEl || !msgEl || !clearBtn || !toggleBtn || !panelEl || !closeBtn) return;
 
   // ── Bind to the real platform fields ──────────────────────────────────────
   function findField(indicatorId) {
@@ -181,26 +184,13 @@
     return String(kr.name).toLowerCase().includes(q);
   }
 
-  function renderSelected() {
+  function renderSummary() {
     const val = readKrValue();
     if (!val) {
-      selectedEl.innerHTML = '<div style="opacity:0.75;">No Key Result selected</div>';
+      summaryValEl.textContent = "None selected";
       return;
     }
-    selectedEl.innerHTML = `
-      <div style="display:flex; justify-content:space-between; gap:0.75rem; align-items:flex-start;">
-        <div style="min-width:0;">
-          <div style="font-weight:700;">${safe(val)}</div>
-          <div style="opacity:0.85; font-size:0.9rem;">Stored value: ${safe(val)}</div>
-        </div>
-        <button type="button" class="buttonNorm" id="krClearSelected37" style="white-space:nowrap;">Remove</button>
-      </div>
-    `;
-    const btn = document.getElementById("krClearSelected37");
-    if (btn) btn.addEventListener("click", () => {
-      writeKrValue("");
-      renderAll();
-    });
+    summaryValEl.textContent = val;
   }
 
   function renderList() {
@@ -232,14 +222,20 @@
       r.addEventListener("change", () => {
         const name = String(r.getAttribute("data-name") || "");
         writeKrValue(name);
-        renderSelected();
+        renderSummary();
+        setExpanded(false);
       });
     });
   }
 
   function renderAll() {
-    renderList();
-    renderSelected();
+    if (panelEl.style.display !== "none") renderList();
+    renderSummary();
+  }
+
+  function setExpanded(isOpen) {
+    panelEl.style.display = isOpen ? "" : "none";
+    toggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
   }
 
   // ── Show / hide KR section based on whether an OKR is selected ────────────
@@ -298,6 +294,16 @@
     writeKrValue("");
     searchEl.value = "";
     renderAll();
+  });
+
+  toggleBtn.addEventListener("click", () => {
+    setExpanded(true);
+    searchEl.focus();
+    renderList();
+  });
+
+  closeBtn.addEventListener("click", () => {
+    setExpanded(false);
   });
 
   searchEl.addEventListener("input", renderList);
