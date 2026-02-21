@@ -8,24 +8,39 @@
 <!-- Main content area (anything under the heading) -->
 <div id="maincontent" style="width: 99%">
 
+<!--{if $empMembership['groupID'][226]}-->
+<div class="noprint pm-transfer-wrap">
+    <button type="button" class="tools pm-transfer-btn" onclick="transferToPMDashboard()" title="Transfer to LEAF Projects">
+        <img src="dynicons/?img=go-next.svg&amp;w=32" alt="" aria-hidden="true" style="vertical-align: middle" /> Transfer to LEAF Projects
+    </button>
+</div>
+<!--{/if}-->
+
 <div id="formcontent"><div style="border: 2px solid black; text-align: center; font-size: 24px; font-weight: bold; background: white; padding: 16px; width: 95%">Loading... <img src="images/largespinner.gif" alt="" /></div></div>
 </div>
+
+<style type="text/css">
+    .pm-transfer-wrap {
+        padding-bottom: 12px;
+    }
+    .pm-transfer-btn {
+        background: #c5ee93 !important;
+        color: #000 !important;
+        cursor: pointer;
+    }
+    .pm-transfer-btn:hover,
+    .pm-transfer-btn:focus {
+        background: #7fb135 !important;
+        color: #fff !important;
+        cursor: pointer;
+    }
+</style>
 
 <!-- DIALOG BOXES -->
 <div id="formContainer"></div>
 <!--{include file="site_elements/generic_xhrDialog.tpl"}-->
 <!--{include file="site_elements/generic_confirm_xhrDialog.tpl"}-->
 <!--{include file="site_elements/generic_dialog.tpl"}-->
-
-<style type="text/css">
-    .pmSandboxLink {
-        font-family: monospace;
-        font-size: 20px;
-        letter-spacing: 0.01rem;
-        line-height: 150%;
-        font-weight: inherit;
-    }
-</style>
 
 <script type="text/javascript" src="js/functions/toggleZoom.js"></script>
 <script type="text/javascript">
@@ -35,181 +50,80 @@ var recordID = <!--{$recordID}-->;
 var serviceID = <!--{$serviceID}-->;
 var CSRFToken = '<!--{$CSRFToken}-->';
 
-function wireSandboxTicket18() {
+function transferToPMDashboard() {
+    var params = new URLSearchParams(window.location.search || "");
+    var id = params.get("recordID");
+    if (!id) return;
+    window.location.href =
+        "https://leaf.va.gov/platform/projects/?tab=tasks&transferFromUX=" +
+        encodeURIComponent(id);
+}
+
+function wireIdeaTicket18() {
     var nodes = document.querySelectorAll("[id^='xhrIndicator_18_']");
     if (!nodes || !nodes.length) return;
     nodes.forEach(function(el) {
-        if (!el || el.querySelector("a.pmSandboxLink")) return;
+        if (!el || el.querySelector("a.pmIdeaLink")) return;
         var text = (el.textContent || "").trim();
-        var match = text.match(/^(Support|UX)\s*Ticket\s*#(\d+)/i);
+        // Ticket import mapping: Support/UX/Idea Ticket # -> source print URL.
+        var match = text.match(/^(Support|UX|Idea)\s*Ticket\s*#(\d+)/i);
         var ticketType = "support";
         var ticketId = "";
         if (!match) return;
         ticketType = match[1].toLowerCase();
         ticketId = match[2];
+        if (!ticketId) return;
         var urlBase =
             ticketType === "ux"
                 ? "/platform/ux/index.php?a=printview&recordID="
+                : ticketType === "idea"
+                ? "/platform/ideas/index.php?a=printview&recordID="
                 : "/platform/support/index.php?a=printview&recordID=";
         var url = urlBase + encodeURIComponent(ticketId);
         var link = document.createElement("a");
         link.href = "#";
-        link.className = "pmSandboxLink";
-        link.setAttribute("data-sandbox-url", url);
+        link.className = "pmIdeaLink";
+        link.setAttribute("data-idea-url", url);
         link.textContent =
-            (ticketType === "ux" ? "UX Ticket #" : "Support Ticket #") +
+            (ticketType === "ux"
+                ? "UX Ticket #"
+                : ticketType === "idea"
+                ? "Idea Ticket #"
+                : "Support Ticket #") +
             ticketId;
         el.innerHTML = "";
         el.appendChild(link);
     });
 }
 
-function decodeEntities(text) {
-    var ta = document.createElement("textarea");
-    ta.innerHTML = String(text || "");
-    return ta.value;
-}
-
-function parseDependenciesValue(raw) {
-    var text = String(raw || "").trim();
-    if (!text) return [];
-    try {
-        var parsed = JSON.parse(text);
-        if (Array.isArray(parsed)) return parsed;
-    } catch (e1) {}
-    try {
-        var decoded = decodeEntities(text);
-        var parsed2 = JSON.parse(decoded);
-        if (Array.isArray(parsed2)) return parsed2;
-    } catch (e2) {}
-    return [];
-}
-
-function extractDependencyRows(items) {
-    if (!items || !items.length) return [];
-    return items
-        .map(function(item) {
-            if (item == null) return null;
-            if (typeof item === "string" || typeof item === "number") {
-                return { id: String(item).trim(), title: "" };
-            }
-            if (typeof item === "object") {
-                var id =
-                    item.id ||
-                    item.recordID ||
-                    item.recordId ||
-                    item.ID ||
-                    "";
-                var title =
-                    item.title ||
-                    item.name ||
-                    item.label ||
-                    item.description ||
-                    "";
-                return { id: String(id || "").trim(), title: String(title || "") };
-            }
-            return null;
-        })
-        .filter(function(row) {
-            return row && row.id;
-        });
-}
-
-function buildDependenciesTable(rows) {
-    var table = document.createElement("table");
-    table.className = "agenda pm-deps-table";
-    table.style.width = "100%";
-    table.style.borderCollapse = "collapse";
-
-    var hasTitle = rows.some(function(r) {
-        return r.title;
-    });
-
-    var thead = document.createElement("thead");
-    var headRow = document.createElement("tr");
-    var thId = document.createElement("th");
-    thId.textContent = "Dependency ID";
-    headRow.appendChild(thId);
-    if (hasTitle) {
-        var thTitle = document.createElement("th");
-        thTitle.textContent = "Title";
-        headRow.appendChild(thTitle);
-    }
-    thead.appendChild(headRow);
-    table.appendChild(thead);
-
-    var tbody = document.createElement("tbody");
-    rows.forEach(function(r) {
-        var tr = document.createElement("tr");
-        var tdId = document.createElement("td");
-        var link = document.createElement("a");
-        link.href =
-            "index.php?a=printview&recordID=" + encodeURIComponent(r.id);
-        link.textContent = r.id;
-        tdId.appendChild(link);
-        tr.appendChild(tdId);
-        if (hasTitle) {
-            var tdTitle = document.createElement("td");
-            tdTitle.textContent = r.title || "";
-            tr.appendChild(tdTitle);
-        }
-        tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-    return table;
-}
-
-function wireDependencies17() {
-    var nodes = document.querySelectorAll(
-        "[id^='data_17_'], [id^='xhrIndicator_17_']"
-    );
-    if (!nodes || !nodes.length) return;
-    nodes.forEach(function(el) {
-        if (!el || el.getAttribute("data-pm-deps-rendered") === "1") return;
-        var raw = "";
-        if (el.tagName === "TEXTAREA") {
-            raw = el.value || "";
-        } else {
-            raw = el.textContent || "";
-        }
-        var rows = extractDependencyRows(parseDependenciesValue(raw));
-        if (!rows.length) return;
-        var table = buildDependenciesTable(rows);
-        el.innerHTML = "";
-        el.appendChild(table);
-        el.setAttribute("data-pm-deps-rendered", "1");
-    });
-}
-
-function initSandboxTicketWatcher() {
+function initIdeaTicketWatcher() {
     var target = document.getElementById("formcontent");
-    if (!target || target.__pmSandboxObserver) return;
+    if (!target || target.__pmIdeaObserver) return;
     var observer = new MutationObserver(function() {
-        wireSandboxTicket18();
-        wireDependencies17();
+        wireIdeaTicket18();
     });
     observer.observe(target, {
         childList: true,
         subtree: true,
         characterData: true
     });
-    target.__pmSandboxObserver = observer;
+    target.__pmIdeaObserver = observer;
 }
 
 document.addEventListener("click", function(event) {
-    var link = event.target.closest("a.pmSandboxLink");
+    var link = event.target.closest("a.pmIdeaLink");
     if (!link) return;
     event.preventDefault();
-    var sandboxUrl = link.getAttribute("data-sandbox-url") || "";
-    if (!sandboxUrl) return;
+    var ideaUrl = link.getAttribute("data-idea-url") || "";
+    if (!ideaUrl) return;
     var linkText = (link.textContent || "").trim();
     if (window.parent && window.parent !== window) {
         window.parent.postMessage(
-            { type: "pm-open-modal", title: linkText, url: sandboxUrl },
+            { type: "pm-open-modal", title: linkText, url: ideaUrl },
             window.location.origin
         );
     } else {
-        window.location.href = sandboxUrl;
+        window.location.href = ideaUrl;
     }
 });
 
@@ -272,8 +186,6 @@ function getIndicator(indicatorID, series) {
             $("#xhrIndicator_" + indicatorID + "_" + series).fadeOut(250, function() {
                 $("#xhrIndicator_" + indicatorID + "_" + series).fadeIn(250);
             });
-            wireSandboxTicket18();
-            wireDependencies17();
         },
         cache: false
     });
@@ -325,8 +237,7 @@ function openContent(url) {
     				}
                 });
     		});
-            wireSandboxTicket18();
-            wireDependencies17();
+            wireIdeaTicket18();
     	},
     	error: function(res) {
     		$('#formcontent').empty().html(res);
@@ -360,7 +271,7 @@ $(function() {
     openContent('ajaxIndex.php?a=internalonlyview&recordID=<!--{$recordID|strip_tags}-->&childCategoryID=<!--{$childCategoryID}-->');
     <!--{/if}-->
 
-    initSandboxTicketWatcher();
+    initIdeaTicketWatcher();
 });
 
 </script>

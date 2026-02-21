@@ -234,15 +234,19 @@ function wireSandboxTicket18() {
     nodes.forEach(function(el) {
         if (!el || el.querySelector("a.pmSandboxLink")) return;
         var text = (el.textContent || "").trim();
-        var match = text.match(/^(Support|UX)\s*Ticket\s*#(\d+)/i);
+        // Ticket import mapping: Support/UX/Idea Ticket # -> source print URL.
+        var match = text.match(/^(Support|UX|Idea)\s*Ticket\s*#(\d+)/i);
         var ticketType = "support";
         var ticketId = "";
         if (!match) return;
         ticketType = match[1].toLowerCase();
         ticketId = match[2];
+        if (!ticketId) return;
         var urlBase =
             ticketType === "ux"
                 ? "/platform/ux/index.php?a=printview&recordID="
+                : ticketType === "idea"
+                ? "/platform/ideas/index.php?a=printview&recordID="
                 : "/platform/support/index.php?a=printview&recordID=";
         var url = urlBase + encodeURIComponent(ticketId);
         var link = document.createElement("a");
@@ -250,7 +254,11 @@ function wireSandboxTicket18() {
         link.className = "pmSandboxLink";
         link.setAttribute("data-sandbox-url", url);
         link.textContent =
-            (ticketType === "ux" ? "UX Ticket #" : "Support Ticket #") +
+            (ticketType === "ux"
+                ? "UX Ticket #"
+                : ticketType === "idea"
+                ? "Idea Ticket #"
+                : "Support Ticket #") +
             ticketId;
         el.innerHTML = "";
         el.appendChild(link);
