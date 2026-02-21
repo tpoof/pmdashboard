@@ -640,7 +640,7 @@
   function parseSupportTicket(value) {
     var text = String(value || "").trim();
     if (!text) return { id: "", type: "" };
-    var match = text.match(/^(Support|UX)\s*Ticket\s*#(\d+)/i);
+    var match = text.match(/^(Support|UX|Idea)\s*Ticket\s*#(\d+)/i);
     if (match) return { id: match[2], type: match[1].toLowerCase() };
     return { id: "", type: "" };
   }
@@ -651,12 +651,18 @@
     if (!id) return "";
     var label = "#" + id;
     var title = parsed.type
-      ? (parsed.type === "ux" ? "UX Ticket #" : "Support Ticket #") + id
+      ? (parsed.type === "ux"
+          ? "UX Ticket #"
+          : parsed.type === "idea"
+            ? "Idea Ticket #"
+            : "Support Ticket #") + id
       : "Ticket #" + id;
     var hrefBase =
       parsed.type === "ux"
         ? "/platform/ux/index.php?a=printview&recordID="
-        : "/platform/support/index.php?a=printview&recordID=";
+        : parsed.type === "idea"
+          ? "/platform/ideas/index.php?a=printview&recordID="
+          : "/platform/support/index.php?a=printview&recordID=";
     var href = hrefBase + encodeURIComponent(id);
     return (
       '<a href="' +
@@ -2174,7 +2180,11 @@
       series: 1,
     };
     var label =
-      (sourceType === "ux" ? "UX Ticket #" : "Support Ticket #") + sourceId;
+      (sourceType === "ux"
+        ? "UX Ticket #"
+        : sourceType === "idea"
+          ? "Idea Ticket #"
+          : "Support Ticket #") + sourceId;
     bodyObj[TASK_IND.supportTicket] = label;
     if (token) {
       bodyObj[tokenField] = token;
@@ -2208,10 +2218,12 @@
     if (state.transferInProgress) return;
     var supportId = getQueryParam("transferFromSupport");
     var uxId = getQueryParam("transferFromUX");
+    var ideaId = getQueryParam("transferFromIdea");
     var legacyId = getQueryParam("transferFromSandbox");
-    var sourceId = supportId || uxId || legacyId;
-    var sourceType = uxId ? "ux" : "support";
-    var sourceLabel = sourceType === "ux" ? "UX" : "Support";
+    var sourceId = supportId || uxId || ideaId || legacyId;
+    var sourceType = uxId ? "ux" : ideaId ? "idea" : "support";
+    var sourceLabel =
+      sourceType === "ux" ? "UX" : sourceType === "idea" ? "Idea" : "Support";
     if (!sourceId) return;
     sourceId = String(sourceId || "").trim();
     if (!sourceId) return;
@@ -2225,6 +2237,7 @@
 
       var params = new URLSearchParams(window.location.search || "");
       params.delete("transferFromUX");
+      params.delete("transferFromIdea");
       params.delete("transferFromSupport");
       params.delete("transferFromSandbox");
       var nextUrl =
