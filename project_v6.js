@@ -1422,6 +1422,7 @@
                     "pmKr-" + makeSafeId(okrKey + "-" + kr.matchKey);
                   var projId = krId + "-projects";
                   var otherId = krId + "-other";
+                  var otherTipId = otherId + "-tip";
                   var extraClass = idx > 2 ? " is-extra" : "";
                   var krHighlight =
                     searchActive && krMatchKeys.indexOf(kr.matchKey) !== -1
@@ -1642,6 +1643,7 @@
                     projList +
                     "</div>" +
                     "<div class='pm-krExtras'>" +
+                    "<div class='pm-tooltipWrap'>" +
                     "<button type='button' class='pm-okrToggle pm-krOtherToggle' data-target='" +
                     otherId +
                     "' data-label='Other contributing items' data-okr='" +
@@ -1650,6 +1652,8 @@
                     kr.otherTasks.length +
                     "' aria-expanded='false' aria-controls='" +
                     otherId +
+                    "' aria-describedby='" +
+                    otherTipId +
                     "' aria-label='Expand Other contributing items for OKR " +
                     okrLabel +
                     " key result " +
@@ -1657,7 +1661,10 @@
                     "'>Other contributing items (" +
                     kr.otherTasks.length +
                     ")</button>" +
-                    "<div class='pm-okrHelper'>Tasks tagged to this Key Result whose project is tagged to a different Key Result or is not set.</div>" +
+                    "<span class='pm-tooltip' role='tooltip' id='" +
+                    otherTipId +
+                    "'>Tasks tagged to this Key Result whose project is tagged to a different Key Result or is not set.</span>" +
+                    "</div>" +
                     "<div class='pm-okrDetails' id='" +
                     otherId +
                     "' role='region' aria-label='Other contributing items for OKR " +

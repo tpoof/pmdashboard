@@ -548,14 +548,14 @@ body {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .pm-krProject {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: var(--space-2);
-  background: var(--surface);
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
 }
 
 .pm-krProjectRow {
@@ -564,6 +564,7 @@ body {
   align-items: center;
   gap: 8px 12px;
   justify-content: space-between;
+  font-size: 0.95rem;
 }
 
 .pm-krProjectName {
@@ -572,7 +573,7 @@ body {
 
 .pm-krProjectMeta {
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
 .pm-krProjectToggle {
@@ -636,12 +637,6 @@ body {
   margin-top: 10px;
 }
 
-.pm-okrHelper {
-  font-size: 0.9rem;
-  color: var(--muted);
-  line-height: 1.35;
-}
-
 .pm-krOtherList {
   list-style: none;
   margin: var(--space-2) 0 0;
@@ -654,6 +649,40 @@ body {
 .pm-krOtherMeta {
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.pm-tooltipWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+}
+
+.pm-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.pm-tooltipWrap:hover .pm-tooltip,
+.pm-tooltipWrap:focus-within .pm-tooltip {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .pm-krEmpty {
