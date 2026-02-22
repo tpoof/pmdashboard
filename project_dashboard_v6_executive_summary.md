@@ -99,6 +99,6 @@ Scalable reporting structure for portfolio-level decision-making.
 
 ## Future Evolution
 
-### SFuture versions (v7+)
+### Future versions (v7+)
 
 Version tracking continues beginning with v6, with v7 and beyond explicitly tracked.
