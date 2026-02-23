@@ -1284,6 +1284,7 @@
     tasks,
     searchQuery,
     searchCompact,
+    selectedOkrFiscalYear,
   ) {
     var wrap = document.getElementById("pmOkrsRollup");
     var summary = document.getElementById("pmOkrsSummary");
@@ -1305,6 +1306,21 @@
         okrMap[key].title = String(r.okrObjective || "").trim();
       }
     });
+    if (!Object.keys(okrMap).length && state.projectsAll.length) {
+      (state.projectsAll || []).forEach(function (r) {
+        var key = normalizeOkrKey(r.okrKey);
+        if (!key) return;
+        if (!okrMap[key]) {
+          okrMap[key] = {
+            key: key,
+            title: String(r.okrObjective || "").trim(),
+            fiscalYear: String(r.okrFiscalYear || "").trim(),
+          };
+        } else if (!okrMap[key].title && r.okrObjective) {
+          okrMap[key].title = String(r.okrObjective || "").trim();
+        }
+      });
+    }
 
     var keyResultsByOkr = {};
     (state.keyResultsAll || []).forEach(function (kr) {
@@ -1403,6 +1419,10 @@
     });
 
     var okrEntriesFiltered = okrEntries.filter(function (entry) {
+      if (selectedOkrFiscalYear) {
+        var fy = String(entry.objective.fiscalYear || "").trim();
+        if (fy !== selectedOkrFiscalYear) return false;
+      }
       return entry.include;
     });
 
@@ -3447,6 +3467,7 @@
             okrBaseTasks,
             q,
             qCompact,
+            selectedOkrFiscalYear,
           );
           renderOkrsTable(okrFiltered);
         } else {
@@ -3468,6 +3489,7 @@
             okrBaseTasks,
             q,
             qCompact,
+            selectedOkrFiscalYear,
           );
           renderOkrsTable(okrFiltered);
         } else {
