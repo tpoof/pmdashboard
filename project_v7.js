@@ -1307,8 +1307,6 @@
       var visibleCount = Math.min(initialCount, okrEntriesFiltered.length);
 
       var quickKrCount = 0;
-      var quickTaskKeys = {};
-      var quickCompletedKeys = {};
       var quickPercentSum = 0;
       var indexItems = [];
       var cardsHtml = okrEntriesFiltered
@@ -1399,14 +1397,7 @@
             });
 
           quickKrCount += keyResultItems.length;
-          keyResultItems.forEach(function (kr) {
-            (kr.tasks || []).forEach(function (t) {
-              var key = getTaskDedupKey(t);
-              if (!key) return;
-              if (!quickTaskKeys[key]) quickTaskKeys[key] = t;
-              if (isCompletedStatus(t.status)) quickCompletedKeys[key] = true;
-            });
-          });
+          // Quick view uses OKR-level average percent; no task totals needed.
 
           var avgPercent = 0;
           if (keyResultItems.length) {
@@ -1869,8 +1860,6 @@
             "' aria-expanded='false'>Show more Objectives</button></div>"
           : "";
 
-      var quickTaskTotal = Object.keys(quickTaskKeys).length;
-      var quickCompletedTotal = Object.keys(quickCompletedKeys).length;
       var quickOverallPercent = okrEntriesFiltered.length
         ? Math.round(quickPercentSum / okrEntriesFiltered.length)
         : 0;
@@ -1881,11 +1870,6 @@
           "</span>" +
           "<span class='pm-okrQuickStat'>Key Results: " +
           quickKrCount +
-          "</span>" +
-          "<span class='pm-okrQuickStat'>Tasks: " +
-          quickCompletedTotal +
-          " / " +
-          quickTaskTotal +
           "</span>" +
           "<span class='pm-okrQuickStat'>Overall: " +
           quickOverallPercent +
@@ -3096,13 +3080,16 @@
       return a.localeCompare(b, undefined, { numeric: true });
     });
 
-    sel.innerHTML = '<option value="">All Fiscal Years</option>';
+    sel.innerHTML = "";
     vals.forEach(function (v) {
       var opt = document.createElement("option");
       opt.value = v;
       opt.textContent = v;
       sel.appendChild(opt);
     });
+    if (vals.length && !sel.value) {
+      sel.value = vals[0];
+    }
   }
 
   function populateAssigneeDropdown(tasks) {

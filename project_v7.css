@@ -766,6 +766,9 @@ body {
 
 .pm-krName {
   font-weight: 700;
+  font-size: 0.95rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .pm-krHighlight {
