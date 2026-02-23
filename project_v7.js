@@ -111,13 +111,9 @@
       projectsByType: null,
     },
     keyResultsAll: [],
-    okrDebugData: null,
     projectsLoaded: false,
   };
 
-  var DEBUG_OKR_BUCKETS = false;
-  var DEBUG_OKR_PROJECT_RESOLVE = false;
-  var DEBUG_UI = false;
 
   function safe(s) {
     return String(s || "")
@@ -1410,18 +1406,6 @@
       return entry.include;
     });
 
-    if (DEBUG_UI) {
-      updateOkrDebugPanel(okrEntriesFiltered, projectMapByKey);
-    }
-
-    if (!projectsReady) {
-      summary.innerHTML =
-        "<div class='pm-okrCard'>Loading projects…</div>";
-      if (indexWrap) indexWrap.innerHTML = "";
-      if (quickStatsEl) quickStatsEl.innerHTML = "";
-      return;
-    }
-
     if (!okrEntriesFiltered.length) {
       summary.innerHTML =
         "<div class='pm-okrCard'>No OKRs found for this Fiscal Year.</div>";
@@ -1434,7 +1418,6 @@
 
       var quickKrCount = 0;
       var quickPercentSum = 0;
-      var debugBucketLogged = false;
       var indexItems = [];
       var cardsHtml = okrEntriesFiltered
         .map(function (entry, idx) {
@@ -1485,67 +1468,6 @@
                 ? Math.round((completedTasks / totalTasks) * 100)
                 : 0;
 
-              if (DEBUG_OKR_PROJECT_RESOLVE && !debugBucketLogged) {
-                var unresolvedPairs = Object.keys(
-                  classification.unresolvedProjectKeys,
-                )
-                  .slice(0, 5)
-                  .map(function (key) {
-                    return {
-                      raw: classification.unresolvedProjectKeys[key],
-                      normalized: key,
-                    };
-                  });
-                console.log("[OKR DEBUG] KR:", krName);
-                console.log(
-                  "[OKR DEBUG] Tasks for KR:",
-                  krTasks.length,
-                  "Unique task project keys:",
-                  Object.keys(classification.resolvedProjectKeys).length +
-                    Object.keys(classification.unresolvedProjectKeys).length,
-                  "Resolved projects:",
-                  Object.keys(classification.resolvedProjectKeys).length,
-                );
-                if (unresolvedPairs.length) {
-                  console.log(
-                    "[OKR DEBUG] Unresolved project keys:",
-                    unresolvedPairs,
-                  );
-                }
-                debugBucketLogged = true;
-              } else if (DEBUG_OKR_BUCKETS && !debugBucketLogged) {
-                var exceptionWithProjectMatch = otherTasks
-                  .filter(function (t) {
-                    var pkNorm = normalizeProjectKey(t.projectKey);
-                    return pkNorm && projectMapByKey[pkNorm];
-                  })
-                  .slice(0, 5)
-                  .map(function (t) {
-                    return {
-                      id: t.recordID || "",
-                      title: t.title || "",
-                      projectKey: t.projectKey || "",
-                    };
-                  });
-                console.log("[OKR DEBUG] KR:", krName);
-                console.log(
-                  "[OKR DEBUG] Projects:",
-                  krProjects.length,
-                  "Tasks (OKR+KR):",
-                  krTasks.length,
-                  "Rendered tasks:",
-                  Object.keys(classification.renderedTaskKeys).length,
-                  "Exceptions:",
-                  otherTasks.length,
-                );
-                if (exceptionWithProjectMatch.length) {
-                  console.log(
-                    "[OKR DEBUG] Exception tasks with matching project key:",
-                    exceptionWithProjectMatch,
-                  );
-                }
-                debugBucketLogged = true;
-              }
               return {
                 name: krName,
                 matchKey: matchKey,
@@ -2084,213 +2006,6 @@
     }
   }
 
-  function ensureOkrDebugPanel() {
-    if (!DEBUG_UI) return null;
-    var wrap = document.getElementById("pmOkrsAnalyticsWrap");
-    if (!wrap) return null;
-    var panel = document.getElementById("pmOkrDebugPanel");
-    if (panel) return panel;
-    panel = document.createElement("div");
-    panel.id = "pmOkrDebugPanel";
-    panel.className = "pm-okrDebugPanel";
-    panel.innerHTML =
-      "<div class='pm-okrDebugTitle'>OKR Debug</div>" +
-      "<label class='pm-okrDebugLabel' for='pmOkrDebugOkr'>OKR</label>" +
-      "<select id='pmOkrDebugOkr' class='pm-okrDebugSelect'></select>" +
-      "<label class='pm-okrDebugLabel' for='pmOkrDebugKr'>Key Result</label>" +
-      "<select id='pmOkrDebugKr' class='pm-okrDebugSelect'></select>" +
-      "<label class='pm-okrDebugCheck'>" +
-      "<input type='checkbox' id='pmOkrDebugLog' /> Log to console</label>" +
-      "<button type='button' class='pm-okrDebugBtn' id='pmOkrDebugRun'>Run Debug</button>" +
-      "<div class='pm-okrDebugResults' id='pmOkrDebugResults'></div>";
-    wrap.appendChild(panel);
-    panel.dataset.wired = "0";
-    return panel;
-  }
-
-  function updateOkrDebugKrOptions(panel, okrKey) {
-    var krSelect = panel.querySelector("#pmOkrDebugKr");
-    if (!krSelect) return;
-    var entry =
-      state.okrDebugData && state.okrDebugData.entriesByOkr
-        ? state.okrDebugData.entriesByOkr[okrKey]
-        : null;
-    var prev = krSelect.value;
-    if (!entry) {
-      krSelect.innerHTML = "";
-      return;
-    }
-    var krNames = Object.keys(entry.keyResultNameMap || {})
-      .map(function (k) {
-        return entry.keyResultNameMap[k];
-      })
-      .filter(Boolean)
-      .sort(function (a, b) {
-        return a.localeCompare(b);
-      });
-    krSelect.innerHTML = krNames
-      .map(function (name) {
-        return (
-          "<option value='" + safeAttr(name) + "'>" + safe(name) + "</option>"
-        );
-      })
-      .join("");
-    if (prev && krNames.indexOf(prev) !== -1) {
-      krSelect.value = prev;
-    } else if (krNames.length) {
-      krSelect.value = krNames[0];
-    }
-  }
-
-  function runOkrDebug(panel) {
-    if (!panel || !state.okrDebugData) return;
-    var okrSelect = panel.querySelector("#pmOkrDebugOkr");
-    var krSelect = panel.querySelector("#pmOkrDebugKr");
-    var results = panel.querySelector("#pmOkrDebugResults");
-    if (!okrSelect || !krSelect || !results) return;
-    var okrKey = okrSelect.value;
-    var krName = krSelect.value;
-    var entry = state.okrDebugData.entriesByOkr
-      ? state.okrDebugData.entriesByOkr[okrKey]
-      : null;
-    if (!entry || !okrKey || !krName) {
-      results.innerHTML = "<div>No OKR/KR selected.</div>";
-      return;
-    }
-    var matchKey = normalizeKeyResultMatch(krName);
-    var classification = classifyKr(
-      matchKey,
-      krName,
-      entry.projectsForOkr,
-      entry.tasksForOkr,
-      state.okrDebugData.projectMapByKey,
-    );
-    var uniqueTaskProjectKeys =
-      Object.keys(classification.resolvedProjectKeys).length +
-      Object.keys(classification.unresolvedProjectKeys).length;
-    var unresolvedList = Object.keys(classification.unresolvedProjectKeys)
-      .slice(0, 10)
-      .map(function (key) {
-        return {
-          raw: classification.unresolvedProjectKeys[key],
-          normalized: key,
-        };
-      });
-    var projectKeysList = state.okrDebugData.projectMapByKey
-      ? Object.keys(state.okrDebugData.projectMapByKey).slice(0, 10)
-      : [];
-    results.innerHTML =
-      "<div><strong>Tasks for KR:</strong> " +
-      classification.tasks.length +
-      "</div>" +
-      "<div><strong>Unique task project keys:</strong> " +
-      uniqueTaskProjectKeys +
-      "</div>" +
-      "<div><strong>Resolved project count:</strong> " +
-      Object.keys(classification.resolvedProjectKeys).length +
-      "</div>" +
-      "<div><strong>Projects to render:</strong> " +
-      classification.projectsToRender.length +
-      "</div>" +
-      "<div><strong>Exceptions:</strong> " +
-      classification.otherTasks.length +
-      "</div>" +
-      "<div><strong>Unresolved project keys:</strong></div>" +
-      (unresolvedList.length
-        ? "<ul class='pm-okrDebugList'>" +
-          unresolvedList
-            .map(function (item) {
-              return (
-                "<li>Raw: " +
-                safe(item.raw) +
-                " | Normalized: " +
-                safe(item.normalized) +
-                "</li>"
-              );
-            })
-            .join("") +
-          "</ul>"
-        : "<div class='pm-okrDebugMuted'>None</div>") +
-      "<div><strong>Project map keys (sample):</strong></div>" +
-      (projectKeysList.length
-        ? "<ul class='pm-okrDebugList'>" +
-          projectKeysList
-            .map(function (key) {
-              return "<li>" + safe(key) + "</li>";
-            })
-            .join("") +
-          "</ul>"
-        : "<div class='pm-okrDebugMuted'>None</div>");
-
-    var logCheck = panel.querySelector("#pmOkrDebugLog");
-    if (logCheck && logCheck.checked) {
-      console.log("[OKR DEBUG UI] OKR:", okrKey, "KR:", krName);
-      console.log("[OKR DEBUG UI] Classification:", {
-        tasksForKR: classification.tasks.length,
-        uniqueTaskProjectKeys: uniqueTaskProjectKeys,
-        resolvedProjectCount: Object.keys(classification.resolvedProjectKeys)
-          .length,
-        projectsToRender: classification.projectsToRender.length,
-        exceptions: classification.otherTasks.length,
-        unresolvedProjectKeys: unresolvedList,
-        projectMapKeys: projectKeysList,
-      });
-    }
-  }
-
-  function updateOkrDebugPanel(entries, projectMapByKey) {
-    if (!DEBUG_UI) return;
-    var panel = ensureOkrDebugPanel();
-    if (!panel) return;
-    state.okrDebugData = {
-      entriesByOkr: {},
-      projectMapByKey: projectMapByKey || {},
-    };
-    (entries || []).forEach(function (entry) {
-      state.okrDebugData.entriesByOkr[entry.okrKey] = entry;
-    });
-    var okrSelect = panel.querySelector("#pmOkrDebugOkr");
-    var krSelect = panel.querySelector("#pmOkrDebugKr");
-    var runBtn = panel.querySelector("#pmOkrDebugRun");
-    if (!okrSelect || !krSelect || !runBtn) return;
-
-    if (panel.dataset.wired !== "1") {
-      okrSelect.addEventListener("change", function () {
-        updateOkrDebugKrOptions(panel, okrSelect.value);
-      });
-      runBtn.addEventListener("click", function () {
-        runOkrDebug(panel);
-      });
-      panel.dataset.wired = "1";
-    }
-
-    if (!entries || !entries.length) {
-      okrSelect.innerHTML = "";
-      krSelect.innerHTML = "";
-      var results = panel.querySelector("#pmOkrDebugResults");
-      if (results) results.innerHTML = "<div>No OKRs available.</div>";
-      return;
-    }
-
-    var prevOkr = okrSelect.value;
-    okrSelect.innerHTML = entries
-      .map(function (entry) {
-        return (
-          "<option value='" +
-          safeAttr(entry.okrKey) +
-          "'>" +
-          safe(entry.okrKey) +
-          "</option>"
-        );
-      })
-      .join("");
-    if (prevOkr && state.okrDebugData.entriesByOkr[prevOkr]) {
-      okrSelect.value = prevOkr;
-    } else {
-      okrSelect.value = entries[0].okrKey;
-    }
-    updateOkrDebugKrOptions(panel, okrSelect.value);
-  }
 
   function renderTasksTable(tasks) {
     var el = document.getElementById("pmTasksTable");
