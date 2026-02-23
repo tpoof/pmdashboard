@@ -19,9 +19,9 @@
     }
 
     #headerMenu_links_list .leafDashBtn--primary {
-        background: var(--accent, #2563eb);
+        background: var(--surface, #ffffff);
         border-color: var(--accent-strong, #1d4ed8);
-        color: #ffffff;
+        color: var(--accent-strong, #1d4ed8);
     }
 
     #headerMenu_links_list .leafDashBtn:hover,
