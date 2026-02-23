@@ -20,20 +20,23 @@
 
     #headerMenu_links_list .leafDashBtn--primary {
         background: var(--surface, #ffffff);
-        border-color: var(--accent-strong, #1d4ed8);
+        border-color: var(--border, #dbe1e8);
         color: var(--accent-strong, #1d4ed8);
     }
 
     #headerMenu_links_list .leafDashBtn:hover,
     #headerMenu_links_list .leafDashBtn:focus {
         box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
-    }
-
-    #headerMenu_links_list .leafDashBtn--primary:hover,
-    #headerMenu_links_list .leafDashBtn--primary:focus {
         background: var(--accent-strong, #1d4ed8);
         border-color: var(--accent-strong, #1d4ed8);
-        color: #ffffff;
+        color: #ffffff !important;
+    }
+
+    #headerMenu_links_list .leafDashBtn:hover .leafDashBtn__title,
+    #headerMenu_links_list .leafDashBtn:hover .leafDashBtn__desc,
+    #headerMenu_links_list .leafDashBtn:focus .leafDashBtn__title,
+    #headerMenu_links_list .leafDashBtn:focus .leafDashBtn__desc {
+        color: #ffffff !important;
     }
 
     #headerMenu_links_list .leafDashBtn:focus-visible {
