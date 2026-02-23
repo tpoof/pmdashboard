@@ -1115,6 +1115,25 @@
     return safe(primary);
   }
 
+  function getOkrStatusLabel(task) {
+    if (isCompletedStatus(task.status)) return "Completed";
+    var primary = normalizePrimaryStatus(task.status);
+    if (primary === "Other") {
+      var subtype = getOtherSubTypeValue(task.otherSubType);
+      return subtype ? "Other (" + subtype + ")" : "Other";
+    }
+    if (primary === "Unknown") return "Unknown";
+    return primary;
+  }
+
+  function renderOkrStatusTag(task) {
+    var label = getOkrStatusLabel(task);
+    if (label === "Completed") {
+      return '<span class="pm-completeGreen">Completed</span>';
+    }
+    return '<span class="pm-okrStatusOpen">' + safe(label) + "</span>";
+  }
+
   function getProjectRecordHrefFromKey(projectKey) {
     var key = String(projectKey || "").trim();
     if (!key) return "";
@@ -1918,10 +1937,7 @@
                                   var projectLabel = getProjectLabelFromKey(
                                     t.projectKey,
                                   );
-                                  var isComplete = isCompletedStatus(t.status);
-                                  var statusLabel = isComplete
-                                    ? '<span class="pm-completeGreen">Completed</span>'
-                                    : '<span class="pm-okrStatusOpen">In progress</span>';
+                                  var statusLabel = renderOkrStatusTag(t);
                                   var taskHref = t.recordID
                                     ? "index.php?a=printview&recordID=" +
                                       encodeURIComponent(t.recordID)
@@ -1999,10 +2015,7 @@
                           var taskLabel =
                             title ||
                             (t.recordID ? "Task " + t.recordID : "Task");
-                          var isComplete = isCompletedStatus(t.status);
-                          var statusLabel = isComplete
-                            ? '<span class="pm-completeGreen">Completed</span>'
-                            : '<span class="pm-okrStatusOpen">In progress</span>';
+                          var statusLabel = renderOkrStatusTag(t);
                           var taskHref = t.recordID
                             ? "index.php?a=printview&recordID=" +
                               encodeURIComponent(t.recordID)

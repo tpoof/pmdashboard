@@ -1435,6 +1435,12 @@ body {
   color: var(--badge-text);
 }
 
+.pm-statusBadge.pm-okrPercentBadge--none {
+  --badge-bg: #b00020;
+  --badge-border: #b00020;
+  --badge-text: #fff;
+}
+
 .pm-statusCell {
   display: flex;
   flex-direction: column;
