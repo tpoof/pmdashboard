@@ -1309,6 +1309,7 @@
       var quickKrCount = 0;
       var quickTaskKeys = {};
       var quickCompletedKeys = {};
+      var quickPercentSum = 0;
       var indexItems = [];
       var cardsHtml = okrEntriesFiltered
         .map(function (entry, idx) {
@@ -1415,6 +1416,8 @@
               }, 0) / keyResultItems.length,
             );
           }
+
+          quickPercentSum += avgPercent;
 
           var okrProjectKeys = {};
           keyResultItems.forEach(function (kr) {
@@ -1868,8 +1871,8 @@
 
       var quickTaskTotal = Object.keys(quickTaskKeys).length;
       var quickCompletedTotal = Object.keys(quickCompletedKeys).length;
-      var quickPercent = quickTaskTotal
-        ? Math.round((quickCompletedTotal / quickTaskTotal) * 100)
+      var quickOverallPercent = okrEntriesFiltered.length
+        ? Math.round(quickPercentSum / okrEntriesFiltered.length)
         : 0;
       if (quickStatsEl) {
         quickStatsEl.innerHTML =
@@ -1885,7 +1888,7 @@
           quickTaskTotal +
           "</span>" +
           "<span class='pm-okrQuickStat'>Overall: " +
-          quickPercent +
+          quickOverallPercent +
           "%</span>";
       }
 
@@ -3066,13 +3069,16 @@
       return a.localeCompare(b, undefined, { numeric: true });
     });
 
-    sel.innerHTML = '<option value="">All Fiscal Years</option>';
+    sel.innerHTML = "";
     vals.forEach(function (v) {
       var opt = document.createElement("option");
       opt.value = v;
       opt.textContent = v;
       sel.appendChild(opt);
     });
+    if (vals.length && !sel.value) {
+      sel.value = vals[0];
+    }
   }
 
   function populateOkrFiscalYearDropdown(projects) {
@@ -3424,7 +3430,9 @@
       });
     if (clearBtn)
       clearBtn.addEventListener("click", function () {
-        if (sel) sel.value = "";
+        if (sel) {
+          sel.selectedIndex = 0;
+        }
         applySearchAndFilters(true);
       });
   }
