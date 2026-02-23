@@ -113,6 +113,8 @@
     keyResultsAll: [],
   };
 
+  var DEBUG_OKR_BUCKETS = false;
+
   function safe(s) {
     return String(s || "")
       .replaceAll("&", "&amp;")
@@ -1165,6 +1167,10 @@
     return ["t", title, projectKey, okrKey, kr].join("|");
   }
 
+  function normalizeProjectKey(val) {
+    return String(val || "").trim().toUpperCase();
+  }
+
   function getTaskProjectMeta(projectKey) {
     var key = String(projectKey || "").trim();
     if (!key) return "No project";
@@ -1308,6 +1314,7 @@
 
       var quickKrCount = 0;
       var quickPercentSum = 0;
+      var debugBucketLogged = false;
       var indexItems = [];
       var cardsHtml = okrEntriesFiltered
         .map(function (entry, idx) {
@@ -1344,19 +1351,22 @@
               });
               var matchingProjectKeys = {};
               krProjects.forEach(function (p) {
-                var pk = String(p.projectKey || "").trim();
-                if (pk) matchingProjectKeys[pk] = true;
+                var pkNorm = normalizeProjectKey(p.projectKey);
+                if (pkNorm) matchingProjectKeys[pkNorm] = true;
               });
-              var tasksInProjects = {};
-              krTasks.forEach(function (t) {
-                var pk = String(t.projectKey || "").trim();
-                if (!pk || !matchingProjectKeys[pk]) return;
-                var key = getTaskDedupKey(t);
-                if (key) tasksInProjects[key] = true;
+              var renderedTaskKeys = {};
+              krProjects.forEach(function (p) {
+                var pkNorm = normalizeProjectKey(p.projectKey);
+                if (!pkNorm) return;
+                krTasks.forEach(function (t) {
+                  if (normalizeProjectKey(t.projectKey) !== pkNorm) return;
+                  var key = getTaskDedupKey(t);
+                  if (key) renderedTaskKeys[key] = true;
+                });
               });
               var otherTasks = krTasks.filter(function (t) {
                 var key = getTaskDedupKey(t);
-                return key ? !tasksInProjects[key] : true;
+                return key ? !renderedTaskKeys[key] : true;
               });
               otherTasks.sort(function (a, b) {
                 var aComplete = isCompletedStatus(a.status);
@@ -1380,6 +1390,40 @@
               var pct = totalTasks
                 ? Math.round((completedTasks / totalTasks) * 100)
                 : 0;
+
+              if (DEBUG_OKR_BUCKETS && !debugBucketLogged) {
+                var exceptionWithProjectMatch = otherTasks
+                  .filter(function (t) {
+                    var pkNorm = normalizeProjectKey(t.projectKey);
+                    return pkNorm && matchingProjectKeys[pkNorm];
+                  })
+                  .slice(0, 5)
+                  .map(function (t) {
+                    return {
+                      id: t.recordID || "",
+                      title: t.title || "",
+                      projectKey: t.projectKey || "",
+                    };
+                  });
+                console.log("[OKR DEBUG] KR:", krName);
+                console.log(
+                  "[OKR DEBUG] Projects:",
+                  krProjects.length,
+                  "Tasks (OKR+KR):",
+                  krTasks.length,
+                  "Rendered tasks:",
+                  Object.keys(renderedTaskKeys).length,
+                  "Exceptions:",
+                  otherTasks.length,
+                );
+                if (exceptionWithProjectMatch.length) {
+                  console.log(
+                    "[OKR DEBUG] Exception tasks with matching project key:",
+                    exceptionWithProjectMatch,
+                  );
+                }
+                debugBucketLogged = true;
+              }
               return {
                 name: krName,
                 matchKey: matchKey,
@@ -1466,6 +1510,7 @@
                       kr.projects
                         .map(function (p, projIdx) {
                           var pk = String(p.projectKey || "").trim();
+                          var pkNorm = normalizeProjectKey(pk);
                           var name = String(p.projectName || "").trim();
                           var label = name
                             ? name + (pk ? " (" + pk + ")" : "")
@@ -1486,9 +1531,7 @@
                               "</a>"
                             : safe(label);
                           var projectTasks = kr.tasks.filter(function (t) {
-                            return (
-                              String(t.projectKey || "").trim() === pk
-                            );
+                            return normalizeProjectKey(t.projectKey) === pkNorm;
                           });
                           var completedProjectTasks = projectTasks.filter(
                             function (t) {
