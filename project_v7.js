@@ -1493,6 +1493,7 @@
                 matchKey: matchKey,
                 projects: krProjects,
                 tasks: krTasks,
+                tasksByProjectKey: classification.tasksByProjectKey,
                 otherTasks: otherTasks,
                 completedTasks: completedTasks,
                 totalTasks: totalTasks,
@@ -1595,8 +1596,8 @@
                               "</a>"
                             : safe(label);
                           var projectTasks = [];
-                          if (pkNorm && tasksByProjectKey[pkNorm]) {
-                            projectTasks = tasksByProjectKey[pkNorm];
+                          if (pkNorm && kr.tasksByProjectKey) {
+                            projectTasks = kr.tasksByProjectKey[pkNorm] || [];
                           }
                           var completedProjectTasks = projectTasks.filter(
                             function (t) {
