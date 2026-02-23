@@ -1094,7 +1094,9 @@
 
   function renderStatusBadge(label, extraClass) {
     if (!label) return "";
-    var cls = "pm-statusBadge" + (extraClass ? " " + extraClass : "");
+    var cls = "pm-statusBadge";
+    if (label === "Blocked") cls += " pm-okrPercentBadge--none";
+    if (extraClass) cls += " " + extraClass;
     return '<span class="' + cls + '">' + safe(label) + "</span>";
   }
 
@@ -1411,6 +1413,33 @@
     } else {
       renderOkrsObjectivesTable(projects);
     }
+  }
+
+  function renderOkrsAnalytics(selectedOkrFiscalYear) {
+    var okrFiltered = state.projectsAll;
+    if (selectedOkrFiscalYear) {
+      okrFiltered = okrFiltered.filter(function (p) {
+        return String(p.okrFiscalYear || "").trim() === selectedOkrFiscalYear;
+      });
+    }
+
+    var okrBaseProjects = state.projectsAll;
+    if (selectedOkrFiscalYear) {
+      okrBaseProjects = okrBaseProjects.filter(function (p) {
+        return String(p.okrFiscalYear || "").trim() === selectedOkrFiscalYear;
+      });
+    }
+    var okrBaseTasks = state.tasksAll;
+
+    renderOkrsRollup(
+      okrBaseProjects,
+      okrBaseProjects,
+      okrBaseTasks,
+      "",
+      "",
+      selectedOkrFiscalYear,
+    );
+    renderOkrsTable(okrFiltered);
   }
 
   function getProjectLabelFromKey(projectKey) {
@@ -2712,7 +2741,9 @@
 
             var badge = getTaskOtherBadgeLabel(t);
             var badgeHtml = badge
-              ? renderStatusBadge(badge, "pm-cardBadge")
+              ? '<div class="pm-cardBadgeWrap">' +
+                renderStatusBadge(badge) +
+                "</div>"
               : "";
 
             return (
@@ -2724,9 +2755,11 @@
               '" tabindex="0" role="group" aria-label="' +
               safeAttr(cardLabel) +
               '" aria-describedby="pmKanbanHint">' +
-              badgeHtml +
+              '<div class="pm-card-header">' +
               '<div class="pm-card-title">' +
               safe(t.title || "(No title)") +
+              "</div>" +
+              badgeHtml +
               "</div>" +
               '<div class="pm-card-meta">' +
               "<div><strong>Task ID:</strong> " +
@@ -2834,10 +2867,12 @@
 
     try {
       await updateTaskStatus(taskId, task.status, task.otherSubType);
+      refreshOkrsIfVisible();
     } catch (err) {
       task.status = oldStatus;
       task.otherSubType = oldOther;
       applySearchAndFilters(true);
+      refreshOkrsIfVisible();
       announceKanbanStatus(
         "Could not update task " + taskId + ". " + String(err),
       );
@@ -3839,15 +3874,7 @@
       }
       if (activeTab === "analytics") {
         if (analyticsView === "okrs") {
-          renderOkrsRollup(
-            okrBaseProjects,
-            okrBaseProjects,
-            okrBaseTasks,
-            "",
-            "",
-            selectedOkrFiscalYear,
-          );
-          renderOkrsTable(okrFiltered);
+          renderOkrsAnalytics(selectedOkrFiscalYear);
         } else {
           renderAnalytics(tasksSearchNoArchive);
         }
@@ -3861,20 +3888,23 @@
         renderGantt(tasksNoArchive);
       if (activeTab === "analytics") {
         if (analyticsView === "okrs") {
-          renderOkrsRollup(
-            okrBaseProjects,
-            okrBaseProjects,
-            okrBaseTasks,
-            "",
-            "",
-            selectedOkrFiscalYear,
-          );
-          renderOkrsTable(okrFiltered);
+          renderOkrsAnalytics(selectedOkrFiscalYear);
         } else {
           renderAnalytics(tasksSearchNoArchive);
         }
       }
     }
+  }
+
+  function refreshOkrsIfVisible() {
+    if (!state.dataReady) return;
+    var activeTab = localStorage.getItem(STORAGE_KEYS.activeTab) || "projects";
+    if (activeTab !== "analytics") return;
+    var analyticsView =
+      localStorage.getItem(STORAGE_KEYS.analyticsView) || "main";
+    if (analyticsView !== "okrs") return;
+    var selectedOkrFiscalYear = getSelected("pmOkrFiscalYearSelect");
+    renderOkrsAnalytics(selectedOkrFiscalYear);
   }
 
   function wireClearFilters() {
