@@ -112,6 +112,7 @@
     },
     keyResultsAll: [],
     okrDebugData: null,
+    projectsLoaded: false,
   };
 
   var DEBUG_OKR_BUCKETS = false;
@@ -1328,13 +1329,16 @@
       projectsByOkr[okrKey].push(p);
     });
 
+    var projectsReady = !!state.projectsLoaded;
     var projectMapByKey = {};
-    (projects || []).forEach(function (p) {
-      var pkNorm = normalizeProjectKey(p.projectKey);
-      if (pkNorm && !projectMapByKey[pkNorm]) {
-        projectMapByKey[pkNorm] = p;
-      }
-    });
+    if (projectsReady) {
+      (state.projectsAll || []).forEach(function (p) {
+        var pkNorm = normalizeProjectKey(p.projectKey);
+        if (pkNorm && !projectMapByKey[pkNorm]) {
+          projectMapByKey[pkNorm] = p;
+        }
+      });
+    }
 
     var tasksByOkr = {};
     (tasks || []).forEach(function (t) {
@@ -1408,6 +1412,14 @@
 
     if (DEBUG_UI) {
       updateOkrDebugPanel(okrEntriesFiltered, projectMapByKey);
+    }
+
+    if (!projectsReady) {
+      summary.innerHTML =
+        "<div class='pm-okrCard'>Loading projects…</div>";
+      if (indexWrap) indexWrap.innerHTML = "";
+      if (quickStatsEl) quickStatsEl.innerHTML = "";
+      return;
     }
 
     if (!okrEntriesFiltered.length) {
@@ -5030,6 +5042,7 @@
       state.projectsAll = projectRows.map(normalizeProject);
       state.tasksAll = taskRows.map(normalizeTask);
       state.keyResultsAll = keyResultRows.map(normalizeKeyResult);
+      state.projectsLoaded = true;
       backfillSupportTicketLabels(state.tasksAll);
 
       state.projectKeyToRecordID = {};
