@@ -1491,7 +1491,7 @@
               return {
                 name: krName,
                 matchKey: matchKey,
-                projects: projectsToRender,
+                projects: krProjects,
                 tasks: krTasks,
                 otherTasks: otherTasks,
                 completedTasks: completedTasks,
