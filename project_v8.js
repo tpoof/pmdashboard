@@ -837,7 +837,7 @@
       '">' +
       '<a href="' +
       safe(href) +
-      '" class="pm-ticketLink" aria-label="' +
+      '" class="pm-ticketLink pm-recordLink" aria-label="' +
       safeAttr(aria) +
       '" title="' +
       safeAttr(tooltip) +
