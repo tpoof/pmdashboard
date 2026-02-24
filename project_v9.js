@@ -3114,7 +3114,7 @@
 
   function getKanbanCacheEntry(sig, tasks, filters) {
     var cached = state.cache.kanban.get(sig);
-    if (cached) return cached;
+    if (cached) return normalizeKanbanCache(cached);
 
     var baseCols = getKanbanBaseColumns().filter(function (col) {
       return (
@@ -3174,8 +3174,80 @@
       grouped: grouped,
       visibleCounts: visibleCounts,
     };
+    normalizeKanbanCache(entry);
     state.cache.kanban.set(sig, entry);
     return entry;
+  }
+
+  function normalizeKanbanCache(cache) {
+    if (!cache) return cache;
+    if (!cache.grouped) cache.grouped = {};
+    var cols = cache.columns;
+    if (!Array.isArray(cols) || !cols.length) {
+      cols = getKanbanBaseColumns()
+        .filter(function (col) {
+          return (
+            String(col || "")
+              .toLowerCase()
+              .indexOf("archive") === -1
+          );
+        })
+        .map(function (c) {
+          return {
+            key: c,
+            title: c,
+            totalCount: 0,
+            visibleCards: 0,
+            hasMore: false,
+          };
+        });
+    } else if (typeof cols[0] === "string") {
+      cols = cols.map(function (c) {
+        return {
+          key: c,
+          title: c,
+          totalCount: 0,
+          visibleCards: 0,
+          hasMore: false,
+        };
+      });
+    }
+
+    var seen = {};
+    cols.forEach(function (colObj) {
+      if (!colObj || !colObj.key) return;
+      seen[colObj.key] = true;
+      if (!cache.grouped[colObj.key]) cache.grouped[colObj.key] = [];
+    });
+
+    Object.keys(cache.grouped).forEach(function (key) {
+      if (!seen[key]) {
+        cols.push({
+          key: key,
+          title: key,
+          totalCount: 0,
+          visibleCards: 0,
+          hasMore: false,
+        });
+        if (!cache.grouped[key]) cache.grouped[key] = [];
+      }
+    });
+
+    cache.columns = cols;
+    if (!cache.visibleCounts) cache.visibleCounts = {};
+    cols.forEach(function (colObj) {
+      var list = cache.grouped[colObj.key] || [];
+      var total = list.length;
+      var visible = cache.visibleCounts[colObj.key];
+      if (visible == null) visible = Math.min(KANBAN_RENDER_LIMIT, total);
+      if (visible > total) visible = total;
+      cache.visibleCounts[colObj.key] = visible;
+      colObj.totalCount = total;
+      colObj.visibleCards = visible;
+      colObj.hasMore = total > visible;
+    });
+
+    return cache;
   }
 
   function updateKanbanColumnMeta(colEl, visible, total) {
@@ -3210,6 +3282,7 @@
       var status = btn.getAttribute("data-status") || "";
       var sig = state.currentKanbanSig;
       var cache = sig ? state.cache.kanban.get(sig) : null;
+      cache = normalizeKanbanCache(cache);
       if (!cache || !cache.grouped) return;
 
       var colTasks = cache.grouped[status] || [];
@@ -3640,6 +3713,7 @@
 
     var sig = state.currentKanbanSig;
     var cache = sig ? state.cache.kanban.get(sig) : null;
+    cache = normalizeKanbanCache(cache);
     if (!cache) {
       renderTasksView("kanban", true);
       return;
@@ -4926,6 +5000,7 @@
 
   function updateKanbanCaches(oldTask, newTask) {
     state.cache.kanban.forEach(function (entry) {
+      entry = normalizeKanbanCache(entry);
       if (!entry || !entry.grouped) return;
       var oldMatch = taskMatchesFilters(oldTask, entry.filters);
       var newMatch = taskMatchesFilters(newTask, entry.filters);
