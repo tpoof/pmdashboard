@@ -73,6 +73,7 @@
     tasksView: "pm_tasks_view",
     analyticsView: "pm_analytics_view",
     tasksDevOnly: "pmdashboard_tasks_devOnly_v9",
+    tasksPagination: "pm_tasks_pagination_v9",
   };
 
   var STATUS_CONFIG = {
@@ -103,6 +104,15 @@
       "Other",
     ],
     OTHER_SUBTYPES: ["Blocked", "On Hold"],
+  };
+
+  var PAGINATION_CONFIG = {
+    tasks: {
+      storageKey: STORAGE_KEYS.tasksPagination,
+      containerId: "pmTasksTablePagination",
+      defaultPageSize: 100,
+      pageSizes: [50, 100, 200],
+    },
   };
 
   var state = {
@@ -177,6 +187,22 @@
       total: 0,
       lastFocusId: "",
       pendingFocusId: "",
+    },
+    pagination: {
+      tasks: {
+        page: 1,
+        pageSize: 100,
+        signature: "",
+        total: 0,
+        totalPages: 1,
+        inited: false,
+      },
+    },
+    analyticsTables: {
+      healthExpanded: false,
+      overdueExpanded: false,
+      healthRows: [],
+      overdueRows: [],
     },
   };
 
@@ -875,12 +901,12 @@
     return (
       '<span class="' +
       chipClass +
-      '" data-tooltip="' +
-      safeAttr(tooltip) +
       '">' +
       '<a href="' +
       safe(href) +
-      '" class="pm-ticketLink" aria-label="' +
+      '" class="pm-recordLink pm-ticketLink" data-title="' +
+      safeAttr(tooltip) +
+      '" aria-label="' +
       safeAttr(aria) +
       '" title="' +
       safeAttr(tooltip) +
@@ -2473,6 +2499,17 @@
     var el = document.getElementById("pmTasksTable");
     if (!container || !el) return null;
 
+    function readTasksRowHeight() {
+      var computed = window.getComputedStyle(container);
+      var rh = parseFloat(
+        computed.getPropertyValue("--pm-tasks-row-height"),
+      );
+      if (!rh || isNaN(rh)) {
+        rh = parseFloat(computed.getPropertyValue("--pm-row-height"));
+      }
+      return rh && !isNaN(rh) ? rh : 52;
+    }
+
     if (!state.virtualTasks) {
       state.virtualTasks = {
         inited: false,
@@ -2512,9 +2549,7 @@
       state.virtualTasks.colCount = 11;
       state.virtualTasks.inited = true;
 
-      var computed = window.getComputedStyle(el);
-      var rh = parseFloat(computed.getPropertyValue("--pm-row-height"));
-      if (rh && !isNaN(rh)) state.virtualTasks.rowHeight = rh;
+      state.virtualTasks.rowHeight = readTasksRowHeight();
 
       container.addEventListener(
         "scroll",
@@ -2525,6 +2560,7 @@
       );
 
       window.addEventListener("resize", function () {
+        state.virtualTasks.rowHeight = readTasksRowHeight();
         updateTasksVirtualSlice(true);
       });
 
@@ -2564,6 +2600,9 @@
 
     var overdueClass = isOverdueTask(t, now) ? "pm-overdueRed" : "";
 
+    var titleText = String(t.title || "(No title)");
+    var titleAttr = safeAttr(titleText);
+
     return (
       '<tr class="pm-virtualRow" data-taskid="' +
       safeAttr(t.recordID) +
@@ -2574,9 +2613,13 @@
       "<td>" +
       taskLink +
       "</td>" +
-      '<td class="pm-wrapCol">' +
-      safe(t.title) +
-      "</td>" +
+      '<td><span class="pm-titleClamp" title="' +
+      titleAttr +
+      '" aria-label="' +
+      titleAttr +
+      '" tabindex="0">' +
+      safe(titleText) +
+      "</span></td>" +
       "<td>" +
       renderStatusCell(t) +
       "</td>" +
@@ -3073,7 +3116,7 @@
     var cached = state.cache.kanban.get(sig);
     if (cached) return cached;
 
-    var cols = getKanbanColumnsOrdered().filter(function (col) {
+    var baseCols = getKanbanBaseColumns().filter(function (col) {
       return (
         String(col || "")
           .toLowerCase()
@@ -3081,28 +3124,53 @@
       );
     });
     var grouped = {};
-    cols.forEach(function (c) {
+    var columnsByKey = {};
+    var columns = baseCols.map(function (c) {
       grouped[c] = [];
+      var colObj = {
+        key: c,
+        title: c,
+        totalCount: 0,
+        visibleCards: 0,
+        hasMore: false,
+      };
+      columnsByKey[c] = colObj;
+      return colObj;
     });
 
     (tasks || []).forEach(function (t) {
       var st = normalizePrimaryStatus(t.status);
       if (!grouped[st]) {
         grouped[st] = [];
-        if (cols.indexOf(st) === -1) cols.push(st);
+        if (!columnsByKey[st]) {
+          var colObj = {
+            key: st,
+            title: st,
+            totalCount: 0,
+            visibleCards: 0,
+            hasMore: false,
+          };
+          columnsByKey[st] = colObj;
+          columns.push(colObj);
+        }
       }
       grouped[st].push(t);
     });
 
     var visibleCounts = {};
-    cols.forEach(function (c) {
-      visibleCounts[c] = Math.min(KANBAN_RENDER_LIMIT, grouped[c].length);
+    columns.forEach(function (colObj) {
+      var total = (grouped[colObj.key] || []).length;
+      var visible = Math.min(KANBAN_RENDER_LIMIT, total);
+      colObj.totalCount = total;
+      colObj.visibleCards = visible;
+      colObj.hasMore = total > visible;
+      visibleCounts[colObj.key] = visible;
     });
 
     var entry = {
       signature: sig,
       filters: filters,
-      columns: cols,
+      columns: columns,
       grouped: grouped,
       visibleCounts: visibleCounts,
     };
@@ -3159,6 +3227,16 @@
       );
       appendKanbanCards(body, newTasks, status);
       cache.visibleCounts[status] = nextVisible;
+      if (cache.columns && cache.columns.length) {
+        var colObj = cache.columns.find(function (c) {
+          return c.key === status;
+        });
+        if (colObj) {
+          colObj.totalCount = colTasks.length;
+          colObj.visibleCards = nextVisible;
+          colObj.hasMore = nextVisible < colTasks.length;
+        }
+      }
 
       var colEl = body ? body.closest(".pm-kanban-col") : null;
       updateKanbanColumnMeta(colEl, nextVisible, colTasks.length);
@@ -3173,10 +3251,13 @@
 
     var cache = getKanbanCacheEntry(sig, tasks, filters);
     state.currentKanbanSig = sig;
-    state.kanbanColumns = cache.columns.slice();
+    state.kanbanColumns = cache.columns.map(function (c) {
+      return c.key;
+    });
 
     board.innerHTML = cache.columns
-      .map(function (col) {
+      .map(function (colObj) {
+        var col = colObj.key;
         var colTasks = cache.grouped[col] || [];
         var total = colTasks.length;
         var visible = cache.visibleCounts[col];
@@ -3185,6 +3266,9 @@
           cache.visibleCounts[col] = visible;
         }
         if (visible > total) visible = total;
+        colObj.totalCount = total;
+        colObj.visibleCards = visible;
+        colObj.hasMore = total > visible;
 
         var cards = colTasks
           .slice(0, visible)
@@ -3207,7 +3291,7 @@
           "" +
           '<div class="pm-kanban-col">' +
           '<div class="pm-kanban-col-header"><span>' +
-          safe(col) +
+          safe(colObj.title || col) +
           '</span><span class="pm-kanban-total">' +
           total +
           "</span></div>" +
@@ -3561,7 +3645,9 @@
       return;
     }
 
-    state.kanbanColumns = cache.columns.slice();
+    state.kanbanColumns = cache.columns.map(function (c) {
+      return c.key;
+    });
 
     var oldStatus = normalizePrimaryStatus(oldTask.status);
     var newStatus = normalizePrimaryStatus(newTask.status);
@@ -3589,6 +3675,14 @@
         cache.visibleCounts[col] = visible;
       }
       if (visible > total) visible = total;
+      var colObj = cache.columns.find(function (c) {
+        return c.key === col;
+      });
+      if (colObj) {
+        colObj.totalCount = total;
+        colObj.visibleCards = visible;
+        colObj.hasMore = total > visible;
+      }
 
       var cards = colTasks
         .slice(0, visible)
@@ -4277,6 +4371,203 @@
     };
   }
 
+  function getPaginationConfig(key) {
+    return PAGINATION_CONFIG[key];
+  }
+
+  function loadPaginationState(key) {
+    var cfg = getPaginationConfig(key);
+    if (!cfg) return null;
+    var stored = null;
+    try {
+      stored = JSON.parse(localStorage.getItem(cfg.storageKey) || "{}");
+    } catch (err) {
+      stored = null;
+    }
+    var pageSize = cfg.defaultPageSize;
+    if (stored && cfg.pageSizes.indexOf(Number(stored.pageSize)) !== -1) {
+      pageSize = Number(stored.pageSize);
+    }
+    var page = stored && Number(stored.page) > 0 ? Number(stored.page) : 1;
+    var signature =
+      stored && typeof stored.signature === "string" ? stored.signature : "";
+    return {
+      page: page,
+      pageSize: pageSize,
+      signature: signature,
+      total: 0,
+      totalPages: 1,
+      inited: true,
+    };
+  }
+
+  function savePaginationState(key, pag) {
+    var cfg = getPaginationConfig(key);
+    if (!cfg || !pag) return;
+    localStorage.setItem(
+      cfg.storageKey,
+      JSON.stringify({
+        page: pag.page,
+        pageSize: pag.pageSize,
+        signature: pag.signature || "",
+      }),
+    );
+  }
+
+  function buildPaginationModel(total, page, pageSize) {
+    var safeTotal = Math.max(0, Number(total) || 0);
+    var safePageSize = Math.max(1, Number(pageSize) || 1);
+    var totalPages = Math.max(1, Math.ceil(safeTotal / safePageSize));
+    var safePage = Math.min(Math.max(1, Number(page) || 1), totalPages);
+    var startIndex = safeTotal ? (safePage - 1) * safePageSize : 0;
+    var endIndex = Math.min(safeTotal, startIndex + safePageSize);
+    var startLabel = safeTotal ? startIndex + 1 : 0;
+    var endLabel = safeTotal ? endIndex : 0;
+    return {
+      total: safeTotal,
+      page: safePage,
+      pageSize: safePageSize,
+      totalPages: totalPages,
+      startIndex: startIndex,
+      endIndex: endIndex,
+      startLabel: startLabel,
+      endLabel: endLabel,
+      hasPrev: safePage > 1,
+      hasNext: safePage < totalPages,
+    };
+  }
+
+  function resetTasksTableScroll() {
+    var wrap = document.querySelector("#pmTasksTableWrap .pm-tableWrap");
+    if (wrap) wrap.scrollTop = 0;
+  }
+
+  function handlePaginationChange(key) {
+    if (key === "tasks") {
+      resetTasksTableScroll();
+      renderTasksView("table", true);
+    }
+  }
+
+  function ensurePaginationState(key, signature, total) {
+    var cfg = getPaginationConfig(key);
+    if (!cfg) return null;
+    var pag = state.pagination[key];
+    if (!pag || !pag.inited) {
+      pag = loadPaginationState(key) || {
+        page: 1,
+        pageSize: cfg.defaultPageSize,
+        signature: "",
+        total: 0,
+        totalPages: 1,
+        inited: true,
+      };
+      state.pagination[key] = pag;
+    }
+
+    if (signature && pag.signature !== signature) {
+      pag.page = 1;
+      pag.signature = signature;
+      resetTasksTableScroll();
+    }
+
+    var model = buildPaginationModel(total, pag.page, pag.pageSize);
+    pag.page = model.page;
+    pag.pageSize = model.pageSize;
+    pag.total = model.total;
+    pag.totalPages = model.totalPages;
+    savePaginationState(key, pag);
+    return model;
+  }
+
+  function bindPaginationControls(container) {
+    if (!container || container.dataset.bound === "1") return;
+    container.dataset.bound = "1";
+
+    container.addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-page-action]");
+      if (!btn) return;
+      var key = container.getAttribute("data-pagination-key");
+      if (!key) return;
+      var pag = state.pagination[key];
+      if (!pag) return;
+      var action = btn.getAttribute("data-page-action");
+      if (action === "prev") pag.page = Math.max(1, pag.page - 1);
+      if (action === "next")
+        pag.page = Math.min(pag.page + 1, pag.totalPages || 1);
+      savePaginationState(key, pag);
+      handlePaginationChange(key);
+    });
+
+    container.addEventListener("change", function (e) {
+      var select = e.target.closest("select[data-page-size]");
+      if (!select) return;
+      var key = container.getAttribute("data-pagination-key");
+      if (!key) return;
+      var pag = state.pagination[key];
+      if (!pag) return;
+      var size = parseInt(select.value || "0", 10);
+      if (!size || isNaN(size)) return;
+      pag.pageSize = size;
+      pag.page = 1;
+      savePaginationState(key, pag);
+      handlePaginationChange(key);
+    });
+  }
+
+  function renderPaginationControls(key, model) {
+    var cfg = getPaginationConfig(key);
+    if (!cfg) return;
+    var container = document.getElementById(cfg.containerId);
+    if (!container || !model) return;
+
+    var shouldShow = model.total > model.pageSize;
+    container.style.display = shouldShow ? "flex" : "none";
+    container.innerHTML = "";
+    if (!shouldShow) return;
+
+    var options = cfg.pageSizes
+      .map(function (size) {
+        return (
+          '<option value="' +
+          size +
+          '"' +
+          (Number(size) === Number(model.pageSize) ? " selected" : "") +
+          ">" +
+          size +
+          "</option>"
+        );
+      })
+      .join("");
+
+    container.setAttribute("data-pagination-key", key);
+    container.innerHTML =
+      '<div class="pm-paginationRange">Showing ' +
+      model.startLabel.toLocaleString() +
+      "-" +
+      model.endLabel.toLocaleString() +
+      " of " +
+      model.total.toLocaleString() +
+      '</div><div class="pm-paginationControls">' +
+      '<label class="pm-srOnly" for="pmPaginationSize_' +
+      key +
+      '">Rows per page</label>' +
+      '<select id="pmPaginationSize_' +
+      key +
+      '" class="pm-select pm-paginationSelect" data-page-size="1" aria-label="Rows per page">' +
+      options +
+      "</select>" +
+      '<button type="button" class="pm-ghostBtn" data-page-action="prev"' +
+      (model.hasPrev ? "" : " disabled") +
+      '>Previous</button>' +
+      '<button type="button" class="pm-ghostBtn" data-page-action="next"' +
+      (model.hasNext ? "" : " disabled") +
+      '>Next</button>' +
+      "</div>";
+
+    bindPaginationControls(container);
+  }
+
   function buildTaskFilterState() {
     var q = getSearchQuery();
     var qCompact = normalizeForSearch(q);
@@ -4640,26 +4931,52 @@
       var newMatch = taskMatchesFilters(newTask, entry.filters);
       var oldStatus = normalizePrimaryStatus(oldTask.status);
       var newStatus = normalizePrimaryStatus(newTask.status);
+      var touched = {};
+
+      function ensureColumn(status) {
+        if (!entry.grouped[status]) entry.grouped[status] = [];
+        if (!entry.columns) entry.columns = [];
+        var colObj = entry.columns.find(function (c) {
+          return c.key === status;
+        });
+        if (!colObj) {
+          colObj = {
+            key: status,
+            title: status,
+            totalCount: 0,
+            visibleCards: 0,
+            hasMore: false,
+          };
+          entry.columns.push(colObj);
+        }
+        return colObj;
+      }
 
       if (oldMatch) {
         var oldList = entry.grouped[oldStatus];
         if (oldList) removeTaskFromList(oldList, oldTask.recordID);
+        touched[oldStatus] = true;
       }
       if (newMatch) {
-        if (!entry.grouped[newStatus]) entry.grouped[newStatus] = [];
+        ensureColumn(newStatus);
         entry.grouped[newStatus].push(newTask);
-        if (
-          entry.columns.indexOf(newStatus) === -1 &&
-          newStatus !== "Unknown"
-        ) {
-          entry.columns.push(newStatus);
-        }
+        touched[newStatus] = true;
       }
 
-      entry.columns.forEach(function (col) {
-        var total = (entry.grouped[col] || []).length;
-        var visible = entry.visibleCounts[col] || 0;
-        if (visible > total) entry.visibleCounts[col] = total;
+      Object.keys(touched).forEach(function (status) {
+        var list = entry.grouped[status] || [];
+        var total = list.length;
+        var visible = entry.visibleCounts[status] || 0;
+        if (!visible && total) {
+          visible = Math.min(KANBAN_RENDER_LIMIT, total);
+        }
+        if (visible > total) visible = total;
+        entry.visibleCounts[status] = visible;
+
+        var colObj = ensureColumn(status);
+        colObj.totalCount = total;
+        colObj.visibleCards = visible;
+        colObj.hasMore = total > visible;
       });
     });
   }
@@ -4719,23 +5036,44 @@
 
     if (view === "table") {
       state.viewInit.tasksTable = true;
-      var sig =
+      var baseSig =
         buildTaskFilterSignature(filters) +
         "::table::" +
         buildTaskSortSignature(sortState);
-      if (!force && state.renderState.tasksTableSig === sig) return;
       var tasks = getTasksSortedCached(filters, sortState);
-      renderTasksTable(tasks);
+      var paginationModel = ensurePaginationState(
+        "tasks",
+        baseSig,
+        tasks.length,
+      );
+      var sig =
+        baseSig +
+        "::page:" +
+        paginationModel.page +
+        "::size:" +
+        paginationModel.pageSize;
+      if (!force && state.renderState.tasksTableSig === sig) {
+        renderPaginationControls("tasks", paginationModel);
+        return;
+      }
+      var pagedTasks = tasks.slice(
+        paginationModel.startIndex,
+        paginationModel.endIndex,
+      );
+      renderTasksTable(pagedTasks);
+      renderPaginationControls("tasks", paginationModel);
       state.renderState.tasksTableSig = sig;
       return;
     }
 
     if (view === "kanban") {
-      state.viewInit.tasksKanban = true;
+      var wasInited = state.viewInit.tasksKanban;
       var sigK = buildKanbanSignature(filters, sortState);
-      if (!force && state.renderState.tasksKanbanSig === sigK) return;
+      if (!force && wasInited && state.renderState.tasksKanbanSig === sigK)
+        return;
       var tasksK = getTasksSortedCached(filters, sortState);
       renderKanban(tasksK, filters, sigK);
+      state.viewInit.tasksKanban = true;
       state.renderState.tasksKanbanSig = sigK;
       return;
     }
@@ -5723,6 +6061,206 @@
     });
   }
 
+  function ensureAnalyticsTableState() {
+    if (!state.analyticsTables) {
+      state.analyticsTables = {
+        healthExpanded: false,
+        overdueExpanded: false,
+        healthRows: [],
+        overdueRows: [],
+      };
+    }
+    return state.analyticsTables;
+  }
+
+  function renderAnalyticsTable(
+    containerId,
+    tableId,
+    headerHtml,
+    rows,
+    colCount,
+    expanded,
+    toggleKey,
+    emptyLabel,
+  ) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var total = rows.length;
+    var limit = 20;
+    var showAll = !!expanded;
+    var visibleRows = showAll ? rows : rows.slice(0, limit);
+    var shown = showAll ? total : Math.min(limit, total);
+    var rangeText =
+      "Showing " + shown + " of " + total + " result" + (total === 1 ? "" : "s");
+    var showToggle = total > limit;
+    var toggleHtml = showToggle
+      ? '<button type="button" class="pm-ghostBtn pm-tableToggle" data-analytics-toggle="' +
+        toggleKey +
+        '" aria-expanded="' +
+        (showAll ? "true" : "false") +
+        '" aria-controls="' +
+        tableId +
+        '">' +
+        (showAll ? "Show less" : "Show all") +
+        "</button>"
+      : "";
+    var metaHtml =
+      total > 0
+        ? '<div class="pm-tableMeta"><span class="pm-tableRange">' +
+          rangeText +
+          "</span>" +
+          toggleHtml +
+          "</div>"
+        : "";
+    var bodyHtml =
+      visibleRows.join("") ||
+      "<tr><td colspan='" + colCount + "'>" + emptyLabel + "</td></tr>";
+
+    container.innerHTML =
+      '<table class="pm-table" id="' +
+      tableId +
+      '">' +
+      headerHtml +
+      "<tbody>" +
+      bodyHtml +
+      "</tbody></table>" +
+      metaHtml;
+  }
+
+  function renderAnalyticsTablesFromState() {
+    var tableState = ensureAnalyticsTableState();
+    renderAnalyticsTable(
+      "pmProjectHealthTable",
+      "pmProjectHealthTableInner",
+      "<thead><tr><th>Project Key</th><th>Total tasks</th><th>Completed</th><th>Completed percent</th><th>Overdue</th></tr></thead>",
+      tableState.healthRows || [],
+      5,
+      tableState.healthExpanded,
+      "health",
+      "No data",
+    );
+    renderAnalyticsTable(
+      "pmOverdueTasksTable",
+      "pmOverdueTasksTableInner",
+      "<thead><tr><th>Project Key</th><th>Task ID</th><th>Title</th><th>Assigned To</th><th>Due</th><th>Status</th></tr></thead>",
+      tableState.overdueRows || [],
+      6,
+      tableState.overdueExpanded,
+      "overdue",
+      "No overdue tasks",
+    );
+
+    ["pmProjectHealthTable", "pmOverdueTasksTable"].forEach(function (id) {
+      var container = document.getElementById(id);
+      if (!container || container.dataset.toggleBound === "1") return;
+      container.dataset.toggleBound = "1";
+      container.addEventListener("click", function (e) {
+        var btn = e.target.closest("button[data-analytics-toggle]");
+        if (!btn) return;
+        var key = btn.getAttribute("data-analytics-toggle");
+        if (!key) return;
+        if (key === "health")
+          tableState.healthExpanded = !tableState.healthExpanded;
+        if (key === "overdue")
+          tableState.overdueExpanded = !tableState.overdueExpanded;
+        renderAnalyticsTablesFromState();
+        var nextBtn = container.querySelector(
+          'button[data-analytics-toggle="' + key + '"]',
+        );
+        if (nextBtn) nextBtn.focus();
+      });
+    });
+  }
+
+  function renderAnalyticsTablesFromCache(cache) {
+    var tableState = ensureAnalyticsTableState();
+    tableState.healthRows = Object.keys(cache.health)
+      .sort(function (a, b) {
+        return a.localeCompare(b);
+      })
+      .map(function (pk) {
+        var h = cache.health[pk];
+        var compPct = h.total ? Math.round((h.completed / h.total) * 100) : 0;
+        var compClass = compPct === 100 ? "pm-completeGreen" : "";
+        var overdueCell =
+          h.overdue > 0
+            ? "<td class='pm-overdueRed'>" + h.overdue + "</td>"
+            : "<td>" + h.overdue + "</td>";
+        return (
+          "<tr><td>" +
+          safe(pk) +
+          "</td><td>" +
+          h.total +
+          "</td><td>" +
+          h.completed +
+          "</td><td class='" +
+          compClass +
+          "'>" +
+          compPct +
+          "%</td>" +
+          overdueCell +
+          "</tr>"
+        );
+      });
+
+    var overdueTasks = (cache.overdueTasks || [])
+      .slice()
+      .sort(function (a, b) {
+        var da = mmddyyyyToDate(a.due) || new Date(8640000000000000);
+        var db = mmddyyyyToDate(b.due) || new Date(8640000000000000);
+        return da - db;
+      });
+
+    tableState.overdueRows = overdueTasks.map(function (t) {
+      var pkHref = getProjectRecordHrefFromKey(t.projectKey);
+      var pkLink = pkHref
+        ? "<a href='" +
+          safe(pkHref) +
+          "' class='pm-recordLink' data-title='" +
+          safe("Project " + t.projectKey) +
+          "'>" +
+          safe(t.projectKey) +
+          "</a>"
+        : safe(t.projectKey);
+
+      var taskHref = t.href || "";
+      var taskLink = taskHref
+        ? "<a href='" +
+          safe(taskHref) +
+          "' class='pm-recordLink' data-title='" +
+          safe("Task " + t.recordID) +
+          "'>" +
+          safe(t.recordID) +
+          "</a>"
+        : safe(t.recordID);
+
+      return (
+        "<tr>" +
+        "<td>" +
+        pkLink +
+        "</td>" +
+        "<td>" +
+        taskLink +
+        "</td>" +
+        "<td>" +
+        safe(t.title) +
+        "</td>" +
+        "<td>" +
+        safe(t.assignedTo) +
+        "</td>" +
+        "<td class='pm-overdueRed'>" +
+        safe(t.due) +
+        " (Overdue)</td>" +
+        "<td>" +
+        renderStatusCell(t) +
+        "</td>" +
+        "</tr>"
+      );
+    });
+
+    renderAnalyticsTablesFromState();
+  }
+
   function renderAnalyticsFromCache(cache) {
     var filterLabel = cache.filterLabel || "All years, all quarters";
 
@@ -5906,115 +6444,7 @@
       "Projects",
     );
 
-    var healthRows = Object.keys(cache.health)
-      .sort(function (a, b) {
-        return a.localeCompare(b);
-      })
-      .map(function (pk) {
-        var h = cache.health[pk];
-        var compPct = h.total ? Math.round((h.completed / h.total) * 100) : 0;
-        var compClass = compPct === 100 ? "pm-completeGreen" : "";
-        var overdueCell =
-          h.overdue > 0
-            ? "<td class='pm-overdueRed'>" + h.overdue + "</td>"
-            : "<td>" + h.overdue + "</td>";
-        return (
-          "<tr><td>" +
-          safe(pk) +
-          "</td><td>" +
-          h.total +
-          "</td><td>" +
-          h.completed +
-          "</td><td class='" +
-          compClass +
-          "'>" +
-          compPct +
-          "%</td>" +
-          overdueCell +
-          "</tr>"
-        );
-      })
-      .join("");
-
-    var healthTable = document.getElementById("pmProjectHealthTable");
-    if (healthTable) {
-      healthTable.innerHTML =
-        '<table class="pm-table">' +
-        "<thead><tr><th>Project Key</th><th>Total tasks</th><th>Completed</th><th>Completed percent</th><th>Overdue</th></tr></thead>" +
-        "<tbody>" +
-        (healthRows || "<tr><td colspan='5'>No data</td></tr>") +
-        "</tbody>" +
-        "</table>";
-    }
-
-    var overdueTasks = (cache.overdueTasks || [])
-      .slice()
-      .sort(function (a, b) {
-        var da = mmddyyyyToDate(a.due) || new Date(8640000000000000);
-        var db = mmddyyyyToDate(b.due) || new Date(8640000000000000);
-        return da - db;
-      });
-
-    var overdueRows = overdueTasks
-      .slice(0, 200)
-      .map(function (t) {
-        var pkHref = getProjectRecordHrefFromKey(t.projectKey);
-        var pkLink = pkHref
-          ? "<a href='" +
-            safe(pkHref) +
-            "' class='pm-recordLink' data-title='" +
-            safe("Project " + t.projectKey) +
-            "'>" +
-            safe(t.projectKey) +
-            "</a>"
-          : safe(t.projectKey);
-
-        var taskHref = t.href || "";
-        var taskLink = taskHref
-          ? "<a href='" +
-            safe(taskHref) +
-            "' class='pm-recordLink' data-title='" +
-            safe("Task " + t.recordID) +
-            "'>" +
-            safe(t.recordID) +
-            "</a>"
-          : safe(t.recordID);
-
-        return (
-          "<tr>" +
-          "<td>" +
-          pkLink +
-          "</td>" +
-          "<td>" +
-          taskLink +
-          "</td>" +
-          "<td>" +
-          safe(t.title) +
-          "</td>" +
-          "<td>" +
-          safe(t.assignedTo) +
-          "</td>" +
-          "<td class='pm-overdueRed'>" +
-          safe(t.due) +
-          " (Overdue)</td>" +
-          "<td>" +
-          renderStatusCell(t) +
-          "</td>" +
-          "</tr>"
-        );
-      })
-      .join("");
-
-    var overdueTable = document.getElementById("pmOverdueTasksTable");
-    if (overdueTable) {
-      overdueTable.innerHTML =
-        '<table class="pm-table">' +
-        "<thead><tr><th>Project Key</th><th>Task ID</th><th>Title</th><th>Assigned To</th><th>Due</th><th>Status</th></tr></thead>" +
-        "<tbody>" +
-        (overdueRows || "<tr><td colspan='6'>No overdue tasks</td></tr>") +
-        "</tbody>" +
-        "</table>";
-    }
+    renderAnalyticsTablesFromCache(cache);
   }
 
   function renderAnalytics(tasks) {
