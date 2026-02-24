@@ -766,6 +766,28 @@
     return { id: "", type: "" };
   }
 
+  function buildSupportTicketHref(parsed) {
+    var id = parsed && parsed.id ? parsed.id : "";
+    if (!id) return "";
+    var hrefBase =
+      parsed.type === "ux"
+        ? "/platform/ux/index.php?a=printview&recordID="
+        : parsed.type === "idea"
+          ? "/platform/ideas/index.php?a=printview&recordID="
+          : "/platform/support/index.php?a=printview&recordID=";
+    return hrefBase + encodeURIComponent(id);
+  }
+
+  function getTicketOriginFromHref(href) {
+    var match = String(href || "").match(/\/platform\/([^/]+)/i);
+    if (!match) return { key: "", label: "" };
+    var key = String(match[1] || "").toLowerCase();
+    if (key === "support") return { key: key, label: "Support" };
+    if (key === "ideas") return { key: key, label: "Ideas" };
+    if (key === "ux") return { key: key, label: "UX" };
+    return { key: key, label: "" };
+  }
+
   function supportTicketLink(value) {
     var parsed = parseSupportTicket(value);
     var id = parsed.id;
@@ -778,13 +800,7 @@
             ? "Idea Ticket #"
             : "Support Ticket #") + id
       : "Ticket #" + id;
-    var hrefBase =
-      parsed.type === "ux"
-        ? "/platform/ux/index.php?a=printview&recordID="
-        : parsed.type === "idea"
-          ? "/platform/ideas/index.php?a=printview&recordID="
-          : "/platform/support/index.php?a=printview&recordID=";
-    var href = hrefBase + encodeURIComponent(id);
+    var href = buildSupportTicketHref(parsed);
     return (
       '<a href="' +
       safe(href) +
@@ -793,6 +809,42 @@
       '">' +
       safe(label) +
       "</a>"
+    );
+  }
+
+  function supportTicketChip(value) {
+    var parsed = parseSupportTicket(value);
+    var id = parsed.id;
+    if (!id) return "";
+    var label = "#" + id;
+    var href = buildSupportTicketHref(parsed);
+    var origin = getTicketOriginFromHref(href);
+    var originLabel = origin.label || "unknown";
+    var tooltip = origin.label
+      ? "Imported from " + origin.label + " site"
+      : "Imported from unknown site";
+    var chipClass =
+      "pm-ticketChip" +
+      (origin.label
+        ? " pm-ticketChip--" + origin.key
+        : " pm-ticketChip--unknown");
+    var aria = "Ticket " + id + ", " + tooltip;
+    return (
+      '<span class="' +
+      chipClass +
+      '" data-tooltip="' +
+      safeAttr(tooltip) +
+      '">' +
+      '<a href="' +
+      safe(href) +
+      '" class="pm-ticketLink" aria-label="' +
+      safeAttr(aria) +
+      '" title="' +
+      safeAttr(tooltip) +
+      '">' +
+      safe(label) +
+      "</a>" +
+      "</span>"
     );
   }
 
@@ -2400,7 +2452,7 @@
           safe(t.due) +
           "</td>" +
           "<td>" +
-          supportTicketLink(t.supportTicket) +
+          supportTicketChip(t.supportTicket) +
           "</td>" +
           "</tr>"
         );
