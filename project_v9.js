@@ -106,6 +106,9 @@
     OTHER_SUBTYPES: ["Blocked", "On Hold"],
   };
 
+  var KANBAN_RENDER_LIMIT = 100;
+  var KANBAN_RENDER_STEP = 50;
+
   var PAGINATION_CONFIG = {
     tasks: {
       storageKey: STORAGE_KEYS.tasksPagination,
