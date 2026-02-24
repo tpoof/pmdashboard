@@ -832,8 +832,6 @@
     return (
       '<span class="' +
       chipClass +
-      '" data-tooltip="' +
-      safeAttr(tooltip) +
       '">' +
       '<a href="' +
       safe(href) +
