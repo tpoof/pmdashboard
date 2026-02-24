@@ -4019,6 +4019,9 @@
       localStorage.setItem(STORAGE_KEYS.tasksView, view);
       if (getActiveTab() === "tasks") {
         renderTasksView(view);
+        if (view === "kanban") {
+          requestAnimationFrame(ensureKanbanRendered);
+        }
       }
     }
 
@@ -5087,6 +5090,7 @@
     if (tabName === "tasks") {
       state.tabInit.tasks = true;
       renderTasksView(getTasksView());
+      requestAnimationFrame(ensureKanbanRendered);
       return;
     }
     if (tabName === "analytics") {
@@ -5166,6 +5170,22 @@
       renderGantt(tasksG);
       state.renderState.tasksGanttSig = sigG;
     }
+  }
+
+  function ensureKanbanRendered() {
+    if (!state.dataReady) return;
+    if (getActiveTab() !== "tasks") return;
+    if (getTasksView() !== "kanban") return;
+    var board = document.getElementById("pmKanbanBoard");
+    if (!board) return;
+    if (board.children && board.children.length) return;
+    var filters = buildTaskFilterState();
+    var sortState = state.sort.tasks;
+    var sigK = buildKanbanSignature(filters, sortState);
+    var tasksK = getTasksSortedCached(filters, sortState);
+    renderKanban(tasksK, filters, sigK);
+    state.viewInit.tasksKanban = true;
+    state.renderState.tasksKanbanSig = sigK;
   }
 
   function renderAnalyticsView(view) {
