@@ -588,6 +588,33 @@
   border-color: #aacdec;
 }
 
+.lp-credit-footer {
+  margin: 0;
+  font-size: 0.8em;
+  line-height: 1.4;
+}
+
+.lp-credit-footer small {
+  display: inline-block;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--ip-border);
+  border-radius: 10px;
+  font-style: italic;
+}
+
+.lp-credit-footer .material-symbols-outlined {
+  font-size: 1.15em;
+  line-height: 1;
+  vertical-align: -2px;
+  margin-right: 6px;
+  font-style: normal;
+}
+
+.lp-bottom-safe {
+  height: 88px;
+}
+
 @media (max-width: 780px) {
   .ip-header {
     flex-direction: column;
