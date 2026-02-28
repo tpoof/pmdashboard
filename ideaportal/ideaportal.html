@@ -62,6 +62,9 @@
     <div class="ip-tableWrap">
       <div class="ip-tableTitle">All Ideas</div>
       <div class="ip-search" id="ipSearchSection">
+        <label class="ip-searchLabel ip-srOnly" for="searchInput">
+          Search ideas
+        </label>
         <div class="ip-searchField">
           <input
             type="text"
@@ -72,14 +75,33 @@
         </div>
       </div>
       <table id="tblIdeas" class="ip-table">
+        <caption class="ip-srOnly">All ideas table</caption>
         <thead>
           <tr>
-            <th class="ip-sortable" data-sort="id">ID</th>
-            <th class="ip-sortable" data-sort="title">Title</th>
-            <th class="ip-sortable" data-sort="category">Category</th>
-            <th class="ip-sortable" data-sort="status">Status</th>
-            <th class="ip-sortable" data-sort="votes">Votes</th>
-            <th class="ip-col-actions">Actions</th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="id">ID</button>
+            </th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="title">
+                Title
+              </button>
+            </th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="category">
+                Category
+              </button>
+            </th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="status">
+                Status
+              </button>
+            </th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="votes">
+                Votes
+              </button>
+            </th>
+            <th class="ip-col-actions" scope="col">Actions</th>
           </tr>
         </thead>
         <tbody id="results"></tbody>
@@ -96,14 +118,33 @@
     <div class="ip-tableWrap">
       <div class="ip-tableTitle">Top 10 Ideas</div>
       <table id="tblTopIdeas" class="ip-table">
+        <caption class="ip-srOnly">Top 10 ideas table</caption>
         <thead>
           <tr>
-            <th class="ip-sortable" data-sort="id">ID</th>
-            <th class="ip-sortable" data-sort="title">Title</th>
-            <th class="ip-sortable" data-sort="category">Category</th>
-            <th class="ip-sortable" data-sort="status">Status</th>
-            <th class="ip-sortable" data-sort="votes">Votes</th>
-            <th class="ip-col-actions">Actions</th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="id">ID</button>
+            </th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="title">
+                Title
+              </button>
+            </th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="category">
+                Category
+              </button>
+            </th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="status">
+                Status
+              </button>
+            </th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="votes">
+                Votes
+              </button>
+            </th>
+            <th class="ip-col-actions" scope="col">Actions</th>
           </tr>
         </thead>
         <tbody id="topResults"></tbody>
@@ -115,14 +156,33 @@
     <div class="ip-tableWrap">
       <div class="ip-tableTitle">My Ideas</div>
       <table id="tblMyIdeas" class="ip-table">
+        <caption class="ip-srOnly">My ideas table</caption>
         <thead>
           <tr>
-            <th class="ip-sortable" data-sort="id">ID</th>
-            <th class="ip-sortable" data-sort="title">Title</th>
-            <th class="ip-sortable" data-sort="category">Category</th>
-            <th class="ip-sortable" data-sort="status">Status</th>
-            <th class="ip-sortable" data-sort="votes">Votes</th>
-            <th class="ip-col-actions">Actions</th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="id">ID</button>
+            </th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="title">
+                Title
+              </button>
+            </th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="category">
+                Category
+              </button>
+            </th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="status">
+                Status
+              </button>
+            </th>
+            <th class="ip-sortable" scope="col" aria-sort="none">
+              <button class="ip-sortBtn" type="button" data-sort="votes">
+                Votes
+              </button>
+            </th>
+            <th class="ip-col-actions" scope="col">Actions</th>
           </tr>
         </thead>
         <tbody id="myResults"></tbody>
@@ -159,8 +219,16 @@
         </div>
         <div class="ip-field">
           <label for="inpTitle" class="ip-label">Idea Title</label>
-          <input type="text" class="ip-input" id="inpTitle" required />
-          <div class="ip-error">Please provide a title for your idea.</div>
+          <input
+            type="text"
+            class="ip-input"
+            id="inpTitle"
+            required
+            aria-describedby="errTitle"
+          />
+          <div class="ip-error" id="errTitle">
+            Please provide a title for your idea.
+          </div>
         </div>
         <div class="ip-field">
           <label for="inpDescription" class="ip-label">Idea Description</label>
@@ -169,8 +237,11 @@
             id="inpDescription"
             rows="3"
             required
+            aria-describedby="errDescription"
           ></textarea>
-          <div class="ip-error">Please provide a description of your idea.</div>
+          <div class="ip-error" id="errDescription">
+            Please provide a description of your idea.
+          </div>
         </div>
         <div class="ip-field">
           <label for="inpBenefit" class="ip-label">Idea Benefit(s)</label>
@@ -179,12 +250,20 @@
             id="inpBenefit"
             rows="3"
             required
+            aria-describedby="errBenefit"
           ></textarea>
-          <div class="ip-error">Briefly describe the benefit of your idea.</div>
+          <div class="ip-error" id="errBenefit">
+            Briefly describe the benefit of your idea.
+          </div>
         </div>
         <div class="ip-field">
           <label for="inpCategory" class="ip-label">Idea Category</label>
-          <select class="ip-input" id="inpCategory" required>
+          <select
+            class="ip-input"
+            id="inpCategory"
+            required
+            aria-describedby="errCategory"
+          >
             <option selected disabled value="">
               Click here to select a category
             </option>
@@ -201,11 +280,16 @@
             <option value="Workflow">Workflow</option>
             <option value="Other">Other</option>
           </select>
-          <div class="ip-error">Please select a category.</div>
+          <div class="ip-error" id="errCategory">Please select a category.</div>
         </div>
         <div class="ip-field">
           <label for="inpImpact" class="ip-label">Idea Impact</label>
-          <select class="ip-input" id="inpImpact" required>
+          <select
+            class="ip-input"
+            id="inpImpact"
+            required
+            aria-describedby="errImpact"
+          >
             <option selected disabled value="">
               Click here to select the impact
             </option>
@@ -218,7 +302,9 @@
               Impact is one or more, but not all users
             </option>
           </select>
-          <div class="ip-error">Please select an impact level.</div>
+          <div class="ip-error" id="errImpact">
+            Please select an impact level.
+          </div>
         </div>
         <div class="ip-field">
           <label for="fileInput" class="ip-label">
@@ -228,7 +314,6 @@
             id="fileInput"
             name="fileInput"
             type="file"
-            aria-labelledby="format_label_18"
             onchange="addFile_XXXXX_18_1(this.id, 1, 'image')"
             accept="image/*"
             class="ip-fileInput"

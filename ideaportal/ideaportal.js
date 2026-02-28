@@ -11,6 +11,8 @@ let csrfToken = sanitizeLeafValue(portalConfig.csrfToken);
 let userVotes = {};
 let votingInProgress = false;
 let myIdeasCache = [];
+let lastFocusedElement = null;
+let lastRecordFocusedElement = null;
 
 const sortState = {
   tblIdeas: { key: "", dir: "asc" },
@@ -21,8 +23,15 @@ const sortState = {
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
   if (!modal) return;
+  lastFocusedElement = document.activeElement;
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
+  setBackgroundHidden(true);
+  bindFocusTrap(modal);
+  const firstInput = modal.querySelector("input, select, textarea");
+  const focusable = getFocusableElements(modal);
+  const target = firstInput || focusable[0];
+  if (target) target.focus();
 }
 
 function closeModal(modalId) {
@@ -30,6 +39,62 @@ function closeModal(modalId) {
   if (!modal) return;
   modal.classList.remove("is-open");
   modal.setAttribute("aria-hidden", "true");
+  setBackgroundHidden(false);
+  if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
+    lastFocusedElement.focus();
+  }
+  lastFocusedElement = null;
+}
+
+
+function setBackgroundHidden(hidden) {
+  const main = document.querySelector(".ip-wrap");
+  if (main) {
+    if (hidden) {
+      main.setAttribute("aria-hidden", "true");
+    } else {
+      main.removeAttribute("aria-hidden");
+    }
+  }
+  const jump = document.getElementById("ipJumpTopBtn");
+  if (jump) {
+    if (hidden) {
+      jump.setAttribute("aria-hidden", "true");
+    } else {
+      jump.removeAttribute("aria-hidden");
+    }
+  }
+}
+
+function getFocusableElements(container) {
+  return Array.from(
+    container.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter((el) => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden"));
+}
+
+function bindFocusTrap(container) {
+  if (container.dataset.focusTrap === "true") return;
+  container.dataset.focusTrap = "true";
+  container.addEventListener("keydown", function (event) {
+    if (event.key !== "Tab") return;
+    const focusable = getFocusableElements(container);
+    if (!focusable.length) {
+      event.preventDefault();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement;
+    if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
 }
 
 function bindModalEvents() {
@@ -50,15 +115,46 @@ function bindModalEvents() {
 }
 
 function bindTabs() {
+  function syncTabs(target) {
+    $(".ip-tab")
+      .removeClass("is-active")
+      .attr("aria-selected", "false")
+      .attr("tabindex", "-1");
+    $(".ip-panel").removeClass("is-active").attr("aria-hidden", "true");
+
+    const activeTab = target ? $(target) : $(".ip-tab.is-active").first();
+    const tabEl = activeTab.length ? activeTab : $(".ip-tab").first();
+    tabEl.addClass("is-active").attr("aria-selected", "true").attr("tabindex", "0");
+
+    const panelId = tabEl.data("ip-tab");
+    if (panelId) {
+      $("#panel-" + panelId)
+        .addClass("is-active")
+        .attr("aria-hidden", "false");
+    }
+  }
+
   $(".ip-tab").on("click", function () {
-    const target = $(this).data("ip-tab");
-
-    $(".ip-tab").removeClass("is-active").attr("aria-selected", "false");
-    $(this).addClass("is-active").attr("aria-selected", "true");
-
-    $(".ip-panel").removeClass("is-active");
-    $(`#panel-${target}`).addClass("is-active");
+    syncTabs(this);
   });
+
+  $(".ip-tab").on("keydown", function (e) {
+    const tabs = $(".ip-tab");
+    const idx = tabs.index(this);
+    let nextIdx = null;
+
+    if (e.key === "ArrowRight") nextIdx = (idx + 1) % tabs.length;
+    else if (e.key === "ArrowLeft") nextIdx = (idx - 1 + tabs.length) % tabs.length;
+    else if (e.key === "Home") nextIdx = 0;
+    else if (e.key === "End") nextIdx = tabs.length - 1;
+
+    if (nextIdx !== null) {
+      e.preventDefault();
+      tabs.eq(nextIdx).focus().click();
+    }
+  });
+
+  syncTabs();
 }
 
 function escapeHtml(value) {
@@ -76,12 +172,16 @@ function openRecordModal(title, url) {
   const titleEl = document.getElementById("ipRecordModalTitle");
   const openTabBtn = document.getElementById("ipRecordModalOpenTabBtn");
   if (!modal || !frame || !titleEl) return;
+  lastRecordFocusedElement = document.activeElement;
   titleEl.textContent = title || "Idea Details";
   frame.src = url;
   if (openTabBtn) openTabBtn.setAttribute("data-url", url || "");
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
+  setBackgroundHidden(true);
+  bindFocusTrap(modal);
+  const focusable = getFocusableElements(modal);
+  if (focusable[0]) focusable[0].focus();
 }
 
 function closeRecordModal() {
@@ -93,7 +193,14 @@ function closeRecordModal() {
   if (openTabBtn) openTabBtn.setAttribute("data-url", "");
   modal.classList.remove("is-open");
   modal.setAttribute("aria-hidden", "true");
-  document.body.style.overflow = "";
+  setBackgroundHidden(false);
+  if (
+    lastRecordFocusedElement &&
+    typeof lastRecordFocusedElement.focus === "function"
+  ) {
+    lastRecordFocusedElement.focus();
+  }
+  lastRecordFocusedElement = null;
 }
 
 function bindRecordModal() {
@@ -148,7 +255,14 @@ function wireJumpToTop() {
   }
 
   btn.addEventListener("click", function () {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    var prefersReduced =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
+      window.scrollTo({ top: 0 });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   });
 
   window.addEventListener("scroll", updateVisibility, { passive: true });
@@ -157,7 +271,7 @@ function wireJumpToTop() {
 }
 
 function bindSortHandlers() {
-  $(".ip-sortable").off("click").on("click", function () {
+  $(".ip-sortBtn").off("click").on("click", function () {
     const key = $(this).data("sort");
     const tableId = $(this).closest("table").attr("id");
     if (!tableId || !key) return;
@@ -269,9 +383,16 @@ function applySortClasses(tableId) {
   const state = sortState[tableId];
   table.querySelectorAll(".ip-sortable").forEach((th) => {
     th.classList.remove("is-asc", "is-desc");
-    const key = th.getAttribute("data-sort");
+    const btn = th.querySelector(".ip-sortBtn");
+    const key = btn ? btn.getAttribute("data-sort") : null;
     if (state && key === state.key) {
       th.classList.add(state.dir === "asc" ? "is-asc" : "is-desc");
+      th.setAttribute(
+        "aria-sort",
+        state.dir === "asc" ? "ascending" : "descending",
+      );
+    } else {
+      th.setAttribute("aria-sort", "none");
     }
   });
 }
@@ -293,7 +414,7 @@ function updateTable() {
     error: function (xhr, status, error) {
       console.error("AJAX Error: ", status, error);
       $("#results").append("<tr><td colspan='6'>Error loading data</td></tr>");
-      $("#myResults").append("<tr><td colspan='5'>Error loading data</td></tr>");
+      $("#myResults").append("<tr><td colspan='6'>Error loading data</td></tr>");
     },
   });
 }
@@ -341,7 +462,7 @@ function fetchVotesData(ideas) {
 
 function fetchUserSubmissions() {
   if (!userID) {
-    $("#myResults").html("<tr><td colspan='5'>No user ID found</td></tr>");
+    $("#myResults").html("<tr><td colspan='6'>No user ID found</td></tr>");
     return;
   }
 
@@ -383,7 +504,7 @@ function fetchUserSubmissions() {
     error: function (xhr, status, error) {
       console.error("AJAX Error: ", status, error);
       $("#myResults").html(
-        "<tr><td colspan='5'>Error loading user ideas</td></tr>",
+        "<tr><td colspan='6'>Error loading user ideas</td></tr>",
       );
     },
   });
@@ -499,7 +620,7 @@ function populateUserSubmissions(userIdeas, voteCounts) {
     </td>`;
 
     $("#myResults").append(`<tr>
-<td><a class="ip-recordLink" data-title="${safeTitle}" href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
+<td><a class="ip-recordLink" data-title="${safeTitle}" aria-haspopup="dialog" href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
 <td>${safeTitle}</td>
 <td>${category}</td>
 <td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
@@ -540,7 +661,7 @@ function populateTables(ideas, voteCounts) {
     </td>`;
 
       $("#results").append(`<tr>
-<td><a class="ip-recordLink" data-title="${safeTitle}" href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
+<td><a class="ip-recordLink" data-title="${safeTitle}" aria-haspopup="dialog" href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
 <td>${safeTitle}</td>
 <td>${category}</td>
 <td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
@@ -591,7 +712,7 @@ function populateTop10Ideas(voteCounts) {
     </td>`;
 
       $("#topResults").append(`<tr>
-<td><a class="ip-recordLink" data-title="${safeTitle}" href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
+<td><a class="ip-recordLink" data-title="${safeTitle}" aria-haspopup="dialog" href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
 <td>${safeTitle}</td>
 <td>${category}</td>
 <td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
@@ -644,8 +765,28 @@ $(document).ready(function () {
     var forms = document.querySelectorAll(".needs-validation");
     Array.prototype.slice.call(forms).forEach(function (form) {
       form.addEventListener(
+        "input",
+        function (event) {
+          var target = event.target;
+          if (target && target.classList.contains("ip-input")) {
+            if (target.checkValidity()) {
+              target.removeAttribute("aria-invalid");
+            }
+          }
+        },
+        false,
+      );
+      form.addEventListener(
         "submit",
         function (event) {
+          var inputs = form.querySelectorAll(".ip-input");
+          inputs.forEach(function (input) {
+            if (!input.checkValidity()) {
+              input.setAttribute("aria-invalid", "true");
+            } else {
+              input.removeAttribute("aria-invalid");
+            }
+          });
           if (!form.checkValidity()) {
             event.preventDefault();
             event.stopPropagation();
