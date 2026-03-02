@@ -14,66 +14,91 @@
   <main id="main-content" tabindex="-1">
     <div id="firstVisit" class="container pt-5">
     <div class="row justify-content-center align-items-center">
-      <!-- Image on the right -->
-      <div class="col-12 col-md-6 order-md-2">
-        <img
-          src="./files/mockup-transparent-v2.png"
-          class="img-fluid"
-          alt="platform overview"
-        />
-
+      <div class="col-12">
         <!--------------- Launchpad Search Widget ----->
         <div class="lp-launchpad-cta">
           <div class="lp-launchpad-card">
-            <h1 class="mb-2">Help modernize VA.</h1>
-            <p class="lead">
-              Improve your processes with our powerful workflow and form system.
-            </p>
-            <div class="lp-launchpad-actions">
-              <a
-                href="?a=newform"
-                class="btn btn-primary btn-lg"
-                tabindex="0"
-              >
-                >🚀 Get started</a
-              >
-            </div>
-          </div>
-        </div>
 
-        <div class="section group is-hidden" id="welcomeBack">
-          <div class="col span_2_of_5">
-            <div class="p-3">
-              <p class="text-center lp-hero-title">Welcome back!</p>
-
-              <p>How can we help?</p>
-              <ul>
-                <li>
-                  <a href="report.php?a=Start_new_site"
-                    >I need a new LEAF site</a
-                  >
-                </li>
-                <li>
-                  <a href="/platform/service_requests_launchpad/"
-                    >I need help with LEAF</a
-                  >
-                </li>
-                <li>
-                  <a href="report.php?a=Find_my_site">I'm looking for a site</a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="col span_3_of_5">
-            <p>Here's the LEAF web sites you've requested:</p>
-            <div id="searchWidget">
-              <div class="lp-search-card">
-                <!--{include file=$tpl_search is_service_chief=$is_service_chief is_admin=$is_admin empUID=$empUID userID=$userID}-->
-                <div id="searchCount"></div>
-                <br />
+            <!-- State: First Visit (default) -->
+            <div id="stateFirstVisit">
+              <h1 class="mb-2">Your Process.<span class="lp-tagline-accent"> Your Platform.</span></h1>
+              <p class="lead">
+                Improve your processes with our powerful workflow and form system.
+              </p>
+              <div class="lp-launchpad-actions">
+                <a
+                  href="?a=newform"
+                  class="btn btn-primary btn-lg"
+                  tabindex="0"
+                >
+                  🚀 Get started</a
+                >
               </div>
             </div>
+
+            <!-- State: Returning User (is-hidden toggled server-side via #welcomeBack) -->
+            <div id="welcomeBack" class="is-hidden">
+
+              <!-- Greeting Hero Band -->
+              <div class="lp-wb-hero">
+                <h2 class="lp-wb-greeting">Welcome back!</h2>
+                <p class="lp-wb-subtitle">Jump back in, or take a moment to find what you need.</p>
+                <a href="#lp-intro" class="lp-wb-refresher" id="lpRefresherLink">New to LEAF or need a refresher? ↓</a>
+              </div>
+
+              <!-- Resource Hub Grid -->
+              <div class="lp-resource-hub">
+                <a href="report.php?a=Start_new_site" class="lp-resource-tile" tabindex="0">
+                  <i class="bi bi-plus-circle-fill" aria-hidden="true"></i>
+                  <span>New LEAF Site</span>
+                </a>
+                <a href="/platform/service_requests_launchpad/" class="lp-resource-tile" tabindex="0">
+                  <i class="bi bi-life-preserver" aria-hidden="true"></i>
+                  <span>Get Help</span>
+                </a>
+                <a href="report.php?a=Find_my_site" class="lp-resource-tile" tabindex="0">
+                  <i class="bi bi-search" aria-hidden="true"></i>
+                  <span>Find a Site</span>
+                </a>
+                <a href="/platform/help_library/" class="lp-resource-tile" tabindex="0">
+                  <i class="bi bi-book-fill" aria-hidden="true"></i>
+                  <span>Help Library</span>
+                </a>
+                <a href="/platform/CoP/" class="lp-resource-tile" tabindex="0">
+                  <i class="bi bi-people-fill" aria-hidden="true"></i>
+                  <span>Community</span>
+                </a>
+                <a href="?go=idea" class="lp-resource-tile" tabindex="0">
+                  <i class="bi bi-lightbulb-fill" aria-hidden="true"></i>
+                  <span>Suggest an Idea</span>
+                </a>
+              </div>
+
+              <!-- Site History -->
+              <div class="lp-site-history">
+                <button
+                  class="lp-site-history-toggle"
+                  id="siteHistoryToggle"
+                  aria-expanded="false"
+                  aria-controls="siteHistoryPanel"
+                  type="button"
+                >
+                  <span>View your existing sites</span>
+                  <i class="bi bi-chevron-down lp-toggle-icon" aria-hidden="true"></i>
+                </button>
+                <div id="siteHistoryPanel" class="lp-site-history-panel is-hidden">
+                  <div id="searchWidget">
+                    <div class="lp-search-card">
+                      <!--{include file=$tpl_search is_service_chief=$is_service_chief is_admin=$is_admin empUID=$empUID userID=$userID}-->
+                      <div id="searchCount"></div>
+                      <br />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
           </div>
         </div>
       </div>
@@ -81,7 +106,7 @@
 
         <!--------------------- Intro--------------------->
 
-        <div class="container bg-light justify-content-center m-auto p-5">
+        <div id="lp-intro" class="container bg-light justify-content-center m-auto p-5">
           <div class="section-divider"></div>
             <h2 class="mb-3 text-center">
               Build your forms, workflows, and reports in a few easy steps.
@@ -484,20 +509,23 @@
       <style>
         :root {
           color-scheme: light;
-          --lp-bg: #f6f8fb;
+          --lp-bg: #f3f3f3;
           --lp-panel: #ffffff;
           --lp-border: #cfd7e3;
           --lp-text: #0f172a;
           --lp-muted: #475569;
-          --lp-accent: #2563eb;
-          --lp-accent-strong: #1d4ed8;
-          --lp-accent-weak: #dbeafe;
+          --lp-accent: #005ea2;
+          --lp-accent-strong: #004a82;
+          --lp-accent-weak: #cce4f5;
           --lp-warning-bg: #fff2cc;
           --lp-warning-border: #f1d08a;
           --lp-warning-text: #7a4a00;
           --lp-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
           --lp-radius: 14px;
           --lp-safe-bottom: 88px;
+          --lp-blue-soft: #d9e8f6;
+          --lp-blue-mid: #aacdec;
+          --lp-blue-deep: #8fb8db;
         }
 
         * {
@@ -684,14 +712,15 @@
         }
 
         .btn-primary {
-          background: var(--lp-accent);
-          border-color: var(--lp-accent);
-          color: #ffffff;
+          background: var(--lp-blue-soft);
+          border-color: var(--lp-blue-mid);
+          color: #111111;
         }
 
         .btn-primary:hover {
-          background: var(--lp-accent-strong);
-          border-color: var(--lp-accent-strong);
+          background: var(--lp-blue-mid);
+          border-color: var(--lp-blue-deep);
+          box-shadow: 0 6px 16px rgba(143, 184, 219, 0.35);
         }
 
         .btn-lg {
@@ -762,14 +791,21 @@
         .lp-launchpad-card {
           background: var(--lp-panel);
           border: 1px solid var(--lp-border);
+          border-top: 4px solid var(--lp-accent);
           border-radius: var(--lp-radius);
           box-shadow: var(--lp-shadow);
           padding: 32px;
           text-align: center;
         }
 
-        .lp-launchpad-card h2 {
+        .lp-launchpad-card h1,
+        .lp-launchpad-card h2.lp-wb-greeting {
+          font-size: 2em;
           margin: 0 0 8px;
+        }
+
+        .lp-tagline-accent {
+          color: var(--lp-accent);
         }
 
         .lp-launchpad-actions {
@@ -863,10 +899,146 @@
           margin: auto;
         }
 
+        .lp-wb-hero {
+          background: var(--lp-blue-soft);
+          border-bottom: 1px solid var(--lp-blue-mid);
+          padding: 24px 32px;
+          margin: -32px -32px 24px -32px;
+          border-radius: 10px 10px 0 0;
+          text-align: left;
+        }
+
+        .lp-wb-greeting {
+          font-size: 1.8em;
+          font-weight: 700;
+          margin: 0 0 4px;
+          color: var(--lp-text);
+          line-height: 1.2;
+        }
+
+        .lp-wb-subtitle {
+          font-size: 0.95em;
+          margin: 0;
+          color: var(--lp-muted);
+          line-height: 1.4;
+        }
+
+        .lp-wb-refresher {
+          display: inline-block;
+          margin-top: 10px;
+          font-size: 0.8em;
+          color: var(--lp-muted);
+          text-decoration: underline;
+          text-underline-offset: 2px;
+          text-decoration-color: var(--lp-blue-mid);
+        }
+
+        .lp-wb-refresher:hover {
+          color: var(--lp-text);
+          text-decoration-color: var(--lp-accent);
+        }
+
+        .lp-resource-hub {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+          gap: 12px;
+          margin-bottom: 24px;
+        }
+
+        .lp-resource-tile {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 16px 12px;
+          background: var(--lp-blue-soft);
+          border: 1px solid var(--lp-blue-mid);
+          border-radius: 10px;
+          text-decoration: none;
+          color: var(--lp-text);
+          font-size: 0.85em;
+          font-weight: 600;
+          text-align: center;
+          transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+        }
+
+        .lp-resource-tile i {
+          font-size: 26px;
+          color: var(--lp-accent);
+        }
+
+        .lp-resource-tile:hover {
+          background: var(--lp-blue-mid);
+          border-color: var(--lp-blue-deep);
+          color: var(--lp-text);
+          text-decoration: none;
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+          transform: translateY(-2px);
+        }
+
+        .lp-resource-tile:active {
+          transform: translateY(0);
+        }
+
+        .lp-resource-tile:focus,
+        .lp-resource-tile:focus-visible {
+          outline: 2px solid var(--lp-accent);
+          outline-offset: 2px;
+        }
+
+        .lp-site-history {
+          margin-top: 16px;
+          padding-top: 16px;
+          border-top: 1px solid var(--lp-border);
+        }
+
+        .lp-site-history-toggle {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          background: var(--lp-panel);
+          border: 1px solid var(--lp-border);
+          border-radius: 10px;
+          padding: 10px 16px;
+          font-size: 0.9em;
+          font-weight: 600;
+          color: var(--lp-text);
+          cursor: pointer;
+          transition: background 0.15s ease, border-color 0.15s ease;
+        }
+
+        .lp-site-history-toggle:hover {
+          background: var(--lp-blue-soft);
+          border-color: var(--lp-blue-mid);
+        }
+
+        .lp-site-history-toggle:focus,
+        .lp-site-history-toggle:focus-visible {
+          outline: 2px solid var(--lp-accent);
+          outline-offset: 2px;
+        }
+
+        .lp-toggle-icon {
+          transition: transform 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .lp-site-history-toggle[aria-expanded="true"] .lp-toggle-icon {
+          transform: rotate(180deg);
+        }
+
+        .lp-site-history-panel {
+          margin-top: 10px;
+        }
+
+        .lp-site-history-panel.is-hidden {
+          display: none;
+        }
+
         #firstVisit p,
-        #firstVisit li,
-        #welcomeBack p,
-        #welcomeBack li {
+        #firstVisit li {
           font-size: 1em;
           line-height: 2em;
         }
@@ -994,8 +1166,8 @@
           width: 46px;
           height: 46px;
           border-radius: 999px;
-          border: 1px solid var(--lp-accent);
-          background: var(--lp-accent-weak);
+          border: 1px solid var(--lp-blue-mid);
+          background: var(--lp-blue-soft);
           color: #111;
           cursor: pointer;
           font-size: 20px;
@@ -1020,8 +1192,8 @@
         }
 
         .lp-jumpTop:hover {
-          background: var(--lp-accent);
-          color: #fff;
+          background: var(--lp-blue-mid);
+          border-color: var(--lp-blue-deep);
         }
 
         .lp-jumpTop:active {
@@ -1145,6 +1317,66 @@
         }
 
         wireJumpToTop();
+
+        (function () {
+          var refresher = document.getElementById("lpRefresherLink");
+          if (!refresher) return;
+          var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          refresher.addEventListener("click", function (e) {
+            var target = document.getElementById("lp-intro");
+            if (!target) return;
+            e.preventDefault();
+            target.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth" });
+          });
+        })();
+
+        (function () {
+          var toggle = document.getElementById("siteHistoryToggle");
+          var panel = document.getElementById("siteHistoryPanel");
+          if (!toggle || !panel) return;
+          toggle.addEventListener("click", function () {
+            var expanded = toggle.getAttribute("aria-expanded") === "true";
+            toggle.setAttribute("aria-expanded", String(!expanded));
+            panel.classList.toggle("is-hidden", expanded);
+          });
+        })();
+
+        // Dev toggle: Alt+Shift+S switches between first-visit and returning-user states
+        (function () {
+          function showToast(msg) {
+            var t = document.getElementById("lpDevToast");
+            if (!t) {
+              t = document.createElement("div");
+              t.id = "lpDevToast";
+              t.style.cssText = [
+                "position:fixed", "bottom:80px", "left:50%",
+                "transform:translateX(-50%)",
+                "background:#0f172a", "color:#fff",
+                "padding:8px 16px", "border-radius:8px",
+                "font-size:13px", "font-family:monospace",
+                "z-index:9999", "pointer-events:none",
+                "opacity:0", "transition:opacity 0.2s ease",
+              ].join(";");
+              document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.opacity = "1";
+            clearTimeout(t._hide);
+            t._hide = setTimeout(function () { t.style.opacity = "0"; }, 2000);
+          }
+
+          document.addEventListener("keydown", function (e) {
+            if (e.altKey && e.shiftKey && e.code === "KeyS") {
+              var stateNew = document.getElementById("stateFirstVisit");
+              var stateBack = document.getElementById("welcomeBack");
+              if (!stateNew || !stateBack) return;
+              var returningVisible = !stateBack.classList.contains("is-hidden");
+              stateNew.classList.toggle("is-hidden", !returningVisible);
+              stateBack.classList.toggle("is-hidden", returningVisible);
+              showToast(returningVisible ? "State: First Visit" : "State: Returning User");
+            }
+          });
+        })();
       </script>
     </div>
   </main>
