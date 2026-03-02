@@ -1534,11 +1534,10 @@ body.smarty.page-privacy .lead {
 }
 
 body.smarty.page-privacy .info-bar {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-4);
-  box-shadow: var(--shadow-sm);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
 }
 
 body.smarty.page-privacy .info-row {
@@ -1629,11 +1628,18 @@ body.smarty.page-privacy .btn {
   gap: 0.35rem;
   text-decoration: none;
   white-space: nowrap;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 body.smarty.page-privacy .btn:hover {
   background: var(--accent-strong);
   border-color: var(--accent-strong);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 body.smarty.page-privacy .btn:active {
@@ -1776,7 +1782,7 @@ body.smarty.page-privacy .badge {
 
 body.smarty.page-privacy .checklist {
   margin: var(--space-2) 0 0;
-  padding-left: 1.1rem;
+  padding-left: 1.6rem;
 }
 
 body.smarty.page-privacy .checklist li + li {

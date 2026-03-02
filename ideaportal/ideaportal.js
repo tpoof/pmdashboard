@@ -402,7 +402,7 @@ function updateTable() {
   $("#myResults").html("");
 
   $.ajax({
-    url: 'https://leaf.va.gov/VISN20/648/Javascript_Examples/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_a9c92","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{"id":"created_date","direction":"desc"},"getData":["16","13","20"]}&x-filterData=recordID,title,created_date,userID',
+    url: 'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_a9c92","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{"id":"created_date","direction":"desc"},"getData":["16","13","20"]}&x-filterData=recordID,title,created_date,userID',
     type: "GET",
     cache: false,
     async: false,
@@ -429,7 +429,7 @@ function filterIdeasByUser() {
 
 function fetchVotesData(ideas) {
   $.ajax({
-    url: 'https://leaf.va.gov/VISN20/648/Javascript_Examples/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_7edf3","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["25","26"]}&x-filterData=recordID,title',
+    url: 'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_7edf3","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["25","26"]}&x-filterData=recordID,title',
     type: "GET",
     cache: false,
     async: false,
@@ -479,7 +479,7 @@ function fetchUserSubmissions() {
   const queryString = encodeURIComponent(JSON.stringify(query));
 
   $.ajax({
-    url: `https://leaf.va.gov/VISN20/648/Javascript_Examples/api/form/query/?q=${queryString}&x-filterData=recordID,title,created_date,userID`,
+    url: `https://leaf.va.gov/platform/ideas/api/form/query/?q=${queryString}&x-filterData=recordID,title,created_date,userID`,
     type: "GET",
     cache: false,
     async: false,
@@ -616,11 +616,11 @@ function populateUserSubmissions(userIdeas, voteCounts) {
 <button class='ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}' data-record-id='${recordID}' ${isVoted ? "disabled" : ""} aria-label='Upvote'>
 <span aria-hidden='true'>&#128077;</span>
 </button>
-<button class='ip-btn ip-btn--ghost ip-share' data-record-link='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>Share</button>
+<button class='ip-btn ip-btn--ghost ip-share' data-record-link='https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}'>Share</button>
     </td>`;
 
     $("#myResults").append(`<tr>
-<td><a class="ip-recordLink" data-title="${safeTitle}" aria-haspopup="dialog" href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
+<td><a class="ip-recordLink" data-title="${safeTitle}" aria-haspopup="dialog" href='https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
 <td>${safeTitle}</td>
 <td>${category}</td>
 <td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
@@ -657,11 +657,11 @@ function populateTables(ideas, voteCounts) {
 <button class='ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}' data-record-id='${recordID}' ${isVoted ? "disabled" : ""} aria-label='Upvote'>
 <span aria-hidden='true'>&#128077;</span>
 </button>
-<button class='ip-btn ip-btn--ghost ip-share' data-record-link='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>Share</button>
+<button class='ip-btn ip-btn--ghost ip-share' data-record-link='https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}'>Share</button>
     </td>`;
 
       $("#results").append(`<tr>
-<td><a class="ip-recordLink" data-title="${safeTitle}" aria-haspopup="dialog" href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
+<td><a class="ip-recordLink" data-title="${safeTitle}" aria-haspopup="dialog" href='https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
 <td>${safeTitle}</td>
 <td>${category}</td>
 <td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
@@ -708,11 +708,11 @@ function populateTop10Ideas(voteCounts) {
 <button class='ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}' data-record-id='${recordID}' ${isVoted ? "disabled" : ""} aria-label='Upvote'>
 <span aria-hidden='true'>&#128077;</span>
 </button>
-<button class='ip-btn ip-btn--ghost ip-share' data-record-link='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>Share</button>
+<button class='ip-btn ip-btn--ghost ip-share' data-record-link='https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}'>Share</button>
     </td>`;
 
       $("#topResults").append(`<tr>
-<td><a class="ip-recordLink" data-title="${safeTitle}" aria-haspopup="dialog" href='https://leaf.va.gov/VISN20/648/Javascript_Examples/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
+<td><a class="ip-recordLink" data-title="${safeTitle}" aria-haspopup="dialog" href='https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
 <td>${safeTitle}</td>
 <td>${category}</td>
 <td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
