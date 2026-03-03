@@ -199,46 +199,57 @@
   margin-bottom: 16px;
 }
 
-.smarty-root .ip-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: nowrap;
+
+.smarty-root .ip-searchWrap {
+  position: relative;
+  width: 100%;
+  display: block;
 }
 
-.smarty-root #searchInput {
-  flex: 1;
-  min-width: 0;
+.smarty-root .ip-searchInput {
+  width: 100%;
   height: 40px;
-  padding: 0 12px;
-  border-radius: 10px;
-  border: 1px solid var(--ip-border, #ccc);
-  background: var(--ip-surface, #fff);
+  padding: 0 44px 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--lp-border, #c9c9c9);
+  background: var(--lp-surface, #fff);
 }
 
-.smarty-root #searchInput:focus {
-  outline: 2px solid var(--ip-focus, #005ea2);
+.smarty-root .ip-searchInput:focus {
+  outline: 2px solid var(--lp-focus, #005ea2);
   outline-offset: 2px;
 }
 
-.smarty-root .ip-searchBtn {
-  width: 40px;
-  height: 40px;
+.smarty-root .ip-searchIconBtn {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
   border-radius: 10px;
-  border: 1px solid var(--ip-border, #ccc);
-  background: var(--ip-surface, #fff);
+  border: 0;
+  background: transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
   cursor: pointer;
+  flex: 0 0 auto;
 }
 
-.smarty-root .ip-searchBtn .material-symbols-outlined {
-  font-size: 22px;
+.smarty-root .ip-searchWrap .ip-searchIconBtn {
+  width: 32px;
+}
+
+.smarty-root .ip-searchIconBtn:focus {
+  outline: 2px solid var(--lp-focus, #005ea2);
+  outline-offset: 2px;
+}
+
+.smarty-root .ip-searchIconBtn .material-symbols-outlined {
+  font-size: 20px;
   line-height: 1;
 }
-
 
 .smarty-root .ip-status {
   margin-bottom: 12px;

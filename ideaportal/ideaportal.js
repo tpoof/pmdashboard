@@ -564,7 +564,7 @@ function buildIdeaRow(idea) {
 <td class="ip-votes">${votes}</td>
 <td class="ip-actionsCell">
 <button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}" data-record-id="${recordID}" ${isVoted ? "disabled" : ""} aria-label="Vote">
-<span class="material-symbols-outlined" aria-hidden="true">how_to_vote</span>
+<span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
 </button>
 <button class="ip-btn ip-btn--ghost ip-share" data-record-link="https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}">Share</button>
 </td>
