@@ -8,7 +8,7 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
     />
-    <link rel="stylesheet" href="platform/designs/files/smarty_styles.css" />
+    <link rel="stylesheet" href="/platform/designs/files/smarty_styles.css" />
   </head>
 
   <body class="smarty page-privacy">
@@ -86,7 +86,7 @@
                     ESSNR Webpage
                     <span class="visually-hidden"
                       >(opens in a new tab)</span
-                    > </a
+                    ></a
                   >.
                 </div>
               </div>
@@ -407,34 +407,34 @@
         outline-offset: 3px;
       }
 
-      body.smarty.page-privacy .recent-change-header {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: 0.5rem;
-      }
-
-      body.smarty.page-privacy .recent-change-title {
-        margin: 0;
-      }
-
       body.smarty.page-privacy .recent-change-date {
         color: var(--muted);
         font-size: 0.9rem;
         font-style: italic;
-        margin-left: auto;
+      }
+
+      body.smarty.page-privacy .recent-change-title {
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      body.smarty.page-privacy .recent-change-meta {
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0;
+      }
+
+      body.smarty.page-privacy .recent-change-meta .pipe {
+        color: var(--muted);
+        margin: 0 0.35rem;
       }
 
       body.smarty.page-privacy .recent-change-summary p + p,
       body.smarty.page-privacy .recent-change-summary ul,
       body.smarty.page-privacy .recent-change-summary ol {
         margin-top: var(--space-1);
-      }
-
-      @media (max-width: 520px) {
-        body.smarty.page-privacy .recent-change-date {
-          margin-left: 0;
-        }
       }
 
       body.smarty.page-privacy .btn:focus-visible,
@@ -591,8 +591,8 @@
         const li = document.createElement("li");
         li.className = "recent-changes-item";
 
-        const header = document.createElement("div");
-        header.className = "recent-change-header";
+        const meta = document.createElement("p");
+        meta.className = "recent-change-meta";
 
         const timeElement = document.createElement("time");
         timeElement.className = "recent-change-date";
@@ -604,19 +604,23 @@
         }
         timeElement.textContent = entry.displayDate;
 
-        const title = document.createElement("p");
+        const separator = document.createElement("span");
+        separator.className = "pipe";
+        separator.textContent = "|";
+
+        const title = document.createElement("span");
         title.className = "recent-change-title";
-        const strong = document.createElement("strong");
-        strong.textContent = entry.title;
-        title.appendChild(strong);
-        header.appendChild(title);
-        header.appendChild(timeElement);
+        title.textContent = entry.title;
+
+        meta.appendChild(timeElement);
+        meta.appendChild(separator);
+        meta.appendChild(title);
 
         const summary = document.createElement("div");
         summary.className = "recent-change-summary";
         renderMultilineText(summary, entry.summary);
 
-        li.appendChild(header);
+        li.appendChild(meta);
         li.appendChild(summary);
 
         return li;
