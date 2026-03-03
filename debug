@@ -1,11 +1,6 @@
-// Get the full form structure for the ideas form (form_ae642)
-fetch('/platform/ideas/api/form/ae642/', {credentials: 'same-origin'})
-  .then(r => r.text()).then(console.log)
-
-// Try getting indicator definition directly by ID
-fetch('/platform/ideas/api/form/ae642/indicator/8/', {credentials: 'same-origin'})
-  .then(r => r.text()).then(console.log)
-
-// Try theNestedForms/subform approach
-fetch('/platform/ideas/api/form/1/indicator/8/', {credentials: 'same-origin'})
-  .then(r => r.text()).then(console.log)
+fetch(
+  "/platform/ideas/api/form/query/?q=%7B%22terms%22%3A%5B%5D%7D&x-filterData=10",
+  { credentials: "same-origin" },
+)
+  .then((r) => r.text())
+  .then(console.log);
