@@ -1,11 +1,11 @@
-// Check what's winning on the footer
-const f = document.querySelector(".lp-credit-footer");
-const s = window.getComputedStyle(f);
-console.log("position:", s.position);
-console.log("margin-top:", s.marginTop);
-console.log("height:", s.height);
+const table = document.querySelector("#tblIdeas");
+const wrap = table.parentElement;
+console.log("table offsetWidth:", table.offsetWidth);
+console.log("wrap clientWidth:", wrap.clientWidth);
+console.log("table minWidth:", window.getComputedStyle(table).minWidth);
 
-// Check actual rendered width of the actions cell content
-const btn = document.querySelector("#results tr:first-child td:last-child");
-console.log("actions cell scrollWidth:", btn.scrollWidth);
-console.log("actions cell clientWidth:", btn.clientWidth);
+const th6 = table.querySelector("th:nth-child(6)");
+const td6 = table.querySelector("td:nth-child(6)");
+console.log("th6 width:", window.getComputedStyle(th6).width);
+console.log("td6 width:", window.getComputedStyle(td6).width);
+console.log("td6 scrollWidth:", td6.scrollWidth);
