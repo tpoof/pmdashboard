@@ -61,6 +61,74 @@ function sanitizeLeafValue(value) {
   return String(value || "").replace(/<!--|-->/g, "").trim();
 }
 
+function apiGetJson(url) {
+  return fetch(url, {
+    method: "GET",
+    credentials: "same-origin",
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+    },
+  })
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error("Request failed with status " + response.status);
+      }
+      return response.text();
+    })
+    .then(function (text) {
+      try {
+        return JSON.parse(text);
+      } catch (error) {
+        console.error("IdeaPortal API error", { url, error, text });
+        throw error;
+      }
+    })
+    .catch(function (error) {
+      console.error("IdeaPortal API error", { url, error });
+      throw error;
+    });
+}
+
+function apiPostJson(url, data) {
+  try {
+    const body = new URLSearchParams();
+    Object.entries(data || {}).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      body.append(String(key), String(value));
+    });
+
+    return fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      },
+      body: body.toString(),
+      credentials: "same-origin",
+    })
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error("Request failed with status " + response.status);
+        }
+        return response.text();
+      })
+      .then(function (text) {
+        try {
+          return JSON.parse(text);
+        } catch (err) {
+          return text;
+        }
+      })
+      .catch(function (error) {
+        console.error("IdeaPortal API error", { url, error });
+        throw error;
+      });
+  } catch (error) {
+    console.error("IdeaPortal API error", { url, error });
+    return Promise.reject(error);
+  }
+}
+
 const userID = sanitizeLeafValue(portalConfig.userID);
 const csrfToken = sanitizeLeafValue(portalConfig.csrfToken);
 let userVotes = {};
@@ -731,13 +799,7 @@ function IdeaVotes(ideanum) {
   payload[VOTE_FIELDS.user] = userID;
   payload[VOTE_FIELDS.idea] = ideanumKey;
 
-  $.ajax({
-    type: "POST",
-    url: "./api/?a=form/new",
-    dataType: "json",
-    data: payload,
-    cache: false,
-  })
+  apiPostJson("./api/?a=form/new", payload)
     .done(function (response) {
       var recordID = parseFloat(response);
       if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
@@ -807,12 +869,7 @@ function fetchIdeasData() {
   setPanelBusy("all", true);
   setStatus("all", "Loading ideas...", "loading");
 
-  return $.ajax({
-    url: buildIdeasQueryUrl(),
-    type: "GET",
-    cache: false,
-    dataType: "json",
-  })
+  return apiGetJson(buildIdeasQueryUrl())
     .done(function (data) {
       ideas = Object.values(data || {});
       renderAllIdeas();
@@ -828,12 +885,7 @@ function fetchIdeasData() {
 }
 
 function fetchVotesData() {
-  return $.ajax({
-    url: buildVotesQueryUrl(),
-    type: "GET",
-    cache: false,
-    dataType: "json",
-  }).then(
+  return apiGetJson(buildVotesQueryUrl()).then(
     function (voteData) {
       voteCounts = {};
       userVotes = {};
@@ -867,7 +919,7 @@ function fetchUserSubmissions() {
     myIdeasCache = [];
     setStatus("my", "No user ID found", "error");
     renderMyIdeas();
-    return $.Deferred().resolve().promise();
+    return Promise.resolve();
   }
 
   setPanelBusy("my", true);
@@ -885,12 +937,7 @@ function fetchUserSubmissions() {
   };
   const queryString = encodeURIComponent(JSON.stringify(query));
 
-  return $.ajax({
-    url: `https://leaf.va.gov/platform/ideas/api/form/query/?q=${queryString}&x-filterData=recordID,title,created_date,userID`,
-    type: "GET",
-    cache: false,
-    dataType: "json",
-  })
+  return apiGetJson(`https://leaf.va.gov/platform/ideas/api/form/query/?q=${queryString}&x-filterData=recordID,title,created_date,userID`)
     .done(function (data) {
       let userIdeas = Object.values(data || {}).map((idea) => {
         if (!idea.s1 && idea.recordID) {
@@ -986,13 +1033,7 @@ function NewIdea() {
   if (submitButton) submitButton.disabled = true;
   if (submissionAlert) submissionAlert.hidden = true;
 
-  $.ajax({
-    type: "POST",
-    url: "./api/?a=form/new",
-    dataType: "json",
-    data: payload,
-    cache: false,
-  })
+  apiPostJson("./api/?a=form/new", payload)
     .done(function (response) {
       var recordID = parseFloat(response);
       if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
@@ -1194,6 +1235,9 @@ function initValidation() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  if (window.$ || window.jQuery) {
+    console.warn("IdeaPortal:  is loaded but no longer required.");
+  }
   cacheElements();
   bindModalEvents();
   bindTabs();
