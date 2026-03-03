@@ -1207,26 +1207,36 @@ function NewIdea() {
     .then(function (response) {
       var recordID = parseFloat(response);
       if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
+        // Capture files BEFORE any reset happens
         var fileInputEl = document.getElementById("fileInput");
-        if (fileInputEl && fileInputEl.files && fileInputEl.files.length) {
-          var formData = new FormData();
-          Array.from(fileInputEl.files).forEach(function (file) {
+        const filesToUpload = (fileInputEl && fileInputEl.files) ? Array.from(fileInputEl.files) : [];
+
+        if (filesToUpload.length > 0) {
+          const formData = new FormData();
+          filesToUpload.forEach(file => {
             formData.append("10", file);
           });
-          fetch("./api/?a=form/" + recordID, {
+          console.log("[IdeaUpload] uploading", filesToUpload.length, "file(s) to record", recordID);
+          fetch(`./api/?a=form/${recordID}`, {
             method: "POST",
             credentials: "same-origin",
             body: formData,
-          }).catch(function (err) {
-            console.warn("[NewIdea] File upload failed", err);
+          })
+          .then(r => r.text())
+          .then(uploadResponse => {
+            console.log("[IdeaUpload] response", uploadResponse);
+          })
+          .catch(err => {
+            console.warn("[IdeaUpload] file upload failed", err);
           });
-          fileInputEl.value = "";
         }
+
         alert("Your idea has been submitted successfully.");
         if (form) {
           form.reset();
           form.classList.remove("was-validated");
         }
+        if (fileInputEl) fileInputEl.value = "";
         const fileList = document.getElementById("fileList");
         if (fileList) fileList.innerHTML = "";
         closeModal("addIdeaModal");
