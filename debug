@@ -1,11 +1,11 @@
-// Option A — query the form definition directly
-fetch('/platform/ideas/api/form/', {credentials: 'same-origin'})
+// Get the full form structure for the ideas form (form_ae642)
+fetch('/platform/ideas/api/form/ae642/', {credentials: 'same-origin'})
   .then(r => r.text()).then(console.log)
 
-// Option B — query a specific known record to see field structure
-fetch('/platform/ideas/api/form/1/', {credentials: 'same-origin'})
+// Try getting indicator definition directly by ID
+fetch('/platform/ideas/api/form/ae642/indicator/8/', {credentials: 'same-origin'})
   .then(r => r.text()).then(console.log)
 
-// Option C — query existing ideas and see what values field 8 actually contains
-fetch('/platform/ideas/api/form/query/?q=%7B%22terms%22%3A%5B%5D%7D&x-filterData=8,9', {credentials: 'same-origin'})
+// Try theNestedForms/subform approach
+fetch('/platform/ideas/api/form/1/indicator/8/', {credentials: 'same-origin'})
   .then(r => r.text()).then(console.log)
