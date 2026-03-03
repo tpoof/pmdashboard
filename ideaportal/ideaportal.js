@@ -756,10 +756,10 @@ function buildIdeaRow(idea) {
 <td>${statusMarkup}</td>
 <td class="ip-votes">${votes}</td>
 <td class="ip-actionsCell">
-<button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}" data-record-id="${recordID}" ${isVoted ? "disabled" : ""} aria-label="Vote for ${labelTitle}" aria-disabled="${isVoted ? "true" : "false"}">
+<button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}" data-record-id="${recordID}" ${isVoted ? "disabled" : ""} aria-label="Vote for ${labelTitle}" aria-disabled="${isVoted ? "true" : "false"}" title="Vote for this idea">
 <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
 </button>
-<button class="ip-btn ip-btn--ghost ip-share" data-record-link="${recordLink}" aria-label="Share ${labelTitle}">Share</button>
+<button class="ip-btn ip-btn--ghost ip-share" data-record-link="${recordLink}" aria-label="Share ${labelTitle}" title="Copy shareable link">Share</button>
 </td>
 </tr>`;
 }
