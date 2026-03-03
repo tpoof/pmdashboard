@@ -1,3 +1,6 @@
+const PAGE_SIZE = 50;
+const SEARCH_DEBOUNCE_MS = 200;
+
 let ideas = [];
 let voteCounts = {};
 const portalConfig = window.leafIdeaPortal || {};
@@ -6,19 +9,77 @@ function sanitizeLeafValue(value) {
   return String(value || "").replace(/<!--|-->/g, "").trim();
 }
 
-let userID = sanitizeLeafValue(portalConfig.userID);
-let csrfToken = sanitizeLeafValue(portalConfig.csrfToken);
+const userID = sanitizeLeafValue(portalConfig.userID);
+const csrfToken = sanitizeLeafValue(portalConfig.csrfToken);
 let userVotes = {};
 let votingInProgress = false;
 let myIdeasCache = [];
 let lastFocusedElement = null;
 let lastRecordFocusedElement = null;
 
+const state = {
+  search: "",
+  pagination: {
+    all: { page: 1, showAll: false },
+    my: { page: 1, showAll: false },
+  },
+};
+
 const sortState = {
   tblIdeas: { key: "", dir: "asc" },
   tblTopIdeas: { key: "", dir: "desc" },
   tblMyIdeas: { key: "", dir: "asc" },
 };
+
+const ui = {
+  results: null,
+  topResults: null,
+  myResults: null,
+  searchInput: null,
+  status: { all: null, my: null },
+  pagination: { all: null, my: null },
+  pageInfo: { all: null, my: null },
+  pageHint: { all: null, my: null },
+  panels: { all: null, my: null },
+};
+
+function cacheElements() {
+  ui.results = document.getElementById("results");
+  ui.topResults = document.getElementById("topResults");
+  ui.myResults = document.getElementById("myResults");
+  ui.searchInput = document.getElementById("searchInput");
+  ui.status.all = document.getElementById("allStatus");
+  ui.status.my = document.getElementById("myStatus");
+  ui.pagination.all = document.getElementById("allPagination");
+  ui.pagination.my = document.getElementById("myPagination");
+  ui.pageInfo.all = document.getElementById("allPageInfo");
+  ui.pageInfo.my = document.getElementById("myPageInfo");
+  ui.pageHint.all = document.getElementById("allPageHint");
+  ui.pageHint.my = document.getElementById("myPageHint");
+  ui.panels.all = document.getElementById("panel-all");
+  ui.panels.my = document.getElementById("panel-my");
+}
+
+function setPanelBusy(scope, isBusy) {
+  const panel = ui.panels[scope];
+  if (!panel) return;
+  panel.setAttribute("aria-busy", isBusy ? "true" : "false");
+}
+
+function setStatus(scope, message, type) {
+  const el = ui.status[scope];
+  if (!el) return;
+  if (!message) {
+    el.hidden = true;
+    el.textContent = "";
+    el.classList.remove("is-error", "is-loading");
+    return;
+  }
+  el.textContent = message;
+  el.hidden = false;
+  el.classList.toggle("is-error", type === "error");
+  el.classList.toggle("is-loading", type === "loading");
+}
 
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
@@ -45,7 +106,6 @@ function closeModal(modalId) {
   }
   lastFocusedElement = null;
 }
-
 
 function setBackgroundHidden(hidden) {
   const main = document.querySelector(".ip-wrap");
@@ -115,43 +175,56 @@ function bindModalEvents() {
 }
 
 function bindTabs() {
+  const tabs = Array.from(document.querySelectorAll(".ip-tab"));
+  const panels = Array.from(document.querySelectorAll(".ip-panel"));
+
   function syncTabs(target) {
-    $(".ip-tab")
-      .removeClass("is-active")
-      .attr("aria-selected", "false")
-      .attr("tabindex", "-1");
-    $(".ip-panel").removeClass("is-active").attr("aria-hidden", "true");
+    tabs.forEach((tab) => {
+      tab.classList.remove("is-active");
+      tab.setAttribute("aria-selected", "false");
+      tab.setAttribute("tabindex", "-1");
+    });
+    panels.forEach((panel) => {
+      panel.classList.remove("is-active");
+      panel.setAttribute("aria-hidden", "true");
+    });
 
-    const activeTab = target ? $(target) : $(".ip-tab.is-active").first();
-    const tabEl = activeTab.length ? activeTab : $(".ip-tab").first();
-    tabEl.addClass("is-active").attr("aria-selected", "true").attr("tabindex", "0");
+    const activeTab = target || tabs.find((tab) => tab.classList.contains("is-active")) || tabs[0];
+    if (!activeTab) return;
+    activeTab.classList.add("is-active");
+    activeTab.setAttribute("aria-selected", "true");
+    activeTab.setAttribute("tabindex", "0");
 
-    const panelId = tabEl.data("ip-tab");
+    const panelId = activeTab.dataset.ipTab;
     if (panelId) {
-      $("#panel-" + panelId)
-        .addClass("is-active")
-        .attr("aria-hidden", "false");
+      const panel = document.getElementById("panel-" + panelId);
+      if (panel) {
+        panel.classList.add("is-active");
+        panel.setAttribute("aria-hidden", "false");
+      }
     }
   }
 
-  $(".ip-tab").on("click", function () {
-    syncTabs(this);
-  });
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", function () {
+      syncTabs(tab);
+    });
 
-  $(".ip-tab").on("keydown", function (e) {
-    const tabs = $(".ip-tab");
-    const idx = tabs.index(this);
-    let nextIdx = null;
+    tab.addEventListener("keydown", function (e) {
+      const idx = tabs.indexOf(tab);
+      let nextIdx = null;
 
-    if (e.key === "ArrowRight") nextIdx = (idx + 1) % tabs.length;
-    else if (e.key === "ArrowLeft") nextIdx = (idx - 1 + tabs.length) % tabs.length;
-    else if (e.key === "Home") nextIdx = 0;
-    else if (e.key === "End") nextIdx = tabs.length - 1;
+      if (e.key === "ArrowRight") nextIdx = (idx + 1) % tabs.length;
+      else if (e.key === "ArrowLeft") nextIdx = (idx - 1 + tabs.length) % tabs.length;
+      else if (e.key === "Home") nextIdx = 0;
+      else if (e.key === "End") nextIdx = tabs.length - 1;
 
-    if (nextIdx !== null) {
-      e.preventDefault();
-      tabs.eq(nextIdx).focus().click();
-    }
+      if (nextIdx !== null) {
+        e.preventDefault();
+        tabs[nextIdx].focus();
+        syncTabs(tabs[nextIdx]);
+      }
+    });
   });
 
   syncTabs();
@@ -270,268 +343,19 @@ function wireJumpToTop() {
   updateVisibility();
 }
 
-function bindSortHandlers() {
-  $(".ip-sortBtn").off("click").on("click", function () {
-    const key = $(this).data("sort");
-    const tableId = $(this).closest("table").attr("id");
-    if (!tableId || !key) return;
-
-    setSortState(tableId, key);
-    applySortClasses(tableId);
-
-    if (tableId === "tblIdeas") {
-      populateTables(ideas, voteCounts);
-    } else if (tableId === "tblTopIdeas") {
-      populateTop10Ideas(voteCounts);
-    } else if (tableId === "tblMyIdeas") {
-      populateUserSubmissions(myIdeasCache, voteCounts);
-    }
-  });
-}
-
-function IdeaVotes(ideanum) {
-  if (votingInProgress) return;
-  if (userVotes[ideanum]) {
-    alert("You already voted on this idea.");
-    return;
-  }
-  votingInProgress = true;
-
-  userVotes[ideanum] = true;
-  setVotedState(ideanum, true);
-
-  $.ajax({
-    type: "POST",
-    url: "./api/?a=form/new",
-    dataType: "json",
-    data: {
-      service: "",
-      title: "Idea #" + ideanum,
-      priority: 0,
-      numform_7edf3: 1,
-      CSRFToken: csrfToken,
-      26: userID,
-      25: ideanum,
-    },
-    success: function (response) {
-      var recordID = parseFloat(response);
-      if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
-        alert("Thanks for voting!");
-        updateTable();
-      } else {
-        alert("Error processing vote.");
-        userVotes[ideanum] = false;
-        setVotedState(ideanum, false);
-      }
-      votingInProgress = false;
-    },
-    error: function () {
-      alert("Error processing vote.");
-      userVotes[ideanum] = false;
-      setVotedState(ideanum, false);
-      votingInProgress = false;
-    },
-    cache: false,
-  });
-}
-
-function attachEventListeners() {
-  $(".ip-upvote").off("click");
-  $(".ip-share").off("click");
-
-  $(".ip-share").on("click", function () {
-    var recordLink = $(this).data("record-link");
-    navigator.clipboard.writeText(recordLink).then(
-      function () {
-        alert("Idea link copied to clipboard.");
-      },
-      function (err) {
-        console.error("Could not copy link: ", err);
-      },
-    );
-  });
-
-  $(".ip-upvote").on("click", function () {
-    if ($(this).prop("disabled")) {
-      return;
-    }
-    let ideanum = $(this).data("record-id");
-    IdeaVotes(ideanum);
-  });
-}
-
-function setVotedState(ideanum, isVoted) {
-  const buttons = $(`.ip-upvote[data-record-id='${ideanum}']`);
-  buttons.prop("disabled", isVoted);
-  buttons.toggleClass("is-voted", isVoted);
-}
-
-function setSortState(tableId, key) {
-  const state = sortState[tableId] || { key: "", dir: "asc" };
-  if (state.key === key) {
-    state.dir = state.dir === "asc" ? "desc" : "asc";
-  } else {
-    state.key = key;
-    state.dir = "asc";
-  }
-  sortState[tableId] = state;
-}
-
-function applySortClasses(tableId) {
-  const table = document.getElementById(tableId);
-  if (!table) return;
-  const state = sortState[tableId];
-  table.querySelectorAll(".ip-sortable").forEach((th) => {
-    th.classList.remove("is-asc", "is-desc");
-    const btn = th.querySelector(".ip-sortBtn");
-    const key = btn ? btn.getAttribute("data-sort") : null;
-    if (state && key === state.key) {
-      th.classList.add(state.dir === "asc" ? "is-asc" : "is-desc");
-      th.setAttribute(
-        "aria-sort",
-        state.dir === "asc" ? "ascending" : "descending",
-      );
-    } else {
-      th.setAttribute("aria-sort", "none");
-    }
-  });
-}
-
-function updateTable() {
-  $("#results").html("");
-  $("#myResults").html("");
-
-  $.ajax({
-    url: 'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_a9c92","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{"id":"created_date","direction":"desc"},"getData":["16","13","20"]}&x-filterData=recordID,title,created_date,userID',
-    type: "GET",
-    cache: false,
-    async: false,
-    dataType: "json",
-    success: function (data) {
-      ideas = Object.values(data);
-      fetchVotesData(ideas);
-    },
-    error: function (xhr, status, error) {
-      console.error("AJAX Error: ", status, error);
-      $("#results").append("<tr><td colspan='6'>Error loading data</td></tr>");
-      $("#myResults").append("<tr><td colspan='6'>Error loading data</td></tr>");
-    },
-  });
-}
-
-function filterIdeasByUser() {
-  if (!userID) return [];
-  return ideas.filter((idea) => {
-    const owner = idea.userID || "";
-    return owner === userID;
-  });
-}
-
-function fetchVotesData(ideas) {
-  $.ajax({
-    url: 'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_7edf3","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["25","26"]}&x-filterData=recordID,title',
-    type: "GET",
-    cache: false,
-    async: false,
-    dataType: "json",
-    success: function (voteData) {
-      voteCounts = {};
-      userVotes = {};
-
-      Object.values(voteData).forEach((vote) => {
-        let ideanum = vote.s1["id25"];
-        let voter = vote.s1["id26"];
-        if (voteCounts[ideanum]) {
-          voteCounts[ideanum]++;
-        } else {
-          voteCounts[ideanum] = 1;
-        }
-        if (voter && voter === userID) {
-          userVotes[ideanum] = true;
-        }
-      });
-
-      populateTables(ideas, voteCounts);
-      fetchUserSubmissions();
-    },
-    error: function (xhr, status, error) {
-      console.error("AJAX Error: ", status, error);
-    },
-  });
-}
-
-function fetchUserSubmissions() {
-  if (!userID) {
-    $("#myResults").html("<tr><td colspan='6'>No user ID found</td></tr>");
-    return;
-  }
-
-  const query = {
-    terms: [
-      { id: "userID", operator: "=", match: userID, gate: "AND" },
-      { id: "categoryID", operator: "=", match: "form_a9c92", gate: "AND" },
-      { id: "deleted", operator: "=", match: 0, gate: "AND" },
-    ],
-    joins: [],
-    sort: {},
-    getData: ["16", "13", "20"],
+function debounce(fn, delay) {
+  let timer;
+  return function (...args) {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => fn.apply(this, args), delay);
   };
-  const queryString = encodeURIComponent(JSON.stringify(query));
-
-  $.ajax({
-    url: `https://leaf.va.gov/platform/ideas/api/form/query/?q=${queryString}&x-filterData=recordID,title,created_date,userID`,
-    type: "GET",
-    cache: false,
-    async: false,
-    dataType: "json",
-    success: function (data) {
-      let userIdeas = Object.values(data).map((idea) => {
-        if (!idea.s1 && idea.recordID) {
-          const match = ideas.find((item) => item.recordID === idea.recordID);
-          return match ? match : idea;
-        }
-        return idea;
-      });
-      if (userIdeas.length === 0) {
-        const fallbackIdeas = filterIdeasByUser();
-        myIdeasCache = fallbackIdeas;
-        populateUserSubmissions(myIdeasCache, voteCounts);
-        return;
-      }
-      myIdeasCache = userIdeas;
-      populateUserSubmissions(myIdeasCache, voteCounts);
-    },
-    error: function (xhr, status, error) {
-      console.error("AJAX Error: ", status, error);
-      $("#myResults").html(
-        "<tr><td colspan='6'>Error loading user ideas</td></tr>",
-      );
-    },
-  });
-}
-
-function getStatusBadgeClass(status) {
-  switch (status) {
-    case "New Submission":
-      return "ip-badge--new";
-    case "Under Review":
-      return "ip-badge--review";
-    case "In Progress":
-      return "ip-badge--progress";
-    case "Completed":
-      return "ip-badge--done";
-    case "Discarded":
-      return "ip-badge--discarded";
-    default:
-      return "";
-  }
 }
 
 function getIdeaField(idea, s1Key, fallbackKey) {
-  if (idea.s1 && idea.s1[s1Key] !== undefined) {
+  if (idea && idea.s1 && idea.s1[s1Key] !== undefined) {
     return idea.s1[s1Key];
   }
-  if (fallbackKey && idea[fallbackKey] !== undefined) {
+  if (idea && fallbackKey && idea[fallbackKey] !== undefined) {
     return idea[fallbackKey];
   }
   return "";
@@ -563,13 +387,13 @@ function getIdeaSortValue(idea, key, votes) {
   }
 }
 
-function sortIdeasList(list, votes, state) {
-  if (!state || !state.key) return list;
-  const direction = state.dir === "desc" ? -1 : 1;
+function sortIdeasList(list, votes, stateObj) {
+  if (!stateObj || !stateObj.key) return list;
+  const direction = stateObj.dir === "desc" ? -1 : 1;
   const safeList = list.filter((item) => item && item.recordID);
   return [...safeList].sort((a, b) => {
-    const aVal = getIdeaSortValue(a, state.key, votes);
-    const bVal = getIdeaSortValue(b, state.key, votes);
+    const aVal = getIdeaSortValue(a, stateObj.key, votes);
+    const bVal = getIdeaSortValue(b, stateObj.key, votes);
     const aNum = typeof aVal === "number";
     const bNum = typeof bVal === "number";
     if (aNum && bNum) {
@@ -584,103 +408,205 @@ function sortIdeasList(list, votes, state) {
   });
 }
 
-function populateUserSubmissions(userIdeas, voteCounts) {
-  $("#myResults").html("");
-  if (userIdeas.length === 0) {
-    $("#myResults").append("<tr><td colspan='6'>No ideas submitted</td></tr>");
-    return;
+function setSortState(tableId, key) {
+  const stateObj = sortState[tableId] || { key: "", dir: "asc" };
+  if (stateObj.key === key) {
+    stateObj.dir = stateObj.dir === "asc" ? "desc" : "asc";
+  } else {
+    stateObj.key = key;
+    stateObj.dir = "asc";
   }
+  sortState[tableId] = stateObj;
+}
 
-  const sortedIdeas = sortIdeasList(
-    userIdeas,
-    voteCounts,
-    sortState.tblMyIdeas,
-  );
-
-  applySortClasses("tblMyIdeas");
-
-  sortedIdeas.forEach((idea) => {
-    if (!idea || !idea.recordID) {
-      return;
+function applySortClasses(tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const stateObj = sortState[tableId];
+  table.querySelectorAll(".ip-sortable").forEach((th) => {
+    th.classList.remove("is-asc", "is-desc");
+    const btn = th.querySelector(".ip-sortBtn");
+    const key = btn ? btn.getAttribute("data-sort") : null;
+    if (stateObj && key === stateObj.key) {
+      th.classList.add(stateObj.dir === "asc" ? "is-asc" : "is-desc");
+      th.setAttribute(
+        "aria-sort",
+        stateObj.dir === "asc" ? "ascending" : "descending",
+      );
+    } else {
+      th.setAttribute("aria-sort", "none");
     }
-    var recordID = idea.recordID;
-    var title = getIdeaField(idea, "id13", "title");
-    var safeTitle = escapeHtml(title);
-    var category = getIdeaField(idea, "id16", "category");
-    var status = normalizeStatusLabel(getIdeaField(idea, "id20", "status"));
-
-    var statusBadgeClass = getStatusBadgeClass(status);
-    var votes = voteCounts[recordID] || 0;
-    var isVoted = userVotes[recordID] === true;
-    var actionsCell = `<td class="ip-actionsCell">
-<button class='ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}' data-record-id='${recordID}' ${isVoted ? "disabled" : ""} aria-label='Upvote'>
-<span aria-hidden='true'>&#128077;</span>
-</button>
-<button class='ip-btn ip-btn--ghost ip-share' data-record-link='https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}'>Share</button>
-    </td>`;
-
-    $("#myResults").append(`<tr>
-<td><a class="ip-recordLink" data-title="${safeTitle}" aria-haspopup="dialog" href='https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
-<td>${safeTitle}</td>
-<td>${category}</td>
-<td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
-<td>${votes}</td>
-${actionsCell}
-    </tr>`);
   });
 }
 
-function populateTables(ideas, voteCounts) {
-  $("#results").html("");
-  if (ideas.length === 0) {
-    $("#results").append("<tr><td colspan='6'>No data found</td></tr>");
-  } else {
-    const sortedIdeas = sortIdeasList(
-      ideas,
-      voteCounts,
-      sortState.tblIdeas,
-    );
-
-    applySortClasses("tblIdeas");
-
-    sortedIdeas.forEach((idea) => {
-      var recordID = idea.recordID;
-      var title = idea.s1["id13"];
-      var safeTitle = escapeHtml(title);
-      var category = idea.s1["id16"];
-      var status = normalizeStatusLabel(idea.s1["id20"]);
-
-      var statusBadgeClass = getStatusBadgeClass(status);
-      var votes = voteCounts[recordID] || 0;
-      var isVoted = userVotes[recordID] === true;
-      var actionsCell = `<td class="ip-actionsCell">
-<button class='ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}' data-record-id='${recordID}' ${isVoted ? "disabled" : ""} aria-label='Upvote'>
-<span aria-hidden='true'>&#128077;</span>
-</button>
-<button class='ip-btn ip-btn--ghost ip-share' data-record-link='https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}'>Share</button>
-    </td>`;
-
-      $("#results").append(`<tr>
-<td><a class="ip-recordLink" data-title="${safeTitle}" aria-haspopup="dialog" href='https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
-<td>${safeTitle}</td>
-<td>${category}</td>
-<td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
-<td>${votes}</td>
-${actionsCell}
-    </tr>`);
-    });
+function getStatusBadgeClass(status) {
+  switch (status) {
+    case "New Submission":
+      return "ip-badge--new";
+    case "Under Review":
+      return "ip-badge--review";
+    case "In Progress":
+      return "ip-badge--progress";
+    case "Completed":
+      return "ip-badge--done";
+    case "Discarded":
+      return "ip-badge--discarded";
+    default:
+      return "";
   }
-
-  populateTop10Ideas(voteCounts);
-  attachEventListeners();
 }
 
-function populateTop10Ideas(voteCounts) {
-  $("#topResults").html("");
+function getIdeaSearchText(idea) {
+  const recordID = idea && idea.recordID ? String(idea.recordID) : "";
+  const title = getIdeaField(idea, "id13", "title");
+  const category = getIdeaField(idea, "id16", "category");
+  const status = normalizeStatusLabel(getIdeaField(idea, "id20", "status"));
+  return [recordID, title, category, status].join(" ").toLowerCase();
+}
 
-  let sortedIdeas = [...ideas].sort((a, b) => {
-    let aVotes = voteCounts[a.recordID] || 0;
-    let bVotes = voteCounts[b.recordID] || 0;
+function filterIdeasList(list, query) {
+  if (!query) return list;
+  const q = query.toLowerCase();
+  return list.filter((idea) => getIdeaSearchText(idea).includes(q));
+}
+
+function paginateList(list, page, pageSize, showAll) {
+  if (showAll) {
+    return { pageItems: list, pageCount: 1, page: 1 };
+  }
+  const pageCount = Math.max(1, Math.ceil(list.length / pageSize));
+  const safePage = Math.min(Math.max(1, page), pageCount);
+  const start = (safePage - 1) * pageSize;
+  return {
+    pageItems: list.slice(start, start + pageSize),
+    pageCount,
+    page: safePage,
+  };
+}
+
+function renderRows(tbody, rowsHtml, emptyMessage) {
+  if (!tbody) return;
+  tbody.innerHTML = rowsHtml || `<tr><td colspan="6">${emptyMessage}</td></tr>`;
+}
+
+function buildIdeaRow(idea) {
+  if (!idea || !idea.recordID) return "";
+  const recordID = idea.recordID;
+  const title = escapeHtml(getIdeaField(idea, "id13", "title"));
+  const category = escapeHtml(getIdeaField(idea, "id16", "category"));
+  const status = normalizeStatusLabel(getIdeaField(idea, "id20", "status"));
+  const statusBadgeClass = getStatusBadgeClass(status);
+  const votes = voteCounts[recordID] || 0;
+  const isVoted = userVotes[recordID] === true;
+
+  return `<tr data-record-id="${recordID}">
+<td><a class="ip-recordLink" data-title="${title}" aria-haspopup="dialog" href="https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}">${recordID}</a></td>
+<td>${title}</td>
+<td>${category}</td>
+<td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
+<td class="ip-votes">${votes}</td>
+<td class="ip-actionsCell">
+<button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}" data-record-id="${recordID}" ${isVoted ? "disabled" : ""} aria-label="Upvote">
+<span aria-hidden="true">&#128077;</span>
+</button>
+<button class="ip-btn ip-btn--ghost ip-share" data-record-link="https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}">Share</button>
+</td>
+</tr>`;
+}
+
+function updatePaginationUI(scope, totalCount, pageCount, page, showAll, allowToggle) {
+  const container = ui.pagination[scope];
+  if (!container) return;
+  if (totalCount === 0) {
+    container.hidden = true;
+    return;
+  }
+  container.hidden = false;
+  const prevBtn = container.querySelector('[data-page-action="prev"]');
+  const nextBtn = container.querySelector('[data-page-action="next"]');
+  const toggleBtn = container.querySelector('[data-page-action="toggle"]');
+
+  if (prevBtn) prevBtn.disabled = showAll || page <= 1;
+  if (nextBtn) nextBtn.disabled = showAll || page >= pageCount;
+  if (ui.pageInfo[scope]) {
+    ui.pageInfo[scope].textContent = `Page ${page} of ${pageCount}`;
+  }
+  if (toggleBtn) {
+    toggleBtn.hidden = !allowToggle;
+    toggleBtn.textContent = showAll ? "Show paged" : "Show all";
+    toggleBtn.setAttribute("aria-pressed", showAll ? "true" : "false");
+  }
+  if (ui.pageHint[scope]) {
+    ui.pageHint[scope].textContent = showAll
+      ? "Showing all results. Large lists may be slow."
+      : `Showing ${PAGE_SIZE} per page.`;
+  }
+}
+
+function renderAllIdeas() {
+  const filtered = filterIdeasList(ideas, state.search);
+  const sorted = sortIdeasList(filtered, voteCounts, sortState.tblIdeas);
+  applySortClasses("tblIdeas");
+
+  const pagination = paginateList(
+    sorted,
+    state.pagination.all.page,
+    PAGE_SIZE,
+    state.pagination.all.showAll,
+  );
+
+  state.pagination.all.page = pagination.page;
+
+  const rowsHtml = pagination.pageItems.map(buildIdeaRow).join("");
+  const emptyMessage = state.search ? "No matching ideas." : "No data found";
+  renderRows(ui.results, rowsHtml, emptyMessage);
+  updatePaginationUI(
+    "all",
+    sorted.length,
+    pagination.pageCount,
+    pagination.page,
+    state.pagination.all.showAll,
+    true,
+  );
+}
+
+function renderMyIdeas() {
+  const sorted = sortIdeasList(myIdeasCache, voteCounts, sortState.tblMyIdeas);
+  applySortClasses("tblMyIdeas");
+
+  const allowToggle = myIdeasCache.length > PAGE_SIZE;
+  if (!allowToggle) {
+    state.pagination.my.showAll = true;
+    state.pagination.my.page = 1;
+  }
+
+  const pagination = paginateList(
+    sorted,
+    state.pagination.my.page,
+    PAGE_SIZE,
+    state.pagination.my.showAll,
+  );
+
+  state.pagination.my.page = pagination.page;
+
+  const rowsHtml = pagination.pageItems.map(buildIdeaRow).join("");
+  renderRows(ui.myResults, rowsHtml, "No ideas submitted");
+  updatePaginationUI(
+    "my",
+    sorted.length,
+    pagination.pageCount,
+    pagination.page,
+    state.pagination.my.showAll,
+    allowToggle,
+  );
+}
+
+function renderTop10Ideas() {
+  if (!ui.topResults) return;
+  let sortedIdeas = ideas.filter((idea) => idea && idea.recordID);
+  sortedIdeas = sortedIdeas.sort((a, b) => {
+    const aVotes = voteCounts[a.recordID] || 0;
+    const bVotes = voteCounts[b.recordID] || 0;
     return bVotes - aVotes;
   });
 
@@ -691,115 +617,383 @@ function populateTop10Ideas(voteCounts) {
 
   applySortClasses("tblTopIdeas");
 
-  if (top10.length === 0) {
-    $("#topResults").append("<tr><td colspan='6'>No data found</td></tr>");
-  } else {
-    top10.forEach((idea) => {
-      var recordID = idea.recordID;
-      var title = idea.s1["id13"];
-      var safeTitle = escapeHtml(title);
-      var category = idea.s1["id16"];
-      var status = normalizeStatusLabel(idea.s1["id20"]);
-
-      var statusBadgeClass = getStatusBadgeClass(status);
-      var votes = voteCounts[recordID] || 0;
-      var isVoted = userVotes[recordID] === true;
-      var actionsCell = `<td class="ip-actionsCell">
-<button class='ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}' data-record-id='${recordID}' ${isVoted ? "disabled" : ""} aria-label='Upvote'>
-<span aria-hidden='true'>&#128077;</span>
-</button>
-<button class='ip-btn ip-btn--ghost ip-share' data-record-link='https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}'>Share</button>
-    </td>`;
-
-      $("#topResults").append(`<tr>
-<td><a class="ip-recordLink" data-title="${safeTitle}" aria-haspopup="dialog" href='https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}'>${recordID}</a></td>
-<td>${safeTitle}</td>
-<td>${category}</td>
-<td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
-<td>${votes}</td>
-${actionsCell}
-    </tr>`);
-    });
-  }
-
-  attachEventListeners();
+  const rowsHtml = top10.map(buildIdeaRow).join("");
+  renderRows(ui.topResults, rowsHtml, "No data found");
 }
 
-$(document).ready(function () {
+function setVotedState(ideanum, isVoted) {
+  const buttons = document.querySelectorAll(
+    `.ip-upvote[data-record-id='${ideanum}']`,
+  );
+  buttons.forEach((button) => {
+    button.disabled = isVoted;
+    button.classList.toggle("is-voted", isVoted);
+  });
+}
+
+function updateVoteDom(ideanum) {
+  const rows = document.querySelectorAll(`tr[data-record-id='${ideanum}']`);
+  rows.forEach((row) => {
+    const voteCell = row.querySelector(".ip-votes");
+    if (voteCell) {
+      voteCell.textContent = voteCounts[ideanum] || 0;
+    }
+  });
+  setVotedState(ideanum, true);
+}
+
+function IdeaVotes(ideanum) {
+  if (votingInProgress) return;
+  if (userVotes[ideanum]) {
+    alert("You already voted on this idea.");
+    return;
+  }
+  votingInProgress = true;
+
+  userVotes[ideanum] = true;
+  setVotedState(ideanum, true);
+
+  $.ajax({
+    type: "POST",
+    url: "./api/?a=form/new",
+    dataType: "json",
+    data: {
+      service: "",
+      title: "Idea #" + ideanum,
+      priority: 0,
+      numform_7edf3: 1,
+      CSRFToken: csrfToken,
+      26: userID,
+      25: ideanum,
+    },
+    cache: false,
+  })
+    .done(function (response) {
+      var recordID = parseFloat(response);
+      if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
+        voteCounts[ideanum] = (voteCounts[ideanum] || 0) + 1;
+        updateVoteDom(ideanum);
+        renderTop10Ideas();
+        if (sortState.tblIdeas.key === "votes") {
+          renderAllIdeas();
+        }
+        if (sortState.tblMyIdeas.key === "votes") {
+          renderMyIdeas();
+        }
+        alert("Thanks for voting!");
+      } else {
+        alert("Error processing vote.");
+        userVotes[ideanum] = false;
+        setVotedState(ideanum, false);
+      }
+    })
+    .fail(function () {
+      alert("Error processing vote.");
+      userVotes[ideanum] = false;
+      setVotedState(ideanum, false);
+    })
+    .always(function () {
+      votingInProgress = false;
+    });
+}
+
+function filterIdeasByUser() {
+  if (!userID) return [];
+  return ideas.filter((idea) => {
+    const owner = idea.userID || "";
+    return owner === userID;
+  });
+}
+
+function fetchIdeasData() {
+  setPanelBusy("all", true);
+  setStatus("all", "Loading ideas...", "loading");
+
+  return $.ajax({
+    url: 'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_a9c92","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{"id":"created_date","direction":"desc"},"getData":["16","13","20"]}&x-filterData=recordID,title,created_date,userID',
+    type: "GET",
+    cache: false,
+    dataType: "json",
+  })
+    .done(function (data) {
+      ideas = Object.values(data || {});
+      renderAllIdeas();
+    })
+    .fail(function (xhr, status, error) {
+      console.error("AJAX Error: ", status, error);
+      renderRows(ui.results, "", "Error loading data");
+      setStatus("all", "Error loading data.", "error");
+    })
+    .always(function () {
+      setPanelBusy("all", false);
+    });
+}
+
+function fetchVotesData() {
+  return $.ajax({
+    url: 'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_7edf3","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["25","26"]}&x-filterData=recordID,title',
+    type: "GET",
+    cache: false,
+    dataType: "json",
+  }).then(
+    function (voteData) {
+      voteCounts = {};
+      userVotes = {};
+
+      Object.values(voteData || {}).forEach((vote) => {
+        let ideanum = vote.s1 && vote.s1["id25"];
+        let voter = vote.s1 && vote.s1["id26"];
+        if (voteCounts[ideanum]) {
+          voteCounts[ideanum]++;
+        } else {
+          voteCounts[ideanum] = 1;
+        }
+        if (voter && voter === userID) {
+          userVotes[ideanum] = true;
+        }
+      });
+      return true;
+    },
+    function (xhr, status, error) {
+      console.error("AJAX Error: ", status, error);
+      return false;
+    },
+  );
+}
+
+function fetchUserSubmissions() {
+  if (!userID) {
+    myIdeasCache = [];
+    setStatus("my", "No user ID found", "error");
+    renderMyIdeas();
+    return $.Deferred().resolve().promise();
+  }
+
+  setPanelBusy("my", true);
+  setStatus("my", "Loading your ideas...", "loading");
+
+  const query = {
+    terms: [
+      { id: "userID", operator: "=", match: userID, gate: "AND" },
+      { id: "categoryID", operator: "=", match: "form_a9c92", gate: "AND" },
+      { id: "deleted", operator: "=", match: 0, gate: "AND" },
+    ],
+    joins: [],
+    sort: {},
+    getData: ["16", "13", "20"],
+  };
+  const queryString = encodeURIComponent(JSON.stringify(query));
+
+  return $.ajax({
+    url: `https://leaf.va.gov/platform/ideas/api/form/query/?q=${queryString}&x-filterData=recordID,title,created_date,userID`,
+    type: "GET",
+    cache: false,
+    dataType: "json",
+  })
+    .done(function (data) {
+      let userIdeas = Object.values(data || {}).map((idea) => {
+        if (!idea.s1 && idea.recordID) {
+          const match = ideas.find((item) => item.recordID === idea.recordID);
+          return match ? match : idea;
+        }
+        return idea;
+      });
+      if (userIdeas.length === 0) {
+        const fallbackIdeas = filterIdeasByUser();
+        myIdeasCache = fallbackIdeas;
+      } else {
+        myIdeasCache = userIdeas;
+      }
+      renderMyIdeas();
+      setStatus("my", "", "");
+    })
+    .fail(function (xhr, status, error) {
+      console.error("AJAX Error: ", status, error);
+      renderRows(ui.myResults, "", "Error loading user ideas");
+      setStatus("my", "Error loading user ideas.", "error");
+    })
+    .always(function () {
+      setPanelBusy("my", false);
+    });
+}
+
+function loadIdeasAndVotes() {
+  return fetchIdeasData()
+    .then(function () {
+      return fetchVotesData();
+    })
+    .then(function () {
+      setStatus("all", "", "");
+      renderAllIdeas();
+      renderTop10Ideas();
+      return fetchUserSubmissions();
+    });
+}
+
+function handleSortClick(sortBtn) {
+  const key = sortBtn.getAttribute("data-sort");
+  const table = sortBtn.closest("table");
+  if (!table || !key) return;
+  const tableId = table.getAttribute("id");
+  setSortState(tableId, key);
+  applySortClasses(tableId);
+
+  if (tableId === "tblIdeas") {
+    state.pagination.all.page = 1;
+    renderAllIdeas();
+  } else if (tableId === "tblTopIdeas") {
+    renderTop10Ideas();
+  } else if (tableId === "tblMyIdeas") {
+    state.pagination.my.page = 1;
+    renderMyIdeas();
+  }
+}
+
+function handlePaginationAction(scope, action) {
+  const pager = state.pagination[scope];
+  if (!pager) return;
+
+  if (action === "prev") {
+    pager.page = Math.max(1, pager.page - 1);
+  } else if (action === "next") {
+    pager.page += 1;
+  } else if (action === "toggle") {
+    pager.showAll = !pager.showAll;
+    pager.page = 1;
+  }
+
+  if (scope === "all") {
+    renderAllIdeas();
+  } else if (scope === "my") {
+    renderMyIdeas();
+  }
+}
+
+function bindDelegatedEvents() {
+  const wrap = document.querySelector(".ip-wrap");
+  if (!wrap) return;
+
+  wrap.addEventListener("click", function (e) {
+    const sortBtn = e.target.closest(".ip-sortBtn");
+    if (sortBtn) {
+      handleSortClick(sortBtn);
+      return;
+    }
+
+    const upvoteBtn = e.target.closest(".ip-upvote");
+    if (upvoteBtn) {
+      if (upvoteBtn.disabled) return;
+      const ideanum = upvoteBtn.getAttribute("data-record-id");
+      IdeaVotes(ideanum);
+      return;
+    }
+
+    const shareBtn = e.target.closest(".ip-share");
+    if (shareBtn) {
+      const recordLink = shareBtn.getAttribute("data-record-link");
+      if (!recordLink) return;
+      navigator.clipboard.writeText(recordLink).then(
+        function () {
+          alert("Idea link copied to clipboard.");
+        },
+        function (err) {
+          console.error("Could not copy link: ", err);
+        },
+      );
+      return;
+    }
+
+    const pageBtn = e.target.closest(".ip-pageBtn, .ip-pageToggle");
+    if (pageBtn) {
+      const scope = pageBtn.getAttribute("data-page-scope");
+      const action = pageBtn.getAttribute("data-page-action");
+      if (scope && action) {
+        handlePaginationAction(scope, action);
+      }
+    }
+  });
+}
+
+function bindSearch() {
+  if (!ui.searchInput) return;
+  const handler = debounce(function (event) {
+    state.search = event.target.value.trim();
+    state.pagination.all.page = 1;
+    renderAllIdeas();
+  }, SEARCH_DEBOUNCE_MS);
+
+  ui.searchInput.addEventListener("input", handler);
+}
+
+function bindFileInput() {
+  const fileInput = document.getElementById("fileInput");
+  const fileList = document.getElementById("fileList");
+  if (!fileInput || !fileList) return;
+
+  fileInput.addEventListener("change", function () {
+    const files = fileInput.files || [];
+    fileList.innerHTML = "";
+    Array.from(files).forEach((file) => {
+      const listItem = document.createElement("li");
+      listItem.textContent = file.name;
+      fileList.appendChild(listItem);
+    });
+  });
+}
+
+function initValidation() {
+  "use strict";
+
+  var forms = document.querySelectorAll(".needs-validation");
+  Array.prototype.slice.call(forms).forEach(function (form) {
+    form.addEventListener(
+      "input",
+      function (event) {
+        var target = event.target;
+        if (target && target.classList.contains("ip-input")) {
+          if (target.checkValidity()) {
+            target.removeAttribute("aria-invalid");
+          }
+        }
+      },
+      false,
+    );
+    form.addEventListener(
+      "submit",
+      function (event) {
+        var inputs = form.querySelectorAll(".ip-input");
+        inputs.forEach(function (input) {
+          if (!input.checkValidity()) {
+            input.setAttribute("aria-invalid", "true");
+          } else {
+            input.removeAttribute("aria-invalid");
+          }
+        });
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        } else {
+          event.preventDefault();
+          if (typeof NewIdea === "function") {
+            NewIdea();
+          }
+        }
+        form.classList.add("was-validated");
+      },
+      false,
+    );
+  });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  cacheElements();
   bindModalEvents();
   bindTabs();
   bindRecordModal();
-  bindSortHandlers();
+  bindDelegatedEvents();
+  bindSearch();
+  bindFileInput();
   wireJumpToTop();
-  updateTable();
-
-  $("#fileInput").on("change", function () {
-    var files = this.files;
-    handleFiles(files);
-  });
-
-  function handleFiles(files) {
-    var fileList = $("#fileList");
-    fileList.empty();
-    for (var i = 0; i < files.length; i++) {
-      var file = files[i];
-      var listItem = $("<li>").text(file.name);
-      fileList.append(listItem);
-    }
-  }
-
-  $("#searchInput").on("input", function () {
-    var searchValue = $(this).val().toLowerCase();
-    filterIdeas(searchValue);
-  });
-
-  function filterIdeas(searchValue) {
-    $("#results tr").filter(function () {
-      $(this).toggle($(this).text().toLowerCase().indexOf(searchValue) > -1);
-    });
-  }
-
-  (function () {
-    "use strict";
-
-    var forms = document.querySelectorAll(".needs-validation");
-    Array.prototype.slice.call(forms).forEach(function (form) {
-      form.addEventListener(
-        "input",
-        function (event) {
-          var target = event.target;
-          if (target && target.classList.contains("ip-input")) {
-            if (target.checkValidity()) {
-              target.removeAttribute("aria-invalid");
-            }
-          }
-        },
-        false,
-      );
-      form.addEventListener(
-        "submit",
-        function (event) {
-          var inputs = form.querySelectorAll(".ip-input");
-          inputs.forEach(function (input) {
-            if (!input.checkValidity()) {
-              input.setAttribute("aria-invalid", "true");
-            } else {
-              input.removeAttribute("aria-invalid");
-            }
-          });
-          if (!form.checkValidity()) {
-            event.preventDefault();
-            event.stopPropagation();
-          } else {
-            event.preventDefault();
-            if (typeof NewIdea === "function") {
-              NewIdea();
-            }
-          }
-          form.classList.add("was-validated");
-        },
-        false,
-      );
-    });
-  })();
+  initValidation();
+  loadIdeasAndVotes();
 });

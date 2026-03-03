@@ -1,10 +1,24 @@
 <!-- Host page: add class="smarty page-ideaportal" to the document <body>. -->
-<link rel="stylesheet" href="./files/smarty_styles.css" />
+<link rel="stylesheet" href="../smarty_styles.css" />
+<link rel="stylesheet" href="./ideaportal.css" />
 <link
   rel="stylesheet"
   href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0"
 />
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  (function () {
+    function applySmartyClasses() {
+      if (!document.body) return;
+      document.body.classList.add("smarty", "page-ideaportal");
+    }
+    if (document.body) {
+      applySmartyClasses();
+    } else {
+      document.addEventListener("DOMContentLoaded", applySmartyClasses);
+    }
+  })();
+</script>
 
 <main class="smarty-root">
   <div class="ip-wrap">
@@ -80,6 +94,7 @@
             />
           </div>
         </div>
+        <div class="ip-status" id="allStatus" role="status" aria-live="polite" hidden></div>
         <table id="tblIdeas" class="ip-table">
           <caption class="ip-srOnly">
             All ideas table
@@ -116,6 +131,35 @@
           </thead>
           <tbody id="results"></tbody>
         </table>
+        <div class="ip-pagination" id="allPagination" aria-label="All ideas pagination">
+          <button
+            type="button"
+            class="ip-btn ip-btn--ghost ip-pageBtn"
+            data-page-scope="all"
+            data-page-action="prev"
+          >
+            Prev
+          </button>
+          <span class="ip-pageInfo" id="allPageInfo">Page 1 of 1</span>
+          <button
+            type="button"
+            class="ip-btn ip-btn--ghost ip-pageBtn"
+            data-page-scope="all"
+            data-page-action="next"
+          >
+            Next
+          </button>
+          <button
+            type="button"
+            class="ip-btn ip-btn--ghost ip-pageToggle"
+            data-page-scope="all"
+            data-page-action="toggle"
+            aria-pressed="false"
+          >
+            Show all
+          </button>
+          <span class="ip-pageHint" id="allPageHint">Showing 50 per page.</span>
+        </div>
       </div>
     </div>
 
@@ -174,6 +218,7 @@
     >
       <div class="ip-tableWrap">
         <div class="ip-tableTitle">My Ideas</div>
+        <div class="ip-status" id="myStatus" role="status" aria-live="polite" hidden></div>
         <table id="tblMyIdeas" class="ip-table">
           <caption class="ip-srOnly">
             My ideas table
@@ -210,6 +255,35 @@
           </thead>
           <tbody id="myResults"></tbody>
         </table>
+        <div class="ip-pagination" id="myPagination" aria-label="My ideas pagination">
+          <button
+            type="button"
+            class="ip-btn ip-btn--ghost ip-pageBtn"
+            data-page-scope="my"
+            data-page-action="prev"
+          >
+            Prev
+          </button>
+          <span class="ip-pageInfo" id="myPageInfo">Page 1 of 1</span>
+          <button
+            type="button"
+            class="ip-btn ip-btn--ghost ip-pageBtn"
+            data-page-scope="my"
+            data-page-action="next"
+          >
+            Next
+          </button>
+          <button
+            type="button"
+            class="ip-btn ip-btn--ghost ip-pageToggle"
+            data-page-scope="my"
+            data-page-action="toggle"
+            aria-pressed="false"
+          >
+            Show all
+          </button>
+          <span class="ip-pageHint" id="myPageHint">Showing 50 per page.</span>
+        </div>
       </div>
     </div>
   </div>
