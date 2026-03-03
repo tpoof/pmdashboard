@@ -1858,17 +1858,21 @@ body.smarty.page-privacy .skip-link:focus {
 
 .ip-wrap {
   flex: 1;
+  padding-bottom: 56px;
 }
 
 /* ── Idea Portal: Footer Credit ─────────────────────────── */
 .lp-credit-footer {
   position: static;
-  padding: 0.4rem 1rem;
-  font-size: 0.75rem;
+  height: 56px;
+  padding: 4px 1rem;
+  font-size: 10px;
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  margin-top: -56px;
   pointer-events: none;
+  z-index: 1;
 }
 
 .lp-credit-footer small {
@@ -1922,10 +1926,21 @@ body.smarty.page-privacy .skip-link:focus {
 }
 
 /* ── Idea Portal: Table ─────────────────────────────────── */
+.ip-badge {
+  margin-right: 0.5rem;
+}
+
+.ip-tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  box-sizing: border-box;
+}
+
 .ip-table {
   border-collapse: collapse;
   width: 100%;
   table-layout: fixed;
+  box-sizing: border-box;
 }
 
 .ip-table th,
@@ -1980,7 +1995,9 @@ body.smarty.page-privacy .skip-link:focus {
 .ip-table th:nth-child(6),
 .ip-table td:nth-child(6) {
   width: 140px;
+  min-width: 140px;
   white-space: nowrap;
-  text-align: right;
+  text-align: left;
   padding-right: 0.75rem;
+  overflow: visible;
 }
