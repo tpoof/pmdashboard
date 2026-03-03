@@ -8,7 +8,7 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
     />
-    <link rel="stylesheet" href="./files/smarty_styles.css" />
+    <link rel="stylesheet" href="platform/designs/files/smarty_styles.css" />
   </head>
 
   <body class="smarty page-privacy">
@@ -571,7 +571,9 @@
           const list = document.createElement(isNumbered ? "ol" : "ul");
           lines.forEach((line) => {
             const item = document.createElement("li");
-            item.textContent = line.replace(/^[-*]\s+/, "").replace(/^\d+\.\s+/, "");
+            item.textContent = line
+              .replace(/^[-*]\s+/, "")
+              .replace(/^\d+\.\s+/, "");
             list.appendChild(item);
           });
           container.appendChild(list);
