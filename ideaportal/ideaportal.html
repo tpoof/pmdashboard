@@ -1,9 +1,8 @@
 <!-- Host page: add class="smarty page-ideaportal" to the document <body>. -->
 <link rel="stylesheet" href="/platform/designs/files/smarty_styles.css" />
-<link
-  rel="stylesheet"
-  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0"
-/>
+<link rel="stylesheet" href="./ideaportal.css" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
   (function () {
@@ -81,24 +80,10 @@
       <div class="ip-tableWrap">
         <div class="ip-tableTitle">All Ideas</div>
         <div class="ip-search" id="ipSearchSection">
-          <label class="ip-searchLabel ip-srOnly" for="searchInput">
-            Search ideas
-          </label>
-          <div class="ip-searchField">
-            <input
-              type="text"
-              class="ip-input"
-              id="searchInput"
-              placeholder="Search ideas..."
-            />
-            <button
-              type="button"
-              class="ip-btn ip-btn--ghost ip-searchBtn"
-              id="searchButton"
-            >
-              Search
-            </button>
-          </div>
+          <input type="text" id="searchInput" placeholder="Search ideas..." />
+          <button type="button" id="searchBtn" class="ip-searchBtn" aria-label="Search">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+          </button>
         </div>
         <div
           class="ip-status"
@@ -344,7 +329,7 @@
             <label for="inpTitle" class="ip-label">Idea Title</label>
             <input
               type="text"
-              class="ip-input"
+              
               id="inpTitle"
               required
               aria-describedby="errTitle"
@@ -384,7 +369,7 @@
           <div class="ip-field">
             <label for="inpCategory" class="ip-label">Idea Category</label>
             <select
-              class="ip-input"
+              
               id="inpCategory"
               required
               aria-describedby="errCategory"
@@ -412,7 +397,7 @@
           <div class="ip-field">
             <label for="inpImpact" class="ip-label">Idea Impact</label>
             <select
-              class="ip-input"
+              
               id="inpImpact"
               required
               aria-describedby="errImpact"

@@ -88,7 +88,7 @@ const ui = {
   topResults: null,
   myResults: null,
   searchInput: null,
-  searchButton: null,
+  searchBtn: null,
   status: { all: null, my: null },
   pagination: { all: null, my: null },
   pageInfo: { all: null, my: null },
@@ -101,7 +101,7 @@ function cacheElements() {
   ui.topResults = document.getElementById("topResults");
   ui.myResults = document.getElementById("myResults");
   ui.searchInput = document.getElementById("searchInput");
-  ui.searchButton = document.getElementById("searchButton");
+  ui.searchBtn = document.getElementById("searchBtn");
   ui.status.all = document.getElementById("allStatus");
   ui.status.my = document.getElementById("myStatus");
   ui.pagination.all = document.getElementById("allPagination");
@@ -564,7 +564,7 @@ function buildIdeaRow(idea) {
 <td class="ip-votes">${votes}</td>
 <td class="ip-actionsCell">
 <button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}" data-record-id="${recordID}" ${isVoted ? "disabled" : ""} aria-label="Upvote">
-<span aria-hidden="true">&#128077;</span>
+<span class="material-symbols-outlined" aria-hidden="true">voting_chip</span>
 </button>
 <button class="ip-btn ip-btn--ghost ip-share" data-record-link="https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}">Share</button>
 </td>
@@ -881,7 +881,7 @@ function fetchUserSubmissions() {
     ],
     joins: [],
     sort: {},
-    getData: ["8", "5", "20"],
+    getData: IDEA_GETDATA,
   };
   const queryString = encodeURIComponent(JSON.stringify(query));
 
@@ -946,8 +946,7 @@ function getAttachmentValue() {
     files = Array.from(fileInput.files).map((file) => file.name).filter(Boolean);
   }
 
-  return files.length ? files.join("
-") : "";
+  return files.length ? files.join("\r\n") : "";
 }
 
 function NewIdea() {
@@ -1127,8 +1126,8 @@ function bindSearch() {
     applySearch(ui.searchInput.value);
   });
 
-  if (ui.searchButton) {
-    ui.searchButton.addEventListener("click", function () {
+  if (ui.searchBtn) {
+    ui.searchBtn.addEventListener("click", function () {
       applySearch(ui.searchInput.value);
     });
   }
@@ -1204,5 +1203,9 @@ document.addEventListener("DOMContentLoaded", function () {
   bindFileInput();
   wireJumpToTop();
   initValidation();
-  loadIdeasAndVotes();
+  try {
+    updateTable();
+  } catch (err) {
+    console.error("updateTable failed", err);
+  }
 });
