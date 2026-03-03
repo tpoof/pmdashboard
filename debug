@@ -1,16 +1,4 @@
-// Query without the project key filter — just get ALL project records and show their ind 2 values
-fetch(
-  "https://leaf.va.gov/platform/projects/api/form/query/?q=" +
-    encodeURIComponent(
-      JSON.stringify({
-        terms: [{ id: "deleted", operator: "=", match: 0, gate: "AND" }],
-        joins: [],
-        sort: {},
-        getData: ["2"],
-      }),
-    ) +
-    "&x-filterData=recordID,",
-  { credentials: "include" },
-)
-  .then((r) => r.json())
-  .then((d) => console.log(JSON.stringify(d)));
+fetch('/platform/ideas/api/form/indicator/8/', {credentials: 'same-origin'})
+  .then(r => r.text())
+  .then(console.log)
+  .catch(console.error)
