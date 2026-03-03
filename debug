@@ -1,11 +1,7 @@
-const table = document.querySelector("#tblIdeas");
-const wrap = table.parentElement;
-console.log("table offsetWidth:", table.offsetWidth);
-console.log("wrap clientWidth:", wrap.clientWidth);
-console.log("table minWidth:", window.getComputedStyle(table).minWidth);
-
-const th6 = table.querySelector("th:nth-child(6)");
-const td6 = table.querySelector("td:nth-child(6)");
-console.log("th6 width:", window.getComputedStyle(th6).width);
-console.log("td6 width:", window.getComputedStyle(td6).width);
-console.log("td6 scrollWidth:", td6.scrollWidth);
+const badge = document.querySelector(".ip-creditBadge");
+const s = window.getComputedStyle(badge);
+console.log("position:", s.position);
+console.log("bottom:", s.bottom);
+console.log("left:", s.left);
+console.log("background:", s.background);
+console.log("border-radius:", s.borderRadius);
