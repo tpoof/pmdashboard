@@ -1,7 +1,10 @@
-// Check the most recent record - replace X with the recordID from the success alert
-fetch(
-  '/platform/ideas/api/form/query/?q={"terms":[{"id":"recordID","operator":"=","match":"X"}]}&x-filterData=recordID,10',
-  { credentials: "same-origin" },
-)
-  .then((r) => r.text())
-  .then(console.log);
+const footer = document.getElementById("footer");
+console.log("footer parent:", footer.parentElement.outerHTML.substring(0, 300));
+console.log(
+  "smarty-root parent:",
+  document.querySelector(".smarty-root").parentElement.tagName,
+);
+console.log(
+  "are siblings:",
+  footer.parentElement === document.querySelector(".smarty-root").parentElement,
+);
