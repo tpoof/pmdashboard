@@ -1,6 +1,20 @@
-fetch(
-  "/platform/ideas/api/form/query/?q=%7B%22terms%22%3A%5B%5D%7D&x-filterData=10",
-  { credentials: "same-origin" },
-)
-  .then((r) => r.text())
-  .then(console.log);
+// Manually test the second-step upload against a known recordID
+// Replace 5 with whatever the latest recordID is
+const formData = new FormData();
+const fileInput = document.getElementById("fileInput");
+
+if (fileInput.files.length > 0) {
+  formData.append("10", fileInput.files[0]);
+  fetch("./api/?a=form/5", {
+    method: "POST",
+    credentials: "same-origin",
+    body: formData,
+  })
+    .then((r) => r.text())
+    .then(console.log)
+    .catch(console.error);
+} else {
+  console.log(
+    "No file selected — select a file in the Add Idea form first without submitting",
+  );
+}
