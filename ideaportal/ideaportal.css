@@ -202,7 +202,7 @@
 
 .smarty-root .ip-searchWrap {
   position: relative;
-  width: 100%;
+  width: 50%;
   display: block;
 }
 
@@ -225,8 +225,8 @@
   top: 50%;
   right: 8px;
   transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   border: 0;
   background: transparent;
@@ -238,7 +238,7 @@
 }
 
 .smarty-root .ip-searchWrap .ip-searchIconBtn {
-  width: 32px;
+  width: 40px;
 }
 
 .smarty-root .ip-searchIconBtn:focus {
@@ -589,7 +589,13 @@
 }
 
 .smarty-root .ip-fileInput {
+  width: 100%;
+  border: 1px solid var(--ip-border);
+  border-radius: 10px;
+  padding: 9px 12px;
   font-size: 15px;
+  font-family: inherit;
+  background: #ffffff;
 }
 
 .smarty-root .ip-fileList {
@@ -705,4 +711,9 @@
 
 .smarty-root .ip-upvote.is-voted .material-symbols-outlined {
   font-variation-settings: "FILL" 1;
+}
+
+.smarty-root .ip-fileInput:focus {
+  outline: 2px solid var(--ip-accent-weak);
+  border-color: var(--ip-accent);
 }
