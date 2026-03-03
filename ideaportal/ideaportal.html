@@ -1,7 +1,9 @@
 <!-- Host page: add class="smarty page-ideaportal" to the document <body>. -->
 <link rel="stylesheet" href="/platform/designs/files/smarty_styles.css" />
-<link rel="stylesheet" href="./ideaportal.css" />
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+<link
+  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+  rel="stylesheet"
+/>
 
 <script>
   (function () {
@@ -79,11 +81,25 @@
       <div class="ip-tableWrap">
         <div class="ip-tableTitle">All Ideas</div>
         <div class="ip-searchWrap">
-<input type="search" id="searchInput" class="ip-searchInput" placeholder="Search ideas" autocomplete="off" />
-  <button type="button" id="searchBtn" class="ip-searchIconBtn" aria-label="Search">
-    <span class="material-symbols-outlined" aria-hidden="true">search</span>
-  </button>
-</div>
+          <label class="ip-srOnly" for="searchInput">Search ideas</label>
+          <input
+            type="search"
+            id="searchInput"
+            class="ip-searchInput"
+            placeholder="Search ideas"
+            autocomplete="off"
+          />
+          <button
+            type="button"
+            id="searchBtn"
+            class="ip-searchIconBtn"
+            aria-label="Search"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true"
+              >search</span
+            >
+          </button>
+        </div>
         <div
           class="ip-status"
           id="allStatus"
@@ -328,7 +344,6 @@
             <label for="inpTitle" class="ip-label">Idea Title</label>
             <input
               type="text"
-              
               id="inpTitle"
               required
               aria-describedby="errTitle"
@@ -367,12 +382,7 @@
           </div>
           <div class="ip-field">
             <label for="inpCategory" class="ip-label">Idea Category</label>
-            <select
-              
-              id="inpCategory"
-              required
-              aria-describedby="errCategory"
-            >
+            <select id="inpCategory" required aria-describedby="errCategory">
               <option selected disabled value="">
                 Click here to select a category
               </option>
@@ -395,12 +405,7 @@
           </div>
           <div class="ip-field">
             <label for="inpImpact" class="ip-label">Idea Impact</label>
-            <select
-              
-              id="inpImpact"
-              required
-              aria-describedby="errImpact"
-            >
+            <select id="inpImpact" required aria-describedby="errImpact">
               <option selected disabled value="">
                 Click here to select the impact
               </option>
@@ -500,7 +505,7 @@
       <span class="material-symbols-outlined" aria-hidden="true"
         >editor_choice</span
       >
-      Co-created with LEAF<br />collaborator, Jennifer Tsan
+      Co-created with LEAF<br />collaborator, Eugene Weast
     </small>
   </footer>
   <div class="lp-bottom-safe" aria-hidden="true"></div>

@@ -388,6 +388,13 @@
   gap: 8px;
 }
 
+.smarty-root .ip-table .ip-actionsCell .ip-btn {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .smarty-root .ip-upvote.is-voted,
 .smarty-root .ip-upvote:disabled {
   opacity: 0.6;
