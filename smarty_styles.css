@@ -1858,17 +1858,13 @@ body.smarty.page-privacy .skip-link:focus {
 
 .ip-wrap {
   flex: 1;
-  padding-bottom: 3rem;
 }
 
 /* ── Idea Portal: Footer Credit ─────────────────────────── */
 .lp-credit-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
+  position: static;
   padding: 0.4rem 1rem;
   font-size: 0.75rem;
-  z-index: 100;
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -1968,7 +1964,7 @@ body.smarty.page-privacy .skip-link:focus {
 /* Status column */
 .ip-table th:nth-child(4),
 .ip-table td:nth-child(4) {
-  width: 130px;
+  width: 160px;
   white-space: nowrap;
 }
 
@@ -1983,7 +1979,7 @@ body.smarty.page-privacy .skip-link:focus {
 /* Actions column */
 .ip-table th:nth-child(6),
 .ip-table td:nth-child(6) {
-  width: 110px;
+  width: 140px;
   white-space: nowrap;
   text-align: right;
   padding-right: 0.75rem;
