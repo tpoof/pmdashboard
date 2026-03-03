@@ -1892,18 +1892,18 @@ body.smarty.page-privacy .skip-link:focus {
 }
 
 /* ── Idea Portal: Badge spacing ─────────────────────────── */
-.smarty-root.page-ideaportal .ip-badge {
+body.smarty.page-ideaportal .ip-badge {
   margin-right: 0.5rem;
 }
 
 /* ── Idea Portal: Table edge alignment ──────────────────── */
-.smarty-root.page-ideaportal .ip-tableWrap {
+body.smarty.page-ideaportal .ip-tableWrap {
   width: 100%;
   box-sizing: border-box;
 }
 
-.smarty-root.page-ideaportal .ip-table th:nth-child(6),
-.smarty-root.page-ideaportal .ip-table td:nth-child(6) {
+body.smarty.page-ideaportal .ip-table th:nth-child(6),
+body.smarty.page-ideaportal .ip-table td:nth-child(6) {
   width: 160px;
   min-width: 160px;
   max-width: 160px;
@@ -1914,36 +1914,36 @@ body.smarty.page-privacy .skip-link:focus {
 }
 
 /* ── Idea Portal: Layout wrap ───────────────────────────── */
-.smarty-root.page-ideaportal .ip-wrap {
+body.smarty.page-ideaportal .ip-wrap {
   flex: 1;
 }
 
 /* ── Idea Portal: Credit Badge ──────────────────────────── */
-.smarty-root.page-ideaportal .ip-creditBadge {
+body.smarty.page-ideaportal .ip-creditBadge {
   position: fixed;
   bottom: 1.25rem;
   left: 1.25rem;
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: var(--ip-panel, #fff);
-  border: 1px solid var(--ip-border, #e2e8f0);
+  background: #d9e8f6;
+  border: 1px solid #aacdec;
   border-radius: 999px;
   padding: 0.4rem 0.85rem 0.4rem 0.6rem;
   font-size: 0.75rem;
-  color: var(--ip-text, #1e293b);
+  color: #111;
   box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-  z-index: 999;
+  z-index: 1200;
   pointer-events: none;
   opacity: 0.85;
   transition: opacity 0.2s;
 }
 
-.smarty-root.page-ideaportal .ip-creditBadge:hover {
+body.smarty.page-ideaportal .ip-creditBadge:hover {
   opacity: 1;
 }
 
-.smarty-root.page-ideaportal .ip-creditBadge .material-symbols-outlined {
+body.smarty.page-ideaportal .ip-creditBadge .material-symbols-outlined {
   font-size: 1rem;
   line-height: 1;
 }
