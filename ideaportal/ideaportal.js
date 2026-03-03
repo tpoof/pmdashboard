@@ -1213,6 +1213,7 @@ function NewIdea() {
 
         if (filesToUpload.length > 0) {
           const formData = new FormData();
+          formData.append("CSRFToken", csrfToken);
           filesToUpload.forEach(file => {
             formData.append("10", file);
           });
