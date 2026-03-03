@@ -21,6 +21,7 @@ const IDEA_FIELDS = {
   impact: 9,
   attachment: 10,
   status: 12,
+  other_category: 13,
 };
 
 const VOTE_FIELDS = {
@@ -36,6 +37,7 @@ const IDEA_INDICATORS = {
   impact: "id" + IDEA_FIELDS.impact,
   attachment: "id" + IDEA_FIELDS.attachment,
   status: "id" + IDEA_FIELDS.status,
+  other_category: "id" + IDEA_FIELDS.other_category,
 };
 
 const VOTE_INDICATORS = {
@@ -54,6 +56,26 @@ const VOTE_GETDATA = [
   String(VOTE_FIELDS.user),
 ];
 
+const CATEGORY_FALLBACK = [
+  "Email Template",
+  "Forms",
+  "Inbox",
+  "Nexus",
+  "Print to PDF",
+  "Report Builder",
+  "Support",
+  "Training",
+  "User Access Groups",
+  "User Interface",
+  "Workflow",
+];
+
+const IMPACT_FALLBACK = [
+  "Impacts National",
+  "Impacts Regional",
+  "Impacts Local Facility",
+  "Impact is one or more, but not all users",
+];
 
 let ideas = [];
 let ideasRaw = [];
@@ -1130,6 +1152,7 @@ function NewIdea() {
   const benefitInput = document.getElementById("inpBenefit");
   const categoryInput = document.getElementById("inpCategory");
   const impactInput = document.getElementById("inpImpact");
+  const otherCategoryInput = document.getElementById("inpOtherCategory");
   const submissionAlert = document.getElementById("submissionAlert");
 
   const titleValue = titleInput ? titleInput.value.trim() : "";
@@ -1137,6 +1160,7 @@ function NewIdea() {
   const benefitValue = benefitInput ? benefitInput.value.trim() : "";
   const categoryValue = categoryInput ? categoryInput.value.trim() : "";
   const impactValue = impactInput ? impactInput.value.trim() : "";
+  const otherCategoryValue = otherCategoryInput ? otherCategoryInput.value.trim() : "";
 
   const payload = {
     service: "",
@@ -1150,6 +1174,9 @@ function NewIdea() {
   payload[IDEA_FIELDS.benefit] = benefitValue;
   payload[IDEA_FIELDS.category] = categoryValue;
   payload[IDEA_FIELDS.impact] = impactValue;
+  if (categoryValue === "Other" && otherCategoryValue) {
+    payload[IDEA_FIELDS.other_category] = otherCategoryValue;
+  }
 
   const attachmentValue = getAttachmentValue();
   if (attachmentValue) {
@@ -1324,6 +1351,103 @@ function bindFileInput() {
   });
 }
 
+function populateSelect(select, options, appendOther) {
+  var placeholder = select.options[0];
+  select.innerHTML = "";
+  if (placeholder) {
+    select.appendChild(placeholder);
+  }
+  options.forEach(function (label) {
+    var opt = document.createElement("option");
+    opt.value = label;
+    opt.textContent = label;
+    select.appendChild(opt);
+  });
+  if (appendOther) {
+    var otherOpt = document.createElement("option");
+    otherOpt.value = "Other";
+    otherOpt.textContent = "Other";
+    select.appendChild(otherOpt);
+  }
+}
+
+function loadCategoryOptions() {
+  var select = document.getElementById("inpCategory");
+  if (!select) return;
+
+  apiGetJson("./api/form/indicator/8/")
+    .then(function (data) {
+      var options = [];
+      if (data && data.format && data.format.selectList) {
+        var selectList = data.format.selectList;
+        if (Array.isArray(selectList)) {
+          options = selectList.map(function (item) {
+            return typeof item === "string" ? item : String(item);
+          });
+        } else if (typeof selectList === "object") {
+          options = Object.values(selectList).map(function (item) {
+            return typeof item === "string" ? item : String(item);
+          });
+        }
+      }
+      if (!options.length) {
+        options = CATEGORY_FALLBACK.slice();
+      }
+      populateSelect(select, options, true);
+    })
+    .catch(function () {
+      populateSelect(select, CATEGORY_FALLBACK.slice(), true);
+    });
+}
+
+function loadImpactOptions() {
+  var select = document.getElementById("inpImpact");
+  if (!select) return;
+
+  apiGetJson("./api/form/indicator/9/")
+    .then(function (data) {
+      var options = [];
+      if (data && data.format && data.format.selectList) {
+        var selectList = data.format.selectList;
+        if (Array.isArray(selectList)) {
+          options = selectList.map(function (item) {
+            return typeof item === "string" ? item : String(item);
+          });
+        } else if (typeof selectList === "object") {
+          options = Object.values(selectList).map(function (item) {
+            return typeof item === "string" ? item : String(item);
+          });
+        }
+      }
+      if (!options.length) {
+        options = IMPACT_FALLBACK.slice();
+      }
+      populateSelect(select, options, false);
+    })
+    .catch(function () {
+      populateSelect(select, IMPACT_FALLBACK.slice(), false);
+    });
+}
+
+function bindCategoryChange() {
+  var categorySelect = document.getElementById("inpCategory");
+  var otherWrapper = document.getElementById("otherCategoryWrapper");
+  var otherInput = document.getElementById("inpOtherCategory");
+  if (!categorySelect || !otherWrapper || !otherInput) return;
+
+  categorySelect.addEventListener("change", function () {
+    if (categorySelect.value === "Other") {
+      otherWrapper.style.display = "";
+      otherInput.required = true;
+    } else {
+      otherWrapper.style.display = "none";
+      otherInput.value = "";
+      otherInput.required = false;
+      otherInput.removeAttribute("aria-invalid");
+    }
+  });
+}
+
 function initValidation() {
   "use strict";
 
@@ -1337,6 +1461,9 @@ function initValidation() {
           if (target.checkValidity()) {
             target.removeAttribute("aria-invalid");
           }
+        }
+        if (target && target.id === "inpOtherCategory" && target.value.trim()) {
+          target.removeAttribute("aria-invalid");
         }
       },
       false,
@@ -1352,6 +1479,15 @@ function initValidation() {
             input.removeAttribute("aria-invalid");
           }
         });
+        var categoryEl = form.querySelector("#inpCategory");
+        var otherCatEl = form.querySelector("#inpOtherCategory");
+        if (otherCatEl && categoryEl && categoryEl.value === "Other") {
+          if (!otherCatEl.value.trim()) {
+            otherCatEl.setAttribute("aria-invalid", "true");
+          } else {
+            otherCatEl.removeAttribute("aria-invalid");
+          }
+        }
         if (!form.checkValidity()) {
           event.preventDefault();
           event.stopPropagation();
@@ -1379,6 +1515,9 @@ document.addEventListener("DOMContentLoaded", function () {
   bindDelegatedEvents();
   bindSearch();
   bindFileInput();
+  bindCategoryChange();
+  loadCategoryOptions();
+  loadImpactOptions();
   wireJumpToTop();
   initValidation();
   try {

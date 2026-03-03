@@ -386,19 +386,11 @@
               <option selected disabled value="">
                 Click here to select a category
               </option>
-              <option value="Email Template">Email Template</option>
-              <option value="Forms">Forms</option>
-              <option value="Inbox">Inbox</option>
-              <option value="Nexus">Nexus</option>
-              <option value="Print to PDF">Print to PDF</option>
-              <option value="Report Builder">Report Builder</option>
-              <option value="Support">Support</option>
-              <option value="Training">Training</option>
-              <option value="User Access Groups">User Access Groups</option>
-              <option value="User Interface">User Interface</option>
-              <option value="Workflow">Workflow</option>
-              <option value="Other">Other</option>
             </select>
+            <div id="otherCategoryWrapper" style="display:none; margin-top:0.5rem;">
+              <label for="inpOtherCategory">Please specify category:</label>
+              <input type="text" id="inpOtherCategory" class="form-control" maxlength="255" placeholder="Enter custom category..." />
+            </div>
             <div class="ip-error" id="errCategory">
               Please select a category.
             </div>
@@ -408,14 +400,6 @@
             <select id="inpImpact" required aria-describedby="errImpact">
               <option selected disabled value="">
                 Click here to select the impact
-              </option>
-              <option value="Impacts National">Impacts National</option>
-              <option value="Impacts Regional">Impacts Regional</option>
-              <option value="Impacts Local Facility">
-                Impacts Local Facility
-              </option>
-              <option value="Impact is one or more, but not all users">
-                Impact is one or more, but not all users
               </option>
             </select>
             <div class="ip-error" id="errImpact">
