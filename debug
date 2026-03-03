@@ -1,4 +1,11 @@
-fetch('/platform/ideas/api/form/indicator/8/', {credentials: 'same-origin'})
-  .then(r => r.text())
-  .then(console.log)
-  .catch(console.error)
+// Option A — query the form definition directly
+fetch('/platform/ideas/api/form/', {credentials: 'same-origin'})
+  .then(r => r.text()).then(console.log)
+
+// Option B — query a specific known record to see field structure
+fetch('/platform/ideas/api/form/1/', {credentials: 'same-origin'})
+  .then(r => r.text()).then(console.log)
+
+// Option C — query existing ideas and see what values field 8 actually contains
+fetch('/platform/ideas/api/form/query/?q=%7B%22terms%22%3A%5B%5D%7D&x-filterData=8,9', {credentials: 'same-origin'})
+  .then(r => r.text()).then(console.log)
