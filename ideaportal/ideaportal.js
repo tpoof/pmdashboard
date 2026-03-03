@@ -1402,64 +1402,6 @@ function populateSelect(select, options, appendOther) {
   }
 }
 
-function loadCategoryOptions() {
-  var select = document.getElementById("inpCategory");
-  if (!select) return;
-
-  apiGetJson("./api/form/indicator/8/")
-    .then(function (data) {
-      var options = [];
-      if (data && data.format && data.format.selectList) {
-        var selectList = data.format.selectList;
-        if (Array.isArray(selectList)) {
-          options = selectList.map(function (item) {
-            return typeof item === "string" ? item : String(item);
-          });
-        } else if (typeof selectList === "object") {
-          options = Object.values(selectList).map(function (item) {
-            return typeof item === "string" ? item : String(item);
-          });
-        }
-      }
-      if (!options.length) {
-        options = CATEGORY_FALLBACK.slice();
-      }
-      populateSelect(select, options, true);
-    })
-    .catch(function () {
-      populateSelect(select, CATEGORY_FALLBACK.slice(), true);
-    });
-}
-
-function loadImpactOptions() {
-  var select = document.getElementById("inpImpact");
-  if (!select) return;
-
-  apiGetJson("./api/form/indicator/9/")
-    .then(function (data) {
-      var options = [];
-      if (data && data.format && data.format.selectList) {
-        var selectList = data.format.selectList;
-        if (Array.isArray(selectList)) {
-          options = selectList.map(function (item) {
-            return typeof item === "string" ? item : String(item);
-          });
-        } else if (typeof selectList === "object") {
-          options = Object.values(selectList).map(function (item) {
-            return typeof item === "string" ? item : String(item);
-          });
-        }
-      }
-      if (!options.length) {
-        options = IMPACT_FALLBACK.slice();
-      }
-      populateSelect(select, options, false);
-    })
-    .catch(function () {
-      populateSelect(select, IMPACT_FALLBACK.slice(), false);
-    });
-}
-
 function bindCategoryChange() {
   var categorySelect = document.getElementById("inpCategory");
   var otherWrapper = document.getElementById("otherCategoryWrapper");
@@ -1547,8 +1489,8 @@ document.addEventListener("DOMContentLoaded", function () {
   bindSearch();
   bindFileInput();
   bindCategoryChange();
-  loadCategoryOptions();
-  loadImpactOptions();
+  populateSelect(document.getElementById("inpCategory"), CATEGORY_FALLBACK, true);
+  populateSelect(document.getElementById("inpImpact"), IMPACT_FALLBACK, false);
   wireJumpToTop();
   initValidation();
   try {
