@@ -724,3 +724,73 @@
   outline: 2px solid var(--ip-accent-weak);
   border-color: var(--ip-accent);
 }
+
+/* ── Fix 3: Pin footer to bottom of viewport ── */
+.smarty-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.smarty-root .ip-wrap {
+  flex: 1;
+}
+
+.smarty-root .lp-credit-footer {
+  margin-top: auto;
+}
+
+/* ── Fix 4: Search bar — unified height and modern focus ── */
+.smarty-root .ip-searchWrap {
+  max-width: 480px;
+  width: 100%;
+}
+
+.smarty-root .ip-searchInput {
+  font-size: 15px;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.smarty-root .ip-searchInput:focus {
+  border-color: var(--ip-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.smarty-root .ip-searchIconBtn {
+  color: var(--ip-muted);
+  transition: color 0.15s;
+}
+
+.smarty-root .ip-searchIconBtn:hover {
+  color: var(--ip-accent);
+}
+
+/* ── Fix 5: Table cell vertical alignment ── */
+.smarty-root .ip-table th,
+.smarty-root .ip-table td {
+  vertical-align: middle;
+}
+
+/* ── Fix 6: ID column (col 1) and Votes column (col 5) — fit to content ── */
+.smarty-root .ip-table th:nth-child(1),
+.smarty-root .ip-table td:nth-child(1) {
+  width: 60px;
+  white-space: nowrap;
+}
+
+.smarty-root .ip-table th:nth-child(5),
+.smarty-root .ip-table td:nth-child(5) {
+  width: 70px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* ── Fix 7: Title column (col 2) — wrap with hyphenation ── */
+.smarty-root .ip-table td:nth-child(2) {
+  max-width: 400px;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}

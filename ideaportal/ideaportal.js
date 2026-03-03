@@ -169,7 +169,9 @@ function apiPostJson(url, data) {
 
 const userID = sanitizeLeafValue(portalConfig.userID);
 const csrfToken = sanitizeLeafValue(portalConfig.csrfToken);
-let userVotes = {};
+let userVotes = (function () {
+  try { return JSON.parse(localStorage.getItem("leafIdeaVotes") || "{}"); } catch (e) { return {}; }
+})();
 let votingInProgress = false;
 let ideaSubmitInProgress = false;
 let myIdeasCache = [];
@@ -389,6 +391,13 @@ function bindTabs() {
   });
 
   syncTabs();
+}
+
+function truncateTitle(title, max) {
+  max = max || 100;
+  if (!title) return "";
+  if (title.length <= max) return title;
+  return title.substring(0, max).trimEnd() + "\u2026";
 }
 
 function escapeHtml(value) {
@@ -726,7 +735,9 @@ function setVoteButtonsDisabled(isDisabled) {
 function buildIdeaRow(idea) {
   if (!idea || !idea.recordID) return "";
   const recordID = String(idea.recordID);
-  const title = escapeHtml(idea.title || "");
+  const titleRaw = idea.title || "";
+  const title = escapeHtml(titleRaw);
+  const titleDisplay = escapeHtml(truncateTitle(titleRaw));
   const category = escapeHtml(idea.category || "");
   const status = normalizeStatusLabel(idea.status || "");
   const statusBadgeClass = getStatusBadgeClass(status);
@@ -740,7 +751,7 @@ function buildIdeaRow(idea) {
 
   return `<tr data-record-id="${recordID}">
 <td><a class="ip-recordLink" data-title="${title}" aria-haspopup="dialog" href="${recordLink}">${recordID}</a></td>
-<td>${title}</td>
+<td title="${title}">${titleDisplay}</td>
 <td>${category}</td>
 <td>${statusMarkup}</td>
 <td class="ip-votes">${votes}</td>
@@ -924,8 +935,11 @@ function IdeaVotes(ideanum) {
   payload[VOTE_FIELDS.user] = userID;
   payload[VOTE_FIELDS.idea] = ideanumKey;
 
+  console.log("[IdeaVotes] payload", payload);
+
   apiPostJson("./api/?a=form/new", payload)
     .then(function (response) {
+      console.log("[IdeaVotes] raw response", response);
       var recordID = parseFloat(response);
       if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
         voteCounts[ideanumKey] = (voteCounts[ideanumKey] || 0) + 1;
@@ -937,9 +951,11 @@ function IdeaVotes(ideanum) {
         if (sortState.tblMyIdeas.key === "votes") {
           renderMyIdeas();
         }
+        try { localStorage.setItem("leafIdeaVotes", JSON.stringify(userVotes)); } catch (e) {}
         alert("Thanks for voting!");
       } else {
-        alert("Error processing vote.");
+        console.error("[IdeaVotes] failed response:", response);
+        alert("Error processing vote. See console for details.");
         userVotes[ideanumKey] = false;
         const ideaVM = ideasVMById[ideanumKey];
         if (ideaVM) ideaVM.isVoted = false;
@@ -949,7 +965,8 @@ function IdeaVotes(ideanum) {
       }
     })
     .catch(function () {
-      alert("Error processing vote.");
+      console.error("[IdeaVotes] request error");
+      alert("Error processing vote. See console for details.");
       userVotes[ideanumKey] = false;
       const ideaVM = ideasVMById[ideanumKey];
       if (ideaVM) ideaVM.isVoted = false;
@@ -1025,6 +1042,10 @@ function fetchVotesData() {
         }
       }
     });
+    try {
+      var saved = JSON.parse(localStorage.getItem("leafIdeaVotes") || "{}");
+      Object.keys(saved).forEach(function (k) { if (saved[k]) userVotes[k] = true; });
+    } catch (e) {}
     return votesList.length;
   });
 }
@@ -1178,11 +1199,6 @@ function NewIdea() {
     payload[IDEA_FIELDS.other_category] = otherCategoryValue;
   }
 
-  const attachmentValue = getAttachmentValue();
-  if (attachmentValue) {
-    payload[IDEA_FIELDS.attachment] = attachmentValue;
-  }
-
   if (submitButton) submitButton.disabled = true;
   if (submissionAlert) submissionAlert.hidden = true;
   ideaSubmitInProgress = true;
@@ -1191,6 +1207,21 @@ function NewIdea() {
     .then(function (response) {
       var recordID = parseFloat(response);
       if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
+        var fileInputEl = document.getElementById("fileInput");
+        if (fileInputEl && fileInputEl.files && fileInputEl.files.length) {
+          var formData = new FormData();
+          Array.from(fileInputEl.files).forEach(function (file) {
+            formData.append("10", file);
+          });
+          fetch("./api/?a=form/" + recordID, {
+            method: "POST",
+            credentials: "same-origin",
+            body: formData,
+          }).catch(function (err) {
+            console.warn("[NewIdea] File upload failed", err);
+          });
+          fileInputEl.value = "";
+        }
         alert("Your idea has been submitted successfully.");
         if (form) {
           form.reset();
