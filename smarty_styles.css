@@ -394,6 +394,21 @@ body.smarty.page-ideaportal .ip-upvote:disabled {
   cursor: not-allowed;
 }
 
+body.smarty.page-ideaportal .ip-table .ip-actionsCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+}
+
+body.smarty.page-ideaportal .ip-upvote,
+body.smarty.page-ideaportal .ip-share {
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 body.smarty.page-ideaportal .ip-btn:disabled {
   background: #f0f0f0;
   border-color: #b5b5b5;
