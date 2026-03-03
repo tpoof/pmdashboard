@@ -1,21 +1,11 @@
-// Get the actual class names on the table, wrapper, and badge
-console.log("table classes:", document.querySelector("#tblIdeas").className);
-console.log(
-  "table wrap classes:",
-  document.querySelector("#tblIdeas").parentElement.className,
-);
-console.log(
-  "first badge classes:",
-  document.querySelector("#results .ip-badge")?.className,
-);
-console.log(
-  "lp-credit-footer classes:",
-  document.querySelector(".lp-credit-footer")?.className,
-);
+// Check what's winning on the footer
+const f = document.querySelector(".lp-credit-footer");
+const s = window.getComputedStyle(f);
+console.log("position:", s.position);
+console.log("margin-top:", s.marginTop);
+console.log("height:", s.height);
 
-// Check which stylesheet is actually winning for the table width
-const td = document.querySelector("#results tr:first-child td:last-child");
-const s = window.getComputedStyle(td);
-console.log("last td width:", s.width);
-console.log("last td overflow:", s.overflow);
-console.log("last td padding-right:", s.paddingRight);
+// Check actual rendered width of the actions cell content
+const btn = document.querySelector("#results tr:first-child td:last-child");
+console.log("actions cell scrollWidth:", btn.scrollWidth);
+console.log("actions cell clientWidth:", btn.clientWidth);
