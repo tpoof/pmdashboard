@@ -79,12 +79,13 @@
     >
       <div class="ip-tableWrap">
         <div class="ip-tableTitle">All Ideas</div>
-        <div class="ip-search" id="ipSearchSection">
-          <input type="text" id="searchInput" placeholder="Search ideas..." />
-          <button type="button" id="searchBtn" class="ip-searchBtn" aria-label="Search">
-            <span class="material-symbols-outlined" aria-hidden="true">search</span>
-          </button>
-        </div>
+        <div class="ip-search">
+  <label class="sr-only" for="searchInput">Search ideas</label>
+  <input type="search" id="searchInput" placeholder="Search ideas" autocomplete="off" />
+  <button type="button" id="searchBtn" class="ip-searchBtn" aria-label="Search">
+    <span class="material-symbols-outlined" aria-hidden="true">search</span>
+  </button>
+</div>
         <div
           class="ip-status"
           id="allStatus"

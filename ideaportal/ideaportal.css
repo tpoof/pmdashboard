@@ -15,7 +15,8 @@
   box-sizing: border-box;
 }
 
-.smarty-root .ip-srOnly {
+.smarty-root .ip-srOnly,
+.smarty-root .sr-only {
   position: absolute !important;
   width: 1px;
   height: 1px;
@@ -202,50 +203,39 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
   flex-wrap: nowrap;
 }
 
-.smarty-root .ip-search input {
+.smarty-root #searchInput {
   flex: 1;
   min-width: 0;
-  border: 1px solid var(--ip-border);
-  border-radius: 10px;
-  padding: 9px 12px;
-  font-size: 16px;
-  font-family: inherit;
-}
-
-.smarty-root .ip-search input:focus {
-  outline: 2px solid var(--ip-accent-weak);
-  border-color: var(--ip-accent);
-}
-
-.smarty-root .ip-searchBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
   height: 40px;
+  padding: 0 12px;
   border-radius: 10px;
-  border: 1px solid #aacdec;
-  background: #d9e8f6;
-  color: #111111;
-  cursor: pointer;
+  border: 1px solid var(--ip-border, #ccc);
+  background: var(--ip-surface, #fff);
 }
 
-.smarty-root .ip-searchBtn:hover {
-  background: #aacdec;
-  border-color: #8fb8db;
-}
-
-.smarty-root .ip-searchBtn:focus-visible {
-  outline: 2px solid var(--ip-accent);
+.smarty-root #searchInput:focus {
+  outline: 2px solid var(--ip-focus, #005ea2);
   outline-offset: 2px;
 }
 
+.smarty-root .ip-searchBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--ip-border, #ccc);
+  background: var(--ip-surface, #fff);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
 .smarty-root .ip-searchBtn .material-symbols-outlined {
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
 }
 
@@ -380,21 +370,6 @@
 
 .smarty-root .ip-col-actions {
   width: 160px;
-}
-
-.smarty-root .ip-voteChip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  line-height: 1;
-  padding: 6px 8px;
-  border-radius: 10px;
-  color: #475569;
-}
-
-.smarty-root .ip-actionsCell.is-voted .ip-voteChip {
-  color: var(--ip-accent);
 }
 
 .smarty-root .ip-table .ip-actionsCell {
@@ -671,33 +646,6 @@
   border-color: #aacdec;
 }
 
-.smarty-root .lp-credit-footer {
-  margin: 0;
-  font-size: 0.8em;
-  line-height: 1.4;
-}
-
-.smarty-root .lp-credit-footer small {
-  display: inline-block;
-  margin: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--ip-border);
-  border-radius: 10px;
-  font-style: italic;
-}
-
-.smarty-root .lp-credit-footer .material-symbols-outlined {
-  font-size: 1.15em;
-  line-height: 1;
-  vertical-align: -2px;
-  margin-right: 6px;
-  font-style: normal;
-}
-
-.smarty-root .lp-bottom-safe {
-  height: 88px;
-}
-
 @media (max-width: 780px) {
   .smarty-root .ip-tableWrap {
     max-height: 60vh;
@@ -729,4 +677,21 @@
     overflow-x: auto;
     white-space: nowrap;
   }
+}
+
+.smarty-root .ip-upvote {
+  height: 40px;
+  width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.smarty-root .ip-upvote .material-symbols-outlined {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.smarty-root .ip-upvote.is-voted .material-symbols-outlined {
+  font-variation-settings: "FILL" 1;
 }

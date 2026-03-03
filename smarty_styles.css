@@ -66,6 +66,30 @@ body.smarty [hidden] {
 
 /* Utilities */
 
+/* Shared: credit footer (canonical — used by all smarty pages) */
+body.smarty .lp-credit-footer {
+  margin: 0;
+  padding: 16px;
+  font-size: 0.8em;
+  line-height: 1.4;
+  text-align: left;
+}
+
+body.smarty .lp-credit-footer small {
+  display: inline-block;
+  margin: 0;
+  font-style: italic;
+  color: var(--lp-muted);
+}
+
+body.smarty .lp-credit-footer .material-symbols-outlined {
+  font-size: 1.15em;
+  line-height: 1;
+  vertical-align: -2px;
+  margin-right: 6px;
+  font-style: normal;
+}
+
 /* Page Overrides: Ideaportal */
 body.smarty.page-ideaportal .ip-srOnly {
   position: absolute !important;
@@ -640,29 +664,6 @@ body.smarty.page-ideaportal .ip-jumpTop:active {
   border-color: #aacdec;
 }
 
-body.smarty.page-ideaportal .lp-credit-footer {
-  margin: 0;
-  font-size: 0.8em;
-  line-height: 1.4;
-}
-
-body.smarty.page-ideaportal .lp-credit-footer small {
-  display: inline-block;
-  margin: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--ip-border);
-  border-radius: 10px;
-  font-style: italic;
-}
-
-body.smarty.page-ideaportal .lp-credit-footer .material-symbols-outlined {
-  font-size: 1.15em;
-  line-height: 1;
-  vertical-align: -2px;
-  margin-right: 6px;
-  font-style: normal;
-}
-
 body.smarty.page-ideaportal .lp-bottom-safe {
   height: 88px;
 }
@@ -1021,29 +1022,6 @@ body.smarty.page-launchpad .cta-button:focus-visible {
 
 body.smarty.page-launchpad .content-container {
   padding-bottom: 80px;
-}
-
-body.smarty.page-launchpad .lp-credit-footer {
-  margin: 0;
-  padding: 16px;
-  font-size: 0.8em;
-  line-height: 1.4;
-  text-align: left;
-}
-
-body.smarty.page-launchpad .lp-credit-footer small {
-  display: inline-block;
-  margin: 0;
-  font-style: italic;
-  color: var(--lp-muted);
-}
-
-body.smarty.page-launchpad .lp-credit-footer .material-symbols-outlined {
-  font-size: 1.15em;
-  line-height: 1;
-  vertical-align: -2px;
-  margin-right: 6px;
-  font-style: normal;
 }
 
 body.smarty.page-launchpad .lp-bottom-safe {

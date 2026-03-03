@@ -562,11 +562,10 @@ function buildIdeaRow(idea) {
 <td>${category}</td>
 <td>${statusMarkup}</td>
 <td class="ip-votes">${votes}</td>
-<td class="ip-actionsCell${isVoted ? " is-voted" : ""}">
-<button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}" data-record-id="${recordID}" ${isVoted ? "disabled" : ""} aria-label="Upvote">
-<span class="material-symbols-outlined" aria-hidden="true">voting_chip</span>
+<td class="ip-actionsCell">
+<button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}" data-record-id="${recordID}" ${isVoted ? "disabled" : ""} aria-label="Vote">
+<span class="material-symbols-outlined" aria-hidden="true">how_to_vote</span>
 </button>
-<span class="ip-voteChip material-symbols-outlined" aria-hidden="true">how_to_vote</span>
 <button class="ip-btn ip-btn--ghost ip-share" data-record-link="https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}">Share</button>
 </td>
 </tr>`;
@@ -695,11 +694,6 @@ function setVotedState(ideanum, isVoted) {
   buttons.forEach((button) => {
     button.disabled = isVoted;
     button.classList.toggle("is-voted", isVoted);
-  });
-  const rows = document.querySelectorAll(`tr[data-record-id='${ideanumKey}']`);
-  rows.forEach((row) => {
-    const cell = row.querySelector(".ip-actionsCell");
-    if (cell) cell.classList.toggle("is-voted", isVoted);
   });
 }
 
