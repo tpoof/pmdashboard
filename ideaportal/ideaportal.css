@@ -191,6 +191,8 @@
   overflow-x: auto;
   overflow-y: auto;
   max-height: 70vh;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .smarty-root .ip-tableTitle {
@@ -311,6 +313,7 @@
   background: #ffffff;
   min-width: 840px;
   font-size: 16px;
+  box-sizing: border-box;
 }
 
 .smarty-root .ip-table th,
@@ -425,6 +428,7 @@
   font-weight: 600;
   background: #e2e8f0;
   color: #1e293b;
+  margin-right: 0.5rem;
 }
 
 .smarty-root .ip-badge--new {
@@ -723,5 +727,43 @@
 .smarty-root .ip-fileInput:focus {
   outline: 2px solid var(--ip-accent-weak);
   border-color: var(--ip-accent);
+}
+
+/* Actions column */
+.smarty-root .ip-table th:nth-child(6),
+.smarty-root .ip-table td:nth-child(6) {
+  width: 140px;
+  min-width: 140px;
+  white-space: nowrap;
+  text-align: left;
+  padding-right: 0.75rem;
+  box-sizing: border-box;
+}
+
+/* Footer */
+.smarty-root .lp-credit-footer {
+  height: 56px;
+  padding: 4px 1rem;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: -56px;
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.smarty-root .lp-credit-footer small {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  line-height: 1.3;
+}
+
+.smarty-root .ip-wrap {
+  flex: 1;
+  padding-bottom: 56px;
 }
 
