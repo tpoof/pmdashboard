@@ -495,6 +495,11 @@ function wireJumpToTop() {
       window.innerHeight || document.documentElement.clientHeight;
     var needsScroll = scrollHeight - clientHeight > 80;
     btn.classList.toggle("is-visible", needsScroll && scrollTop > 120);
+    var credit = document.getElementById("ipCreditBadge");
+    if (credit) {
+      var nearBottom = scrollTop + clientHeight >= scrollHeight - 80;
+      credit.classList.toggle("is-visible", nearBottom);
+    }
   }
 
   btn.addEventListener("click", function () {
@@ -756,7 +761,7 @@ function buildIdeaRow(idea) {
 <td>${statusMarkup}</td>
 <td class="ip-votes">${votes}</td>
 <td class="ip-actionsCell">
-<button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}" data-record-id="${recordID}" ${isVoted ? "disabled" : ""} aria-label="Vote for ${labelTitle}" aria-disabled="${isVoted ? "true" : "false"}" title="Vote for this idea">
+<button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}" data-record-id="${recordID}" ${isVoted ? "disabled" : ""} aria-label="Vote for ${labelTitle}" aria-disabled="${isVoted ? "true" : "false"}" title="${isVoted ? "You\'ve already voted for this idea" : "Vote for this idea"}">
 <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
 </button>
 <button class="ip-btn ip-btn--ghost ip-share" data-record-link="${recordLink}" aria-label="Share ${labelTitle}" title="Copy shareable link">Share</button>
