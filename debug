@@ -1,10 +1,9 @@
-const footer = document.getElementById("footer");
-console.log("footer parent:", footer.parentElement.outerHTML.substring(0, 300));
-console.log(
-  "smarty-root parent:",
-  document.querySelector(".smarty-root").parentElement.tagName,
-);
-console.log(
-  "are siblings:",
-  footer.parentElement === document.querySelector(".smarty-root").parentElement,
-);
+const f = document.getElementById("footer");
+const r = f.getBoundingClientRect();
+const s = window.getComputedStyle(f);
+console.log("height:", r.height);
+console.log("padding:", s.padding);
+console.log("font-size:", s.fontSize);
+console.log("bottom distance:", window.innerHeight - r.bottom);
+console.log("background:", s.backgroundColor);
+console.log("color:", s.color);
