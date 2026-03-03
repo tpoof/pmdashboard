@@ -1848,3 +1848,106 @@ body.smarty.page-privacy .skip-link:focus {
   outline: none;
   box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
 }
+
+/* ── Idea Portal: Footer ────────────────────────────────── */
+.smarty-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.ip-wrap {
+  flex: 1;
+}
+
+.lp-credit-footer {
+  margin-top: auto;
+  padding: 0.5rem 1rem;
+  width: 100%;
+  text-align: center;
+}
+
+/* ── Idea Portal: Search Bar ────────────────────────────── */
+.ip-searchWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  max-width: 480px;
+  width: 100%;
+}
+
+.ip-searchInput {
+  flex: 1;
+  height: 2.5rem;
+  padding: 0 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ip-searchInput:focus {
+  border-color: #005ea2;
+  box-shadow: 0 0 0 3px rgba(0, 94, 162, 0.15);
+}
+
+.ip-searchIconBtn {
+  height: 2.5rem;
+  width: 2.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background-color: #005ea2;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.ip-searchIconBtn:hover {
+  background-color: #004b87;
+}
+
+.ip-searchIconBtn .material-symbols-outlined {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+/* ── Idea Portal: Table Alignment ───────────────────────── */
+.ip-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.ip-table th,
+.ip-table td {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.ip-table th:last-child,
+.ip-table td:last-child {
+  padding-right: 0.75rem;
+  text-align: left;
+}
+
+/* ── Idea Portal: ID & Votes Column Sizing ──────────────── */
+.ip-table th:nth-child(1),
+.ip-table td:nth-child(1) {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.ip-table th:nth-child(5),
+.ip-table td:nth-child(5) {
+  width: 1%;
+  white-space: nowrap;
+  text-align: center;
+}
