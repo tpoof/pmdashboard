@@ -337,6 +337,57 @@
     </button>
 
     <!-------------------------------------------Custom styles/scripts----------------------------------------->
+    <style>
+      body.smarty.page-privacy .card ul,
+      body.smarty.page-privacy .card ol {
+        margin: var(--space-2) 0;
+        padding-left: 1.5rem;
+      }
+
+      body.smarty.page-privacy .card li + li {
+        margin-top: 0.45rem;
+      }
+
+      body.smarty.page-privacy .btn,
+      body.smarty.page-privacy .btn-ghost {
+        transition:
+          background 0.12s ease,
+          border-color 0.12s ease,
+          box-shadow 0.12s ease,
+          transform 0.12s ease;
+      }
+
+      body.smarty.page-privacy .btn:hover {
+        background: var(--accent-strong);
+        border-color: var(--accent-strong);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+      }
+
+      body.smarty.page-privacy .btn:active {
+        transform: translateY(0);
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+      }
+
+      body.smarty.page-privacy .btn-ghost:hover {
+        background: var(--surface-alt);
+        border-color: var(--border);
+        box-shadow: var(--shadow-sm);
+        transform: translateY(-1px);
+      }
+
+      body.smarty.page-privacy .btn-ghost:active {
+        transform: translateY(0);
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+      }
+
+      body.smarty.page-privacy .btn:focus-visible,
+      body.smarty.page-privacy .btn-ghost:focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 3px;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25);
+      }
+    </style>
 
     <script>
       const backToTopButton = document.getElementById("backToTop");
@@ -354,7 +405,7 @@
       const RECENT_CHANGES_LIMIT = 5;
 
       /*
-        TENTATIVE INDICATOR IDS – UPDATE IF CHANGED IN LEAF
+        CURRENT INDICATOR IDS (update if the LEAF form changes):
         Release Date → indicatorID: 39
         Title        → indicatorID: 40
         Summary      → indicatorID: 41
@@ -553,7 +604,14 @@
                 record,
                 RECENT_CHANGE_INDICATORS.changeDate,
               );
+              if (typeof rawDate !== "string" || !rawDate.trim()) {
+                return null;
+              }
               const dateObject = parseDateValue(rawDate);
+              if (!dateObject) {
+                return null;
+              }
+
               const rawTitle = getS1Value(
                 record,
                 RECENT_CHANGE_INDICATORS.title,
@@ -562,31 +620,22 @@
                 record,
                 RECENT_CHANGE_INDICATORS.summary,
               );
-
-              const title =
-                typeof rawTitle === "string" && rawTitle.trim()
-                  ? rawTitle.trim()
-                  : "Untitled update";
-              const summary =
-                typeof rawSummary === "string" && rawSummary.trim()
-                  ? rawSummary.trim()
-                  : "Summary unavailable.";
-
-              let displayDate = "Date unavailable";
-              if (dateObject) {
-                displayDate = formatDisplayDate(dateObject);
-              } else if (typeof rawDate === "string" && rawDate.trim()) {
-                displayDate = rawDate.trim();
+              if (typeof rawTitle !== "string" || !rawTitle.trim()) {
+                return null;
+              }
+              if (typeof rawSummary !== "string" || !rawSummary.trim()) {
+                return null;
               }
 
               return {
                 dateObject,
-                displayDate,
-                title,
-                summary,
-                sortValue: dateObject ? dateObject.getTime() : 0,
+                displayDate: formatDisplayDate(dateObject),
+                title: rawTitle.trim(),
+                summary: rawSummary.trim(),
+                sortValue: dateObject.getTime(),
               };
             })
+            .filter(Boolean)
             .sort((a, b) => b.sortValue - a.sortValue);
 
           renderRecentChanges();
