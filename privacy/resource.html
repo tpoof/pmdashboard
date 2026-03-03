@@ -357,6 +357,19 @@
           transform 0.12s ease;
       }
 
+      body.smarty.page-privacy .btn,
+      body.smarty.page-privacy .btn:link,
+      body.smarty.page-privacy .btn:visited,
+      body.smarty.page-privacy .btn:hover,
+      body.smarty.page-privacy .btn:focus-visible,
+      body.smarty.page-privacy .btn:active {
+        color: #ffffff;
+      }
+
+      body.smarty.page-privacy .btn .material-symbols-outlined {
+        color: currentColor;
+      }
+
       body.smarty.page-privacy .btn:hover {
         background: var(--accent-strong);
         border-color: var(--accent-strong);
@@ -379,6 +392,18 @@
       body.smarty.page-privacy .btn-ghost:active {
         transform: translateY(0);
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+      }
+
+      body.smarty.page-privacy .recent-change-date {
+        color: var(--muted);
+        font-size: 0.9rem;
+        font-style: italic;
+      }
+
+      body.smarty.page-privacy .recent-change-summary p + p,
+      body.smarty.page-privacy .recent-change-summary ul,
+      body.smarty.page-privacy .recent-change-summary ol {
+        margin-top: var(--space-1);
       }
 
       body.smarty.page-privacy .btn:focus-visible,
@@ -495,12 +520,50 @@
         });
       }
 
+      function renderMultilineText(container, text) {
+        if (!container) {
+          return;
+        }
+        const normalized = String(text || "")
+          .replace(/<br\s*\/?>/gi, "\n")
+          .replace(/\r\n/g, "\n");
+        const rawLines = normalized.split("\n");
+        const lines = rawLines.map((line) => line.trim()).filter(Boolean);
+        if (!lines.length) {
+          return;
+        }
+
+        const isBullet = lines.every((line) => /^[-*]\s+/.test(line));
+        const isNumbered = lines.every((line) => /^\d+\.\s+/.test(line));
+
+        if (isBullet || isNumbered) {
+          const list = document.createElement(isNumbered ? "ol" : "ul");
+          lines.forEach((line) => {
+            const item = document.createElement("li");
+            item.textContent = line.replace(/^[-*]\s+/, "").replace(/^\d+\.\s+/, "");
+            list.appendChild(item);
+          });
+          container.appendChild(list);
+          return;
+        }
+
+        lines.forEach((line) => {
+          const paragraph = document.createElement("p");
+          paragraph.textContent = line;
+          container.appendChild(paragraph);
+        });
+      }
+
       function buildListItem(entry) {
         const li = document.createElement("li");
         li.className = "recent-changes-item";
 
-        const dateWrapper = document.createElement("p");
+        const title = document.createElement("p");
+        const strong = document.createElement("strong");
+        strong.textContent = entry.title;
+        title.appendChild(strong);
 
+        const dateWrapper = document.createElement("p");
         const timeElement = document.createElement("time");
         timeElement.className = "recent-change-date";
         if (entry.dateObject) {
@@ -512,16 +575,12 @@
         timeElement.textContent = entry.displayDate;
         dateWrapper.appendChild(timeElement);
 
-        const title = document.createElement("p");
-        const strong = document.createElement("strong");
-        strong.textContent = entry.title;
-        title.appendChild(strong);
+        const summary = document.createElement("div");
+        summary.className = "recent-change-summary";
+        renderMultilineText(summary, entry.summary);
 
-        const summary = document.createElement("p");
-        summary.textContent = entry.summary;
-
-        li.appendChild(dateWrapper);
         li.appendChild(title);
+        li.appendChild(dateWrapper);
         li.appendChild(summary);
 
         return li;
