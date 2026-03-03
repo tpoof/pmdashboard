@@ -47,7 +47,7 @@
             aria-labelledby="recent-changes-title"
           >
             <h2 id="recent-changes-title" class="subtitle">Recent Changes</h2>
-            <div class="card">
+            <div class="card section">
               <div>
                 <p
                   id="recentChangesMessage"
@@ -57,7 +57,9 @@
                 >
                   Loading recent changes…
                 </p>
-                <ul id="recentChangesList" class="recent-changes-list"></ul>
+                <div class="recent-changes-scroll" tabindex="0">
+                  <ul id="recentChangesList" class="recent-changes-list"></ul>
+                </div>
                 <button
                   id="recentChangesToggle"
                   type="button"
@@ -93,7 +95,7 @@
 
           <section class="section" aria-labelledby="leaf-s-title">
             <h2 id="leaf-s-title" class="subtitle">LEAF Secure (LEAF-S)</h2>
-            <div class="grid">
+            <div class="grid section">
               <article class="card">
                 <div class="card-header">
                   <h3 class="card-title">What is LEAF-S</h3>
@@ -394,16 +396,45 @@
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
       }
 
+      body.smarty.page-privacy .recent-changes-scroll {
+        max-height: 360px;
+        overflow-y: auto;
+        padding-right: var(--space-1);
+      }
+
+      body.smarty.page-privacy .recent-changes-scroll:focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 3px;
+      }
+
+      body.smarty.page-privacy .recent-change-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.5rem;
+      }
+
+      body.smarty.page-privacy .recent-change-title {
+        margin: 0;
+      }
+
       body.smarty.page-privacy .recent-change-date {
         color: var(--muted);
         font-size: 0.9rem;
         font-style: italic;
+        margin-left: auto;
       }
 
       body.smarty.page-privacy .recent-change-summary p + p,
       body.smarty.page-privacy .recent-change-summary ul,
       body.smarty.page-privacy .recent-change-summary ol {
         margin-top: var(--space-1);
+      }
+
+      @media (max-width: 520px) {
+        body.smarty.page-privacy .recent-change-date {
+          margin-left: 0;
+        }
       }
 
       body.smarty.page-privacy .btn:focus-visible,
@@ -558,12 +589,9 @@
         const li = document.createElement("li");
         li.className = "recent-changes-item";
 
-        const title = document.createElement("p");
-        const strong = document.createElement("strong");
-        strong.textContent = entry.title;
-        title.appendChild(strong);
+        const header = document.createElement("div");
+        header.className = "recent-change-header";
 
-        const dateWrapper = document.createElement("p");
         const timeElement = document.createElement("time");
         timeElement.className = "recent-change-date";
         if (entry.dateObject) {
@@ -573,14 +601,20 @@
           );
         }
         timeElement.textContent = entry.displayDate;
-        dateWrapper.appendChild(timeElement);
+
+        const title = document.createElement("p");
+        title.className = "recent-change-title";
+        const strong = document.createElement("strong");
+        strong.textContent = entry.title;
+        title.appendChild(strong);
+        header.appendChild(title);
+        header.appendChild(timeElement);
 
         const summary = document.createElement("div");
         summary.className = "recent-change-summary";
         renderMultilineText(summary, entry.summary);
 
-        li.appendChild(title);
-        li.appendChild(dateWrapper);
+        li.appendChild(header);
         li.appendChild(summary);
 
         return li;
