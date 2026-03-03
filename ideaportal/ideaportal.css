@@ -213,6 +213,13 @@
 
 .smarty-root .ip-searchField {
   max-width: 420px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.smarty-root .ip-searchBtn {
+  white-space: nowrap;
 }
 
 .smarty-root .ip-status {

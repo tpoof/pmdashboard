@@ -1,6 +1,58 @@
 const PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 200;
 
+const FORM_IDS = {
+  idea: "form_ae642",
+  votes: "form_57e89",
+};
+
+const FORM_KEYS = {
+  idea: FORM_IDS.idea.replace("form_", ""),
+  votes: FORM_IDS.votes.replace("form_", ""),
+};
+
+const IDEA_FIELDS = {
+  title: 5,
+  summary: 6,
+  benefit: 7,
+  category: 8,
+  impact: 9,
+  attachment: 10,
+  status: 12,
+};
+
+const VOTE_FIELDS = {
+  idea: 2,
+  user: 3,
+};
+
+const IDEA_INDICATORS = {
+  title: "id" + IDEA_FIELDS.title,
+  summary: "id" + IDEA_FIELDS.summary,
+  benefit: "id" + IDEA_FIELDS.benefit,
+  category: "id" + IDEA_FIELDS.category,
+  impact: "id" + IDEA_FIELDS.impact,
+  attachment: "id" + IDEA_FIELDS.attachment,
+  status: "id" + IDEA_FIELDS.status,
+};
+
+const VOTE_INDICATORS = {
+  idea: "id" + VOTE_FIELDS.idea,
+  user: "id" + VOTE_FIELDS.user,
+};
+
+const IDEA_GETDATA = [
+  String(IDEA_FIELDS.category),
+  String(IDEA_FIELDS.title),
+  String(IDEA_FIELDS.status),
+];
+
+const VOTE_GETDATA = [
+  String(VOTE_FIELDS.idea),
+  String(VOTE_FIELDS.user),
+];
+
+
 let ideas = [];
 let voteCounts = {};
 const portalConfig = window.leafIdeaPortal || {};
@@ -36,6 +88,7 @@ const ui = {
   topResults: null,
   myResults: null,
   searchInput: null,
+  searchButton: null,
   status: { all: null, my: null },
   pagination: { all: null, my: null },
   pageInfo: { all: null, my: null },
@@ -48,6 +101,7 @@ function cacheElements() {
   ui.topResults = document.getElementById("topResults");
   ui.myResults = document.getElementById("myResults");
   ui.searchInput = document.getElementById("searchInput");
+  ui.searchButton = document.getElementById("searchButton");
   ui.status.all = document.getElementById("allStatus");
   ui.status.my = document.getElementById("myStatus");
   ui.pagination.all = document.getElementById("allPagination");
@@ -375,11 +429,11 @@ function getIdeaSortValue(idea, key, votes) {
     case "id":
       return Number(idea.recordID) || 0;
     case "title":
-      return String(getIdeaField(idea, "id5", "title") || "");
+      return String(getIdeaField(idea, IDEA_INDICATORS.title, "title") || "");
     case "category":
-      return String(getIdeaField(idea, "id8", "category") || "");
+      return String(getIdeaField(idea, IDEA_INDICATORS.category, "category") || "");
     case "status":
-      return String(normalizeStatusLabel(getIdeaField(idea, "id20", "status")));
+      return String(normalizeStatusLabel(getIdeaField(idea, IDEA_INDICATORS.status, "status")));
     case "votes":
       return votes[idea.recordID] || 0;
     default:
@@ -458,9 +512,9 @@ function getStatusBadgeClass(status) {
 
 function getIdeaSearchText(idea) {
   const recordID = idea && idea.recordID ? String(idea.recordID) : "";
-  const title = getIdeaField(idea, "id5", "title");
-  const category = getIdeaField(idea, "id8", "category");
-  const status = normalizeStatusLabel(getIdeaField(idea, "id20", "status"));
+  const title = getIdeaField(idea, IDEA_INDICATORS.title, "title");
+  const category = getIdeaField(idea, IDEA_INDICATORS.category, "category");
+  const status = normalizeStatusLabel(getIdeaField(idea, IDEA_INDICATORS.status, "status"));
   return [recordID, title, category, status].join(" ").toLowerCase();
 }
 
@@ -492,18 +546,21 @@ function renderRows(tbody, rowsHtml, emptyMessage) {
 function buildIdeaRow(idea) {
   if (!idea || !idea.recordID) return "";
   const recordID = idea.recordID;
-  const title = escapeHtml(getIdeaField(idea, "id5", "title"));
-  const category = escapeHtml(getIdeaField(idea, "id8", "category"));
-  const status = normalizeStatusLabel(getIdeaField(idea, "id20", "status"));
+  const title = escapeHtml(getIdeaField(idea, IDEA_INDICATORS.title, "title"));
+  const category = escapeHtml(getIdeaField(idea, IDEA_INDICATORS.category, "category"));
+  const status = normalizeStatusLabel(getIdeaField(idea, IDEA_INDICATORS.status, "status"));
   const statusBadgeClass = getStatusBadgeClass(status);
+  const statusMarkup = status
+    ? `<span class="ip-badge ${statusBadgeClass}">${status}</span>`
+    : "";
   const votes = voteCounts[recordID] || 0;
-  const isVoted = userVotes[recordID] === true;
+  const isVoted = userVotes[String(recordID)] === true;
 
   return `<tr data-record-id="${recordID}">
 <td><a class="ip-recordLink" data-title="${title}" aria-haspopup="dialog" href="https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=${recordID}">${recordID}</a></td>
 <td>${title}</td>
 <td>${category}</td>
-<td><span class="ip-badge ${statusBadgeClass}">${status}</span></td>
+<td>${statusMarkup}</td>
 <td class="ip-votes">${votes}</td>
 <td class="ip-actionsCell">
 <button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}" data-record-id="${recordID}" ${isVoted ? "disabled" : ""} aria-label="Upvote">
@@ -517,7 +574,7 @@ function buildIdeaRow(idea) {
 function updatePaginationUI(scope, totalCount, pageCount, page, showAll, allowToggle) {
   const container = ui.pagination[scope];
   if (!container) return;
-  if (totalCount === 0) {
+  if (totalCount < PAGE_SIZE) {
     container.hidden = true;
     return;
   }
@@ -533,7 +590,7 @@ function updatePaginationUI(scope, totalCount, pageCount, page, showAll, allowTo
   }
   if (toggleBtn) {
     toggleBtn.hidden = !allowToggle;
-    toggleBtn.textContent = showAll ? "Show paged" : "Show all";
+    toggleBtn.textContent = showAll ? "Show pages" : "Show all";
     toggleBtn.setAttribute("aria-pressed", showAll ? "true" : "false");
   }
   if (ui.pageHint[scope]) {
@@ -548,11 +605,18 @@ function renderAllIdeas() {
   const sorted = sortIdeasList(filtered, voteCounts, sortState.tblIdeas);
   applySortClasses("tblIdeas");
 
+  const shouldPaginate = sorted.length >= PAGE_SIZE;
+  if (!shouldPaginate) {
+    state.pagination.all.showAll = true;
+    state.pagination.all.page = 1;
+  }
+  const showAll = shouldPaginate ? state.pagination.all.showAll : true;
+
   const pagination = paginateList(
     sorted,
     state.pagination.all.page,
     PAGE_SIZE,
-    state.pagination.all.showAll,
+    showAll,
   );
 
   state.pagination.all.page = pagination.page;
@@ -565,8 +629,8 @@ function renderAllIdeas() {
     sorted.length,
     pagination.pageCount,
     pagination.page,
-    state.pagination.all.showAll,
-    true,
+    showAll,
+    shouldPaginate,
   );
 }
 
@@ -574,17 +638,18 @@ function renderMyIdeas() {
   const sorted = sortIdeasList(myIdeasCache, voteCounts, sortState.tblMyIdeas);
   applySortClasses("tblMyIdeas");
 
-  const allowToggle = myIdeasCache.length > PAGE_SIZE;
-  if (!allowToggle) {
+  const shouldPaginate = sorted.length >= PAGE_SIZE;
+  if (!shouldPaginate) {
     state.pagination.my.showAll = true;
     state.pagination.my.page = 1;
   }
+  const showAll = shouldPaginate ? state.pagination.my.showAll : true;
 
   const pagination = paginateList(
     sorted,
     state.pagination.my.page,
     PAGE_SIZE,
-    state.pagination.my.showAll,
+    showAll,
   );
 
   state.pagination.my.page = pagination.page;
@@ -596,8 +661,8 @@ function renderMyIdeas() {
     sorted.length,
     pagination.pageCount,
     pagination.page,
-    state.pagination.my.showAll,
-    allowToggle,
+    showAll,
+    shouldPaginate,
   );
 }
 
@@ -622,8 +687,9 @@ function renderTop10Ideas() {
 }
 
 function setVotedState(ideanum, isVoted) {
+  const ideanumKey = String(ideanum);
   const buttons = document.querySelectorAll(
-    `.ip-upvote[data-record-id='${ideanum}']`,
+    `.ip-upvote[data-record-id='${ideanumKey}']`,
   );
   buttons.forEach((button) => {
     button.disabled = isVoted;
@@ -632,47 +698,51 @@ function setVotedState(ideanum, isVoted) {
 }
 
 function updateVoteDom(ideanum) {
-  const rows = document.querySelectorAll(`tr[data-record-id='${ideanum}']`);
+  const ideanumKey = String(ideanum);
+  const rows = document.querySelectorAll(`tr[data-record-id='${ideanumKey}']`);
   rows.forEach((row) => {
     const voteCell = row.querySelector(".ip-votes");
     if (voteCell) {
-      voteCell.textContent = voteCounts[ideanum] || 0;
+      voteCell.textContent = voteCounts[ideanumKey] || 0;
     }
   });
-  setVotedState(ideanum, true);
+  setVotedState(ideanumKey, true);
 }
 
 function IdeaVotes(ideanum) {
+  const ideanumKey = String(ideanum);
   if (votingInProgress) return;
-  if (userVotes[ideanum]) {
+  if (userVotes[ideanumKey]) {
     alert("You already voted on this idea.");
     return;
   }
   votingInProgress = true;
 
-  userVotes[ideanum] = true;
-  setVotedState(ideanum, true);
+  userVotes[ideanumKey] = true;
+  setVotedState(ideanumKey, true);
+
+  const payload = {
+    service: "",
+    title: "Idea #" + ideanumKey,
+    priority: 0,
+    CSRFToken: csrfToken,
+  };
+  payload["numform_" + FORM_KEYS.votes] = 1;
+  payload[VOTE_FIELDS.user] = userID;
+  payload[VOTE_FIELDS.idea] = ideanumKey;
 
   $.ajax({
     type: "POST",
     url: "./api/?a=form/new",
     dataType: "json",
-    data: {
-      service: "",
-      title: "Idea #" + ideanum,
-      priority: 0,
-      numform_57e89: 1,
-      CSRFToken: csrfToken,
-      3: userID,
-      2: ideanum,
-    },
+    data: payload,
     cache: false,
   })
     .done(function (response) {
       var recordID = parseFloat(response);
       if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
-        voteCounts[ideanum] = (voteCounts[ideanum] || 0) + 1;
-        updateVoteDom(ideanum);
+        voteCounts[ideanumKey] = (voteCounts[ideanumKey] || 0) + 1;
+        updateVoteDom(ideanumKey);
         renderTop10Ideas();
         if (sortState.tblIdeas.key === "votes") {
           renderAllIdeas();
@@ -683,14 +753,14 @@ function IdeaVotes(ideanum) {
         alert("Thanks for voting!");
       } else {
         alert("Error processing vote.");
-        userVotes[ideanum] = false;
-        setVotedState(ideanum, false);
+        userVotes[ideanumKey] = false;
+        setVotedState(ideanumKey, false);
       }
     })
     .fail(function () {
       alert("Error processing vote.");
-      userVotes[ideanum] = false;
-      setVotedState(ideanum, false);
+      userVotes[ideanumKey] = false;
+      setVotedState(ideanumKey, false);
     })
     .always(function () {
       votingInProgress = false;
@@ -705,12 +775,40 @@ function filterIdeasByUser() {
   });
 }
 
+function buildIdeasQueryUrl() {
+  const query = {
+    terms: [
+      { id: "categoryID", operator: "=", match: FORM_IDS.idea, gate: "AND" },
+      { id: "deleted", operator: "=", match: 0, gate: "AND" },
+    ],
+    joins: [],
+    sort: { id: "created_date", direction: "desc" },
+    getData: IDEA_GETDATA,
+  };
+  const queryString = encodeURIComponent(JSON.stringify(query));
+  return `https://leaf.va.gov/platform/ideas/api/form/query/?q=${queryString}&x-filterData=recordID,title,created_date,userID`;
+}
+
+function buildVotesQueryUrl() {
+  const query = {
+    terms: [
+      { id: "categoryID", operator: "=", match: FORM_IDS.votes, gate: "AND" },
+      { id: "deleted", operator: "=", match: 0, gate: "AND" },
+    ],
+    joins: [],
+    sort: {},
+    getData: VOTE_GETDATA,
+  };
+  const queryString = encodeURIComponent(JSON.stringify(query));
+  return `https://leaf.va.gov/platform/ideas/api/form/query/?q=${queryString}&x-filterData=recordID,title`;
+}
+
 function fetchIdeasData() {
   setPanelBusy("all", true);
   setStatus("all", "Loading ideas...", "loading");
 
   return $.ajax({
-    url: 'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_ae642","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{"id":"created_date","direction":"desc"},"getData":["8","5","20"]}&x-filterData=recordID,title,created_date,userID',
+    url: buildIdeasQueryUrl(),
     type: "GET",
     cache: false,
     dataType: "json",
@@ -731,7 +829,7 @@ function fetchIdeasData() {
 
 function fetchVotesData() {
   return $.ajax({
-    url: 'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_57e89","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["2","3"]}&x-filterData=recordID,title',
+    url: buildVotesQueryUrl(),
     type: "GET",
     cache: false,
     dataType: "json",
@@ -741,8 +839,8 @@ function fetchVotesData() {
       userVotes = {};
 
       Object.values(voteData || {}).forEach((vote) => {
-        let ideanum = vote.s1 && vote.s1["id2"];
-        let voter = vote.s1 && vote.s1["id3"];
+        let ideanum = vote.s1 && vote.s1[VOTE_INDICATORS.idea];
+        let voter = vote.s1 && vote.s1[VOTE_INDICATORS.user];
         if (ideanum !== undefined && ideanum !== null && ideanum !== "") {
           const ideanumKey = String(ideanum);
           if (voteCounts[ideanumKey]) {
@@ -778,7 +876,7 @@ function fetchUserSubmissions() {
   const query = {
     terms: [
       { id: "userID", operator: "=", match: userID, gate: "AND" },
-      { id: "categoryID", operator: "=", match: "form_ae642", gate: "AND" },
+      { id: "categoryID", operator: "=", match: FORM_IDS.idea, gate: "AND" },
       { id: "deleted", operator: "=", match: 0, gate: "AND" },
     ],
     joins: [],
@@ -831,6 +929,97 @@ function loadIdeasAndVotes() {
       renderTop10Ideas();
       return fetchUserSubmissions();
     });
+}
+
+function getAttachmentValue() {
+  const fileList = document.getElementById("fileList");
+  const fileInput = document.getElementById("fileInput");
+  let files = [];
+
+  if (fileList) {
+    files = Array.from(fileList.querySelectorAll("li"))
+      .map((item) => item.textContent.trim())
+      .filter(Boolean);
+  }
+
+  if (!files.length && fileInput && fileInput.files && fileInput.files.length) {
+    files = Array.from(fileInput.files).map((file) => file.name).filter(Boolean);
+  }
+
+  return files.length ? files.join("
+") : "";
+}
+
+function NewIdea() {
+  const form = document.getElementById("ideaForm");
+  const submitButton = document.getElementById("submitButton");
+  const titleInput = document.getElementById("inpTitle");
+  const descriptionInput = document.getElementById("inpDescription");
+  const benefitInput = document.getElementById("inpBenefit");
+  const categoryInput = document.getElementById("inpCategory");
+  const impactInput = document.getElementById("inpImpact");
+  const submissionAlert = document.getElementById("submissionAlert");
+
+  const titleValue = titleInput ? titleInput.value.trim() : "";
+  const descriptionValue = descriptionInput ? descriptionInput.value.trim() : "";
+  const benefitValue = benefitInput ? benefitInput.value.trim() : "";
+  const categoryValue = categoryInput ? categoryInput.value.trim() : "";
+  const impactValue = impactInput ? impactInput.value.trim() : "";
+
+  const payload = {
+    service: "",
+    title: titleValue || "Idea Submission",
+    priority: 0,
+    CSRFToken: csrfToken,
+  };
+  payload["numform_" + FORM_KEYS.idea] = 1;
+  payload[IDEA_FIELDS.title] = titleValue;
+  payload[IDEA_FIELDS.summary] = descriptionValue;
+  payload[IDEA_FIELDS.benefit] = benefitValue;
+  payload[IDEA_FIELDS.category] = categoryValue;
+  payload[IDEA_FIELDS.impact] = impactValue;
+
+  const attachmentValue = getAttachmentValue();
+  if (attachmentValue) {
+    payload[IDEA_FIELDS.attachment] = attachmentValue;
+  }
+
+  if (submitButton) submitButton.disabled = true;
+  if (submissionAlert) submissionAlert.hidden = true;
+
+  $.ajax({
+    type: "POST",
+    url: "./api/?a=form/new",
+    dataType: "json",
+    data: payload,
+    cache: false,
+  })
+    .done(function (response) {
+      var recordID = parseFloat(response);
+      if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
+        alert("Your idea has been submitted successfully.");
+        if (form) {
+          form.reset();
+          form.classList.remove("was-validated");
+        }
+        const fileList = document.getElementById("fileList");
+        if (fileList) fileList.innerHTML = "";
+        closeModal("addIdeaModal");
+        updateTable();
+      } else {
+        alert("Error submitting idea.");
+      }
+    })
+    .fail(function () {
+      alert("Error submitting idea.");
+    })
+    .always(function () {
+      if (submitButton) submitButton.disabled = false;
+    });
+}
+
+function updateTable() {
+  return loadIdeasAndVotes();
 }
 
 function handleSortClick(sortBtn) {
@@ -917,15 +1106,32 @@ function bindDelegatedEvents() {
   });
 }
 
+function applySearch(value) {
+  state.search = value.trim();
+  if (!state.pagination.all.showAll) {
+    state.pagination.all.page = 1;
+  }
+  renderAllIdeas();
+}
+
 function bindSearch() {
   if (!ui.searchInput) return;
   const handler = debounce(function (event) {
-    state.search = event.target.value.trim();
-    state.pagination.all.page = 1;
-    renderAllIdeas();
+    applySearch(event.target.value);
   }, SEARCH_DEBOUNCE_MS);
 
   ui.searchInput.addEventListener("input", handler);
+  ui.searchInput.addEventListener("keydown", function (event) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    applySearch(ui.searchInput.value);
+  });
+
+  if (ui.searchButton) {
+    ui.searchButton.addEventListener("click", function () {
+      applySearch(ui.searchInput.value);
+    });
+  }
 }
 
 function bindFileInput() {
