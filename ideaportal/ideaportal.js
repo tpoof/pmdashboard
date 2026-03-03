@@ -375,9 +375,9 @@ function getIdeaSortValue(idea, key, votes) {
     case "id":
       return Number(idea.recordID) || 0;
     case "title":
-      return String(getIdeaField(idea, "id13", "title") || "");
+      return String(getIdeaField(idea, "id5", "title") || "");
     case "category":
-      return String(getIdeaField(idea, "id16", "category") || "");
+      return String(getIdeaField(idea, "id8", "category") || "");
     case "status":
       return String(normalizeStatusLabel(getIdeaField(idea, "id20", "status")));
     case "votes":
@@ -458,8 +458,8 @@ function getStatusBadgeClass(status) {
 
 function getIdeaSearchText(idea) {
   const recordID = idea && idea.recordID ? String(idea.recordID) : "";
-  const title = getIdeaField(idea, "id13", "title");
-  const category = getIdeaField(idea, "id16", "category");
+  const title = getIdeaField(idea, "id5", "title");
+  const category = getIdeaField(idea, "id8", "category");
   const status = normalizeStatusLabel(getIdeaField(idea, "id20", "status"));
   return [recordID, title, category, status].join(" ").toLowerCase();
 }
@@ -492,8 +492,8 @@ function renderRows(tbody, rowsHtml, emptyMessage) {
 function buildIdeaRow(idea) {
   if (!idea || !idea.recordID) return "";
   const recordID = idea.recordID;
-  const title = escapeHtml(getIdeaField(idea, "id13", "title"));
-  const category = escapeHtml(getIdeaField(idea, "id16", "category"));
+  const title = escapeHtml(getIdeaField(idea, "id5", "title"));
+  const category = escapeHtml(getIdeaField(idea, "id8", "category"));
   const status = normalizeStatusLabel(getIdeaField(idea, "id20", "status"));
   const statusBadgeClass = getStatusBadgeClass(status);
   const votes = voteCounts[recordID] || 0;
@@ -661,10 +661,10 @@ function IdeaVotes(ideanum) {
       service: "",
       title: "Idea #" + ideanum,
       priority: 0,
-      numform_7edf3: 1,
+      numform_57e89: 1,
       CSRFToken: csrfToken,
-      26: userID,
-      25: ideanum,
+      3: userID,
+      2: ideanum,
     },
     cache: false,
   })
@@ -710,7 +710,7 @@ function fetchIdeasData() {
   setStatus("all", "Loading ideas...", "loading");
 
   return $.ajax({
-    url: 'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_a9c92","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{"id":"created_date","direction":"desc"},"getData":["16","13","20"]}&x-filterData=recordID,title,created_date,userID',
+    url: 'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_ae642","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{"id":"created_date","direction":"desc"},"getData":["8","5","20"]}&x-filterData=recordID,title,created_date,userID',
     type: "GET",
     cache: false,
     dataType: "json",
@@ -731,7 +731,7 @@ function fetchIdeasData() {
 
 function fetchVotesData() {
   return $.ajax({
-    url: 'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_7edf3","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["25","26"]}&x-filterData=recordID,title',
+    url: 'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_57e89","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["2","3"]}&x-filterData=recordID,title',
     type: "GET",
     cache: false,
     dataType: "json",
@@ -741,15 +741,18 @@ function fetchVotesData() {
       userVotes = {};
 
       Object.values(voteData || {}).forEach((vote) => {
-        let ideanum = vote.s1 && vote.s1["id25"];
-        let voter = vote.s1 && vote.s1["id26"];
-        if (voteCounts[ideanum]) {
-          voteCounts[ideanum]++;
-        } else {
-          voteCounts[ideanum] = 1;
-        }
-        if (voter && voter === userID) {
-          userVotes[ideanum] = true;
+        let ideanum = vote.s1 && vote.s1["id2"];
+        let voter = vote.s1 && vote.s1["id3"];
+        if (ideanum !== undefined && ideanum !== null && ideanum !== "") {
+          const ideanumKey = String(ideanum);
+          if (voteCounts[ideanumKey]) {
+            voteCounts[ideanumKey]++;
+          } else {
+            voteCounts[ideanumKey] = 1;
+          }
+          if (voter && voter === userID) {
+            userVotes[ideanumKey] = true;
+          }
         }
       });
       return true;
@@ -775,12 +778,12 @@ function fetchUserSubmissions() {
   const query = {
     terms: [
       { id: "userID", operator: "=", match: userID, gate: "AND" },
-      { id: "categoryID", operator: "=", match: "form_a9c92", gate: "AND" },
+      { id: "categoryID", operator: "=", match: "form_ae642", gate: "AND" },
       { id: "deleted", operator: "=", match: 0, gate: "AND" },
     ],
     joins: [],
     sort: {},
-    getData: ["16", "13", "20"],
+    getData: ["8", "5", "20"],
   };
   const queryString = encodeURIComponent(JSON.stringify(query));
 
