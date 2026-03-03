@@ -383,14 +383,6 @@ body.smarty.page-ideaportal .ip-sortable.is-desc::after {
   content: "▼";
 }
 
-body.smarty.page-ideaportal .ip-col-actions {
-  width: 160px;
-}
-
-body.smarty.page-ideaportal .ip-table .ip-actionsCell {
-  display: inline-flex;
-  gap: 8px;
-}
 
 body.smarty.page-ideaportal .ip-upvote.is-voted {
   opacity: 0.6;
@@ -1912,37 +1904,46 @@ body.smarty.page-privacy .skip-link:focus {
 
 .smarty-root.page-ideaportal .ip-table th:nth-child(6),
 .smarty-root.page-ideaportal .ip-table td:nth-child(6) {
-  width: 140px;
-  min-width: 140px;
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
   white-space: nowrap;
   text-align: left;
   padding-right: 0.75rem;
   box-sizing: border-box;
 }
 
-/* ── Idea Portal: Footer alignment ──────────────────────── */
+/* ── Idea Portal: Layout wrap ───────────────────────────── */
 .smarty-root.page-ideaportal .ip-wrap {
   flex: 1;
-  padding-bottom: 56px;
 }
 
-.smarty-root.page-ideaportal .lp-credit-footer {
-  height: 56px;
-  padding: 4px 1rem;
-  font-size: 10px;
+/* ── Idea Portal: Credit Badge ──────────────────────────── */
+.smarty-root.page-ideaportal .ip-creditBadge {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 1.25rem;
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  margin-top: -56px;
-  position: relative;
-  z-index: 1;
+  background: var(--ip-panel, #fff);
+  border: 1px solid var(--ip-border, #e2e8f0);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem 0.4rem 0.6rem;
+  font-size: 0.75rem;
+  color: var(--ip-text, #1e293b);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  z-index: 999;
   pointer-events: none;
-  box-sizing: border-box;
+  opacity: 0.85;
+  transition: opacity 0.2s;
 }
 
-.smarty-root.page-ideaportal .lp-credit-footer small {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  line-height: 1.3;
+.smarty-root.page-ideaportal .ip-creditBadge:hover {
+  opacity: 1;
+}
+
+.smarty-root.page-ideaportal .ip-creditBadge .material-symbols-outlined {
+  font-size: 1rem;
+  line-height: 1;
 }
