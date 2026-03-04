@@ -1,0 +1,614 @@
+/*
+ * leaf-forms.css
+ * Shared design system for LEAF Request Portal form views.
+ *
+ * Usage: <link rel="stylesheet" href="{$app_css_path}/leaf-forms.css" />
+ *
+ * Contents
+ * ─────────────────────────────────────────────────────────
+ * 1.  Design Tokens (CSS custom properties)
+ * 2.  Base / Reset  (scoped to .lf-root)
+ * 3.  Layout — page shell, topbar
+ * 4.  Record Header
+ * 5.  Progress Bar
+ * 6.  Form Tabs
+ * 7.  Field List
+ *     7a. Field Row  (short/simple values)
+ *     7b. Field Card (rich/long values)
+ *     7c. Field state variants (missing, sensitive, updated)
+ *     7d. Field value type renderers (chips, files, currency…)
+ * 8.  Section Subheadings
+ * 9.  Sidebar Panels
+ *     9a. Tools
+ *     9b. Internal Use tabs
+ *     9c. Comments
+ *     9d. Permissions
+ * 10. Badges & Tags
+ * 11. Buttons
+ * 12. Animations
+ * 13. Print overrides  (@media print)
+ * 14. Responsive       (@media max-width)
+ */
+
+
+/* ─────────────────────────────────────────────────────────
+   1. Design Tokens
+   ───────────────────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --lf-bg:              #f4f5f7;
+  --lf-surface:         #ffffff;
+
+  /* Borders */
+  --lf-border:          #e2e5ea;
+  --lf-border-hover:    #c8cdd8;
+  --lf-border-focus:    #3d6ef5;
+
+  /* Text */
+  --lf-text-primary:    #1a1d23;
+  --lf-text-secondary:  #5a6171;
+  --lf-text-muted:      #9299a5;
+  --lf-text-inverse:    #ffffff;
+
+  /* Accent */
+  --lf-accent:          #3d6ef5;
+  --lf-accent-light:    #eef2ff;
+  --lf-accent-dark:     #2551d4;
+  --lf-accent-border:   #c7d5fd;
+
+  /* Semantic */
+  --lf-success:         #16a34a;
+  --lf-success-light:   #dcfce7;
+  --lf-warning:         #d97706;
+  --lf-warning-light:   #fef3c7;
+  --lf-danger:          #dc2626;
+  --lf-danger-light:    #fee2e2;
+
+  /* Radii */
+  --lf-radius-sm:       6px;
+  --lf-radius-md:       10px;
+  --lf-radius-lg:       16px;
+
+  /* Shadows */
+  --lf-shadow-xs: 0 1px 2px rgba(0,0,0,.05);
+  --lf-shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --lf-shadow-md: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+
+  /* Typography */
+  --lf-font-sans: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --lf-font-mono: 'DM Mono', ui-monospace, 'Cascadia Code', 'Fira Mono', monospace;
+
+  /* Layout */
+  --lf-sidebar-w: 272px;
+  --lf-header-h:  60px;
+  --lf-max-w:     1260px;
+  --lf-page-pad:  20px;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   2. Base / Reset
+   Scoped to .lf-root to avoid colliding with existing
+   portal styles. Wrap your template output in:
+   <div class="lf-root"> ... </div>
+   ───────────────────────────────────────────────────────── */
+.lf-root,
+.lf-root *,
+.lf-root *::before,
+.lf-root *::after {
+  box-sizing: border-box;
+}
+.lf-root {
+  font-family: var(--lf-font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--lf-text-primary);
+  background: var(--lf-bg);
+  min-height: 100vh;
+}
+.lf-root a             { color: var(--lf-accent); text-decoration: none; }
+.lf-root a:hover       { text-decoration: underline; }
+.lf-root button        { font-family: inherit; cursor: pointer; }
+
+
+/* ─────────────────────────────────────────────────────────
+   3. Layout
+   ───────────────────────────────────────────────────────── */
+
+.lf-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  height: var(--lf-header-h);
+  background: var(--lf-surface);
+  border-bottom: 1px solid var(--lf-border);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 24px;
+  box-shadow: var(--lf-shadow-xs);
+}
+.lf-topbar-logo {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -.02em;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.lf-topbar-badge {
+  background: var(--lf-accent);
+  color: var(--lf-text-inverse);
+  font-size: .62rem;
+  font-weight: 600;
+  letter-spacing: .07em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.lf-topbar-sep     { width: 1px; height: 26px; background: var(--lf-border); flex-shrink: 0; }
+.lf-topbar-crumb   { display: flex; align-items: center; gap: 5px; font-size: .83rem; color: var(--lf-text-secondary); }
+.lf-topbar-crumb a { color: var(--lf-text-secondary); }
+.lf-topbar-crumb strong { color: var(--lf-text-primary); font-weight: 500; }
+.lf-topbar-spacer  { flex: 1; }
+.lf-topbar-actions { display: flex; gap: 6px; }
+
+.lf-page {
+  display: grid;
+  grid-template-columns: 1fr var(--lf-sidebar-w);
+  gap: var(--lf-page-pad);
+  max-width: var(--lf-max-w);
+  margin: 0 auto;
+  padding: var(--lf-page-pad) var(--lf-page-pad) 60px;
+  align-items: start;
+}
+.lf-page-main  { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.lf-page-aside { position: sticky; top: calc(var(--lf-header-h) + var(--lf-page-pad)); display: flex; flex-direction: column; gap: 10px; }
+
+
+/* ─────────────────────────────────────────────────────────
+   4. Record Header
+   ───────────────────────────────────────────────────────── */
+.lf-record-header {
+  background: var(--lf-surface);
+  border: 1px solid var(--lf-border);
+  border-radius: var(--lf-radius-lg);
+  padding: 22px 26px 18px;
+  box-shadow: var(--lf-shadow-sm);
+  animation: lf-fade-up .28s ease both;
+}
+.lf-rh-top        { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.lf-record-id     { font-family: var(--lf-font-mono); font-size: .75rem; color: var(--lf-text-muted); margin-left: auto; }
+.lf-rh-title      { font-size: 1.45rem; font-weight: 600; letter-spacing: -.025em; line-height: 1.25; margin-bottom: 3px; }
+.lf-rh-subtitle   { font-size: .87rem; color: var(--lf-text-secondary); margin-bottom: 16px; }
+.lf-rh-meta       { display: flex; flex-wrap: wrap; gap: 0; border-top: 1px solid var(--lf-border); padding-top: 14px; }
+.lf-meta-item     { flex: 1; min-width: 120px; padding-right: 16px; }
+.lf-meta-label    { font-size: .69rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--lf-text-muted); margin-bottom: 2px; }
+.lf-meta-value    { font-size: .88rem; font-weight: 500; color: var(--lf-text-primary); }
+.lf-meta-value--empty { color: var(--lf-text-muted); font-style: italic; }
+.lf-rh-tags       { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+
+
+/* ─────────────────────────────────────────────────────────
+   5. Progress Bar
+   ───────────────────────────────────────────────────────── */
+.lf-progress-row {
+  background: var(--lf-surface);
+  border: 1px solid var(--lf-border);
+  border-radius: var(--lf-radius-md);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--lf-shadow-xs);
+  animation: lf-fade-up .28s .04s ease both;
+}
+.lf-progress-label  { font-size: .8rem; font-weight: 500; color: var(--lf-text-secondary); white-space: nowrap; }
+.lf-progress-track  { flex: 1; height: 7px; background: var(--lf-bg); border-radius: 999px; overflow: hidden; border: 1px solid var(--lf-border); }
+.lf-progress-fill   { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--lf-accent) 0%, #7c9fff 100%); transition: width .5s ease; }
+.lf-progress-pct    { font-size: .8rem; font-weight: 600; color: var(--lf-accent); white-space: nowrap; font-family: var(--lf-font-mono); }
+
+
+/* ─────────────────────────────────────────────────────────
+   6. Form Tabs
+   ───────────────────────────────────────────────────────── */
+.lf-form-tabs {
+  background: var(--lf-surface);
+  border: 1px solid var(--lf-border);
+  border-radius: var(--lf-radius-lg);
+  box-shadow: var(--lf-shadow-sm);
+  overflow: hidden;
+  animation: lf-fade-up .28s .08s ease both;
+}
+.lf-tabs-header {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--lf-border);
+  overflow-x: auto;
+  padding: 0 4px;
+  gap: 2px;
+  scrollbar-width: none;
+}
+.lf-tabs-header::-webkit-scrollbar { display: none; }
+
+.lf-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 13px 16px;
+  font-size: .82rem;
+  font-weight: 400;
+  color: var(--lf-text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+  position: relative;
+}
+.lf-tab-btn:hover          { color: var(--lf-text-primary); }
+.lf-tab-btn.is-active      { color: var(--lf-accent); font-weight: 500; border-bottom-color: var(--lf-accent); }
+
+.lf-tab-count {
+  font-size: .68rem; font-weight: 600;
+  background: var(--lf-bg); color: var(--lf-text-muted);
+  padding: 1px 6px; border-radius: 999px; border: 1px solid var(--lf-border);
+}
+.lf-tab-btn.is-active .lf-tab-count { background: var(--lf-accent-light); color: var(--lf-accent); border-color: var(--lf-accent-border); }
+
+.lf-tab-alert {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--lf-danger);
+  position: absolute; top: 10px; right: 8px;
+}
+
+.lf-tab-panel          { display: none; }
+.lf-tab-panel.is-active { display: block; }
+.lf-field-list         { display: flex; flex-direction: column; }
+
+
+/* ─────────────────────────────────────────────────────────
+   7a. Field Row
+   Used for: text, number, date, radio, dropdown, currency,
+   single checkbox, orgchart_employee name
+   ───────────────────────────────────────────────────────── */
+.lf-field-row {
+  display: grid;
+  grid-template-columns: 200px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 22px;
+  border-bottom: 1px solid var(--lf-border);
+  transition: background .1s;
+  position: relative;
+}
+.lf-field-row:last-child          { border-bottom: none; }
+.lf-field-row:hover               { background: #fafbfc; }
+.lf-field-row:hover .lf-field-edit { opacity: 1; }
+
+.lf-field-num {
+  position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
+  font-family: var(--lf-font-mono); font-size: .62rem; color: var(--lf-text-muted);
+  width: 16px; text-align: center; pointer-events: none;
+}
+.lf-field-label {
+  font-size: .8rem; font-weight: 500; color: var(--lf-text-secondary);
+  display: flex; align-items: center; gap: 6px; padding-left: 14px;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.lf-field-value             { font-size: .88rem; color: var(--lf-text-primary); }
+.lf-field-value--empty      { color: var(--lf-text-muted); font-style: italic; font-size: .83rem; }
+.lf-field-value--mono       { font-family: var(--lf-font-mono); font-size: .85rem; }
+.lf-field-value--currency   { font-family: var(--lf-font-mono); font-size: .9rem; }
+.lf-field-value--sensitive  { filter: blur(3.5px); transition: filter .2s; cursor: pointer; user-select: none; }
+.lf-field-value--sensitive:hover { filter: none; }
+
+.lf-field-edit {
+  background: none; border: 1px solid var(--lf-border); border-radius: var(--lf-radius-sm);
+  padding: 3px 9px; font-size: .72rem; color: var(--lf-text-secondary);
+  opacity: 0; transition: opacity .12s, background .12s, border-color .12s, color .12s;
+  display: flex; align-items: center; gap: 3px; white-space: nowrap; flex-shrink: 0;
+}
+.lf-field-edit:hover { background: var(--lf-accent-light); border-color: var(--lf-accent); color: var(--lf-accent); }
+
+
+/* ─────────────────────────────────────────────────────────
+   7b. Field Card
+   Used for: textarea, multiselect, checkboxes, fileupload,
+   image, grid, orgchart_position
+   ───────────────────────────────────────────────────────── */
+.lf-field-card {
+  padding: 15px 22px;
+  border-bottom: 1px solid var(--lf-border);
+  position: relative;
+  transition: background .1s;
+}
+.lf-field-card:last-child           { border-bottom: none; }
+.lf-field-card:hover                { background: #fafbfc; }
+.lf-field-card:hover .lf-field-edit { opacity: 1; }
+
+.lf-field-card-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 9px;
+}
+.lf-field-card-num {
+  font-family: var(--lf-font-mono); font-size: .62rem; color: var(--lf-text-muted);
+  width: 16px; flex-shrink: 0;
+}
+.lf-field-card-label {
+  font-size: .8rem; font-weight: 500; color: var(--lf-text-secondary);
+  flex: 1; display: flex; align-items: center; gap: 6px;
+}
+.lf-field-card-value               { font-size: .9rem; color: var(--lf-text-primary); padding-left: 24px; }
+.lf-field-card-value--textarea     { white-space: pre-wrap; line-height: 1.75; font-size: .88rem; color: var(--lf-text-secondary); }
+
+
+/* ─────────────────────────────────────────────────────────
+   7c. Field state variants
+   ───────────────────────────────────────────────────────── */
+.lf-field-row.is-missing,
+.lf-field-card.is-missing { background: #fff9f9; }
+
+.lf-field-row.is-missing:hover,
+.lf-field-card.is-missing:hover { background: #fff4f4; }
+
+.lf-field-row.is-missing .lf-field-label::after,
+.lf-field-card.is-missing .lf-field-card-label::after {
+  content: '✕ Required';
+  font-size: .65rem; font-weight: 600; letter-spacing: .03em;
+  background: var(--lf-danger-light); color: var(--lf-danger);
+  padding: 1px 5px; border-radius: 4px; flex-shrink: 0;
+}
+
+.lf-field-updated {
+  font-size: .65rem; font-weight: 600;
+  background: var(--lf-warning-light); color: var(--lf-warning);
+  padding: 1px 5px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;
+}
+.lf-sensitive-tag {
+  font-size: .65rem; font-weight: 600;
+  background: var(--lf-danger-light); color: var(--lf-danger);
+  padding: 1px 5px; border-radius: 4px;
+}
+.lf-readonly-icon { font-size: .75rem; opacity: .5; cursor: default; }
+
+
+/* ─────────────────────────────────────────────────────────
+   7d. Field value type renderers
+   ───────────────────────────────────────────────────────── */
+
+/* Multiselect / Checkboxes */
+.lf-chip-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.lf-chip { font-size: .77rem; font-weight: 500; padding: 3px 10px; border-radius: 999px; display: flex; align-items: center; gap: 4px; }
+.lf-chip--check { background: var(--lf-success-light); color: var(--lf-success); }
+.lf-chip--check::before { content: '✓'; font-size: .65rem; }
+
+/* File upload */
+.lf-file-list { display: flex; flex-direction: column; gap: 5px; }
+.lf-file-item {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--lf-bg); border: 1px solid var(--lf-border);
+  border-radius: var(--lf-radius-sm); padding: 6px 10px;
+  font-size: .82rem; color: var(--lf-text-primary);
+  text-decoration: none; transition: all .12s; width: fit-content; max-width: 100%;
+}
+.lf-file-item:hover { border-color: var(--lf-accent); background: var(--lf-accent-light); color: var(--lf-accent); text-decoration: none; }
+.lf-file-ext {
+  font-size: .6rem; font-weight: 700; letter-spacing: .04em;
+  background: var(--lf-accent); color: white; padding: 1px 4px; border-radius: 3px;
+  text-transform: uppercase; flex-shrink: 0;
+}
+
+/* Orgchart position block */
+.lf-orgchart-block {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--lf-bg); border: 1px solid var(--lf-border);
+  border-radius: var(--lf-radius-sm); padding: 8px 12px; margin-top: 4px;
+  cursor: pointer; transition: border-color .12s; width: fit-content;
+}
+.lf-orgchart-block:hover  { border-color: var(--lf-accent); }
+.lf-orgchart-name         { font-weight: 500; font-size: .88rem; }
+.lf-orgchart-meta         { font-size: .77rem; color: var(--lf-text-secondary); }
+
+
+/* ─────────────────────────────────────────────────────────
+   8. Section Subheadings (within tab panels)
+   ───────────────────────────────────────────────────────── */
+.lf-section-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 22px 6px;
+  border-bottom: 1px solid var(--lf-border);
+  background: var(--lf-bg);
+}
+.lf-section-label { font-size: .69rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--lf-text-muted); white-space: nowrap; }
+.lf-section-rule  { flex: 1; height: 1px; background: var(--lf-border); }
+
+
+/* ─────────────────────────────────────────────────────────
+   9. Sidebar Panels
+   ───────────────────────────────────────────────────────── */
+.lf-panel {
+  background: var(--lf-surface); border: 1px solid var(--lf-border);
+  border-radius: var(--lf-radius-md); overflow: hidden; box-shadow: var(--lf-shadow-xs);
+}
+.lf-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--lf-border);
+  cursor: pointer; user-select: none; transition: background .12s;
+}
+.lf-panel-header:hover                          { background: var(--lf-bg); }
+.lf-panel-header.is-open + .lf-panel-body       { display: block; }
+.lf-panel-title   { font-size: .73rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--lf-text-secondary); }
+.lf-panel-chevron { font-size: .7rem; color: var(--lf-text-muted); transition: transform .2s; line-height: 1; }
+.lf-panel-header.is-open .lf-panel-chevron { transform: rotate(180deg); }
+.lf-panel-body    { padding: 10px 14px; display: none; }
+
+/* 9a. Tools */
+.lf-tool-list { display: flex; flex-direction: column; gap: 1px; }
+.lf-tool-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px; border-radius: var(--lf-radius-sm);
+  font-size: .83rem; color: var(--lf-text-primary);
+  background: none; border: none; text-align: left; width: 100%;
+  cursor: pointer; transition: background .1s;
+}
+.lf-tool-btn:hover         { background: var(--lf-bg); }
+.lf-tool-btn--danger:hover { background: var(--lf-danger-light); color: var(--lf-danger); }
+.lf-tool-icon { width: 17px; text-align: center; font-size: .9rem; flex-shrink: 0; opacity: .7; }
+.lf-tool-sep  { height: 1px; background: var(--lf-border); margin: 5px 0; }
+
+/* 9b. Internal Use tabs */
+.lf-int-tab-list { display: flex; flex-direction: column; gap: 1px; }
+.lf-int-tab {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 8px; border-radius: var(--lf-radius-sm); border: none;
+  font-size: .82rem; color: var(--lf-text-secondary);
+  background: none; cursor: pointer; text-align: left; width: 100%; transition: all .1s;
+}
+.lf-int-tab:hover    { background: var(--lf-bg); }
+.lf-int-tab.is-active { background: var(--lf-accent-light); color: var(--lf-accent); font-weight: 500; }
+.lf-int-tab-dot      { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+/* 9c. Comments */
+.lf-comment-thread   { display: flex; flex-direction: column; gap: 7px; }
+.lf-comment          { background: var(--lf-bg); border-radius: var(--lf-radius-sm); padding: 8px 10px; }
+.lf-comment-meta     { font-size: .69rem; color: var(--lf-text-muted); display: flex; gap: 5px; margin-bottom: 3px; }
+.lf-comment-author   { font-weight: 600; color: var(--lf-text-secondary); }
+.lf-comment-text     { font-size: .81rem; color: var(--lf-text-primary); }
+.lf-comment-form     { display: flex; gap: 6px; margin-top: 8px; }
+.lf-comment-input {
+  flex: 1; font-family: var(--lf-font-sans); font-size: .81rem;
+  border: 1px solid var(--lf-border); border-radius: var(--lf-radius-sm);
+  padding: 6px 9px; outline: none; transition: border-color .15s; background: var(--lf-surface);
+}
+.lf-comment-input:focus  { border-color: var(--lf-accent); }
+.lf-comment-submit {
+  background: var(--lf-accent); color: white; border: none;
+  border-radius: var(--lf-radius-sm); padding: 6px 12px;
+  font-size: .78rem; font-weight: 500; cursor: pointer; transition: background .12s; flex-shrink: 0;
+}
+.lf-comment-submit:hover { background: var(--lf-accent-dark); }
+
+/* 9d. Permissions */
+.lf-perm-list        { display: flex; flex-direction: column; }
+.lf-perm-item        { display: flex; align-items: center; gap: 7px; padding: 6px 0; border-bottom: 1px solid var(--lf-border); font-size: .82rem; }
+.lf-perm-item:last-child { border-bottom: none; }
+.lf-perm-label       { flex: 1; color: var(--lf-text-secondary); }
+.lf-perm-badge       { font-size: .68rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; }
+.lf-perm-badge--yes  { background: var(--lf-success-light); color: var(--lf-success); }
+.lf-perm-badge--no   { background: var(--lf-danger-light);  color: var(--lf-danger); }
+
+
+/* ─────────────────────────────────────────────────────────
+   10. Badges & Tags
+   ───────────────────────────────────────────────────────── */
+.lf-badge         { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; font-weight: 600; letter-spacing: .02em; padding: 3px 9px; border-radius: 999px; }
+.lf-badge-dot     { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.lf-badge--inprogress { background: var(--lf-warning-light); color: var(--lf-warning); }
+.lf-badge--submitted  { background: var(--lf-success-light); color: var(--lf-success); }
+.lf-badge--cancelled  { background: var(--lf-danger-light);  color: var(--lf-danger); }
+.lf-badge--draft      { background: var(--lf-bg); color: var(--lf-text-secondary); border: 1px solid var(--lf-border); }
+.lf-tag { font-size: .73rem; font-weight: 500; background: var(--lf-accent-light); color: var(--lf-accent); padding: 2px 9px; border-radius: 999px; border: 1px solid var(--lf-accent-border); }
+
+
+/* ─────────────────────────────────────────────────────────
+   11. Buttons
+   ───────────────────────────────────────────────────────── */
+.lf-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  border-radius: var(--lf-radius-sm); padding: 6px 13px;
+  font-size: .81rem; font-weight: 500; border: 1px solid transparent;
+  cursor: pointer; transition: background .12s, border-color .12s, color .12s;
+  white-space: nowrap; font-family: var(--lf-font-sans);
+}
+.lf-btn--ghost   { background: none; border-color: var(--lf-border); color: var(--lf-text-secondary); }
+.lf-btn--ghost:hover { background: var(--lf-bg); border-color: var(--lf-border-hover); color: var(--lf-text-primary); }
+.lf-btn--primary { background: var(--lf-accent); color: var(--lf-text-inverse); border-color: var(--lf-accent); }
+.lf-btn--primary:hover { background: var(--lf-accent-dark); border-color: var(--lf-accent-dark); }
+.lf-btn--danger  { background: none; border-color: #fca5a5; color: var(--lf-danger); }
+.lf-btn--danger:hover { background: var(--lf-danger-light); }
+
+
+/* ─────────────────────────────────────────────────────────
+   12. Animations
+   ───────────────────────────────────────────────────────── */
+@keyframes lf-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.lf-tab-panel.is-active .lf-field-row,
+.lf-tab-panel.is-active .lf-field-card,
+.lf-tab-panel.is-active .lf-section-row { animation: lf-fade-up .18s ease both; }
+
+.lf-tab-panel.is-active .lf-field-row:nth-child(1)  { animation-delay: .02s; }
+.lf-tab-panel.is-active .lf-field-row:nth-child(2)  { animation-delay: .04s; }
+.lf-tab-panel.is-active .lf-field-row:nth-child(3)  { animation-delay: .07s; }
+.lf-tab-panel.is-active .lf-field-row:nth-child(4)  { animation-delay: .09s; }
+.lf-tab-panel.is-active .lf-field-row:nth-child(5)  { animation-delay: .11s; }
+.lf-tab-panel.is-active .lf-field-row:nth-child(6)  { animation-delay: .13s; }
+.lf-tab-panel.is-active .lf-field-row:nth-child(7)  { animation-delay: .15s; }
+.lf-tab-panel.is-active .lf-field-row:nth-child(8)  { animation-delay: .17s; }
+.lf-tab-panel.is-active .lf-field-row:nth-child(9)  { animation-delay: .19s; }
+.lf-tab-panel.is-active .lf-field-row:nth-child(10) { animation-delay: .21s; }
+
+.lf-page-aside .lf-panel:nth-child(1) { animation: lf-fade-up .3s .10s ease both; }
+.lf-page-aside .lf-panel:nth-child(2) { animation: lf-fade-up .3s .15s ease both; }
+.lf-page-aside .lf-panel:nth-child(3) { animation: lf-fade-up .3s .20s ease both; }
+.lf-page-aside .lf-panel:nth-child(4) { animation: lf-fade-up .3s .25s ease both; }
+
+
+/* ─────────────────────────────────────────────────────────
+   13. Print overrides
+   ───────────────────────────────────────────────────────── */
+@media print {
+  /* Show all tab panels simultaneously */
+  .lf-tab-panel           { display: block !important; }
+  .lf-tabs-header         { display: none; }
+
+  /* Kill animations */
+  .lf-tab-panel.is-active .lf-field-row,
+  .lf-tab-panel.is-active .lf-field-card,
+  .lf-tab-panel.is-active .lf-section-row,
+  .lf-record-header, .lf-progress-row, .lf-form-tabs,
+  .lf-page-aside .lf-panel { animation: none !important; }
+
+  /* Hide screen-only chrome */
+  .lf-topbar, .lf-page-aside, .lf-field-edit,
+  .lf-progress-row, .lf-comment-form, .lf-btn--primary { display: none !important; }
+
+  /* Open all panels */
+  .lf-panel-body { display: block !important; }
+
+  /* Unblur sensitive on print — presenter has already authenticated */
+  .lf-field-value--sensitive { filter: none; }
+
+  /* Single column */
+  .lf-page { grid-template-columns: 1fr; padding: 0; gap: 12px; }
+  .lf-form-tabs { border: none; box-shadow: none; }
+  .lf-field-row, .lf-field-card { break-inside: avoid; }
+  .lf-section-row { break-after: avoid; }
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   14. Responsive
+   ───────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .lf-page       { grid-template-columns: 1fr; }
+  .lf-page-aside { position: static; }
+}
+
+@media (max-width: 640px) {
+  .lf-field-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding: 10px 14px;
+  }
+  .lf-field-num   { display: none; }
+  .lf-field-label { padding-left: 0; grid-column: 1; grid-row: 1; white-space: normal; }
+  .lf-field-value { grid-column: 1 / -1; grid-row: 2; font-size: .85rem; }
+  .lf-field-edit  { display: none; }
+  .lf-topbar-actions .lf-btn--ghost { display: none; }
+}
