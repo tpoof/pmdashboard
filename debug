@@ -1,7 +1,6 @@
-const badge = document.querySelector(".ip-creditBadge");
-const s = window.getComputedStyle(badge);
-console.log("position:", s.position);
-console.log("bottom:", s.bottom);
-console.log("left:", s.left);
-console.log("background:", s.background);
-console.log("border-radius:", s.borderRadius);
+const cat = document.getElementById("inpCategory");
+const imp = document.getElementById("inpImpact");
+console.log("category options:", cat ? cat.options.length : "not found");
+console.log("impact options:", imp ? imp.options.length : "not found");
+console.log("first category:", cat?.options[1]?.text);
+console.log("first impact:", imp?.options[1]?.text);
