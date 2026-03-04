@@ -174,6 +174,8 @@ let userVotes = (function () {
 })();
 let votingInProgress = false;
 let ideaSubmitInProgress = false;
+let isDraft = false;
+let workflowSteps = [];
 let myIdeasCache = [];
 let lastFocusedElement = null;
 let lastRecordFocusedElement = null;
@@ -751,20 +753,26 @@ function buildIdeaRow(idea) {
     : "";
   const votes = idea.votes || 0;
   const isVoted = idea.isVoted === true;
+  const isIdeaDraft = idea.isDraft === true;
   const recordLink = idea.recordLink || RECORD_VIEW_URL + recordID;
   const labelTitle = title || `Idea ${recordID}`;
+  const draftBadge = isIdeaDraft ? `<span class="ip-badge ip-badge--draft">Draft</span>` : '';
+  const draftEditBtn = isIdeaDraft
+    ? `<button class="ip-btn ip-btn--ghost ip-editDraft" data-record-id="${recordID}">Edit Draft</button>`
+    : '';
 
   return `<tr data-record-id="${recordID}">
 <td><a class="ip-recordLink" data-title="${title}" aria-haspopup="dialog" href="${recordLink}">${recordID}</a></td>
 <td title="${title}">${titleDisplay}</td>
 <td>${category}</td>
-<td>${statusMarkup}</td>
+<td>${statusMarkup}${draftBadge}</td>
 <td class="ip-votes">${votes}</td>
 <td class="ip-actionsCell">
 <button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}" data-record-id="${recordID}" ${isVoted ? "disabled" : ""} aria-label="Vote for ${labelTitle}" aria-disabled="${isVoted ? "true" : "false"}" title="${isVoted ? "You\'ve already voted for this idea" : "Vote for this idea"}">
 <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
 </button>
 <button class="ip-btn ip-btn--ghost ip-share" data-record-link="${recordLink}" aria-label="Share ${labelTitle}" title="Copy shareable link">Share</button>
+${draftEditBtn}
 </td>
 </tr>`;
 }
@@ -997,6 +1005,7 @@ function buildIdeasQueryUrl() {
     terms: [
       { id: "categoryID", operator: "=", match: FORM_IDS.idea, gate: "AND" },
       { id: "deleted", operator: "=", match: 0, gate: "AND" },
+      { id: "stepID", operator: "!=", match: "notSubmitted", gate: "AND" },
     ],
     joins: [],
     sort: { id: "created_date", direction: "desc" },
@@ -1075,7 +1084,7 @@ function fetchUserSubmissions() {
     ],
     joins: [],
     sort: {},
-    getData: IDEA_GETDATA,
+    getData: ["8", "9", "13", "stepID"],
   };
   const queryString = encodeURIComponent(JSON.stringify(query));
 
@@ -1096,7 +1105,12 @@ function fetchUserSubmissions() {
         const fallbackIdeas = filterIdeasByUser();
         myIdeasCache = fallbackIdeas;
       } else {
-        myIdeasCache = buildIdeasViewModelList(userIdeas, false);
+        const vms = buildIdeasViewModelList(userIdeas, false);
+        myIdeasCache = vms.map(function(vm) {
+          const raw = userIdeas.find(function(r) { return String(r.recordID) === String(vm.recordID); });
+          const step = raw && raw.s1 && raw.s1.stepID;
+          return Object.assign({}, vm, { isDraft: !step || step === 'notSubmitted' });
+        });
       }
       renderMyIdeas();
       setStatus("my", "", "");
@@ -1188,6 +1202,12 @@ function NewIdea() {
   const impactValue = impactInput ? impactInput.value.trim() : "";
   const otherCategoryValue = otherCategoryInput ? otherCategoryInput.value.trim() : "";
 
+  // Capture and reset isDraft flag immediately so it can't leak
+  const savingAsDraft = isDraft;
+  isDraft = false;
+
+  const existingDraftID = form && form.dataset.draftRecordId ? form.dataset.draftRecordId : null;
+
   const payload = {
     service: "",
     title: titleValue || "Idea Submission",
@@ -1208,9 +1228,39 @@ function NewIdea() {
   if (submissionAlert) submissionAlert.hidden = true;
   ideaSubmitInProgress = true;
 
-  apiPostJson("./api/?a=form/new", payload)
-    .then(function (response) {
-      var recordID = parseFloat(response);
+  // If editing an existing draft, update the record fields instead of creating new
+  var createPromise;
+  if (existingDraftID) {
+    const updatePayload = new URLSearchParams({
+      CSRFToken: csrfToken,
+      series: "1",
+      title: titleValue || "Idea Submission",
+    });
+    updatePayload.append(String(IDEA_FIELDS.title), titleValue);
+    updatePayload.append(String(IDEA_FIELDS.summary), descriptionValue);
+    updatePayload.append(String(IDEA_FIELDS.benefit), benefitValue);
+    updatePayload.append(String(IDEA_FIELDS.category), categoryValue);
+    updatePayload.append(String(IDEA_FIELDS.impact), impactValue);
+    if (categoryValue === "Other" && otherCategoryValue) {
+      updatePayload.append(String(IDEA_FIELDS.other_category), otherCategoryValue);
+    }
+    console.log("[Draft] updating existing record", existingDraftID);
+    createPromise = fetch(`./api/?a=form/${existingDraftID}`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: updatePayload,
+    })
+      .then(r => r.text())
+      .then(function() { return existingDraftID; });
+  } else {
+    createPromise = apiPostJson("./api/?a=form/new", payload)
+      .then(function(response) { return parseFloat(response); });
+  }
+
+  createPromise
+    .then(function (recordID) {
+      recordID = parseFloat(recordID);
       if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
         // Capture files BEFORE any reset happens
         var fileInputEl = document.getElementById("fileInput");
@@ -1237,16 +1287,26 @@ function NewIdea() {
           });
         }
 
-        alert("Your idea has been submitted successfully.");
         if (form) {
           form.reset();
           form.classList.remove("was-validated");
+          delete form.dataset.draftRecordId;
         }
         if (fileInputEl) fileInputEl.value = "";
         const fileList = document.getElementById("fileList");
         if (fileList) fileList.innerHTML = "";
         closeModal("addIdeaModal");
-        updateTable();
+
+        if (savingAsDraft) {
+          alert("Draft saved. You can find it in My Ideas.");
+          fetchUserSubmissions();
+        } else {
+          advanceWorkflow(recordID).then(function() {
+            alert("Your idea has been submitted successfully.");
+            updateTable();
+            fetchUserSubmissions();
+          });
+        }
       } else {
         alert("Error submitting idea.");
       }
@@ -1325,6 +1385,13 @@ function bindDelegatedEvents() {
       if (upvoteBtn.disabled) return;
       const ideanum = upvoteBtn.getAttribute("data-record-id");
       IdeaVotes(ideanum);
+      return;
+    }
+
+    const editDraftBtn = e.target.closest(".ip-editDraft");
+    if (editDraftBtn) {
+      const recordID = editDraftBtn.getAttribute("data-record-id");
+      loadDraftIntoModal(recordID);
       return;
     }
 
@@ -1415,6 +1482,85 @@ function populateSelect(select, options, appendOther) {
     other.value = 'Other';
     other.textContent = 'Other';
     select.appendChild(other);
+  }
+}
+
+async function fetchWorkflowSteps() {
+  try {
+    const res = await fetch('./api/workflow/1/', { credentials: 'same-origin' });
+    const data = await res.json();
+    const steps = Object.entries(data);
+    console.log('[Workflow] steps:', steps);
+    return steps;
+  } catch (err) {
+    console.warn('[Workflow] could not fetch steps:', err);
+    return [];
+  }
+}
+
+async function advanceWorkflow(recordID) {
+  try {
+    const stepRes = await fetch(`./api/formWorkflow/${recordID}/currentStep`, {
+      credentials: 'same-origin'
+    });
+    const stepData = await stepRes.json();
+    console.log('[Workflow] current step:', stepData);
+
+    const firstStep = Array.isArray(stepData) ? stepData[0] : stepData;
+    const applyRes = await fetch(`./api/formWorkflow/${recordID}/apply`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        CSRFToken: csrfToken,
+        actionType: 'submit',
+        dependencyID: (firstStep && firstStep.dependencyID) || (firstStep && firstStep.stepID) || 1,
+      }),
+    });
+    const applyData = await applyRes.text();
+    console.log('[Workflow] advance response:', applyData);
+    return applyData;
+  } catch (err) {
+    console.warn('[Workflow] advance failed:', err);
+  }
+}
+
+async function loadDraftIntoModal(recordID) {
+  try {
+    const res = await fetch(`./api/form/${recordID}/data`, {
+      credentials: 'same-origin'
+    });
+    const data = await res.json();
+    const record = Object.values(data)[0];
+    const s1 = record && record.s1 ? record.s1 : {};
+    console.log('[Draft] loaded record', recordID, s1);
+
+    const form = document.getElementById('ideaForm');
+    const titleEl = document.getElementById('inpTitle');
+    const descEl = document.getElementById('inpDescription');
+    const benefitEl = document.getElementById('inpBenefit');
+    const catEl = document.getElementById('inpCategory');
+    const impactEl = document.getElementById('inpImpact');
+    const otherCatEl = document.getElementById('inpOtherCategory');
+    const otherWrapper = document.getElementById('otherCategoryWrapper');
+
+    if (titleEl) titleEl.value = s1['id' + IDEA_FIELDS.title] || '';
+    if (descEl) descEl.value = s1['id' + IDEA_FIELDS.summary] || '';
+    if (benefitEl) benefitEl.value = s1['id' + IDEA_FIELDS.benefit] || '';
+    if (catEl) catEl.value = s1['id' + IDEA_FIELDS.category] || '';
+    if (impactEl) impactEl.value = s1['id' + IDEA_FIELDS.impact] || '';
+
+    const catValue = s1['id' + IDEA_FIELDS.category] || '';
+    const otherCatValue = s1['id' + IDEA_FIELDS.other_category] || '';
+    if (catValue === 'Other' && otherCatEl && otherWrapper) {
+      otherCatEl.value = otherCatValue;
+      otherWrapper.style.display = 'block';
+    }
+
+    if (form) form.dataset.draftRecordId = recordID;
+    openModal('addIdeaModal');
+  } catch (err) {
+    console.warn('[Draft] failed to load:', err);
   }
 }
 
@@ -1516,6 +1662,7 @@ function initValidation() {
         if (!form.checkValidity()) {
           event.preventDefault();
           event.stopPropagation();
+          isDraft = false;
         } else {
           event.preventDefault();
           if (typeof NewIdea === "function") {
@@ -1543,6 +1690,11 @@ document.addEventListener("DOMContentLoaded", function () {
   bindCategoryChange();
   loadCategoryOptions();
   loadImpactOptions();
+  fetchWorkflowSteps().then(function(steps) { workflowSteps = steps; });
+  document.getElementById('saveDraftButton')?.addEventListener('click', function() {
+    isDraft = true;
+    document.getElementById('ideaForm').requestSubmit();
+  });
   wireJumpToTop();
   initValidation();
   try {

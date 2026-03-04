@@ -1911,6 +1911,11 @@ body.smarty.page-ideaportal .ip-badge {
   margin-right: 0.5rem;
 }
 
+body.smarty.page-ideaportal .ip-badge--draft {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
 /* ── Idea Portal: Table edge alignment ──────────────────── */
 body.smarty.page-ideaportal .ip-tableWrap {
   width: 100%;
