@@ -1,18 +1,15 @@
-// Check what userID the portal thinks you are
-console.log("portal userID:", window.leafIdeaPortal.userID);
-
-// Check what userID is on existing records
 fetch(
   "https://leaf.va.gov/platform/ideas/api/form/query/?q=" +
     encodeURIComponent(
       JSON.stringify({
         terms: [
+          { id: "userID", operator: "=", match: "oitauslumags", gate: "AND" },
           { id: "categoryID", operator: "=", match: "form_ae642", gate: "AND" },
           { id: "deleted", operator: "=", match: 0, gate: "AND" },
         ],
         joins: [],
-        sort: { id: "created_date", direction: "desc" },
-        getData: ["5"],
+        sort: {},
+        getData: ["5", "stepID"],
       }),
     ) +
     "&x-filterData=recordID,title,created_date,userID",
@@ -20,9 +17,5 @@ fetch(
     credentials: "same-origin",
   },
 )
-  .then((r) => r.json())
-  .then((data) => {
-    Object.values(data).forEach((r) => {
-      console.log("recordID:", r.recordID, "userID:", r.userID);
-    });
-  });
+  .then((r) => r.text())
+  .then(console.log);
