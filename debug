@@ -1,14 +1,21 @@
-fetch('/platform/ideas/api/form/query/?q=' + encodeURIComponent(JSON.stringify({
-  terms: [
-    { id: "userID", operator: "=", match: window.leafIdeaPortal.userID, gate: "AND" },
-    { id: "categoryID", operator: "=", match: "form_ae642", gate: "AND" },
-    { id: "deleted", operator: "=", match: 0, gate: "AND" }
-  ],
-  joins: [],
-  sort: {},
-  getData: ["5", "8", "9", "13", "stepID"]
-})) + '&x-filterData=recordID,title,created_date,userID', {
-  credentials: 'same-origin'
-})
-.then(r => r.text())
-.then(console.log)
+fetch(
+  "/platform/ideas/api/form/query/?q=" +
+    encodeURIComponent(
+      JSON.stringify({
+        terms: [{ id: "deleted", operator: "=", match: 0, gate: "AND" }],
+        joins: [],
+        sort: {},
+        getData: ["5"],
+      }),
+    ) +
+    "&x-filterData=recordID,title,created_date,userID",
+  {
+    credentials: "same-origin",
+  },
+)
+  .then((r) => r.text())
+  .then(console.log);
+
+fetch("/platform/ideas/api/form/", { credentials: "same-origin" })
+  .then((r) => r.text())
+  .then(console.log);
