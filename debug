@@ -1,15 +1,6 @@
-// Try without userID filter - does this return anything?
+// Also try this exact format that mirrors what worked earlier
 fetch(
-  "https://leaf.va.gov/platform/ideas/api/form/query/?q=" +
-    encodeURIComponent(
-      JSON.stringify({
-        terms: [{ id: "deleted", operator: "=", match: 0, gate: "AND" }],
-        joins: [],
-        sort: {},
-        getData: ["5", "stepID"],
-      }),
-    ) +
-    "&x-filterData=recordID,title,created_date,userID",
+  'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5"]}&x-filterData=recordID,title,created_date,userID',
   {
     credentials: "same-origin",
   },
