@@ -1,6 +1,5 @@
-// Also try this exact format that mirrors what worked earlier
 fetch(
-  'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5"]}&x-filterData=recordID,title,created_date,userID',
+  'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"userID","operator":"=","match":"oitauslumags","gate":"AND"},{"id":"categoryID","operator":"=","match":"form_ae642","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","13","stepID"]}&x-filterData=recordID,title,created_date,userID',
   {
     credentials: "same-origin",
   },
