@@ -1183,7 +1183,15 @@ function getAttachmentValue() {
   return files.length ? files.join("\r\n") : "";
 }
 
-function NewIdea() {
+function showSuccessMessage(msg) {
+  var el = document.getElementById("submissionAlert");
+  if (!el) return;
+  el.textContent = msg;
+  el.hidden = false;
+  setTimeout(function () { el.hidden = true; }, 4000);
+}
+
+async function NewIdea() {
   if (ideaSubmitInProgress) return;
   const form = document.getElementById("ideaForm");
   const submitButton = document.getElementById("submitButton");
@@ -1193,7 +1201,6 @@ function NewIdea() {
   const categoryInput = document.getElementById("inpCategory");
   const impactInput = document.getElementById("inpImpact");
   const otherCategoryInput = document.getElementById("inpOtherCategory");
-  const submissionAlert = document.getElementById("submissionAlert");
 
   const titleValue = titleInput ? titleInput.value.trim() : "";
   const descriptionValue = descriptionInput ? descriptionInput.value.trim() : "";
@@ -1206,8 +1213,60 @@ function NewIdea() {
   const savingAsDraft = isDraft;
   isDraft = false;
 
+  // Part 9 — re-submit or re-save an existing draft
   const existingDraftID = form && form.dataset.draftRecordId ? form.dataset.draftRecordId : null;
+  if (existingDraftID) {
+    if (submitButton) submitButton.disabled = true;
+    ideaSubmitInProgress = true;
+    try {
+      const updatePayload = new URLSearchParams({
+        CSRFToken: csrfToken,
+        series: "1",
+        title: titleValue || "Idea Submission",
+      });
+      updatePayload.append(String(IDEA_FIELDS.title), titleValue);
+      updatePayload.append(String(IDEA_FIELDS.summary), descriptionValue);
+      updatePayload.append(String(IDEA_FIELDS.benefit), benefitValue);
+      updatePayload.append(String(IDEA_FIELDS.category), categoryValue);
+      updatePayload.append(String(IDEA_FIELDS.impact), impactValue);
+      if (categoryValue === "Other" && otherCategoryValue) {
+        updatePayload.append(String(IDEA_FIELDS.other_category), otherCategoryValue);
+      }
+      console.log("[Draft] updating existing record", existingDraftID);
+      await fetch(`./api/?a=form/${existingDraftID}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: updatePayload,
+      });
 
+      if (form) {
+        form.reset();
+        form.classList.remove("was-validated");
+        delete form.dataset.draftRecordId;
+      }
+      closeModal("addIdeaModal");
+
+      if (savingAsDraft) {
+        showSuccessMessage("Draft saved. You can find it in My Ideas.");
+        fetchUserSubmissions();
+      } else {
+        await advanceWorkflow(existingDraftID);
+        showSuccessMessage("Your idea has been submitted successfully.");
+        updateTable();
+        fetchUserSubmissions();
+      }
+    } catch (err) {
+      console.warn("[Draft] update failed:", err);
+      showSuccessMessage("Error saving draft.");
+    } finally {
+      ideaSubmitInProgress = false;
+      if (submitButton) submitButton.disabled = false;
+    }
+    return;
+  }
+
+  // New idea creation
   const payload = {
     service: "",
     title: titleValue || "Idea Submission",
@@ -1225,99 +1284,59 @@ function NewIdea() {
   }
 
   if (submitButton) submitButton.disabled = true;
-  if (submissionAlert) submissionAlert.hidden = true;
   ideaSubmitInProgress = true;
 
-  // If editing an existing draft, update the record fields instead of creating new
-  var createPromise;
-  if (existingDraftID) {
-    const updatePayload = new URLSearchParams({
-      CSRFToken: csrfToken,
-      series: "1",
-      title: titleValue || "Idea Submission",
-    });
-    updatePayload.append(String(IDEA_FIELDS.title), titleValue);
-    updatePayload.append(String(IDEA_FIELDS.summary), descriptionValue);
-    updatePayload.append(String(IDEA_FIELDS.benefit), benefitValue);
-    updatePayload.append(String(IDEA_FIELDS.category), categoryValue);
-    updatePayload.append(String(IDEA_FIELDS.impact), impactValue);
-    if (categoryValue === "Other" && otherCategoryValue) {
-      updatePayload.append(String(IDEA_FIELDS.other_category), otherCategoryValue);
-    }
-    console.log("[Draft] updating existing record", existingDraftID);
-    createPromise = fetch(`./api/?a=form/${existingDraftID}`, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: updatePayload,
-    })
-      .then(r => r.text())
-      .then(function() { return existingDraftID; });
-  } else {
-    createPromise = apiPostJson("./api/?a=form/new", payload)
-      .then(function(response) { return parseFloat(response); });
-  }
-
-  createPromise
-    .then(function (recordID) {
-      recordID = parseFloat(recordID);
-      if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
-        // Capture files BEFORE any reset happens
-        var fileInputEl = document.getElementById("fileInput");
-        const filesToUpload = (fileInputEl && fileInputEl.files) ? Array.from(fileInputEl.files) : [];
-
-        if (filesToUpload.length > 0) {
-          const formData = new FormData();
-          formData.append("CSRFToken", csrfToken);
-          filesToUpload.forEach(file => {
-            formData.append("10", file);
-          });
-          console.log("[IdeaUpload] uploading", filesToUpload.length, "file(s) to record", recordID);
-          fetch(`./api/?a=form/${recordID}`, {
-            method: "POST",
-            credentials: "same-origin",
-            body: formData,
-          })
+  try {
+    const response = await apiPostJson("./api/?a=form/new", payload);
+    const recordID = parseFloat(response);
+    if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
+      // Upload files if any
+      var fileInputEl = document.getElementById("fileInput");
+      const filesToUpload = (fileInputEl && fileInputEl.files) ? Array.from(fileInputEl.files) : [];
+      if (filesToUpload.length > 0) {
+        const formData = new FormData();
+        formData.append("CSRFToken", csrfToken);
+        filesToUpload.forEach(file => { formData.append("10", file); });
+        console.log("[IdeaUpload] uploading", filesToUpload.length, "file(s) to record", recordID);
+        fetch(`./api/?a=form/${recordID}`, {
+          method: "POST",
+          credentials: "same-origin",
+          body: formData,
+        })
           .then(r => r.text())
-          .then(uploadResponse => {
-            console.log("[IdeaUpload] response", uploadResponse);
-          })
-          .catch(err => {
-            console.warn("[IdeaUpload] file upload failed", err);
-          });
-        }
-
-        if (form) {
-          form.reset();
-          form.classList.remove("was-validated");
-          delete form.dataset.draftRecordId;
-        }
-        if (fileInputEl) fileInputEl.value = "";
-        const fileList = document.getElementById("fileList");
-        if (fileList) fileList.innerHTML = "";
-        closeModal("addIdeaModal");
-
-        if (savingAsDraft) {
-          alert("Draft saved. You can find it in My Ideas.");
-          fetchUserSubmissions();
-        } else {
-          advanceWorkflow(recordID).then(function() {
-            alert("Your idea has been submitted successfully.");
-            updateTable();
-            fetchUserSubmissions();
-          });
-        }
-      } else {
-        alert("Error submitting idea.");
+          .then(res => { console.log("[IdeaUpload] response", res); })
+          .catch(err => { console.warn("[IdeaUpload] file upload failed", err); });
       }
-    })
-    .catch(function () {
-      alert("Error submitting idea.");
-    })
-    .finally(function () {
-      ideaSubmitInProgress = false;
-      if (submitButton) submitButton.disabled = false;
-    });
+
+      if (form) {
+        form.reset();
+        form.classList.remove("was-validated");
+        delete form.dataset.draftRecordId;
+      }
+      if (fileInputEl) fileInputEl.value = "";
+      const fileList = document.getElementById("fileList");
+      if (fileList) fileList.innerHTML = "";
+      closeModal("addIdeaModal");
+
+      if (savingAsDraft) {
+        showSuccessMessage("Draft saved. You can find it in My Ideas.");
+        fetchUserSubmissions();
+      } else {
+        await advanceWorkflow(recordID);
+        showSuccessMessage("Your idea has been submitted successfully.");
+        updateTable();
+        fetchUserSubmissions();
+      }
+    } else {
+      showSuccessMessage("Error submitting idea.");
+    }
+  } catch (err) {
+    console.warn("[NewIdea] error:", err);
+    showSuccessMessage("Error submitting idea.");
+  } finally {
+    ideaSubmitInProgress = false;
+    if (submitButton) submitButton.disabled = false;
+  }
 }
 
 function updateTable() {
@@ -1500,6 +1519,15 @@ async function fetchWorkflowSteps() {
 
 async function advanceWorkflow(recordID) {
   try {
+    // Step 1: mark submitted
+    await fetch(`./api/form/${recordID}/submit`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ CSRFToken: csrfToken }),
+    });
+
+    // Step 2: read current step for dependencyID and actionType
     const stepRes = await fetch(`./api/formWorkflow/${recordID}/currentStep`, {
       credentials: 'same-origin'
     });
@@ -1507,14 +1535,19 @@ async function advanceWorkflow(recordID) {
     console.log('[Workflow] current step:', stepData);
 
     const firstStep = Array.isArray(stepData) ? stepData[0] : stepData;
+    const depID = firstStep && firstStep.dependencyID;
+    const actions = firstStep && firstStep.dependencyActions;
+    const actionType = (Array.isArray(actions) && actions[0] && actions[0].actionType) || 'submit';
+
+    // Step 3: advance the workflow step
     const applyRes = await fetch(`./api/formWorkflow/${recordID}/apply`, {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         CSRFToken: csrfToken,
-        actionType: 'submit',
-        dependencyID: (firstStep && firstStep.dependencyID) || (firstStep && firstStep.stepID) || 1,
+        actionType: actionType,
+        dependencyID: depID,
       }),
     });
     const applyData = await applyRes.text();
