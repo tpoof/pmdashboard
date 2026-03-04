@@ -311,7 +311,7 @@ body.smarty.page-ideaportal .ip-textarea {
 body.smarty.page-ideaportal .ip-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: auto;
   background: #ffffff;
   min-width: 840px;
   font-size: 16px;
@@ -1917,6 +1917,21 @@ body.smarty.page-ideaportal .ip-tableWrap {
   box-sizing: border-box;
 }
 
+/* ID column — fit to content */
+body.smarty.page-ideaportal .ip-table th:nth-child(1),
+body.smarty.page-ideaportal .ip-table td:nth-child(1) {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* Votes column — fit to content */
+body.smarty.page-ideaportal .ip-table th:nth-child(5),
+body.smarty.page-ideaportal .ip-table td:nth-child(5) {
+  width: 1%;
+  white-space: nowrap;
+  text-align: center;
+}
+
 body.smarty.page-ideaportal .ip-table th:nth-child(6),
 body.smarty.page-ideaportal .ip-table td:nth-child(6) {
   width: 160px;
@@ -1965,4 +1980,31 @@ body.smarty.page-ideaportal .ip-creditBadge:hover {
 body.smarty.page-ideaportal .ip-creditBadge .material-symbols-outlined {
   font-size: 1rem;
   line-height: 1;
+}
+
+/* ── Idea Portal: ID Badge ──────────────────────────────── */
+body.smarty.page-ideaportal .ip-table td:nth-child(1) a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  background: #1f1f1f;
+  color: #fff !important;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 1em;
+  line-height: 1;
+  text-decoration: none;
+  text-align: center;
+}
+
+body.smarty.page-ideaportal .ip-table td:nth-child(1) a:hover,
+body.smarty.page-ideaportal .ip-table td:nth-child(1) a:focus {
+  background: #3a3a3a;
+  color: #fff !important;
+}
+
+body.smarty.page-ideaportal .ip-table td:nth-child(1) a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
