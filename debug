@@ -1,8 +1,11 @@
-fetch(
-  'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5"]}&x-filterData=recordID,title,categoryID,userID',
-  {
-    credentials: "same-origin",
-  },
-)
+fetch("https://leaf.va.gov/platform/ideas/api/form/10/", {
+  credentials: "same-origin",
+})
+  .then((r) => r.text())
+  .then(console.log);
+
+fetch("https://leaf.va.gov/platform/ideas/api/form/1/", {
+  credentials: "same-origin",
+})
   .then((r) => r.text())
   .then(console.log);
