@@ -1,6 +1,0 @@
-const cat = document.getElementById("inpCategory");
-const imp = document.getElementById("inpImpact");
-console.log("category options:", cat ? cat.options.length : "not found");
-console.log("impact options:", imp ? imp.options.length : "not found");
-console.log("first category:", cat?.options[1]?.text);
-console.log("first impact:", imp?.options[1]?.text);

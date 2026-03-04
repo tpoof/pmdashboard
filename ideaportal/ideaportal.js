@@ -1399,23 +1399,51 @@ function bindFileInput() {
 }
 
 function populateSelect(select, options, appendOther) {
-  var placeholder = select.options[0];
-  select.innerHTML = "";
-  if (placeholder) {
-    select.appendChild(placeholder);
-  }
-  options.forEach(function (label) {
-    var opt = document.createElement("option");
-    opt.value = label;
-    opt.textContent = label;
-    select.appendChild(opt);
+  if (!select) return;
+  const placeholder = select.options[0];
+  select.innerHTML = '';
+  if (placeholder) select.appendChild(placeholder);
+  options.forEach(opt => {
+    const el = document.createElement('option');
+    const label = typeof opt === 'string' ? opt : (opt.label || opt.name || opt);
+    el.value = label;
+    el.textContent = label;
+    select.appendChild(el);
   });
   if (appendOther) {
-    var otherOpt = document.createElement("option");
-    otherOpt.value = "Other";
-    otherOpt.textContent = "Other";
-    select.appendChild(otherOpt);
+    const other = document.createElement('option');
+    other.value = 'Other';
+    other.textContent = 'Other';
+    select.appendChild(other);
   }
+}
+
+function loadCategoryOptions() {
+  fetch(`./ajaxIndex.php?a=getindicator&indicatorID=${IDEA_FIELDS.category}&series=1&recordID=0`, {
+    credentials: 'same-origin'
+  })
+    .then(r => r.json())
+    .then(data => {
+      const options = data[0]?.options || CATEGORY_FALLBACK;
+      populateSelect(document.getElementById('inpCategory'), options, true);
+    })
+    .catch(() => {
+      populateSelect(document.getElementById('inpCategory'), CATEGORY_FALLBACK, true);
+    });
+}
+
+function loadImpactOptions() {
+  fetch(`./ajaxIndex.php?a=getindicator&indicatorID=${IDEA_FIELDS.impact}&series=1&recordID=0`, {
+    credentials: 'same-origin'
+  })
+    .then(r => r.json())
+    .then(data => {
+      const options = data[0]?.options || IMPACT_FALLBACK;
+      populateSelect(document.getElementById('inpImpact'), options, false);
+    })
+    .catch(() => {
+      populateSelect(document.getElementById('inpImpact'), IMPACT_FALLBACK, false);
+    });
 }
 
 function bindCategoryChange() {
@@ -1505,8 +1533,8 @@ document.addEventListener("DOMContentLoaded", function () {
   bindSearch();
   bindFileInput();
   bindCategoryChange();
-  populateSelect(document.getElementById("inpCategory"), CATEGORY_FALLBACK, true);
-  populateSelect(document.getElementById("inpImpact"), IMPACT_FALLBACK, false);
+  loadCategoryOptions();
+  loadImpactOptions();
   wireJumpToTop();
   initValidation();
   try {
