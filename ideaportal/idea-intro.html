@@ -1,31 +1,18 @@
-{* ============================================================ LEAF Idea Portal
-— Welcome Header Smarty Template Test Page Usage: Drop into your LEAF templates
-directory and point your route at this .tpl to preview in-engine. Static
-fallbacks are provided for all Smarty variables so the file also renders
-correctly as plain HTML in a browser.
-============================================================ *}
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    {* Dynamic page title — falls back to static string in plain-HTML preview *}
-    <title>{$portal_title|default:'LEAF Idea Portal'}</title>
-
+    <title>LEAF Idea Portal</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap"
       rel="stylesheet"
     />
-
     <style>
       /* ============================================================
      LEAF BACKEND HEADER OVERRIDE
-     Hides the default LEAF / CMS chrome so only our portal
-     header renders. Uses !important throughout to win the
-     specificity battle against any injected framework styles.
+     Hides default LEAF / CMS chrome with !important overrides
      ============================================================ */
-
       #header,
       .header,
       header.site-header,
@@ -59,9 +46,6 @@ correctly as plain HTML in a browser.
         padding: 0 !important;
         border: none !important;
       }
-
-      /* Also collapse any top-padding/margin the CMS adds to <body>
-     to compensate for its header bar */
       body {
         padding-top: 0 !important;
         margin-top: 0 !important;
@@ -110,7 +94,6 @@ correctly as plain HTML in a browser.
         text-align: center;
       }
 
-      /* Subtle leaf-vein tile + soft radial glows */
       .leaf-hero::before {
         content: "";
         position: absolute;
@@ -134,7 +117,6 @@ correctly as plain HTML in a browser.
         pointer-events: none;
       }
 
-      /* Decorative corner leaf silhouettes */
       .leaf-deco {
         position: absolute;
         opacity: 0.12;
@@ -164,7 +146,6 @@ correctly as plain HTML in a browser.
         transform: rotate(-10deg) scaleX(-1);
       }
 
-      /* Centered content column */
       .hero-inner {
         position: relative;
         z-index: 2;
@@ -172,7 +153,6 @@ correctly as plain HTML in a browser.
         margin: 0 auto;
       }
 
-      /* "Open for Ideas" pill badge */
       .hero-badge {
         display: inline-flex;
         align-items: center;
@@ -197,7 +177,6 @@ correctly as plain HTML in a browser.
         box-shadow: 0 0 6px #a8e67a;
         animation: pulse 2s infinite;
       }
-
       @keyframes pulse {
         0%,
         100% {
@@ -210,7 +189,6 @@ correctly as plain HTML in a browser.
         }
       }
 
-      /* Main title */
       .hero-title {
         font-family: "Lora", serif;
         font-size: clamp(2rem, 5vw, 3.2rem);
@@ -226,7 +204,6 @@ correctly as plain HTML in a browser.
         color: #b8eb8a;
       }
 
-      /* Italic serif tagline */
       .hero-tagline {
         font-family: "Lora", serif;
         font-style: italic;
@@ -236,7 +213,6 @@ correctly as plain HTML in a browser.
         animation: fadeSlideDown 0.6s 0.2s ease both;
       }
 
-      /* Welcome body copy */
       .hero-desc {
         font-size: 0.97rem;
         font-weight: 300;
@@ -247,7 +223,6 @@ correctly as plain HTML in a browser.
         animation: fadeSlideDown 0.6s 0.3s ease both;
       }
 
-      /* CTA button */
       .hero-cta {
         display: inline-flex;
         align-items: center;
@@ -310,7 +285,6 @@ correctly as plain HTML in a browser.
         position: relative;
         animation: fadeUp 0.5s ease both;
       }
-      /* Vertical dividers between stats */
       .stat-item:not(:last-child)::after {
         content: "";
         position: absolute;
@@ -361,7 +335,6 @@ correctly as plain HTML in a browser.
       .stat-text {
         line-height: 1.25;
       }
-
       .stat-number {
         font-size: 1.45rem;
         font-weight: 600;
@@ -382,7 +355,7 @@ correctly as plain HTML in a browser.
       }
 
       /* ============================================================
-     PORTAL BODY (content slot)
+     PORTAL BODY
      ============================================================ */
       .portal-body {
         max-width: 900px;
@@ -407,13 +380,12 @@ correctly as plain HTML in a browser.
       }
 
       /* ============================================================
-     RESPONSIVE — stack stats on small screens
+     RESPONSIVE
      ============================================================ */
       @media (max-width: 600px) {
         .leaf-hero {
           padding: 40px 24px 48px;
         }
-
         .stats-strip {
           flex-direction: column;
           align-items: center;
@@ -424,7 +396,6 @@ correctly as plain HTML in a browser.
           padding: 16px 12px;
           justify-content: center;
         }
-        /* Replace vertical dividers with horizontal lines on mobile */
         .stat-item:not(:last-child)::after {
           top: auto;
           bottom: 0;
@@ -433,7 +404,6 @@ correctly as plain HTML in a browser.
           width: auto;
           height: 1px;
         }
-
         .portal-body {
           padding: 0 20px;
         }
@@ -441,9 +411,8 @@ correctly as plain HTML in a browser.
     </style>
   </head>
   <body>
-    {* ── HERO ── *}
+    <!-- HERO -->
     <header class="leaf-hero">
-      {* Corner leaf silhouettes — purely decorative *}
       <div class="leaf-deco tl" aria-hidden="true">
         <svg width="200" height="180" viewBox="0 0 200 180">
           <path d="M100 10 Q170 90 100 170 Q30 90 100 10Z" fill="white" />
@@ -495,12 +464,7 @@ correctly as plain HTML in a browser.
           Open for Ideas
         </div>
 
-        {* $portal_title can be set by the calling controller; falls back to
-        static string *}
-        <h1 class="hero-title">
-          Welcome to the <em>{$portal_title|default:'LEAF'}</em> Idea Portal
-        </h1>
-
+        <h1 class="hero-title">Welcome to the <em>LEAF</em> Idea Portal</h1>
         <p class="hero-tagline">Your ideas grow here.</p>
 
         <p class="hero-desc">
@@ -531,16 +495,14 @@ correctly as plain HTML in a browser.
         </button>
       </div>
     </header>
-    {* /leaf-hero *} {* ── STATS STRIP ── *}
+
+    <!-- STATS STRIP -->
     <div class="stats-strip" role="region" aria-label="Portal statistics">
       <div class="stat-item">
         <div class="stat-icon ideas" aria-hidden="true">💡</div>
         <div class="stat-text">
           <div class="stat-number">
-            {$stat_ideas_submitted|default:'142'}
-            <span class="delta"
-              >↑ {$stat_ideas_delta|default:'12'} this month</span
-            >
+            142 <span class="delta">↑ 12 this month</span>
           </div>
           <div class="stat-label">Ideas Submitted</div>
         </div>
@@ -549,7 +511,7 @@ correctly as plain HTML in a browser.
       <div class="stat-item">
         <div class="stat-icon done" aria-hidden="true">✅</div>
         <div class="stat-text">
-          <div class="stat-number">{$stat_ideas_implemented|default:'38'}</div>
+          <div class="stat-number">38</div>
           <div class="stat-label">Ideas Implemented</div>
         </div>
       </div>
@@ -557,21 +519,19 @@ correctly as plain HTML in a browser.
       <div class="stat-item">
         <div class="stat-icon people" aria-hidden="true">👥</div>
         <div class="stat-text">
-          <div class="stat-number">{$stat_contributors|default:'200'}+</div>
+          <div class="stat-number">200+</div>
           <div class="stat-label">Contributors</div>
         </div>
       </div>
     </div>
-    {* /stats-strip *} {* ── PORTAL CONTENT SLOT ── *} {* Replace the
-    placeholder below with your real LEAF form / idea feed *}
+
+    <!-- PORTAL CONTENT -->
     <div class="portal-body">
-      {block name="portal_content"}
       <div class="placeholder-card">
         <strong>Portal content loads here</strong>
         Your LEAF idea submission form, idea feed, and category filters will
-        appear in this block.
+        appear here.
       </div>
-      {/block}
     </div>
   </body>
 </html>
