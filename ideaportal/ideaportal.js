@@ -1011,7 +1011,7 @@ function buildIdeasQueryUrl() {
     sort: { id: "created_date", direction: "desc" },
     getData: IDEA_GETDATA,
   };
-  const queryString = encodeURIComponent(JSON.stringify(query));
+  const queryString = JSON.stringify(query);
   return `https://leaf.va.gov/platform/ideas/api/form/query/?q=${queryString}&x-filterData=recordID,title,created_date,userID`;
 }
 
@@ -1025,7 +1025,7 @@ function buildVotesQueryUrl() {
     sort: {},
     getData: VOTE_GETDATA,
   };
-  const queryString = encodeURIComponent(JSON.stringify(query));
+  const queryString = JSON.stringify(query);
   return `https://leaf.va.gov/platform/ideas/api/form/query/?q=${queryString}&x-filterData=recordID,title`;
 }
 
@@ -1086,7 +1086,7 @@ function fetchUserSubmissions() {
     sort: {},
     getData: ["8", "9", "13", "stepID"],
   };
-  const queryString = encodeURIComponent(JSON.stringify(query));
+  const queryString = JSON.stringify(query);
 
   return apiGetJson(
     "https://leaf.va.gov/platform/ideas/api/form/query/?q=" +
