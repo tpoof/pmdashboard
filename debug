@@ -1,9 +1,3 @@
-fetch(
-  "/platform/ideas/ajaxIndex.php?a=getindicator&indicatorID=8&series=1&recordID=0",
-  {
-    credentials: "same-origin",
-  },
-)
-  .then((r) => r.text())
-  .then((data) => console.log(data))
-  .catch((err) => console.error("failed:", err));
+fetchWorkflowSteps().then((steps) =>
+  console.log(JSON.stringify(steps, null, 2)),
+);
