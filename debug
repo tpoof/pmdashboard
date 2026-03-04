@@ -1,12 +1,16 @@
-fetch("./api/formWorkflow/X/apply", {
-  method: "POST",
+fetch("/platform/ideas/ajaxIndex.php?a=getworkflowsteps&recordID=2", {
   credentials: "same-origin",
-  headers: { "Content-Type": "application/x-www-form-urlencoded" },
-  body: new URLSearchParams({
-    CSRFToken: window.leafIdeaPortal.csrfToken,
-    actionType: "submit",
-    dependencyID: 1,
-  }),
 })
+  .then((r) => r.text())
+  .then(console.log);
+
+fetch(
+  "/platform/ideas/ajaxIndex.php?a=submit&recordID=2&CSRFToken=" +
+    window.leafIdeaPortal.csrfToken,
+  {
+    method: "POST",
+    credentials: "same-origin",
+  },
+)
   .then((r) => r.text())
   .then(console.log);
