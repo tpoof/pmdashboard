@@ -1,3 +1,12 @@
-fetch("./api/workflow/1/", { credentials: "same-origin" })
+fetch("./api/formWorkflow/X/apply", {
+  method: "POST",
+  credentials: "same-origin",
+  headers: { "Content-Type": "application/x-www-form-urlencoded" },
+  body: new URLSearchParams({
+    CSRFToken: window.leafIdeaPortal.csrfToken,
+    actionType: "submit",
+    dependencyID: 1,
+  }),
+})
   .then((r) => r.text())
   .then(console.log);
