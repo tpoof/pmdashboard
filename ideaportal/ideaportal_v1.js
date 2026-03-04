@@ -1419,17 +1419,13 @@ function populateSelect(select, options, appendOther) {
 }
 
 function loadCategoryOptions() {
-  fetch('/platform/ideas/ajaxIndex.php?a=getindicator&indicatorID=8&series=1&recordID=0', {
+  fetch(`./ajaxIndex.php?a=getindicator&indicatorID=${IDEA_FIELDS.category}&series=1&recordID=0`, {
     credentials: 'same-origin'
   })
-    .then(r => r.text())
-    .then(html => {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const select = doc.querySelector('select#8');
-      if (!select || select.options.length === 0) throw new Error('no options found');
-      const options = Array.from(select.options).map(o => o.value).filter(Boolean);
-      populateSelect(document.getElementById('inpCategory'), options, false);
+    .then(r => r.json())
+    .then(data => {
+      const options = data[0]?.options || CATEGORY_FALLBACK;
+      populateSelect(document.getElementById('inpCategory'), options, true);
     })
     .catch(() => {
       populateSelect(document.getElementById('inpCategory'), CATEGORY_FALLBACK, true);
@@ -1437,16 +1433,12 @@ function loadCategoryOptions() {
 }
 
 function loadImpactOptions() {
-  fetch('/platform/ideas/ajaxIndex.php?a=getindicator&indicatorID=9&series=1&recordID=0', {
+  fetch(`./ajaxIndex.php?a=getindicator&indicatorID=${IDEA_FIELDS.impact}&series=1&recordID=0`, {
     credentials: 'same-origin'
   })
-    .then(r => r.text())
-    .then(html => {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const select = doc.querySelector('select#9');
-      if (!select || select.options.length === 0) throw new Error('no options found');
-      const options = Array.from(select.options).map(o => o.value).filter(Boolean);
+    .then(r => r.json())
+    .then(data => {
+      const options = data[0]?.options || IMPACT_FALLBACK;
       populateSelect(document.getElementById('inpImpact'), options, false);
     })
     .catch(() => {
