@@ -1,6 +1,9 @@
-fetch("./ajaxIndex.php?a=getindicator&indicatorID=8&series=1&recordID=0", {
-  credentials: "same-origin",
-})
-  .then((r) => r.json())
-  .then((data) => console.log(JSON.stringify(data, null, 2)))
+fetch(
+  "/platform/ideas/ajaxIndex.php?a=getindicator&indicatorID=8&series=1&recordID=0",
+  {
+    credentials: "same-origin",
+  },
+)
+  .then((r) => r.text())
+  .then((data) => console.log(data))
   .catch((err) => console.error("failed:", err));
