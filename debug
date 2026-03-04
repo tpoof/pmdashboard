@@ -1,4 +1,3 @@
-// Test without form_ prefix
 fetch(
   'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"ae642","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5"]}&x-filterData=recordID,title,userID',
   {
@@ -8,7 +7,6 @@ fetch(
   .then((r) => r.text())
   .then(console.log);
 
-// Test with LIKE operator
 fetch(
   'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"LIKE","match":"ae642","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5"]}&x-filterData=recordID,title,userID',
   {
