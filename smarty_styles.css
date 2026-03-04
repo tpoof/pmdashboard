@@ -623,6 +623,23 @@ body.smarty.page-ideaportal .ip-alert {
   font-size: 15px;
 }
 
+body.smarty.page-ideaportal .ip-alert--fixed {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  padding: 0.75rem 1.5rem;
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+  border-radius: 6px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  min-width: 300px;
+  text-align: center;
+}
+
 body.smarty.page-ideaportal .ip-table td a {
   color: var(--ip-accent);
   text-decoration: none;

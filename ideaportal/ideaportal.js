@@ -1724,9 +1724,23 @@ document.addEventListener("DOMContentLoaded", function () {
   loadCategoryOptions();
   loadImpactOptions();
   fetchWorkflowSteps().then(function(steps) { workflowSteps = steps; });
-  document.getElementById('saveDraftButton')?.addEventListener('click', function() {
+  document.getElementById('saveDraftButton')?.addEventListener('click', async function() {
+    const form = document.getElementById('ideaForm');
+    if (!form) return;
+
+    // Run validation manually
+    form.classList.add('was-validated');
+
+    // For drafts, only require title — allow partial saves
+    const titleVal = document.getElementById('inpTitle')?.value.trim();
+    if (!titleVal) {
+      document.getElementById('inpTitle')?.focus();
+      return;
+    }
+
     isDraft = true;
-    document.getElementById('ideaForm').requestSubmit();
+    await NewIdea();
+    isDraft = false;
   });
   wireJumpToTop();
   initValidation();
