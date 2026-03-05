@@ -1,28 +1,17 @@
-fetch('/platform/projects/report.php?a=LEAF_Start_Request&id=form_9b302&title=Task', {
+// Replace XXX with the new record ID shown in "Recurring task copied: source=119 → new=XXX"
+fetch('/platform/projects/api/form/XXX/data', {
   credentials: 'include'
 })
-.then(r => r.text())
-.then(html => {
-  var appendMatch = html.match(/formData\.append\(\s*['"]CSRFToken['"]\s*,\s*['"]([a-f0-9]+)['"]\s*\)/i);
-  var token = appendMatch ? appendMatch[1] : null;
-  console.log('token:', token);
+.then(r => r.json())
+.then(d => console.log(JSON.stringify(d, null, 2)));
 
-  var body = new URLSearchParams();
-  body.append('CSRFToken', token);
-  body.append('dependencyID', '0');
-  body.append('actionType', 'Submit');
-  body.append('comment', 'Auto-submitted by recurring task copy.');
 
-  return fetch('/platform/projects/api/formWorkflow/139/apply', {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-      'x-requested-with': 'XMLHttpRequest',
-      'x-csrf-token': token
-    },
-    body: body.toString()
-  })
-  .then(r => r.text())
-  .then(d => console.log('apply response:', d));
-});
+
+
+
+
+fetch('/platform/projects/api/formWorkflow/XXX/currentStep', {
+  credentials: 'include'
+})
+.then(r => r.json())
+.then(d => console.log(JSON.stringify(d, null, 2)));
