@@ -1,25 +1,21 @@
-// Test in console first
-$(".icheck45").closest("label").css("pointer-events", "none");
-$(".icheck45").closest("span").css("pointer-events", "none");
-$("#parentID_").css("pointer-events", "none");
-$(".response.blockIndicator_45").css("pointer-events", "none");
-
-// Also destroy iCheck if initialized
-if ($.fn.iCheck) {
-  $(".icheck45").iCheck("disable");
-}
-
-console.log("done");
-
-document.querySelector(".response.blockIndicator_45").addEventListener(
-  "click",
-  function (e) {
-    console.log(
-      "clicked element:",
-      e.target.tagName,
-      e.target.className,
-      e.target.id,
-    );
-  },
-  true,
-);
+<script>
+$(function() {
+    if (window.location.href.indexOf('printview') === -1 &&
+        window.location.href.indexOf('a=print') === -1) {
+        // Hide and disable entire field wrapper
+        $('.response.blockIndicator_45').hide();
+        
+        // Disable iCheck's visual overlay span — this is the actual click target
+        $('.response.blockIndicator_45 span.leaf_check').css('pointer-events', 'none');
+        
+        // Disable the input and label
+        $('#45_').attr('disabled', true);
+        $('label[for="45_"]').css('pointer-events', 'none');
+        
+        // Disable via iCheck API if initialized
+        if ($.fn.iCheck) {
+            $('.icheck45').iCheck('disable');
+        }
+    }
+});
+</script>
