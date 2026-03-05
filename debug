@@ -1,6 +1,12 @@
-console.log({
-    sublabel: $('.sublabel.blockIndicator_45').length,
-    response: $('.response.blockIndicator_45').length,
-    sublabelVisible: $('.sublabel.blockIndicator_45').is(':visible'),
-    responseVisible: $('.response.blockIndicator_45').is(':visible')
+// Check all iframes on the page
+document.querySelectorAll('iframe').forEach(function(frame, i)
+{try {
+        var doc = frame.contentDocument || frame.contentWindow.document;
+        var sublabel = doc.querySelectorAll('.sublabel.blockIndicator_45').length;
+        var response = doc.querySelectorAll('.response.blockIndicator_45').length;
+        console.log('iframe ' + i, frame.id,
+  frame.src.substring(0, 80), {sublabel, response}
+  );
+    } catch(e) {console.log('iframe ' + i, 'cross-origin, cannot access');}
+
 });
