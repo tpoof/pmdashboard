@@ -1,33 +1,17 @@
-fetch('/platform/projects/report.php?a=LEAF_Start_Request&id=form_9b302&title=Task', {
-  credentials: 'include'
+fetch('/platform/projects/report.php?a=LEAF_Start_Request&id=form_9b302&title=Task',
+{credentials: 'include'
 })
 .then(r => r.text())
 .then(html => {
-  var match = html.match(/name=[\"'](CSRFToken)[\"'][^>]*value=[\"']([^\"']+)[\"']/i) ||
-              html.match(/CSRFToken\s*[:=]\s*[\"']([^\"']+)[\"']/i);
-  var token = match ? (match[2] || match[1]) : null;
-  console.log('CSRF token:', token);
+  // Print first 3000 chars to find where CSRFToken appears
+  console.log(html.substring(0, 3000));
+  // Also search specifically for csrf anywhere in the page
+  var idx = html.toLowerCase().indexOf('csrf');
+  if (idx !== -1) {
+    console.log('CSRF found at index ' + idx + ':',
+  html.substring(idx - 20, idx + 100));
+  } else {
+    console.log('CSRF not found anywhere in response');
+  }
 
-  if (!token) { console.error('No token found'); return; }
-
-  var fd = new FormData();
-  fd.append('CSRFToken', token);
-  fd.append('numform_9b302', '1');
-  fd.append('title', 'test');
-
-  return fetch('/platform/projects/api/form/new', {
-    method: 'POST',
-    credentials: 'include',
-    headers: {'x-requested-with': 'XMLHttpRequest', 'x-csrf-token': token},
-    body: fd
-  })
-  .then(r => r.json())
-  .then(newID => {
-    console.log('new record ID:', newID);
-    return fetch('/platform/projects/api/formWorkflow/' + newID + '/currentStep', {
-      credentials: 'include'
-    })
-    .then(r => r.json())
-    .then(d => console.log('current step:', JSON.stringify(d, null, 2)));
-  });
 });
