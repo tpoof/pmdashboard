@@ -6024,6 +6024,28 @@
     updateConfirmState();
   }
 
+  function wireRecurringFieldHider() {
+    function hideRecurringField() {
+      var sublabel = document.querySelector('.sublabel.blockIndicator_' + RECURRING_INDICATOR_ID);
+      var response = document.querySelector('.response.blockIndicator_' + RECURRING_INDICATOR_ID);
+      if (sublabel) sublabel.style.display = 'none';
+      if (response) response.style.display = 'none';
+    }
+
+    // Initial hide attempt
+    hideRecurringField();
+
+    // Watch for LEAF re-rendering and re-hide immediately
+    var observer = new MutationObserver(function() {
+      hideRecurringField();
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
   function wireAddButtons() {
     var inbox = document.getElementById("pmViewInboxBtn");
     if (inbox)
@@ -7166,6 +7188,7 @@
       wireModalControls();
       wireOtherStatusModal();
       wireAddButtons();
+      wireRecurringFieldHider();
       wireAnalyticsSharedFilters();
       wireJumpToTop();
 
