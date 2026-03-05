@@ -1,1 +1,6 @@
-_pmCheckRecurring();
+fetch(
+  '/platform/projects/api/form/query/?terms=[{"id":"recordIDs","operator":"=","match":"122"}]&joins=["unfilledDependencies"]&format=json',
+  { credentials: "include" },
+)
+  .then((r) => r.json())
+  .then((d) => console.log(JSON.stringify(d, null, 2)));
