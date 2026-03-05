@@ -1,12 +1,3 @@
 var frame = document.getElementById("pmModalFrame");
 var doc = frame.contentDocument || frame.contentWindow.document;
-var checkboxes = doc.querySelectorAll('input[type="checkbox"]');
-checkboxes.forEach(function (cb) {
-  console.log({
-    name: cb.name,
-    id: cb.id,
-    value: cb.value,
-    dataAttributes: cb.dataset,
-    outerHTML: cb.outerHTML,
-  });
-});
+console.log(doc.querySelector('input[name="45"]'));
