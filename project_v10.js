@@ -6081,21 +6081,36 @@
             var doc = frame.contentDocument || frame.contentWindow.document;
             if (!doc) return;
 
-            // Find the checkbox for indicator 45 and check it
-            var checkbox = doc.querySelector(
-              'input[type="checkbox"][name="' + RECURRING_INDICATOR_ID + '"], ' +
-              'input[type="checkbox"][id*="' + RECURRING_INDICATOR_ID + '"], ' +
-              'input[type="checkbox"][data-indicatorid="' + RECURRING_INDICATOR_ID + '"]'
-            );
+            // LEAF renders indicator 45 as an iCheck widget
+            // Selector: name="45", id="45_", class contains "leaf_check"
+            var checkbox = doc.querySelector('input[name="' + RECURRING_INDICATOR_ID + '"]');
 
             if (checkbox) {
+              // Set the checked state and value directly
               checkbox.checked = true;
               checkbox.value = "Yes";
-              // Trigger change event so LEAF registers the value
-              checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-              // Hide the field from the user
-              var fieldWrapper = checkbox.closest(".xtemplate_field, .leafFormField, tr, .form-group") || checkbox.parentElement;
+
+              // iCheck requires its own trigger method if initialized
+              // Try native iCheck API first, fall back to jQuery triggers
+              var $cb = frame.contentWindow.$ && frame.contentWindow.$(checkbox);
+              if ($cb && $cb.iCheck) {
+                $cb.iCheck('check');
+              } else {
+                // Fire all relevant events so LEAF registers the change
+                checkbox.dispatchEvent(new Event("ifChecked", { bubbles: true }));
+                checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+                checkbox.dispatchEvent(new Event("click", { bubbles: true }));
+              }
+
+              // Hide the field row from the user
+              var fieldWrapper =
+                checkbox.closest("tr") ||
+                checkbox.closest(".xtemplate_field") ||
+                checkbox.closest(".leafFormField") ||
+                checkbox.parentElement;
               if (fieldWrapper) fieldWrapper.style.display = "none";
+
+              console.log("Recurring checkbox set successfully for indicator " + RECURRING_INDICATOR_ID);
             } else {
               console.warn("Recurring checkbox (indicator " + RECURRING_INDICATOR_ID + ") not found in iframe DOM.");
             }
