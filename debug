@@ -1,10 +1,12 @@
 <script>
-$(function() {
-    if (window.location.href.indexOf('printview') === -1 &&
-        window.location.href.indexOf('a=print') === -1) {
-        // Hide field title and field input on regular form view
-        $('.sublabel.blockIndicator_45').hide();
-        $('.response.blockIndicator_45').hide();
+  $(function () {
+    if (
+      window.location.href.indexOf("printview") === -1 &&
+      window.location.href.indexOf("a=print") === -1
+    ) {
+      // Hide field title and field input on regular form view
+      $(".sublabel.blockIndicator_45").hide();
+      $(".response.blockIndicator_45").hide();
     }
-});
+  });
 </script>
