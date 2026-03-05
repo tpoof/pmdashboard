@@ -7298,4 +7298,9 @@
   handleTransferFromSupport();
   window.addEventListener("load", handleTransferFromSupport);
   document.addEventListener("DOMContentLoaded", main);
+
+  // DEBUG: expose recurring task functions to window for console testing
+  // TODO: remove after confirmed working
+  window._pmCheckRecurring = checkAndCopyResolvedRecurringTasks;
+  window._pmCopyRecurring = copyRecurringTask;
 })();
