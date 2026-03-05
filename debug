@@ -1,11 +1,10 @@
-fetch('/platform/projects/files/project_v10.js')
+fetch('/platform/projects/files/project_v10.js?v=' + Date.now())
   .then(r => r.text())
   .then(js => {
-    var idx = js.indexOf('_pmCheckRecurring');
-    console.log('found at index:', idx);
-    if (idx !== -1) console.log('context:', js.substring(idx - 50, idx + 100));
-    
-    // Also check if new copyRecurringTask code is there
-    var idx2 = js.indexOf('id11_orgchart');
-    console.log('id11_orgchart found at index:', idx2);
+    // Execute the fresh version
+    var script = document.createElement('script');
+    script.textContent = js;
+    document.head.appendChild(script);
+    console.log('Script reloaded. Testing _pmCheckRecurring:');
+    console.log(typeof _pmCheckRecurring);
   });
