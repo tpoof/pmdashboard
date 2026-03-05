@@ -1,15 +1,8 @@
-// Check main document
-console.log('main doc:', document.querySelectorAll('.sublabel.blockIndicator_45').length);
-
-// Check all iframes
-document.querySelectorAll('iframe').forEach(function(frame, i) {
-    try {
-        var doc = frame.contentDocument || frame.contentWindow.document;
-        console.log('iframe ' + i, frame.id, {
-            sublabel: doc.querySelectorAll('.sublabel.blockIndicator_45').length,
-            response: doc.querySelectorAll('.response.blockIndicator_45').length
-        });
-    } catch(e) {
-        console.log('iframe ' + i, 'cross-origin blocked');
-    }
+console.log({
+    sublabelVisible: $('.sublabel.blockIndicator_45').is(':visible'),
+    responseVisible: $('.response.blockIndicator_45').is(':visible'),
+    sublabelDisplay: $('.sublabel.blockIndicator_45').css('display'),
+    responseDisplay: $('.response.blockIndicator_45').css('display'),
+    sublabelParentVisible: $('.sublabel.blockIndicator_45').parent().is(':visible'),
+    sublabelParentDisplay: $('.sublabel.blockIndicator_45').parent().css('display')
 });
