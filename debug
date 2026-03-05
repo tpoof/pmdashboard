@@ -1,6 +1,15 @@
-fetch(
-  'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"LIKE","match":"ae642","gate":"AND"}],"joins":[],"sort":{},"getData":["5"]}&x-filterData=recordID,title,userID',
-  { credentials: "same-origin" },
-)
-  .then((r) => r.text())
-  .then(console.log);
+<script>
+$(function() {
+    // Hide the input itself
+    $('#{{ iID }}').hide();
+    
+    // Hide the sublabel
+    $('.sublabel.blockIndicator_{{ iID }}').hide();
+    
+    // Hide the parent container (catches the visible checkbox widget)
+    $('#{{ iID }}').closest('tr').hide();
+    
+    // Disable it so it can't be interacted with
+    $('#{{ iID }}').attr('disabled', true);
+});
+</script>
