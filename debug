@@ -1,8 +1,17 @@
-// Find all elements that mention 45 in class, id, or for attribute
-['[class*="45"]', '[id*="45"]', '[for*="45"]', '[data-id="45"]'].forEach(
-  function (sel) {
-    document.querySelectorAll(sel).forEach(function (el) {
-      console.log(sel, el.outerHTML.substring(0, 200));
-    });
-  },
-);
+<script>
+$(function() {
+    var $checkbox = $('#45_');
+    var $wrapper = $('.response.blockIndicator_45');
+
+    // Always hide these — covers both form view and print view
+    $wrapper.hide();
+    $('#subIndicator_45_1').hide();
+    $('#xhrIndicator_45_1').hide();
+
+    // Also disable checkbox on form view
+    if (window.location.href.indexOf('printview') === -1 &&
+        window.location.href.indexOf('a=print') === -1) {
+        $checkbox.attr('disabled', true);
+    }
+});
+</script>
