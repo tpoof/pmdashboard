@@ -1,26 +1,15 @@
-<script>
-  $(function () {
-    if (
-      window.location.href.indexOf("printview") === -1 &&
-      window.location.href.indexOf("a=print") === -1
-    ) {
-      function hideRecurringField() {
-        $(".sublabel.blockIndicator_45").hide();
-        $(".response.blockIndicator_45").hide();
-      }
+// Check main document
+console.log('main doc:', document.querySelectorAll('.sublabel.blockIndicator_45').length);
 
-      // Initial hide
-      hideRecurringField();
-
-      // Watch for LEAF re-rendering the form and re-hide immediately
-      var observer = new MutationObserver(function () {
-        hideRecurringField();
-      });
-
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-      });
+// Check all iframes
+document.querySelectorAll('iframe').forEach(function(frame, i) {
+    try {
+        var doc = frame.contentDocument || frame.contentWindow.document;
+        console.log('iframe ' + i, frame.id, {
+            sublabel: doc.querySelectorAll('.sublabel.blockIndicator_45').length,
+            response: doc.querySelectorAll('.response.blockIndicator_45').length
+        });
+    } catch(e) {
+        console.log('iframe ' + i, 'cross-origin blocked');
     }
-  });
-</script>
+});
