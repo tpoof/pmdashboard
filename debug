@@ -13,3 +13,7 @@ $(function() {
     $('#{{ iID }}').attr('disabled', true);
 });
 </script>
+
+$('#{{ iID }}').closest('.xtemplate_field').hide(); // try this first
+$('#{{ iID }}').closest('tr').hide();               // fallback
+$('#{{ iID }}').closest('div').hide();              // last resort
