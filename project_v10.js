@@ -230,8 +230,32 @@
 
 
 
-  // Tracks recurring task IDs already copied this session to prevent duplicate copies on re-poll.
-  var recurringCopiedThisSession = new Set();
+  // Persistent dedup — survives page refresh
+  // Stores recordIDs that have already been copied as recurring tasks
+  var RECURRING_COPIED_KEY = 'pm_recurring_copied_v10';
+
+  function getRecurringCopiedSet() {
+    try {
+      var stored = localStorage.getItem(RECURRING_COPIED_KEY);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch(e) {
+      return new Set();
+    }
+  }
+
+  function addRecurringCopied(recordID) {
+    try {
+      var set = getRecurringCopiedSet();
+      set.add(String(recordID));
+      localStorage.setItem(RECURRING_COPIED_KEY, JSON.stringify(Array.from(set)));
+    } catch(e) {
+      console.warn('addRecurringCopied storage error:', e);
+    }
+  }
+
+  function hasRecurringCopied(recordID) {
+    return getRecurringCopiedSet().has(String(recordID));
+  }
 
   function safe(s) {
     return String(s || "")
@@ -300,13 +324,18 @@
       var results = await query.execute();
 
       for (var recordID in results) {
-        if (recurringCopiedThisSession.has(recordID)) continue;
-        recurringCopiedThisSession.add(recordID);
+        if (hasRecurringCopied(recordID)) continue;
+        addRecurringCopied(recordID);
         try {
           await copyRecurringTask(recordID);
         } catch (e) {
           console.error('Failed to copy recurring task ' + recordID, e);
-          recurringCopiedThisSession.delete(recordID);
+          // Remove from localStorage on failure so it can retry next poll
+          try {
+            var set = getRecurringCopiedSet();
+            set.delete(String(recordID));
+            localStorage.setItem(RECURRING_COPIED_KEY, JSON.stringify(Array.from(set)));
+          } catch(e2) {}
         }
       }
     } catch (e) {
@@ -390,7 +419,7 @@
       encodeURIComponent(newRecordID) +
       "/apply";
     var workflowBody = encodeFormBody({
-      dependencyID: "1", // TODO: replace with real value
+      dependencyID: "-1", // TODO: replace with real value
       actionType: "Submit",               // TODO: confirm for your workflow
       comment: "Auto-submitted by recurring task copy.",
       [workflowTokenField]: workflowToken,
