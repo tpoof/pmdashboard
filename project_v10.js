@@ -270,6 +270,17 @@
 
   async function checkAndCopyResolvedRecurringTasks() {
     try {
+      // Pre-fetch CSRF token so createTaskRecord has it available
+      // This is necessary when the dashboard is served without Smarty templating
+      var token = getCSRFToken();
+      if (!token || token.indexOf('{') === 0) {
+        token = await fetchCSRFFromAPI();
+        if (!token) {
+          console.warn('checkAndCopyResolvedRecurringTasks: could not obtain CSRF token, skipping.');
+          return;
+        }
+      }
+
       var query = new LeafFormQuery();
       query.addTerm('stepID', '=', 'resolved');
       query.addDataTerm('data', TASK_IND.isRecurring, '=', 'Yes');
@@ -292,12 +303,12 @@
         try {
           await copyRecurringTask(recordID);
         } catch (e) {
-          console.error("Failed to copy recurring task " + recordID, e);
+          console.error('Failed to copy recurring task ' + recordID, e);
           recurringCopiedThisSession.delete(recordID);
         }
       }
     } catch (e) {
-      console.error("checkAndCopyResolvedRecurringTasks failed", e);
+      console.error('checkAndCopyResolvedRecurringTasks failed', e);
     }
   }
 
@@ -862,6 +873,25 @@
     }
 
     return "";
+  }
+
+  async function fetchCSRFFromAPI() {
+    // Fetch CSRF token directly from a LEAF page that reliably returns it
+    try {
+      var r = await fetch('/platform/projects/report.php?a=LEAF_Start_Request&id=form_9b302&title=Task', {
+        credentials: 'include'
+      });
+      var html = await r.text();
+      var match = extractCSRFTokenFromHTML(html);
+      if (match && match.token) {
+        cacheCSRF(match.token, match.field);
+        console.log('CSRF token fetched from API successfully.');
+        return match.token;
+      }
+    } catch (e) {
+      console.warn('fetchCSRFFromAPI failed:', e);
+    }
+    return null;
   }
 
   async function fetchJSON(url) {
