@@ -1,7 +1,26 @@
-var observer = new MutationObserver(function() {
-    $('.sublabel.blockIndicator_45').hide();
-    $('.response.blockIndicator_45').hide();
-});
+<script>
+  $(function () {
+    if (
+      window.location.href.indexOf("printview") === -1 &&
+      window.location.href.indexOf("a=print") === -1
+    ) {
+      function hideRecurringField() {
+        $(".sublabel.blockIndicator_45").hide();
+        $(".response.blockIndicator_45").hide();
+      }
 
-observer.observe(document.body, { childList: true, subtree: true });
-console.log('observer started');
+      // Initial hide
+      hideRecurringField();
+
+      // Watch for LEAF re-rendering the form and re-hide immediately
+      var observer = new MutationObserver(function () {
+        hideRecurringField();
+      });
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+    }
+  });
+</script>
