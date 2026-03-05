@@ -1,8 +1,25 @@
-console.log({
-    sublabelVisible: $('.sublabel.blockIndicator_45').is(':visible'),
-    responseVisible: $('.response.blockIndicator_45').is(':visible'),
-    sublabelDisplay: $('.sublabel.blockIndicator_45').css('display'),
-    responseDisplay: $('.response.blockIndicator_45').css('display'),
-    sublabelParentVisible: $('.sublabel.blockIndicator_45').parent().is(':visible'),
-    sublabelParentDisplay: $('.sublabel.blockIndicator_45').parent().css('display')
-});
+fetch('/platform/projects/api/formWorkflow/127/apply', {
+  credentials: 'include'
+})
+.then(r => r.text())
+.then(d => console.log(d));
+
+
+
+
+
+fetch('/platform/projects/api/form/127', {
+  credentials: 'include'
+})
+.then(r => r.json())
+.then(d => console.log(JSON.stringify(d, null, 2)));
+
+
+
+
+
+fetch('/platform/projects/api/formWorkflow/127', {
+  credentials: 'include'
+})
+.then(r => r.json())
+.then(d => console.log(JSON.stringify(d, null, 2)));
