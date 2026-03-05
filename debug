@@ -1,5 +1,22 @@
-fetch('https://leaf.va.gov/platform/projects/api/formWorkflow/134/currentStep', {
+fetch('https://leaf.va.gov/platform/projects/api/formWorkflow/128/currentStep', {
   credentials: 'include'
 })
 .then(r => r.json())
 .then(d => console.log(JSON.stringify(d, null, 2)));
+
+
+
+
+fetch('/platform/projects/api/form/new', {
+  method: 'POST',
+  credentials: 'include',
+  headers: {'x-requested-with': 'XMLHttpRequest'},
+  body: (() => { var fd = new FormData(); fd.append('numform_9b302', '1'); fd.append('title', 'test'); return fd; })()
+})
+.then(r => r.json())
+.then(newID => {
+  console.log('new record ID:', newID);
+  return fetch('/platform/projects/api/formWorkflow/' + newID + '/currentStep', {credentials: 'include'})
+    .then(r => r.json())
+    .then(d => console.log('current step:', JSON.stringify(d, null, 2)));
+});
