@@ -70,7 +70,7 @@
     "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_9b302&title=Task";
   var START_RECURRING_TASK_URL =
     "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_9b302&title=Recurring+Task&" +
-    encodeURIComponent(RECURRING_INDICATOR_ID) + "=1";
+    encodeURIComponent(RECURRING_INDICATOR_ID) + "=Yes";
   var START_OKR_URL =
     "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_a2b55&title=OKR";
   var START_KEY_RESULT_URL =
@@ -272,7 +272,7 @@
     try {
       var query = new LeafFormQuery();
       query.addTerm('stepID', '=', 'resolved');
-      query.addDataTerm('data', TASK_IND.isRecurring, '=', '1');
+      query.addDataTerm('data', TASK_IND.isRecurring, '=', 'Yes');
       query.getData([
         TASK_IND.projectKey,
         TASK_IND.title,
@@ -339,7 +339,7 @@
     });
 
     // Explicitly preserve isRecurring on the copy
-    bodyObj[TASK_IND.isRecurring] = "1";
+    bodyObj[TASK_IND.isRecurring] = "Yes";
 
     var body = encodeFormBody(bodyObj);
     var headers = {
@@ -454,7 +454,7 @@
     return !!(modal && modal.getAttribute("aria-hidden") === "false");
   }
 
-  function openModal(title, url) {
+  function openModal(title, url, postLoadCallback) {
     var modal = document.getElementById("pmModal");
     var frame = document.getElementById("pmModalFrame");
     var titleEl = document.getElementById("pmModalTitle");
@@ -462,10 +462,30 @@
     var closeBtn = document.getElementById("pmModalCloseBtn");
     if (!modal || !frame || !titleEl) return;
     titleEl.textContent = title || "Details";
+
+    // Remove any previous load listener
+    if (frame._recurringLoadHandler) {
+      frame.removeEventListener("load", frame._recurringLoadHandler);
+      frame._recurringLoadHandler = null;
+    }
+
+    if (typeof postLoadCallback === "function") {
+      frame._recurringLoadHandler = function () {
+        frame.removeEventListener("load", frame._recurringLoadHandler);
+        frame._recurringLoadHandler = null;
+        try {
+          postLoadCallback(frame);
+        } catch (e) {
+          console.warn("postLoadCallback error", e);
+        }
+      };
+      frame.addEventListener("load", frame._recurringLoadHandler);
+    }
+
     frame.src = url;
     frame.setAttribute(
       "title",
-      title ? "LEAF content - " + String(title) : "LEAF content",
+      title ? "LEAF content - " + String(title) : "LEAF content"
     );
     if (openTabBtn) openTabBtn.setAttribute("data-url", url || "");
     lastFocusedElement = document.activeElement;
@@ -1163,7 +1183,7 @@
       supportTicket: extractFromS1(row, TASK_IND.supportTicket),
       okrAssociation: extractFromS1(row, TASK_IND.okrAssociation),
       keyResultSelection: extractFromS1(row, TASK_IND.keyResultSelection),
-      isRecurring: row[TASK_IND.isRecurring] === "1" || row[TASK_IND.isRecurring] === true || row[TASK_IND.isRecurring] === 1,
+      isRecurring: row[TASK_IND.isRecurring] === "Yes" || row[TASK_IND.isRecurring] === "1" || row[TASK_IND.isRecurring] === true || row[TASK_IND.isRecurring] === 1,
       createdAt: createdAt,
       dependenciesRaw: depsRaw,
       depIds: depIds,
@@ -6055,7 +6075,35 @@
     function launchAction(action) {
       if (action === "project") openModal("New Project", START_PROJECT_URL);
       else if (action === "task") openModal("New Task", START_TASK_URL);
-      else if (action === "recurringTask") openModal("New Recurring Task", START_RECURRING_TASK_URL);
+      else if (action === "recurringTask") {
+        openModal("New Recurring Task", START_RECURRING_TASK_URL, function (frame) {
+          try {
+            var doc = frame.contentDocument || frame.contentWindow.document;
+            if (!doc) return;
+
+            // Find the checkbox for indicator 45 and check it
+            var checkbox = doc.querySelector(
+              'input[type="checkbox"][name="' + RECURRING_INDICATOR_ID + '"], ' +
+              'input[type="checkbox"][id*="' + RECURRING_INDICATOR_ID + '"], ' +
+              'input[type="checkbox"][data-indicatorid="' + RECURRING_INDICATOR_ID + '"]'
+            );
+
+            if (checkbox) {
+              checkbox.checked = true;
+              checkbox.value = "Yes";
+              // Trigger change event so LEAF registers the value
+              checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+              // Hide the field from the user
+              var fieldWrapper = checkbox.closest(".xtemplate_field, .leafFormField, tr, .form-group") || checkbox.parentElement;
+              if (fieldWrapper) fieldWrapper.style.display = "none";
+            } else {
+              console.warn("Recurring checkbox (indicator " + RECURRING_INDICATOR_ID + ") not found in iframe DOM.");
+            }
+          } catch (e) {
+            console.warn("Could not inject recurring checkbox value:", e);
+          }
+        });
+      }
       else if (action === "objective")
         openModal("Add Objective", START_OKR_URL);
       else if (action === "keyResult")
