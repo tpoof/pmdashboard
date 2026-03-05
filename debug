@@ -1,17 +1,1 @@
-fetch('/platform/projects/report.php?a=LEAF_Start_Request&id=form_9b302&title=Task',
-{credentials: 'include'
-})
-.then(r => r.text())
-.then(html => {
-  // Print first 3000 chars to find where CSRFToken appears
-  console.log(html.substring(0, 3000));
-  // Also search specifically for csrf anywhere in the page
-  var idx = html.toLowerCase().indexOf('csrf');
-  if (idx !== -1) {
-    console.log('CSRF found at index ' + idx + ':',
-  html.substring(idx - 20, idx + 100));
-  } else {
-    console.log('CSRF not found anywhere in response');
-  }
-
-});
+_pmCheckRecurring();
