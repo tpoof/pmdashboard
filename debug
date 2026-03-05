@@ -1,24 +1,4 @@
-fetch('/platform/projects/api/formWorkflow/127/apply', {
-  credentials: 'include'
-})
-.then(r => r.text())
-.then(d => console.log(d));
-
-
-
-
-
-fetch('/platform/projects/api/form/127', {
-  credentials: 'include'
-})
-.then(r => r.json())
-.then(d => console.log(JSON.stringify(d, null, 2)));
-
-
-
-
-
-fetch('/platform/projects/api/formWorkflow/127', {
+fetch('https://leaf.va.gov/platform/projects/api/formWorkflow/134/currentStep', {
   credentials: 'include'
 })
 .then(r => r.json())
