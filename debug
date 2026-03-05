@@ -1,15 +1,25 @@
-<script>
-$(function() {
-    if (window.location.href.indexOf('printview') === -1 &&
-        window.location.href.indexOf('a=print') === -1) {
-        // Regular form view only — hide and disable entire field
-        $('.response.blockIndicator_45').hide();
-        $('#45_').attr('disabled', true);
-        
-        // Disable iCheck custom widget — pointer-events blocks click on the visual checkbox
-        $('.icheck45').attr('disabled', true);
-        $('label[for="45_"]').css('pointer-events', 'none');
-        $('.response.blockIndicator_45').css('pointer-events', 'none');
-    }
-});
-</script>
+// Test in console first
+$(".icheck45").closest("label").css("pointer-events", "none");
+$(".icheck45").closest("span").css("pointer-events", "none");
+$("#parentID_").css("pointer-events", "none");
+$(".response.blockIndicator_45").css("pointer-events", "none");
+
+// Also destroy iCheck if initialized
+if ($.fn.iCheck) {
+  $(".icheck45").iCheck("disable");
+}
+
+console.log("done");
+
+document.querySelector(".response.blockIndicator_45").addEventListener(
+  "click",
+  function (e) {
+    console.log(
+      "clicked element:",
+      e.target.tagName,
+      e.target.className,
+      e.target.id,
+    );
+  },
+  true,
+);
