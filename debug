@@ -1,10 +1,1 @@
-fetch('/platform/projects/files/project_v10.js?v=' + Date.now())
-  .then(r => r.text())
-  .then(js => {
-    // Execute the fresh version
-    var script = document.createElement('script');
-    script.textContent = js;
-    document.head.appendChild(script);
-    console.log('Script reloaded. Testing _pmCheckRecurring:');
-    console.log(typeof _pmCheckRecurring);
-  });
+localStorage.removeItem('pm_recurring_copied_v10'); _pmCheckRecurring();
