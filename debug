@@ -2,9 +2,14 @@
 $(function() {
     if (window.location.href.indexOf('printview') === -1 &&
         window.location.href.indexOf('a=print') === -1) {
-        // Regular form view only — hide and disable
+        // Regular form view only — hide and disable entire field
         $('.response.blockIndicator_45').hide();
         $('#45_').attr('disabled', true);
+        
+        // Disable iCheck custom widget — pointer-events blocks click on the visual checkbox
+        $('.icheck45').attr('disabled', true);
+        $('label[for="45_"]').css('pointer-events', 'none');
+        $('.response.blockIndicator_45').css('pointer-events', 'none');
     }
 });
 </script>
