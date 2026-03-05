@@ -1,17 +1,10 @@
 <script>
 $(function() {
-    var $checkbox = $('#45_');
-    var $wrapper = $('.response.blockIndicator_45');
-
-    // Always hide these — covers both form view and print view
-    $wrapper.hide();
-    $('#subIndicator_45_1').hide();
-    $('#xhrIndicator_45_1').hide();
-
-    // Also disable checkbox on form view
     if (window.location.href.indexOf('printview') === -1 &&
         window.location.href.indexOf('a=print') === -1) {
-        $checkbox.attr('disabled', true);
+        // Regular form view only — hide and disable
+        $('.response.blockIndicator_45').hide();
+        $('#45_').attr('disabled', true);
     }
 });
 </script>
