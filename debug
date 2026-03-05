@@ -1,4 +1,11 @@
-// Find the actual script tag loading project_v10.js
-document.querySelectorAll('script[src*="project_v10"]').forEach(function(s) {
-    console.log(s.src);
+// Search all script tags on the page
+document.querySelectorAll('script[src]').forEach(function(s) {
+    if (s.src.indexOf('project') !== -1 || s.src.indexOf('v10') !== -1 || s.src.indexOf('v9') !== -1) {
+        console.log(s.src);
+    }
+});
+
+// Also check all iframes
+document.querySelectorAll('iframe').forEach(function(f) {
+    console.log('iframe src:', f.src);
 });
