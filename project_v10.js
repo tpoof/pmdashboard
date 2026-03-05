@@ -12,7 +12,7 @@
   // Indicator ID for the isRecurring checkbox field on the Task form.
   // IMPORTANT: Replace 99 with the real LEAF indicator ID once the field is created.
   // TODO: replace 99 with real LEAF indicator ID
-  var RECURRING_INDICATOR_ID = 99;
+  var RECURRING_INDICATOR_ID = 45;
 
   // Task form indicator IDs
   var TASK_IND = {
@@ -377,8 +377,8 @@
       encodeURIComponent(newRecordID) +
       "/apply";
     var workflowBody = encodeFormBody({
-      dependencyID: "YOUR_DEPENDENCY_ID", // TODO: replace with real value
-      actionType: "approve",              // TODO: confirm for your workflow
+      dependencyID: "1", // TODO: replace with real value
+      actionType: "Submit",               // TODO: confirm for your workflow
       comment: "Auto-submitted by recurring task copy.",
       [workflowTokenField]: workflowToken,
     });
