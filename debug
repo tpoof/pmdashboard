@@ -1,10 +1,10 @@
-document
-  .querySelectorAll('[class*="blockIndicator_45"], [id*="45"]')
-  .forEach(function (el) {
-    console.log(
-      el.tagName,
-      el.className,
-      el.id,
-      el.outerHTML.substring(0, 150),
-    );
-  });
+<script>
+$(function() {
+    if (window.location.href.indexOf('printview') === -1 &&
+        window.location.href.indexOf('a=print') === -1) {
+        // Hide field title and field input on regular form view
+        $('.sublabel.blockIndicator_45').hide();
+        $('.response.blockIndicator_45').hide();
+    }
+});
+</script>
