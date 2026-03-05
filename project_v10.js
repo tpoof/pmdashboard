@@ -6077,26 +6077,39 @@
       else if (action === "task") openModal("New Task", START_TASK_URL);
       else if (action === "recurringTask") {
         openModal("New Recurring Task", START_RECURRING_TASK_URL, function (frame) {
-          try {
-            var doc = frame.contentDocument || frame.contentWindow.document;
-            if (!doc) return;
+          var maxAttempts = 20;  // 20 x 250ms = 5 seconds max wait
+          var attempts = 0;
 
-            // LEAF renders indicator 45 as an iCheck widget
-            // Selector: name="45", id="45_", class contains "leaf_check"
-            var checkbox = doc.querySelector('input[name="' + RECURRING_INDICATOR_ID + '"]');
+          function tryInject() {
+            attempts++;
+            try {
+              var doc = frame.contentDocument || frame.contentWindow.document;
+              if (!doc) {
+                if (attempts < maxAttempts) setTimeout(tryInject, 250);
+                return;
+              }
 
-            if (checkbox) {
-              // Set the checked state and value directly
+              var checkbox = doc.querySelector('input[name="' + RECURRING_INDICATOR_ID + '"]');
+
+              if (!checkbox) {
+                // Not rendered yet — retry
+                if (attempts < maxAttempts) {
+                  setTimeout(tryInject, 250);
+                } else {
+                  console.warn("Recurring checkbox (indicator " + RECURRING_INDICATOR_ID + ") not found after " + maxAttempts + " attempts.");
+                }
+                return;
+              }
+
+              // Checkbox found — inject value
               checkbox.checked = true;
               checkbox.value = "Yes";
 
-              // iCheck requires its own trigger method if initialized
-              // Try native iCheck API first, fall back to jQuery triggers
+              // iCheck API first, fall back to events
               var $cb = frame.contentWindow.$ && frame.contentWindow.$(checkbox);
               if ($cb && $cb.iCheck) {
                 $cb.iCheck('check');
               } else {
-                // Fire all relevant events so LEAF registers the change
                 checkbox.dispatchEvent(new Event("ifChecked", { bubbles: true }));
                 checkbox.dispatchEvent(new Event("change", { bubbles: true }));
                 checkbox.dispatchEvent(new Event("click", { bubbles: true }));
@@ -6110,13 +6123,15 @@
                 checkbox.parentElement;
               if (fieldWrapper) fieldWrapper.style.display = "none";
 
-              console.log("Recurring checkbox set successfully for indicator " + RECURRING_INDICATOR_ID);
-            } else {
-              console.warn("Recurring checkbox (indicator " + RECURRING_INDICATOR_ID + ") not found in iframe DOM.");
+              console.log("Recurring checkbox set successfully on attempt " + attempts);
+
+            } catch (e) {
+              console.warn("Could not inject recurring checkbox value:", e);
             }
-          } catch (e) {
-            console.warn("Could not inject recurring checkbox value:", e);
           }
+
+          // Start polling after initial short delay
+          setTimeout(tryInject, 300);
         });
       }
       else if (action === "objective")
