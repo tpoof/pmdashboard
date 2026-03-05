@@ -343,103 +343,98 @@
     }
   }
 
-  async function copyRecurringTask(recordID) {
-    if (!recordID) throw new Error("copyRecurringTask: missing recordID");
+  async function copyRecurringTask(sourceRecordID) {
+    if (!sourceRecordID) throw new Error('copyRecurringTask: missing recordID');
 
-    // Step 1: Read all data from the source record
-    var readUrl = "/platform/projects/api/form/" + encodeURIComponent(recordID) + "/data";
-    var readResp = await fetch(readUrl, { credentials: "include" });
-    if (!readResp.ok) throw new Error("Read failed HTTP " + readResp.status);
-    var sourceData = await readResp.json();
-    // sourceData is an object keyed by indicatorID -> value
-
-    // Step 2: Create a new blank task record
-    var newRecordID = await createTaskRecord();
-
-    // Step 3: Write copied fields to new record
-    // Copy all fields EXCEPT status (reset to blank/default) and isRecurring (preserve true)
-    var token = await ensureCSRFToken(newRecordID);
-    var tokenField = state.csrfField || getCSRFFieldName();
-    var url = FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(newRecordID);
-
-    var fieldsToSkip = new Set([
-      String(TASK_IND.status),      // do not copy resolved status to new record
-      String(TASK_IND.otherSubType) // do not copy sub-type either
+    // Step 1: Read source record data via query API
+    var query = new LeafFormQuery();
+    query.addTerm('recordIDs', '=', String(sourceRecordID));
+    query.getData([
+      TASK_IND.projectKey,
+      TASK_IND.title,
+      TASK_IND.status,
+      TASK_IND.assignedTo,
+      TASK_IND.startDate,
+      TASK_IND.dueDate,
+      TASK_IND.priority,
+      TASK_IND.category,
+      TASK_IND.dependencies,
+      TASK_IND.supportTicket,
+      TASK_IND.okrAssociation,
+      TASK_IND.keyResultSelection,
+      TASK_IND.isRecurring,
     ]);
 
-    var bodyObj = {
-      recordID: newRecordID,
-      series: 1,
-    };
-    bodyObj[tokenField] = token;
+    var results = await query.execute();
+    var sourceRecord = results[String(sourceRecordID)];
+    if (!sourceRecord || !sourceRecord.s1) {
+      throw new Error('copyRecurringTask: could not read source record ' + sourceRecordID);
+    }
 
-    // Copy all indicator fields from source, skipping excluded ones
-    Object.keys(sourceData).forEach(function (indID) {
-      if (!fieldsToSkip.has(String(indID))) {
-        bodyObj[indID] = sourceData[indID];
+    var s1 = sourceRecord.s1;
+
+    // Step 2: Get CSRF token
+    var token = await fetchCSRFFromAPI();
+    if (!token) throw new Error('copyRecurringTask: missing CSRFToken');
+
+    // Step 3: Create new record with all data in a single api/form/new POST
+    // This ensures LEAF assigns the workflow automatically on creation
+    var fd = new FormData();
+    fd.append('CSRFToken', token);
+    fd.append('numform_9b302', '1');
+    fd.append('title', sourceRecord.title || 'Recurring Task');
+
+    // Copy all s1 fields — skip status (reset to Not Started) and timestamps
+    var skipFields = new Set([
+      'id' + TASK_IND.status,       // reset status on new copy
+      'id' + TASK_IND.otherSubType, // reset subtype
+    ]);
+
+    Object.keys(s1).forEach(function(key) {
+      // Only copy id[number] keys, skip timestamps and metadata
+      if (!/^id\d+$/.test(key)) return;
+      if (skipFields.has(key)) return;
+      var indID = key.replace('id', '');
+      var value = s1[key];
+      if (value !== null && value !== undefined && value !== '' && value !== '[]') {
+        fd.append(indID, value);
       }
     });
 
-    // Explicitly preserve isRecurring on the copy
-    bodyObj[TASK_IND.isRecurring] = "Yes";
+    // Always set isRecurring to Yes on the copy
+    fd.append(String(TASK_IND.isRecurring), 'Yes');
 
-    var body = encodeFormBody(bodyObj);
+    // Reset status to Not Started
+    fd.append(String(TASK_IND.status), 'Not Started');
+
     var headers = {
-      "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-      "x-requested-with": "XMLHttpRequest",
-      "x-csrf-token": token,
-      "x-xsrf-token": token,
+      'x-requested-with': 'XMLHttpRequest',
+      'x-csrf-token': token,
+      'x-xsrf-token': token,
     };
 
-    var writeResp = await fetch(url, {
-      method: "POST",
+    var r = await fetch('/platform/projects/api/form/new', {
+      method: 'POST',
+      credentials: 'include',
       headers: headers,
-      credentials: "include",
-      body: body,
+      body: fd,
     });
-    if (!writeResp.ok) throw new Error("Write failed HTTP " + writeResp.status);
 
-    console.log(
-      "Recurring task copied: source=" + recordID + " \u2192 new=" + newRecordID
-    );
+    if (!r.ok) throw new Error('Create failed HTTP ' + r.status);
 
-    // Step 4: Submit the new record to the first workflow step so it
-    // appears in the dashboard. dependencyID and actionType must be
-    // confirmed in LEAF Admin under the workflow editor for form_9b302.
-    // TODO: Replace YOUR_DEPENDENCY_ID with the real dependencyID value
-    //       (found in LEAF Admin -> Workflow editor for form_9b302 ->
-    //        first step requirement ID, or by inspecting a live task
-    //        submission network request).
-    // TODO: Confirm actionType is correct for your workflow
-    //       (typically "approve" for the initial submission step).
-    var workflowToken = await ensureCSRFToken(newRecordID);
-    var workflowTokenField = state.csrfField || getCSRFFieldName();
-    var workflowUrl =
-      "/platform/projects/api/formWorkflow/" +
-      encodeURIComponent(newRecordID) +
-      "/apply";
-    var workflowBody = encodeFormBody({
-      dependencyID: "-1", // TODO: replace with real value
-      actionType: "Submit",               // TODO: confirm for your workflow
-      comment: "Auto-submitted by recurring task copy.",
-      [workflowTokenField]: workflowToken,
-    });
-    var workflowResp = await fetch(workflowUrl, {
-      method: "POST",
-      headers: {
-        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "x-requested-with": "XMLHttpRequest",
-        "x-csrf-token": workflowToken,
-        "x-xsrf-token": workflowToken,
-      },
-      credentials: "include",
-      body: workflowBody,
-    });
-    if (!workflowResp.ok) {
-      throw new Error("Workflow submit failed HTTP " + workflowResp.status);
+    var text = await r.text();
+    var newRecordID;
+    try {
+      newRecordID = JSON.parse(text);
+    } catch(e) {
+      newRecordID = text;
     }
-    console.log("Recurring task submitted to workflow: " + newRecordID);
+    newRecordID = String(newRecordID || '').trim().replace(/^\"|\"$/g, '');
+    if (!newRecordID || newRecordID === 'Invalid Token.') {
+      throw new Error('copyRecurringTask: invalid new record ID: ' + newRecordID);
+    }
 
+    console.log('Recurring task copied: source=' + sourceRecordID + ' \u2192 new=' + newRecordID);
     return newRecordID;
   }
 
