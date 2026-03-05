@@ -1,19 +1,12 @@
-<script>
-$(function() {
-    // Hide the input itself
-    $('#{{ iID }}').hide();
-    
-    // Hide the sublabel
-    $('.sublabel.blockIndicator_{{ iID }}').hide();
-    
-    // Hide the parent container (catches the visible checkbox widget)
-    $('#{{ iID }}').closest('tr').hide();
-    
-    // Disable it so it can't be interacted with
-    $('#{{ iID }}').attr('disabled', true);
+var frame = document.getElementById("pmModalFrame");
+var doc = frame.contentDocument || frame.contentWindow.document;
+var checkboxes = doc.querySelectorAll('input[type="checkbox"]');
+checkboxes.forEach(function (cb) {
+  console.log({
+    name: cb.name,
+    id: cb.id,
+    value: cb.value,
+    dataAttributes: cb.dataset,
+    outerHTML: cb.outerHTML,
+  });
 });
-</script>
-
-$('#{{ iID }}').closest('.xtemplate_field').hide(); // try this first
-$('#{{ iID }}').closest('tr').hide();               // fallback
-$('#{{ iID }}').closest('div').hide();              // last resort
