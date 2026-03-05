@@ -1,12 +1,6 @@
-<script>
-  $(function () {
-    if (
-      window.location.href.indexOf("printview") === -1 &&
-      window.location.href.indexOf("a=print") === -1
-    ) {
-      // Hide field title and field input on regular form view
-      $(".sublabel.blockIndicator_45").hide();
-      $(".response.blockIndicator_45").hide();
-    }
-  });
-</script>
+console.log({
+    sublabel: $('.sublabel.blockIndicator_45').length,
+    response: $('.response.blockIndicator_45').length,
+    sublabelVisible: $('.sublabel.blockIndicator_45').is(':visible'),
+    responseVisible: $('.response.blockIndicator_45').is(':visible')
+});
