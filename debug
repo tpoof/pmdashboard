@@ -1,2 +1,8 @@
-// This will print the actual source of the tryInject function if it exists
-console.log(typeof tryInject);
+console.log(typeof LeafFormQuery);
+
+var query = new LeafFormQuery();
+query.addTerm("stepID", "=", "resolved");
+query.addDataTerm("data", 45, "=", "Yes");
+query.execute().then(function (r) {
+  console.log(r);
+});
