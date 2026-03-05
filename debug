@@ -1,7 +1,4 @@
-fetch('/platform/projects/project_v10.js')
-  .then(r => r.text())
-  .then(js => {
-    var idx = js.indexOf('_pmCheckRecurring');
-    console.log('found at index:', idx);
-    if (idx !== -1) console.log('context:', js.substring(idx - 50, idx + 100));
-  });
+// Find the actual script tag loading project_v10.js
+document.querySelectorAll('script[src*="project_v10"]').forEach(function(s) {
+    console.log(s.src);
+});
