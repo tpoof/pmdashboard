@@ -1,10 +1,8 @@
-console.log(
-  document.querySelector(".xtemplate_label_45")?.outerHTML ||
-    document.querySelector('[for="45_"]')?.outerHTML ||
-    document.querySelector(".label_45")?.outerHTML ||
-    document
-      .querySelector(".blockIndicator_45")
-      ?.closest("table")
-      ?.querySelector("td:first-child")?.outerHTML ||
-    "not found",
+// Find all elements that mention 45 in class, id, or for attribute
+['[class*="45"]', '[id*="45"]', '[for*="45"]', '[data-id="45"]'].forEach(
+  function (sel) {
+    document.querySelectorAll(sel).forEach(function (el) {
+      console.log(sel, el.outerHTML.substring(0, 200));
+    });
+  },
 );
