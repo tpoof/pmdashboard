@@ -270,14 +270,18 @@
 
   async function checkAndCopyResolvedRecurringTasks() {
     try {
-      // Pre-warm CSRF token so createTaskRecord has it available.
-      // ensureCSRFToken checks headers + multiple URL fallbacks — more reliable
-      // than getCSRFToken() alone when Smarty hasn't substituted the placeholder.
-      var token = await ensureCSRFToken();
-      if (!token) {
-        console.warn('checkAndCopyResolvedRecurringTasks: could not obtain CSRF token, skipping.');
-        return;
+      // Pre-fetch CSRF token using fetchCSRFFromAPI which handles
+      // the formData.append format that LEAF uses on this site
+      var token = getCSRFToken();
+      if (!token || token.indexOf('{') === 0) {
+        token = await fetchCSRFFromAPI();
+        if (!token) {
+          console.warn('checkAndCopyResolvedRecurringTasks: could not obtain CSRF token, skipping.');
+          return;
+        }
       }
+      // Cache it so createTaskRecord and ensureCSRFToken can use it downstream
+      cacheCSRF(token, 'CSRFToken');
 
       var query = new LeafFormQuery();
       query.addTerm('stepID', '=', 'resolved');
@@ -871,6 +875,36 @@
     }
 
     return "";
+  }
+
+  async function fetchCSRFFromAPI() {
+    try {
+      var r = await fetch('/platform/projects/report.php?a=LEAF_Start_Request&id=form_9b302&title=Task', {
+        credentials: 'include'
+      });
+      var html = await r.text();
+
+      // Try existing extractCSRFTokenFromHTML first
+      var match = extractCSRFTokenFromHTML(html);
+      if (match && match.token) {
+        cacheCSRF(match.token, match.field);
+        console.log('CSRF token fetched via extractCSRFTokenFromHTML.');
+        return match.token;
+      }
+
+      // Fallback: match formData.append('CSRFToken', 'TOKEN') format
+      var appendMatch = html.match(/formData\.append\(\s*['"]CSRFToken['"]\s*,\s*['"]([a-f0-9]+)['"]\s*\)/i);
+      if (appendMatch && appendMatch[1]) {
+        cacheCSRF(appendMatch[1], 'CSRFToken');
+        console.log('CSRF token fetched via formData.append match.');
+        return appendMatch[1];
+      }
+
+      console.warn('fetchCSRFFromAPI: token not found in response.');
+    } catch (e) {
+      console.warn('fetchCSRFFromAPI failed:', e);
+    }
+    return null;
   }
 
   async function fetchJSON(url) {
