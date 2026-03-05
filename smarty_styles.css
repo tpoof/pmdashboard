@@ -1432,6 +1432,39 @@ body.smarty.page-launchpad .step_description {
   width: 100%;
 }
 
+body.smarty.page-launchpad .lp-creditBadge {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem 0.4rem 0.6rem;
+  font-size: 0.75rem;
+  color: #111;
+  box-shadow: none;
+  z-index: 1200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+body.smarty.page-launchpad .lp-creditBadge.is-visible {
+  opacity: 0.85;
+}
+
+body.smarty.page-launchpad .lp-creditBadge:hover {
+  opacity: 1;
+}
+
+body.smarty.page-launchpad .lp-creditBadge .material-symbols-outlined {
+  font-size: 1rem;
+  line-height: 1;
+}
+
 /* Page Overrides: Privacy */
 body.smarty.page-privacy .smarty-root {
   margin: 0;

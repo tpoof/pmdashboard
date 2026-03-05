@@ -10,7 +10,14 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/leaf-forms.css" />
+<link rel="stylesheet" href="css/leaf-forms.css" id="lf-stylesheet" />
+<script>
+// Resolve CSS path relative to the portal root automatically
+(function() {
+    var base = window.location.pathname.replace(/\/[^/]*$/, '/');
+    document.getElementById('lf-stylesheet').href = base + 'css/leaf-forms.css';
+})();
+</script>
 
 <div class="lf-root">
 
@@ -99,9 +106,8 @@
                 id="lf-tab-0"
                 aria-labelledby="lf-tabctrl-0">
                 <div id="formcontent">
-                    <div class="lf-banner lf-banner-warning" style="margin:20px">
-                        Loading&hellip;
-                        <img src="images/largespinner.gif" alt="" style="margin-left:8px" />
+                    <div style="padding:24px;text-align:center;color:#9299a5;font-size:.88rem">
+                        Loading&hellip; <img src="images/largespinner.gif" alt="" style="vertical-align:middle;margin-left:6px"/>
                     </div>
                 </div>
             </div>

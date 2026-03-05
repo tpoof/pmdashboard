@@ -1,13 +1,13 @@
 <!--{*
     print_form_ajax.tpl
-    The request header block — title, metadata, tags.
-    Injected into #formcontent by openContent() via AJAX.
-    Depends on: leaf-forms.css
+    Injected into #formcontent by openContent() AJAX call.
+    Renders inside an existing .lf-tabs-wrap > .lf-tab-panel — do NOT
+    add another wrapper here. Just output the header + bare field list.
 *}-->
 
-<div class="lf-record-header lf-animate-in">
+<div style="padding: 20px 22px 14px">
 
-    <!--{* Status badge row *}-->
+    <!--{* Status badge + record ID *}-->
     <div class="lf-rh-top">
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <!--{if $submitted == 0}-->
@@ -23,9 +23,9 @@
         <span class="lf-record-id">#<!--{$recordID|strip_tags}--></span>
     </div>
 
-    <!--{* Title — editable if not submitted or user is admin *}-->
+    <!--{* Title *}-->
     <div id="requestTitle">
-        <div class="lf-rh-title">
+        <div class="lf-rh-title" style="margin-top:8px">
             <!--{$title|sanitize}--> <!--{$subtype|sanitize}-->
             <!--{if $submitted == 0 || $is_admin}-->
                 <button
@@ -43,7 +43,7 @@
     </div>
 
     <!--{* Metadata row *}-->
-    <div class="lf-rh-meta">
+    <div class="lf-rh-meta" style="margin-top:14px; padding-top:14px; border-top:1px solid var(--lf-border)">
         <div class="lf-meta-item">
             <div class="lf-meta-label">Service</div>
             <div class="lf-meta-value">
@@ -59,9 +59,7 @@
                         style="font-size:.68rem; padding:2px 6px; margin-left:4px"
                         aria-label="Edit service"
                         onclick="changeService()"
-                        onkeydown="if(event.keyCode==13){ changeService(); }">
-                        ✎
-                    </button>
+                        onkeydown="if(event.keyCode==13){ changeService(); }">✎</button>
                 <!--{/if}-->
             </div>
         </div>
@@ -81,19 +79,20 @@
         </div>
     </div>
 
-    <!--{* Tags / bookmarks strip *}-->
+    <!--{* Tags *}-->
     <div
         class="lf-rh-tags<!--{if count($tags) == 0}--> lf-noprint<!--{/if}-->"
         id="tags"
         role="status"
         aria-live="polite"
-        style="margin-top: 12px;">
+        style="margin-top:12px">
         <!--{include file="print_form_ajax_tags.tpl" tags=$tags}-->
     </div>
 
 </div>
 
-<!--{* Form field sections rendered by print_subindicators.tpl *}-->
-<div class="lf-tabs-wrap" style="margin-top: 14px;">
-    <!--{include file=$printSubindicatorsTemplate form=$form orgchartPath=$orgchartPath}-->
-</div>
+<!--{* Divider before fields *}-->
+<div style="border-top: 1px solid var(--lf-border)"></div>
+
+<!--{* Field list — bare, no extra wrapper *}-->
+<!--{include file=$printSubindicatorsTemplate form=$form orgchartPath=$orgchartPath}-->
