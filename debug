@@ -1,16 +1,10 @@
-<script>
-$(function() {
-    var $checkbox = $('#45_');
-    var $wrapper = $('.response.blockIndicator_45');
-
-    if (window.location.href.indexOf('printview') !== -1 ||
-        window.location.href.indexOf('a=print') !== -1) {
-        // Print view — hide the whole field entirely
-        $wrapper.hide();
-    } else {
-        // Regular form view — hide and disable
-        $wrapper.hide();
-        $checkbox.attr('disabled', true);
-    }
-});
-</script>
+console.log(
+  document.querySelector(".xtemplate_label_45")?.outerHTML ||
+    document.querySelector('[for="45_"]')?.outerHTML ||
+    document.querySelector(".label_45")?.outerHTML ||
+    document
+      .querySelector(".blockIndicator_45")
+      ?.closest("table")
+      ?.querySelector("td:first-child")?.outerHTML ||
+    "not found",
+);
