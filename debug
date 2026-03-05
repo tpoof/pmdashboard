@@ -1,5 +1,13 @@
-// Replace XXX with the new record ID shown in "Recurring task copied: source=119 → new=XXX"
-fetch('/platform/projects/api/form/XXX/data', {
+fetch('/platform/projects/api/form/119/data', {
+  credentials: 'include'
+})
+.then(r => r.json())
+.then(d => console.log(JSON.stringify(d, null, 2)));
+
+
+
+
+fetch('/platform/projects/api/formWorkflow/134/currentStep', {
   credentials: 'include'
 })
 .then(r => r.json())
@@ -9,9 +17,3 @@ fetch('/platform/projects/api/form/XXX/data', {
 
 
 
-
-fetch('/platform/projects/api/formWorkflow/XXX/currentStep', {
-  credentials: 'include'
-})
-.then(r => r.json())
-.then(d => console.log(JSON.stringify(d, null, 2)));
