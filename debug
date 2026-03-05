@@ -1,6 +1,29 @@
-console.log({
-  windowCSRF: window.CSRFToken,
-  metaCSRF: document.querySelector('meta[name="csrf-token"]')?.content,
-  inputCSRF: document.querySelector('input[name="CSRFToken"]')?.value,
-  pmEnvCSRF: document.getElementById("pmEnv")?.getAttribute("data-csrf"),
+<script>
+$(function() {
+    // Hide and disable on regular form view
+    $('#{{ iID }}').closest('tr').hide();
+    $('.sublabel.blockIndicator_{{ iID }}').hide();
+    $('#{{ iID }}').attr('disabled', true);
+
+    // Handle print view - different DOM structure
+    // Disable the field
+    $('#{{ iID }}').attr('disabled', true).css({
+        'pointer-events': 'none',
+        'opacity': '0.6'
+    });
+
+    // Check if we are in print view
+    if (window.location.href.indexOf('printview') !== -1 ||
+        window.location.href.indexOf('a=print') !== -1) {
+
+        // In print view - don't hide, just disable and show as read-only
+        $('#{{ iID }}').attr('disabled', true);
+        $('#{{ iID }}').closest('tr').find('td').css('color', '#999');
+
+    } else {
+        // Regular form view - hide everything
+        $('#{{ iID }}').closest('tr').hide();
+        $('.sublabel.blockIndicator_{{ iID }}').hide();
+    }
 });
+</script>
