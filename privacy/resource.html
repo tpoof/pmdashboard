@@ -464,6 +464,20 @@
 
       const RECENT_CHANGES_ENDPOINT = "api/form/query";
       const RECENT_CHANGES_LIMIT = 5;
+      const PUBLISHED_RECORDS_ENDPOINT =
+        "https://leaf.va.gov/platform/privacy/api/form/query/?q=" +
+        encodeURIComponent(
+          JSON.stringify({
+            terms: [
+              { id: "categoryID", operator: "=", match: "form_8f7e8", gate: "AND" },
+              { id: "stepID", operator: "=", match: "20", gate: "AND" },
+              { id: "deleted", operator: "=", match: 0, gate: "AND" },
+            ],
+            joins: [],
+            sort: {},
+          }),
+        ) +
+        "&x-filterData=recordID,title";
 
       /*
         CURRENT INDICATOR IDS (update if the LEAF form changes):
@@ -670,6 +684,25 @@
         );
       }
 
+      async function fetchPublishedRecordIDs() {
+        try {
+          const response = await fetch(PUBLISHED_RECORDS_ENDPOINT, {
+            headers: { Accept: "application/json" },
+          });
+          if (!response.ok) {
+            throw new Error("Published records request failed");
+          }
+          const payload = await response.json();
+          return new Set(Object.keys(payload || {}));
+        } catch (error) {
+          console.warn(
+            "Could not fetch published records; falling back to showing all records.",
+            error,
+          );
+          return null;
+        }
+      }
+
       async function loadRecentChanges() {
         if (
           !recentChangesList ||
@@ -680,17 +713,17 @@
         }
 
         try {
-          const url = buildRecentChangesQueryUrl();
-          const response = await fetch(url, {
-            headers: {
-              Accept: "application/json",
-            },
-          });
+          const [publishedIDs, response] = await Promise.all([
+            fetchPublishedRecordIDs(),
+            fetch(buildRecentChangesQueryUrl(), {
+              headers: { Accept: "application/json" },
+            }),
+          ]);
           if (!response.ok) {
             throw new Error("Request failed");
           }
           const payload = await response.json();
-          const records = Array.isArray(payload)
+          const allRecords = Array.isArray(payload)
             ? payload
             : Object.values(payload || {}).filter(
                 (row) =>
@@ -701,6 +734,15 @@
                     "recordId" in row ||
                     "id" in row),
               );
+          const records =
+            publishedIDs === null
+              ? allRecords
+              : allRecords.filter((row) => {
+                  const id = String(
+                    row.recordID ?? row.recordId ?? row.id ?? "",
+                  );
+                  return publishedIDs.has(id);
+                });
 
           recentChanges = records
             .map((record) => {
