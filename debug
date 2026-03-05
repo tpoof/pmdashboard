@@ -1,1 +1,5 @@
-_pmCheckRecurring();
+fetch('https://leaf.va.gov/platform/projects/api/formWorkflow/139/currentStep', {
+  credentials: 'include'
+})
+.then(r => r.json())
+.then(d => console.log(JSON.stringify(d, null, 2)));
