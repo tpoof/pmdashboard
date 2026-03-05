@@ -1,35 +1,7 @@
-<script>
-  $(function () {
-    if (
-      window.location.href.indexOf("printview") === -1 &&
-      window.location.href.indexOf("a=print") === -1
-    ) {
-      var attempts = 0;
-      var maxAttempts = 20;
+var observer = new MutationObserver(function() {
+    $('.sublabel.blockIndicator_45').hide();
+    $('.response.blockIndicator_45').hide();
+});
 
-      function tryHide() {
-        attempts++;
-        var $sublabel = $(".sublabel.blockIndicator_45");
-        var $response = $(".response.blockIndicator_45");
-
-        if ($sublabel.length === 0 && $response.length === 0) {
-          if (attempts < maxAttempts) {
-            setTimeout(tryHide, 250);
-          } else {
-            console.warn(
-              "Recurring Task field not found after " +
-                maxAttempts +
-                " attempts.",
-            );
-          }
-          return;
-        }
-
-        $sublabel.hide();
-        $response.hide();
-      }
-
-      setTimeout(tryHide, 300);
-    }
-  });
-</script>
+observer.observe(document.body, { childList: true, subtree: true });
+console.log('observer started');
