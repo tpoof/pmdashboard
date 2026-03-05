@@ -1,3 +1,2 @@
-var frame = document.getElementById("pmModalFrame");
-var doc = frame.contentDocument || frame.contentWindow.document;
-console.log(doc.querySelector('input[name="45"]'));
+// This will print the actual source of the tryInject function if it exists
+console.log(typeof tryInject);
