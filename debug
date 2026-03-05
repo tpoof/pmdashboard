@@ -1,6 +1,6 @@
-fetch(
-  '/platform/projects/api/form/query/?terms=[{"id":"recordIDs","operator":"=","match":"120"}]&joins=["unfilledDependencies"]&format=json',
-  { credentials: "include" },
-)
-  .then((r) => r.json())
-  .then((d) => console.log(JSON.stringify(d, null, 2)));
+console.log({
+  windowCSRF: window.CSRFToken,
+  metaCSRF: document.querySelector('meta[name="csrf-token"]')?.content,
+  inputCSRF: document.querySelector('input[name="CSRFToken"]')?.value,
+  pmEnvCSRF: document.getElementById("pmEnv")?.getAttribute("data-csrf"),
+});
