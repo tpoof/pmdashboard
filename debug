@@ -1,7 +1,11 @@
-console.log(localStorage.getItem('pm_recurring_copied_v10'));
-
-
 var query = new LeafFormQuery();
-query.addTerm('stepID', '=', 'resolved');
-query.addDataTerm('data', 45, '=', 'Yes');
-query.execute().then(function(r) { console.log(JSON.stringify(r, null, 2)); });
+query.addTerm('recordIDs', '=', '137');
+query.getData([8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 30, 39, 45]);
+query.execute().then(function(r) { 
+  console.log(JSON.stringify(r['137'].s1, null, 2)); 
+});
+```
+
+**Check indicator 46 format** — what type of field is it in LEAF Admin? Text input, textarea, or something else? And what should the clickable link look like — a link to the original record's print view like:
+```
+https://leaf.va.gov/platform/projects/index.php?a=printview&recordID=119
