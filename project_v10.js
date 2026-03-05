@@ -378,34 +378,56 @@
     if (!token) throw new Error('copyRecurringTask: missing CSRFToken');
 
     // Step 3: Create new record with all data in a single api/form/new POST
-    // This ensures LEAF assigns the workflow automatically on creation
     var fd = new FormData();
     fd.append('CSRFToken', token);
     fd.append('numform_9b302', '1');
+
+    // Use actual title from source record
     fd.append('title', sourceRecord.title || 'Recurring Task');
 
-    // Copy all s1 fields — skip status (reset to Not Started) and timestamps
+    // Fields to skip — reset on new copy
     var skipFields = new Set([
-      'id' + TASK_IND.status,       // reset status on new copy
-      'id' + TASK_IND.otherSubType, // reset subtype
+      'id' + TASK_IND.status,
+      'id' + TASK_IND.otherSubType,
     ]);
 
+    // Copy s1 fields — only id[number] keys, skip timestamps and metadata
     Object.keys(s1).forEach(function(key) {
-      // Only copy id[number] keys, skip timestamps and metadata
-      if (!/^id\d+$/.test(key)) return;
+      if (!/^id\d+$/.test(key)) return;  // skip timestamps, _orgchart, etc
       if (skipFields.has(key)) return;
       var indID = key.replace('id', '');
       var value = s1[key];
-      if (value !== null && value !== undefined && value !== '' && value !== '[]') {
-        fd.append(indID, value);
-      }
+
+      // Skip nulls, empty, empty arrays
+      if (value === null || value === undefined || value === '' || value === '[]') return;
+
+      // Skip objects — these are complex types that need special handling below
+      if (typeof value === 'object') return;
+
+      fd.append(indID, String(value));
     });
+
+    // Special handling: assignedTo (indicator 11) uses orgchart empUID format
+    // LEAF expects username string, read from id11_orgchart if id11 is empty
+    var assignedTo = s1['id' + TASK_IND.assignedTo];
+    var orgchart = s1['id' + TASK_IND.assignedTo + '_orgchart'];
+
+    if (assignedTo && typeof assignedTo === 'string' && assignedTo.trim() !== '') {
+      fd.append(String(TASK_IND.assignedTo), assignedTo.trim());
+    } else if (orgchart && orgchart.userName) {
+      fd.append(String(TASK_IND.assignedTo), orgchart.userName);
+    } else if (orgchart && orgchart.empUID && orgchart.empUID !== 0) {
+      fd.append(String(TASK_IND.assignedTo), String(orgchart.empUID));
+    }
 
     // Always set isRecurring to Yes on the copy
     fd.append(String(TASK_IND.isRecurring), 'Yes');
 
     // Reset status to Not Started
     fd.append(String(TASK_IND.status), 'Not Started');
+
+    // Write source record ID to indicator 46 for traceability
+    fd.append('46', String(sourceRecordID));
 
     var headers = {
       'x-requested-with': 'XMLHttpRequest',
