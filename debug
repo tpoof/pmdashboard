@@ -1,19 +1,6 @@
-fetch('/platform/projects/api/form/119/data', {
-  credentials: 'include'
-})
-.then(r => r.json())
-.then(d => console.log(JSON.stringify(d, null, 2)));
-
-
-
-
-fetch('/platform/projects/api/formWorkflow/134/currentStep', {
-  credentials: 'include'
-})
-.then(r => r.json())
-.then(d => console.log(JSON.stringify(d, null, 2)));
-
-
-
-
-
+var query = new LeafFormQuery();
+query.addTerm('recordIDs', '=', '119');
+query.getData([8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 30, 39, 45]);
+query.execute().then(function(r) { 
+  console.log(JSON.stringify(r, null, 2)); 
+});
