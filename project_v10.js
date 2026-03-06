@@ -467,31 +467,55 @@
 
     console.log('Recurring task copied: source=' + sourceRecordID + ' \u2192 new=' + newRecordID);
 
-    // Step 4: Import orgchart employee for assignedTo field
-    // LEAF orgchart fields require a separate import API call
+    // Step 4: Copy assignedTo field using LEAF orgchart API sequence
     var orgchart = s1['id' + TASK_IND.assignedTo + '_orgchart'];
     var assignedUserName = orgchart && orgchart.userName ? orgchart.userName : null;
+    var assignedEmpUID = orgchart && orgchart.empUID && orgchart.empUID !== 0 ? orgchart.empUID : null;
 
     if (assignedUserName) {
       try {
         var orgToken = await fetchCSRFFromAPI();
-        var orgUrl = '/platform/orgchart/api/employee/import/_' + encodeURIComponent(assignedUserName);
-        var orgBody = encodeFormBody({ CSRFToken: orgToken });
 
-        // First import the employee into the orgchart
-        var orgImportResp = await fetch(orgUrl, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'x-requested-with': 'XMLHttpRequest',
-            'x-csrf-token': orgToken,
-          },
-          body: orgBody,
-        });
+        // Step 4a: Search by username to find employee
+        await fetch(
+          '/platform/orgchart/api/national/employee/search?q=userName:' +
+          encodeURIComponent(assignedUserName) + '&noLimit=0&domain=&_=' + Date.now(),
+          {
+            credentials: 'include',
+            headers: { 'x-requested-with': 'XMLHttpRequest' }
+          }
+        );
 
-        if (orgImportResp.ok) {
-          // Now write the username to the assignedTo field on the new record
+        // Step 4b: Import employee into local orgchart
+        var importResp = await fetch(
+          '/platform/orgchart/api/employee/import/_' + encodeURIComponent(assignedUserName),
+          {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+              'x-requested-with': 'XMLHttpRequest',
+              'x-csrf-token': orgToken,
+            },
+            body: encodeFormBody({ CSRFToken: orgToken }),
+          }
+        );
+
+        // Step 4c: Search by empUID to confirm import
+        if (assignedEmpUID) {
+          await fetch(
+            '/platform/orgchart/api/employee/search?q=%23' +
+            encodeURIComponent(assignedEmpUID) +
+            '&noLimit=0&domain=&includeDisabled=true&_=' + Date.now(),
+            {
+              credentials: 'include',
+              headers: { 'x-requested-with': 'XMLHttpRequest' }
+            }
+          );
+        }
+
+        // Step 4d: Write username to assignedTo field on new record
+        if (importResp.ok) {
           var writeToken = await fetchCSRFFromAPI();
           var writeUrl = FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(newRecordID);
           var writeBody = encodeFormBody({
@@ -501,7 +525,7 @@
             [TASK_IND.assignedTo]: assignedUserName,
           });
 
-          await fetch(writeUrl, {
+          var writeResp = await fetch(writeUrl, {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -511,7 +535,12 @@
             },
             body: writeBody,
           });
-          console.log('Assigned To copied for record ' + newRecordID + ': ' + assignedUserName);
+
+          if (writeResp.ok) {
+            console.log('Assigned To copied for record ' + newRecordID + ': ' + assignedUserName);
+          } else {
+            console.warn('Assigned To write failed HTTP ' + writeResp.status);
+          }
         }
       } catch(e) {
         console.warn('Could not copy assignedTo for record ' + newRecordID, e);
