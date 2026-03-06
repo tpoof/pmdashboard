@@ -11,7 +11,6 @@
 
   // Indicator ID for the isRecurring checkbox field on the Task form.
   // IMPORTANT: Replace 99 with the real LEAF indicator ID once the field is created.
-  // TODO: replace 99 with real LEAF indicator ID
   var RECURRING_INDICATOR_ID = 45;
 
   // Task form indicator IDs
@@ -537,7 +536,6 @@
           });
 
           if (writeResp.ok) {
-            console.log('Assigned To copied for record ' + newRecordID + ': empUID=' + (assignedEmpUID || assignedUserName));
           } else {
             console.warn('Assigned To write failed HTTP ' + writeResp.status);
           }
@@ -1051,7 +1049,6 @@
       var match = extractCSRFTokenFromHTML(html);
       if (match && match.token) {
         cacheCSRF(match.token, match.field);
-        console.log('CSRF token fetched via extractCSRFTokenFromHTML.');
         return match.token;
       }
 
@@ -1059,7 +1056,6 @@
       var appendMatch = html.match(/formData\.append\(\s*['"]CSRFToken['"]\s*,\s*['"]([a-f0-9]+)['"]\s*\)/i);
       if (appendMatch && appendMatch[1]) {
         cacheCSRF(appendMatch[1], 'CSRFToken');
-        console.log('CSRF token fetched via formData.append match.');
         return appendMatch[1];
       }
 
@@ -6352,9 +6348,6 @@
                 radio.closest(".leafFormField") ||
                 radio.parentElement;
               if (fieldWrapper) fieldWrapper.style.display = "none";
-
-              console.log("Recurring radio set successfully on attempt " + attempts);
-
             } catch (e) {
               console.warn("Could not inject recurring radio value:", e);
             }
@@ -7530,8 +7523,4 @@
   window.addEventListener("load", handleTransferFromSupport);
   document.addEventListener("DOMContentLoaded", main);
 
-  // DEBUG: expose recurring task functions to window for console testing
-  // TODO: remove after confirmed working
-  window._pmCheckRecurring = checkAndCopyResolvedRecurringTasks;
-  window._pmCopyRecurring = copyRecurringTask;
 })();
