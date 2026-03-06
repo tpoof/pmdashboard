@@ -257,6 +257,9 @@
     return getRecurringCopiedSet().has(String(recordID));
   }
 
+  // In-memory lock to prevent concurrent copies within same poll cycle
+  var recurringInProgress = new Set();
+
   function safe(s) {
     return String(s || "")
       .replaceAll("&", "&amp;")
@@ -324,13 +327,20 @@
       var results = await query.execute();
 
       for (var recordID in results) {
+        // Skip if already copied (persistent) or currently being copied (in-memory lock)
         if (hasRecurringCopied(recordID)) continue;
+        if (recurringInProgress.has(String(recordID))) continue;
+
+        // Lock immediately before any async work
+        recurringInProgress.add(String(recordID));
         addRecurringCopied(recordID);
+
         try {
           await copyRecurringTask(recordID);
-        } catch (e) {
+        } catch(e) {
           console.error('Failed to copy recurring task ' + recordID, e);
-          // Remove from localStorage on failure so it can retry next poll
+          // Remove from both on failure so it can retry
+          recurringInProgress.delete(String(recordID));
           try {
             var set = getRecurringCopiedSet();
             set.delete(String(recordID));
