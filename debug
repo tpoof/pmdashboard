@@ -1,5 +1,35 @@
-fetch('/platform/projects/api/formWorkflow/158/currentStep', {
+fetch('/platform/projects/files/project_v10.js?v=' + Date.now())
+  .then(r => r.text())
+  .then(js => {
+    var appendMatch = js.match(/formData\.append\(\s*['"]CSRFToken['"]\s*,\s*['"]([a-f0-9]+)['"]\s*\)/i);
+  });
+
+// Get CSRF and test workflow submit on 158
+fetch('/platform/projects/report.php?a=LEAF_Start_Request&id=form_9b302&title=Task', {
   credentials: 'include'
 })
-.then(r => r.json())
-.then(d => console.log(JSON.stringify(d, null, 2)));
+.then(r => r.text())
+.then(html => {
+  var appendMatch = html.match(/formData\.append\(\s*['"]CSRFToken['"]\s*,\s*['"]([a-f0-9]+)['"]\s*\)/i);
+  var token = appendMatch ? appendMatch[1] : null;
+  console.log('token:', token);
+
+  var body = new URLSearchParams();
+  body.append('CSRFToken', token);
+  body.append('dependencyID', '-1');
+  body.append('actionType', 'Submit');
+  body.append('comment', 'test submit');
+
+  return fetch('/platform/projects/api/formWorkflow/158/apply', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      'x-requested-with': 'XMLHttpRequest',
+      'x-csrf-token': token
+    },
+    body: body.toString()
+  })
+  .then(r => r.text())
+  .then(d => console.log('apply response:', d));
+});

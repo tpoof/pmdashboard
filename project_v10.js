@@ -466,6 +466,91 @@
     }
 
     console.log('Recurring task copied: source=' + sourceRecordID + ' \u2192 new=' + newRecordID);
+
+    // Step 4: Import orgchart employee for assignedTo field
+    // LEAF orgchart fields require a separate import API call
+    var orgchart = s1['id' + TASK_IND.assignedTo + '_orgchart'];
+    var assignedUserName = orgchart && orgchart.userName ? orgchart.userName : null;
+
+    if (assignedUserName) {
+      try {
+        var orgToken = await fetchCSRFFromAPI();
+        var orgUrl = '/platform/orgchart/api/employee/import/_' + encodeURIComponent(assignedUserName);
+        var orgBody = encodeFormBody({ CSRFToken: orgToken });
+
+        // First import the employee into the orgchart
+        var orgImportResp = await fetch(orgUrl, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'x-requested-with': 'XMLHttpRequest',
+            'x-csrf-token': orgToken,
+          },
+          body: orgBody,
+        });
+
+        if (orgImportResp.ok) {
+          // Now write the username to the assignedTo field on the new record
+          var writeToken = await fetchCSRFFromAPI();
+          var writeUrl = FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(newRecordID);
+          var writeBody = encodeFormBody({
+            CSRFToken: writeToken,
+            recordID: newRecordID,
+            series: 1,
+            [TASK_IND.assignedTo]: assignedUserName,
+          });
+
+          await fetch(writeUrl, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+              'x-requested-with': 'XMLHttpRequest',
+              'x-csrf-token': writeToken,
+            },
+            body: writeBody,
+          });
+          console.log('Assigned To copied for record ' + newRecordID + ': ' + assignedUserName);
+        }
+      } catch(e) {
+        console.warn('Could not copy assignedTo for record ' + newRecordID, e);
+      }
+    }
+
+    // Step 5: Submit record into workflow
+    try {
+      var wfToken = await fetchCSRFFromAPI();
+      var wfUrl = '/platform/projects/api/formWorkflow/' + encodeURIComponent(newRecordID) + '/apply';
+      var wfBody = encodeFormBody({
+        CSRFToken: wfToken,
+        dependencyID: '-1',
+        actionType: 'Submit',
+        comment: 'Auto-submitted by recurring task copy.',
+      });
+
+      var wfResp = await fetch(wfUrl, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'x-requested-with': 'XMLHttpRequest',
+          'x-csrf-token': wfToken,
+          'x-xsrf-token': wfToken,
+        },
+        body: wfBody,
+      });
+
+      if (wfResp.ok) {
+        console.log('Recurring task submitted to workflow: ' + newRecordID);
+      } else {
+        var wfText = await wfResp.text();
+        console.warn('Workflow submit failed HTTP ' + wfResp.status + ': ' + wfText);
+      }
+    } catch(e) {
+      console.warn('Could not submit record to workflow: ' + newRecordID, e);
+    }
+
     return newRecordID;
   }
 
