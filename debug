@@ -1,1 +1,23 @@
-localStorage.removeItem('pm_recurring_copied_v10'); _pmCheckRecurring();
+Issue 1 — Dedup not persisting
+Run this to see what's in localStorage right now after the copies:
+    console.log(localStorage.getItem('pm_recurring_copied_v10'));
+
+Also check if the record ID being stored matches exactly what the query returns:
+    // Check what recordID format is being stored vs what query returns
+    var query = new LeafFormQuery();
+    query.addTerm('stepID', '=', 'resolved');
+    query.addDataTerm('data', 45, '=', 'Yes');
+    query.execute().then(function(r) { 
+        console.log('query recordIDs:', Object.keys(r));
+        console.log('localStorage:', JSON.parse(localStorage.getItem('pm_recurring_copied_v10') || '[]'));
+    });
+
+
+Issue 2 — Assigned To empUID
+Run this to see exactly what the source record stores for indicator 11:
+    var query = new LeafFormQuery();
+    query.addTerm('recordIDs', '=', '137');
+    query.getData([11]);
+    query.execute().then(function(r) { 
+        console.log(JSON.stringify(r['137'].s1, null, 2)); 
+    });
