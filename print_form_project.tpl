@@ -382,12 +382,33 @@ function wireDependencies17() {
     });
 }
 
+function wireSourceRecord46() {
+    var nodes = document.querySelectorAll(
+        "[id^='xhrIndicator_46_'], [id^='data_46_']"
+    );
+    if (!nodes || !nodes.length) return;
+    nodes.forEach(function(el) {
+        if (!el || el.querySelector("a.pmSandboxLink")) return;
+        var raw = el.tagName === "TEXTAREA" ? (el.value || "") : (el.textContent || "");
+        var id = raw.trim();
+        if (!id || !/^\d+$/.test(id)) return;
+        var link = document.createElement("a");
+        link.className = "pmSandboxLink";
+        link.href = "#";
+        link.setAttribute("data-sandbox-url", "index.php?a=printview&recordID=" + encodeURIComponent(id));
+        link.textContent = "Source Task #" + id;
+        el.innerHTML = "";
+        el.appendChild(link);
+    });
+}
+
 function initSandboxTicketWatcher() {
     var target = document.getElementById("formcontent");
     if (!target || target.__pmSandboxObserver) return;
     var observer = new MutationObserver(function() {
         wireSandboxTicket18();
         wireDependencies17();
+        wireSourceRecord46();
     });
     observer.observe(target, {
         childList: true,
@@ -853,6 +874,7 @@ function doSubmit(recordID) {
                 handlePrintConditionalIndicators(formPrintConditions);
                 wireSandboxTicket18();
                 wireDependencies17();
+                wireSourceRecord46();
             },
             error: function(res) {
                 $('#formcontent').empty().html(res);
@@ -891,6 +913,7 @@ function doSubmit(recordID) {
                 handlePrintConditionalIndicators(formPrintConditions);
                 wireSandboxTicket18();
                 wireDependencies17();
+                wireSourceRecord46();
             },
             error: function(res) {
                 $('#formcontent').empty().html(res);
@@ -1719,3 +1742,64 @@ function doSubmit(recordID) {
         });
     });
 </script>
+
+<!--{if $stepID == 'resolved'}-->
+<script>
+(function() {
+  var recordID = <!--{$recordID|intval}-->;
+
+  // Fetch indicator 45 to confirm this is a recurring task
+  fetch('api/form/query?q=' + encodeURIComponent(JSON.stringify({
+    terms: [{ id: 'recordIDs', operator: '=', match: recordID, gate: 'AND' }],
+    joins: [],
+    sort: {},
+    getData: ['45']
+  })) + '&x-filterData=recordID', {
+    credentials: 'include',
+    headers: { 'Accept': 'application/json' }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var record = data && data[String(recordID)];
+    var isRecurring = record && record.s1 && record.s1['id45'];
+    if (isRecurring !== 'Yes') return;
+
+    // Wait for #workflowbox_lastAction to appear via MutationObserver
+    var timeout = setTimeout(function() {
+      observer.disconnect();
+    }, 10000); // abort after 10 seconds
+
+    var observer = new MutationObserver(function() {
+      var target = document.getElementById('workflowbox_lastAction');
+      if (!target) return;
+
+      // Element found — disconnect immediately to avoid re-firing
+      observer.disconnect();
+      clearTimeout(timeout);
+
+      var banner = document.createElement('div');
+      banner.className = 'pm-recurring-complete-banner';
+      banner.style.cssText = [
+        'background-color:#d4edda',
+        'border:1px solid #c3e6cb',
+        'border-radius:4px',
+        'color:#155724',
+        'padding:12px 16px',
+        'margin-bottom:12px',
+        'font-size:14px',
+        'display:flex',
+        'align-items:center',
+        'gap:8px'
+      ].join(';');
+      banner.innerHTML = '<span style="font-size:18px;">&#10003;</span>' +
+        '<span>This recurring task has been completed. A new task has been automatically created and is ready in your inbox.</span>';
+
+      target.parentNode.insertBefore(banner, target);
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  })
+  .catch(function() {});
+})();
+</script>
+<!--{/if}-->
