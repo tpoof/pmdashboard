@@ -1281,7 +1281,10 @@
       supportTicket: extractFromS1(row, TASK_IND.supportTicket),
       okrAssociation: extractFromS1(row, TASK_IND.okrAssociation),
       keyResultSelection: extractFromS1(row, TASK_IND.keyResultSelection),
-      isRecurring: row[TASK_IND.isRecurring] === "Yes" || row[TASK_IND.isRecurring] === "1" || row[TASK_IND.isRecurring] === true || row[TASK_IND.isRecurring] === 1,
+      isRecurring: row[TASK_IND.isRecurring] === "Yes" ||
+                   row[TASK_IND.isRecurring] === "1" ||
+                   row[TASK_IND.isRecurring] === true ||
+                   row[TASK_IND.isRecurring] === 1,
       createdAt: createdAt,
       dependenciesRaw: depsRaw,
       depIds: depIds,
@@ -6209,44 +6212,43 @@
                 return;
               }
 
-              var checkbox = doc.querySelector('input[name="' + RECURRING_INDICATOR_ID + '"]');
+              // Target the Yes radio button for indicator 45
+              var radio = doc.querySelector(
+                'input[type="radio"][name="' + RECURRING_INDICATOR_ID + '"][value="Yes"]'
+              );
 
-              if (!checkbox) {
-                // Not rendered yet — retry
+              if (!radio) {
                 if (attempts < maxAttempts) {
                   setTimeout(tryInject, 250);
                 } else {
-                  console.warn("Recurring checkbox (indicator " + RECURRING_INDICATOR_ID + ") not found after " + maxAttempts + " attempts.");
+                  console.warn("Recurring radio (indicator " + RECURRING_INDICATOR_ID + ") not found after " + maxAttempts + " attempts.");
                 }
                 return;
               }
 
-              // Checkbox found — inject value
-              checkbox.checked = true;
-              checkbox.value = "Yes";
+              // Ensure it's selected — URL pre-population should handle this
+              // but we force it as a safety measure
+              radio.checked = true;
+              radio.dispatchEvent(new Event("change", { bubbles: true }));
 
-              // iCheck API first, fall back to events
-              var $cb = frame.contentWindow.$ && frame.contentWindow.$(checkbox);
-              if ($cb && $cb.iCheck) {
-                $cb.iCheck('check');
-              } else {
-                checkbox.dispatchEvent(new Event("ifChecked", { bubbles: true }));
-                checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-                checkbox.dispatchEvent(new Event("click", { bubbles: true }));
+              // Use iCheck API if available
+              var $radio = frame.contentWindow.$ && frame.contentWindow.$(radio);
+              if ($radio && $radio.iCheck) {
+                $radio.iCheck('check');
               }
 
-              // Hide the field row from the user
+              // Hide the entire field from the user
               var fieldWrapper =
-                checkbox.closest("tr") ||
-                checkbox.closest(".xtemplate_field") ||
-                checkbox.closest(".leafFormField") ||
-                checkbox.parentElement;
+                radio.closest("tr") ||
+                radio.closest(".xtemplate_field") ||
+                radio.closest(".leafFormField") ||
+                radio.parentElement;
               if (fieldWrapper) fieldWrapper.style.display = "none";
 
-              console.log("Recurring checkbox set successfully on attempt " + attempts);
+              console.log("Recurring radio set successfully on attempt " + attempts);
 
             } catch (e) {
-              console.warn("Could not inject recurring checkbox value:", e);
+              console.warn("Could not inject recurring radio value:", e);
             }
           }
 
