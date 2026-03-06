@@ -407,17 +407,16 @@
       fd.append(indID, String(value));
     });
 
-    // Special handling: assignedTo (indicator 11) uses orgchart empUID format
-    // LEAF expects username string, read from id11_orgchart if id11 is empty
-    var assignedTo = s1['id' + TASK_IND.assignedTo];
+    // Special handling: assignedTo (indicator 11) uses orgchart format
+    // LEAF expects userName, not display name
     var orgchart = s1['id' + TASK_IND.assignedTo + '_orgchart'];
+    var assignedTo = s1['id' + TASK_IND.assignedTo];
 
-    if (assignedTo && typeof assignedTo === 'string' && assignedTo.trim() !== '') {
-      fd.append(String(TASK_IND.assignedTo), assignedTo.trim());
-    } else if (orgchart && orgchart.userName) {
+    if (orgchart && orgchart.userName) {
+      // Use userName from orgchart metadata — most reliable format
       fd.append(String(TASK_IND.assignedTo), orgchart.userName);
-    } else if (orgchart && orgchart.empUID && orgchart.empUID !== 0) {
-      fd.append(String(TASK_IND.assignedTo), String(orgchart.empUID));
+    } else if (assignedTo && typeof assignedTo === 'string' && assignedTo.trim() !== '') {
+      fd.append(String(TASK_IND.assignedTo), assignedTo.trim());
     }
 
     // Always set isRecurring to Yes on the copy
