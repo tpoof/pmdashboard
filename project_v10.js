@@ -514,7 +514,7 @@
           );
         }
 
-        // Step 4d: Write username to assignedTo field on new record
+        // Step 4d: Write empUID to assignedTo field on new record
         if (importResp.ok) {
           var writeToken = await fetchCSRFFromAPI();
           var writeUrl = FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(newRecordID);
@@ -522,7 +522,7 @@
             CSRFToken: writeToken,
             recordID: newRecordID,
             series: 1,
-            [TASK_IND.assignedTo]: assignedUserName,
+            [TASK_IND.assignedTo]: assignedEmpUID || assignedUserName,
           });
 
           var writeResp = await fetch(writeUrl, {
@@ -537,7 +537,7 @@
           });
 
           if (writeResp.ok) {
-            console.log('Assigned To copied for record ' + newRecordID + ': ' + assignedUserName);
+            console.log('Assigned To copied for record ' + newRecordID + ': empUID=' + (assignedEmpUID || assignedUserName));
           } else {
             console.warn('Assigned To write failed HTTP ' + writeResp.status);
           }
