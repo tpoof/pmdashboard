@@ -547,34 +547,28 @@
       }
     }
 
-    // Step 5: Submit record into workflow
+    // Step 5: Submit record into workflow using the correct submit endpoint
     try {
-      var wfToken = await fetchCSRFFromAPI();
-      var wfUrl = '/platform/projects/api/formWorkflow/' + encodeURIComponent(newRecordID) + '/apply';
-      var wfBody = encodeFormBody({
-        CSRFToken: wfToken,
-        dependencyID: '-1',
-        actionType: 'Submit',
-        comment: 'Auto-submitted by recurring task copy.',
-      });
+      var submitToken = await fetchCSRFFromAPI();
+      var submitUrl = '/platform/projects/api/form/' + encodeURIComponent(newRecordID) + '/submit';
+      var submitBody = encodeFormBody({ CSRFToken: submitToken });
 
-      var wfResp = await fetch(wfUrl, {
+      var submitResp = await fetch(submitUrl, {
         method: 'POST',
         credentials: 'include',
         headers: {
           'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
           'x-requested-with': 'XMLHttpRequest',
-          'x-csrf-token': wfToken,
-          'x-xsrf-token': wfToken,
+          'x-csrf-token': submitToken,
         },
-        body: wfBody,
+        body: submitBody,
       });
 
-      if (wfResp.ok) {
+      if (submitResp.ok) {
         console.log('Recurring task submitted to workflow: ' + newRecordID);
       } else {
-        var wfText = await wfResp.text();
-        console.warn('Workflow submit failed HTTP ' + wfResp.status + ': ' + wfText);
+        var submitText = await submitResp.text();
+        console.warn('Workflow submit failed HTTP ' + submitResp.status + ': ' + submitText);
       }
     } catch(e) {
       console.warn('Could not submit record to workflow: ' + newRecordID, e);
