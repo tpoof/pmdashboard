@@ -29,6 +29,7 @@
     okrAssociation: 30,
     keyResultSelection: 39,
     isRecurring: RECURRING_INDICATOR_ID,
+    actualCompletionDate: 47,
   };
 
   // Project form indicator IDs
@@ -164,6 +165,7 @@
       priority: null,
       ticketsImported: null,
       projectsByType: null,
+      scheduleVariance: null,
     },
     keyResultsAll: [],
         projectsLoaded: false,
@@ -1385,6 +1387,7 @@
       supportTicket: extractFromS1(row, TASK_IND.supportTicket),
       okrAssociation: extractFromS1(row, TASK_IND.okrAssociation),
       keyResultSelection: extractFromS1(row, TASK_IND.keyResultSelection),
+      actualCompletion: extractFromS1(row, TASK_IND.actualCompletionDate),
       isRecurring: row[TASK_IND.isRecurring] === "Yes" ||
                    row[TASK_IND.isRecurring] === "1" ||
                    row[TASK_IND.isRecurring] === true ||
@@ -1647,6 +1650,19 @@
     return "index.php?a=printview&recordID=" + encodeURIComponent(rid);
   }
 
+  function getProjectCompletionPct(projectKey) {
+    var key = String(projectKey || "").trim();
+    var tasks = (state.tasksAll || []).filter(function (t) {
+      return String(t.projectKey || "").trim() === key;
+    });
+    var total = tasks.length;
+    if (total === 0) return 0;
+    var completed = tasks.filter(function (t) {
+      return String(t.status || "").toLowerCase().indexOf("completed") !== -1;
+    }).length;
+    return Math.round((completed / total) * 100);
+  }
+
   function renderProjectsTable(projects) {
     var el = document.getElementById("pmProjectsTable");
     if (!el) return;
@@ -1681,6 +1697,8 @@
             '">' +
             safe(projectKeyText) +
             "</span>";
+        var compPct = getProjectCompletionPct(p.projectKey);
+        var compClass = compPct === 100 ? "pm-completeGreen" : compPct >= 50 ? "pm-completeMid" : "";
         var okrKeyText = String(p.okrAssociation || "").trim();
         var krText = String(p.keyResultSelection || "").trim();
         var okrLink = okrKeyText
@@ -1725,6 +1743,7 @@
           "<td>" +
           safe(p.projectStatus) +
           "</td>" +
+          '<td class="pm-colCompletion"><span class="pm-compPctWrap"><span class="pm-compPctBar" style="width:' + compPct + '%" aria-hidden="true"></span><span class="' + compClass + ' pm-compPctLabel">' + compPct + '%</span></span></td>' +
           "</tr>"
         );
       })
@@ -1740,6 +1759,7 @@
       '<th scope="col" class="pm-sortable" data-sort="projectFiscalYear" data-type="string"><button type="button" class="pm-sortBtn">FY</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="okrAssociation" data-type="string"><button type="button" class="pm-sortBtn">OKR | Key Result</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
+      '<th scope="col" class="pm-sortable pm-colCompletion" data-sort="completionPct" data-type="number"><button type="button" class="pm-sortBtn">% Complete</button></th>' +
       "</tr></thead>" +
       "<tbody>" +
       rows +
@@ -2924,6 +2944,7 @@
         '<th scope="col" class="pm-sortable" data-sort="assignedTo" data-type="string"><button type="button" class="pm-sortBtn">Assigned To</button></th>' +
         '<th scope="col" class="pm-sortable" data-sort="start" data-type="date"><button type="button" class="pm-sortBtn">Start</button></th>' +
         '<th scope="col" class="pm-sortable" data-sort="due" data-type="date"><button type="button" class="pm-sortBtn">Due</button></th>' +
+        '<th scope="col" class="pm-sortable" data-sort="actualCompletion" data-type="date"><button type="button" class="pm-sortBtn">Completed Date</button></th>' +
         '<th scope="col" class="pm-sortable" data-sort="supportTicket" data-type="string"><button type="button" class="pm-sortBtn">Ticket</button></th>' +
         "</tr></thead>";
 
@@ -2934,7 +2955,7 @@
 
       state.virtualTasks.container = container;
       state.virtualTasks.tbody = el.querySelector("tbody");
-      state.virtualTasks.colCount = 11;
+      state.virtualTasks.colCount = 12;
       state.virtualTasks.inited = true;
 
       state.virtualTasks.rowHeight = readTasksRowHeight();
@@ -3030,6 +3051,9 @@
       overdueClass +
       '">' +
       safe(t.due) +
+      "</td>" +
+      "<td>" +
+      formatDateCell(t.actualCompletion) +
       "</td>" +
       "<td>" +
       supportTicketChip(t.supportTicket) +
@@ -3228,12 +3252,22 @@
     if (isOther && !subType) {
       throw new Error("Other status requires a subtype.");
     }
+    var today = new Date();
+    var todayStr =
+      today.getFullYear() +
+      "-" +
+      String(today.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(today.getDate()).padStart(2, "0");
     var bodyObj = {
       10: newStatus,
       44: isOther ? subType : "",
       recordID: recordID,
       series: 1,
     };
+    if (newStatus === "Completed") {
+      bodyObj[47] = todayStr;
+    }
     bodyObj[tokenField] = token;
     var body = encodeFormBody(bodyObj);
 
@@ -3346,7 +3380,7 @@
     var supportId = getQueryParam("transferFromSupport");
     var uxId = getQueryParam("transferFromUX");
     var ideaId = getQueryParam("transferFromIdea");
-    var legacyId = getQueryParam("transferFromSandbox");
+    var legacyId = getQueryParam("transferFromPortal");
     var sourceId = supportId || uxId || ideaId || legacyId;
     var sourceType = uxId ? "ux" : ideaId ? "idea" : "support";
     var sourceLabel =
@@ -3366,7 +3400,7 @@
       params.delete("transferFromUX");
       params.delete("transferFromIdea");
       params.delete("transferFromSupport");
-      params.delete("transferFromSandbox");
+      params.delete("transferFromPortal");
       var nextUrl =
         window.location.pathname +
         (params.toString() ? "?" + params.toString() : "") +
@@ -5275,6 +5309,8 @@
       priorities: new Set(getFilterSet("priority")),
       categories: new Set(getFilterSet("category")),
       devOnly: state.devOnly,
+      actualCompletionFrom: (document.getElementById("pmActualCompletionFrom") || {}).value || "",
+      actualCompletionTo: (document.getElementById("pmActualCompletionTo") || {}).value || "",
     };
   }
 
@@ -5329,6 +5365,16 @@
       return false;
     if (filters && !matchesFilterSet(task.category, filters.categories))
       return false;
+    if (filters && filters.actualCompletionFrom) {
+      var acFrom = parseDateLoose(filters.actualCompletionFrom);
+      var acVal = parseDateLoose(task.actualCompletion);
+      if (!acVal || (acFrom && acVal < acFrom)) return false;
+    }
+    if (filters && filters.actualCompletionTo) {
+      var acTo = parseDateLoose(filters.actualCompletionTo);
+      var acVal2 = parseDateLoose(task.actualCompletion);
+      if (!acVal2 || (acTo && acVal2 > acTo)) return false;
+    }
     return true;
   }
 
@@ -5343,6 +5389,8 @@
       signatureFromSet(filters.assignees),
       signatureFromSet(filters.priorities),
       signatureFromSet(filters.categories),
+      sigPart(filters.actualCompletionFrom),
+      sigPart(filters.actualCompletionTo),
     ].join("|");
   }
 
@@ -5488,6 +5536,14 @@
     var sorted = list;
     if (sortState && sortState.key) {
       sorted = list.slice().sort(function (a, b) {
+        if (sortState.key === "completionPct") {
+          return compareValues(
+            getProjectCompletionPct(a.projectKey),
+            getProjectCompletionPct(b.projectKey),
+            sortState.dir,
+            "number",
+          );
+        }
         return compareValues(
           a[sortState.key],
           b[sortState.key],
@@ -5889,6 +5945,11 @@
       { value: "Medium", label: "Medium" },
       { value: "Low", label: "Low" },
     ]);
+
+    var acFrom = document.getElementById("pmActualCompletionFrom");
+    var acTo = document.getElementById("pmActualCompletionTo");
+    if (acFrom) acFrom.addEventListener("change", tasksOnChange);
+    if (acTo) acTo.addEventListener("change", tasksOnChange);
   }
 
 
@@ -5903,6 +5964,10 @@
           if (ctrl) ctrl.clear();
         },
       );
+      var acFromEl = document.getElementById("pmActualCompletionFrom");
+      var acToEl = document.getElementById("pmActualCompletionTo");
+      if (acFromEl) acFromEl.value = "";
+      if (acToEl) acToEl.value = "";
       applySearchAndFilters(true);
     }
     var b2 = document.getElementById("pmClearFiltersBtn_tasks");
@@ -7274,7 +7339,54 @@
       "Projects",
     );
 
+    var svData = computeScheduleVariance(state.tasksAll || []);
+    setChartSummary(
+      "pmChartScheduleVarianceDesc",
+      "Schedule variance (" +
+        filterLabel +
+        "): " +
+        (svData.labels.length ? summarizeLabelData(svData.labels, svData.data) : "No data."),
+    );
+    updateOrCreateChart(
+      "scheduleVariance",
+      "pmChartScheduleVariance",
+      svData.labels.length ? svData.labels : ["No data"],
+      svData.labels.length ? svData.data : [0],
+      "Tasks",
+    );
+
     renderAnalyticsTablesFromCache(cache);
+  }
+
+  function computeScheduleVariance(tasks) {
+    var buckets = {
+      "Early/On Time": 0,
+      "1\u20137 days late": 0,
+      "8\u201314 days late": 0,
+      "15+ days late": 0,
+    };
+    var MS_PER_DAY = 1000 * 60 * 60 * 24;
+    (tasks || []).forEach(function (t) {
+      if (!t.actualCompletion || !t.due) return;
+      var statusLower = String(t.status || "").toLowerCase();
+      if (statusLower.indexOf("completed") === -1) return;
+      var dueDate = parseDateLoose(t.due);
+      var actualDate = parseDateLoose(t.actualCompletion);
+      if (!dueDate || !actualDate) return;
+      var gap = Math.round((actualDate - dueDate) / MS_PER_DAY);
+      if (gap <= 0) {
+        buckets["Early/On Time"]++;
+      } else if (gap <= 7) {
+        buckets["1\u20137 days late"]++;
+      } else if (gap <= 14) {
+        buckets["8\u201314 days late"]++;
+      } else {
+        buckets["15+ days late"]++;
+      }
+    });
+    var labels = Object.keys(buckets);
+    var data = labels.map(function (k) { return buckets[k]; });
+    return { labels: labels, data: data };
   }
 
   function renderAnalytics(tasks) {
@@ -7292,6 +7404,7 @@
         "pmChartTasksByProjectDesc",
         "pmChartTicketsImportedDesc",
         "pmChartProjectsByTypeDesc",
+        "pmChartScheduleVarianceDesc",
       ].forEach(function (id) {
         setChartSummary(id, "Charts unavailable.");
       });
@@ -7421,6 +7534,7 @@
           TASK_IND.okrAssociation,
           TASK_IND.keyResultSelection,
           TASK_IND.isRecurring,
+          TASK_IND.actualCompletionDate,
         ],
         [],
       );
@@ -7451,7 +7565,7 @@
       var taskRows = taskRowsAll.filter(function (r) {
         return hasAnyS1Value(
           r,
-          [8, 9, 10, 44, 11, 12, 13, 14, 16, 17, 18, 30, 39],
+          [8, 9, 10, 44, 11, 12, 13, 14, 16, 17, 18, 30, 39, 47],
         );
       });
 

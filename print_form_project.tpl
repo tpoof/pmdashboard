@@ -184,7 +184,7 @@
 <!--{include file="site_elements/generic_OkDialog.tpl"}-->
 
 <style type="text/css">
-    .pmSandboxLink {
+    .pm-portal-link {
         font-family: monospace;
         font-size: 20px;
         letter-spacing: 0.01rem;
@@ -218,7 +218,7 @@
         $('#comments').css({'display': "none"});
         $('#notes').css({'display': "none"});
     }
-    initSandboxTicketWatcher();
+    initPortalLinkWatcher();
 });
 
 let currIndicatorID;
@@ -228,11 +228,11 @@ var serviceID = <!--{$serviceID|strip_tags}-->;
 let CSRFToken = '<!--{$CSRFToken}-->';
 let formPrintConditions = {};
 
-function wireSandboxTicket18() {
+function wirePortalLink18() {
     var nodes = document.querySelectorAll("[id^='xhrIndicator_18_']");
     if (!nodes || !nodes.length) return;
     nodes.forEach(function(el) {
-        if (!el || el.querySelector("a.pmSandboxLink")) return;
+        if (!el || el.querySelector("a.pm-portal-link")) return;
         var text = (el.textContent || "").trim();
         // Ticket import mapping: Support/UX/Idea Ticket # -> source print URL.
         var match = text.match(/^(Support|UX|Idea)\s*Ticket\s*#(\d+)/i);
@@ -251,8 +251,8 @@ function wireSandboxTicket18() {
         var url = urlBase + encodeURIComponent(ticketId);
         var link = document.createElement("a");
         link.href = "#";
-        link.className = "pmSandboxLink";
-        link.setAttribute("data-sandbox-url", url);
+        link.className = "pm-portal-link";
+        link.setAttribute("data-portal-url", url);
         link.textContent =
             (ticketType === "ux"
                 ? "UX Ticket #"
@@ -388,25 +388,25 @@ function wireSourceRecord46() {
     );
     if (!nodes || !nodes.length) return;
     nodes.forEach(function(el) {
-        if (!el || el.querySelector("a.pmSandboxLink")) return;
+        if (!el || el.querySelector("a.pm-portal-link")) return;
         var raw = el.tagName === "TEXTAREA" ? (el.value || "") : (el.textContent || "");
         var id = raw.trim();
         if (!id || !/^\d+$/.test(id)) return;
         var link = document.createElement("a");
-        link.className = "pmSandboxLink";
+        link.className = "pm-portal-link";
         link.href = "#";
-        link.setAttribute("data-sandbox-url", "index.php?a=printview&recordID=" + encodeURIComponent(id));
+        link.setAttribute("data-portal-url", "index.php?a=printview&recordID=" + encodeURIComponent(id));
         link.textContent = "Source Task #" + id;
         el.innerHTML = "";
         el.appendChild(link);
     });
 }
 
-function initSandboxTicketWatcher() {
+function initPortalLinkWatcher() {
     var target = document.getElementById("formcontent");
-    if (!target || target.__pmSandboxObserver) return;
+    if (!target || target.__pmPortalLinkObserver) return;
     var observer = new MutationObserver(function() {
-        wireSandboxTicket18();
+        wirePortalLink18();
         wireDependencies17();
         wireSourceRecord46();
     });
@@ -415,23 +415,23 @@ function initSandboxTicketWatcher() {
         subtree: true,
         characterData: true
     });
-    target.__pmSandboxObserver = observer;
+    target.__pmPortalLinkObserver = observer;
 }
 
 document.addEventListener("click", function(event) {
-    var link = event.target.closest("a.pmSandboxLink");
+    var link = event.target.closest("a.pm-portal-link");
     if (!link) return;
     event.preventDefault();
-    var sandboxUrl = link.getAttribute("data-sandbox-url") || "";
-    if (!sandboxUrl) return;
+    var portalUrl = link.getAttribute("data-portal-url") || "";
+    if (!portalUrl) return;
     var linkText = (link.textContent || "").trim();
     if (window.parent && window.parent !== window) {
         window.parent.postMessage(
-            { type: "pm-open-modal", title: linkText, url: sandboxUrl },
+            { type: "pm-open-modal", title: linkText, url: portalUrl },
             window.location.origin
         );
     } else {
-        window.location.href = sandboxUrl;
+        window.location.href = portalUrl;
     }
 });
 
@@ -599,7 +599,7 @@ function doSubmit(recordID) {
                     xhrIndicator.fadeIn(250);
                 });
                 handlePrintConditionalIndicators(formPrintConditions);
-                wireSandboxTicket18();
+                wirePortalLink18();
                 wireDependencies17();
             },
             error: function(res) {
@@ -872,7 +872,7 @@ function doSubmit(recordID) {
                     });
                 });
                 handlePrintConditionalIndicators(formPrintConditions);
-                wireSandboxTicket18();
+                wirePortalLink18();
                 wireDependencies17();
                 wireSourceRecord46();
             },
@@ -911,7 +911,7 @@ function doSubmit(recordID) {
                     });
                 });
                 handlePrintConditionalIndicators(formPrintConditions);
-                wireSandboxTicket18();
+                wirePortalLink18();
                 wireDependencies17();
                 wireSourceRecord46();
             },
@@ -949,7 +949,7 @@ function doSubmit(recordID) {
                         });
                     });
                     handlePrintConditionalIndicators(formPrintConditions);
-                    wireSandboxTicket18();
+                    wirePortalLink18();
                     wireDependencies17();
                 },
                 error: function(res) {
@@ -1743,7 +1743,6 @@ function doSubmit(recordID) {
     });
 </script>
 
-<!--{if $stepID == 'resolved'}-->
 <script>
 (function() {
   var recordID = <!--{$recordID|intval}-->;
@@ -1802,4 +1801,3 @@ function doSubmit(recordID) {
   .catch(function() {});
 })();
 </script>
-<!--{/if}-->

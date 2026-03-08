@@ -2086,3 +2086,42 @@ body {
   font-weight: 700;
   color: var(--text);
 }
+
+/* Change 12: date range filter pair */
+.pm-fieldDateRange {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Change 17: % completion column */
+.pm-colCompletion {
+  width: 110px;
+  min-width: 90px;
+  text-align: center;
+}
+.pm-compPctWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.pm-compPctBar {
+  display: inline-block;
+  height: 6px;
+  background: #2563eb;
+  border-radius: 3px;
+  min-width: 2px;
+  max-width: 60px;
+  flex-shrink: 0;
+}
+.pm-compPctLabel {
+  font-weight: 600;
+  font-size: 13px;
+  min-width: 36px;
+}
+.pm-completeMid {
+  color: #b26a00;
+}

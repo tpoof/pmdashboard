@@ -59,11 +59,11 @@ function transferToPMDashboard() {
         encodeURIComponent(id);
 }
 
-function wireSandboxTicket148() {
+function wirePortalLink148() {
     var nodes = document.querySelectorAll("[id^='xhrIndicator_148_']");
     if (!nodes || !nodes.length) return;
     nodes.forEach(function(el) {
-        if (!el || el.querySelector("a.pmSandboxLink")) return;
+        if (!el || el.querySelector("a.pm-portal-link")) return;
         var text = (el.textContent || "").trim();
         var match = text.match(/^(Support|UX)\s*Ticket\s*#(\d+)/i);
         var ticketType = "support";
@@ -78,8 +78,8 @@ function wireSandboxTicket148() {
         var url = urlBase + encodeURIComponent(ticketId);
         var link = document.createElement("a");
         link.href = "#";
-        link.className = "pmSandboxLink";
-        link.setAttribute("data-sandbox-url", url);
+        link.className = "pm-portal-link";
+        link.setAttribute("data-portal-url", url);
         link.textContent =
             (ticketType === "ux" ? "UX Ticket #" : "Support Ticket #") +
             ticketId;
@@ -88,34 +88,34 @@ function wireSandboxTicket148() {
     });
 }
 
-function initSandboxTicketWatcher() {
+function initPortalLinkWatcher() {
     var target = document.getElementById("formcontent");
-    if (!target || target.__pmSandboxObserver) return;
+    if (!target || target.__pmPortalLinkObserver) return;
     var observer = new MutationObserver(function() {
-        wireSandboxTicket148();
+        wirePortalLink148();
     });
     observer.observe(target, {
         childList: true,
         subtree: true,
         characterData: true
     });
-    target.__pmSandboxObserver = observer;
+    target.__pmPortalLinkObserver = observer;
 }
 
 document.addEventListener("click", function(event) {
-    var link = event.target.closest("a.pmSandboxLink");
+    var link = event.target.closest("a.pm-portal-link");
     if (!link) return;
     event.preventDefault();
-    var sandboxUrl = link.getAttribute("data-sandbox-url") || "";
-    if (!sandboxUrl) return;
+    var portalUrl = link.getAttribute("data-portal-url") || "";
+    if (!portalUrl) return;
     var linkText = (link.textContent || "").trim();
     if (window.parent && window.parent !== window) {
         window.parent.postMessage(
-            { type: "pm-open-modal", title: linkText, url: sandboxUrl },
+            { type: "pm-open-modal", title: linkText, url: portalUrl },
             window.location.origin
         );
     } else {
-        window.location.href = sandboxUrl;
+        window.location.href = portalUrl;
     }
 });
 
@@ -229,7 +229,7 @@ function openContent(url) {
     				}
                 });
     		});
-            wireSandboxTicket148();
+            wirePortalLink148();
     	},
     	error: function(res) {
     		$('#formcontent').empty().html(res);
@@ -263,7 +263,7 @@ $(function() {
     openContent('ajaxIndex.php?a=internalonlyview&recordID=<!--{$recordID|strip_tags}-->&childCategoryID=<!--{$childCategoryID}-->');
     <!--{/if}-->
 
-    initSandboxTicketWatcher();
+    initPortalLinkWatcher();
 });
 
 </script>
