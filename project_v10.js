@@ -6477,7 +6477,7 @@
 
     menuBtn.addEventListener("click", function () {
       if (isOpen) closeMenu(true);
-      else openMenu(0);
+      else openMenu();
     });
 
     menuBtn.addEventListener("keydown", function (e) {
