@@ -102,9 +102,9 @@ body {
 
 .pm-primaryBtn.pm-inboxBtn:hover,
 #pmViewInboxBtn:hover {
-  background: var(--surface-alt) !important;
-  border-color: var(--border) !important;
-  color: var(--text) !important;
+  background: var(--accent-soft) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-strong) !important;
 }
 
 .pm-controls {
@@ -470,7 +470,8 @@ body {
 
 .pm-menuItem:hover,
 .pm-menuItem:focus {
-  background: var(--surface-alt);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 [data-action="recurringTask"]::before {
@@ -2120,12 +2121,20 @@ body {
 .pm-compPctBar {
   display: inline-block;
   height: 6px;
-  background: #2563eb;
+  background: var(--pct-bar-color, #2563eb);
   border-radius: 3px;
   min-width: 2px;
   width: var(--pct-width, 0%);
   max-width: 55px;
   flex-shrink: 0;
+}
+
+.pm-compPctWrap:has(.pm-completeGreen) .pm-compPctBar {
+  --pct-bar-color: #2e7d32;
+}
+
+.pm-compPctWrap:has(.pm-completeMid) .pm-compPctBar {
+  --pct-bar-color: #b26a00;
 }
 .pm-compPctLabel {
   font-weight: 600;
@@ -2190,4 +2199,23 @@ body {
 .pm-menuItemTip:hover::after,
 .pm-menuItemTip:focus-visible::after {
   opacity: 1;
+}
+
+/* Change 3 — De-emphasize Project Key column in task table */
+#pmTasksTableWrap .pm-table td:first-child .pm-recordLink,
+#pmTasksTableWrap .pm-table td:first-child {
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+#pmTasksTableWrap .pm-table td:first-child .pm-recordLink:hover {
+  color: var(--accent-strong);
+  text-decoration: underline;
+}
+
+#pmTasksTableWrap .pm-table th:first-child .pm-sortBtn {
+  color: #6b7280;
+  font-size: 11px;
 }
