@@ -3519,7 +3519,7 @@
       "<div><strong>Due:</strong> " +
       safe(t.due) +
       "</div>" +
-      (col === "Completed" && t.actualCompletion
+      (t.actualCompletion
         ? "<div><strong>Completed:</strong> <span class='pm-completeGreen'>" + safe(t.actualCompletion) + "</span></div>"
         : "") +
       (ticketLink
@@ -5345,8 +5345,6 @@
       priorities: new Set(getFilterSet("priority")),
       categories: new Set(getFilterSet("category")),
       devOnly: state.devOnly,
-      actualCompletionFrom: (document.getElementById("pmActualCompletionFrom") || {}).value || "",
-      actualCompletionTo: (document.getElementById("pmActualCompletionTo") || {}).value || "",
     };
   }
 
@@ -5401,16 +5399,6 @@
       return false;
     if (filters && !matchesFilterSet(task.category, filters.categories))
       return false;
-    if (filters && filters.actualCompletionFrom) {
-      var acFrom = parseDateLoose(filters.actualCompletionFrom);
-      var acVal = mmddyyyyToDate(task.actualCompletion);
-      if (!acVal || (acFrom && acVal < acFrom)) return false;
-    }
-    if (filters && filters.actualCompletionTo) {
-      var acTo = parseDateLoose(filters.actualCompletionTo);
-      var acVal2 = mmddyyyyToDate(task.actualCompletion);
-      if (!acVal2 || (acTo && acVal2 > acTo)) return false;
-    }
     return true;
   }
 
@@ -5425,8 +5413,6 @@
       signatureFromSet(filters.assignees),
       signatureFromSet(filters.priorities),
       signatureFromSet(filters.categories),
-      sigPart(filters.actualCompletionFrom),
-      sigPart(filters.actualCompletionTo),
     ].join("|");
   }
 
@@ -5983,10 +5969,6 @@
       { value: "Low", label: "Low" },
     ]);
 
-    var acFrom = document.getElementById("pmActualCompletionFrom");
-    var acTo = document.getElementById("pmActualCompletionTo");
-    if (acFrom) acFrom.addEventListener("change", tasksOnChange);
-    if (acTo) acTo.addEventListener("change", tasksOnChange);
   }
 
 
@@ -6001,10 +5983,6 @@
           if (ctrl) ctrl.clear();
         },
       );
-      var acFromEl = document.getElementById("pmActualCompletionFrom");
-      var acToEl = document.getElementById("pmActualCompletionTo");
-      if (acFromEl) acFromEl.value = "";
-      if (acToEl) acToEl.value = "";
       applySearchAndFilters(true);
     }
     var b2 = document.getElementById("pmClearFiltersBtn_tasks");
@@ -6387,9 +6365,9 @@
       isOpen = true;
       menu.hidden = false;
       menuBtn.setAttribute("aria-expanded", "true");
-      focusItem(
-        typeof focusIndex === "number" ? focusIndex : Math.max(0, activeIndex),
-      );
+      if (typeof focusIndex === "number") {
+        focusItem(focusIndex);
+      }
       document.addEventListener("click", onDocumentClick, true);
       document.addEventListener("keydown", onDocumentKeydown);
     }

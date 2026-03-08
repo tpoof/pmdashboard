@@ -321,6 +321,7 @@ body {
 .pm-multiSelectToggle.is-active {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent) inset;
+  padding-left: 22px;
 }
 
 .pm-multiSelectToggle.is-active::before {
@@ -2093,14 +2094,6 @@ body {
   font-size: 13px;
   font-weight: 700;
   color: var(--text);
-}
-
-/* Change 12: date range filter pair */
-.pm-fieldDateRange {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
 }
 
 /* Change 17: % completion column */
