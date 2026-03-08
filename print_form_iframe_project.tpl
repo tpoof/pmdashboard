@@ -453,3 +453,23 @@ $(function() {
   .catch(function() {});
 })();
 </script>
+
+<script>
+function showRecurringBanner(newRecordID) {
+  var existing = document.getElementById('pmRecurringBanner');
+  if (existing) existing.remove();
+  var style = document.getElementById('pmRecurringBannerStyle');
+  if (!style) {
+    style = document.createElement('style');
+    style.id = 'pmRecurringBannerStyle';
+    style.textContent = '.pm-recurringBanner{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a3a1a;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.3);text-align:center;white-space:nowrap;pointer-events:none}.pm-recurringBannerCheck{font-weight:900;font-size:16px;margin-right:6px;color:#6fcf6f}';
+    document.head.appendChild(style);
+  }
+  var el = document.createElement('div');
+  el.id = 'pmRecurringBanner';
+  el.className = 'pm-recurringBanner';
+  el.innerHTML = '<span class="pm-recurringBannerCheck">&#10003;</span> A new task <strong>#' + String(newRecordID || '') + '</strong> has been automatically created.';
+  document.body.appendChild(el);
+  setTimeout(function() { if (el && el.parentNode) el.parentNode.removeChild(el); }, 6000);
+}
+</script>

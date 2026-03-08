@@ -2076,6 +2076,13 @@ body {
   min-width: 120px;
 }
 
+#pmProjectsTableWrap .pm-table th:nth-child(8),
+#pmProjectsTableWrap .pm-table td:nth-child(8) {
+  min-width: 100px;
+  max-width: 140px;
+  overflow: hidden;
+}
+
 #pmProjectsTableWrap th[data-sort="okrAssociation"] .pm-sortBtn {
   font-size: 0;
 }
@@ -2097,16 +2104,18 @@ body {
 
 /* Change 17: % completion column */
 .pm-colCompletion {
-  width: 110px;
-  min-width: 90px;
-  text-align: center;
+  width: 120px;
+  min-width: 100px;
+  max-width: 140px;
+  text-align: left;
+  overflow: hidden;
 }
 .pm-compPctWrap {
-  position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   width: 100%;
+  overflow: hidden;
 }
 .pm-compPctBar {
   display: inline-block;
@@ -2114,13 +2123,15 @@ body {
   background: #2563eb;
   border-radius: 3px;
   min-width: 2px;
-  max-width: 60px;
+  width: var(--pct-width, 0%);
+  max-width: 55px;
   flex-shrink: 0;
 }
 .pm-compPctLabel {
   font-weight: 600;
-  font-size: 13px;
-  min-width: 36px;
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .pm-completeMid {
   color: #b26a00;

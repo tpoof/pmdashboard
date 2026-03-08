@@ -467,6 +467,11 @@
     }
 
     showRecurringBanner(newRecordID);
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'pmRecurringBannerMsg', newRecordID: String(newRecordID) }, '*');
+      }
+    } catch(e) {}
 
     // Step 4: Copy assignedTo field using LEAF orgchart API sequence
     var orgchart = s1['id' + TASK_IND.assignedTo + '_orgchart'];
@@ -1761,7 +1766,7 @@
           "<td>" +
           safe(p.projectStatus) +
           "</td>" +
-          '<td class="pm-colCompletion"><span class="pm-compPctWrap"><span class="pm-compPctBar" style="width:' + compPct + '%" aria-hidden="true"></span><span class="' + compClass + ' pm-compPctLabel">' + compPct + '%</span></span></td>' +
+          '<td class="pm-colCompletion"><span class="pm-compPctWrap"><span class="pm-compPctBar" style="--pct-width:' + compPct + '%;width:' + Math.min(compPct, 100) + '%" aria-hidden="true"></span><span class="' + compClass + ' pm-compPctLabel">' + compPct + '%</span></span></td>' +
           "</tr>"
         );
       })
@@ -2952,8 +2957,8 @@
     if (!state.virtualTasks.inited) {
       var headerHtml =
         "<thead><tr>" +
-        '<th scope="col" class="pm-sortable" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>' +
         '<th scope="col" class="pm-sortable" data-sort="recordID" data-type="number"><button type="button" class="pm-sortBtn">Task ID</button></th>' +
+        '<th scope="col" class="pm-sortable" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>' +
         '<th scope="col" class="pm-sortable pm-wrapCol" data-sort="title" data-type="string"><button type="button" class="pm-sortBtn">Title</button></th>' +
         '<th scope="col" class="pm-sortable" data-sort="status" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
         '<th scope="col" class="pm-sortable" data-sort="dependencies" data-type="string"><button type="button" class="pm-sortBtn">Dependencies</button></th>' +
@@ -3035,10 +3040,10 @@
       safeAttr(t.recordID) +
       '">' +
       "<td>" +
-      pkLink +
+      taskLink +
       "</td>" +
       "<td>" +
-      taskLink +
+      pkLink +
       "</td>" +
       '<td><span class="pm-titleClamp" title="' +
       titleAttr +
@@ -3281,8 +3286,10 @@
       recordID: recordID,
       series: 1,
     };
-    if (newStatus === "Completed") {
+    if (isCompletedStatus(newStatus)) {
       bodyObj[47] = todayFormatted;
+    } else {
+      bodyObj[47] = "";
     }
     bodyObj[tokenField] = token;
     var body = encodeFormBody(bodyObj);
@@ -3843,6 +3850,7 @@
       }
       task.status = "Other";
       task.otherSubType = selection;
+      task.actualCompletion = "";
       next = cloneTaskForUpdate(task);
       updateTaskDerivedCaches(prev, next);
       refreshAfterTaskUpdate(prev, next);
@@ -3852,6 +3860,12 @@
     } else {
       task.status = normalized;
       task.otherSubType = "";
+      task.actualCompletion = isCompletedStatus(normalized) ? (function() {
+        var n = new Date();
+        var m = String(n.getMonth() + 1).padStart(2, "0");
+        var d = String(n.getDate()).padStart(2, "0");
+        return m + "/" + d + "/" + n.getFullYear();
+      })() : "";
       next = cloneTaskForUpdate(task);
       updateTaskDerivedCaches(prev, next);
       refreshAfterTaskUpdate(prev, next);
@@ -3867,6 +3881,11 @@
     try {
       await updateTaskStatus(taskId, task.status, task.otherSubType);
       refreshOkrsIfVisible();
+      if (isCompletedStatus(task.status)) {
+        setTimeout(function() {
+          window.location.reload();
+        }, 1200);
+      }
     } catch (err) {
       task.status = prev.status;
       task.otherSubType = prev.otherSubType;
@@ -6188,6 +6207,12 @@
       if (!url) return;
       var title = typeof data.title === "string" ? data.title : "Details";
       openModal(title, url);
+    });
+    window.addEventListener("message", function(e) {
+      if (!e || !e.data || e.data.type !== "pmRecurringBannerMsg") return;
+      if (typeof showRecurringBanner === "function") {
+        showRecurringBanner(e.data.newRecordID);
+      }
     });
   }
 
