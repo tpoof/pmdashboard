@@ -2957,8 +2957,8 @@
     if (!state.virtualTasks.inited) {
       var headerHtml =
         "<thead><tr>" +
-        '<th scope="col" class="pm-sortable" data-sort="recordID" data-type="number"><button type="button" class="pm-sortBtn">Task ID</button></th>' +
         '<th scope="col" class="pm-sortable" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>' +
+        '<th scope="col" class="pm-sortable" data-sort="recordID" data-type="number"><button type="button" class="pm-sortBtn">Task ID</button></th>' +
         '<th scope="col" class="pm-sortable pm-wrapCol" data-sort="title" data-type="string"><button type="button" class="pm-sortBtn">Title</button></th>' +
         '<th scope="col" class="pm-sortable" data-sort="status" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
         '<th scope="col" class="pm-sortable" data-sort="dependencies" data-type="string"><button type="button" class="pm-sortBtn">Dependencies</button></th>' +
@@ -3040,10 +3040,10 @@
       safeAttr(t.recordID) +
       '">' +
       "<td>" +
-      taskLink +
+      pkLink +
       "</td>" +
       "<td>" +
-      pkLink +
+      taskLink +
       "</td>" +
       '<td><span class="pm-titleClamp" title="' +
       titleAttr +

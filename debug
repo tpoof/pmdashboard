@@ -1,6 +1,1 @@
-fetch('/platform/orgchart/api/employee/search?q=userName:oitauslumags&noLimit=0&domain=&_=' + Date.now(), {
-  credentials: 'include',
-  headers: { 'x-requested-with': 'XMLHttpRequest' }
-})
-.then(r => r.json())
-.then(d => console.log(JSON.stringify(d, null, 2)));
+localStorage.getItem("pm_recurring_copied_v10");
