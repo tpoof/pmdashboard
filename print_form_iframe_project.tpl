@@ -428,6 +428,10 @@ $(function() {
       observer.disconnect();
       clearTimeout(timeout);
 
+      // Only show banner on the final completed/resolved step
+      var actionText = (target.textContent || target.innerText || '').toLowerCase();
+      if (actionText.indexOf('completed') === -1 && actionText.indexOf('resolved') === -1) return;
+
       var banner = document.createElement('div');
       banner.className = 'pm-recurring-complete-banner';
       banner.style.cssText = [
