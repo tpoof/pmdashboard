@@ -3275,22 +3275,19 @@
     if (isOther && !subType) {
       throw new Error("Other status requires a subtype.");
     }
-    var now = new Date();
-    var mm = String(now.getMonth() + 1).padStart(2, "0");
-    var dd = String(now.getDate()).padStart(2, "0");
-    var yyyy = now.getFullYear();
-    var todayFormatted = mm + "/" + dd + "/" + yyyy;
+    function todayMMDDYYYY() {
+      var n = new Date();
+      var mm = String(n.getMonth() + 1).padStart(2, '0');
+      var dd = String(n.getDate()).padStart(2, '0');
+      return mm + '/' + dd + '/' + n.getFullYear();
+    }
     var bodyObj = {
       10: newStatus,
       44: isOther ? subType : "",
+      47: isCompletedStatus(newStatus) ? todayMMDDYYYY() : "",
       recordID: recordID,
       series: 1,
     };
-    if (isCompletedStatus(newStatus)) {
-      bodyObj[47] = todayFormatted;
-    } else {
-      bodyObj[47] = "";
-    }
     bodyObj[tokenField] = token;
     var body = encodeFormBody(bodyObj);
 
@@ -3523,7 +3520,7 @@
       safe(t.due) +
       "</div>" +
       (col === "Completed" && t.actualCompletion
-        ? "<div><strong>Completed:</strong> " + safe(t.actualCompletion) + "</div>"
+        ? "<div><strong>Completed:</strong> <span class='pm-completeGreen'>" + safe(t.actualCompletion) + "</span></div>"
         : "") +
       (ticketLink
         ? "<div><strong>Ticket:</strong> " + ticketLink + "</div>"
@@ -3889,6 +3886,7 @@
     } catch (err) {
       task.status = prev.status;
       task.otherSubType = prev.otherSubType;
+      task.actualCompletion = prev.actualCompletion || '';
       var reverted = cloneTaskForUpdate(task);
       updateTaskDerivedCaches(next || task, reverted);
       refreshAfterTaskUpdate(next || task, reverted);
@@ -5635,6 +5633,7 @@
       assignedTo: task.assignedTo,
       start: task.start,
       due: task.due,
+      actualCompletion: task.actualCompletion || "",
       okrAssociation: task.okrAssociation,
       keyResultSelection: task.keyResultSelection,
       supportTicket: task.supportTicket,
