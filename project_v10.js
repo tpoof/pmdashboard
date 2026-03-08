@@ -3252,13 +3252,11 @@
     if (isOther && !subType) {
       throw new Error("Other status requires a subtype.");
     }
-    var today = new Date();
-    var todayStr =
-      today.getFullYear() +
-      "-" +
-      String(today.getMonth() + 1).padStart(2, "0") +
-      "-" +
-      String(today.getDate()).padStart(2, "0");
+    var now = new Date();
+    var mm = String(now.getMonth() + 1).padStart(2, "0");
+    var dd = String(now.getDate()).padStart(2, "0");
+    var yyyy = now.getFullYear();
+    var todayFormatted = mm + "/" + dd + "/" + yyyy;
     var bodyObj = {
       10: newStatus,
       44: isOther ? subType : "",
@@ -3266,7 +3264,7 @@
       series: 1,
     };
     if (newStatus === "Completed") {
-      bodyObj[47] = todayStr;
+      bodyObj[47] = todayFormatted;
     }
     bodyObj[tokenField] = token;
     var body = encodeFormBody(bodyObj);
@@ -5367,12 +5365,12 @@
       return false;
     if (filters && filters.actualCompletionFrom) {
       var acFrom = parseDateLoose(filters.actualCompletionFrom);
-      var acVal = parseDateLoose(task.actualCompletion);
+      var acVal = mmddyyyyToDate(task.actualCompletion);
       if (!acVal || (acFrom && acVal < acFrom)) return false;
     }
     if (filters && filters.actualCompletionTo) {
       var acTo = parseDateLoose(filters.actualCompletionTo);
-      var acVal2 = parseDateLoose(task.actualCompletion);
+      var acVal2 = mmddyyyyToDate(task.actualCompletion);
       if (!acVal2 || (acTo && acVal2 > acTo)) return false;
     }
     return true;
@@ -7370,10 +7368,10 @@
       if (!t.actualCompletion || !t.due) return;
       var statusLower = String(t.status || "").toLowerCase();
       if (statusLower.indexOf("completed") === -1) return;
-      var dueDate = parseDateLoose(t.due);
-      var actualDate = parseDateLoose(t.actualCompletion);
+      var dueDate = mmddyyyyToDate(t.due);
+      var actualDate = mmddyyyyToDate(t.actualCompletion);
       if (!dueDate || !actualDate) return;
-      var gap = Math.round((actualDate - dueDate) / MS_PER_DAY);
+      var gap = Math.round((actualDate.getTime() - dueDate.getTime()) / MS_PER_DAY);
       if (gap <= 0) {
         buckets["Early/On Time"]++;
       } else if (gap <= 7) {
