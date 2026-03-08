@@ -466,7 +466,7 @@
       throw new Error('copyRecurringTask: invalid new record ID: ' + newRecordID);
     }
 
-    console.log('Recurring task copied: source=' + sourceRecordID + ' \u2192 new=' + newRecordID);
+    showRecurringBanner(newRecordID);
 
     // Step 4: Copy assignedTo field using LEAF orgchart API sequence
     var orgchart = s1['id' + TASK_IND.assignedTo + '_orgchart'];
@@ -781,6 +781,24 @@
       window.__pmTransferDebug = "";
       showTransferDebug(msg);
     }
+  }
+
+  function showRecurringBanner(newRecordID) {
+    var existing = document.getElementById('pmRecurringBanner');
+    if (existing) existing.remove();
+
+    var el = document.createElement('div');
+    el.id = 'pmRecurringBanner';
+    el.className = 'pm-recurringBanner';
+    el.innerHTML =
+      '<span class="pm-recurringBannerCheck">&#10003;</span>' +
+      ' A new task <strong>#' + safe(String(newRecordID || '')) + '</strong> has been automatically created.';
+
+    document.body.appendChild(el);
+
+    setTimeout(function() {
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    }, 6000);
   }
 
   function getQueryParam(name) {
@@ -2944,7 +2962,7 @@
         '<th scope="col" class="pm-sortable" data-sort="assignedTo" data-type="string"><button type="button" class="pm-sortBtn">Assigned To</button></th>' +
         '<th scope="col" class="pm-sortable" data-sort="start" data-type="date"><button type="button" class="pm-sortBtn">Start</button></th>' +
         '<th scope="col" class="pm-sortable" data-sort="due" data-type="date"><button type="button" class="pm-sortBtn">Due</button></th>' +
-        '<th scope="col" class="pm-sortable" data-sort="actualCompletion" data-type="date"><button type="button" class="pm-sortBtn">Completed Date</button></th>' +
+        '<th scope="col" class="pm-sortable" data-sort="actualCompletion" data-type="date"><button type="button" class="pm-sortBtn">Completed</button></th>' +
         '<th scope="col" class="pm-sortable" data-sort="supportTicket" data-type="string"><button type="button" class="pm-sortBtn">Ticket</button></th>' +
         "</tr></thead>";
 
@@ -3497,6 +3515,9 @@
       "<div><strong>Due:</strong> " +
       safe(t.due) +
       "</div>" +
+      (col === "Completed" && t.actualCompletion
+        ? "<div><strong>Completed:</strong> " + safe(t.actualCompletion) + "</div>"
+        : "") +
       (ticketLink
         ? "<div><strong>Ticket:</strong> " + ticketLink + "</div>"
         : "") +

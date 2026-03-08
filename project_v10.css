@@ -2125,3 +2125,58 @@ body {
 .pm-completeMid {
   color: #b26a00;
 }
+
+/* Change 3: recurring task success banner */
+.pm-recurringBanner {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: #1a3a1a;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.pm-recurringBannerCheck {
+  font-weight: 900;
+  font-size: 16px;
+  margin-right: 6px;
+  color: #6fcf6f;
+}
+
+/* Change 4: Add menu tooltip */
+.pm-menuItemTip {
+  position: relative;
+}
+
+.pm-menuItemTip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 105%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1f2933;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 10001;
+}
+
+.pm-menuItemTip:hover::after,
+.pm-menuItemTip:focus-visible::after {
+  opacity: 1;
+}
