@@ -3520,7 +3520,7 @@
       safe(t.due) +
       "</div>" +
       (t.actualCompletion
-        ? "<div><strong>Completed:</strong> <span class='pm-completeGreen'>" + safe(t.actualCompletion) + "</span></div>"
+        ? "<div><strong>Completed:</strong> " + safe(t.actualCompletion) + "</div>"
         : "") +
       (ticketLink
         ? "<div><strong>Ticket:</strong> " + ticketLink + "</div>"
@@ -3877,6 +3877,7 @@
 
     try {
       await updateTaskStatus(taskId, task.status, task.otherSubType);
+      state.cache.kanban.clear();
       refreshOkrsIfVisible();
       if (isCompletedStatus(task.status)) {
         setTimeout(function() {
