@@ -1792,9 +1792,12 @@ function doSubmit(recordID) {
         'font-size:14px',
         'display:flex',
         'align-items:center',
+        'justify-content:center',
+        'text-align:center',
         'gap:8px'
       ].join(';');
-      banner.innerHTML = '<span style="font-size:18px;">&#10003;</span>' +
+      /* newRecordID unavailable — copy runs on dashboard after this step fires */
+      banner.innerHTML = '<span style="font-size:18px;"><strong>&#10003;</strong></span>' +
         '<span>This recurring task has been completed. A new task has been automatically created and is ready in your inbox.</span>';
 
       target.parentNode.insertBefore(banner, target);
