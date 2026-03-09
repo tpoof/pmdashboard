@@ -6624,8 +6624,20 @@
   }
 
   function fetchAndRenderInboxCount() {
-    fetch('api/inbox/dependency/_', {
-      headers: { 'x-requested-with': 'XMLHttpRequest' },
+    var baseUrl = 'api/form/query?q=' +
+      encodeURIComponent(JSON.stringify({
+        terms: [
+          { id: 'stepID', operator: '=', match: 'actionable', gate: 'AND' },
+          { id: 'deleted', operator: '=', match: 0, gate: 'AND' }
+        ],
+        joins: [],
+        sort: {},
+        limit: 500,
+        limitOffset: 0
+      })) +
+      '&x-filterData=recordID&masquerade=nonAdmin';
+
+    fetch(baseUrl, {
       credentials: 'include'
     })
     .then(function(r) {
@@ -6633,21 +6645,9 @@
       return r.json();
     })
     .then(function(data) {
-      var seen = {};
-      var count = 0;
-      if (data && typeof data === 'object') {
-        Object.keys(data).forEach(function(depKey) {
-          var group = data[depKey];
-          if (group && group.records && typeof group.records === 'object') {
-            Object.keys(group.records).forEach(function(recID) {
-              if (!seen[recID]) {
-                seen[recID] = true;
-                count++;
-              }
-            });
-          }
-        });
-      }
+      var count = data && typeof data === 'object'
+        ? Object.keys(data).length
+        : 0;
       var badge = document.getElementById('pmInboxBadge');
       if (!badge) return;
       if (count > 0) {
