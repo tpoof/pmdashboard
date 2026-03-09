@@ -77,9 +77,12 @@
           </button>
         </div>
       </div>
-      <button type="button" class="pm-ghostBtn pm-inboxBtn" id="pmViewInboxBtn">
-        View Inbox
-      </button>
+      <div class="pm-inboxWrap">
+        <button type="button" class="pm-primaryBtn pm-inboxBtn"
+          id="pmViewInboxBtn">View Inbox</button>
+        <span class="pm-inboxBadge" id="pmInboxBadge" hidden
+          aria-label="inbox items" aria-live="polite">0</span>
+      </div>
       <button type="button" class="pm-primaryBtn pm-helpBtn" id="pmTourBtn"
         aria-label="First time here? Launch a quick interactive tutorial"
         data-tooltip="First time here? Launch a quick interactive tutorial">

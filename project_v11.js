@@ -6623,6 +6623,47 @@
       });
   }
 
+  function fetchAndRenderInboxCount() {
+    fetch('api/inbox/dependency/_', {
+      headers: { 'x-requested-with': 'XMLHttpRequest' },
+      credentials: 'include'
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      var seen = {};
+      var count = 0;
+      if (data && typeof data === 'object') {
+        Object.keys(data).forEach(function(depKey) {
+          var group = data[depKey];
+          if (group && group.records && typeof group.records === 'object') {
+            Object.keys(group.records).forEach(function(recID) {
+              if (!seen[recID]) {
+                seen[recID] = true;
+                count++;
+              }
+            });
+          }
+        });
+      }
+      var badge = document.getElementById('pmInboxBadge');
+      if (!badge) return;
+      if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : String(count);
+        badge.hidden = false;
+        badge.setAttribute('aria-label', count + ' items in your inbox');
+      } else {
+        badge.hidden = true;
+      }
+    })
+    .catch(function() {
+      var badge = document.getElementById('pmInboxBadge');
+      if (badge) badge.hidden = true;
+    });
+  }
+
   function wireJumpToTop() {
     var btn = document.getElementById("pmJumpTopBtn");
     if (!btn) return;
@@ -7790,27 +7831,11 @@
       wireModalControls();
       wireOtherStatusModal();
       wireAddButtons();
+      fetchAndRenderInboxCount();
       wireRecurringFieldHider();
       wireAnalyticsSharedFilters();
       wireJumpToTop();
       initTour();
-
-      // ── INBOX STRUCTURE INSPECTION (remove after confirming count) ──
-      fetch('/platform/projects/api/inbox/dependency/_', {
-        headers: { 'x-requested-with': 'XMLHttpRequest' },
-        credentials: 'include'
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        console.log('INBOX A full response:', JSON.stringify(d).substring(0, 500));
-        console.log('INBOX A keys:', Object.keys(d));
-        if (Object.keys(d).length > 0) {
-          var firstKey = Object.keys(d)[0];
-          console.log('INBOX A first item:', JSON.stringify(d[firstKey]));
-        }
-      })
-      .catch(function(e) { console.log('INBOX A ERROR:', e.message); });
-      // ── END INSPECTION ──
 
       var projectsUrl = buildQueryUrl(
         [
