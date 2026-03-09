@@ -300,7 +300,7 @@
     <div
       id="pmProjectHealthSticky"
       class="pm-healthSticky"
-      style="display: none"
+      hidden
     >
       <div class="pm-healthInner"></div>
     </div>
@@ -433,19 +433,19 @@
 
       <div class="pm-analyticsTables">
         <div class="pm-tableCard">
-          <div class="pm-chartTitle">Project health rollup</div>
+          <h3 class="pm-chartTitle">Project health rollup</h3>
           <div id="pmProjectHealthTable"></div>
         </div>
 
         <div class="pm-tableCard">
-          <div class="pm-chartTitle">Overdue tasks</div>
+          <h3 class="pm-chartTitle">Overdue tasks</h3>
           <div id="pmOverdueTasksTable"></div>
         </div>
       </div>
 
       <div class="pm-analyticsGrid">
         <div class="pm-chartCard">
-          <div class="pm-chartTitle">Due date buckets</div>
+          <h3 class="pm-chartTitle">Due date buckets</h3>
           <div class="pm-chartBox">
             <div class="pm-chartInner">
               <canvas
@@ -460,7 +460,7 @@
 
         <div class="pm-chartCard">
           <div class="pm-chartHeader">
-            <div class="pm-chartTitle">Completed tasks by quarter</div>
+            <h3 class="pm-chartTitle">Completed tasks by quarter</h3>
           </div>
           <div class="pm-chartBox">
             <div class="pm-chartInner">
@@ -476,7 +476,7 @@
 
         <div class="pm-chartCard">
           <div class="pm-chartHeader">
-            <div class="pm-chartTitle">Completed tasks by category</div>
+            <h3 class="pm-chartTitle">Completed tasks by category</h3>
           </div>
           <div class="pm-chartBox">
             <div class="pm-chartInner">
@@ -491,7 +491,7 @@
         </div>
 
         <div class="pm-chartCard">
-          <div class="pm-chartTitle">Tasks by priority</div>
+          <h3 class="pm-chartTitle">Tasks by priority</h3>
           <div class="pm-chartBox">
             <div class="pm-chartInner">
               <canvas
@@ -505,7 +505,7 @@
         </div>
 
         <div class="pm-chartCard">
-          <div class="pm-chartTitle">Tasks by Status</div>
+          <h3 class="pm-chartTitle">Tasks by Status</h3>
           <div class="pm-chartBox">
             <div class="pm-chartInner">
               <canvas
@@ -519,7 +519,7 @@
         </div>
 
         <div class="pm-chartCard">
-          <div class="pm-chartTitle">Tasks per Project Key</div>
+          <h3 class="pm-chartTitle">Tasks per Project Key</h3>
           <div class="pm-chartBox">
             <div class="pm-chartInner">
               <canvas
@@ -534,7 +534,7 @@
 
         <div class="pm-chartCard">
           <div class="pm-chartHeader">
-            <div class="pm-chartTitle">Tickets imported by month</div>
+            <h3 class="pm-chartTitle">Tickets imported by month</h3>
           </div>
           <div class="pm-chartBox">
             <div class="pm-chartInner">
@@ -549,7 +549,7 @@
         </div>
 
         <div class="pm-chartCard">
-          <div class="pm-chartTitle">Projects by Project Type</div>
+          <h3 class="pm-chartTitle">Projects by Project Type</h3>
           <div class="pm-chartBox">
             <div class="pm-chartInner">
               <canvas
@@ -563,7 +563,7 @@
         </div>
 
         <div class="pm-chartCard">
-          <div class="pm-chartTitle">Schedule Variance (Days Late/Early)</div>
+          <h3 class="pm-chartTitle">Schedule Variance (Days Late/Early)</h3>
           <div class="pm-chartBox">
             <div class="pm-chartInner">
               <canvas id="pmChartScheduleVariance" role="img" aria-describedby="pmChartScheduleVarianceDesc"></canvas>
@@ -579,7 +579,7 @@
       role="tabpanel"
       aria-labelledby="pmAnalyticsViewOkrsBtn"
       aria-hidden="true"
-      style="display: none"
+      hidden
     >
       <div id="pmOkrsFilterRow" class="pm-filterRow">
         <div class="pm-field pm-filterHeader">
@@ -658,7 +658,7 @@
     id="pmOtherModal"
     class="pm-modal pm-otherModal"
     aria-hidden="true"
-    style="display: none"
+    hidden
   >
     <div class="pm-modalBackdrop" data-close="1"></div>
     <div
@@ -668,9 +668,9 @@
       aria-labelledby="pmOtherModalTitle"
     >
       <div class="pm-otherModalHeader">
-        <div class="pm-modalTitle" id="pmOtherModalTitle">
+        <h2 class="pm-modalTitle" id="pmOtherModalTitle">
           Select Other Status
-        </div>
+        </h2>
         <button
           type="button"
           class="pm-modalClose"
@@ -725,7 +725,7 @@
     </div>
   </div>
 
-  <div id="pmModal" class="pm-modal" aria-hidden="true" style="display: none">
+  <div id="pmModal" class="pm-modal" aria-hidden="true" hidden>
     <div class="pm-modalBackdrop" data-close="1"></div>
     <div
       class="pm-modalDialog"
@@ -734,7 +734,7 @@
       aria-labelledby="pmModalTitle"
     >
       <div class="pm-modalHeader">
-        <div class="pm-modalTitle" id="pmModalTitle">Details</div>
+        <h2 class="pm-modalTitle" id="pmModalTitle">Details</h2>
         <div class="pm-modalActions">
           <button
             type="button"
@@ -768,7 +768,7 @@
     type="button"
     class="pm-jumpTop"
     id="pmJumpTopBtn"
-    aria-label="Jump to top"
+    aria-label="Back to top"
     aria-hidden="true"
     tabindex="-1"
   >
@@ -776,11 +776,11 @@
   </button>
 </div>
 
-<div id="pmTourOverlay" class="pm-tourOverlay" hidden aria-modal="true" role="dialog"
-  aria-label="Dashboard tour">
+<div id="pmTourOverlay" class="pm-tourOverlay" hidden>
   <div id="pmTourSpotlight" class="pm-tourSpotlight"></div>
-  <div id="pmTourTooltip" class="pm-tourTooltip" role="document">
-    <div id="pmTourStepLabel" class="pm-tourStepLabel"></div>
+  <div id="pmTourTooltip" class="pm-tourTooltip" role="dialog"
+    aria-modal="true" aria-labelledby="pmTourTitle">
+    <div id="pmTourStepLabel" class="pm-tourStepLabel" aria-live="polite"></div>
     <div id="pmTourTitle" class="pm-tourTitle"></div>
     <div id="pmTourBody" class="pm-tourBody"></div>
     <div class="pm-tourFooter">
@@ -793,6 +793,8 @@
   </div>
 </div>
 
+<!-- PERF: Ideally move preconnect + font link to <head> in host template -->
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
       rel="stylesheet">
 <link rel="stylesheet" href="./files/project_v11.css" />

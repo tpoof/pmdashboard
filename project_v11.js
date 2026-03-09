@@ -30,6 +30,13 @@
     keyResultSelection: 39,
     isRecurring: RECURRING_INDICATOR_ID,
     actualCompletionDate: 47,
+    // Indicator 48: recurringCopied — written to the SOURCE task after a successful
+    // copy. Stores the new copy's recordID as a string. Provides server-side
+    // deduplication that survives localStorage clears, private browsing, new devices,
+    // and deleted copies. IMPORTANT: Must be created manually in LEAF Form Editor on
+    // the task form (type = text, label = "Continued As Task #", read-only) before this
+    // logic takes effect. Until then, deduplication falls back to localStorage only.
+    recurringCopied: 48,
   };
 
   // Project form indicator IDs
@@ -78,9 +85,9 @@
 
   // Persistence keys
   var STORAGE_KEYS = {
-    activeTab: "pm_active_tab",
-    tasksView: "pm_tasks_view",
-    analyticsView: "pm_analytics_view",
+    activeTab: "pm_active_tab_v11",
+    tasksView: "pm_tasks_view_v11",
+    analyticsView: "pm_analytics_view_v11",
     tasksDevOnly: "pmdashboard_tasks_devOnly_v11",
     tasksPagination: "pm_tasks_pagination_v11",
   };
@@ -230,7 +237,7 @@
     lastModalRecordID: null,
   };
 
-
+  var _kanbanColsCache = { devOnly: null, cols: null };
 
   // Persistent dedup — survives page refresh
   // Stores recordIDs that have already been copied as recurring tasks
@@ -274,9 +281,15 @@
   }
 
   function getKanbanBaseColumns() {
-    return state.devOnly
+    if (_kanbanColsCache.devOnly === state.devOnly && _kanbanColsCache.cols) {
+      return _kanbanColsCache.cols.slice();
+    }
+    var cols = state.devOnly
       ? STATUS_CONFIG.DEV_KANBAN_COLUMNS.slice()
       : STATUS_CONFIG.LEGACY_KANBAN_COLUMNS.slice();
+    _kanbanColsCache.devOnly = state.devOnly;
+    _kanbanColsCache.cols = cols;
+    return cols.slice();
   }
 
   function getStatusFilterOptions() {
@@ -295,6 +308,44 @@
 
   function isOtherStatusLabel(status) {
     return normalizePrimaryStatus(status) === "Other";
+  }
+
+  /*
+   * RECURRING TASK DEDUPLICATION — REQUIRED MANUAL SETUP IN LEAF:
+   *
+   * Indicator 48 must be created manually in the LEAF Form Editor:
+   *   1. Go to Admin Panel → Form Editor → Task form
+   *   2. Add a new field: type = text, label = "Continued As Task #"
+   *   3. Set the indicator ID to 48 (or note the assigned ID and update
+   *      TASK_IND.recurringCopied in project_v10.js to match)
+   *   4. Set field permissions to read-only for regular users
+   *   5. This field will be auto-populated by the dashboard after each
+   *      successful recurring task copy
+   *
+   * Until this is done, deduplication falls back to localStorage only.
+   */
+  async function isRecurringAlreadyCopiedServerSide(sourceRecordID) {
+    try {
+      var q = JSON.stringify({
+        terms: [{ id: "recordIDs", operator: "=", match: String(sourceRecordID), gate: "AND" }],
+        joins: [],
+        sort: {},
+        getData: [TASK_IND.recurringCopied],
+      });
+      var resp = await fetch(
+        "api/form/query?q=" + encodeURIComponent(q) + "&x-filterData=recordID",
+        { credentials: "include", headers: { Accept: "application/json", "x-requested-with": "XMLHttpRequest" } }
+      );
+      if (!resp.ok) return false;
+      var data = await resp.json();
+      var rec = data && data[String(sourceRecordID)];
+      var val = rec && rec.s1
+        ? String(rec.s1["id" + TASK_IND.recurringCopied] || "").trim()
+        : "";
+      return val.length > 0;
+    } catch(e) {
+      return false; // fail open — localStorage guard still applies
+    }
   }
 
   async function checkAndCopyResolvedRecurringTasks() {
@@ -328,17 +379,53 @@
 
       var results = await query.execute();
 
+      var copiedSet = getRecurringCopiedSet();
       for (var recordID in results) {
         // Skip if already copied (persistent) or currently being copied (in-memory lock)
-        if (hasRecurringCopied(recordID)) continue;
+        if (copiedSet.has(String(recordID))) continue;
         if (recurringInProgress.has(String(recordID))) continue;
+
+        // Server-side check — survives localStorage clears, new browsers, and deleted copies
+        var serverSideCopied = await isRecurringAlreadyCopiedServerSide(recordID);
+        if (serverSideCopied) {
+          addRecurringCopied(recordID); // re-hydrate localStorage from server truth
+          continue;
+        }
 
         // Lock immediately before any async work
         recurringInProgress.add(String(recordID));
         addRecurringCopied(recordID);
 
         try {
-          await copyRecurringTask(recordID);
+          var newRecordID = await copyRecurringTask(recordID);
+
+          // Write indicator 48 to the SOURCE record — permanent server-side dedup marker.
+          // Survives localStorage clears, private browsing, new devices, and deleted copies.
+          try {
+            var flagToken = await ensureCSRFToken(recordID);
+            var flagField = state.csrfField || getCSRFFieldName();
+            var flagObj = { recordID: recordID, series: 1 };
+            flagObj[TASK_IND.recurringCopied] = String(newRecordID);
+            flagObj[flagField] = flagToken;
+            var flagRes = await fetch(
+              FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(String(recordID)), {
+                method: 'POST',
+                headers: {
+                  'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                  'x-requested-with': 'XMLHttpRequest',
+                  'x-csrf-token': flagToken,
+                  'x-xsrf-token': flagToken
+                },
+                credentials: 'include',
+                body: encodeFormBody(flagObj)
+              }
+            );
+            if (!flagRes.ok) {
+              console.warn('pm-dashboard: failed to write "Continued As Task #" flag to record ' + recordID + ' — HTTP ' + flagRes.status);
+            }
+          } catch(flagErr) {
+            console.warn('pm-dashboard: error writing "Continued As Task #" flag:', flagErr);
+          }
         } catch(e) {
           console.error('Failed to copy recurring task ' + recordID, e);
           // Remove from both on failure so it can retry
@@ -673,7 +760,7 @@
     var _rMatch = String(url || "").match(/[?&]recordID=(\d+)/i);
     state.lastModalRecordID = _rMatch ? _rMatch[1] : null;
     lastFocusedElement = document.activeElement;
-    modal.style.display = "block";
+    modal.hidden = false;
     modal.setAttribute("aria-hidden", "false");
     toggleAppInert(true);
     document.body.style.overflow = "hidden";
@@ -693,7 +780,7 @@
     frame.src = "about:blank";
     frame.setAttribute("title", "LEAF content");
     if (openTabBtn) openTabBtn.setAttribute("data-url", "");
-    modal.style.display = "none";
+    modal.hidden = true;
     modal.setAttribute("aria-hidden", "true");
     toggleAppInert(false);
     document.body.style.overflow = "";
@@ -807,7 +894,7 @@
     }
 
     otherModalLastFocused = document.activeElement;
-    modal.style.display = "block";
+    modal.hidden = false;
     modal.setAttribute("aria-hidden", "false");
     toggleAppInert(true);
     document.body.style.overflow = "hidden";
@@ -825,7 +912,7 @@
   function closeOtherStatusModal(result) {
     var modal = document.getElementById("pmOtherModal");
     if (!modal) return;
-    modal.style.display = "none";
+    modal.hidden = true;
     modal.setAttribute("aria-hidden", "true");
     toggleAppInert(false);
     document.body.style.overflow = "";
@@ -883,6 +970,9 @@
     var el = document.createElement('div');
     el.id = 'pmRecurringBanner';
     el.className = 'pm-recurringBanner';
+    el.setAttribute("role", "status");
+    el.setAttribute("aria-live", "polite");
+    el.setAttribute("aria-atomic", "true");
     el.innerHTML =
       '<span class="pm-recurringBannerCheck">&#10003;</span>' +
       ' A new task <strong>#' + safe(String(newRecordID || '')) + '</strong> has been automatically created.';
@@ -3295,7 +3385,7 @@
 
     var key = String(selectedProjectKey || "").trim();
     if (activeTab !== "tasks" || !key) {
-      wrap.style.display = "none";
+      wrap.hidden = true;
       wrap.innerHTML = "";
       return;
     }
@@ -3323,7 +3413,7 @@
     var overdueClass =
       overdue > 0 ? "pm-healthValue pm-overdueRed" : "pm-healthValue";
 
-    wrap.style.display = "block";
+    wrap.hidden = false;
     wrap.innerHTML =
       '<div class="pm-healthInner">' +
       '<div class="pm-healthCell"><span class="pm-healthLabel">Project Key:</span> <span class="pm-healthValue">' +
@@ -3824,6 +3914,11 @@
     });
   }
 
+  // NOTE (CLEANUP): "pmKanbanBoard" is queried by getElementById in 4 separate
+  // functions (renderKanban, wireKanbanDnD, wireKanbanLoadMore, ensureKanbanRendered).
+  // If hot-path profiling shows DOM lookup overhead, consider caching this element
+  // at module level after DOMContentLoaded. Do not refactor without auditing all
+  // tab-switching and lazy-init paths first.
   function renderKanban(tasks, filters, sig) {
     var board = document.getElementById("pmKanbanBoard");
     if (!board) return;
@@ -3980,10 +4075,16 @@
       updateTaskDerivedCaches(next || task, reverted);
       refreshAfterTaskUpdate(next || task, reverted);
       refreshOkrsIfVisible();
-      announceKanbanStatus(
-        "Could not update task " + taskId + ". " + String(err),
-      );
-      alert("Could not update task status. " + String(err));
+      announceKanbanStatus("Error: Could not update task status. Please try again.");
+      var hint = document.getElementById("pmKanbanHint");
+      if (hint) {
+        hint.textContent = "Could not update task status. Please try again.";
+        hint.style.color = "#b00020";
+        setTimeout(function() {
+          hint.textContent = "Drag a task card to a new status column to update the task. Keyboard: focus a card and press Shift+Left/Right to move it.";
+          hint.style.color = "";
+        }, 5000);
+      }
     }
   }
 
@@ -4603,9 +4704,6 @@
       var isMain = view === "main";
       var isOkrs = view === "okrs";
 
-      wrapMain.style.display = isMain ? "block" : "none";
-      wrapOkrs.style.display = isOkrs ? "block" : "none";
-
       wrapMain.hidden = !isMain;
       wrapOkrs.hidden = !isOkrs;
 
@@ -4993,6 +5091,7 @@
     toggle.id = config.id + "Toggle";
     toggle.setAttribute("aria-expanded", "false");
     toggle.setAttribute("aria-controls", config.id + "Panel");
+    toggle.setAttribute("aria-haspopup", "listbox");
 
     var panel = document.createElement("div");
     panel.className = "pm-multiSelectPanel";
@@ -5020,7 +5119,15 @@
     var searchInput = document.createElement("input");
     searchInput.type = "text";
     searchInput.placeholder = "Search";
-    searchInput.setAttribute("aria-label", "Search options");
+    var filterName = container.getAttribute("data-filter") || "options";
+    var labelMap = {
+      projectKey: "Project", status: "Status", assignee: "Assigned To",
+      category: "Category", priority: "Priority",
+      projectFiscalYear: "Fiscal Year", analyticsYear: "Year",
+      analyticsQuarter: "Quarter", okrFiscalYear: "OKR Fiscal Year"
+    };
+    var humanLabel = labelMap[filterName] || filterName;
+    searchInput.setAttribute("aria-label", "Search " + humanLabel + " options");
     searchWrap.appendChild(searchInput);
 
     var list = document.createElement("div");
@@ -6699,12 +6806,14 @@
     })
     .then(function(counts) {
       var total = counts.reduce(function(sum, n) { return sum + n; }, 0);
-      if (total > 0) {
-        badge.textContent = total > 99 ? '99+' : String(total);
+      var count = total;
+      if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : String(count);
         badge.hidden = false;
-        badge.setAttribute('aria-label', total + ' items in your inbox');
+        badge.setAttribute('aria-label', count + ' inbox item' + (count !== 1 ? 's' : ''));
       } else {
         badge.hidden = true;
+        badge.setAttribute('aria-label', 'No inbox items');
       }
     })
     .catch(function() {
@@ -6732,11 +6841,11 @@
     }
 
     btn.addEventListener("click", function () {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo(0, 0);
     });
 
     window.addEventListener("scroll", updateVisibility, { passive: true });
-    window.addEventListener("resize", updateVisibility);
+    window.addEventListener("resize", debounce(updateVisibility, 120));
     updateVisibility();
   }
 
@@ -7680,25 +7789,39 @@
 
     var steps = [
       {
-        title: "Welcome to the LEAF Project Dashboard 👋",
-        body: "This quick tour will walk you through the key features. It takes about 2 minutes. You can skip at any time.",
-        target: null,
-        welcome: true
+        title: "Welcome to the LEAF Project Dashboard",
+        body: "This quick tour walks you through the key features. Use Next and Back to navigate, or press Escape to exit anytime. Keyboard users: use Tab to move between buttons and arrow keys to navigate steps.",
+        target: null
+      },
+      {
+        title: "Add Menu",
+        body: "Create a new Project, Task, or Recurring Task here. Recurring tasks automatically generate a fresh copy each time they're completed — no manual re-entry needed.",
+        target: '#pmAddMenuBtn'
+      },
+      {
+        title: "View Inbox",
+        body: "Your LEAF inbox — tasks assigned to you, pending approvals, and workflow actions waiting on your attention.",
+        target: '#pmViewInboxBtn'
       },
       {
         title: "Projects Tab",
-        body: "This is your bird's-eye view. Every active project lives here with status, health, OKR associations, and % completion at a glance.",
+        body: "Your bird's-eye view of every active project — status, health, OKR associations, and % completion at a glance.",
         target: '[data-tab="projects"]'
       },
       {
         title: "Tasks Tab",
-        body: "All tasks across every project in one place. Switch between Task Table, Kanban board, and Gantt timeline using the view buttons.",
+        body: "All tasks across every project in one place. Your primary workspace for day-to-day work.",
         target: '[data-tab="tasks"]'
       },
       {
-        title: "Kanban Board",
-        body: "Drag cards left or right to update a task's status. When you move a card to Completed, the completion date is automatically recorded.",
-        target: '[data-tab="tasks"]'
+        title: "Other Views: Kanban & Gantt",
+        body: "Switch between Task Table, Kanban board, and Gantt timeline using these view buttons. Drag cards on the Kanban to update status — completion dates are recorded automatically.",
+        target: '.pm-viewRow'
+      },
+      {
+        title: "Analytics Tab",
+        body: "Track completion trends by quarter and category, monitor schedule variance, and review project health summaries.",
+        target: '[data-tab="analytics"]'
       },
       {
         title: "Filter Bar",
@@ -7706,25 +7829,9 @@
         target: '.pm-filterRow'
       },
       {
-        title: "Add Menu",
-        body: "Create a new Project, Task, or Recurring Task here. Recurring tasks automatically generate a fresh copy each time they're completed.",
-        target: '#pmAddMenuBtn'
-      },
-      {
-        title: "View Inbox",
-        body: "Your LEAF inbox — see tasks assigned to you, pending approvals, and workflow actions waiting on your attention.",
-        target: '#pmViewInboxBtn'
-      },
-      {
-        title: "Analytics Tab",
-        body: "Track completion trends by quarter and category, monitor schedule variance, and see project health summaries.",
-        target: '[data-tab="analytics"]'
-      },
-      {
-        title: "You're all set! 🎉",
-        body: "That covers the essentials. Click the <strong>?</strong> button in the toolbar anytime to replay this tour.",
-        target: null,
-        welcome: true
+        title: "You're all set!",
+        body: "That covers the essentials. Click the <strong>tour</strong> icon in the toolbar anytime to replay this tour.",
+        target: null
       }
     ];
 
@@ -7784,12 +7891,14 @@
       var step = steps[index];
       var total = steps.length;
 
-      stepLabel.textContent = step.welcome ? '' : 'Step ' + index + ' of ' + (total - 2);
+      stepLabel.textContent = (index === 0 || index === total - 1) ? '' : 'Step ' + index + ' of ' + (total - 2);
       titleEl.textContent = step.title;
       bodyEl.innerHTML = step.body;
       backBtn.disabled = index === 0;
       nextBtn.textContent = index === total - 1 ? 'Finish ✓' : 'Next →';
 
+      // getTargetRect returns null if selector is null or element not in DOM —
+      // both cases fall back to centered tooltip with no spotlight
       var rect = getTargetRect(step.target);
 
       if (rect) {
@@ -7806,19 +7915,46 @@
       }
 
       positionTooltip(rect);
+      nextBtn.focus();
+    }
+
+    function trapFocus(e) {
+      if (overlay.hidden) return;
+      var focusable = Array.from(
+        tooltip.querySelectorAll('button:not([disabled])')
+      );
+      if (!focusable.length) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
     }
 
     function startTour() {
       currentStep = 0;
       overlay.hidden = false;
       document.body.style.overflow = 'hidden';
+      document.addEventListener('keydown', trapFocus);
       showStep(0);
     }
 
     function endTour() {
       overlay.hidden = true;
       document.body.style.overflow = '';
+      document.removeEventListener('keydown', trapFocus);
       localStorage.setItem(TOUR_KEY, '1');
+      if (tourBtn) tourBtn.focus();
     }
 
     nextBtn.addEventListener('click', function() {
@@ -7845,9 +7981,9 @@
 
     document.addEventListener('keydown', function(e) {
       if (overlay.hidden) return;
-      if (e.key === 'Escape') endTour();
-      if (e.key === 'ArrowRight') nextBtn.click();
-      if (e.key === 'ArrowLeft' && !backBtn.disabled) backBtn.click();
+      if (e.key === 'Escape') { e.preventDefault(); endTour(); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); nextBtn.click(); }
+      if (e.key === 'ArrowLeft' && !backBtn.disabled) { e.preventDefault(); backBtn.click(); }
     });
 
     tourBtn.addEventListener('click', startTour);
@@ -7923,6 +8059,7 @@
           TASK_IND.keyResultSelection,
           TASK_IND.isRecurring,
           TASK_IND.actualCompletionDate,
+          TASK_IND.recurringCopied,
         ],
         [],
       );
@@ -7977,6 +8114,20 @@
       state.projectsLoaded = true;
       backfillSupportTicketLabels(state.tasksAll);
       checkAndCopyResolvedRecurringTasks();
+
+      // Warn once if indicator 48 (recurringCopied) doesn't appear in any task row,
+      // which likely means it hasn't been created in LEAF Form Editor yet.
+      var ind48Key = "id" + TASK_IND.recurringCopied;
+      var ind48Exists = taskRowsAll.some(function(r) {
+        return r.s1 && r.s1[ind48Key] !== undefined;
+      });
+      if (!ind48Exists) {
+        console.warn(
+          "pm-dashboard: Indicator 48 (recurringCopied) may not be created in " +
+          "LEAF Form Editor yet. Server-side recurring task deduplication will " +
+          "not work until this indicator is added as a text field on the task form."
+        );
+      }
 
       state.projectKeyToRecordID = {};
       state.projectKeyToTitle = {};

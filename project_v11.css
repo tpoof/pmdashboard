@@ -1,3 +1,12 @@
+/* Z-INDEX SCALE
+ * 1000  — popovers, add menu
+ * 1200  — floating table overlays, jump-to-top
+ * 9999  — banners (recurring, transfer debug)
+ * 10000 — tour overlay backdrop
+ * 10001 — tour spotlight
+ * 10002 — tour tooltip, help tooltip
+ */
+
 :root {
   --space-1: 4px;
   --space-2: 8px;
@@ -203,12 +212,6 @@ body {
   background: var(--surface);
 }
 
-.pm-input:focus {
-  outline: none;
-  box-shadow: none;
-  border-color: var(--border);
-}
-
 .pm-input:focus-visible,
 .pm-select:focus-visible,
 .pm-tab:focus-visible,
@@ -288,7 +291,7 @@ body {
   font-size: 13px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--text);
 }
 
 .pm-select {
@@ -337,7 +340,7 @@ body {
 }
 
 .pm-multiSelectToggle::after {
-  content: "▾";
+  content: "▾" / "";
   position: absolute;
   right: 10px;
   top: 50%;
@@ -439,7 +442,7 @@ body {
 }
 
 .pm-addBtn::after {
-  content: "▾";
+  content: "▾" / "";
   margin-left: var(--space-2);
   font-size: 12px;
 }
@@ -476,7 +479,7 @@ body {
 }
 
 [data-action="recurringTask"]::before {
-  content: "↺ ";
+  content: "↺ " / "";
   font-size: 1em;
 }
 
@@ -523,9 +526,15 @@ body {
 
 .pm-switchInput {
   position: absolute;
-  opacity: 0;
   width: 1px;
   height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
 }
 
 .pm-switchTrack {
@@ -1260,7 +1269,6 @@ body {
   overflow-y: hidden;
   max-width: 100%;
   width: 100%;
-  -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
   padding: 0 0 0 var(--pm-table-safe-left);
   margin: 0;
@@ -1821,11 +1829,16 @@ body {
   border-radius: var(--radius-md);
   background: var(--surface);
   padding: var(--space-3);
-  overflow: hidden;
   box-shadow: var(--shadow-sm);
 }
+.pm-chartCard {
+  overflow: hidden;
+}
+.pm-tableCard {
+  overflow: visible;
+}
 
-.pm-chartTitle {
+.pm-chartTitle, h3.pm-chartTitle {
   font-weight: 900;
   margin-bottom: 0;
   color: var(--text);
@@ -2257,7 +2270,7 @@ body {
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.15s ease;
-  z-index: 9999;
+  z-index: 10002;
 }
 .pm-helpBtn:hover::after,
 .pm-helpBtn:focus-visible::after {
@@ -2280,7 +2293,8 @@ body {
   position: fixed;
   border-radius: 6px;
   box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
-  transition: all 0.3s ease;
+  transition: top 0.3s ease, left 0.3s ease,
+              width 0.3s ease, height 0.3s ease;
   pointer-events: none;
   z-index: 10001;
 }
@@ -2355,6 +2369,18 @@ body {
 .pm-tourBack:hover { background: var(--accent-soft); }
 .pm-tourBack[disabled] { opacity: 0.35; pointer-events: none; }
 
+.pm-tourBack:focus-visible,
+.pm-tourNext:focus-visible,
+.pm-tourSkip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Ensure overlay is fully removed from tab order when closed */
+.pm-tourOverlay[hidden] {
+  display: none !important;
+}
+
 /* Welcome card (step 0 — no spotlight) */
 .pm-tourWelcome .pm-tourTooltip {
   position: fixed;
@@ -2390,4 +2416,32 @@ body {
   line-height: 1;
   box-shadow: 0 1px 4px rgba(0,0,0,0.25);
   z-index: 1;
+}
+
+/* ── Responsive table scrolling ── */
+
+/* Analytics: allow inner table divs to scroll horizontally */
+#pmProjectHealthTable,
+#pmOverdueTasksTable {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* OKR: make the existing wrapper scrollable */
+#pmOkrsTableWrap {
+  overflow-x: auto;
+  max-width: 100%;
+  width: 100%;
+}
+
+/* Mobile: give tables a minimum width so columns don't collapse */
+@media (max-width: 768px) {
+  #pmProjectHealthTableInner,
+  #pmOverdueTasksTableInner {
+    min-width: 600px;
+  }
+
+  #pmOkrsTableWrap .pm-table {
+    min-width: 700px;
+  }
 }
