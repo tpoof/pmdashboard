@@ -262,9 +262,6 @@
     }
   }
 
-  function hasRecurringCopied(recordID) {
-    return getRecurringCopiedSet().has(String(recordID));
-  }
 
   // In-memory lock to prevent concurrent copies within same poll cycle
   var recurringInProgress = new Set();
@@ -1304,22 +1301,34 @@
     var key = "id" + String(indicatorId);
     var v = row.s1[key];
     if (v == null) return "";
-    return String(v).trim();
+    return decodeEntities(String(v).trim());
   }
 
   function extractRawIndicator(row, indicatorId) {
     if (!row) return null;
     var key = "id" + String(indicatorId);
-    if (row.s1 && row.s1[key] != null) return row.s1[key];
+    if (row.s1 && row.s1[key] != null) {
+      var v1 = row.s1[key];
+      return typeof v1 === "string" ? decodeEntities(v1) : v1;
+    }
     var stepKeys = Object.keys(row).filter(function (k) {
       return /^s\d+$/.test(k);
     });
     for (var i = 0; i < stepKeys.length; i++) {
       var step = row[stepKeys[i]];
-      if (step && step[key] != null) return step[key];
+      if (step && step[key] != null) {
+        var vs = step[key];
+        return typeof vs === "string" ? decodeEntities(vs) : vs;
+      }
     }
-    if (row[key] != null) return row[key];
-    if (row.data && row.data[key] != null) return row.data[key];
+    if (row[key] != null) {
+      var vr = row[key];
+      return typeof vr === "string" ? decodeEntities(vr) : vr;
+    }
+    if (row.data && row.data[key] != null) {
+      var vd = row.data[key];
+      return typeof vd === "string" ? decodeEntities(vd) : vd;
+    }
     return null;
   }
 
@@ -1471,7 +1480,6 @@
     var label = "#" + id;
     var href = buildSupportTicketHref(parsed);
     var origin = getTicketOriginFromHref(href);
-    var originLabel = origin.label || "unknown";
     var tooltip = origin.label
       ? "Imported from " + origin.label + " site"
       : "Imported from unknown site";
@@ -2257,7 +2265,6 @@
 
   function classifyKr(
     matchKey,
-    krName,
     projectsForOkr,
     tasksForOkr,
     projectMapByKey,
@@ -2533,10 +2540,8 @@
 
           var keyResultItems = Object.keys(keyResultNameMap)
             .map(function (matchKey) {
-              var krName = keyResultNameMap[matchKey];
               var classification = classifyKr(
                 matchKey,
-                krName,
                 projectsForOkr,
                 tasksForOkr,
                 projectMapByKey,
@@ -2544,7 +2549,6 @@
               var krTasks = classification.tasks;
               var krProjects = classification.projectsToRender;
               var otherTasks = classification.otherTasks;
-              var tasksByProjectKey = classification.tasksByProjectKey;
               otherTasks.sort(function (a, b) {
                 var aComplete = isCompletedStatus(a.status);
                 var bComplete = isCompletedStatus(b.status);
@@ -2569,7 +2573,7 @@
                 : 0;
 
               return {
-                name: krName,
+                name: keyResultNameMap[matchKey],
                 matchKey: matchKey,
                 projects: krProjects,
                 tasks: krTasks,
@@ -5177,7 +5181,7 @@
       }
 
       var frag = document.createDocumentFragment();
-      items.forEach(function (opt, idx) {
+      items.forEach(function (opt) {
         var label = document.createElement("label");
         label.className = "pm-multiSelectOption";
         var input = document.createElement("input");
@@ -6962,7 +6966,7 @@
     if (arr[idx] < 0) arr[idx] = 0;
   }
 
-  function getAnalyticsTaskInfo(task, config, now) {
+  function getAnalyticsTaskInfo(task, config) {
     if (!task || isArchivedStatus(task.status)) {
       return { inGeneral: false, inCompleted: false, inTicket: false };
     }
@@ -7061,8 +7065,8 @@
 
   function updateAnalyticsCacheEntry(cache, oldTask, newTask, now) {
     if (!cache || !cache.config) return;
-    var oldInfo = getAnalyticsTaskInfo(oldTask, cache.config, now);
-    var newInfo = getAnalyticsTaskInfo(newTask, cache.config, now);
+    var oldInfo = getAnalyticsTaskInfo(oldTask, cache.config);
+    var newInfo = getAnalyticsTaskInfo(newTask, cache.config);
 
     if (oldInfo.inGeneral) applyAnalyticsGeneralDelta(cache, oldInfo, -1, now);
     if (newInfo.inGeneral) applyAnalyticsGeneralDelta(cache, newInfo, 1, now);
