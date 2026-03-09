@@ -1,3 +1,5 @@
+[Documentation created by Claude.ai]: #
+
 # LEAF Project Dashboard — v10 Technical Documentation
 
 ## 1) Overview
@@ -16,7 +18,7 @@ Version reference: v10.
 
 ## 2) File Structure and Versioning
 
-- `project_v10.html`
+- `project_v10.html` [view_homepage.tpl]
   - Page structure, layout scaffolding, tab containers, and modal plumbing.
   - OKR Analytics containers (filters, quick view, index, roll-up).
   - Add menu (Project, Task, Objective, Key Result) and View Inbox button.
@@ -52,11 +54,13 @@ The dashboard uses LEAF Smarty template conditionals to gate visibility:
 <!--{if $empMembership['groupID'][435]}-->
 <!-- Outer gate: read-only group 435. All users need this. -->
 <div class="pm-wrap">
-  <span id="pmEnv"
+  <span
+    id="pmEnv"
     data-csrf="{$CSRFToken}"
     data-csrf-alt="{$csrf_token}"
     data-csrf2="{$csrfToken}"
-    style="display:none"></span>
+    style="display:none"
+  ></span>
 
   <!--{if $empMembership['groupID'][12]}-->
   <!-- Inner gate: LEAF Team group 12. Shows Add menu and View Inbox. -->
@@ -153,18 +157,32 @@ All statuses and Kanban column orderings are centralized in `STATUS_CONFIG`:
 ```js
 var STATUS_CONFIG = {
   ALL_STATUSES: [
-    "Not Started", "In Progress", "Ready for HCD Review",
-    "Ready for Testing", "Ready for PO Review", "Other", "Completed"
+    "Not Started",
+    "In Progress",
+    "Ready for HCD Review",
+    "Ready for Testing",
+    "Ready for PO Review",
+    "Other",
+    "Completed",
   ],
   LEGACY_KANBAN_COLUMNS: [
-    "Not Started", "In Progress", "Ready for HCD Review",
-    "Ready for PO Review", "Completed", "Other"
+    "Not Started",
+    "In Progress",
+    "Ready for HCD Review",
+    "Ready for PO Review",
+    "Completed",
+    "Other",
   ],
   DEV_KANBAN_COLUMNS: [
-    "Not Started", "In Progress", "Ready for HCD Review",
-    "Ready for Testing", "Ready for PO Review", "Completed", "Other"
+    "Not Started",
+    "In Progress",
+    "Ready for HCD Review",
+    "Ready for Testing",
+    "Ready for PO Review",
+    "Completed",
+    "Other",
   ],
-  OTHER_SUBTYPES: ["Blocked", "On Hold"]
+  OTHER_SUBTYPES: ["Blocked", "On Hold"],
 };
 ```
 
@@ -260,8 +278,8 @@ var PAGINATION_CONFIG = {
     storageKey: "pm_tasks_pagination_v9",
     containerId: "pmTasksTablePagination",
     defaultPageSize: 100,
-    pageSizes: [50, 100, 200]
-  }
+    pageSizes: [50, 100, 200],
+  },
 };
 ```
 
@@ -311,8 +329,13 @@ A timeline bar chart for tasks with start/due dates.
 ### HTML Structure
 
 ```html
-<div id="pmGanttWrap" role="tabpanel" aria-labelledby="pmViewGanttBtn"
-     aria-hidden="true" style="display:none">
+<div
+  id="pmGanttWrap"
+  role="tabpanel"
+  aria-labelledby="pmViewGanttBtn"
+  aria-hidden="true"
+  style="display:none"
+>
   <div class="pm-ganttMeta" id="pmGanttMeta"></div>
   <div id="pmGanttBoard" class="pm-gantt">
     <div id="pmGanttInner"></div>
@@ -332,8 +355,8 @@ A timeline bar chart for tasks with start/due dates.
 
 ### Priority Color Classes
 
-| Priority | CSS Class     | Color     |
-|----------|---------------|-----------|
+| Priority | CSS Class      | Color     |
+| -------- | -------------- | --------- |
 | High     | `pm-ganttHigh` | `#f2938c` |
 | Medium   | `pm-ganttMed`  | `#e6c74c` |
 | Low      | `pm-ganttLow`  | `#aacdec` |
@@ -394,11 +417,26 @@ A sticky summary bar that appears above the tasks table when a specific project 
 ### CSS
 
 ```css
-.pm-healthSticky  { position: sticky; top: var(--space-2); z-index: 10; }
-.pm-healthInner   { display: flex; flex-wrap: wrap; gap: 12px 18px; }
-.pm-healthCell    { font-size: 1.05rem; white-space: nowrap; }
-.pm-healthLabel   { font-weight: 900; }
-.pm-healthValue   { font-weight: 400; }
+.pm-healthSticky {
+  position: sticky;
+  top: var(--space-2);
+  z-index: 10;
+}
+.pm-healthInner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+}
+.pm-healthCell {
+  font-size: 1.05rem;
+  white-space: nowrap;
+}
+.pm-healthLabel {
+  font-weight: 900;
+}
+.pm-healthValue {
+  font-weight: 400;
+}
 ```
 
 ### Reproducing in Another Site
@@ -418,12 +456,12 @@ A team-member–only action row at the top of the dashboard (gated by LEAF group
 
 A popover menu button that opens a small dropdown with four creation options:
 
-| Menu Item   | Action key     | Opens modal for              |
-|-------------|----------------|------------------------------|
-| + Project   | `project`       | New Project form             |
-| + Task      | `task`          | New Task form                |
-| + Objective | `objective`     | New OKR (Objective) form     |
-| + Key Result| `keyResult`     | New Key Result form          |
+| Menu Item    | Action key  | Opens modal for          |
+| ------------ | ----------- | ------------------------ |
+| + Project    | `project`   | New Project form         |
+| + Task       | `task`      | New Task form            |
+| + Objective  | `objective` | New OKR (Objective) form |
+| + Key Result | `keyResult` | New Key Result form      |
 
 Each action calls `openModal(title, url)` with the appropriate `START_*_URL` constant.
 
@@ -448,19 +486,61 @@ A "View Inbox" ghost button that opens `report.php?a=LEAF_Inbox` in the record m
 <!--{if $empMembership['groupID'][12]}-->
 <div class="pm-actionsRow pm-actionsRowSpaced">
   <div class="pm-addMenu">
-    <button type="button" class="pm-primaryBtn pm-addBtn" id="pmAddMenuBtn"
-      aria-haspopup="menu" aria-expanded="false" aria-controls="pmAddMenuList">
+    <button
+      type="button"
+      class="pm-primaryBtn pm-addBtn"
+      id="pmAddMenuBtn"
+      aria-haspopup="menu"
+      aria-expanded="false"
+      aria-controls="pmAddMenuList"
+    >
       Add
     </button>
-    <div class="pm-addMenuPopover" id="pmAddMenuList"
-      role="menu" aria-label="Add menu" aria-orientation="vertical" hidden>
-      <button type="button" class="pm-menuItem" role="menuitem" data-action="project">+ Project</button>
-      <button type="button" class="pm-menuItem" role="menuitem" data-action="task">+ Task</button>
-      <button type="button" class="pm-menuItem" role="menuitem" data-action="objective">+ Objective</button>
-      <button type="button" class="pm-menuItem" role="menuitem" data-action="keyResult">+ Key Result</button>
+    <div
+      class="pm-addMenuPopover"
+      id="pmAddMenuList"
+      role="menu"
+      aria-label="Add menu"
+      aria-orientation="vertical"
+      hidden
+    >
+      <button
+        type="button"
+        class="pm-menuItem"
+        role="menuitem"
+        data-action="project"
+      >
+        + Project
+      </button>
+      <button
+        type="button"
+        class="pm-menuItem"
+        role="menuitem"
+        data-action="task"
+      >
+        + Task
+      </button>
+      <button
+        type="button"
+        class="pm-menuItem"
+        role="menuitem"
+        data-action="objective"
+      >
+        + Objective
+      </button>
+      <button
+        type="button"
+        class="pm-menuItem"
+        role="menuitem"
+        data-action="keyResult"
+      >
+        + Key Result
+      </button>
     </div>
   </div>
-  <button type="button" class="pm-ghostBtn pm-inboxBtn" id="pmViewInboxBtn">View Inbox</button>
+  <button type="button" class="pm-ghostBtn pm-inboxBtn" id="pmViewInboxBtn">
+    View Inbox
+  </button>
 </div>
 <!--{/if}-->
 ```
@@ -468,10 +548,12 @@ A "View Inbox" ghost button that opens `report.php?a=LEAF_Inbox` in the record m
 ### URL Constants (replace with your own LEAF instance paths)
 
 ```js
-var START_PROJECT_URL    = "report.php?a=LEAF_Start_Request&id=form_55445&title=Project";
-var START_TASK_URL       = "report.php?a=LEAF_Start_Request&id=form_9b302&title=Task";
-var START_OKR_URL        = "report.php?a=LEAF_Start_Request&id=form_a2b55&title=OKR";
-var START_KEY_RESULT_URL = "report.php?a=LEAF_Start_Request&id=form_6530b&title=Key+Result";
+var START_PROJECT_URL =
+  "report.php?a=LEAF_Start_Request&id=form_55445&title=Project";
+var START_TASK_URL = "report.php?a=LEAF_Start_Request&id=form_9b302&title=Task";
+var START_OKR_URL = "report.php?a=LEAF_Start_Request&id=form_a2b55&title=OKR";
+var START_KEY_RESULT_URL =
+  "report.php?a=LEAF_Start_Request&id=form_6530b&title=Key+Result";
 ```
 
 ---
@@ -491,17 +573,35 @@ A fixed-position circular button in the bottom-right corner that scrolls the pag
 ### HTML
 
 ```html
-<button class="pm-jumpTop" id="pmJumpTopBtn"
-  aria-label="Jump to top" aria-hidden="true" tabindex="-1">↑</button>
+<button
+  class="pm-jumpTop"
+  id="pmJumpTopBtn"
+  aria-label="Jump to top"
+  aria-hidden="true"
+  tabindex="-1"
+>
+  ↑
+</button>
 ```
 
 ### CSS
 
 ```css
-.pm-jumpTop          { position: fixed; right: 24px; bottom: 24px;
-                       width: 46px; height: 46px; border-radius: 999px;
-                       opacity: 0; pointer-events: none; z-index: 1200; }
-.pm-jumpTop.is-visible { opacity: 1; pointer-events: auto; }
+.pm-jumpTop {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1200;
+}
+.pm-jumpTop.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
 ```
 
 ---
@@ -533,6 +633,7 @@ The Projects table includes a sortable **% Complete** column as the last column.
 **Helper function**: `getProjectCompletionPct(projectKey)` filters `state.tasksAll` by project key, counts tasks whose status contains "completed" (case-insensitive), and returns `Math.round((completed / total) * 100)`, or 0 if there are no tasks.
 
 **Styling**: Uses the same color classes as the Project Health Sticky bar:
+
 - `pm-completeGreen` (green) when % = 100
 - `pm-completeMid` (amber, `#b26a00`) when % ≥ 50 and < 100
 - No color class when % < 50
@@ -542,13 +643,35 @@ The Projects table includes a sortable **% Complete** column as the last column.
 **Sorting**: When `state.sort.projects.key === "completionPct"`, `getProjectCompletionPct()` is called on each project during the sort comparison using `compareValues` with type `"number"`.
 
 New CSS classes added:
+
 ```css
-.pm-colCompletion   { width: 110px; min-width: 90px; text-align: center; }
-.pm-compPctWrap     { display: inline-flex; align-items: center; gap: 6px; width: 100%; }
-.pm-compPctBar      { display: inline-block; height: 6px; background: #2563eb;
-                      border-radius: 3px; min-width: 2px; max-width: 60px; }
-.pm-compPctLabel    { font-weight: 600; font-size: 13px; min-width: 36px; }
-.pm-completeMid     { color: #b26a00; }
+.pm-colCompletion {
+  width: 110px;
+  min-width: 90px;
+  text-align: center;
+}
+.pm-compPctWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.pm-compPctBar {
+  display: inline-block;
+  height: 6px;
+  background: #2563eb;
+  border-radius: 3px;
+  min-width: 2px;
+  max-width: 60px;
+}
+.pm-compPctLabel {
+  font-weight: 600;
+  font-size: 13px;
+  min-width: 36px;
+}
+.pm-completeMid {
+  color: #b26a00;
+}
 ```
 
 ---
@@ -559,21 +682,22 @@ New CSS classes added:
 
 All charts are rendered via Chart.js and support Year/Quarter filtering. The following charts are present:
 
-| Chart Title                   | Canvas ID                     | Data Source               |
-|-------------------------------|-------------------------------|---------------------------|
-| Due date buckets              | `pmChartDueBuckets`            | Tasks (due date)          |
-| Completed tasks by quarter    | `pmChartCompletedByQuarter`    | Tasks (completion date)   |
-| Completed tasks by category   | `pmChartCompletedByCategory`   | Tasks (category)          |
-| Tasks by priority             | `pmChartTasksByPriority`       | Tasks                     |
-| Tasks by Status               | `pmChartTasksByStatus`         | Tasks                     |
-| Tasks per Project Key         | `pmChartTasksByProject`        | Tasks                     |
-| Tickets imported by month     | `pmChartTicketsImported`       | Tasks (support ticket)    |
-| **Projects by Project Type**  | `pmChartProjectsByType`        | **Projects (type field)**  |
-| **Schedule Variance (Days Late/Early)** | `pmChartScheduleVariance` | **Completed tasks (actualCompletion vs due date)** |
+| Chart Title                             | Canvas ID                    | Data Source                                        |
+| --------------------------------------- | ---------------------------- | -------------------------------------------------- |
+| Due date buckets                        | `pmChartDueBuckets`          | Tasks (due date)                                   |
+| Completed tasks by quarter              | `pmChartCompletedByQuarter`  | Tasks (completion date)                            |
+| Completed tasks by category             | `pmChartCompletedByCategory` | Tasks (category)                                   |
+| Tasks by priority                       | `pmChartTasksByPriority`     | Tasks                                              |
+| Tasks by Status                         | `pmChartTasksByStatus`       | Tasks                                              |
+| Tasks per Project Key                   | `pmChartTasksByProject`      | Tasks                                              |
+| Tickets imported by month               | `pmChartTicketsImported`     | Tasks (support ticket)                             |
+| **Projects by Project Type**            | `pmChartProjectsByType`      | **Projects (type field)**                          |
+| **Schedule Variance (Days Late/Early)** | `pmChartScheduleVariance`    | **Completed tasks (actualCompletion vs due date)** |
 
 "Projects by Project Type" is new in v10 and uses `buildProjectTypeChartData(projects)` which aggregates `project.projectType` (indicator 32) with `formatProjectTypeLabel` for display normalization.
 
 **Schedule Variance chart** is new in v10.1. It is computed by `computeScheduleVariance(tasks)` which:
+
 - Only considers completed tasks that have both a `due` date and an `actualCompletion` date.
 - Computes `gap = actualCompletion - due` in whole days.
 - Buckets into: "Early/On Time" (gap ≤ 0), "1–7 days late", "8–14 days late", "15+ days late".
@@ -590,12 +714,12 @@ Both tables are generated by `renderAnalyticsTablesFromCache(cache)` and rendere
 
 ### Project Health Rollup vs. Health Sticky Bar
 
-| Feature                   | Analytics Project Health Table     | Tasks Health Sticky Bar             |
-|---------------------------|-------------------------------------|--------------------------------------|
-| Location                  | Analytics tab                       | Tasks tab                            |
-| Scope                     | All projects, all tasks             | One selected project                 |
-| Trigger                   | Analytics view activation           | Project filter selection             |
-| Updates on task change    | Yes (incremental cache update)      | Yes (re-renders on filter change)    |
+| Feature                | Analytics Project Health Table | Tasks Health Sticky Bar           |
+| ---------------------- | ------------------------------ | --------------------------------- |
+| Location               | Analytics tab                  | Tasks tab                         |
+| Scope                  | All projects, all tasks        | One selected project              |
+| Trigger                | Analytics view activation      | Project filter selection          |
+| Updates on task change | Yes (incremental cache update) | Yes (re-renders on filter change) |
 
 ---
 
