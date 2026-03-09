@@ -7585,6 +7585,193 @@
   }
 
 
+  function initTour() {
+
+    var TOUR_KEY = 'pm_tour_seen_v1';
+
+    var steps = [
+      {
+        title: "Welcome to the LEAF Project Dashboard 👋",
+        body: "This quick tour will walk you through the key features. It takes about 2 minutes. You can skip at any time.",
+        target: null,
+        welcome: true
+      },
+      {
+        title: "Projects Tab",
+        body: "This is your bird's-eye view. Every active project lives here with status, health, OKR associations, and % completion at a glance.",
+        target: '[data-tab="projects"]'
+      },
+      {
+        title: "Tasks Tab",
+        body: "All tasks across every project in one place. Switch between Task Table, Kanban board, and Gantt timeline using the view buttons.",
+        target: '[data-tab="tasks"]'
+      },
+      {
+        title: "Kanban Board",
+        body: "Drag cards left or right to update a task's status. When you move a card to Completed, the completion date is automatically recorded.",
+        target: '[data-tab="tasks"]'
+      },
+      {
+        title: "Filter Bar",
+        body: "Narrow down tasks by Project, Status, Assigned To, Category, or Priority. Use multiple filters together. Hit Clear all filters to reset.",
+        target: '.pm-filterRow'
+      },
+      {
+        title: "Add Menu",
+        body: "Create a new Project, Task, or Recurring Task here. Recurring tasks automatically generate a fresh copy each time they're completed.",
+        target: '#pmAddMenuBtn'
+      },
+      {
+        title: "View Inbox",
+        body: "Your LEAF inbox — see tasks assigned to you, pending approvals, and workflow actions waiting on your attention.",
+        target: '#pmViewInboxBtn'
+      },
+      {
+        title: "Analytics Tab",
+        body: "Track completion trends by quarter and category, monitor schedule variance, and see project health summaries.",
+        target: '[data-tab="analytics"]'
+      },
+      {
+        title: "You're all set! 🎉",
+        body: "That covers the essentials. Click the <strong>?</strong> button in the toolbar anytime to replay this tour.",
+        target: null,
+        welcome: true
+      }
+    ];
+
+    var currentStep = 0;
+    var overlay = document.getElementById('pmTourOverlay');
+    var spotlight = document.getElementById('pmTourSpotlight');
+    var tooltip = document.getElementById('pmTourTooltip');
+    var stepLabel = document.getElementById('pmTourStepLabel');
+    var titleEl = document.getElementById('pmTourTitle');
+    var bodyEl = document.getElementById('pmTourBody');
+    var backBtn = document.getElementById('pmTourBack');
+    var nextBtn = document.getElementById('pmTourNext');
+    var skipBtn = document.getElementById('pmTourSkip');
+    var tourBtn = document.getElementById('pmTourBtn');
+
+    if (!overlay || !tourBtn) return;
+
+    function getTargetRect(selector) {
+      if (!selector) return null;
+      var el = document.querySelector(selector);
+      if (!el) return null;
+      var r = el.getBoundingClientRect();
+      return { top: r.top, left: r.left, width: r.width, height: r.height };
+    }
+
+    function positionTooltip(rect) {
+      var pad = 16;
+      var tw = 300;
+      var th = tooltip.offsetHeight || 160;
+      var vw = window.innerWidth;
+      var vh = window.innerHeight;
+      var top, left;
+
+      if (!rect) {
+        top = (vh - th) / 2;
+        left = (vw - tw) / 2;
+      } else {
+        if (rect.top + rect.height + pad + th < vh) {
+          top = rect.top + rect.height + pad;
+          left = rect.left;
+        } else if (rect.top - pad - th > 0) {
+          top = rect.top - pad - th;
+          left = rect.left;
+        } else {
+          top = rect.top;
+          left = rect.left + rect.width + pad;
+        }
+        left = Math.max(pad, Math.min(left, vw - tw - pad));
+        top = Math.max(pad, Math.min(top, vh - th - pad));
+      }
+
+      tooltip.style.top = top + 'px';
+      tooltip.style.left = left + 'px';
+    }
+
+    function showStep(index) {
+      var step = steps[index];
+      var total = steps.length;
+
+      stepLabel.textContent = step.welcome ? '' : 'Step ' + index + ' of ' + (total - 2);
+      titleEl.textContent = step.title;
+      bodyEl.innerHTML = step.body;
+      backBtn.disabled = index === 0;
+      nextBtn.textContent = index === total - 1 ? 'Finish ✓' : 'Next →';
+
+      var rect = getTargetRect(step.target);
+
+      if (rect) {
+        var pad = 8;
+        spotlight.style.top = (rect.top - pad) + 'px';
+        spotlight.style.left = (rect.left - pad) + 'px';
+        spotlight.style.width = (rect.width + pad * 2) + 'px';
+        spotlight.style.height = (rect.height + pad * 2) + 'px';
+        spotlight.hidden = false;
+      } else {
+        spotlight.hidden = true;
+        spotlight.style.width = '0';
+        spotlight.style.height = '0';
+      }
+
+      positionTooltip(rect);
+    }
+
+    function startTour() {
+      currentStep = 0;
+      overlay.hidden = false;
+      document.body.style.overflow = 'hidden';
+      showStep(0);
+    }
+
+    function endTour() {
+      overlay.hidden = true;
+      document.body.style.overflow = '';
+      localStorage.setItem(TOUR_KEY, '1');
+    }
+
+    nextBtn.addEventListener('click', function() {
+      if (currentStep >= steps.length - 1) {
+        endTour();
+      } else {
+        currentStep++;
+        showStep(currentStep);
+      }
+    });
+
+    backBtn.addEventListener('click', function() {
+      if (currentStep > 0) {
+        currentStep--;
+        showStep(currentStep);
+      }
+    });
+
+    skipBtn.addEventListener('click', endTour);
+
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) endTour();
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (overlay.hidden) return;
+      if (e.key === 'Escape') endTour();
+      if (e.key === 'ArrowRight') nextBtn.click();
+      if (e.key === 'ArrowLeft' && !backBtn.disabled) backBtn.click();
+    });
+
+    tourBtn.addEventListener('click', startTour);
+
+    window.addEventListener('resize', function() {
+      if (!overlay.hidden) showStep(currentStep);
+    });
+
+    if (!localStorage.getItem(TOUR_KEY)) {
+      setTimeout(startTour, 1200);
+    }
+  }
+
   async function main() {
     try {
       flushTransferDebug();
@@ -7606,6 +7793,7 @@
       wireRecurringFieldHider();
       wireAnalyticsSharedFilters();
       wireJumpToTop();
+      initTour();
 
       var projectsUrl = buildQueryUrl(
         [

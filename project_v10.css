@@ -2212,3 +2212,120 @@ body {
   color: #6b7280;
   font-size: 11px;
 }
+
+/* ── Tour Help Button ── */
+.pm-helpBtn {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+  font-weight: 900;
+  font-size: 16px;
+  width: 36px;
+  padding: 0;
+  border-radius: 50% !important;
+}
+.pm-helpBtn:hover {
+  background: var(--accent-soft) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-strong) !important;
+}
+
+/* ── Tour Overlay ── */
+.pm-tourOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+}
+.pm-tourOverlay:not([hidden]) {
+  pointer-events: auto;
+}
+
+/* Spotlight cutout using box-shadow */
+.pm-tourSpotlight {
+  position: fixed;
+  border-radius: 6px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+  transition: all 0.3s ease;
+  pointer-events: none;
+  z-index: 10001;
+}
+
+/* Tooltip bubble */
+.pm-tourTooltip {
+  position: fixed;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+  padding: 20px 22px 16px;
+  width: 300px;
+  z-index: 10002;
+  transition: top 0.3s ease, left 0.3s ease;
+}
+.pm-tourStepLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.pm-tourTitle {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+.pm-tourBody {
+  font-size: 13px;
+  color: #444;
+  line-height: 1.55;
+  margin-bottom: 16px;
+}
+.pm-tourFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pm-tourSkip {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+.pm-tourSkip:hover { color: var(--text); }
+.pm-tourNav {
+  display: flex;
+  gap: 8px;
+}
+.pm-tourBack,
+.pm-tourNext {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.pm-tourNext {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.pm-tourNext:hover { background: var(--accent-strong); }
+.pm-tourBack:hover { background: var(--accent-soft); }
+.pm-tourBack[disabled] { opacity: 0.35; pointer-events: none; }
+
+/* Welcome card (step 0 — no spotlight) */
+.pm-tourWelcome .pm-tourTooltip {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 360px;
+}

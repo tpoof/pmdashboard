@@ -80,6 +80,8 @@
       <button type="button" class="pm-ghostBtn pm-inboxBtn" id="pmViewInboxBtn">
         View Inbox
       </button>
+      <button type="button" class="pm-primaryBtn pm-helpBtn" id="pmTourBtn"
+        aria-label="Take a guided tour">?</button>
     </div>
     <!--{/if}-->
 
@@ -766,6 +768,23 @@
   >
     ↑
   </button>
+</div>
+
+<div id="pmTourOverlay" class="pm-tourOverlay" hidden aria-modal="true" role="dialog"
+  aria-label="Dashboard tour">
+  <div id="pmTourSpotlight" class="pm-tourSpotlight"></div>
+  <div id="pmTourTooltip" class="pm-tourTooltip" role="document">
+    <div id="pmTourStepLabel" class="pm-tourStepLabel"></div>
+    <div id="pmTourTitle" class="pm-tourTitle"></div>
+    <div id="pmTourBody" class="pm-tourBody"></div>
+    <div class="pm-tourFooter">
+      <button type="button" class="pm-tourSkip" id="pmTourSkip">Skip tour</button>
+      <div class="pm-tourNav">
+        <button type="button" class="pm-tourBack" id="pmTourBack">← Back</button>
+        <button type="button" class="pm-tourNext" id="pmTourNext">Next →</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <link rel="stylesheet" href="./files/project_v10.css" />
