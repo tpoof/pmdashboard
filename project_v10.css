@@ -1821,8 +1821,13 @@ body {
   border-radius: var(--radius-md);
   background: var(--surface);
   padding: var(--space-3);
-  overflow: hidden;
   box-shadow: var(--shadow-sm);
+}
+.pm-chartCard {
+  overflow: hidden;
+}
+.pm-tableCard {
+  overflow: visible;
 }
 
 .pm-chartTitle {
@@ -2402,4 +2407,34 @@ body {
   line-height: 1;
   box-shadow: 0 1px 4px rgba(0,0,0,0.25);
   z-index: 1;
+}
+
+/* ── Responsive table scrolling ── */
+
+/* Analytics: allow inner table divs to scroll horizontally */
+#pmProjectHealthTable,
+#pmOverdueTasksTable {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+/* OKR: make the existing wrapper scrollable */
+#pmOkrsTableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  width: 100%;
+}
+
+/* Mobile: give tables a minimum width so columns don't collapse */
+@media (max-width: 768px) {
+  #pmProjectHealthTableInner,
+  #pmOverdueTasksTableInner {
+    min-width: 600px;
+  }
+
+  #pmOkrsTableWrap .pm-table {
+    min-width: 700px;
+  }
 }
