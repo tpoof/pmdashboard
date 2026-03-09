@@ -2215,19 +2215,53 @@ body {
 
 /* ── Tour Help Button ── */
 .pm-helpBtn {
+  position: relative;
   background: var(--surface) !important;
   border-color: var(--border) !important;
   color: var(--text) !important;
   font-weight: 900;
-  font-size: 16px;
   width: 36px;
+  height: 36px;
   padding: 0;
   border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.pm-helpBtn .material-icons {
+  font-size: 20px;
+  line-height: 1;
+  color: var(--text);
 }
 .pm-helpBtn:hover {
   background: var(--accent-soft) !important;
   border-color: var(--accent) !important;
   color: var(--accent-strong) !important;
+}
+.pm-helpBtn:hover .material-icons {
+  color: var(--accent-strong);
+}
+.pm-helpBtn::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f1f1f;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 5px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 9999;
+}
+.pm-helpBtn:hover::after,
+.pm-helpBtn:focus-visible::after {
+  opacity: 1;
 }
 
 /* ── Tour Overlay ── */
