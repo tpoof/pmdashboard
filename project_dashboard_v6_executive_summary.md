@@ -1,8 +1,8 @@
-# LEAF Project Dashboard v10 Executive Summary
+# LEAF Project Dashboard Executive Summary
 
 ## Overview
 
-The LEAF Project Dashboard v10 is the current production version of the platform's unified project and task management interface. It represents a significant evolution from earlier versions, delivering a full-featured operational dashboard with real-time task tracking, analytics, OKR alignment, Gantt timeline visualization, recurring task automation, and schedule variance intelligence. v10 is actively used by the LEAF team for day-to-day project execution and leadership oversight.
+The LEAF Project Dashboard (v10) is the current version of the platform's unified project and task management interface. It represents a significant evolution from earlier versions, delivering a full-featured operational dashboard with real-time task tracking, analytics, OKR alignment, Gantt timeline visualization, recurring task automation, and schedule variance intelligence. v10 is actively used by the LEAF team for day-to-day project execution and leadership oversight.
 
 ## Purpose of the Project Dashboard
 
@@ -120,20 +120,3 @@ Single source of truth that eliminates duplicate reporting, inconsistent metrics
 ### Operational clarity at scale
 
 Scalable reporting structure for portfolio-level decision-making.
-
-## Future Evolution
-
-### Delivered in v7–v10
-
-- v7: OKR roll-up structural refactor (Quick View, Index, Roll-up details)
-- v8: Performance refactor (lazy tab initialization, derived caching)
-- v9: Virtualized task table, Kanban caps, incremental analytics updates
-- v10: Gantt timeline, Project Health Sticky bar, pagination, Add menu with full keyboard support, recurring task auto-copy system, CSRF resolution improvements
-- v10.1: Actual Completion Date field (auto-stamped), Completed Date column in task table, Schedule Variance analytics chart, % Completion column on Projects table
-
-### Potential future enhancements
-
-- Notification or email digest when recurring tasks are auto-generated
-- Bulk completion date backfill tooling for pre-v10.1 tasks
-- Export to CSV or PDF for offline reporting
-- Enhanced OKR progress forecasting based on schedule variance trends
