@@ -7837,6 +7837,19 @@
       wireJumpToTop();
       initTour();
 
+      // ── SITEMAP STRUCTURE INSPECTION (remove after confirming) ──
+      fetch('api/site/settings/sitemap_json', {
+        headers: { 'x-requested-with': 'XMLHttpRequest' },
+        credentials: 'include'
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        console.log('SITEMAP keys:', Object.keys(d));
+        console.log('SITEMAP full:', JSON.stringify(d).substring(0, 800));
+      })
+      .catch(function(e) { console.log('SITEMAP ERROR:', e); });
+      // ── END SITEMAP INSPECTION ──
+
       var projectsUrl = buildQueryUrl(
         [
           PROJECT_IND.projectKey,
