@@ -7591,25 +7591,39 @@
 
     var steps = [
       {
-        title: "Welcome to the LEAF Project Dashboard 👋",
-        body: "This quick tour will walk you through the key features. It takes about 2 minutes. You can skip at any time.",
-        target: null,
-        welcome: true
+        title: "Welcome to the LEAF Project Dashboard",
+        body: "This quick tour walks you through the key features. Use Next and Back to navigate, or press Escape to exit anytime. Keyboard users: use Tab to move between buttons and arrow keys to navigate steps.",
+        target: null
+      },
+      {
+        title: "Add Menu",
+        body: "Create a new Project, Task, or Recurring Task here. Recurring tasks automatically generate a fresh copy each time they're completed — no manual re-entry needed.",
+        target: '#pmAddMenuBtn'
+      },
+      {
+        title: "View Inbox",
+        body: "Your LEAF inbox — tasks assigned to you, pending approvals, and workflow actions waiting on your attention.",
+        target: '#pmViewInboxBtn'
       },
       {
         title: "Projects Tab",
-        body: "This is your bird's-eye view. Every active project lives here with status, health, OKR associations, and % completion at a glance.",
+        body: "Your bird's-eye view of every active project — status, health, OKR associations, and % completion at a glance.",
         target: '[data-tab="projects"]'
       },
       {
         title: "Tasks Tab",
-        body: "All tasks across every project in one place. Switch between Task Table, Kanban board, and Gantt timeline using the view buttons.",
+        body: "All tasks across every project in one place. Your primary workspace for day-to-day work.",
         target: '[data-tab="tasks"]'
       },
       {
-        title: "Kanban Board",
-        body: "Drag cards left or right to update a task's status. When you move a card to Completed, the completion date is automatically recorded.",
-        target: '[data-tab="tasks"]'
+        title: "Other Views: Kanban & Gantt",
+        body: "Switch between Task Table, Kanban board, and Gantt timeline using these view buttons. Drag cards on the Kanban to update status — completion dates are recorded automatically.",
+        target: '.pm-viewRow'
+      },
+      {
+        title: "Analytics Tab",
+        body: "Track completion trends by quarter and category, monitor schedule variance, and review project health summaries.",
+        target: '[data-tab="analytics"]'
       },
       {
         title: "Filter Bar",
@@ -7617,25 +7631,9 @@
         target: '.pm-filterRow'
       },
       {
-        title: "Add Menu",
-        body: "Create a new Project, Task, or Recurring Task here. Recurring tasks automatically generate a fresh copy each time they're completed.",
-        target: '#pmAddMenuBtn'
-      },
-      {
-        title: "View Inbox",
-        body: "Your LEAF inbox — see tasks assigned to you, pending approvals, and workflow actions waiting on your attention.",
-        target: '#pmViewInboxBtn'
-      },
-      {
-        title: "Analytics Tab",
-        body: "Track completion trends by quarter and category, monitor schedule variance, and see project health summaries.",
-        target: '[data-tab="analytics"]'
-      },
-      {
-        title: "You're all set! 🎉",
-        body: "That covers the essentials. Click the <strong>?</strong> button in the toolbar anytime to replay this tour.",
-        target: null,
-        welcome: true
+        title: "You're all set!",
+        body: "That covers the essentials. Click the <strong>tour</strong> icon in the toolbar anytime to replay this tour.",
+        target: null
       }
     ];
 
@@ -7695,12 +7693,14 @@
       var step = steps[index];
       var total = steps.length;
 
-      stepLabel.textContent = step.welcome ? '' : 'Step ' + index + ' of ' + (total - 2);
+      stepLabel.textContent = (index === 0 || index === total - 1) ? '' : 'Step ' + index + ' of ' + (total - 2);
       titleEl.textContent = step.title;
       bodyEl.innerHTML = step.body;
       backBtn.disabled = index === 0;
       nextBtn.textContent = index === total - 1 ? 'Finish ✓' : 'Next →';
 
+      // getTargetRect returns null if selector is null or element not in DOM —
+      // both cases fall back to centered tooltip with no spotlight
       var rect = getTargetRect(step.target);
 
       if (rect) {
@@ -7717,19 +7717,46 @@
       }
 
       positionTooltip(rect);
+      nextBtn.focus();
+    }
+
+    function trapFocus(e) {
+      if (overlay.hidden) return;
+      var focusable = Array.from(
+        tooltip.querySelectorAll('button:not([disabled])')
+      );
+      if (!focusable.length) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
     }
 
     function startTour() {
       currentStep = 0;
       overlay.hidden = false;
       document.body.style.overflow = 'hidden';
+      document.addEventListener('keydown', trapFocus);
       showStep(0);
     }
 
     function endTour() {
       overlay.hidden = true;
       document.body.style.overflow = '';
+      document.removeEventListener('keydown', trapFocus);
       localStorage.setItem(TOUR_KEY, '1');
+      if (tourBtn) tourBtn.focus();
     }
 
     nextBtn.addEventListener('click', function() {
@@ -7756,9 +7783,9 @@
 
     document.addEventListener('keydown', function(e) {
       if (overlay.hidden) return;
-      if (e.key === 'Escape') endTour();
-      if (e.key === 'ArrowRight') nextBtn.click();
-      if (e.key === 'ArrowLeft' && !backBtn.disabled) backBtn.click();
+      if (e.key === 'Escape') { e.preventDefault(); endTour(); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); nextBtn.click(); }
+      if (e.key === 'ArrowLeft' && !backBtn.disabled) { e.preventDefault(); backBtn.click(); }
     });
 
     tourBtn.addEventListener('click', startTour);

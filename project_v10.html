@@ -776,8 +776,9 @@
 <div id="pmTourOverlay" class="pm-tourOverlay" hidden aria-modal="true" role="dialog"
   aria-label="Dashboard tour">
   <div id="pmTourSpotlight" class="pm-tourSpotlight"></div>
-  <div id="pmTourTooltip" class="pm-tourTooltip" role="document">
-    <div id="pmTourStepLabel" class="pm-tourStepLabel"></div>
+  <div id="pmTourTooltip" class="pm-tourTooltip" role="dialog"
+    aria-modal="true" aria-labelledby="pmTourTitle">
+    <div id="pmTourStepLabel" class="pm-tourStepLabel" aria-live="polite"></div>
     <div id="pmTourTitle" class="pm-tourTitle"></div>
     <div id="pmTourBody" class="pm-tourBody"></div>
     <div class="pm-tourFooter">
