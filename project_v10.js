@@ -30,6 +30,13 @@
     keyResultSelection: 39,
     isRecurring: RECURRING_INDICATOR_ID,
     actualCompletionDate: 47,
+    // Indicator 48: recurringCopied — written to the SOURCE task after a successful
+    // copy. Stores the new copy's recordID as a string. Provides server-side
+    // deduplication that survives localStorage clears, private browsing, new devices,
+    // and deleted copies. IMPORTANT: Must be created manually in LEAF Form Editor on
+    // the task form (type = text, label = "Recurring Copy ID", read-only) before this
+    // logic takes effect. Until then, deduplication falls back to localStorage only.
+    recurringCopied: 48,
   };
 
   // Project form indicator IDs
@@ -297,6 +304,44 @@
     return normalizePrimaryStatus(status) === "Other";
   }
 
+  /*
+   * RECURRING TASK DEDUPLICATION — REQUIRED MANUAL SETUP IN LEAF:
+   *
+   * Indicator 48 must be created manually in the LEAF Form Editor:
+   *   1. Go to Admin Panel → Form Editor → Task form
+   *   2. Add a new field: type = text, label = "Recurring Copy ID"
+   *   3. Set the indicator ID to 48 (or note the assigned ID and update
+   *      TASK_IND.recurringCopied in project_v10.js to match)
+   *   4. Set field permissions to read-only for regular users
+   *   5. This field will be auto-populated by the dashboard after each
+   *      successful recurring task copy
+   *
+   * Until this is done, deduplication falls back to localStorage only.
+   */
+  async function isRecurringAlreadyCopiedServerSide(sourceRecordID) {
+    try {
+      var q = JSON.stringify({
+        terms: [{ id: "recordIDs", operator: "=", match: String(sourceRecordID), gate: "AND" }],
+        joins: [],
+        sort: {},
+        getData: [TASK_IND.recurringCopied],
+      });
+      var resp = await fetch(
+        "api/form/query?q=" + encodeURIComponent(q) + "&x-filterData=recordID",
+        { credentials: "include", headers: { Accept: "application/json", "x-requested-with": "XMLHttpRequest" } }
+      );
+      if (!resp.ok) return false;
+      var data = await resp.json();
+      var rec = data && data[String(sourceRecordID)];
+      var val = rec && rec.s1
+        ? String(rec.s1["id" + TASK_IND.recurringCopied] || "").trim()
+        : "";
+      return val.length > 0;
+    } catch(e) {
+      return false; // fail open — localStorage guard still applies
+    }
+  }
+
   async function checkAndCopyResolvedRecurringTasks() {
     try {
       // Pre-fetch CSRF token using fetchCSRFFromAPI which handles
@@ -333,12 +378,47 @@
         if (hasRecurringCopied(recordID)) continue;
         if (recurringInProgress.has(String(recordID))) continue;
 
+        // Server-side check — survives localStorage clears, new browsers, and deleted copies
+        var serverSideCopied = await isRecurringAlreadyCopiedServerSide(recordID);
+        if (serverSideCopied) {
+          addRecurringCopied(recordID); // re-hydrate localStorage from server truth
+          continue;
+        }
+
         // Lock immediately before any async work
         recurringInProgress.add(String(recordID));
         addRecurringCopied(recordID);
 
         try {
-          await copyRecurringTask(recordID);
+          var newRecordID = await copyRecurringTask(recordID);
+
+          // Write indicator 48 to the SOURCE record — permanent server-side dedup marker.
+          // Survives localStorage clears, private browsing, new devices, and deleted copies.
+          try {
+            var flagToken = await ensureCSRFToken(recordID);
+            var flagField = state.csrfField || getCSRFFieldName();
+            var flagObj = { recordID: recordID, series: 1 };
+            flagObj[TASK_IND.recurringCopied] = String(newRecordID);
+            flagObj[flagField] = flagToken;
+            var flagRes = await fetch(
+              FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(String(recordID)), {
+                method: 'POST',
+                headers: {
+                  'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                  'x-requested-with': 'XMLHttpRequest',
+                  'x-csrf-token': flagToken,
+                  'x-xsrf-token': flagToken
+                },
+                credentials: 'include',
+                body: encodeFormBody(flagObj)
+              }
+            );
+            if (!flagRes.ok) {
+              console.warn('pm-dashboard: failed to write recurringCopied flag to record ' + recordID + ' — HTTP ' + flagRes.status);
+            }
+          } catch(flagErr) {
+            console.warn('pm-dashboard: error writing recurringCopied flag:', flagErr);
+          }
         } catch(e) {
           console.error('Failed to copy recurring task ' + recordID, e);
           // Remove from both on failure so it can retry
@@ -7860,6 +7940,7 @@
           TASK_IND.keyResultSelection,
           TASK_IND.isRecurring,
           TASK_IND.actualCompletionDate,
+          TASK_IND.recurringCopied,
         ],
         [],
       );
@@ -7914,6 +7995,20 @@
       state.projectsLoaded = true;
       backfillSupportTicketLabels(state.tasksAll);
       checkAndCopyResolvedRecurringTasks();
+
+      // Warn once if indicator 48 (recurringCopied) doesn't appear in any task row,
+      // which likely means it hasn't been created in LEAF Form Editor yet.
+      var ind48Key = "id" + TASK_IND.recurringCopied;
+      var ind48Exists = taskRowsAll.some(function(r) {
+        return r.s1 && r.s1[ind48Key] !== undefined;
+      });
+      if (!ind48Exists) {
+        console.warn(
+          "pm-dashboard: Indicator 48 (recurringCopied) may not be created in " +
+          "LEAF Form Editor yet. Server-side recurring task deduplication will " +
+          "not work until this indicator is added as a text field on the task form."
+        );
+      }
 
       state.projectKeyToRecordID = {};
       state.projectKeyToTitle = {};
