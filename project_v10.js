@@ -227,6 +227,7 @@
       healthRows: [],
       overdueRows: [],
     },
+    lastModalRecordID: null,
   };
 
 
@@ -669,6 +670,8 @@
       title ? "LEAF content - " + String(title) : "LEAF content"
     );
     if (openTabBtn) openTabBtn.setAttribute("data-url", url || "");
+    var _rMatch = String(url || "").match(/[?&]recordID=(\d+)/i);
+    state.lastModalRecordID = _rMatch ? _rMatch[1] : null;
     lastFocusedElement = document.activeElement;
     modal.style.display = "block";
     modal.setAttribute("aria-hidden", "false");
@@ -685,6 +688,8 @@
     var frame = document.getElementById("pmModalFrame");
     var openTabBtn = document.getElementById("pmModalOpenTabBtn");
     if (!modal || !frame) return;
+    var _syncID = state.lastModalRecordID;
+    state.lastModalRecordID = null;
     frame.src = "about:blank";
     frame.setAttribute("title", "LEAF content");
     if (openTabBtn) openTabBtn.setAttribute("data-url", "");
@@ -696,6 +701,89 @@
       lastFocusedElement.focus();
     }
     lastFocusedElement = null;
+    if (_syncID) syncTaskAfterModalClose(_syncID);
+  }
+
+  async function syncTaskAfterModalClose(recordID) {
+    var taskIdx = -1;
+    for (var i = 0; i < (state.tasksAll || []).length; i++) {
+      if (String(state.tasksAll[i].recordID) === String(recordID)) {
+        taskIdx = i;
+        break;
+      }
+    }
+    if (taskIdx === -1) return; // Not a task record (project, OKR, etc.)
+
+    var task = state.tasksAll[taskIdx];
+    var fetchedStatus = "";
+    var fetchedActualCompletion = "";
+    try {
+      var q = JSON.stringify({
+        terms: [{ id: "recordIDs", operator: "=", match: recordID, gate: "AND" }],
+        joins: [],
+        sort: {},
+        getData: [TASK_IND.status, TASK_IND.actualCompletionDate],
+      });
+      var resp = await fetch(
+        "api/form/query?q=" + encodeURIComponent(q) + "&x-filterData=recordID",
+        { credentials: "include", headers: { Accept: "application/json" } }
+      );
+      var data = await resp.json();
+      var rec = data && data[String(recordID)];
+      if (rec && rec.s1) {
+        fetchedStatus = rec.s1["id" + TASK_IND.status] || "";
+        fetchedActualCompletion = rec.s1["id" + TASK_IND.actualCompletionDate] || "";
+      }
+    } catch (e) {
+      return;
+    }
+    if (!fetchedStatus) return;
+
+    var prev = cloneTaskForUpdate(task);
+    task.status = fetchedStatus;
+    task.actualCompletion = fetchedActualCompletion;
+
+    if (isCompletedStatus(fetchedStatus) && !fetchedActualCompletion) {
+      var n = new Date();
+      var mm = String(n.getMonth() + 1).padStart(2, "0");
+      var dd = String(n.getDate()).padStart(2, "0");
+      var today = mm + "/" + dd + "/" + n.getFullYear();
+      task.actualCompletion = today;
+      try {
+        var token = await ensureCSRFToken(recordID);
+        var tokenField = state.csrfField || getCSRFFieldName();
+        var bodyObj = { 47: today, recordID: recordID, series: 1 };
+        bodyObj[tokenField] = token;
+        await fetch(FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordID), {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          credentials: "include",
+          body: encodeFormBody(bodyObj),
+        });
+      } catch (e) {
+        console.warn("syncTaskAfterModalClose: write ind 47 failed", e);
+      }
+    } else if (!isCompletedStatus(fetchedStatus) && fetchedActualCompletion) {
+      task.actualCompletion = "";
+      try {
+        var token2 = await ensureCSRFToken(recordID);
+        var tokenField2 = state.csrfField || getCSRFFieldName();
+        var bodyObj2 = { 47: "", recordID: recordID, series: 1 };
+        bodyObj2[tokenField2] = token2;
+        await fetch(FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordID), {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          credentials: "include",
+          body: encodeFormBody(bodyObj2),
+        });
+      } catch (e) {
+        console.warn("syncTaskAfterModalClose: clear ind 47 failed", e);
+      }
+    }
+
+    var next = cloneTaskForUpdate(task);
+    updateTaskDerivedCaches(prev, next);
+    refreshAfterTaskUpdate(prev, next);
   }
 
   function isOtherModalOpen() {
@@ -1351,7 +1439,7 @@
   }
 
   function renderDepsList(depIds) {
-    if (!depIds || !depIds.length) return '<span class="pm-muted">None</span>';
+    if (!depIds || !depIds.length) return 'None';
     return (
       '<span class="pm-depsList">' +
       depIds
