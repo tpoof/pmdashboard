@@ -1,0 +1,6 @@
+$(function () {
+  $("#45").hide();
+  $("#radio_options_45").hide();
+  $(".response.blockIndicator_45").hide();
+  $(".sublabel.blockIndicator_45").hide();
+});
