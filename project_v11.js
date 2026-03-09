@@ -6624,7 +6624,10 @@
   }
 
   function fetchAndRenderInboxCount() {
-    var baseUrl = 'api/form/query?q=' +
+    var badge = document.getElementById('pmInboxBadge');
+    if (!badge) return;
+
+    var queryParams = '?q=' +
       encodeURIComponent(JSON.stringify({
         terms: [
           { id: 'stepID', operator: '=', match: 'actionable', gate: 'AND' },
@@ -6637,30 +6640,75 @@
       })) +
       '&x-filterData=recordID&masquerade=nonAdmin';
 
-    fetch(baseUrl, {
+    fetch('api/site/settings/sitemap_json', {
+      headers: { 'x-requested-with': 'XMLHttpRequest' },
       credentials: 'include'
     })
     .then(function(r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
+      if (!r.ok) throw new Error('sitemap HTTP ' + r.status);
       return r.json();
     })
-    .then(function(data) {
-      var count = data && typeof data === 'object'
-        ? Object.keys(data).length
-        : 0;
-      var badge = document.getElementById('pmInboxBadge');
-      if (!badge) return;
-      if (count > 0) {
-        badge.textContent = count > 99 ? '99+' : String(count);
+    .then(function(sitemap) {
+      var portalUrls = [];
+
+      try {
+        // sitemap is an array; first element's "data" property is a JSON string
+        // containing a "buttons" array where each button has a "target" URL
+        var entry = Array.isArray(sitemap) ? sitemap[0] : null;
+        var parsed = entry && entry.data
+          ? JSON.parse(entry.data)
+          : null;
+        var buttons = parsed && Array.isArray(parsed.buttons)
+          ? parsed.buttons
+          : [];
+
+        buttons.forEach(function(btn) {
+          if (btn.target) {
+            portalUrls.push(btn.target.replace(/\/$/, ''));
+          }
+        });
+      } catch(e) {
+        console.warn('pm-inbox: failed to parse sitemap buttons', e);
+      }
+
+      // Fallback to current portal if sitemap parse failed or empty
+      if (!portalUrls.length) {
+        var currentBase = window.location.href
+          .replace(/\/[^\/]*(\?.*)?$/, '');
+        portalUrls = [currentBase];
+      }
+
+      // Query each portal for actionable records in parallel
+      var fetches = portalUrls.map(function(baseUrl) {
+        return fetch(baseUrl + '/api/form/query' + queryParams, {
+          credentials: 'include'
+        })
+        .then(function(r) {
+          if (!r.ok) return {};
+          return r.json();
+        })
+        .then(function(data) {
+          return (data && typeof data === 'object')
+            ? Object.keys(data).length
+            : 0;
+        })
+        .catch(function() { return 0; });
+      });
+
+      return Promise.all(fetches);
+    })
+    .then(function(counts) {
+      var total = counts.reduce(function(sum, n) { return sum + n; }, 0);
+      if (total > 0) {
+        badge.textContent = total > 99 ? '99+' : String(total);
         badge.hidden = false;
-        badge.setAttribute('aria-label', count + ' items in your inbox');
+        badge.setAttribute('aria-label', total + ' items in your inbox');
       } else {
         badge.hidden = true;
       }
     })
     .catch(function() {
-      var badge = document.getElementById('pmInboxBadge');
-      if (badge) badge.hidden = true;
+      badge.hidden = true;
     });
   }
 
@@ -7836,19 +7884,6 @@
       wireAnalyticsSharedFilters();
       wireJumpToTop();
       initTour();
-
-      // ── SITEMAP STRUCTURE INSPECTION (remove after confirming) ──
-      fetch('api/site/settings/sitemap_json', {
-        headers: { 'x-requested-with': 'XMLHttpRequest' },
-        credentials: 'include'
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        console.log('SITEMAP keys:', Object.keys(d));
-        console.log('SITEMAP full:', JSON.stringify(d).substring(0, 800));
-      })
-      .catch(function(e) { console.log('SITEMAP ERROR:', e); });
-      // ── END SITEMAP INSPECTION ──
 
       var projectsUrl = buildQueryUrl(
         [
