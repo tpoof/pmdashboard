@@ -2375,3 +2375,31 @@ body {
   transform: translate(-50%, -50%);
   width: 360px;
 }
+
+/* ── Inbox Badge ── */
+.pm-inboxWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pm-inboxBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  background: #d32f2f;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  pointer-events: none;
+  line-height: 1;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  z-index: 1;
+}
