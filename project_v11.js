@@ -7795,43 +7795,22 @@
       wireJumpToTop();
       initTour();
 
-      // ── INBOX COUNT TEST FETCHES (Step 3 — remove after testing) ──
-      // TEST A: api/inbox/dependency/_ (non-numeric dep → no filter → all user inbox items)
+      // ── INBOX STRUCTURE INSPECTION (remove after confirming count) ──
       fetch('/platform/projects/api/inbox/dependency/_', {
         headers: { 'x-requested-with': 'XMLHttpRequest' },
         credentials: 'include'
       })
       .then(function(r) { return r.json(); })
       .then(function(d) {
-        console.log('INBOX A - dependency/_:', d,
-          'count:', Array.isArray(d) ? d.length : typeof d);
+        console.log('INBOX A full response:', JSON.stringify(d).substring(0, 500));
+        console.log('INBOX A keys:', Object.keys(d));
+        if (Object.keys(d).length > 0) {
+          var firstKey = Object.keys(d)[0];
+          console.log('INBOX A first item:', JSON.stringify(d[firstKey]));
+        }
       })
       .catch(function(e) { console.log('INBOX A ERROR:', e.message); });
-
-      // TEST B: api/inbox/dependency/0 (dependencyID=0 → no filter → all items)
-      fetch('/platform/projects/api/inbox/dependency/0', {
-        headers: { 'x-requested-with': 'XMLHttpRequest' },
-        credentials: 'include'
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        console.log('INBOX B - dependency/0:', d,
-          'count:', Array.isArray(d) ? d.length : typeof d);
-      })
-      .catch(function(e) { console.log('INBOX B ERROR:', e.message); });
-
-      // TEST C: api/inbox (POST-only route — check status)
-      fetch('/platform/projects/api/inbox', {
-        headers: { 'x-requested-with': 'XMLHttpRequest' },
-        credentials: 'include'
-      })
-      .then(function(r) {
-        console.log('INBOX C status:', r.status);
-        return r.text();
-      })
-      .then(function(d) { console.log('INBOX C response:', d.substring(0, 200)); })
-      .catch(function(e) { console.log('INBOX C ERROR:', e.message); });
-      // ── END TEST FETCHES ──
+      // ── END INSPECTION ──
 
       var projectsUrl = buildQueryUrl(
         [

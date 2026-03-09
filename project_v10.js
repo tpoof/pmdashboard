@@ -34,7 +34,7 @@
     // copy. Stores the new copy's recordID as a string. Provides server-side
     // deduplication that survives localStorage clears, private browsing, new devices,
     // and deleted copies. IMPORTANT: Must be created manually in LEAF Form Editor on
-    // the task form (type = text, label = "Recurring Copy ID", read-only) before this
+    // the task form (type = text, label = "Continued As Task #", read-only) before this
     // logic takes effect. Until then, deduplication falls back to localStorage only.
     recurringCopied: 48,
   };
@@ -309,7 +309,7 @@
    *
    * Indicator 48 must be created manually in the LEAF Form Editor:
    *   1. Go to Admin Panel → Form Editor → Task form
-   *   2. Add a new field: type = text, label = "Recurring Copy ID"
+   *   2. Add a new field: type = text, label = "Continued As Task #"
    *   3. Set the indicator ID to 48 (or note the assigned ID and update
    *      TASK_IND.recurringCopied in project_v10.js to match)
    *   4. Set field permissions to read-only for regular users
@@ -414,10 +414,10 @@
               }
             );
             if (!flagRes.ok) {
-              console.warn('pm-dashboard: failed to write recurringCopied flag to record ' + recordID + ' — HTTP ' + flagRes.status);
+              console.warn('pm-dashboard: failed to write "Continued As Task #" flag to record ' + recordID + ' — HTTP ' + flagRes.status);
             }
           } catch(flagErr) {
-            console.warn('pm-dashboard: error writing recurringCopied flag:', flagErr);
+            console.warn('pm-dashboard: error writing "Continued As Task #" flag:', flagErr);
           }
         } catch(e) {
           console.error('Failed to copy recurring task ' + recordID, e);
