@@ -4066,11 +4066,6 @@
       await updateTaskStatus(taskId, task.status, task.otherSubType);
       state.cache.kanban.clear();
       refreshOkrsIfVisible();
-      if (isCompletedStatus(task.status)) {
-        setTimeout(function() {
-          window.location.reload();
-        }, 1200);
-      }
     } catch (err) {
       task.status = prev.status;
       task.otherSubType = prev.otherSubType;
