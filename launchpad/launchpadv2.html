@@ -605,7 +605,6 @@
 
 <!-- =================================== SCRIPTS ================================= -->
 <script>
-  ß;
   // Image protection
   document.addEventListener("contextmenu", function (event) {
     if (event.target.tagName === "IMG") {
@@ -692,7 +691,7 @@
     });
   })();
 
-  // Dev toggle: Alt+Shift+W switches between first-visit and returning-user states
+  // Dev toggle: Ctrl+Shift+Q switches between first-visit and returning-user states
   (function () {
     function showToast(msg) {
       var t = document.getElementById("lpDevToast");
@@ -726,7 +725,7 @@
     }
 
     document.addEventListener("keydown", function (e) {
-      if (e.altKey && e.shiftKey && e.code === "KeyW") {
+      if (e.ctrlKey && e.shiftKey && e.code === "KeyQ") {
         var stateNew = document.getElementById("stateFirstVisit");
         var stateBack = document.getElementById("welcomeBack");
         if (!stateNew || !stateBack) return;
