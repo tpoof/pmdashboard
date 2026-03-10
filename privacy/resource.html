@@ -22,10 +22,12 @@
           <div class="info-item">
             <span class="tag" aria-label="Important">Important</span>
           </div>
-          <div class="info-item">Estimated Reading Time: ~2 mins</div>
-          <!----------------------------------------------- CHANGE LAST UPDATE DATE HERE ----------------------------------------------------------------->
-          <div class="info-item right">Last Updated: 03/03/2026</div>
-          <!---------------------------------------------------------------------------------------------------------------------------------------------->
+          <div class="info-item">
+            Estimated Reading Time: <span id="reading-time">~2 mins</span>
+          </div>
+          <div class="info-item right">
+            Last Updated: <span id="last-updated-date">Loading…</span>
+          </div>
         </div>
       </section>
 
@@ -73,7 +75,8 @@
                 <div class="info-callout">
                   <strong>Update:</strong> The Enterprise Social Security Number
                   Reduction (ESSNR) office has determined that the LEAF platform
-                  is compliant, as LEAF is a vehicle of records and does not use
+                  is compliant with the Consolidated Appropriations Act of 2024,
+                  as the platform serves a vehicle of records and does not use
                   SSNs for identification purposes. If there are any questions
                   regarding ESSNR, please visit the
                   <!-- TODO: Update shortlink -->
@@ -469,7 +472,12 @@
         encodeURIComponent(
           JSON.stringify({
             terms: [
-              { id: "categoryID", operator: "=", match: "form_8f7e8", gate: "AND" },
+              {
+                id: "categoryID",
+                operator: "=",
+                match: "form_8f7e8",
+                gate: "AND",
+              },
               { id: "stepID", operator: "=", match: "20", gate: "AND" },
               { id: "deleted", operator: "=", match: 0, gate: "AND" },
             ],
@@ -831,6 +839,32 @@
       }
 
       loadRecentChanges();
+
+      // ── Auto: Last Updated from file's HTTP Last-Modified header ──────────
+      (function () {
+        const raw = document.lastModified;
+        const d = raw ? new Date(raw) : null;
+        const el = document.getElementById("last-updated-date");
+        if (el && d && !isNaN(d.getTime())) {
+          el.textContent = d.toLocaleDateString("en-US", {
+            month: "2-digit",
+            day: "2-digit",
+            year: "numeric",
+          });
+        } else if (el) {
+          el.textContent = "N/A";
+        }
+      })();
+
+      // ── Auto: Estimated Reading Time from visible page text ───────────────
+      (function () {
+        const main = document.getElementById("main-content");
+        const el = document.getElementById("reading-time");
+        if (!main || !el) return;
+        const wordCount = (main.innerText || "").trim().split(/\s+/).length;
+        const minutes = Math.max(1, Math.round(wordCount / 200));
+        el.textContent = "~" + minutes + " min" + (minutes !== 1 ? "s" : "");
+      })();
     </script>
   </body>
 </html>
