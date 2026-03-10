@@ -793,6 +793,7 @@
             .sort((a, b) => b.sortValue - a.sortValue);
 
           renderRecentChanges();
+          updateReadingTime();
         } catch (error) {
           recentChanges = [];
           recentChangesList.innerHTML = "";
@@ -857,14 +858,14 @@
       })();
 
       // ── Auto: Estimated Reading Time from visible page text ───────────────
-      (function () {
+      function updateReadingTime() {
         const main = document.getElementById("main-content");
         const el = document.getElementById("reading-time");
         if (!main || !el) return;
         const wordCount = (main.innerText || "").trim().split(/\s+/).length;
         const minutes = Math.max(1, Math.round(wordCount / 200));
         el.textContent = "~" + minutes + " min" + (minutes !== 1 ? "s" : "");
-      })();
+      }
     </script>
   </body>
 </html>
