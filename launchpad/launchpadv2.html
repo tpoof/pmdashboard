@@ -131,7 +131,6 @@
         id="lp-intro"
         class="container justify-content-center m-auto p-5"
       >
-        <div class="section-divider"></div>
         <p class="lp-intro-label">Platform Overview</p>
         <p class="lp-intro-bridge text-center">
           New to LEAF? Here's everything you need to know.
@@ -329,6 +328,8 @@
           </div>
         </div>
       </div>
+
+      <hr class="lp-section-rule" style="width:100%;margin:0 auto 0;" />
 
       <!-----------------Enterprise Scalability -------------->
       <div
@@ -547,15 +548,11 @@
       btn.tabIndex = isVisible ? 0 : -1;
     }
 
-    function updateVisibility() {
-      var scrollTop =
-        window.pageYOffset || document.documentElement.scrollTop;
-      var scrollHeight = Math.max(
-        document.body.scrollHeight,
-        document.documentElement.scrollHeight,
-      );
-      var clientHeight =
-        window.innerHeight || document.documentElement.clientHeight;
+    function updateVisibility(evt) {
+      var scrollEl = (evt && evt.target && evt.target !== document && evt.target.scrollTop !== undefined) ? evt.target : null;
+      var scrollTop = scrollEl ? scrollEl.scrollTop : (window.pageYOffset || document.documentElement.scrollTop);
+      var scrollHeight = scrollEl ? scrollEl.scrollHeight : Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+      var clientHeight = scrollEl ? scrollEl.clientHeight : (window.innerHeight || document.documentElement.clientHeight);
       var needsScroll = scrollHeight - clientHeight > 80;
       setVisibility(needsScroll && scrollTop > 120);
       var credit = document.getElementById("lpCreditBadge");
@@ -573,6 +570,7 @@
     });
 
     window.addEventListener("scroll", updateVisibility, { passive: true });
+    document.addEventListener("scroll", updateVisibility, { passive: true, capture: true });
     window.addEventListener("resize", updateVisibility);
     updateVisibility();
   }

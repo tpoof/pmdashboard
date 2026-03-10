@@ -1054,7 +1054,6 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 .lp-scope .lp-launchpad-card {
   background: #ffffff;
   border: 1px solid var(--lp-border);
-  border-top: 4px solid var(--lp-accent);
   border-radius: 14px;
   box-shadow: 0 8px 32px rgba(15, 23, 42, 0.10);
   padding: 40px;
@@ -1122,6 +1121,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .content-container {
+  padding-top: 60px;
   padding-bottom: 80px;
 }
 
