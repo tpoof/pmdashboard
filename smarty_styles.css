@@ -960,9 +960,20 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .list-group-item {
-  padding: 10px 14px;
-  border-top: 1px solid var(--lp-border);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--lp-border);
+  font-size: 0.9rem;
+  text-align: left;
+  display: block;
   background: var(--lp-panel);
+}
+
+.lp-scope .list-group-item:last-child {
+  border-bottom: none;
+}
+
+.lp-scope .list-group-item:nth-child(even) {
+  background: var(--lp-surface-alt, #f8fafc);
 }
 
 .lp-scope .list-group-flush .list-group-item:first-child {
@@ -992,9 +1003,10 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .lp-launchpad-cta {
-  margin-top: 24px;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  padding: 60px calc(50vw - 50%);
   background: linear-gradient(135deg, #e8f0f9 0%, #f3f3f3 60%, #d6ead6 100%);
-  padding: 60px 20px;
   text-align: center;
 }
 
@@ -1126,6 +1138,13 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   font-size: 1em;
   color: var(--lp-muted);
   margin: 0 0 24px;
+}
+
+.lp-scope .lp-section-rule {
+  border: none;
+  border-top: 1px solid var(--lp-border);
+  margin: 24px auto 32px;
+  width: 80%;
 }
 
 .lp-scope .lp-resource-hub {
@@ -1333,37 +1352,38 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 .lp-scope .cta-container {
   background-color: var(--lp-accent);
   color: white;
-  padding: 20px;
+  padding: 32px 40px;
   border-radius: var(--lp-radius);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  margin-top: 20px;
+  margin: 40px 0;
 }
 
 .lp-scope .cta-text {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: white;
 }
 
 .lp-scope .cta-button {
-  background-color: white;
+  background: white;
   color: var(--lp-accent);
-  border: 1px solid transparent;
-  padding: 15px 30px;
-  font-size: 18px;
-  font-weight: bold;
+  border: 2px solid white;
+  padding: 12px 28px;
+  font-size: 1rem;
+  font-weight: 700;
   border-radius: 10px;
-  text-transform: uppercase;
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .lp-scope .cta-button:hover {
   background: var(--lp-accent-weak);
-  color: #111;
-  border-color: var(--lp-accent);
+  color: var(--lp-accent);
+  border-color: var(--lp-accent-weak);
 }
 
 .lp-scope .lp-jumpTop {
