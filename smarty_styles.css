@@ -725,12 +725,31 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 .lp-scope {
   margin: 0;
   background: var(--lp-bg);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--lp-text);
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 .lp-scope .lp-scope {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   color: var(--lp-text);
-  font-size: 125%;
+  font-size: 1rem;
+}
+
+.lp-scope h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.lp-scope h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.lp-scope .lead {
+  color: var(--lp-muted);
 }
 
 .lp-scope a {
@@ -820,7 +839,6 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope .lead {
   font-size: 1em;
-  color: var(--lp-muted);
 }
 
 .lp-scope .is-hidden {
@@ -836,7 +854,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .p-5 {
-  padding: 3rem;
+  padding: 2rem;
 }
 
 .lp-scope .mb-2 {
@@ -901,20 +919,21 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .btn-primary {
-  background: var(--lp-blue-soft);
-  border-color: var(--lp-blue-mid);
-  color: #111111;
+  background: #005ea2;
+  border: none;
+  color: #ffffff;
 }
 
 .lp-scope .btn-primary:hover {
-  background: var(--lp-blue-mid);
-  border-color: var(--lp-blue-deep);
-  box-shadow: 0 6px 16px rgba(143, 184, 219, 0.35);
+  background: #004a82;
+  border: none;
+  box-shadow: 0 6px 16px rgba(0, 94, 162, 0.35);
 }
 
 .lp-scope .btn-lg {
-  padding: 14px 20px;
-  font-size: 1.05rem;
+  padding: 14px 28px;
+  font-size: 1.1rem;
+  border-radius: 10px;
 }
 
 .lp-scope .card {
@@ -974,16 +993,21 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope .lp-launchpad-cta {
   margin-top: 24px;
+  background: linear-gradient(135deg, #e8f0f9 0%, #f3f3f3 60%, #d6ead6 100%);
+  padding: 60px 20px;
+  text-align: center;
 }
 
 .lp-scope .lp-launchpad-card {
-  background: var(--lp-panel);
+  background: #ffffff;
   border: 1px solid var(--lp-border);
   border-top: 4px solid var(--lp-accent);
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow);
-  padding: 32px;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.10);
+  padding: 40px;
   text-align: center;
+  max-width: 640px;
+  margin: 0 auto;
 }
 
 .lp-scope .lp-launchpad-card h1,
@@ -1219,6 +1243,12 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   border: 1px solid var(--lp-border);
   box-shadow: var(--lp-shadow);
   margin: 15px 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lp-scope .feature-container:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
 }
 
 .lp-scope .feature-content-wrapper {
@@ -1228,9 +1258,13 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .feature-icon {
-  font-size: 48px;
+  font-size: 32px;
   margin-right: 15px;
   color: var(--lp-accent);
+}
+
+.lp-scope .feature-icon .material-symbols-outlined {
+  font-size: 32px;
 }
 
 .lp-scope .feature-content {
@@ -1241,7 +1275,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope .feature-title {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -1256,13 +1290,13 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .result-title {
-  font-size: 18px;
+  font-size: 1rem;
   font-weight: bold;
   margin: 0;
 }
 
 .lp-scope .result-text {
-  font-size: 1em;
+  font-size: 0.9em;
   color: var(--lp-muted);
 }
 
@@ -1278,12 +1312,18 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   box-shadow: var(--lp-shadow);
   width: 100%;
   height: 100%;
+  transition: transform 0.15s ease;
+}
+
+.lp-scope .result-container:hover {
+  transform: translateY(-3px);
 }
 
 .lp-scope .result-icon {
-  margin-right: 30px;
-  margin-left: 30px;
+  margin-right: 20px;
+  margin-left: 20px;
   color: var(--lp-accent);
+  flex-shrink: 0;
 }
 
 .lp-scope .result-content {
@@ -1368,7 +1408,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .section-divider {
-  padding: 40px;
+  padding: 20px 0;
 }
 
 .lp-scope .section-divider::before {
@@ -1463,6 +1503,31 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 .lp-scope .lp-creditBadge .material-symbols-outlined {
   font-size: 1rem;
   line-height: 1;
+}
+
+.lp-scope #lp-intro,
+.lp-scope #container_features,
+.lp-scope #container_usecases {
+  margin-bottom: 48px;
+}
+
+.lp-scope .lp-img-placeholder {
+  width: 100%;
+  max-width: 500px;
+  height: 275px;
+  background: #e8eef4;
+  border: 2px dashed #aac4db;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lp-scope .lp-img-placeholder::after {
+  content: "Image coming soon";
+  font-size: 0.85em;
+  color: #6b7f96;
+  font-style: italic;
 }
 
 /* Page Overrides: Privacy */
