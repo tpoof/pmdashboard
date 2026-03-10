@@ -1,5 +1,8 @@
-var stateNew = document.getElementById("stateFirstVisit");
-var stateBack = document.getElementById("welcomeBack");
-var returningVisible = !stateBack.classList.contains("is-hidden");
-stateNew.classList.toggle("is-hidden", !returningVisible);
-stateBack.classList.toggle("is-hidden", returningVisible);
+document.dispatchEvent(
+  new KeyboardEvent("keydown", {
+    altKey: true,
+    shiftKey: true,
+    code: "KeyS",
+    bubbles: true,
+  }),
+);
