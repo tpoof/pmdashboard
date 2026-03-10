@@ -1102,6 +1102,15 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   outline-offset: 2px;
 }
 
+/*
+ * WCAG 2.1 AA focus indicators (3px, 3:1+ contrast).
+ * !important guards against LEAF platform stylesheet (/launchpad/css/style.css)
+ * overriding these rules. If LEAF's sheet sets outline:none on any of these
+ * selectors, these overrides will still win because they are loaded after it.
+ * HOST TEMPLATE NOTE: If the host page loads its stylesheet AFTER smarty_styles.css,
+ * these rules may still be overridden — the host template must not suppress
+ * outline on interactive elements inside .lp-scope.
+ */
 .lp-scope a:focus,
 .lp-scope a:focus-visible,
 .lp-scope .btn:focus,
@@ -1167,7 +1176,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope .lp-intro-label {
   text-align: center;
-  font-size: 0.8em;
+  font-size: 0.875rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1207,7 +1216,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   border-radius: 10px;
   text-decoration: none;
   color: var(--lp-text);
-  font-size: 0.85em;
+  font-size: 0.875rem;
   font-weight: 600;
   text-align: center;
   transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
@@ -1233,8 +1242,8 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope .lp-resource-tile:focus,
 .lp-scope .lp-resource-tile:focus-visible {
-  outline: 2px solid var(--lp-accent);
-  outline-offset: 2px;
+  outline: 3px solid var(--lp-accent) !important;
+  outline-offset: 3px !important;
 }
 
 .lp-scope .lp-site-history {
@@ -1266,8 +1275,8 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope .lp-site-history-toggle:focus,
 .lp-scope .lp-site-history-toggle:focus-visible {
-  outline: 2px solid var(--lp-accent);
-  outline-offset: 2px;
+  outline: 3px solid var(--lp-accent) !important;
+  outline-offset: 3px !important;
 }
 
 .lp-scope .lp-toggle-icon {
@@ -1372,6 +1381,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   box-shadow: var(--lp-shadow);
   width: 100%;
   height: 100%;
+  flex: 1;
   transition: transform 0.15s ease;
 }
 
@@ -1499,11 +1509,14 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   width: 100%;
 }
 
-.lp-scope #container_usecases .row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
-  align-items: stretch;
+.lp-scope .features-grid .card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.lp-scope .features-grid .list-group {
+  flex: 1;
 }
 
 .lp-scope #firstVisit {
@@ -1514,9 +1527,6 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 @media (max-width: 900px) {
   .lp-scope .features-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .lp-scope #container_usecases .row {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1535,8 +1545,23 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 @media (prefers-reduced-motion: reduce) {
   .lp-scope .btn,
   .lp-scope .lp-jumpTop,
-  .lp-scope .skip-link {
+  .lp-scope .skip-link,
+  .lp-scope .lp-resource-tile,
+  .lp-scope .lp-site-history-toggle,
+  .lp-scope .lp-toggle-icon,
+  .lp-scope .feature-container,
+  .lp-scope .result-container,
+  .lp-scope .lp-creditBadge,
+  .lp-scope .cta-button {
     transition: none;
+  }
+  .lp-scope .feature-container:hover,
+  .lp-scope .result-container:hover,
+  .lp-scope .lp-resource-tile:hover,
+  .lp-scope .btn:active,
+  .lp-scope .lp-jumpTop:active,
+  .lp-scope .lp-site-history-toggle[aria-expanded="true"] .lp-toggle-icon {
+    transform: none;
   }
 }
 
@@ -1561,7 +1586,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   border: none;
   border-radius: 999px;
   padding: 0.4rem 0.85rem 0.4rem 0.6rem;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: #111;
   box-shadow: none;
   z-index: 1200;
@@ -1603,7 +1628,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope .lp-img-placeholder::after {
   content: "Image coming soon";
-  font-size: 0.85em;
+  font-size: 0.875rem;
   color: #6b7f96;
   font-style: italic;
 }
