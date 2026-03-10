@@ -723,6 +723,51 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 /* Page Overrides: Launchpad */
 .lp-scope {
+  --ip-bg: #f6f8fb;
+  --ip-panel: #ffffff;
+  --ip-border: #cfd7e3;
+  --ip-text: #0f172a;
+  --ip-muted: #475569;
+  --ip-accent: #2563eb;
+  --ip-accent-weak: #dbeafe;
+  --ip-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --ip-radius: 14px;
+  --lp-bg: #f3f3f3;
+  --lp-panel: #ffffff;
+  --lp-border: #cfd7e3;
+  --lp-text: #0f172a;
+  --lp-muted: #475569;
+  --lp-accent: #005ea2;
+  --lp-accent-strong: #004a82;
+  --lp-accent-weak: #cce4f5;
+  --lp-warning-bg: #fff2cc;
+  --lp-warning-border: #f1d08a;
+  --lp-warning-text: #7a4a00;
+  --lp-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --lp-radius: 14px;
+  --lp-safe-bottom: 88px;
+  --lp-blue-soft: #d9e8f6;
+  --lp-blue-mid: #aacdec;
+  --lp-blue-deep: #8fb8db;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 32px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-alt: #f8fafc;
+  --border: #dbe1e8;
+  --text: #1f2933;
+  --muted: #3f4a57;
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --focus: #0b5cab;
+  --danger: #b50909;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.08);
+  --shadow-md: 0 6px 16px rgba(15, 23, 42, 0.12);
   margin: 0;
   background: var(--lp-bg);
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -961,19 +1006,15 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope .list-group-item {
   padding: 10px 16px;
-  border-bottom: 1px solid var(--lp-border);
+  border: 1px solid var(--lp-border);
   font-size: 0.9rem;
   text-align: left;
   display: block;
   background: var(--lp-panel);
 }
 
-.lp-scope .list-group-item:last-child {
-  border-bottom: none;
-}
-
-.lp-scope .list-group-item:nth-child(even) {
-  background: var(--lp-surface-alt, #f8fafc);
+.lp-scope .list-group-item + .list-group-item {
+  border-top: none;
 }
 
 .lp-scope .list-group-flush .list-group-item:first-child {
