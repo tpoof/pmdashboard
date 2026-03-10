@@ -692,7 +692,7 @@
     });
   })();
 
-  // Dev toggle: Alt+Shift+S switches between first-visit and returning-user states
+  // Dev toggle: Alt+Shift+W switches between first-visit and returning-user states
   (function () {
     function showToast(msg) {
       var t = document.getElementById("lpDevToast");
@@ -726,7 +726,7 @@
     }
 
     document.addEventListener("keydown", function (e) {
-      if (e.altKey && e.shiftKey && e.code === "KeyS") {
+      if (e.altKey && e.shiftKey && e.code === "KeyW") {
         var stateNew = document.getElementById("stateFirstVisit");
         var stateBack = document.getElementById("welcomeBack");
         if (!stateNew || !stateBack) return;
