@@ -1044,9 +1044,13 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .lp-launchpad-cta {
-  margin-left: calc(-50vw + 50%);
-  margin-right: calc(-50vw + 50%);
-  padding: 60px calc(50vw - 50%);
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  padding: 60px 20px;
   background: linear-gradient(135deg, #e8f0f9 0%, #f3f3f3 60%, #d6ead6 100%);
   text-align: center;
 }
@@ -1073,7 +1077,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .lp-hero-eyebrow {
-  font-size: 1.6rem;
+  font-size: 2rem;
   font-weight: 700;
   color: var(--lp-text);
   margin: 0 0 4px;
@@ -1081,22 +1085,22 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .lp-hero-headline {
-  font-size: 2.4rem;
+  font-size: 3rem;
   font-weight: 800;
   margin: 0 0 12px;
   line-height: 1.1;
 }
 
 .lp-scope .lp-hero-sub {
-  font-size: 1rem;
+  font-size: 1.15rem;
   color: var(--lp-muted);
   margin: 0 0 12px;
 }
 
 .lp-scope .btn-hero-primary {
-  background: #e66f0e;
+  background: #fa9441;
   color: white;
-  border: 2px solid #e66f0e;
+  border: 2px solid #fa9441;
   font-weight: 700;
 }
 
@@ -1117,6 +1121,11 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   background: rgba(0, 94, 162, 0.08);
   color: var(--lp-accent);
   border-color: var(--lp-accent);
+}
+
+.lp-scope .lp-launchpad-card .lead {
+  font-size: 1.1rem;
+  color: var(--lp-muted);
 }
 
 .lp-scope .lp-modal-overlay {
@@ -1255,11 +1264,11 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .lp-wb-hero {
-  background: var(--lp-blue-soft);
-  border-bottom: 1px solid var(--lp-blue-mid);
-  padding: 24px 32px;
-  margin: -32px -32px 24px -32px;
-  border-radius: 10px 10px 0 0;
+  background: transparent;
+  border-bottom: none;
+  padding: 0 0 16px 0;
+  margin: 0 0 24px 0;
+  border-radius: 0;
   text-align: left;
 }
 
@@ -1280,18 +1289,19 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope .lp-intro-label {
   text-align: center;
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--lp-accent);
-  margin: 0 0 8px;
+  margin: 0 0 12px;
 }
 
 .lp-scope .lp-intro-bridge {
-  font-size: 1em;
+  font-size: 1.3rem;
   color: var(--lp-muted);
   margin: 0 0 24px;
+  text-align: center;
 }
 
 .lp-scope .lp-section-rule {
@@ -1477,14 +1487,12 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 0;
   padding: 24px;
   background: var(--lp-panel);
   border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius);
   box-shadow: var(--lp-shadow);
   width: 100%;
-  height: 100%;
   flex: 1;
 }
 
@@ -1513,15 +1521,15 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .cta-text {
-  font-size: 1.6rem;
+  font-size: 2rem;
   font-weight: 700;
   color: white;
   margin: 0;
 }
 
 .lp-scope .cta-subtext {
-  font-size: 1rem;
-  color: rgba(255,255,255,0.85);
+  font-size: 1.15rem;
+  color: rgba(255, 255, 255, 0.85);
   margin: 0;
 }
 
@@ -1632,6 +1640,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   align-items: stretch;
   width: 100%;
 }
+
 
 .lp-scope .features-grid .card {
   height: 100%;
