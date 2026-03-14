@@ -1044,15 +1044,11 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .lp-launchpad-cta {
-  width: 100vw;
-  position: relative;
-  left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
+  width: 100%;
   padding: 60px 20px;
   background: linear-gradient(135deg, #e8f0f9 0%, #f3f3f3 60%, #d6ead6 100%);
   text-align: center;
+  box-sizing: border-box;
 }
 
 .lp-scope .lp-launchpad-card {
@@ -1076,7 +1072,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   color: var(--lp-accent);
 }
 
-.lp-scope .lp-hero-eyebrow {
+.lp-scope #firstVisit .lp-hero-eyebrow {
   font-size: 2rem;
   font-weight: 700;
   color: var(--lp-text);
@@ -1084,17 +1080,23 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   line-height: 1.2;
 }
 
-.lp-scope .lp-hero-headline {
+.lp-scope #firstVisit .lp-hero-headline {
   font-size: 3rem;
   font-weight: 800;
   margin: 0 0 12px;
   line-height: 1.1;
 }
 
-.lp-scope .lp-hero-sub {
+.lp-scope #firstVisit .lp-hero-sub {
   font-size: 1.15rem;
   color: var(--lp-muted);
-  margin: 0 0 12px;
+  margin: 0 0 16px;
+}
+
+.lp-scope #firstVisit .lead {
+  font-size: 1.15rem;
+  color: var(--lp-muted);
+  line-height: 1.6;
 }
 
 .lp-scope .btn-hero-primary {
@@ -1126,6 +1128,21 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 .lp-scope .lp-launchpad-card .lead {
   font-size: 1.1rem;
   color: var(--lp-muted);
+}
+
+.lp-scope .lp-btn-icon {
+  font-size: 1.4rem;
+  vertical-align: -4px;
+  margin-right: 8px;
+  line-height: 1;
+}
+
+.lp-scope .btn-hero-primary .lp-btn-icon {
+  color: white;
+}
+
+.lp-scope .btn-hero-outline .lp-btn-icon {
+  color: var(--lp-accent);
 }
 
 .lp-scope .lp-modal-overlay {
@@ -1412,8 +1429,8 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope #firstVisit p,
 .lp-scope #firstVisit li {
-  font-size: 1em;
-  line-height: 2em;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 .lp-scope .feature-container {
@@ -1653,8 +1670,9 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope #firstVisit {
-  padding-top: 3rem;
-  padding-bottom: 3rem;
+  padding: 0;
+  margin: 0;
+  width: 100%;
 }
 
 @media (max-width: 900px) {
