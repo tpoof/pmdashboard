@@ -25,9 +25,6 @@
           <div class="info-item">
             Estimated Reading Time: <span id="reading-time">~2 mins</span>
           </div>
-          <div class="info-item right">
-            Last Updated: <span id="last-updated-date">Loading…</span>
-          </div>
         </div>
       </section>
 
@@ -470,8 +467,8 @@
 
       /* 3: Increase wrap padding for more breathing room from browser edges */
       body.smarty.page-privacy .wrap {
-        padding-left: clamp(1.25rem, 5vw, 3rem) !important;
-        padding-right: clamp(1.25rem, 5vw, 3rem) !important;
+        padding-left: clamp(2rem, 8vw, 5rem) !important;
+        padding-right: clamp(2rem, 8vw, 5rem) !important;
       }
 
       /* 6: Recent changes — no fixed height, expands naturally to fit content */
@@ -485,6 +482,23 @@
         border: none;
         border-top: 1px solid var(--border, #e2e8f0) !important;
         margin: var(--space-3, 1.25rem) 0 !important;
+      }
+
+      /* VA Privacy Resources — stretch cards so buttons align at the same bottom line */
+      body.smarty.page-privacy #resources-title ~ .grid .card {
+        display: flex;
+        flex-direction: column;
+      }
+
+      body.smarty.page-privacy #resources-title ~ .grid .card > div {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+
+      body.smarty.page-privacy #resources-title ~ .grid .card-row {
+        flex: 1;
+        align-items: flex-end;
       }
     </style>
 
@@ -866,22 +880,6 @@
       }
 
       loadRecentChanges();
-
-      // ── Auto: Last Updated from file's HTTP Last-Modified header ──────────
-      (function () {
-        const raw = document.lastModified;
-        const d = raw ? new Date(raw) : null;
-        const el = document.getElementById("last-updated-date");
-        if (el && d && !isNaN(d.getTime())) {
-          el.textContent = d.toLocaleDateString("en-US", {
-            month: "2-digit",
-            day: "2-digit",
-            year: "numeric",
-          });
-        } else if (el) {
-          el.textContent = "N/A";
-        }
-      })();
 
       // ── Auto: Estimated Reading Time from visible page text ───────────────
       function updateReadingTime() {
