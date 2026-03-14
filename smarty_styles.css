@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,400;1,600&display=swap');
+
 /* ========== Smarty Styles (Universal) ========== */
 /* Tokens */
 body.smarty {
@@ -107,7 +109,7 @@ body.smarty.page-ideaportal .ip-wrap {
   max-width: 1200px;
   margin: 32px auto 48px;
   padding: 0 20px;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
   color: var(--ip-text);
 }
 
@@ -140,7 +142,7 @@ body.smarty.page-ideaportal .ip-btn {
   padding: 10px 14px;
   border-radius: 10px;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 900;
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
 }
@@ -556,7 +558,7 @@ body.smarty.page-ideaportal .ip-recordModal__header {
 
 body.smarty.page-ideaportal .ip-recordModal__title {
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 body.smarty.page-ideaportal .ip-recordModal__actions {
@@ -770,14 +772,14 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   --shadow-md: 0 6px 16px rgba(15, 23, 42, 0.12);
   margin: 0;
   background: var(--lp-bg);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
   color: var(--lp-text);
   font-size: 1rem;
   line-height: 1.6;
 }
 
 .lp-scope .lp-scope {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
   color: var(--lp-text);
   font-size: 1rem;
 }
@@ -1083,7 +1085,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope #firstVisit .lp-hero-headline {
   font-size: 3rem;
-  font-weight: 800;
+  font-weight: 900;
   margin: 0 0 12px;
   line-height: 1.1;
 }
@@ -1857,13 +1859,7 @@ body.smarty.page-privacy {
   min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family:
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Roboto,
-    Arial,
-    sans-serif;
+  font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
 }
 
 body.smarty.page-privacy a {
@@ -1899,7 +1895,7 @@ body.smarty.page-privacy .section-lg {
 body.smarty.page-privacy .title {
   margin: 0 0 var(--space-2);
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: -0.01em;
 }
 
@@ -1974,7 +1970,7 @@ body.smarty.page-privacy .card-header {
 body.smarty.page-privacy .card-title {
   margin: 0;
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 body.smarty.page-privacy .card-row {
