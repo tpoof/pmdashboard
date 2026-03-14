@@ -422,33 +422,22 @@
       }
 
       body.smarty.page-privacy .recent-change-date {
+        display: block;
         color: var(--muted);
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         font-style: italic;
+        margin: 0;
       }
 
       body.smarty.page-privacy .recent-change-title {
+        display: block;
         font-weight: 700;
         color: var(--text);
+        margin: 0.2rem 0 0;
       }
 
-      body.smarty.page-privacy .recent-change-meta {
-        margin: 0;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: 0;
-      }
-
-      body.smarty.page-privacy .recent-change-meta .pipe {
-        color: var(--muted);
-        margin: 0 0.35rem;
-      }
-
-      body.smarty.page-privacy .recent-change-summary p + p,
-      body.smarty.page-privacy .recent-change-summary ul,
-      body.smarty.page-privacy .recent-change-summary ol {
-        margin-top: var(--space-1);
+      body.smarty.page-privacy .recent-change-summary {
+        margin-top: 0.35rem;
       }
 
       body.smarty.page-privacy .btn:focus-visible,
@@ -672,9 +661,6 @@
         const li = document.createElement("li");
         li.className = "recent-changes-item";
 
-        const meta = document.createElement("p");
-        meta.className = "recent-change-meta";
-
         const timeElement = document.createElement("time");
         timeElement.className = "recent-change-date";
         if (entry.dateObject) {
@@ -685,23 +671,16 @@
         }
         timeElement.textContent = entry.displayDate;
 
-        const separator = document.createElement("span");
-        separator.className = "pipe";
-        separator.textContent = "|";
-
-        const title = document.createElement("span");
+        const title = document.createElement("p");
         title.className = "recent-change-title";
         title.textContent = entry.title;
-
-        meta.appendChild(timeElement);
-        meta.appendChild(separator);
-        meta.appendChild(title);
 
         const summary = document.createElement("div");
         summary.className = "recent-change-summary";
         renderMultilineText(summary, entry.summary);
 
-        li.appendChild(meta);
+        li.appendChild(timeElement);
+        li.appendChild(title);
         li.appendChild(summary);
 
         return li;
