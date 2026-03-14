@@ -697,6 +697,13 @@
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && !modal.hasAttribute('hidden')) closeModal();
     });
+    /* Focus trap: cycle focus within modal between close button and iframe */
+    modal.addEventListener('keydown', function (e) {
+      if (e.key === 'Tab' && !modal.hasAttribute('hidden')) {
+        e.preventDefault();
+        closeBtn.focus();
+      }
+    });
   })();
 
   // Site-history accordion
