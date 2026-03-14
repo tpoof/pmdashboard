@@ -610,10 +610,6 @@
   function wireJumpToTop() {
     var btn = document.getElementById("lpJumpTopBtn");
     if (!btn) return;
-    var prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-
     function setVisibility(isVisible) {
       btn.classList.toggle("is-visible", isVisible);
       btn.setAttribute("aria-hidden", String(!isVisible));
@@ -651,10 +647,7 @@
     }
 
     btn.addEventListener("click", function () {
-      window.scrollTo({
-        top: 0,
-        behavior: prefersReducedMotion ? "auto" : "smooth",
-      });
+      window.scrollTo({ top: 0 });
     });
 
     window.addEventListener("scroll", updateVisibility, { passive: true });

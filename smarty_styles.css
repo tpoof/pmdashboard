@@ -1108,6 +1108,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   color: #1b1b1b;
   border: 2px solid #fa9441;
   font-weight: 700;
+  font-size: 1.1rem;
 }
 
 .lp-scope .btn-hero-primary:hover {
@@ -1121,6 +1122,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   color: var(--lp-accent);
   border: 2px solid var(--lp-accent);
   font-weight: 700;
+  font-size: 1.1rem;
 }
 
 .lp-scope .btn-hero-outline:hover {
@@ -1331,7 +1333,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope .lp-intro-label {
   text-align: center;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1340,7 +1342,8 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .lp-intro-bridge {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
+  font-weight: 400;
   color: var(--lp-muted);
   margin: 0 0 24px;
   text-align: center;
@@ -1563,14 +1566,14 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope .cta-text {
-  font-size: 2.2rem;
+  font-size: 2rem !important;
   font-weight: 700;
   color: white;
   margin: 0;
 }
 
 .lp-scope .cta-subtext {
-  font-size: 1.3rem;
+  font-size: 1.25rem !important;
   color: rgba(255, 255, 255, 0.85);
   margin: 0;
 }
