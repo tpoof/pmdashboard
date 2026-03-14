@@ -20,22 +20,13 @@
             <div class="lp-launchpad-card">
               <!-- State: First Visit (default) -->
               <div id="stateFirstVisit">
-                <h1 class="mb-2">
-                  Your Process.<span class="lp-tagline-accent">
-                    Your Platform.</span
-                  >
-                </h1>
-                <p class="lead">
-                  Improve your processes with our powerful workflow and form
-                  system.
-                </p>
+                <p class="lp-hero-eyebrow">Your Platform For</p>
+                <h1 class="lp-hero-headline"><span class="lp-tagline-accent">Digital Transformation</span></h1>
+                <p class="lp-hero-sub"><em>Built by VA. For VA. Trusted in 250+ facilities.</em></p>
+                <p class="lead">A secure, no-code/low-code platform that empowers every VA team to build custom workflows, forms, and reports.</p>
                 <div class="lp-launchpad-actions">
-                  <a
-                    href="?a=newform"
-                    class="btn btn-primary btn-lg"
-                  >
-                    🚀 Get started</a
-                  >
+                  <a href="?a=newform" class="btn btn-hero-primary btn-lg">🚀 Get Started</a>
+                  <button class="btn btn-hero-outline btn-lg" id="lpDemoBtn" type="button">▶ Watch a Demo</button>
                 </div>
               </div>
 
@@ -150,7 +141,7 @@
         <!----------------- Description container -------------->
         <div
           id="steps_desc_container"
-          class="row justify-content-center m-auto p-5"
+          class="row justify-content-center m-auto"
         >
           <!----------------- Description: Design Forms -------------->
           <div id="step_forms" class="row step_description">
@@ -541,10 +532,17 @@
       <!-- Call to Action -->
       <div class="container content-container">
         <div id="CTA" class="cta-container">
-          <div class="cta-text">See the platform in action for yourself!</div>
-          <button class="cta-button" type="button">
-            Watch a Demo
-          </button>
+          <p class="cta-text">See the platform in action for yourself!</p>
+          <p class="cta-subtext">Watch how LEAF helps VA teams build smarter workflows in minutes.</p>
+          <div class="lp-cta-video">
+            <iframe
+              src="PLACEHOLDER_MICROSOFT_STREAM_URL"
+              title="LEAF Platform Overview Video"
+              allowfullscreen
+              frameborder="0"
+              style="width:100%;height:100%;border:0">
+            </iframe>
+          </div>
         </div>
       </div>
 
@@ -569,6 +567,22 @@
     <span>Co-created with LEAF collaborator, Jennifer Tsan</span>
   </div>
   <div class="lp-bottom-safe" aria-hidden="true"></div>
+
+  <div id="lpDemoModal" class="lp-modal-overlay" role="dialog" aria-modal="true" aria-label="Watch a Demo" hidden>
+    <div class="lp-modal-box">
+      <button class="lp-modal-close" id="lpDemoClose" aria-label="Close video">&times;</button>
+      <div class="lp-modal-video">
+        <iframe id="lpDemoFrame"
+          src=""
+          data-src="PLACEHOLDER_MICROSOFT_STREAM_URL"
+          title="LEAF Platform Demo"
+          allowfullscreen
+          frameborder="0"
+          style="width:100%;height:100%;border:0">
+        </iframe>
+      </div>
+    </div>
+  </div>
 </div>
 
 <link rel="stylesheet" href="/platform/designs/files/smarty_styles.css" />
@@ -653,6 +667,37 @@
   }
 
   wireJumpToTop();
+
+  // Demo modal
+  (function () {
+    var modal = document.getElementById('lpDemoModal');
+    var frame = document.getElementById('lpDemoFrame');
+    var openBtn = document.getElementById('lpDemoBtn');
+    var closeBtn = document.getElementById('lpDemoClose');
+    if (!modal || !openBtn || !closeBtn || !frame) return;
+    var videoSrc = frame.getAttribute('data-src');
+
+    function openModal() {
+      frame.src = videoSrc;
+      modal.removeAttribute('hidden');
+      document.body.style.overflow = 'hidden';
+      closeBtn.focus();
+    }
+    function closeModal() {
+      frame.src = '';
+      modal.setAttribute('hidden', '');
+      document.body.style.overflow = '';
+      openBtn.focus();
+    }
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !modal.hasAttribute('hidden')) closeModal();
+    });
+  })();
 
   // Site-history accordion
   (function () {

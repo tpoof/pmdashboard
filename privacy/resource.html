@@ -48,7 +48,9 @@
             class="section recent-changes"
             aria-labelledby="recent-changes-title"
           >
-            <h2 id="recent-changes-title" class="subtitle">Recent Changes</h2>
+            <h2 id="recent-changes-title" class="subtitle">
+              Recent Enhancements
+            </h2>
             <div class="card section">
               <div>
                 <p
@@ -99,7 +101,7 @@
             <div class="grid section">
               <article class="card">
                 <div class="card-header">
-                  <h3 class="card-title">What is LEAF-S</h3>
+                  <h3 class="card-title">What is LEAF-S?</h3>
                 </div>
                 <div class="card-text">
                   <p>
@@ -113,7 +115,7 @@
                     be monitored for continued compliance with sensitive data
                     handling standards.
                   </p>
-                  <h4 class="card-title subhead">
+                  <!--<h4 class="card-title subhead">
                     What to expect on a LEAF-S site
                   </h4>
                   <p>
@@ -124,20 +126,20 @@
                     <strong>Pro tip:</strong> Keep forms in short sections. LEAF
                     autosaves after each section, so progress is less likely to
                     be lost if a session times out.
-                  </p>
+                  </p>-->
                 </div>
               </article>
 
               <article class="card">
                 <div class="card-header">
-                  <h3 class="card-title">When you need LEAF-S</h3>
+                  <h3 class="card-title">What sites need LEAF-S?</h3>
                 </div>
                 <div class="card-text">
                   <p>
-                    LEAF-S is required only for sites that collect, display, or
-                    route PHI or PII.
+                    LEAF-S is required for sites that collect, display, or route
+                    PHI or PII.
                   </p>
-                  <h4 class="card-title subhead">Common examples include:</h4>
+                  <h4 class="card-title subhead">Some examples may include:</h4>
                   <ul class="checklist">
                     <li>Full name combined with date of birth</li>
                     <li>
@@ -149,6 +151,11 @@
                     <li>Attachments containing identifiable information</li>
                     <li>Employee records</li>
                   </ul>
+                  <p>
+                    This is not an exhaustive list — if you're unsure whether
+                    your process involves PII or PHI, contact your local Privacy
+                    Officer.
+                  </p>
                 </div>
               </article>
 
@@ -157,15 +164,18 @@
                   <h3 class="card-title">How to get started</h3>
                 </div>
                 <div class="card-text">
+                  <p>
+                    Once you have identified a sensitive field in your form:
+                  </p>
                   <ol class="checklist">
                     <li>
-                      <strong>Path 1:</strong> Once you identify a sensitive
-                      field in your form, a banner appears in the Form Editor
-                      with a link to the LEAF-S certification form.
+                      <strong>Path 1:</strong> Use the link in the banner that
+                      appears in the Form Editor to begin the LEAF-S
+                      certification form <b> or </b>
                     </li>
                     <li>
                       <strong>Path 2:</strong> Admin Panel &gt; Site Settings
-                      &gt; Start Certification.
+                      &gt; Start Certification Process.
                     </li>
                   </ol>
                   <p>
@@ -179,10 +189,9 @@
                     for step-by-step guidance.
                   </p>
                   <p>
-                    <!-- TODO: Update link once LEAF-S Help Library is confirmed. -->
                     <a
                       class="btn"
-                      href="#leaf-s-help-library"
+                      href="https://leaf.va.gov/platform/help_library/report.php?a=View_Help_Resource#28"
                       tabindex="0"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -324,7 +333,7 @@
 
           <div class="callout" role="note" aria-label="Update and note">
             <p>
-              <span class="badge">Note:</span>
+              <strong>Note:</strong>
               The LEAF Platform team does not serve as the subject matter expert
               for privacy policy or approval decisions. Local LEAF Process
               Owners are responsible for working directly with the appropriate
@@ -450,6 +459,32 @@
         outline: 3px solid var(--focus);
         outline-offset: 3px;
         box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25);
+      }
+
+      /* 1 & 2: h2 subtitle — larger than h3 card-title (1.05rem), with increased top padding */
+      body.smarty.page-privacy .subtitle {
+        font-size: 1.5rem !important;
+        padding-top: var(--space-4, 1.75rem) !important;
+        margin-top: 0 !important;
+      }
+
+      /* 3: Increase wrap padding for more breathing room from browser edges */
+      body.smarty.page-privacy .wrap {
+        padding-left: clamp(1.25rem, 5vw, 3rem) !important;
+        padding-right: clamp(1.25rem, 5vw, 3rem) !important;
+      }
+
+      /* 6: Recent changes — no fixed height, expands naturally to fit content */
+      body.smarty.page-privacy .recent-changes-scroll {
+        max-height: none !important;
+        overflow-y: visible !important;
+        padding-right: 0 !important;
+      }
+
+      body.smarty.page-privacy .smarty-root hr.divider {
+        border: none;
+        border-top: 1px solid var(--border, #e2e8f0) !important;
+        margin: var(--space-3, 1.25rem) 0 !important;
       }
     </style>
 
@@ -819,17 +854,8 @@
       });
 
       backToTopButton.addEventListener("click", () => {
-        const prefersReducedMotion = window.matchMedia(
-          "(prefers-reduced-motion: reduce)",
-        ).matches;
-        window.scrollTo({
-          top: 0,
-          behavior: prefersReducedMotion ? "auto" : "smooth",
-        });
-        const focusDelay = prefersReducedMotion ? 0 : 300;
-        setTimeout(() => {
-          mainContent.focus();
-        }, focusDelay);
+        window.scrollTo({ top: 0, behavior: "instant" });
+        mainContent.focus();
       });
 
       if (recentChangesToggle) {
