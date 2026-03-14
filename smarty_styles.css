@@ -1082,7 +1082,9 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   color: #1b1b1b;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin: 0 0 12px;
+  margin: 0 0 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--lp-border);
 }
 
 .lp-scope #firstVisit .lp-hero-eyebrow {
@@ -1364,7 +1366,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope h2 .text-primary {
-  font-weight: 400;
+  font-weight: 400 !important;
 }
 
 .lp-scope .lp-section-rule {
