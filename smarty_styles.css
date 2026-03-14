@@ -1116,16 +1116,16 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 /* CONTRAST NOTE: #fa9441 with white fails WCAG AA (2.16:1). Text changed to #1b1b1b (~8:1 ratio). */
 .lp-scope .btn-hero-primary {
-  background: #fa9441;
+  background: #7fb135;
   color: #1b1b1b;
-  border: 2px solid #fa9441;
+  border: 2px solid #7fb135;
   font-weight: 700;
   font-size: 1.1rem;
 }
 
 .lp-scope .btn-hero-primary:hover {
-  background: #c05600;
-  border-color: #c05600;
+  background: #538200;
+  border-color: #538200;
   color: white;
 }
 
@@ -1366,7 +1366,9 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 }
 
 .lp-scope h2 .text-primary {
-  font-weight: 400 !important;
+  font-weight: 700 !important;
+  font-size: 1.8rem !important;
+  color: var(--lp-accent);
 }
 
 .lp-scope .lp-section-rule {
