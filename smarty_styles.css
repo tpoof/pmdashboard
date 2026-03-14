@@ -1131,7 +1131,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   background: transparent;
   color: var(--lp-accent);
   border: 2px solid var(--lp-accent);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 1.1rem;
 }
 
@@ -1343,20 +1343,28 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope .lp-intro-label {
   text-align: center;
-  font-size: 1rem !important;
+  font-size: 1.8rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
   color: var(--lp-accent);
-  margin: 0 0 12px;
+  margin: 0 0 8px;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .lp-scope .lp-intro-bridge {
-  font-size: 1.8rem !important;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 400;
   color: var(--lp-muted);
-  margin: 0 0 24px;
+  margin: 0 0 32px;
   text-align: center;
+}
+
+.lp-scope .lp-intro-bridge + h2 {
+  margin-top: 1.5rem;
+}
+
+.lp-scope h2 .text-primary {
+  font-weight: 400;
 }
 
 .lp-scope .lp-section-rule {
