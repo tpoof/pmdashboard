@@ -1071,6 +1071,9 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope .lp-tagline-accent {
   color: var(--lp-accent);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .lp-scope #firstVisit .lp-hero-kicker {
@@ -1092,7 +1095,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope #firstVisit .lp-hero-headline {
   font-size: 3rem;
-  font-weight: 900;
+  font-weight: 700;
   margin: 0 0 12px;
   line-height: 1.1;
 }
@@ -1128,7 +1131,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   background: transparent;
   color: var(--lp-accent);
   border: 2px solid var(--lp-accent);
-  font-weight: 900;
+  font-weight: 700;
   font-size: 1.1rem;
 }
 
@@ -1634,7 +1637,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   color: #111;
   cursor: pointer;
   font-size: 20px;
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1;
   text-align: center;
   display: inline-flex;
