@@ -1129,23 +1129,45 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   color: white;
 }
 
-.lp-scope .btn-hero-outline {
-  background: transparent;
-  color: var(--lp-accent);
-  border: 2px solid var(--lp-accent);
-  font-weight: 600;
-  font-size: 1.1rem;
-}
-
-.lp-scope .btn-hero-outline:hover {
-  background: rgba(0, 94, 162, 0.08);
-  color: var(--lp-accent);
-  border-color: var(--lp-accent);
-}
-
-.lp-scope .btn-hero-primary:hover,
-.lp-scope .btn-hero-outline:hover {
+.lp-scope .btn-hero-primary:hover {
   text-decoration: none;
+}
+
+.lp-scope .lp-demo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--lp-accent);
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 14px 8px;
+}
+
+.lp-scope .lp-demo-link:hover {
+  color: var(--lp-accent-strong);
+  text-decoration: underline;
+}
+
+.lp-scope .lp-demo-link .lp-btn-icon {
+  color: var(--lp-accent);
+  font-size: 1.2rem;
+  vertical-align: -4px;
+}
+
+.lp-scope .lp-demo-link:hover .lp-btn-icon {
+  color: var(--lp-accent-strong);
+}
+
+.lp-scope .lp-demo-link:focus,
+.lp-scope .lp-demo-link:focus-visible {
+  outline: 3px solid var(--lp-accent);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 .lp-scope .lp-launchpad-card .lead {
@@ -1166,10 +1188,6 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 
 .lp-scope .btn-hero-primary:hover .lp-btn-icon {
   color: white;
-}
-
-.lp-scope .btn-hero-outline .lp-btn-icon {
-  color: var(--lp-accent);
 }
 
 .lp-scope .lp-modal-overlay {
@@ -1747,7 +1765,7 @@ body.smarty.page-ideaportal .lp-bottom-safe {
 @media (prefers-reduced-motion: reduce) {
   .lp-scope .btn,
   .lp-scope .btn-hero-primary,
-  .lp-scope .btn-hero-outline,
+  .lp-scope .lp-demo-link,
   .lp-scope .lp-jumpTop,
   .lp-scope .skip-link,
   .lp-scope .lp-resource-tile,
