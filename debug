@@ -1,3 +1,19 @@
-fetch("./api/form/" + recordID + "/data")
+fetch("./api/form/" + recordID)
   .then((r) => r.json())
-  .then((d) => console.log(JSON.stringify(d, null, 2)));
+  .then(function (d) {
+    console.log("full response:", JSON.stringify(d, null, 2));
+    if (d && d.items) {
+      d.items.forEach(function (item) {
+        (item.children || []).forEach(function (child) {
+          console.log(
+            "child.type:",
+            child.type,
+            "=== QUIZ_CATEGORY_ID:",
+            "form_515b4",
+            "->",
+            child.type === "form_515b4",
+          );
+        });
+      });
+    }
+  });
