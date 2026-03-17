@@ -78,15 +78,13 @@ function getForm(indicatorID, series) {
     });
 
     form.getForm(indicatorID, series);
-
-    // checkNextGate uses MutationObserver internally to wait for render
-    checkNextGate();
 }
 
 function getNext() {
     currFormPosition++;
     if(currFormPosition < formStructure.length) {
         getForm(formStructure[currFormPosition].indicatorID, formStructure[currFormPosition].series);
+        checkNextGate();
     }
     else {
     	var iframeURL = '';
@@ -105,6 +103,7 @@ function getPrev() {
         currFormPosition = 0;
     }
     getForm(formStructure[currFormPosition].indicatorID, formStructure[currFormPosition].series);
+    checkNextGate();
 
     return true;
 }
@@ -205,19 +204,12 @@ function checkNextGate() {
         return;
     }
 
-    // Disable while we wait for the form to render
+    // Disable while evaluating
     document.querySelectorAll('.nextQuestion').forEach(function(btn) {
         btn.disabled = true;
     });
 
-    function getRadioInputs() {
-        return document.querySelectorAll(
-            'input[type="radio"][id^="' + watchID + '_radio"]'
-        );
-    }
-
     function evaluateGate() {
-        // Always require radio1 (first option) to be selected
         var radio1 = document.querySelector(
             'input[type="radio"][id="' + watchID + '_radio1"]'
         );
@@ -227,37 +219,35 @@ function checkNextGate() {
         });
     }
 
-    function attachAndEvaluate() {
-        var radios = getRadioInputs();
-        if (radios.length === 0) return false;
-
-        // Attach change listener to all radio options for this question
-        radios.forEach(function(r) {
+    function attachListeners() {
+        document.querySelectorAll(
+            'input[type="radio"][id^="' + watchID + '_radio"]'
+        ).forEach(function(r) {
             r.removeEventListener('change', evaluateGate);
             r.addEventListener('change', evaluateGate);
         });
-
-        // Evaluate immediately in case question was already answered
         evaluateGate();
-        return true;
     }
 
-    // Try immediately first in case DOM is already ready
-    if (attachAndEvaluate()) return;
-
-    // Otherwise observe #xhr for DOM changes until radio inputs appear
+    // Wait for #xhr to finish rendering the new question
+    var xhrEl = document.getElementById('xhr');
     var observer = new MutationObserver(function(mutations, obs) {
-        if (attachAndEvaluate()) {
+        // Check if our radio inputs have appeared
+        var radio1 = document.querySelector(
+            'input[type="radio"][id="' + watchID + '_radio1"]'
+        );
+        if (radio1) {
             obs.disconnect();
+            attachListeners();
         }
     });
 
-    observer.observe(document.getElementById('xhr'), {
+    observer.observe(xhrEl, {
         childList: true,
         subtree: true
     });
 
-    // Safety disconnect after 5 seconds to avoid memory leaks
+    // Safety disconnect after 5 seconds
     setTimeout(function() { observer.disconnect(); }, 5000);
 }
 
@@ -307,6 +297,7 @@ $(function() {
             $('#navtree').html(buffer);
 
             getForm(formStructure[0].indicatorID, formStructure[0].series);
+            checkNextGate();
         },
         error: function(e) {
             console.log(e);
