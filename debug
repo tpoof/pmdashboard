@@ -1,8 +1,3 @@
-document.dispatchEvent(
-  new KeyboardEvent("keydown", {
-    altKey: true,
-    shiftKey: true,
-    code: "KeyS",
-    bubbles: true,
-  }),
-);
+fetch("./api/form/" + recordID)
+  .then((r) => r.json())
+  .then((d) => console.log(JSON.stringify(d, null, 2)));
