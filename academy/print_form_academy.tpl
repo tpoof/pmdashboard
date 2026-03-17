@@ -115,137 +115,106 @@ function runQuizGrading(recordID) {
                 return;
             }
 
-            // Hide the default LEAF submit banner — we control it
+            // Hide the default LEAF submit banner - we control it
             $('#submitContent').hide();
 
-            // Fetch submitted answers
-            $.ajax({
-                type: 'GET',
-                url: './api/form/' + recordID + '/data',
-                dataType: 'json',
-                success: function(submittedData) {
+            var totalQuestions = 0;
+            var correctCount = 0;
+            var wrongLabels = [];
 
-                    var totalQuestions = 0;
-                    var correctCount = 0;
-                    var wrongLabels = [];
+            for (var indID in QUIZ_ANSWER_KEY) {
+                indID = parseInt(indID);
+                var correctPosition = QUIZ_ANSWER_KEY[indID];
+                totalQuestions++;
 
-                    for (var indID in QUIZ_ANSWER_KEY) {
-                        indID = parseInt(indID);
-                        var correctPosition = QUIZ_ANSWER_KEY[indID];
-                        totalQuestions++;
-
-                        // Get submitted value
-                        var submittedEntry = submittedData[indID];
-                        if (!submittedEntry) {
-                            wrongLabels.push(QUIZ_QUESTION_LABELS[indID] || 'Question ' + indID);
-                            continue;
-                        }
-
-                        // submittedData may be keyed by series — find first entry
-                        var submittedValue = null;
-                        for (var series in submittedEntry) {
-                            if (submittedEntry[series] && submittedEntry[series].value !== undefined) {
-                                submittedValue = submittedEntry[series].value.trim();
-                                break;
-                            }
-                        }
-
-                        if (!submittedValue) {
-                            wrongLabels.push(QUIZ_QUESTION_LABELS[indID] || 'Question ' + indID);
-                            continue;
-                        }
-
-                        // Get radio options from the rendered print view DOM
-                        // Radio inputs in print view use name="{indicatorID}"
-                        var radioOptions = document.querySelectorAll(
-                            'input[type="radio"][name="' + indID + '"]'
-                        );
-
-                        // Fallback: try name="{indicatorID}_1"
-                        if (radioOptions.length === 0) {
-                            radioOptions = document.querySelectorAll(
-                                'input[type="radio"][name="' + indID + '_1"]'
-                            );
-                        }
-
-                        if (radioOptions.length < correctPosition) {
-                            console.log('Quiz grading: cannot find radio options for indicator ' + indID);
-                            wrongLabels.push(QUIZ_QUESTION_LABELS[indID] || 'Question ' + indID);
-                            continue;
-                        }
-
-                        var correctValue = radioOptions[correctPosition - 1].value.trim();
-
-                        console.log('Q' + indID + ' submitted: "' + submittedValue + '" correct: "' + correctValue + '"');
-
-                        if (submittedValue === correctValue) {
-                            correctCount++;
-                        } else {
-                            wrongLabels.push(QUIZ_QUESTION_LABELS[indID] || 'Question ' + indID);
-                        }
-                    }
-
-                    // Calculate score
-                    var score = totalQuestions > 0
-                        ? correctCount / totalQuestions
-                        : 0;
-                    var pct = Math.round(score * 100);
-                    var passed = score >= PASSING_SCORE;
-
-                    var bannerColor = passed ? '#2e7d32' : '#b71c1c';
-                    var bannerText = passed
-                        ? '&#10003; You passed! Score: ' + correctCount + '/'
-                            + totalQuestions + ' (' + pct + '%)'
-                        : '&#10007; You did not pass. Score: ' + correctCount + '/'
-                            + totalQuestions + ' (' + pct + '%) &mdash; minimum passing score is '
-                            + Math.round(PASSING_SCORE * 100) + '%';
-
-                    var wrongList = '';
-                    if (wrongLabels.length > 0) {
-                        wrongList = '<div style="margin-top: 8px; font-size: 15px; font-weight: normal;">'
-                            + 'Incorrect: ' + wrongLabels.join(', ')
-                            + '</div>';
-                    }
-
-                    // If passed — show submit button instead of retake
-                    var actionButton = '';
-                    if (passed) {
-                        actionButton = '<div style="margin-top: 12px;">'
-                            + '<div style="background-color: #b74141; padding: 8px; margin: 0px; color: white; text-shadow: black 0.1em 0.1em 0.2em; font-weight: bold; text-align: center; font-size: 120%">Please review your request before submitting</div>'
-                            + '<div style="padding: 8px; width: 260px; margin: auto">'
-                            + '<button class="buttonNorm" type="button" style="font-weight: bold; font-size: 120%" title="Submit Form" onclick="doSubmit(3);">'
-                            + '<img src="dynicons/?img=go-next.svg&amp;w=32" alt=""> Submit Request'
-                            + '</button>'
-                            + '</div>'
-                            + '</div>';
-                    } else {
-                        actionButton = '<div style="margin-top: 12px;">'
-                            + '<a href="' + QUIZ_RETAKE_URL + '" class="buttonNorm" '
-                            + 'style="display: inline-block; font-size: 16px; padding: 8px 20px; text-decoration: none;">'
-                            + '&#8635; Retake Quiz'
-                            + '</a></div>';
-                    }
-
-                    var banner = '<div id="quizResultsBanner" style="'
-                        + 'background-color: ' + bannerColor + ';'
-                        + 'color: white;'
-                        + 'padding: 16px 20px;'
-                        + 'margin-bottom: 20px;'
-                        + 'font-size: 20px;'
-                        + 'font-weight: bold;'
-                        + 'border-radius: 4px;'
-                        + 'text-align: center;">'
-                        + bannerText
-                        + wrongList
-                        + actionButton
-                        + '</div>';
-
-                    $('#formcontent').prepend(banner);
-                },
-                error: function(e) {
-                    console.log('Quiz grading: error fetching submitted data', e);
+                // Read submitted value directly from print view span
+                // LEAF renders submitted answers as id="data_{indicatorID}_1"
+                var responseSpan = document.getElementById('data_' + indID + '_1');
+                if (!responseSpan) {
+                    console.log('Quiz grading: no response span found for indicator ' + indID);
+                    wrongLabels.push(QUIZ_QUESTION_LABELS[indID] || 'Question ' + indID);
+                    continue;
                 }
-            });
+
+                var submittedValue = responseSpan.textContent.trim();
+                if (!submittedValue) {
+                    wrongLabels.push(QUIZ_QUESTION_LABELS[indID] || 'Question ' + indID);
+                    continue;
+                }
+
+                // Get all radio options for this indicator from the form
+                // builder order — read from hidden inputs rendered in print view
+                // Correct position maps to: a. = 1, b. = 2, c. = 3, d. = 4
+                // The submitted value starts with "a. ", "b. " etc.
+                var submittedPrefix = submittedValue.substring(0, 2).toLowerCase();
+                var submittedPosition = 'abcd'.indexOf(submittedPrefix[0]) + 1;
+
+                console.log('Q' + indID + ' submitted: "' + submittedValue + '" position: ' + submittedPosition + ' correct: ' + correctPosition);
+
+                if (submittedPosition === correctPosition) {
+                    correctCount++;
+                } else {
+                    wrongLabels.push(QUIZ_QUESTION_LABELS[indID] || 'Question ' + indID);
+                }
+            }
+
+            // Calculate score
+            var score = totalQuestions > 0
+                ? correctCount / totalQuestions
+                : 0;
+            var pct = Math.round(score * 100);
+            var passed = score >= PASSING_SCORE;
+
+            var bannerColor = passed ? '#2e7d32' : '#b71c1c';
+            var bannerText = passed
+                ? '&#10003; You passed! Score: ' + correctCount + '/'
+                    + totalQuestions + ' (' + pct + '%)'
+                : '&#10007; You did not pass. Score: ' + correctCount + '/'
+                    + totalQuestions + ' (' + pct + '%) &mdash; minimum passing score is '
+                    + Math.round(PASSING_SCORE * 100) + '%';
+
+            var wrongList = '';
+            if (wrongLabels.length > 0) {
+                wrongList = '<div style="margin-top: 8px; font-size: 15px; font-weight: normal;">'
+                    + 'Incorrect: ' + wrongLabels.join(', ')
+                    + '</div>';
+            }
+
+            var actionButton = '';
+            if (passed) {
+                actionButton = '<div style="margin-top: 12px;">'
+                    + '<div style="background-color: #b74141; padding: 8px; color: white; text-shadow: black 0.1em 0.1em 0.2em; font-weight: bold; text-align: center; font-size: 120%">Please review your request before submitting</div>'
+                    + '<div style="padding: 8px; width: 260px; margin: auto">'
+                    + '<button class="buttonNorm" type="button" style="font-weight: bold; font-size: 120%" title="Submit Form" onclick="doSubmit(3);">'
+                    + '<img src="dynicons/?img=go-next.svg&amp;w=32" alt=""> Submit Request'
+                    + '</button>'
+                    + '</div>'
+                    + '</div>';
+            } else {
+                actionButton = '<div style="margin-top: 12px;">'
+                    + '<a href="' + QUIZ_RETAKE_URL + '" class="buttonNorm" '
+                    + 'style="display: inline-block; font-size: 16px; padding: 8px 20px; text-decoration: none;">'
+                    + '&#8635; Retake Quiz'
+                    + '</a></div>';
+            }
+
+            var banner = '<div id="quizResultsBanner" style="'
+                + 'background-color: ' + bannerColor + ';'
+                + 'color: white;'
+                + 'padding: 16px 20px;'
+                + 'margin-bottom: 20px;'
+                + 'font-size: 20px;'
+                + 'font-weight: bold;'
+                + 'border-radius: 4px;'
+                + 'text-align: center;">'
+                + bannerText
+                + wrongList
+                + actionButton
+                + '</div>';
+
+            // Remove existing banner if present then prepend new one
+            $('#quizResultsBanner').remove();
+            $('#formcontent').prepend(banner);
         },
         error: function(e) {
             console.log('Quiz grading: error checking form category', e);
