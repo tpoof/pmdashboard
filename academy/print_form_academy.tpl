@@ -1539,7 +1539,7 @@ function doSubmit(recordID) {
 
         // Academy: trigger quiz grading after formcontent finishes rendering
         var gradeObserver = new MutationObserver(function(mutations, obs) {
-            // Wait for actual form content to appear — not just the loading div
+            // Wait for actual form content to appear - not just the loading div
             var formLoaded = document.querySelector('#formcontent table, #formcontent .formBody, #formcontent .lf-form-body, #formcontent input');
             if (formLoaded) {
                 obs.disconnect();
