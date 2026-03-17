@@ -77,10 +77,10 @@ function getForm(indicatorID, series) {
         btn.disabled = true;
     });
 
-    form.setPostModifyCallback(function() {
-        checkNextGate();
-    });
     form.getForm(indicatorID, series);
+
+    // checkNextGate uses MutationObserver internally to wait for render
+    checkNextGate();
 }
 
 function getNext() {
@@ -181,80 +181,84 @@ function manualSaveChange()
 }
 
 // Academy: per-section Next Question gate
-// Key = indicatorID (number) that must be answered to unlock Next for that section
-// Value = the specific answer value required, or null to unlock on any non-empty answer
+// Key = indicatorID, Value = the value attribute of the correct radio button
+// All quiz questions require the first radio option (radio1) to unlock Next
 var academyNextGate = {
-    1001: null,   // Section 1 placeholder — any answer unlocks Next
-    1002: null,   // Section 2 placeholder
-    1003: null,   // Section 3 placeholder
-    1004: null,   // Section 4 placeholder
-    1005: null,   // Section 5 placeholder
+    20: null,   // value will be read from DOM at runtime — see checkNextGate
+    27: null,
+    34: null,
+    42: null,
+    55: null,
 };
 
 function checkNextGate() {
     var currentStep = formStructure[currFormPosition];
     if (!currentStep) return;
 
-    // Find the gate config for the current question's indicatorID
-    var watchID = null;
-    var requiredValue = null;
-    for (var id in academyNextGate) {
-        if (parseInt(id) === parseInt(currentStep.indicatorID)) {
-            watchID = parseInt(id);
-            requiredValue = academyNextGate[id];
-            break;
-        }
-    }
+    var watchID = parseInt(currentStep.indicatorID);
 
-    // If no gate is configured for this question, enable the button freely
-    if (watchID === null) {
+    // If this question is not in the gate map, enable freely
+    if (!(watchID in academyNextGate)) {
         document.querySelectorAll('.nextQuestion').forEach(function(btn) {
             btn.disabled = false;
         });
         return;
     }
 
-    // Disable buttons initially while we evaluate
+    // Disable while we wait for the form to render
     document.querySelectorAll('.nextQuestion').forEach(function(btn) {
         btn.disabled = true;
     });
 
-    function readValue() {
-        // Try text/dropdown/number/currency
-        var el = document.getElementById(watchID);
-        if (el && el.value !== undefined) return el.value.trim();
-
-        // Try radio buttons
-        var radio = document.querySelector('input[id^="' + watchID + '_radio"]:checked');
-        if (radio) return radio.value.trim();
-
-        // Try checkboxes
-        var checked = document.querySelectorAll('input[type="checkbox"][id^="' + watchID + '"]:checked');
-        if (checked.length > 0) return checked[0].value.trim();
-
-        return '';
+    function getRadioInputs() {
+        return document.querySelectorAll(
+            'input[type="radio"][id^="' + watchID + '_radio"]'
+        );
     }
 
     function evaluateGate() {
-        var val = readValue();
-        var pass = (requiredValue === null) ? val !== '' : val === requiredValue;
+        // Always require radio1 (first option) to be selected
+        var radio1 = document.querySelector(
+            'input[type="radio"][id="' + watchID + '_radio1"]'
+        );
+        var pass = radio1 && radio1.checked;
         document.querySelectorAll('.nextQuestion').forEach(function(btn) {
             btn.disabled = !pass;
         });
     }
 
-    // Run immediately in case value is already saved
-    evaluateGate();
+    function attachAndEvaluate() {
+        var radios = getRadioInputs();
+        if (radios.length === 0) return false;
 
-    // Attach live change listeners
-    var el = document.getElementById(watchID);
-    if (el) el.addEventListener('change', evaluateGate);
+        // Attach change listener to all radio options for this question
+        radios.forEach(function(r) {
+            r.removeEventListener('change', evaluateGate);
+            r.addEventListener('change', evaluateGate);
+        });
 
-    document.querySelectorAll('input[id^="' + watchID + '_radio"]')
-        .forEach(function(r) { r.addEventListener('change', evaluateGate); });
+        // Evaluate immediately in case question was already answered
+        evaluateGate();
+        return true;
+    }
 
-    document.querySelectorAll('input[type="checkbox"][id^="' + watchID + '"]')
-        .forEach(function(c) { c.addEventListener('change', evaluateGate); });
+    // Try immediately first in case DOM is already ready
+    if (attachAndEvaluate()) return;
+
+    // Otherwise observe #xhr for DOM changes until radio inputs appear
+    var observer = new MutationObserver(function(mutations, obs) {
+        if (attachAndEvaluate()) {
+            obs.disconnect();
+        }
+    });
+
+    observer.observe(document.getElementById('xhr'), {
+        childList: true,
+        subtree: true
+    });
+
+    // Safety disconnect after 5 seconds to avoid memory leaks
+    setTimeout(function() { observer.disconnect(); }, 5000);
 }
 
 var form;
