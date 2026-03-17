@@ -95,13 +95,18 @@ function runQuizGrading(recordID) {
         success: function(formData) {
 
             // Check if this record belongs to the quiz category
+            // Category ID is found in items[].children[].type in the API response
             var isQuizForm = false;
-            if (formData && formData.categories) {
-                for (var i in formData.categories) {
-                    if (formData.categories[i].categoryID === QUIZ_CATEGORY_ID) {
-                        isQuizForm = true;
-                        break;
+            if (formData && formData.items) {
+                for (var i in formData.items) {
+                    var children = formData.items[i].children || [];
+                    for (var j in children) {
+                        if (children[j].type === QUIZ_CATEGORY_ID) {
+                            isQuizForm = true;
+                            break;
+                        }
                     }
+                    if (isQuizForm) break;
                 }
             }
 
