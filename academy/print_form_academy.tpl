@@ -56,7 +56,7 @@
 // QUIZ GRADING CONFIGURATION
 // =============================================================================
 
-// Quiz form ID
+// Only run grading for this specific quiz form
 var QUIZ_CATEGORY_ID = 'form_515b4';
 
 // Passing score threshold
@@ -64,14 +64,14 @@ var PASSING_SCORE = 0.80;
 
 // Answer key — indicatorID: correct radio position (1-based)
 var QUIZ_ANSWER_KEY = {
-    65: 2,   // Question 1 — radio2
-    66: 2,   // Question 2 — radio2
-    67: 1,   // Question 3 — radio1
-    68: 1,   // Question 4 — radio1
-    69: 1    // Question 5 — radio1
+    65: 2,
+    66: 2,
+    67: 1,
+    68: 1,
+    69: 1
 };
 
-// Question labels for display in results banner
+// Human readable labels for incorrect question display
 var QUIZ_QUESTION_LABELS = {
     65: 'Question 1',
     66: 'Question 2',
@@ -80,136 +80,170 @@ var QUIZ_QUESTION_LABELS = {
     69: 'Question 5'
 };
 
+// Retake URL
+var QUIZ_RETAKE_URL = 'https://leaf.va.gov/platform/stephanie_sandbox/report.php?a=LEAF_Start_Request&id=form_515b4';
+
 // =============================================================================
 
 function runQuizGrading(recordID) {
 
-    // Fetch submitted answers for this record
+    // Only run grading if this form is the quiz form
     $.ajax({
         type: 'GET',
-        url: './api/form/' + recordID + '/data',
+        url: './api/form/' + recordID,
         dataType: 'json',
-        success: function(submittedData) {
+        success: function(formData) {
 
-            var totalQuestions = 0;
-            var correctCount = 0;
-            var wrongLabels = [];
-
-            for (var indicatorID in QUIZ_ANSWER_KEY) {
-                indicatorID = parseInt(indicatorID);
-                var correctPosition = QUIZ_ANSWER_KEY[indicatorID];
-                totalQuestions++;
-
-                // Get submitted value for this indicatorID
-                var submittedEntry = submittedData[indicatorID];
-                if (!submittedEntry || !submittedEntry[1]
-                    || !submittedEntry[1].value) {
-                    wrongLabels.push(
-                        QUIZ_QUESTION_LABELS[indicatorID] || 'Question ' + indicatorID
-                    );
-                    continue;
-                }
-                var submittedValue = submittedEntry[1].value;
-
-                // Get the radio options rendered in the print view DOM
-                var radioOptions = document.querySelectorAll(
-                    'input[type="radio"][name="' + indicatorID + '"]'
-                );
-
-                if (radioOptions.length < correctPosition) {
-                    console.log('Quiz grading: not enough options for indicator '
-                        + indicatorID);
-                    wrongLabels.push(
-                        QUIZ_QUESTION_LABELS[indicatorID] || 'Question ' + indicatorID
-                    );
-                    continue;
-                }
-
-                var correctValue = radioOptions[correctPosition - 1].value;
-
-                if (submittedValue.trim() === correctValue.trim()) {
-                    correctCount++;
-                } else {
-                    wrongLabels.push(
-                        QUIZ_QUESTION_LABELS[indicatorID] || 'Question ' + indicatorID
-                    );
+            // Check if this record belongs to the quiz category
+            var isQuizForm = false;
+            if (formData && formData.categories) {
+                for (var i in formData.categories) {
+                    if (formData.categories[i].categoryID === QUIZ_CATEGORY_ID) {
+                        isQuizForm = true;
+                        break;
+                    }
                 }
             }
 
-            // Calculate score
-            var score = totalQuestions > 0
-                ? correctCount / totalQuestions
-                : 0;
-            var pct = Math.round(score * 100);
-            var passed = score >= PASSING_SCORE;
-
-            // Build banner
-            var bannerColor = passed ? '#2e7d32' : '#b71c1c';
-            var bannerText = passed
-                ? '&#10003; You passed! Score: ' + correctCount + '/'
-                    + totalQuestions + ' (' + pct + '%)'
-                : '&#10007; You did not pass. Score: ' + correctCount + '/'
-                    + totalQuestions + ' (' + pct + '%) &mdash; minimum passing score is '
-                    + Math.round(PASSING_SCORE * 100) + '%';
-
-            var wrongList = '';
-            if (wrongLabels.length > 0) {
-                wrongList = '<div style="margin-top: 8px; font-size: 15px; '
-                    + 'font-weight: normal;">'
-                    + 'Incorrect: ' + wrongLabels.join(', ')
-                    + '</div>';
+            if (!isQuizForm) {
+                console.log('Quiz grading: not a quiz form, skipping.');
+                return;
             }
 
-            var retakeButton = '';
-            if (!passed) {
-                retakeButton = '<div style="margin-top: 12px;">'
-                    + '<button type="button" class="buttonNorm" '
-                    + 'onclick="retakeQuiz()" '
-                    + 'style="font-size: 16px; padding: 8px 20px;">'
-                    + '&#8635; Retake Quiz</button></div>';
-            }
+            // Hide the default LEAF submit banner — we control it
+            $('#submitContent').hide();
 
-            var banner = '<div id="quizResultsBanner" style="'
-                + 'background-color: ' + bannerColor + ';'
-                + 'color: white;'
-                + 'padding: 16px 20px;'
-                + 'margin-bottom: 20px;'
-                + 'font-size: 20px;'
-                + 'font-weight: bold;'
-                + 'border-radius: 4px;'
-                + 'text-align: center;">'
-                + bannerText
-                + wrongList
-                + retakeButton
-                + '</div>';
+            // Fetch submitted answers
+            $.ajax({
+                type: 'GET',
+                url: './api/form/' + recordID + '/data',
+                dataType: 'json',
+                success: function(submittedData) {
 
-            $('#formcontent').prepend(banner);
+                    var totalQuestions = 0;
+                    var correctCount = 0;
+                    var wrongLabels = [];
+
+                    for (var indID in QUIZ_ANSWER_KEY) {
+                        indID = parseInt(indID);
+                        var correctPosition = QUIZ_ANSWER_KEY[indID];
+                        totalQuestions++;
+
+                        // Get submitted value
+                        var submittedEntry = submittedData[indID];
+                        if (!submittedEntry) {
+                            wrongLabels.push(QUIZ_QUESTION_LABELS[indID] || 'Question ' + indID);
+                            continue;
+                        }
+
+                        // submittedData may be keyed by series — find first entry
+                        var submittedValue = null;
+                        for (var series in submittedEntry) {
+                            if (submittedEntry[series] && submittedEntry[series].value !== undefined) {
+                                submittedValue = submittedEntry[series].value.trim();
+                                break;
+                            }
+                        }
+
+                        if (!submittedValue) {
+                            wrongLabels.push(QUIZ_QUESTION_LABELS[indID] || 'Question ' + indID);
+                            continue;
+                        }
+
+                        // Get radio options from the rendered print view DOM
+                        // Radio inputs in print view use name="{indicatorID}"
+                        var radioOptions = document.querySelectorAll(
+                            'input[type="radio"][name="' + indID + '"]'
+                        );
+
+                        // Fallback: try name="{indicatorID}_1"
+                        if (radioOptions.length === 0) {
+                            radioOptions = document.querySelectorAll(
+                                'input[type="radio"][name="' + indID + '_1"]'
+                            );
+                        }
+
+                        if (radioOptions.length < correctPosition) {
+                            console.log('Quiz grading: cannot find radio options for indicator ' + indID);
+                            wrongLabels.push(QUIZ_QUESTION_LABELS[indID] || 'Question ' + indID);
+                            continue;
+                        }
+
+                        var correctValue = radioOptions[correctPosition - 1].value.trim();
+
+                        console.log('Q' + indID + ' submitted: "' + submittedValue + '" correct: "' + correctValue + '"');
+
+                        if (submittedValue === correctValue) {
+                            correctCount++;
+                        } else {
+                            wrongLabels.push(QUIZ_QUESTION_LABELS[indID] || 'Question ' + indID);
+                        }
+                    }
+
+                    // Calculate score
+                    var score = totalQuestions > 0
+                        ? correctCount / totalQuestions
+                        : 0;
+                    var pct = Math.round(score * 100);
+                    var passed = score >= PASSING_SCORE;
+
+                    var bannerColor = passed ? '#2e7d32' : '#b71c1c';
+                    var bannerText = passed
+                        ? '&#10003; You passed! Score: ' + correctCount + '/'
+                            + totalQuestions + ' (' + pct + '%)'
+                        : '&#10007; You did not pass. Score: ' + correctCount + '/'
+                            + totalQuestions + ' (' + pct + '%) &mdash; minimum passing score is '
+                            + Math.round(PASSING_SCORE * 100) + '%';
+
+                    var wrongList = '';
+                    if (wrongLabels.length > 0) {
+                        wrongList = '<div style="margin-top: 8px; font-size: 15px; font-weight: normal;">'
+                            + 'Incorrect: ' + wrongLabels.join(', ')
+                            + '</div>';
+                    }
+
+                    // If passed — show submit button instead of retake
+                    var actionButton = '';
+                    if (passed) {
+                        actionButton = '<div style="margin-top: 12px;">'
+                            + '<div style="background-color: #b74141; padding: 8px; margin: 0px; color: white; text-shadow: black 0.1em 0.1em 0.2em; font-weight: bold; text-align: center; font-size: 120%">Please review your request before submitting</div>'
+                            + '<div style="padding: 8px; width: 260px; margin: auto">'
+                            + '<button class="buttonNorm" type="button" style="font-weight: bold; font-size: 120%" title="Submit Form" onclick="doSubmit(3);">'
+                            + '<img src="dynicons/?img=go-next.svg&amp;w=32" alt=""> Submit Request'
+                            + '</button>'
+                            + '</div>'
+                            + '</div>';
+                    } else {
+                        actionButton = '<div style="margin-top: 12px;">'
+                            + '<a href="' + QUIZ_RETAKE_URL + '" class="buttonNorm" '
+                            + 'style="display: inline-block; font-size: 16px; padding: 8px 20px; text-decoration: none;">'
+                            + '&#8635; Retake Quiz'
+                            + '</a></div>';
+                    }
+
+                    var banner = '<div id="quizResultsBanner" style="'
+                        + 'background-color: ' + bannerColor + ';'
+                        + 'color: white;'
+                        + 'padding: 16px 20px;'
+                        + 'margin-bottom: 20px;'
+                        + 'font-size: 20px;'
+                        + 'font-weight: bold;'
+                        + 'border-radius: 4px;'
+                        + 'text-align: center;">'
+                        + bannerText
+                        + wrongList
+                        + actionButton
+                        + '</div>';
+
+                    $('#formcontent').prepend(banner);
+                },
+                error: function(e) {
+                    console.log('Quiz grading: error fetching submitted data', e);
+                }
+            });
         },
         error: function(e) {
-            console.log('Quiz grading: error fetching submitted data', e);
-        }
-    });
-}
-
-function retakeQuiz() {
-    $.ajax({
-        type: 'POST',
-        url: './api/form/new',
-        data: {
-            'categoryID': QUIZ_CATEGORY_ID,
-            CSRFToken: CSRFToken
-        },
-        dataType: 'json',
-        success: function(newRecordID) {
-            newRecordID = parseInt(newRecordID);
-            if (newRecordID > 0) {
-                window.location.href = 'index.php?a=view&recordID=' + newRecordID;
-            } else {
-                alert('Could not create a new quiz attempt. Please try again.');
-            }
-        },
-        error: function(e) {
-            console.log('Quiz grading: error creating retake record', e);
+            console.log('Quiz grading: error checking form category', e);
         }
     });
 }
@@ -1498,12 +1532,13 @@ function doSubmit(recordID) {
             openContent('ajaxIndex.php?a=internalonlyview&recordID=<!--{$recordID|strip_tags}-->&childCategoryID=<!--{$childCategoryID|strip_tags}-->');
         <!--{/if}-->
 
-        // Academy: run quiz grading after formcontent finishes loading
+        // Academy: trigger quiz grading after formcontent finishes rendering
         var gradeObserver = new MutationObserver(function(mutations, obs) {
-            var formBody = document.querySelector('#formcontent .lf-form-body, #formcontent table, #formcontent .formBody');
-            if (formBody) {
+            // Wait for actual form content to appear — not just the loading div
+            var formLoaded = document.querySelector('#formcontent table, #formcontent .formBody, #formcontent .lf-form-body, #formcontent input');
+            if (formLoaded) {
                 obs.disconnect();
-                runQuizGrading(<!--{$recordID|strip_tags|escape}-->);
+                runQuizGrading(recordID);
             }
         });
         gradeObserver.observe(document.getElementById('formcontent'), {
