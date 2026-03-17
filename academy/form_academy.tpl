@@ -72,6 +72,14 @@ function getForm(indicatorID, series) {
     $('.question').removeClass('buttonNormSelected');
     $('#q' + currFormPosition).addClass('buttonNormSelected');
 
+    // Disable Next while new question loads
+    document.querySelectorAll('.nextQuestion').forEach(function(btn) {
+        btn.disabled = true;
+    });
+
+    form.setPostModifyCallback(function() {
+        checkNextGate();
+    });
     form.getForm(indicatorID, series);
 }
 
@@ -172,6 +180,83 @@ function manualSaveChange()
     form.dialog().clickSave();
 }
 
+// Academy: per-section Next Question gate
+// Key = indicatorID (number) that must be answered to unlock Next for that section
+// Value = the specific answer value required, or null to unlock on any non-empty answer
+var academyNextGate = {
+    1001: null,   // Section 1 placeholder — any answer unlocks Next
+    1002: null,   // Section 2 placeholder
+    1003: null,   // Section 3 placeholder
+    1004: null,   // Section 4 placeholder
+    1005: null,   // Section 5 placeholder
+};
+
+function checkNextGate() {
+    var currentStep = formStructure[currFormPosition];
+    if (!currentStep) return;
+
+    // Find the gate config for the current question's indicatorID
+    var watchID = null;
+    var requiredValue = null;
+    for (var id in academyNextGate) {
+        if (parseInt(id) === parseInt(currentStep.indicatorID)) {
+            watchID = parseInt(id);
+            requiredValue = academyNextGate[id];
+            break;
+        }
+    }
+
+    // If no gate is configured for this question, enable the button freely
+    if (watchID === null) {
+        document.querySelectorAll('.nextQuestion').forEach(function(btn) {
+            btn.disabled = false;
+        });
+        return;
+    }
+
+    // Disable buttons initially while we evaluate
+    document.querySelectorAll('.nextQuestion').forEach(function(btn) {
+        btn.disabled = true;
+    });
+
+    function readValue() {
+        // Try text/dropdown/number/currency
+        var el = document.getElementById(watchID);
+        if (el && el.value !== undefined) return el.value.trim();
+
+        // Try radio buttons
+        var radio = document.querySelector('input[id^="' + watchID + '_radio"]:checked');
+        if (radio) return radio.value.trim();
+
+        // Try checkboxes
+        var checked = document.querySelectorAll('input[type="checkbox"][id^="' + watchID + '"]:checked');
+        if (checked.length > 0) return checked[0].value.trim();
+
+        return '';
+    }
+
+    function evaluateGate() {
+        var val = readValue();
+        var pass = (requiredValue === null) ? val !== '' : val === requiredValue;
+        document.querySelectorAll('.nextQuestion').forEach(function(btn) {
+            btn.disabled = !pass;
+        });
+    }
+
+    // Run immediately in case value is already saved
+    evaluateGate();
+
+    // Attach live change listeners
+    var el = document.getElementById(watchID);
+    if (el) el.addEventListener('change', evaluateGate);
+
+    document.querySelectorAll('input[id^="' + watchID + '_radio"]')
+        .forEach(function(r) { r.addEventListener('change', evaluateGate); });
+
+    document.querySelectorAll('input[type="checkbox"][id^="' + watchID + '"]')
+        .forEach(function(c) { c.addEventListener('change', evaluateGate); });
+}
+
 var form;
 var formValidator = {};
 var formStructure = Array();
@@ -232,10 +317,6 @@ $(function() {
         });
         form.dialog().clickSave();
     });
-    document.querySelectorAll('.nextQuestion').forEach(button => {
-        button.removeAttribute('disabled');
-    });
-
     $('.prevQuestion').on('click', function() {
         form.dialog().indicateBusy();
         form.setPostModifyCallback(function() {
