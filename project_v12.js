@@ -5157,13 +5157,13 @@
     searchInput.type = "text";
     searchInput.placeholder = "Search";
     var filterName = container.getAttribute("data-filter") || "options";
-    var labelMap = {
+    var filterNameLabels = {
       projectKey: "Project", status: "Status", assignee: "Assigned To",
       category: "Category", priority: "Priority",
       projectFiscalYear: "Fiscal Year", analyticsYear: "Year",
       analyticsQuarter: "Quarter", okrFiscalYear: "OKR Fiscal Year"
     };
-    var humanLabel = labelMap[filterName] || filterName;
+    var humanLabel = filterNameLabels[filterName] || filterName;
     searchInput.setAttribute("aria-label", "Search " + humanLabel + " options");
     searchWrap.appendChild(searchInput);
 
