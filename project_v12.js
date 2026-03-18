@@ -6949,17 +6949,25 @@
       statusEl.textContent = "Submitting...";
 
       try {
-        var token = getCSRFToken();
+        var token = await ensureCSRFToken();
+        var tokenField = state.csrfField || getCSRFFieldName();
 
         // Step 1: Create new record
         var fd = new FormData();
-        fd.append("CSRFToken", token);
-        fd.append("num_form_1c5b6", "num_form_1c5b6");
+        fd.append(tokenField, token);
+        fd.append("numform_1c5b6", "1");
+        var createHeaders = { "x-requested-with": "XMLHttpRequest" };
+        if (token) {
+          createHeaders["x-csrf-token"] = token;
+          createHeaders["x-xsrf-token"] = token;
+        }
         var createRes = await fetch("/platform/projects/api/form/new", {
           method: "POST",
           credentials: "include",
+          headers: createHeaders,
           body: fd
         });
+        if (!createRes.ok) throw new Error("Create failed HTTP " + createRes.status);
         var newRecordID = await createRes.text();
         newRecordID = parseInt(newRecordID, 10);
         if (!newRecordID || newRecordID <= 0) throw new Error("Invalid record ID returned");
