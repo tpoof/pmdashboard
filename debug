@@ -1,3 +1,17 @@
 fetch("./api/form/" + recordID + "/data")
   .then((r) => r.json())
   .then((d) => console.log(JSON.stringify(d, null, 2)));
+// Hide "Completed" from project status dropdown — auto-set by syncProjectCompletionStatus()
+$(document).ready(function () {
+  // Try immediately, then retry briefly in case LEAF renders the field async
+  function hideCompletedOption() {
+    $('select[name="6"], select[name="6_1"]')
+      .find("option")
+      .filter(function () {
+        return $(this).text().trim() === "Completed";
+      })
+      .hide();
+  }
+  hideCompletedOption();
+  setTimeout(hideCompletedOption, 500); // safety net for async render
+});
