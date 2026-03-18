@@ -1,6 +1,3 @@
-fetch("./api/form/" + recordID + "/data")
-  .then((r) => r.json())
-  .then((d) => console.log(JSON.stringify(d, null, 2)));
 // Hide "Completed" from project status dropdown — auto-set by syncProjectCompletionStatus()
 $(document).ready(function () {
   // Try immediately, then retry briefly in case LEAF renders the field async
