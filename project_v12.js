@@ -6968,8 +6968,10 @@
           body: fd
         });
         if (!createRes.ok) throw new Error("Create failed HTTP " + createRes.status);
-        var newRecordID = await createRes.text();
-        newRecordID = parseInt(newRecordID, 10);
+        var createText = await createRes.text();
+        var newRecordID;
+        try { newRecordID = JSON.parse(createText); } catch(e) { newRecordID = createText; }
+        newRecordID = parseInt(String(newRecordID || "").trim().replace(/^\"|\"$/g, ""), 10);
         if (!newRecordID || newRecordID <= 0) throw new Error("Invalid record ID returned");
 
         // Step 2: Write feedback text to indicator 50
