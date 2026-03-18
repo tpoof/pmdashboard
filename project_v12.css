@@ -2466,6 +2466,7 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.18);
   transition: opacity 0.2s ease, background 0.2s ease;
 }
+.pm-feedbackBtn .material-icons { color: #ffffff; }
 .pm-feedbackBtn:hover { opacity: 0.88; }
 .pm-feedbackBtn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .pm-feedbackBtn::after {
