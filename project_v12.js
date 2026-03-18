@@ -3482,6 +3482,14 @@
     }
   }
 
+  async function auditAllProjectStatuses() {
+    for (var i = 0; i < state.projectsAll.length; i++) {
+      var p = state.projectsAll[i];
+      if (!p.recordID || !p.projectKey) continue;
+      await syncProjectCompletionStatus(p.projectKey);
+    }
+  }
+
   async function updateTaskStatus(recordID, newStatus, otherSubType) {
     if (!recordID) throw new Error("Missing recordID");
     var token = await ensureCSRFToken(recordID);
@@ -8328,6 +8336,7 @@
       setActiveTab(activeTab);
 
       applySearchAndFilters(true);
+      auditAllProjectStatuses();
     } catch (e) {
       console.error("Failed to load data.", e);
     } finally {
