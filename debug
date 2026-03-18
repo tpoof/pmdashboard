@@ -1,14 +1,40 @@
-// Hide "Completed" from project status dropdown — auto-set by syncProjectCompletionStatus()
-$(document).ready(function () {
-  // Try immediately, then retry briefly in case LEAF renders the field async
-  function hideCompletedOption() {
-    $('select[name="6"], select[name="6_1"]')
-      .find("option")
-      .filter(function () {
-        return $(this).text().trim() === "Completed";
-      })
-      .hide();
+// ============================================================
+// Hide "Completed" from Project Status dropdown (indicator 6)
+// Completed is auto-set by syncProjectCompletionStatus()
+// in project_v12.js when task completion reaches 100%
+// ============================================================
+
+<script>
+setTimeout(function () {
+
+  function hideCompleted() {
+    // 1. Hide from native select
+    $('#6 option[value="Completed"]').hide();
+
+    // 2. Hide from Chosen's rendered list
+    $('#6-chosen-search-results li').filter(function () {
+      return $(this).text().trim() === 'Completed';
+    }).hide();
   }
-  hideCompletedOption();
-  setTimeout(hideCompletedOption, 500); // safety net for async render
-});
+
+  // Initial hide
+  hideCompleted();
+
+  // Re-hide after any Chosen rebuild (chosen:updated fires on every refresh)
+  $('#6').on('chosen:updated', function () {
+    setTimeout(hideCompleted, 0);
+  });
+
+  // MutationObserver — catches re-renders from syncProjectCompletionStatus()
+  // auto-saving via API, which can cause Chosen to rebuild its list
+  var chosenList = document.getElementById('6-chosen-search-results');
+  if (chosenList) {
+    var observer = new MutationObserver(function () {
+      hideCompleted();
+    });
+    observer.observe(chosenList, { childList: true, subtree: true });
+  }
+
+}, 300); // 300ms delay ensures Chosen has fully initialized before we run
+
+</script>
