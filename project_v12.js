@@ -6235,14 +6235,17 @@
           if (ctrl) ctrl.clear();
         },
       );
-      setFilterValues("status", ["In Progress"]);
-      if (state.filterControls.status) {
-        state.filterControls.status.setSelectedValues(new Set(["In Progress"]));
-      }
       applySearchAndFilters(true);
     }
     var b2 = document.getElementById("pmClearFiltersBtn_tasks");
     if (b2) b2.addEventListener("click", clearAll);
+
+    var bProjects = document.getElementById("pmClearProjectFilters");
+    if (bProjects) bProjects.addEventListener("click", function () {
+      setFilterValues("projectFiscalYear", []);
+      if (state.filterControls.projectFiscalYear) state.filterControls.projectFiscalYear.clear();
+      applySearchAndFilters();
+    });
   }
 
   function wireOkrFilters() {
