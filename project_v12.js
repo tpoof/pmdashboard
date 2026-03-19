@@ -5197,7 +5197,7 @@
 
     var selected = config.selected || new Set();
     var options = [];
-    var searchThreshold = config.searchThreshold || 15;
+    var searchThreshold = config.searchThreshold != null ? config.searchThreshold : 15;
     var isOpen = false;
     var searchValue = "";
     var labelMap = new Map();
@@ -8303,9 +8303,6 @@
         setFilterValues("status", ["In Progress"]);
       }
       initFilterControls();
-      ["projectKey", "status", "assignee", "priority", "category", "projectFiscalYear"].forEach(function (k) {
-        if (state.filterControls[k]) state.filterControls[k].setSelectedValues(getFilterSet(k));
-      });
       wireClearFilters();
       wireOkrFilters();
       wireOkrRollupToggle();
