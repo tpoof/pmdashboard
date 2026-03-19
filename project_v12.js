@@ -104,6 +104,7 @@
       "Ready for PO Review",
       "Other",
       "Completed",
+      "Cancelled",
     ],
     LEGACY_KANBAN_COLUMNS: [
       "Not Started",
@@ -1818,6 +1819,7 @@
     if (!label) return "";
     var cls = "pm-statusBadge";
     if (label === "Blocked") cls += " pm-okrPercentBadge--none";
+    if (label === "Cancelled") cls += " pm-statusCancelled";
     if (extraClass) cls += " " + extraClass;
     return '<span class="' + cls + '">' + safe(label) + "</span>";
   }
@@ -3831,6 +3833,7 @@
 
     (tasks || []).forEach(function (t) {
       var st = normalizePrimaryStatus(t.status);
+      if (st === "Cancelled") return; // skip, not shown on Kanban
       if (!grouped[st]) {
         grouped[st] = [];
         if (!columnsByKey[st]) {
@@ -6336,6 +6339,8 @@
           if (ctrl) ctrl.clear();
         },
       );
+      setFilterValues("status", ["In Progress"]);
+      if (state.filterControls.status) state.filterControls.status.setSelectedValues(new Set(["In Progress"]));
       applySearchAndFilters(true);
       saveFilterState();
     }
@@ -8298,8 +8303,8 @@
       wireOkrTableViewToggle();
       wireSortingDelegation();
       wireLoadMore();
-      var hadSavedFilters = loadFilterState();
-      if (!hadSavedFilters && getFilterSet("status").size === 0) {
+      loadFilterState();
+      if (getFilterSet("status").size === 0) {
         setFilterValues("status", ["In Progress"]);
       }
       initFilterControls();

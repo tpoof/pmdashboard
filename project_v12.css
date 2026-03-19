@@ -1697,6 +1697,12 @@ body {
   --badge-text: #fff;
 }
 
+.pm-statusCancelled {
+  background: #f3f4f6;
+  color: #6b7280;
+  text-decoration: line-through;
+}
+
 .pm-statusCell {
   display: flex;
   flex-direction: column;
