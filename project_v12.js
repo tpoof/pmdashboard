@@ -84,6 +84,8 @@
     "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_6530b&title=Key+Result";
 
   var LOAD_MORE_BATCH = 100;
+  var PROJECTS_INITIAL_BATCH = 50;
+  var PROJECTS_LOAD_MORE_BATCH = 50;
 
   // Persistence keys
   var STORAGE_KEYS = {
@@ -164,6 +166,8 @@
     filterControls: {},
     taskTableCurrentRows: null,
     taskTableRenderedCount: 0,
+    projectTableCurrentRows: [],
+    projectTableRenderedCount: 0,
     sort: {
       projects: { key: null, dir: 1, type: "string" },
       tasks: { key: null, dir: 1, type: "string" },
@@ -1879,91 +1883,97 @@
     return Math.round((completed / total) * 100);
   }
 
+  function buildProjectRowHtml(p) {
+    var projectKeyText = String(p.projectKey || "").trim();
+    var projectNameText = String(p.projectName || "").trim();
+    var pkHref = getProjectRecordHrefFromKey(p.projectKey) || p.href;
+    var pkLink = pkHref
+      ? '<a href="' +
+        safe(pkHref) +
+        '" class="pm-recordLink" data-title="' +
+        safe("Project " + projectKeyText) +
+        '" title="' +
+        safeAttr(projectKeyText) +
+        '">' +
+        safe(projectKeyText) +
+        "</a>"
+      : '<span class="pm-colKeyText" tabindex="0" title="' +
+        safeAttr(projectKeyText) +
+        '">' +
+        safe(projectKeyText) +
+        "</span>";
+    var compPct = getProjectCompletionPct(p.projectKey);
+    var compClass = compPct === 100 ? "pm-completeGreen" : compPct >= 50 ? "pm-completeMid" : "";
+    var okrKeyText = String(p.okrAssociation || "").trim();
+    var krText = String(p.keyResultSelection || "").trim();
+    var okrLink = okrKeyText
+      ? okrRecordLink(okrKeyText, okrKeyText)
+      : "<span class='pm-okrFallback'>None</span>";
+    var krDisplay = krText
+      ? safe(krText)
+      : "<span class='pm-okrFallback'>No Key Result</span>";
+    var okrCombined =
+      okrLink +
+      ' <span class="pm-okrSep" aria-hidden="true">|</span> ' +
+      krDisplay;
+
+    return (
+      "<tr>" +
+      '<td class="pm-colKey">' +
+      pkLink +
+      "</td>" +
+      '<td class="pm-colName">' +
+      '<div class="pm-wrapCol pm-colNameText" tabindex="0" title="' +
+      safeAttr(projectNameText) +
+      '" aria-label="' +
+      safeAttr(projectNameText || "Project name") +
+      '">' +
+      safe(projectNameText) +
+      "</div>" +
+      "</td>" +
+      '<td class="pm-colDesc">' +
+      '<div class="pm-wrapColLong">' +
+      safe(p.description) +
+      "</div>" +
+      "</td>" +
+      "<td>" +
+      safe(p.owner) +
+      "</td>" +
+      "<td>" +
+      safe(p.projectFiscalYear) +
+      "</td>" +
+      "<td>" +
+      okrCombined +
+      "</td>" +
+      "<td>" +
+      safe(p.projectStatus) +
+      "</td>" +
+      '<td class="pm-colCompletion"><span class="pm-compPctWrap"><span class="pm-compPctBar" style="--pct-width:' + compPct + '%;width:' + Math.min(compPct, 100) + '%" aria-hidden="true"></span><span class="' + compClass + ' pm-compPctLabel">' + compPct + '%</span></span></td>' +
+      "</tr>"
+    );
+  }
+
   function renderProjectsTable(projects) {
     var el = document.getElementById("pmProjectsTable");
     if (!el) return;
 
-    var rows = projects
-      .filter(function (p) {
-        return (
-          String(p.projectKey || "").trim() ||
-          String(p.projectName || "").trim() ||
-          String(p.description || "").trim() ||
-          String(p.owner || "").trim() ||
-          String(p.projectStatus || "").trim()
-        );
-      })
-      .slice(0, 500)
-      .map(function (p) {
-        var projectKeyText = String(p.projectKey || "").trim();
-        var projectNameText = String(p.projectName || "").trim();
-        var pkHref = getProjectRecordHrefFromKey(p.projectKey) || p.href;
-        var pkLink = pkHref
-          ? '<a href="' +
-            safe(pkHref) +
-            '" class="pm-recordLink" data-title="' +
-            safe("Project " + projectKeyText) +
-            '" title="' +
-            safeAttr(projectKeyText) +
-            '">' +
-            safe(projectKeyText) +
-            "</a>"
-          : '<span class="pm-colKeyText" tabindex="0" title="' +
-            safeAttr(projectKeyText) +
-            '">' +
-            safe(projectKeyText) +
-            "</span>";
-        var compPct = getProjectCompletionPct(p.projectKey);
-        var compClass = compPct === 100 ? "pm-completeGreen" : compPct >= 50 ? "pm-completeMid" : "";
-        var okrKeyText = String(p.okrAssociation || "").trim();
-        var krText = String(p.keyResultSelection || "").trim();
-        var okrLink = okrKeyText
-          ? okrRecordLink(okrKeyText, okrKeyText)
-          : "<span class='pm-okrFallback'>None</span>";
-        var krDisplay = krText
-          ? safe(krText)
-          : "<span class='pm-okrFallback'>No Key Result</span>";
-        var okrCombined =
-          okrLink +
-          ' <span class="pm-okrSep" aria-hidden="true">|</span> ' +
-          krDisplay;
+    var filtered = (projects || []).filter(function (p) {
+      return (
+        String(p.projectKey || "").trim() ||
+        String(p.projectName || "").trim() ||
+        String(p.description || "").trim() ||
+        String(p.owner || "").trim() ||
+        String(p.projectStatus || "").trim()
+      );
+    });
 
-        return (
-          "<tr>" +
-          '<td class="pm-colKey">' +
-          pkLink +
-          "</td>" +
-          '<td class="pm-colName">' +
-          '<div class="pm-wrapCol pm-colNameText" tabindex="0" title="' +
-          safeAttr(projectNameText) +
-          '" aria-label="' +
-          safeAttr(projectNameText || "Project name") +
-          '">' +
-          safe(projectNameText) +
-          "</div>" +
-          "</td>" +
-          '<td class="pm-colDesc">' +
-          '<div class="pm-wrapColLong">' +
-          safe(p.description) +
-          "</div>" +
-          "</td>" +
-          "<td>" +
-          safe(p.owner) +
-          "</td>" +
-          "<td>" +
-          safe(p.projectFiscalYear) +
-          "</td>" +
-          "<td>" +
-          okrCombined +
-          "</td>" +
-          "<td>" +
-          safe(p.projectStatus) +
-          "</td>" +
-          '<td class="pm-colCompletion"><span class="pm-compPctWrap"><span class="pm-compPctBar" style="--pct-width:' + compPct + '%;width:' + Math.min(compPct, 100) + '%" aria-hidden="true"></span><span class="' + compClass + ' pm-compPctLabel">' + compPct + '%</span></span></td>' +
-          "</tr>"
-        );
-      })
-      .join("");
+    state.projectTableCurrentRows = filtered;
+    state.projectTableRenderedCount = Math.min(PROJECTS_INITIAL_BATCH, filtered.length);
+
+    var rowsHtml = "";
+    for (var i = 0; i < state.projectTableRenderedCount; i++) {
+      rowsHtml += buildProjectRowHtml(filtered[i]);
+    }
 
     el.innerHTML =
       '<table class="pm-table">' +
@@ -1978,9 +1988,20 @@
       '<th scope="col" class="pm-sortable pm-colCompletion" data-sort="completionPct" data-type="number"><button type="button" class="pm-sortBtn">% Complete</button></th>' +
       "</tr></thead>" +
       "<tbody>" +
-      rows +
+      rowsHtml +
       "</tbody>" +
       "</table>";
+
+    var existing = document.getElementById("pmProjectsLoadMoreWrap");
+    if (existing) existing.remove();
+    var remaining = filtered.length - state.projectTableRenderedCount;
+    if (remaining > 0) {
+      var wrap = document.createElement("div");
+      wrap.id = "pmProjectsLoadMoreWrap";
+      wrap.className = "pm-loadMoreWrap";
+      wrap.innerHTML = '<button type="button" class="pm-ghostBtn" id="pmProjectsLoadMoreBtn">Load more projects (' + remaining + " remaining)</button>";
+      el.appendChild(wrap);
+    }
 
     var s = state.sort.projects;
     setSortIndicator("pmProjectsTable", s.key, s.dir);
@@ -6299,6 +6320,34 @@
   }
 
 
+  function wireProjectsLoadMore() {
+    document.addEventListener("click", function (e) {
+      if (!e.target || e.target.id !== "pmProjectsLoadMoreBtn") return;
+      var projects = state.projectTableCurrentRows;
+      if (!projects) return;
+      var start = state.projectTableRenderedCount;
+      var end = Math.min(start + PROJECTS_LOAD_MORE_BATCH, projects.length);
+      var tbody = document.querySelector("#pmProjectsTable table tbody");
+      if (!tbody) return;
+
+      for (var i = start; i < end; i++) {
+        var tpl = document.createElement("template");
+        tpl.innerHTML = buildProjectRowHtml(projects[i]);
+        tbody.appendChild(tpl.content.firstElementChild);
+      }
+      state.projectTableRenderedCount = end;
+
+      var remaining = projects.length - end;
+      var wrap = document.getElementById("pmProjectsLoadMoreWrap");
+      if (remaining <= 0) {
+        if (wrap) wrap.remove();
+      } else {
+        var btn = document.getElementById("pmProjectsLoadMoreBtn");
+        if (btn) btn.textContent = "Load more projects (" + remaining + " remaining)";
+      }
+    });
+  }
+
   function wireLoadMore() {
     document.addEventListener("click", function (e) {
       if (!e.target || e.target.id !== "pmLoadMoreBtn") return;
@@ -8303,6 +8352,7 @@
       wireOkrTableViewToggle();
       wireSortingDelegation();
       wireLoadMore();
+      wireProjectsLoadMore();
       loadFilterState();
       if (getFilterSet("status").size === 0) {
         setFilterValues("status", ["In Progress"]);
