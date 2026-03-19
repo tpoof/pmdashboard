@@ -83,6 +83,8 @@
   var START_KEY_RESULT_URL =
     "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_6530b&title=Key+Result";
 
+  var LOAD_MORE_BATCH = 100;
+
   // Persistence keys
   var STORAGE_KEYS = {
     activeTab: "pm_active_tab_v11",
@@ -90,6 +92,7 @@
     analyticsView: "pm_analytics_view_v11",
     tasksDevOnly: "pmdashboard_tasks_devOnly_v11",
     tasksPagination: "pm_tasks_pagination_v11",
+    FILTER_STATE_KEY: "pm_filter_state_v12",
   };
 
   var STATUS_CONFIG = {
@@ -158,6 +161,8 @@
       okrFiscalYear: new Set(),
     },
     filterControls: {},
+    taskTableCurrentRows: null,
+    taskTableRenderedCount: 0,
     sort: {
       projects: { key: null, dir: 1, type: "string" },
       tasks: { key: null, dir: 1, type: "string" },
@@ -3371,12 +3376,53 @@
     }
   }
 
+  function buildTaskTableRow(task) {
+    var tpl = document.createElement("template");
+    tpl.innerHTML = buildTasksRowHtml(task, new Date());
+    return tpl.content.firstElementChild;
+  }
+
   function renderTasksTable(tasks) {
-    var v = initTasksVirtualTable();
-    if (!v) return;
-    v.items = tasks || [];
-    v.total = v.items.length;
-    updateTasksVirtualSlice(true);
+    var el = document.getElementById("pmTasksTable");
+    if (!el) return;
+
+    state.taskTableCurrentRows = tasks || [];
+    state.taskTableRenderedCount = Math.min(LOAD_MORE_BATCH, state.taskTableCurrentRows.length);
+
+    var headerHtml =
+      "<thead><tr>" +
+      '<th scope="col" class="pm-sortable" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="recordID" data-type="number"><button type="button" class="pm-sortBtn">Task ID</button></th>' +
+      '<th scope="col" class="pm-sortable pm-wrapCol" data-sort="title" data-type="string"><button type="button" class="pm-sortBtn">Title</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="status" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="dependencies" data-type="string"><button type="button" class="pm-sortBtn">Dependencies</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="priority" data-type="string"><button type="button" class="pm-sortBtn">Priority</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="category" data-type="string"><button type="button" class="pm-sortBtn">Category</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="assignedTo" data-type="string"><button type="button" class="pm-sortBtn">Assigned To</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="start" data-type="date"><button type="button" class="pm-sortBtn">Start</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="due" data-type="date"><button type="button" class="pm-sortBtn">Due</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="actualCompletion" data-type="date"><button type="button" class="pm-sortBtn">Completed</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="supportTicket" data-type="string"><button type="button" class="pm-sortBtn">Ticket</button></th>' +
+      "</tr></thead>";
+
+    var now = new Date();
+    var rowsHtml = "";
+    for (var i = 0; i < state.taskTableRenderedCount; i++) {
+      rowsHtml += buildTasksRowHtml(state.taskTableCurrentRows[i], now);
+    }
+
+    el.innerHTML = '<table class="pm-table">' + headerHtml + "<tbody>" + rowsHtml + "</tbody></table>";
+
+    var existing = document.getElementById("pmLoadMoreWrap");
+    if (existing) existing.remove();
+    var remaining = state.taskTableCurrentRows.length - state.taskTableRenderedCount;
+    if (remaining > 0) {
+      var wrap = document.createElement("div");
+      wrap.id = "pmLoadMoreWrap";
+      wrap.className = "pm-loadMoreWrap";
+      wrap.innerHTML = '<button type="button" class="pm-ghostBtn" id="pmLoadMoreBtn">Load more records (' + remaining + " remaining)</button>";
+      el.appendChild(wrap);
+    }
 
     var s = state.sort.tasks;
     setSortIndicator("pmTasksTable", s.key, s.dir);
@@ -5108,6 +5154,32 @@
     });
   }
 
+  function saveFilterState() {
+    var obj = {};
+    var keys = ["projectKey", "status", "assignee", "priority", "category", "projectFiscalYear"];
+    keys.forEach(function (k) {
+      obj[k] = Array.from(getFilterSet(k));
+    });
+    try {
+      localStorage.setItem(STORAGE_KEYS.FILTER_STATE_KEY, JSON.stringify(obj));
+    } catch (e) {}
+  }
+
+  function loadFilterState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEYS.FILTER_STATE_KEY);
+      if (!raw) return false;
+      var obj = JSON.parse(raw);
+      var keys = ["projectKey", "status", "assignee", "priority", "category", "projectFiscalYear"];
+      keys.forEach(function (k) {
+        if (Array.isArray(obj[k]) && obj[k].length > 0) {
+          setFilterValues(k, obj[k]);
+        }
+      });
+      return true;
+    } catch (e) { return false; }
+  }
+
   function getSingleSelectedValue(set) {
     if (!set || set.size !== 1) return "";
     return Array.from(set)[0] || "";
@@ -6161,6 +6233,7 @@
   function initFilterControls() {
     var tasksOnChange = function () {
       applySearchAndFilters(true);
+      saveFilterState();
     };
     var analyticsOnChange = function () {
       applySearchAndFilters(false);
@@ -6175,10 +6248,8 @@
       id: "pmProjectKeySelect",
       selected: getFilterSet("projectKey"),
       onChange: tasksOnChange,
+      searchThreshold: 0,
     });
-    if (getFilterSet("status").size === 0) {
-      setFilterValues("status", ["In Progress"]);
-    }
     state.filterControls.status = multiSelectDropdown({
       id: "pmStatusSelect",
       selected: getFilterSet("status"),
@@ -6188,6 +6259,7 @@
       id: "pmAssigneeSelect",
       selected: getFilterSet("assignee"),
       onChange: tasksOnChange,
+      searchThreshold: 0,
     });
     state.filterControls.category = multiSelectDropdown({
       id: "pmCategorySelect",
@@ -6224,6 +6296,35 @@
   }
 
 
+  function wireLoadMore() {
+    document.addEventListener("click", function (e) {
+      if (!e.target || e.target.id !== "pmLoadMoreBtn") return;
+      var tasks = state.taskTableCurrentRows;
+      if (!tasks) return;
+      var start = state.taskTableRenderedCount;
+      var end = Math.min(start + LOAD_MORE_BATCH, tasks.length);
+      var tbody = document.querySelector("#pmTasksTable tbody");
+      if (!tbody) return;
+
+      var now = new Date();
+      for (var i = start; i < end; i++) {
+        var tpl = document.createElement("template");
+        tpl.innerHTML = buildTasksRowHtml(tasks[i], now);
+        tbody.appendChild(tpl.content.firstElementChild);
+      }
+      state.taskTableRenderedCount = end;
+
+      var remaining = tasks.length - end;
+      var wrap = document.getElementById("pmLoadMoreWrap");
+      if (remaining <= 0) {
+        if (wrap) wrap.remove();
+      } else {
+        var btn = document.getElementById("pmLoadMoreBtn");
+        if (btn) btn.textContent = "Load more records (" + remaining + " remaining)";
+      }
+    });
+  }
+
   function wireClearFilters() {
     function clearAll() {
       var s = document.getElementById("pmSearchInput");
@@ -6236,6 +6337,7 @@
         },
       );
       applySearchAndFilters(true);
+      saveFilterState();
     }
     var b2 = document.getElementById("pmClearFiltersBtn_tasks");
     if (b2) b2.addEventListener("click", clearAll);
@@ -6921,12 +7023,35 @@
     var statusEl = document.getElementById("pmFeedbackStatus");
     if (!btn || !modal) return;
 
+    var feedbackClickOutsideHandler = null;
+
+    function attachFeedbackClickOutside() {
+      if (feedbackClickOutsideHandler) return;
+      feedbackClickOutsideHandler = function (e) {
+        if (!modal.hidden && !modal.contains(e.target) && e.target !== btn) {
+          closeFeedback();
+        }
+      };
+      setTimeout(function () {
+        document.addEventListener("click", feedbackClickOutsideHandler);
+      }, 0);
+    }
+
+    function detachFeedbackClickOutside() {
+      if (feedbackClickOutsideHandler) {
+        document.removeEventListener("click", feedbackClickOutsideHandler);
+        feedbackClickOutsideHandler = null;
+      }
+    }
+
     function openFeedback() {
       modal.hidden = false;
       textarea.focus();
+      attachFeedbackClickOutside();
     }
 
     function closeFeedback() {
+      detachFeedbackClickOutside();
       modal.hidden = true;
       textarea.value = "";
       statusEl.textContent = "";
@@ -6939,13 +7064,6 @@
     // Close on Escape
     modal.addEventListener("keydown", function(e) {
       if (e.key === "Escape") closeFeedback();
-    });
-
-    // Close on click outside
-    document.addEventListener("click", function(e) {
-      if (!modal.hidden && !modal.contains(e.target) && e.target !== btn) {
-        closeFeedback();
-      }
     });
 
     submitBtn.addEventListener("click", async function() {
@@ -8179,7 +8297,15 @@
       wireAnalyticsViewToggle();
       wireOkrTableViewToggle();
       wireSortingDelegation();
+      wireLoadMore();
+      var hadSavedFilters = loadFilterState();
+      if (!hadSavedFilters && getFilterSet("status").size === 0) {
+        setFilterValues("status", ["In Progress"]);
+      }
       initFilterControls();
+      ["projectKey", "status", "assignee", "priority", "category", "projectFiscalYear"].forEach(function (k) {
+        if (state.filterControls[k]) state.filterControls[k].setSelectedValues(getFilterSet(k));
+      });
       wireClearFilters();
       wireOkrFilters();
       wireOkrRollupToggle();
