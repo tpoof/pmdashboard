@@ -993,11 +993,11 @@ function filterIdeasByUser() {
 }
 
 function buildIdeasQueryUrl() {
-  return `https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_ae642","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"},{"id":"stepID","operator":"!=","match":"notSubmitted","gate":"AND"}],"joins":[],"sort":{"id":"created_date","direction":"desc"},"getData":["8","5","12"]}&x-filterData=recordID,title,created_date,userID`;
+  return `https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_ae642","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"},{"id":"stepID","operator":"!=","match":"notSubmitted","gate":"AND"}],"joins":[],"sort":{"id":"created_date","direction":"desc"},"getData":["8","5","12"]}&x-filterData=recordID,title,created_date,userID&_=${Date.now()}`;
 }
 
 function buildVotesQueryUrl() {
-  return `https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_57e89","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["2","3"]}&x-filterData=recordID,title`;
+  return `https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"form_57e89","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["2","3"]}&x-filterData=recordID,title&_=${Date.now()}`;
 }
 
 function fetchIdeasData() {
@@ -1047,7 +1047,7 @@ function fetchUserSubmissions() {
   setStatus("my", "Loading your ideas...", "loading");
   renderTableMessage(ui.myResults, "Loading...");
 
-  const url = `https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"userID","operator":"=","match":"${userID}","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","12","13","stepID"]}&x-filterData=recordID,title,created_date,userID`;
+  const url = `https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"userID","operator":"=","match":"${userID}","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","12","13","stepID"]}&x-filterData=recordID,title,created_date,userID&_=${Date.now()}`;
   console.log('[MyIdeas] url:', url);
 
   return fetch(url, {
