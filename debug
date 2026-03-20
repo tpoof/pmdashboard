@@ -1,40 +1,40 @@
-// ============================================================
-// Hide "Completed" from Project Status dropdown (indicator 6)
-// Completed is auto-set by syncProjectCompletionStatus()
-// in project_v12.js when task completion reaches 100%
-// ============================================================
+// Test the exact draft query being sent
+fetch(
+  "https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q=" +
+    JSON.stringify({
+      terms: [
+        {
+          id: "userID",
+          operator: "=",
+          match: window.leafIdeaPortal.userID,
+          gate: "AND",
+        },
+        { id: "categoryID", operator: "=", match: "form_ae642", gate: "AND" },
+        { id: "deleted", operator: "=", match: 0, gate: "AND" },
+        { id: "stepID", operator: "=", match: "notSubmitted", gate: "AND" },
+      ],
+      joins: [],
+      sort: {},
+      getData: ["5", "8", "9", "13", "stepID"],
+    }),
+  { credentials: "same-origin" },
+)
+  .then((r) => r.text())
+  .then(console.log);
 
-<script>
-setTimeout(function () {
-
-  function hideCompleted() {
-    // 1. Hide from native select
-    $('#6 option[value="Completed"]').hide();
-
-    // 2. Hide from Chosen's rendered list
-    $('#6-chosen-search-results li').filter(function () {
-      return $(this).text().trim() === 'Completed';
-    }).hide();
-  }
-
-  // Initial hide
-  hideCompleted();
-
-  // Re-hide after any Chosen rebuild (chosen:updated fires on every refresh)
-  $('#6').on('chosen:updated', function () {
-    setTimeout(hideCompleted, 0);
-  });
-
-  // MutationObserver — catches re-renders from syncProjectCompletionStatus()
-  // auto-saving via API, which can cause Chosen to rebuild its list
-  var chosenList = document.getElementById('6-chosen-search-results');
-  if (chosenList) {
-    var observer = new MutationObserver(function () {
-      hideCompleted();
-    });
-    observer.observe(chosenList, { childList: true, subtree: true });
-  }
-
-}, 300); // 300ms delay ensures Chosen has fully initialized before we run
-
-</script>
+// Check the most recent draft record directly
+fetch(
+  "https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q=" +
+    JSON.stringify({
+      terms: [
+        { id: "stepID", operator: "=", match: "notSubmitted", gate: "AND" },
+        { id: "deleted", operator: "=", match: 0, gate: "AND" },
+      ],
+      joins: [],
+      sort: {},
+      getData: ["5"],
+    }),
+  { credentials: "same-origin" },
+)
+  .then((r) => r.text())
+  .then(console.log);
