@@ -1047,8 +1047,7 @@ function fetchUserSubmissions() {
   setStatus("my", "Loading your ideas...", "loading");
   renderTableMessage(ui.myResults, "Loading...");
 
-  const url = `https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"userID","operator":"=","match":"${userID}","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","12","13","stepID"]}&x-filterData=recordID,title,created_date,userID&_=${Date.now()}`;
-  console.log('[MyIdeas] url:', url);
+  const url = `https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"${FORM_IDS.idea}","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","12","13","stepID"]}&x-filterData=recordID,title,created_date,userID&_=${Date.now()}`;
 
   return fetch(url, {
     credentials: "same-origin"
@@ -1057,7 +1056,9 @@ function fetchUserSubmissions() {
     .then(function(text) {
       const data = (text && text !== '""') ? JSON.parse(text) : {};
       const myRecords = Object.values(data).filter(function(idea) {
-        return idea && idea.recordID && !(idea.title || '').startsWith('Idea #');
+        if (!idea || !idea.recordID) return false;
+        if ((idea.title || '').startsWith('Idea #')) return false;
+        return idea.userID === userID;
       });
 
       console.log('[MyIdeas] my records:', myRecords.length);
