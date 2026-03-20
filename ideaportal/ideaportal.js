@@ -1079,12 +1079,11 @@ function fetchUserSubmissions() {
   const query = {
     terms: [
       { id: "userID", operator: "=", match: userID, gate: "AND" },
-      { id: "categoryID", operator: "=", match: FORM_IDS.idea, gate: "AND" },
       { id: "deleted", operator: "=", match: 0, gate: "AND" },
     ],
     joins: [],
     sort: {},
-    getData: ["8", "9", "13", "stepID"],
+    getData: ["5", "8", "9", "13", "stepID"],
   };
   const queryString = JSON.stringify(query);
 
@@ -1102,8 +1101,7 @@ function fetchUserSubmissions() {
         return idea;
       });
       if (userIdeas.length === 0) {
-        const fallbackIdeas = filterIdeasByUser();
-        myIdeasCache = fallbackIdeas;
+        myIdeasCache = [];
       } else {
         const vms = buildIdeasViewModelList(userIdeas, false);
         myIdeasCache = vms.map(function(vm) {
