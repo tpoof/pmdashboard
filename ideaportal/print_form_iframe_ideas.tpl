@@ -1,19 +1,10 @@
+<!--{if $empMembership['groupID'][226]}-->
 
 <!--{if $deleted > 0}-->
 <div style="font-size: 36px"><img src="dynicons/?img=emblem-unreadable.svg&amp;w=96" alt="" style="float: left" /> Notice: This request has been marked as deleted.<br />
     <span class="buttonNorm" onclick="restoreRequest(<!--{$recordID|strip_tags}-->)"><img src="dynicons/?img=user-trash-full.svg&amp;w=32" alt="" /> Un-delete request</span>
 </div><br style="clear: both" />
 <hr />
-<!--{/if}-->
-
-<!--{if !$is_admin}-->
-<style>
-  #requestTitle,
-  #requestInfo,
-  #tags {
-    display: none !important;
-  }
-</style>
 <!--{/if}-->
 
 <!-- Main content area (anything under the heading) -->
@@ -182,3 +173,17 @@ $(function() {
 });
 
 </script>
+
+<!--{else}-->
+
+<!-- ============================================================ -->
+<!--   PUBLIC VIEW — BLANK SLATE (iframe variant)                 -->
+<!--   Group 226 users see the full original view above.          -->
+<!--   Build the public-facing experience here.                   -->
+<!-- ============================================================ -->
+
+<div id="public-view-iframe">
+    <!-- TODO: Public view goes here -->
+</div>
+
+<!--{/if}-->
