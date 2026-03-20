@@ -174,8 +174,6 @@ let userVotes = (function () {
 })();
 let votingInProgress = false;
 let ideaSubmitInProgress = false;
-let isDraft = false;
-let workflowSteps = [];
 let myIdeasCache = [];
 let lastFocusedElement = null;
 let lastRecordFocusedElement = null;
@@ -753,26 +751,20 @@ function buildIdeaRow(idea) {
     : "";
   const votes = idea.votes || 0;
   const isVoted = idea.isVoted === true;
-  const isIdeaDraft = idea.isDraft === true;
   const recordLink = idea.recordLink || RECORD_VIEW_URL + recordID;
   const labelTitle = title || `Idea ${recordID}`;
-  const draftBadge = isIdeaDraft ? `<span class="ip-badge ip-badge--draft">Draft</span>` : '';
-  const draftEditBtn = isIdeaDraft
-    ? `<button class="ip-btn ip-btn--ghost ip-editDraft" data-record-id="${recordID}">Edit Draft</button>`
-    : '';
 
   return `<tr data-record-id="${recordID}">
 <td><a class="ip-recordLink" data-title="${title}" aria-haspopup="dialog" href="${recordLink}">${recordID}</a></td>
 <td title="${title}">${titleDisplay}</td>
 <td>${category}</td>
-<td>${statusMarkup}${draftBadge}</td>
+<td>${statusMarkup}</td>
 <td class="ip-votes">${votes}</td>
 <td class="ip-actionsCell">
 <button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}" data-record-id="${recordID}" ${isVoted ? "disabled" : ""} aria-label="Vote for ${labelTitle}" aria-disabled="${isVoted ? "true" : "false"}" title="${isVoted ? "You\'ve already voted for this idea" : "Vote for this idea"}">
 <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
 </button>
 <button class="ip-btn ip-btn--ghost ip-share" data-record-link="${recordLink}" aria-label="Share ${labelTitle}" title="Copy shareable link">Share</button>
-${draftEditBtn}
 </td>
 </tr>`;
 }
@@ -1088,12 +1080,7 @@ function fetchUserSubmissions() {
       if (merged.length === 0) {
         myIdeasCache = filterIdeasByUser();
       } else {
-        const vms = buildIdeasViewModelList(merged, false);
-        myIdeasCache = vms.map(function(vm) {
-          const raw = merged.find(function(r) { return String(r.recordID) === String(vm.recordID); });
-          const step = raw && raw.s1 && raw.s1.stepID;
-          return Object.assign({}, vm, { isDraft: !step || step === 'notSubmitted' });
-        });
+        myIdeasCache = buildIdeasViewModelList(merged, false);
       }
       renderMyIdeas();
       setStatus("my", "", "");
@@ -1174,151 +1161,88 @@ function showSuccessMessage(msg) {
   setTimeout(function () { el.hidden = true; }, 4000);
 }
 
-async function NewIdea() {
-  if (ideaSubmitInProgress) return;
+async function NewIdea(advanceOnSuccess) {
   const form = document.getElementById("ideaForm");
   const submitButton = document.getElementById("submitButton");
-  const titleInput = document.getElementById("inpTitle");
-  const descriptionInput = document.getElementById("inpDescription");
-  const benefitInput = document.getElementById("inpBenefit");
-  const categoryInput = document.getElementById("inpCategory");
-  const impactInput = document.getElementById("inpImpact");
-  const otherCategoryInput = document.getElementById("inpOtherCategory");
+  const saveButton = document.getElementById("saveDraftButton");
 
-  const titleValue = titleInput ? titleInput.value.trim() : "";
-  const descriptionValue = descriptionInput ? descriptionInput.value.trim() : "";
-  const benefitValue = benefitInput ? benefitInput.value.trim() : "";
-  const categoryValue = categoryInput ? categoryInput.value.trim() : "";
-  const impactValue = impactInput ? impactInput.value.trim() : "";
+  const titleValue = document.getElementById("inpTitle")?.value.trim() || "";
+  const descriptionValue = document.getElementById("inpDescription")?.value.trim() || "";
+  const benefitValue = document.getElementById("inpBenefit")?.value.trim() || "";
+  const categoryValue = document.getElementById("inpCategory")?.value.trim() || "";
+  const impactValue = document.getElementById("inpImpact")?.value.trim() || "";
+  const otherCategoryInput = document.getElementById("inpOtherCategory");
   const otherCategoryValue = otherCategoryInput ? otherCategoryInput.value.trim() : "";
 
-  // Capture and reset isDraft flag immediately so it can't leak
-  const savingAsDraft = isDraft;
-  isDraft = false;
-
-  // Part 9 — re-submit or re-save an existing draft
-  const existingDraftID = form && form.dataset.draftRecordId ? form.dataset.draftRecordId : null;
-  if (existingDraftID) {
-    if (submitButton) submitButton.disabled = true;
-    ideaSubmitInProgress = true;
-    try {
-      const updatePayload = new URLSearchParams({
-        CSRFToken: csrfToken,
-        series: "1",
-        title: titleValue || "Idea Submission",
-      });
-      updatePayload.append(String(IDEA_FIELDS.title), titleValue);
-      updatePayload.append(String(IDEA_FIELDS.summary), descriptionValue);
-      updatePayload.append(String(IDEA_FIELDS.benefit), benefitValue);
-      updatePayload.append(String(IDEA_FIELDS.category), categoryValue);
-      updatePayload.append(String(IDEA_FIELDS.impact), impactValue);
-      if (categoryValue === "Other" && otherCategoryValue) {
-        updatePayload.append(String(IDEA_FIELDS.other_category), otherCategoryValue);
-      }
-      console.log("[Draft] updating existing record", existingDraftID);
-      await fetch(`./api/?a=form/${existingDraftID}`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: updatePayload,
-      });
-
-      if (form) {
-        form.reset();
-        form.classList.remove("was-validated");
-        delete form.dataset.draftRecordId;
-      }
-      closeModal("addIdeaModal");
-
-      if (savingAsDraft) {
-        showSuccessMessage("Idea saved. Find it in My Ideas.");
-        fetchUserSubmissions();
-      } else {
-        await advanceWorkflow(existingDraftID);
-        showSuccessMessage("Your idea has been submitted.");
-        updateTable();
-        fetchUserSubmissions();
-      }
-    } catch (err) {
-      console.warn("[Draft] update failed:", err);
-      showSuccessMessage("Error saving draft.");
-    } finally {
-      ideaSubmitInProgress = false;
-      if (submitButton) submitButton.disabled = false;
-    }
-    return;
-  }
-
-  // New idea creation
-  const payload = {
-    service: "",
-    title: titleValue || "Idea Submission",
-    priority: 0,
-    CSRFToken: csrfToken,
-  };
-  payload["numform_" + FORM_KEYS.idea] = 1;
-  payload[IDEA_FIELDS.title] = titleValue;
-  payload[IDEA_FIELDS.summary] = descriptionValue;
-  payload[IDEA_FIELDS.benefit] = benefitValue;
-  payload[IDEA_FIELDS.category] = categoryValue;
-  payload[IDEA_FIELDS.impact] = impactValue;
-  if (categoryValue === "Other" && otherCategoryValue) {
-    payload[IDEA_FIELDS.other_category] = otherCategoryValue;
-  }
-
   if (submitButton) submitButton.disabled = true;
+  if (saveButton) saveButton.disabled = true;
   ideaSubmitInProgress = true;
 
   try {
+    const payload = {
+      service: "",
+      title: titleValue || "Idea Submission",
+      priority: 0,
+      CSRFToken: csrfToken,
+    };
+    payload["numform_" + FORM_KEYS.idea] = 1;
+    payload[IDEA_FIELDS.title] = titleValue;
+    payload[IDEA_FIELDS.summary] = descriptionValue;
+    payload[IDEA_FIELDS.benefit] = benefitValue;
+    payload[IDEA_FIELDS.category] = categoryValue;
+    payload[IDEA_FIELDS.impact] = impactValue;
+    if (categoryValue === "Other" && otherCategoryValue) {
+      payload[IDEA_FIELDS.other_category] = otherCategoryValue;
+    }
+
     const response = await apiPostJson("./api/?a=form/new", payload);
     const recordID = parseFloat(response);
+
     if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
-      // Upload files if any
-      var fileInputEl = document.getElementById("fileInput");
-      const filesToUpload = (fileInputEl && fileInputEl.files) ? Array.from(fileInputEl.files) : [];
+      // File upload — fire and forget
+      const fileInputEl = document.getElementById("fileInput");
+      const filesToUpload = (fileInputEl && fileInputEl.files)
+        ? Array.from(fileInputEl.files) : [];
       if (filesToUpload.length > 0) {
         const formData = new FormData();
         formData.append("CSRFToken", csrfToken);
-        filesToUpload.forEach(file => { formData.append("10", file); });
-        console.log("[IdeaUpload] uploading", filesToUpload.length, "file(s) to record", recordID);
+        filesToUpload.forEach(file => formData.append("10", file));
         fetch(`./api/?a=form/${recordID}`, {
           method: "POST",
           credentials: "same-origin",
           body: formData,
-        })
-          .then(r => r.text())
-          .then(res => { console.log("[IdeaUpload] response", res); })
-          .catch(err => { console.warn("[IdeaUpload] file upload failed", err); });
+        }).catch(err => console.warn("[IdeaUpload] file upload failed", err));
       }
 
+      // Reset form
       if (form) {
         form.reset();
         form.classList.remove("was-validated");
-        delete form.dataset.draftRecordId;
       }
       if (fileInputEl) fileInputEl.value = "";
       const fileList = document.getElementById("fileList");
       if (fileList) fileList.innerHTML = "";
       closeModal("addIdeaModal");
 
-      if (savingAsDraft) {
-        showSuccessMessage("Idea saved. Find it in My Ideas.");
-        fetchUserSubmissions();
-      } else {
+      if (advanceOnSuccess) {
         await advanceWorkflow(recordID);
-        showSuccessMessage("Your idea has been submitted.");
+        showSuccessMessage("Your idea has been submitted successfully.");
         updateTable();
-        fetchUserSubmissions();
+      } else {
+        showSuccessMessage("Idea saved. You can find it in My Ideas.");
       }
+      fetchUserSubmissions();
+
     } else {
-      showSuccessMessage("Error submitting idea.");
+      showSuccessMessage("Error submitting idea. Please try again.");
     }
   } catch (err) {
     console.warn("[NewIdea] error:", err);
-    showSuccessMessage("Error submitting idea.");
+    showSuccessMessage("Error submitting idea. Please try again.");
   } finally {
     ideaSubmitInProgress = false;
     if (submitButton) submitButton.disabled = false;
+    if (saveButton) saveButton.disabled = false;
   }
 }
 
@@ -1390,12 +1314,7 @@ function bindDelegatedEvents() {
       return;
     }
 
-    const editDraftBtn = e.target.closest(".ip-editDraft");
-    if (editDraftBtn) {
-      const recordID = editDraftBtn.getAttribute("data-record-id");
-      loadDraftIntoModal(recordID);
-      return;
-    }
+
 
     const shareBtn = e.target.closest(".ip-share");
     if (shareBtn) {
@@ -1487,19 +1406,6 @@ function populateSelect(select, options, appendOther) {
   }
 }
 
-async function fetchWorkflowSteps() {
-  try {
-    const res = await fetch('./api/workflow/1/', { credentials: 'same-origin' });
-    const data = await res.json();
-    const steps = Object.entries(data);
-    console.log('[Workflow] steps:', steps);
-    return steps;
-  } catch (err) {
-    console.warn('[Workflow] could not fetch steps:', err);
-    return [];
-  }
-}
-
 async function advanceWorkflow(recordID) {
   try {
     // Step 1: mark submitted
@@ -1538,45 +1444,6 @@ async function advanceWorkflow(recordID) {
     return applyData;
   } catch (err) {
     console.warn('[Workflow] advance failed:', err);
-  }
-}
-
-async function loadDraftIntoModal(recordID) {
-  try {
-    const res = await fetch(`./api/form/${recordID}/data`, {
-      credentials: 'same-origin'
-    });
-    const data = await res.json();
-    const record = Object.values(data)[0];
-    const s1 = record && record.s1 ? record.s1 : {};
-    console.log('[Draft] loaded record', recordID, s1);
-
-    const form = document.getElementById('ideaForm');
-    const titleEl = document.getElementById('inpTitle');
-    const descEl = document.getElementById('inpDescription');
-    const benefitEl = document.getElementById('inpBenefit');
-    const catEl = document.getElementById('inpCategory');
-    const impactEl = document.getElementById('inpImpact');
-    const otherCatEl = document.getElementById('inpOtherCategory');
-    const otherWrapper = document.getElementById('otherCategoryWrapper');
-
-    if (titleEl) titleEl.value = s1['id' + IDEA_FIELDS.title] || '';
-    if (descEl) descEl.value = s1['id' + IDEA_FIELDS.summary] || '';
-    if (benefitEl) benefitEl.value = s1['id' + IDEA_FIELDS.benefit] || '';
-    if (catEl) catEl.value = s1['id' + IDEA_FIELDS.category] || '';
-    if (impactEl) impactEl.value = s1['id' + IDEA_FIELDS.impact] || '';
-
-    const catValue = s1['id' + IDEA_FIELDS.category] || '';
-    const otherCatValue = s1['id' + IDEA_FIELDS.other_category] || '';
-    if (catValue === 'Other' && otherCatEl && otherWrapper) {
-      otherCatEl.value = otherCatValue;
-      otherWrapper.style.display = 'block';
-    }
-
-    if (form) form.dataset.draftRecordId = recordID;
-    openModal('addIdeaModal');
-  } catch (err) {
-    console.warn('[Draft] failed to load:', err);
   }
 }
 
@@ -1672,30 +1539,26 @@ document.addEventListener("DOMContentLoaded", function () {
   bindCategoryChange();
   loadCategoryOptions();
   loadImpactOptions();
-  fetchWorkflowSteps().then(function(steps) { workflowSteps = steps; });
-  // Save Idea — creates record only, no workflow advancement
-  document.getElementById('saveDraftButton')?.addEventListener('click', async function() {
-    const titleVal = document.getElementById('inpTitle')?.value.trim();
-    const form = document.getElementById('ideaForm');
+  // Save Idea — creates record, no workflow advancement
+  document.getElementById("saveDraftButton")?.addEventListener("click", async function() {
+    const form = document.getElementById("ideaForm");
     if (!form) return;
-    form.classList.add('was-validated');
+    const titleVal = document.getElementById("inpTitle")?.value.trim();
     if (!titleVal) {
-      document.getElementById('inpTitle')?.focus();
+      document.getElementById("inpTitle")?.focus();
+      form.classList.add("was-validated");
       return;
     }
-    isDraft = true;
-    await NewIdea();
-    isDraft = false;
+    await NewIdea(false);
   });
 
-  // Submit Idea — creates record AND advances workflow to stepID 1
-  document.getElementById('submitButton')?.addEventListener('click', async function() {
-    const form = document.getElementById('ideaForm');
+  // Submit Idea — creates record AND advances workflow
+  document.getElementById("submitButton")?.addEventListener("click", async function() {
+    const form = document.getElementById("ideaForm");
     if (!form) return;
-    form.classList.add('was-validated');
+    form.classList.add("was-validated");
     if (!form.checkValidity()) return;
-    isDraft = false;
-    await NewIdea();
+    await NewIdea(true);
   });
   wireJumpToTop();
   initValidation();
