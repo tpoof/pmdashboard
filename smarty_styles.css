@@ -247,12 +247,21 @@ body.smarty.page-ideaportal .ip-tab {
   font-size: 16px;
   cursor: pointer;
   color: var(--ip-muted);
+  border-bottom: 3px solid transparent;
+  transition: border-color 0.2s, color 0.2s;
 }
 
 body.smarty.page-ideaportal .ip-tab.is-active {
   background: var(--ip-panel);
-  color: var(--ip-text);
+  color: #005ea2;
   box-shadow: var(--ip-shadow);
+  border-bottom: 3px solid #005ea2;
+  font-weight: 700;
+}
+
+body.smarty.page-ideaportal .ip-tab:hover:not(.is-active) {
+  border-bottom: 3px solid #aacdec;
+  color: #004b87;
 }
 
 body.smarty.page-ideaportal .ip-panel {
@@ -2304,6 +2313,14 @@ body.smarty.page-privacy .skip-link:focus {
   min-height: 100vh;
 }
 
+/* ── Idea Portal: Panel Description ─────────────────────── */
+body.smarty.page-ideaportal .ip-panelDesc {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.5;
+}
+
 /* ── Idea Portal: Search Bar ────────────────────────────── */
 .ip-searchWrap {
   display: flex;
@@ -2312,6 +2329,11 @@ body.smarty.page-privacy .skip-link:focus {
   padding: 0.75rem 0;
   max-width: 480px;
   width: 100%;
+}
+
+/* ── Idea Portal: Search bar top spacing ────────────────── */
+body.smarty.page-ideaportal .ip-searchWrap {
+  margin-top: 1.25rem;
 }
 
 .ip-searchInput {

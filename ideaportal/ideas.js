@@ -1521,6 +1521,12 @@ document.addEventListener("DOMContentLoaded", function () {
   bindRecordModal();
   bindDelegatedEvents();
   bindSearch();
+  document.getElementById("mySearchInput")?.addEventListener("input", function() {
+    const searchValue = this.value.toLowerCase();
+    document.querySelectorAll("#myResults tr").forEach(function(row) {
+      row.style.display = row.textContent.toLowerCase().includes(searchValue) ? "" : "none";
+    });
+  });
   bindFileInput();
   bindCategoryChange();
   loadCategoryOptions();

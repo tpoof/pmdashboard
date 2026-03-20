@@ -83,6 +83,7 @@
     >
       <div class="ip-tableWrap">
         <div class="ip-tableTitle">All Ideas</div>
+        <p class="ip-panelDesc">Browse all submitted ideas from across the organization. Vote for ideas you support.</p>
         <div class="ip-searchWrap">
           <label class="ip-srOnly" for="searchInput">Search ideas</label>
           <input
@@ -190,6 +191,7 @@
     >
       <div class="ip-tableWrap">
         <div class="ip-tableTitle">Top 10 Ideas</div>
+        <p class="ip-panelDesc">The 10 most voted ideas, ranked by votes. Cast your vote to help the best ideas rise to the top.</p>
         <table id="tblTopIdeas" class="ip-table">
           <caption class="ip-srOnly">
             Top 10 ideas table
@@ -237,6 +239,25 @@
     >
       <div class="ip-tableWrap">
         <div class="ip-tableTitle">My Ideas</div>
+        <p class="ip-panelDesc">A personal view of all your submitted ideas. Ideas without a status label have been saved but not yet submitted for review.</p>
+        <div class="ip-searchWrap">
+          <label class="ip-srOnly" for="mySearchInput">Search my ideas</label>
+          <input
+            type="search"
+            id="mySearchInput"
+            class="ip-searchInput"
+            placeholder="Search my ideas"
+            autocomplete="off"
+          />
+          <button
+            type="button"
+            id="mySearchBtn"
+            class="ip-btn ip-btn--primary ip-searchIconBtn"
+            aria-label="Search"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+          </button>
+        </div>
         <div
           class="ip-status"
           id="myStatus"
