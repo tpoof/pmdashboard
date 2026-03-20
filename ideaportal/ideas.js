@@ -1076,57 +1076,42 @@ function fetchUserSubmissions() {
   setStatus("my", "Loading your ideas...", "loading");
   renderTableMessage(ui.myResults, "Loading...");
 
-  const submittedQuery = {
-    terms: [
-      { id: "userID", operator: "=", match: userID, gate: "AND" },
-      { id: "categoryID", operator: "=", match: FORM_IDS.idea, gate: "AND" },
-      { id: "deleted", operator: "=", match: 0, gate: "AND" },
-    ],
-    joins: [],
-    sort: {},
-    getData: ["5", "8", "9", "13", "stepID"],
-  };
-
-  const draftQuery = {
+  const query = {
     terms: [
       { id: "userID", operator: "=", match: userID, gate: "AND" },
       { id: "deleted", operator: "=", match: 0, gate: "AND" },
-      { id: "stepID", operator: "=", match: "notSubmitted", gate: "AND" },
     ],
     joins: [],
     sort: {},
     getData: ["5", "8", "9", "12", "13", "stepID"],
   };
 
-  const baseUrl = "https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q=";
+  const url = "https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q=" + JSON.stringify(query);
 
-  return Promise.all([
-    apiGetJson(baseUrl + JSON.stringify(submittedQuery)),
-    apiGetJson(baseUrl + JSON.stringify(draftQuery)),
-  ])
-    .then(function ([submittedData, draftData]) {
-      console.log('[MyIdeas] submittedData:', JSON.stringify(submittedData));
-      console.log('[MyIdeas] draftData:', JSON.stringify(draftData));
-      // Merge both result sets, deduplicating by recordID
+  return fetch(url, {
+    method: "GET",
+    credentials: "same-origin",
+    cache: "no-store",
+    headers: { Accept: "application/json" }
+  })
+    .then(r => r.text())
+    .then(function(text) {
+      const data = text ? JSON.parse(text) : {};
+      console.log('[MyIdeas] raw count:', Object.keys(data).length);
+
       const seen = new Set();
       const merged = [];
-      [submittedData, draftData].forEach(function(data) {
-        Object.values(data || {}).forEach(function(idea) {
-          const key = idea && idea.recordID ? String(idea.recordID) : null;
-          if (!key || seen.has(key)) return;
-          // Filter out vote records — they have null id5 or title starting with "Idea #"
-          const title = (idea.title || '');
-          const id5 = (idea.s1 && idea.s1.id5) || idea.title || '';
-          if (title.startsWith('Idea #') && !id5) return;
-          seen.add(key);
-          if (!idea.s1 && ideasById[key]) {
-            merged.push(ideasById[key]);
-          } else {
-            merged.push(idea);
-          }
-        });
+      Object.values(data || {}).forEach(function(idea) {
+        const key = idea && idea.recordID ? String(idea.recordID) : null;
+        if (!key || seen.has(key)) return;
+        // Filter out vote records
+        const title = (idea.title || '');
+        if (title.startsWith('Idea #')) return;
+        seen.add(key);
+        merged.push(idea);
       });
-      console.log('[MyIdeas] merged count:', merged.length, 'records:', merged.map(r => r.recordID));
+
+      console.log('[MyIdeas] merged count:', merged.length);
 
       if (merged.length === 0) {
         myIdeasCache = filterIdeasByUser();
@@ -1138,16 +1123,15 @@ function fetchUserSubmissions() {
           return Object.assign({}, vm, { isDraft: !step || step === 'notSubmitted' });
         });
       }
-      console.log('[MyIdeas] myIdeasCache count:', myIdeasCache.length);
       renderMyIdeas();
       setStatus("my", "", "");
     })
-    .catch(function (error) {
-      console.error("AJAX Error: ", error);
+    .catch(function(error) {
+      console.error("AJAX Error:", error);
       renderTableMessage(ui.myResults, "Error loading user ideas.", { retry: true });
       setStatus("my", "Error loading user ideas.", "error");
     })
-    .finally(function () {
+    .finally(function() {
       setPanelBusy("my", false);
     });
 }
