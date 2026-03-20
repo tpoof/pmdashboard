@@ -1,41 +1,11 @@
 fetch(
-  "https://leaf.va.gov/platform/ideas/api/form/query/?debug=1&x-filterData=recordID,title,created_date,userID&q=" +
-    JSON.stringify({
-      terms: [
-        {
-          id: "userID",
-          operator: "=",
-          match: window.leafIdeaPortal.userID,
-          gate: "AND",
-        },
-        { id: "deleted", operator: "=", match: 0, gate: "AND" },
-      ],
-      joins: [],
-      sort: {},
-      getData: ["5"],
-    }),
-  { credentials: "same-origin" },
+  'https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q={"terms":[{"id":"userID","operator":"=","match":"oitauslumags","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","12"]}',
+  {
+    method: "GET",
+    credentials: "same-origin",
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  },
 )
   .then((r) => r.text())
-  .then(console.log);
-
-fetch(
-  "https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q=" +
-    JSON.stringify({
-      terms: [
-        {
-          id: "userID",
-          operator: "=",
-          match: window.leafIdeaPortal.userID,
-          gate: "AND",
-        },
-        { id: "deleted", operator: "=", match: 0, gate: "AND" },
-      ],
-      joins: [],
-      sort: {},
-      getData: ["5"],
-    }),
-  { credentials: "same-origin" },
-)
-  .then((r) => r.text())
-  .then((data) => console.log("raw:", JSON.stringify(data)));
+  .then((data) => console.log("raw:", data));
