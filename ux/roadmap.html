@@ -3,27 +3,6 @@
     ===================================
     This page queries a LEAF form to display UX roadmap themes
     organized into Now / Next / Future time horizons.
-
-    LEAF FORM SETUP REQUIRED:
-    ========================
-    Create a form in the LEAF Form Editor with these fields (indicators):
-      - Theme Title              (text)         — indicatorID: update INDICATOR_TITLE
-      - Beneficiary              (text)         — indicatorID: update INDICATOR_BENEFICIARY
-      - User Need                (textarea)     — indicatorID: update INDICATOR_NEED
-      - Business Outcome         (textarea)     — indicatorID: update INDICATOR_OUTCOME
-      - Owner / Team             (text)         — indicatorID: update INDICATOR_OWNER
-      - Work Type                (textarea)     — indicatorID: update INDICATOR_WORK
-      - Time Horizon             (dropdown)     — Options: Now, Next, Future
-                                                  indicatorID: update INDICATOR_HORIZON
-      - Priority                 (number)       — indicatorID: update INDICATOR_PRIORITY
-      - Product Area             (dropdown)     — Options: (your product areas)
-                                                  indicatorID: update INDICATOR_AREA
-      - Confidence               (dropdown)     — Options: High, Medium, Low
-                                                  indicatorID: update INDICATOR_CONFIDENCE
-      - Subthemes                (textarea)     — indicatorID: update INDICATOR_SUBTHEMES
-
-    After creating the form, update the CONFIGURATION section below
-    with the correct categoryID and indicatorIDs.
 -->
 
 <style>
@@ -462,21 +441,23 @@
    CONFIGURATION — UPDATE THESE VALUES FOR YOUR LEAF SITE
    ============================================================ */
   var ROADMAP_CONFIG = {
-    // The categoryID of your UX Roadmap form
-    categoryID: "", // e.g. 'form_a1b2c'
+    // The categoryID of your UX Roadmap form (numeric ID only, e.g. 50725)
+    // NOTE: LeafFormQuery addTerm for categoryID expects the NUMERIC id,
+    //       not the prefixed "form_XXXXX" string.
+    categoryID: "50725",
 
     // Indicator IDs — update these after creating the form
-    INDICATOR_TITLE: 0, // Theme Title (text)
-    INDICATOR_BENEFICIARY: 0, // Beneficiary (text)
-    INDICATOR_NEED: 0, // User Need (textarea)
-    INDICATOR_OUTCOME: 0, // Business Outcome (textarea)
-    INDICATOR_OWNER: 0, // Owner / Team (text)
-    INDICATOR_WORK: 0, // Work Type (textarea)
-    INDICATOR_HORIZON: 0, // Time Horizon (dropdown: Now, Next, Future)
-    INDICATOR_PRIORITY: 0, // Priority (number)
-    INDICATOR_AREA: 0, // Product Area (dropdown)
-    INDICATOR_CONFIDENCE: 0, // Confidence (dropdown: High, Medium, Low)
-    INDICATOR_SUBTHEMES: 0, // Subthemes (textarea)
+    INDICATOR_TITLE: 10, // Theme Title (text)
+    INDICATOR_BENEFICIARY: 11, // Beneficiary (text)
+    INDICATOR_NEED: 12, // User Need (textarea)
+    INDICATOR_OUTCOME: 13, // Business Outcome (textarea)
+    INDICATOR_OWNER: 14, // Owner / Team (text)
+    INDICATOR_WORK: 15, // Work Type (textarea)
+    INDICATOR_HORIZON: 16, // Time Horizon (dropdown: Now, Next, Future)
+    INDICATOR_PRIORITY: 17, // Priority (number)
+    INDICATOR_AREA: 18, // Product Area (dropdown)
+    INDICATOR_CONFIDENCE: 19, // Confidence (dropdown: High, Medium, Low)
+    INDICATOR_SUBTHEMES: 20, // Subthemes (textarea)
 
     // Page display settings
     pageTitle: "UX Roadmap",
@@ -486,7 +467,10 @@
 
     // Set to the categoryID number to enable "New Theme" button.
     // Leave as '' to hide the button.
-    newFormCategoryID: "", // e.g. 'form_a1b2c'
+    newFormCategoryID: "",
+
+    // Set to true to see raw API response data in the browser console
+    debug: true,
   };
 
   /* ============================================================
@@ -557,12 +541,74 @@
       query
         .execute()
         .then(function (results) {
+          if (ROADMAP_CONFIG.debug) {
+            console.log("=== ROADMAP DEBUG: Raw query results ===");
+            console.log(JSON.stringify(results, null, 2));
+            console.log(
+              "Number of records returned:",
+              Object.keys(results).length,
+            );
+
+            // Inspect first record structure
+            var firstKey = Object.keys(results)[0];
+            if (firstKey) {
+              console.log(
+                "=== First record (ID: " + firstKey + ") structure ===",
+              );
+              var firstRecord = results[firstKey];
+              console.log("Top-level keys:", Object.keys(firstRecord));
+
+              // Check for s1 vs other data key patterns
+              if (firstRecord.s1) {
+                console.log("s1 keys:", Object.keys(firstRecord.s1));
+                // Show what a single indicator looks like
+                var s1Keys = Object.keys(firstRecord.s1);
+                if (s1Keys.length > 0) {
+                  console.log(
+                    "Sample s1 entry [" + s1Keys[0] + "]:",
+                    JSON.stringify(firstRecord.s1[s1Keys[0]]),
+                  );
+                }
+              } else {
+                console.log(
+                  "WARNING: No 's1' key found. Checking alternative data structures...",
+                );
+                // LEAF may nest data differently depending on version
+                // Check if data is at the top level keyed by indicator ID
+                for (var k in firstRecord) {
+                  if (firstRecord.hasOwnProperty(k)) {
+                    console.log(
+                      "  Key '" + k + "':",
+                      typeof firstRecord[k] === "object"
+                        ? JSON.stringify(firstRecord[k]).substring(0, 200)
+                        : firstRecord[k],
+                    );
+                  }
+                }
+              }
+            } else {
+              console.log(
+                "WARNING: Query returned 0 records. Possible causes:",
+              );
+              console.log(
+                "  1. categoryID '" +
+                  ROADMAP_CONFIG.categoryID +
+                  "' does not match any form",
+              );
+              console.log("  2. No records exist for this form yet");
+              console.log("  3. All records are deleted");
+              console.log(
+                "  4. categoryID might need 'form_' prefix or just the number — try both",
+              );
+            }
+            console.log("=== END DEBUG ===");
+          }
           processResults(results);
         })
         .catch(function (err) {
           console.error("Roadmap query error:", err);
           showError(
-            "Error loading roadmap data. Please check the console for details.",
+            "Error loading roadmap data. Check the browser console (F12) for details.",
           );
         });
     }
@@ -573,11 +619,26 @@
     function processResults(results) {
       themes = [];
       var areaSet = {};
+      var recordCount = 0;
+      var skippedCount = 0;
 
       for (var recordID in results) {
         if (!results.hasOwnProperty(recordID)) continue;
+        recordCount++;
         var r = results[recordID];
-        var s1 = r.s1 || {};
+
+        // -------------------------------------------------------
+        // FIX 1: Resolve the data series object.
+        //
+        // LeafFormQuery response structure can vary:
+        //   - Newer LEAF (Go backend): data is under r.s1.idXX.value
+        //   - Some versions:           data is under r.s1.idXX  (value is the direct content)
+        //   - PHP legacy fallback:     data may be at r[indicatorID].value
+        //                              or r[indicatorID] directly
+        //
+        // We try s1 first, then fall back to the record root.
+        // -------------------------------------------------------
+        var s1 = r.s1 || r;
 
         var theme = {
           recordID: recordID,
@@ -599,12 +660,76 @@
           subthemes: getVal(s1, ROADMAP_CONFIG.INDICATOR_SUBTHEMES),
         };
 
-        // Only include themes that have a title and a valid horizon
-        if (theme.title && theme.horizon) {
+        if (ROADMAP_CONFIG.debug && recordCount <= 3) {
+          console.log("--- Record #" + recordID + " parsed theme ---");
+          console.log("  title: '" + theme.title + "'");
+          console.log(
+            "  horizon: '" +
+              theme.horizon +
+              "' (raw: '" +
+              getVal(s1, ROADMAP_CONFIG.INDICATOR_HORIZON) +
+              "')",
+          );
+          console.log("  confidence: '" + theme.confidence + "'");
+          console.log("  area: '" + theme.area + "'");
+        }
+
+        // -------------------------------------------------------
+        // FIX 2: Relaxed inclusion filter.
+        //
+        // Previously required BOTH title AND horizon to be valid.
+        // If either field's indicatorID is wrong, ALL records are
+        // silently dropped and the board shows "No themes".
+        //
+        // Now: include if we have a title OR a horizon. If horizon
+        // is missing, default to "now" so it still appears.
+        // -------------------------------------------------------
+        if (theme.title || theme.horizon) {
+          if (!theme.horizon) {
+            theme.horizon = "now"; // default so card isn't lost
+            if (ROADMAP_CONFIG.debug) {
+              console.log(
+                "  -> Horizon missing for record " +
+                  recordID +
+                  ", defaulting to 'now'",
+              );
+            }
+          }
+          if (!theme.title) {
+            theme.title = "(Untitled — Record #" + recordID + ")";
+          }
           themes.push(theme);
           if (theme.area) {
             areaSet[theme.area] = true;
           }
+        } else {
+          skippedCount++;
+          if (ROADMAP_CONFIG.debug) {
+            console.log(
+              "  -> SKIPPED record " +
+                recordID +
+                " (no title and no horizon found)",
+            );
+          }
+        }
+      }
+
+      if (ROADMAP_CONFIG.debug) {
+        console.log("=== PROCESSING SUMMARY ===");
+        console.log("  Total records from query: " + recordCount);
+        console.log("  Themes added to board: " + themes.length);
+        console.log("  Records skipped: " + skippedCount);
+        if (skippedCount > 0 && themes.length === 0) {
+          console.log("  !!! ALL RECORDS SKIPPED — likely cause:");
+          console.log(
+            "  !!! Your indicator IDs in ROADMAP_CONFIG don't match the actual form field IDs.",
+          );
+          console.log(
+            "  !!! Go to Report Builder, build a report with this form,",
+          );
+          console.log(
+            "  !!! click JSON > JavaScript Template to see the correct indicator IDs.",
+          );
         }
       }
 
@@ -626,23 +751,52 @@
 
     /**
      * Extract a value from the query result by indicatorID
+     *
+     * Handles multiple LEAF response formats:
+     *   Format A (Go backend):  s1.id16.value = "Now"
+     *   Format B (legacy PHP):  s1.id16 = "Now"  (value is directly the string)
+     *   Format C (numeric key): s1["16"].value = "Now"
      */
     function getVal(series, indicatorID) {
       if (!indicatorID) return "";
+
+      var val = null;
+
+      // Try "id" + indicatorID (e.g. "id16") — most common format
       var key = "id" + indicatorID;
-      if (series[key] && series[key].value !== undefined) {
-        var val = series[key].value;
-        // Handle array values (multiselect, checkboxes)
-        if (Array.isArray(val)) {
-          return val
-            .filter(function (v) {
-              return v && v !== "no";
-            })
-            .join(", ");
+      if (series[key] !== undefined) {
+        if (typeof series[key] === "object" && series[key] !== null) {
+          // Format A: { value: "...", ... }
+          val = series[key].value;
+        } else {
+          // Format B: direct string/number value
+          val = series[key];
         }
-        return (val || "").toString().trim();
       }
-      return "";
+
+      // Fallback: try bare numeric key (e.g. "16")
+      if (val === null || val === undefined) {
+        var numKey = String(indicatorID);
+        if (series[numKey] !== undefined) {
+          if (typeof series[numKey] === "object" && series[numKey] !== null) {
+            val = series[numKey].value;
+          } else {
+            val = series[numKey];
+          }
+        }
+      }
+
+      if (val === null || val === undefined) return "";
+
+      // Handle array values (multiselect, checkboxes)
+      if (Array.isArray(val)) {
+        return val
+          .filter(function (v) {
+            return v && v !== "no";
+          })
+          .join(", ");
+      }
+      return val.toString().trim();
     }
 
     /**
@@ -652,6 +806,18 @@
       if (!val) return "";
       var v = val.toLowerCase().trim();
       if (v === "now" || v === "next" || v === "future") return v;
+      // Handle partial matches or common variations
+      if (v.indexOf("now") !== -1) return "now";
+      if (v.indexOf("next") !== -1) return "next";
+      if (v.indexOf("future") !== -1 || v.indexOf("later") !== -1)
+        return "future";
+      if (ROADMAP_CONFIG.debug) {
+        console.log(
+          "  WARNING: Unrecognized horizon value: '" +
+            val +
+            "' — must be Now, Next, or Future",
+        );
+      }
       return "";
     }
 
@@ -662,6 +828,8 @@
       if (!val) return "medium";
       var v = val.toLowerCase().trim();
       if (v === "high" || v === "medium" || v === "low") return v;
+      if (v.indexOf("high") !== -1) return "high";
+      if (v.indexOf("low") !== -1) return "low";
       return "medium";
     }
 

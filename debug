@@ -1,6 +1,5 @@
-// Test the exact draft query being sent
 fetch(
-  "https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q=" +
+  "https://leaf.va.gov/platform/ideas/api/form/query/?debug=1&x-filterData=recordID,title,created_date,userID&q=" +
     JSON.stringify({
       terms: [
         {
@@ -9,25 +8,6 @@ fetch(
           match: window.leafIdeaPortal.userID,
           gate: "AND",
         },
-        { id: "categoryID", operator: "=", match: "form_ae642", gate: "AND" },
-        { id: "deleted", operator: "=", match: 0, gate: "AND" },
-        { id: "stepID", operator: "=", match: "notSubmitted", gate: "AND" },
-      ],
-      joins: [],
-      sort: {},
-      getData: ["5", "8", "9", "13", "stepID"],
-    }),
-  { credentials: "same-origin" },
-)
-  .then((r) => r.text())
-  .then(console.log);
-
-// Check the most recent draft record directly
-fetch(
-  "https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q=" +
-    JSON.stringify({
-      terms: [
-        { id: "stepID", operator: "=", match: "notSubmitted", gate: "AND" },
         { id: "deleted", operator: "=", match: 0, gate: "AND" },
       ],
       joins: [],
@@ -38,3 +18,24 @@ fetch(
 )
   .then((r) => r.text())
   .then(console.log);
+
+fetch(
+  "https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q=" +
+    JSON.stringify({
+      terms: [
+        {
+          id: "userID",
+          operator: "=",
+          match: window.leafIdeaPortal.userID,
+          gate: "AND",
+        },
+        { id: "deleted", operator: "=", match: 0, gate: "AND" },
+      ],
+      joins: [],
+      sort: {},
+      getData: ["5"],
+    }),
+  { credentials: "same-origin" },
+)
+  .then((r) => r.text())
+  .then((data) => console.log("raw:", JSON.stringify(data)));
