@@ -1,16 +1,5 @@
-// Check if records still exist at all
 fetch(
-  'https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,userID&q={"terms":[{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5"]}',
-  {
-    credentials: "same-origin",
-  },
-)
-  .then((r) => r.text())
-  .then(console.log);
-
-// Check if userID filter specifically is broken now
-fetch(
-  'https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,userID&q={"terms":[{"id":"categoryID","operator":"=","match":"form_ae642","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5"]}',
+  'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"userID","operator":"=","match":"oitauslumags","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{}}&x-filterData=recordID,title,created_date,userID',
   {
     credentials: "same-origin",
   },
