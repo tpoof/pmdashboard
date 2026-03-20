@@ -2360,15 +2360,22 @@ body.smarty.page-ideaportal .ip-table td:nth-child(1) {
   white-space: nowrap;
 }
 
-/* Title column — slightly narrower */
+/* Title column — narrower */
 body.smarty.page-ideaportal .ip-table th:nth-child(2),
 body.smarty.page-ideaportal .ip-table td:nth-child(2) {
-  width: auto;
-  min-width: 0;
+  width: 30%;
   white-space: normal;
   word-wrap: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
+}
+
+/* Category column — wider */
+body.smarty.page-ideaportal .ip-table th:nth-child(3),
+body.smarty.page-ideaportal .ip-table td:nth-child(3) {
+  width: 180px;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 /* Status column — fixed width to fit "New Submission" unwrapped */

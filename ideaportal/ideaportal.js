@@ -1248,11 +1248,11 @@ async function NewIdea() {
       closeModal("addIdeaModal");
 
       if (savingAsDraft) {
-        showSuccessMessage("Draft saved. You can find it in My Ideas.");
+        showSuccessMessage("Idea saved. Find it in My Ideas.");
         fetchUserSubmissions();
       } else {
         await advanceWorkflow(existingDraftID);
-        showSuccessMessage("Your idea has been submitted successfully.");
+        showSuccessMessage("Your idea has been submitted.");
         updateTable();
         fetchUserSubmissions();
       }
@@ -1319,11 +1319,11 @@ async function NewIdea() {
       closeModal("addIdeaModal");
 
       if (savingAsDraft) {
-        showSuccessMessage("Draft saved. You can find it in My Ideas.");
+        showSuccessMessage("Idea saved. Find it in My Ideas.");
         fetchUserSubmissions();
       } else {
         await advanceWorkflow(recordID);
-        showSuccessMessage("Your idea has been submitted successfully.");
+        showSuccessMessage("Your idea has been submitted.");
         updateTable();
         fetchUserSubmissions();
       }
@@ -1672,40 +1672,6 @@ function initValidation() {
       },
       false,
     );
-    form.addEventListener(
-      "submit",
-      function (event) {
-        var inputs = form.querySelectorAll(".ip-input");
-        inputs.forEach(function (input) {
-          if (!input.checkValidity()) {
-            input.setAttribute("aria-invalid", "true");
-          } else {
-            input.removeAttribute("aria-invalid");
-          }
-        });
-        var categoryEl = form.querySelector("#inpCategory");
-        var otherCatEl = form.querySelector("#inpOtherCategory");
-        if (otherCatEl && categoryEl && categoryEl.value === "Other") {
-          if (!otherCatEl.value.trim()) {
-            otherCatEl.setAttribute("aria-invalid", "true");
-          } else {
-            otherCatEl.removeAttribute("aria-invalid");
-          }
-        }
-        if (!form.checkValidity()) {
-          event.preventDefault();
-          event.stopPropagation();
-          isDraft = false;
-        } else {
-          event.preventDefault();
-          if (typeof NewIdea === "function") {
-            NewIdea();
-          }
-        }
-        form.classList.add("was-validated");
-      },
-      false,
-    );
   });
 }
 
@@ -1724,23 +1690,29 @@ document.addEventListener("DOMContentLoaded", function () {
   loadCategoryOptions();
   loadImpactOptions();
   fetchWorkflowSteps().then(function(steps) { workflowSteps = steps; });
+  // Save Idea — creates record only, no workflow advancement
   document.getElementById('saveDraftButton')?.addEventListener('click', async function() {
+    const titleVal = document.getElementById('inpTitle')?.value.trim();
     const form = document.getElementById('ideaForm');
     if (!form) return;
-
-    // Run validation manually
     form.classList.add('was-validated');
-
-    // For drafts, only require title — allow partial saves
-    const titleVal = document.getElementById('inpTitle')?.value.trim();
     if (!titleVal) {
       document.getElementById('inpTitle')?.focus();
       return;
     }
-
     isDraft = true;
     await NewIdea();
     isDraft = false;
+  });
+
+  // Submit Idea — creates record AND advances workflow to stepID 1
+  document.getElementById('submitButton')?.addEventListener('click', async function() {
+    const form = document.getElementById('ideaForm');
+    if (!form) return;
+    form.classList.add('was-validated');
+    if (!form.checkValidity()) return;
+    isDraft = false;
+    await NewIdea();
   });
   wireJumpToTop();
   initValidation();
