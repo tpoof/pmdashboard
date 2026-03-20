@@ -1048,15 +1048,23 @@ function fetchUserSubmissions() {
   renderTableMessage(ui.myResults, "Loading...");
 
   $.ajax({
-    url: 'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","12","13"]}&x-filterData=recordID,title,created_date,userID',
+    url: `https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"userID","operator":"=","match":"${userID}","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{}}&x-filterData=recordID,title,created_date,userID`,
     type: "GET",
     cache: false,
     dataType: "json",
     success: function(data) {
+      // Filter out vote records (title starts with "Idea #")
       const userIdeas = Object.values(data || {}).filter(function(idea) {
         if (!idea || !idea.recordID) return false;
         if ((idea.title || '').startsWith('Idea #')) return false;
-        return (idea.userID || '') === userID;
+        return true;
+      }).map(function(idea) {
+        // Enrich with full data from ideasById if available (submitted records)
+        const key = String(idea.recordID);
+        if (ideasById && ideasById[key]) {
+          return ideasById[key];
+        }
+        return idea;
       });
 
       myIdeasCache = buildIdeasViewModelList(userIdeas, false);
