@@ -469,6 +469,10 @@
     // Leave as '' to hide the button.
     newFormCategoryID: "",
 
+    // Workflow step that means "completed" — records at this step are
+    // removed from the board. Set to '' to show all non-deleted records.
+    completedStepID: "4",
+
     // Set to true to see raw API response data in the browser console
     debug: true,
   };
@@ -894,6 +898,9 @@
       var query = new LeafFormQuery();
       query.addTerm("categoryID", "=", ROADMAP_CONFIG.categoryID);
       query.addTerm("stepID", "=", "notDeleted");
+      if (ROADMAP_CONFIG.completedStepID) {
+        query.addTerm("stepID", "!=", ROADMAP_CONFIG.completedStepID);
+      }
       query.getData(indicatorIDs);
       query.join("status");
 
@@ -1267,9 +1274,9 @@
         html += "</div>";
       }
 
-      // Link to LEAF record
+      // Link to LEAF record (on its own line)
       html +=
-        '<a class="rm-record-link" href="index.php?a=printview&recordID=' +
+        '<a class="rm-record-link" style="display:block; margin-top:10px" href="index.php?a=printview&recordID=' +
         theme.recordID +
         '" ';
       html += 'onclick="event.stopPropagation()" target="_blank">';
