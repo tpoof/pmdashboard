@@ -8,12 +8,8 @@
 <!--{/if}-->
 
 <!-- Public view for all users -->
-<!--
-    PUBLIC VIEW — indicatorIDs: 5, 6, 7, 8, 13 (if Other), 9, 10
-    Inserted inside the <!--{else}--> block of print_form_ideas.tpl
-    Requires: $recordID, $portal_url, $form (standard LEAF printview vars)
--->
 
+<div id="public-view">
 <!-- ── Skip link (accessibility: keyboard users jump past nav) ── -->
 <a href="#pv-main" class="pv-skip-link">Skip to main content</a>
 
@@ -571,6 +567,7 @@
 }());
 </script>
 
+</div>
 
 <!-- Group 226 toolbar: shown only to idea managers -->
 <!--{if $empMembership['groupID'][226]}-->
