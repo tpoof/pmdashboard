@@ -1,8 +1,3 @@
-fetch(
-  'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"userID","operator":"=","match":"oitauslumags","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{}}&x-filterData=recordID,title,created_date,userID',
-  {
-    credentials: "same-origin",
-  },
-)
-  .then((r) => r.text())
-  .then(console.log);
+console.log("userID value:", userID);
+console.log("type:", typeof userID);
+console.log("length:", userID?.length);
