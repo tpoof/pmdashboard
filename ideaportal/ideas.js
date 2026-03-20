@@ -1048,6 +1048,7 @@ function fetchUserSubmissions() {
   renderTableMessage(ui.myResults, "Loading...");
 
   const url = `https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"userID","operator":"=","match":"${userID}","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","12","13","stepID"]}&x-filterData=recordID,title,created_date,userID`;
+  console.log('[MyIdeas] url:', url);
 
   return fetch(url, {
     credentials: "same-origin"

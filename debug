@@ -1,3 +1,6 @@
-console.log("userID value:", userID);
-console.log("type:", typeof userID);
-console.log("length:", userID?.length);
+const testUID = userID;
+const testUrl = `https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"userID","operator":"=","match":"${testUID}","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","12","13","stepID"]}&x-filterData=recordID,title,created_date,userID`;
+console.log("built url:", testUrl);
+fetch(testUrl, { credentials: "same-origin" })
+  .then((r) => r.text())
+  .then(console.log);
