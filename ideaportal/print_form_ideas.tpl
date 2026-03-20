@@ -9,6 +9,7 @@
 
 <!-- Public view for all users -->
 
+<!--{if $empMembership['groupID'][226]}--><div class="pv-layout-row"><!--{/if}-->
 <div id="public-view">
 <!-- ── Skip link (accessibility: keyboard users jump past nav) ── -->
 <a href="#pv-main" class="pv-skip-link">Skip to main content</a>
@@ -47,6 +48,37 @@
     font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
     color: #0f172a;
     padding: 0 0 64px;
+}
+
+/* ── Group 226 side-by-side layout ─────────────────── */
+.pv-layout-row {
+    display: flex;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+.pv-layout-row #public-view {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-bottom: 64px;
+}
+.pv-layout-row #toolbar226 {
+    flex: 0 0 220px;
+    width: 220px;
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+    align-self: flex-start;
+}
+@media (max-width: 700px) {
+    .pv-layout-row {
+        flex-direction: column;
+    }
+    .pv-layout-row #toolbar226 {
+        position: static;
+        width: 100%;
+        max-height: none;
+    }
 }
 
 /* ── Back nav bar ───────────────────────────────────── */
@@ -722,6 +754,7 @@
 
 </div>
 <!--{/if}-->
+<!--{if $empMembership['groupID'][226]}--></div><!--{/if}-->
 
 <!-- DIALOG BOXES -->
 <div id="formContainer"></div>
@@ -1981,28 +2014,7 @@ function doSubmit(recordID) {
         }
     }
 
-    // attempt to force a consistent width for the sidebar if there is enough desktop resolution
-    let lastScreenSize = null;
-
-    function sideBar() {
-        if (lastScreenSize != window.innerWidth) {
-            lastScreenSize = window.innerWidth;
-            let toolbar = $('#toolbar226');
-            let maincontent = $('#pv-main');
-            if (lastScreenSize < 700) {
-                toolbar.removeClass("toolbar_right");
-                toolbar.addClass("toolbar_inline");
-                maincontent.css("width", "98%");
-                toolbar.css("width", "98%");
-            } else {
-                toolbar.removeClass("toolbar_inline");
-                toolbar.addClass("toolbar_right");
-                mywidth = Math.floor((1 - 250 / lastScreenSize) * 100);
-                maincontent.css("width", mywidth + "%");
-                toolbar.css("width", 98 - mywidth + "%");
-            }
-        }
-    }
+    // Layout is handled by CSS flexbox (.pv-layout-row) — no JS sideBar needed
 
     this.portalAPI = LEAFRequestPortalAPI();
     this.portalAPI.setBaseURL('api/?a=');
@@ -2041,8 +2053,6 @@ function doSubmit(recordID) {
         <!--{else}-->
             openContent('ajaxIndex.php?a=internalonlyview&recordID=<!--{$recordID|strip_tags}-->&childCategoryID=<!--{$childCategoryID|strip_tags}-->');
         <!--{/if}-->
-        sideBar();
-        setInterval("sideBar()", 500);
         <!--{/if}-->
 
         <!--{if $submitted == 0}-->
