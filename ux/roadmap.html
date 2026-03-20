@@ -444,7 +444,7 @@
     // The categoryID of your UX Roadmap form (numeric ID only, e.g. 50725)
     // NOTE: LeafFormQuery addTerm for categoryID expects the NUMERIC id,
     //       not the prefixed "form_XXXXX" string.
-    categoryID: "50725",
+    categoryID: "form_50725",
 
     // Indicator IDs — update these after creating the form
     INDICATOR_TITLE: 10, // Theme Title (text)
@@ -728,12 +728,107 @@
           console.log("  Query failed:", e);
         });
 
-      // Step 6: If we can find records, inspect their data structure
+      // Step 6: Discover actual indicator IDs from the form structure
       console.log(
-        "\n--- STEP 6: Trying query with getData to inspect indicator structure ---",
+        "\n--- STEP 6: Discovering actual indicator IDs for this form ---",
       );
+
+      // 6a: Fetch the form structure to find real indicator IDs and names
+      $.ajax({
+        type: "GET",
+        url:
+          "./api/formEditor/indicator/list/category/" +
+          ROADMAP_CONFIG.categoryID.replace("form_", ""),
+        success: function (indicators) {
+          console.log("  Form field structure (indicator list):");
+          if (indicators && typeof indicators === "object") {
+            for (var indID in indicators) {
+              if (indicators.hasOwnProperty(indID)) {
+                var ind = indicators[indID];
+                var name = ind.name || ind.description || "";
+                var format = ind.format || ind.input_type || "";
+                var parentID = ind.parentID || "";
+                console.log(
+                  "    indicatorID: " +
+                    indID +
+                    " | name: " +
+                    name +
+                    " | format: " +
+                    format +
+                    " | parentID: " +
+                    parentID,
+                );
+              }
+            }
+          } else {
+            console.log("  (Could not parse indicator list)");
+            console.log("  Raw:", JSON.stringify(indicators).substring(0, 500));
+          }
+        },
+        error: function () {
+          console.log(
+            "  Could not fetch indicator list via formEditor API. Trying form/[recordID] approach...",
+          );
+        },
+      });
+
+      // 6b: Fetch a known record (#3) directly to see its full data
+      console.log(
+        "\n--- STEP 6b: Fetching Record #3 directly (the 'Test' record) ---",
+      );
+      $.ajax({
+        type: "GET",
+        url: "./api/form/3",
+        success: function (formData) {
+          console.log("  Record #3 full structure:");
+          console.log(JSON.stringify(formData, null, 2));
+
+          // Also try getting the data for this record
+          $.ajax({
+            type: "GET",
+            url: "./api/form/3/data",
+            success: function (dataRes) {
+              console.log("  Record #3 /data endpoint:");
+              console.log(JSON.stringify(dataRes, null, 2));
+              if (dataRes && typeof dataRes === "object") {
+                console.log("\n  >>> YOUR ACTUAL INDICATOR IDs ARE:");
+                for (var indKey in dataRes) {
+                  if (dataRes.hasOwnProperty(indKey)) {
+                    var d = dataRes[indKey];
+                    if (d && typeof d === "object") {
+                      var series = Object.keys(d)[0] || "1";
+                      var entry = d[series] || d;
+                      console.log(
+                        "    indicatorID: " +
+                          (entry.indicatorID || indKey) +
+                          " | name: " +
+                          (entry.name || "?") +
+                          " | format: " +
+                          (entry.format || "?") +
+                          " | value: " +
+                          JSON.stringify(entry.value || "").substring(0, 80),
+                      );
+                    }
+                  }
+                }
+                console.log(
+                  "\n  >>> UPDATE your ROADMAP_CONFIG indicator IDs to match the above!",
+                );
+              }
+            },
+            error: function () {
+              console.log("  Could not fetch /data for record #3");
+            },
+          });
+        },
+        error: function () {
+          console.log("  Could not fetch record #3 directly.");
+        },
+      });
+
+      // 6c: Try query with getData but using the CORRECT categoryID now
       var q5 = new LeafFormQuery();
-      q5.addTerm("categoryID", "=", ROADMAP_CONFIG.categoryID);
+      q5.addTerm("categoryID", "=", "form_50725");
       q5.getData([
         ROADMAP_CONFIG.INDICATOR_TITLE,
         ROADMAP_CONFIG.INDICATOR_HORIZON,
@@ -742,12 +837,29 @@
       q5.execute()
         .then(function (res) {
           var count = Object.keys(res).length;
-          console.log("  Result: " + count + " records (with getData)");
+          console.log(
+            "\n--- STEP 6c: Query with form_50725 + getData [" +
+              ROADMAP_CONFIG.INDICATOR_TITLE +
+              "," +
+              ROADMAP_CONFIG.INDICATOR_HORIZON +
+              "] ---",
+          );
+          console.log("  Result: " + count + " records");
           if (count > 0) {
             var firstKey = Object.keys(res)[0];
-            var rec = res[firstKey];
-            console.log("  Full first record structure:");
-            console.log(JSON.stringify(rec, null, 2));
+            console.log("  Full first record:");
+            console.log(JSON.stringify(res[firstKey], null, 2));
+          } else {
+            console.log(
+              "  0 records — the indicator IDs [" +
+                ROADMAP_CONFIG.INDICATOR_TITLE +
+                ", " +
+                ROADMAP_CONFIG.INDICATOR_HORIZON +
+                "] likely do not exist on this form.",
+            );
+            console.log(
+              "  Check the output from Step 6b above for the real IDs.",
+            );
           }
 
           console.log("\n=== END DIAGNOSTICS ===");
