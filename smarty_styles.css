@@ -191,9 +191,15 @@ body.smarty.page-ideaportal .ip-btn--ghost:active {
   border-color: #aacdec;
 }
 
+body.smarty.page-ideaportal .ip-upvote {
+  margin-right: 1.25rem;
+}
+
 body.smarty.page-ideaportal .ip-share {
   background: transparent;
   border-color: #c7c7c7;
+  margin-left: 0;
+  margin-right: 1.25rem;
 }
 
 body.smarty.page-ideaportal .ip-share:hover {
@@ -395,10 +401,14 @@ body.smarty.page-ideaportal .ip-upvote:disabled {
 }
 
 body.smarty.page-ideaportal .ip-table .ip-actionsCell {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 0.75rem;
+  vertical-align: middle;
+  text-align: left;
+  white-space: nowrap;
+  display: table-cell;
+}
+
+body.smarty.page-ideaportal .ip-table .ip-actionsCell > * {
+  vertical-align: middle;
 }
 
 body.smarty.page-ideaportal .ip-upvote,
@@ -2370,12 +2380,11 @@ body.smarty.page-ideaportal .ip-table td:nth-child(2) {
   hyphens: auto;
 }
 
-/* Category column — wider */
+/* Category column — shrink to content */
 body.smarty.page-ideaportal .ip-table th:nth-child(3),
 body.smarty.page-ideaportal .ip-table td:nth-child(3) {
-  width: 180px;
-  white-space: normal;
-  word-wrap: break-word;
+  width: 1%;
+  white-space: nowrap;
 }
 
 /* Status column — fixed width to fit "New Submission" unwrapped */
