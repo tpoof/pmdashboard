@@ -1534,6 +1534,7 @@ function doSubmit(recordID) {
 
 <!-- ── Scoped styles ── -->
 <style>
+<!--{literal}-->
 /* ── Reset & scope ─────────────────────────────────── */
 #public-view *,
 #public-view *::before,
@@ -1831,6 +1832,7 @@ function doSubmit(recordID) {
     outline-offset: 2px;
     border-radius: 2px;
 }
+<!--{/literal}-->
 </style>
 
 <!-- ── Back nav ─────────────────────────────────────────────────────────── -->
