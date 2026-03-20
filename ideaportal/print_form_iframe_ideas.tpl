@@ -138,6 +138,7 @@
     line-height: 1.25;
     margin: 0 0 24px;
     color: #0f172a;
+    font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
 }
 
 /* ── Cards ──────────────────────────────────────────── */
@@ -162,6 +163,7 @@
     line-height: 1.7;
     color: #0f172a;
     margin: 0;
+    font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
 }
 .pv-card-body p {
     margin: 0 0 0.75em;
@@ -314,7 +316,7 @@
 
 <!-- ── Back nav ─────────────────────────────────────────────────────────── -->
 <div class="pv-topbar" role="navigation" aria-label="Breadcrumb">
-    <a href="index.php" class="pv-back-link">
+    <a href="https://leaf.va.gov/platform/ideas/" class="pv-back-link">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
             <path d="M10 12L6 8l4-4"/>
         </svg>
@@ -438,21 +440,37 @@
         { id: 10, target: 'pv-value-10', isAttachment: true }
     ];
 
-    /* ── Render a plain-text / html field ────────────────────────────── */
-    function renderText(el, html) {
-        var trimmed = html ? html.trim() : '';
-        if (trimmed === '' || trimmed === 'N/A') {
+    /* ── Extract the clean value from LEAF's indicator response ─────── */
+    /* LEAF appends htmlPrint markup (inputs, scripts) after the value span.
+       We only want the text inside data_N_1, not the whole response.      */
+    function extractCleanValue(html, indicatorID) {
+        var tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        /* Try to find the canonical data span first */
+        var span = tmp.querySelector('[id^="data_' + indicatorID + '_"]');
+        if (span) {
+            return (span.textContent || span.innerText || '').trim();
+        }
+        /* Fallback: strip all script/input/button elements then read text */
+        var scripts = tmp.querySelectorAll('script, input, button, textarea, select');
+        scripts.forEach(function(s) { s.remove(); });
+        return (tmp.textContent || tmp.innerText || '').trim();
+    }
+
+    /* ── Render a plain-text field (clean value only) ────────────────── */
+    function renderText(el, html, indicatorID) {
+        var value = extractCleanValue(html, indicatorID);
+        if (value === '' || value === 'N/A') {
             el.innerHTML = '<span class="pv-empty">Not provided</span>';
         } else {
-            el.innerHTML = trimmed;
+            /* Safely set as text — no raw HTML from LEAF leaks through */
+            el.textContent = value;
         }
     }
 
-    /* ── Extract readable text from an HTML fragment ─────────────────── */
-    function extractText(html) {
-        var tmp = document.createElement('div');
-        tmp.innerHTML = html;
-        return (tmp.textContent || tmp.innerText || '').trim();
+    /* ── Extract readable text (used by onValue callbacks) ──────────── */
+    function extractText(html, indicatorID) {
+        return extractCleanValue(html, indicatorID);
     }
 
     /* ── Render attachments (image or file) from raw AJAX HTML ───────── */
@@ -490,7 +508,6 @@
             out +=     '<img src="' + src + '"'
                   +         ' alt="' + filename.replace(/"/g, '&quot;') + '"'
                   +         ' class="pv-attach-thumb"'
-                  +         ' loading="lazy"'
                   +         ' onerror="this.closest(\'.pv-attach-btn\').setAttribute(\'aria-label\',\'Image could not load: ' + filename.replace(/"/g, '&quot;') + '\')"'
                   +    '/>';
             out +=   '</button>';
@@ -543,9 +560,9 @@
                 if (cfg.isAttachment) {
                     renderAttachments(el, html);
                 } else {
-                    renderText(el, html);
+                    renderText(el, html, indicatorID);
                     if (typeof cfg.onValue === 'function') {
-                        cfg.onValue(extractText(html));
+                        cfg.onValue(extractText(html, indicatorID));
                     }
                 }
             },
