@@ -1047,37 +1047,29 @@ function fetchUserSubmissions() {
   setStatus("my", "Loading your ideas...", "loading");
   renderTableMessage(ui.myResults, "Loading...");
 
-  const url = `https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q={"terms":[{"id":"userID","operator":"=","match":"${userID}","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","12","13","stepID"]}`;
+  const url = `https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q={"terms":[{"id":"categoryID","operator":"=","match":"${FORM_IDS.idea}","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","12","13","stepID"]}`;
 
   return fetch(url, {
-    method: "GET",
-    credentials: "same-origin",
-    cache: "no-store",
-    headers: { Accept: "application/json" }
+    credentials: "same-origin"
   })
     .then(r => r.text())
     .then(function(text) {
-      const data = text ? JSON.parse(text) : {};
-      console.log('[MyIdeas] raw count:', Object.keys(data).length);
+      const data = (text && text !== '""') ? JSON.parse(text) : {};
+      console.log('[MyIdeas] total records:', Object.keys(data).length);
 
-      const seen = new Set();
-      const merged = [];
-      Object.values(data || {}).forEach(function(idea) {
-        const key = idea && idea.recordID ? String(idea.recordID) : null;
-        if (!key || seen.has(key)) return;
-        // Filter out vote records
-        const title = (idea.title || '');
-        if (title.startsWith('Idea #')) return;
-        seen.add(key);
-        merged.push(idea);
+      // Filter client-side by userID and exclude vote records
+      const myRecords = Object.values(data).filter(function(idea) {
+        if (!idea || !idea.recordID) return false;
+        if ((idea.title || '').startsWith('Idea #')) return false;
+        return idea.userID === userID;
       });
 
-      console.log('[MyIdeas] merged count:', merged.length);
+      console.log('[MyIdeas] my records:', myRecords.length);
 
-      if (merged.length === 0) {
-        myIdeasCache = filterIdeasByUser();
+      if (myRecords.length === 0) {
+        myIdeasCache = [];
       } else {
-        myIdeasCache = buildIdeasViewModelList(merged, false);
+        myIdeasCache = buildIdeasViewModelList(myRecords, false);
       }
       renderMyIdeas();
       setStatus("my", "", "");
