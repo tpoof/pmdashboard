@@ -511,7 +511,254 @@
         return;
       }
 
-      loadData();
+      if (ROADMAP_CONFIG.debug) {
+        runDiagnostics();
+      } else {
+        loadData();
+      }
+    }
+
+    /**
+     * Run diagnostic queries to find why data isn't appearing
+     */
+    function runDiagnostics() {
+      console.log("=== ROADMAP DIAGNOSTICS ===");
+      console.log("Config categoryID: '" + ROADMAP_CONFIG.categoryID + "'");
+      console.log("Indicator IDs:", {
+        title: ROADMAP_CONFIG.INDICATOR_TITLE,
+        horizon: ROADMAP_CONFIG.INDICATOR_HORIZON,
+        area: ROADMAP_CONFIG.INDICATOR_AREA,
+      });
+
+      // Step 1: Check what forms/categories exist via the API
+      console.log("\n--- STEP 1: Fetching available forms via API ---");
+      $.ajax({
+        type: "GET",
+        url: "./api/form/categories",
+        success: function (categories) {
+          console.log("Available form categories on this site:");
+          if (categories && typeof categories === "object") {
+            for (var catID in categories) {
+              if (categories.hasOwnProperty(catID)) {
+                var cat = categories[catID];
+                var name =
+                  cat.categoryName ||
+                  cat.name ||
+                  cat.categoryDescription ||
+                  JSON.stringify(cat);
+                console.log("  categoryID: " + catID + " => " + name);
+              }
+            }
+          } else {
+            console.log("  (could not parse categories response)");
+            console.log("  Raw response:", categories);
+          }
+        },
+        error: function (err) {
+          console.log(
+            "  Could not fetch categories (api/form/categories). Trying alternative...",
+          );
+          // Try the workflow categories endpoint
+          $.ajax({
+            type: "GET",
+            url: "./api/workflow/categoriesUnabridged",
+            success: function (cats) {
+              console.log(
+                "Available form categories (from workflow endpoint):",
+              );
+              if (Array.isArray(cats)) {
+                cats.forEach(function (c) {
+                  console.log(
+                    "  categoryID: " +
+                      c.categoryID +
+                      " => " +
+                      c.categoryName +
+                      (c.visible === -1 ? " [UNPUBLISHED]" : ""),
+                  );
+                });
+              } else {
+                console.log("  Raw:", JSON.stringify(cats).substring(0, 500));
+              }
+            },
+            error: function () {
+              console.log("  Both category endpoints failed.");
+            },
+          });
+        },
+      });
+
+      // Step 2: Try the configured categoryID
+      console.log(
+        "\n--- STEP 2: Querying with categoryID = '" +
+          ROADMAP_CONFIG.categoryID +
+          "' ---",
+      );
+      var q1 = new LeafFormQuery();
+      q1.addTerm("categoryID", "=", ROADMAP_CONFIG.categoryID);
+      q1.addTerm("stepID", "=", "notDeleted");
+      q1.join("categoryName");
+      q1.join("status");
+      q1.setLimit(5);
+      q1.execute()
+        .then(function (res) {
+          var count = Object.keys(res).length;
+          console.log(
+            "  Result: " +
+              count +
+              " records found with categoryID='" +
+              ROADMAP_CONFIG.categoryID +
+              "'",
+          );
+          if (count > 0) {
+            var firstKey = Object.keys(res)[0];
+            console.log("  First record keys:", Object.keys(res[firstKey]));
+            console.log(
+              "  First record categoryNames:",
+              res[firstKey].categoryNames ||
+                res[firstKey].categoryName ||
+                "N/A",
+            );
+            console.log(
+              "  First record status:",
+              res[firstKey].stepID || res[firstKey].lastStatus || "N/A",
+            );
+          }
+        })
+        .catch(function (e) {
+          console.log("  Query failed:", e);
+        });
+
+      // Step 3: Try without any category filter to see if ANY records exist
+      console.log(
+        "\n--- STEP 3: Querying ALL recent records (no category filter) ---",
+      );
+      var q2 = new LeafFormQuery();
+      q2.addTerm("stepID", "=", "notDeleted");
+      q2.join("categoryName");
+      q2.setLimit(10);
+      q2.execute()
+        .then(function (res) {
+          var count = Object.keys(res).length;
+          console.log(
+            "  Found " + count + " total non-deleted records on this site",
+          );
+          if (count > 0) {
+            console.log("  Showing up to 10 records with their category info:");
+            var i = 0;
+            for (var rid in res) {
+              if (!res.hasOwnProperty(rid) || i >= 10) break;
+              var rec = res[rid];
+              console.log(
+                "    Record #" +
+                  rid +
+                  " | title: " +
+                  (rec.title || "(no title)") +
+                  " | categoryNames: " +
+                  JSON.stringify(
+                    rec.categoryNames || rec.categoryName || "N/A",
+                  ) +
+                  " | categoryIDs: " +
+                  JSON.stringify(rec.categoryIDs || "N/A"),
+              );
+              i++;
+            }
+          } else {
+            console.log(
+              "  No records found at all — the site may have no submitted forms.",
+            );
+          }
+        })
+        .catch(function (e) {
+          console.log("  Query failed:", e);
+        });
+
+      // Step 4: Try with the form_ prefix
+      var altID = "form_" + ROADMAP_CONFIG.categoryID;
+      console.log(
+        "\n--- STEP 4: Trying categoryID = '" +
+          altID +
+          "' (with form_ prefix) ---",
+      );
+      var q3 = new LeafFormQuery();
+      q3.addTerm("categoryID", "=", altID);
+      q3.addTerm("stepID", "=", "notDeleted");
+      q3.setLimit(5);
+      q3.execute()
+        .then(function (res) {
+          var count = Object.keys(res).length;
+          console.log(
+            "  Result: " +
+              count +
+              " records found with categoryID='" +
+              altID +
+              "'",
+          );
+          if (count > 0) {
+            console.log(
+              "  >>> FIX: Change ROADMAP_CONFIG.categoryID to '" + altID + "'",
+            );
+          }
+        })
+        .catch(function (e) {
+          console.log("  Query failed:", e);
+        });
+
+      // Step 5: Try including not-yet-submitted records
+      console.log(
+        "\n--- STEP 5: Including un-submitted records (stepID=notSubmitted) ---",
+      );
+      var q4 = new LeafFormQuery();
+      q4.addTerm("categoryID", "=", ROADMAP_CONFIG.categoryID);
+      q4.addTerm("stepID", "=", "notSubmitted");
+      q4.setLimit(5);
+      q4.execute()
+        .then(function (res) {
+          var count = Object.keys(res).length;
+          console.log("  Result: " + count + " un-submitted records found");
+          if (count > 0) {
+            console.log(
+              "  >>> Your records exist but have NOT been submitted yet!",
+            );
+            console.log(
+              "  >>> Either submit them, or change the query to include unsubmitted records.",
+            );
+          }
+        })
+        .catch(function (e) {
+          console.log("  Query failed:", e);
+        });
+
+      // Step 6: If we can find records, inspect their data structure
+      console.log(
+        "\n--- STEP 6: Trying query with getData to inspect indicator structure ---",
+      );
+      var q5 = new LeafFormQuery();
+      q5.addTerm("categoryID", "=", ROADMAP_CONFIG.categoryID);
+      q5.getData([
+        ROADMAP_CONFIG.INDICATOR_TITLE,
+        ROADMAP_CONFIG.INDICATOR_HORIZON,
+      ]);
+      q5.setLimit(3);
+      q5.execute()
+        .then(function (res) {
+          var count = Object.keys(res).length;
+          console.log("  Result: " + count + " records (with getData)");
+          if (count > 0) {
+            var firstKey = Object.keys(res)[0];
+            var rec = res[firstKey];
+            console.log("  Full first record structure:");
+            console.log(JSON.stringify(rec, null, 2));
+          }
+
+          console.log("\n=== END DIAGNOSTICS ===");
+          console.log("=== Now running the real query... ===\n");
+          loadData();
+        })
+        .catch(function (e) {
+          console.log("  Query failed:", e);
+          console.log("\n=== END DIAGNOSTICS ===");
+          loadData();
+        });
     }
 
     /**
@@ -541,68 +788,6 @@
       query
         .execute()
         .then(function (results) {
-          if (ROADMAP_CONFIG.debug) {
-            console.log("=== ROADMAP DEBUG: Raw query results ===");
-            console.log(JSON.stringify(results, null, 2));
-            console.log(
-              "Number of records returned:",
-              Object.keys(results).length,
-            );
-
-            // Inspect first record structure
-            var firstKey = Object.keys(results)[0];
-            if (firstKey) {
-              console.log(
-                "=== First record (ID: " + firstKey + ") structure ===",
-              );
-              var firstRecord = results[firstKey];
-              console.log("Top-level keys:", Object.keys(firstRecord));
-
-              // Check for s1 vs other data key patterns
-              if (firstRecord.s1) {
-                console.log("s1 keys:", Object.keys(firstRecord.s1));
-                // Show what a single indicator looks like
-                var s1Keys = Object.keys(firstRecord.s1);
-                if (s1Keys.length > 0) {
-                  console.log(
-                    "Sample s1 entry [" + s1Keys[0] + "]:",
-                    JSON.stringify(firstRecord.s1[s1Keys[0]]),
-                  );
-                }
-              } else {
-                console.log(
-                  "WARNING: No 's1' key found. Checking alternative data structures...",
-                );
-                // LEAF may nest data differently depending on version
-                // Check if data is at the top level keyed by indicator ID
-                for (var k in firstRecord) {
-                  if (firstRecord.hasOwnProperty(k)) {
-                    console.log(
-                      "  Key '" + k + "':",
-                      typeof firstRecord[k] === "object"
-                        ? JSON.stringify(firstRecord[k]).substring(0, 200)
-                        : firstRecord[k],
-                    );
-                  }
-                }
-              }
-            } else {
-              console.log(
-                "WARNING: Query returned 0 records. Possible causes:",
-              );
-              console.log(
-                "  1. categoryID '" +
-                  ROADMAP_CONFIG.categoryID +
-                  "' does not match any form",
-              );
-              console.log("  2. No records exist for this form yet");
-              console.log("  3. All records are deleted");
-              console.log(
-                "  4. categoryID might need 'form_' prefix or just the number — try both",
-              );
-            }
-            console.log("=== END DEBUG ===");
-          }
           processResults(results);
         })
         .catch(function (err) {
