@@ -1071,9 +1071,7 @@ function fetchUserSubmissions() {
 
       if (userIdeas.length === 0) {
         // Fallback — filter the already-loaded ideas array by userID client-side
-        userIdeas = ideas.filter(function(idea) {
-          return idea && (idea.userID || '') === userID;
-        });
+        userIdeas = filterIdeasByUser();
       }
 
       myIdeasCache = buildIdeasViewModelList(userIdeas, false);
