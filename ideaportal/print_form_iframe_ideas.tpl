@@ -44,14 +44,11 @@
 #public-view {
     font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
     color: #0f172a;
-    background: #f6f8fb;
-    min-height: 100vh;
     padding: 0 0 64px;
 }
 
 /* ── Back nav bar ───────────────────────────────────── */
 .pv-topbar {
-    background: #ffffff;
     border-bottom: 1px solid #cfd7e3;
     padding: 10px 20px;
 }

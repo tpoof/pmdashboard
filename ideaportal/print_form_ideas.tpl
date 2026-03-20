@@ -46,14 +46,11 @@
 #public-view {
     font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
     color: #0f172a;
-    background: #f6f8fb;
-    min-height: 100vh;
     padding: 0 0 64px;
 }
 
 /* ── Back nav bar ───────────────────────────────────── */
 .pv-topbar {
-    background: #ffffff;
     border-bottom: 1px solid #cfd7e3;
     padding: 10px 20px;
 }
@@ -90,6 +87,7 @@
     max-width: 820px;
     margin: 32px auto 0;
     padding: 0 20px;
+    box-sizing: border-box;
 }
 
 /* ── Record ID + pills row ──────────────────────────── */
@@ -1987,11 +1985,10 @@ function doSubmit(recordID) {
     let lastScreenSize = null;
 
     function sideBar() {
-        //    console.log(window.innerWidth);
         if (lastScreenSize != window.innerWidth) {
             lastScreenSize = window.innerWidth;
-            let toolbar = $('#toolbar');
-            let maincontent = $('#maincontent');
+            let toolbar = $('#toolbar226');
+            let maincontent = $('#pv-main');
             if (lastScreenSize < 700) {
                 toolbar.removeClass("toolbar_right");
                 toolbar.addClass("toolbar_inline");
@@ -2000,7 +1997,6 @@ function doSubmit(recordID) {
             } else {
                 toolbar.removeClass("toolbar_inline");
                 toolbar.addClass("toolbar_right");
-                // effective width of toolbar becomes around 205px
                 mywidth = Math.floor((1 - 250 / lastScreenSize) * 100);
                 maincontent.css("width", mywidth + "%");
                 toolbar.css("width", 98 - mywidth + "%");

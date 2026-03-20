@@ -2501,33 +2501,3 @@ body.smarty.page-ideaportal .ip-table td:nth-child(1) a:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
-
-/* ── Idea Portal: Transparent backgrounds ───────────────── */
-body.smarty.page-ideaportal .smarty-root {
-  background: transparent;
-}
-
-body.smarty.page-ideaportal .ip-wrap {
-  background: transparent;
-}
-
-/* ── Idea Portal: Staff Layout (Group 226) ──────────────── */
-body.smarty.page-ideaportal .smarty-root.is-staff {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 1.5rem;
-}
-
-body.smarty.page-ideaportal .smarty-root.is-staff .ip-wrap {
-  flex: 1;
-  min-width: 0;
-}
-
-body.smarty.page-ideaportal .smarty-root.is-staff #footer {
-  position: sticky;
-  top: 1rem;
-  width: 220px;
-  flex-shrink: 0;
-  align-self: flex-start;
-}
