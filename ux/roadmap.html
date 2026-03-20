@@ -80,6 +80,10 @@
     background: #f0f0f0;
     border-color: #aaa;
   }
+  .rm-filter-btn:focus-visible {
+    outline: 2px solid #003f72;
+    outline-offset: 2px;
+  }
   .rm-filter-btn.active {
     background: #003f72;
     color: #fff;
@@ -102,13 +106,17 @@
     background: #003f72;
     color: #fff;
   }
+  .rm-add-btn:focus-visible {
+    outline: 2px solid #003f72;
+    outline-offset: 2px;
+  }
 
   /* Loading */
   .rm-loading {
     text-align: center;
     padding: 60px 20px;
     font-size: 16px;
-    color: #888;
+    color: #555;
   }
 
   /* Error */
@@ -123,9 +131,9 @@
   .rm-empty {
     text-align: center;
     padding: 40px 20px;
-    color: #888;
+    color: #555;
     font-size: 14px;
-    border: 1px dashed #ccc;
+    border: 1px dashed #aaa;
     border-radius: 8px;
     margin: 8px 0;
   }
@@ -163,7 +171,7 @@
     background: #eee;
     padding: 2px 10px;
     border-radius: 12px;
-    color: #666;
+    color: #555;
   }
   .rm-col-now .rm-col-header {
     border-bottom-color: #2e8540;
@@ -190,6 +198,10 @@
   .rm-card:hover {
     border-color: #aeb0b5;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+  .rm-card:focus-visible {
+    outline: 2px solid #003f72;
+    outline-offset: 2px;
   }
   .rm-card.expanded {
     border-color: #003f72;
@@ -280,25 +292,25 @@
   .rm-detail-label {
     font-size: 11px;
     font-weight: 700;
-    color: #888;
+    color: #555;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     margin-bottom: 4px;
   }
   .rm-detail-value {
     font-size: 13px;
-    color: #444;
+    color: #333;
     line-height: 1.5;
   }
 
   /* Owner */
   .rm-owner {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 6px;
     font-size: 12px;
     color: #555;
-    margin-top: 8px;
+    margin-top: 10px;
   }
   .rm-owner-dot {
     width: 20px;
@@ -311,6 +323,7 @@
     font-size: 9px;
     font-weight: 700;
     color: #fff;
+    flex-shrink: 0;
   }
 
   /* Legend */
@@ -321,7 +334,7 @@
     padding-top: 14px;
     border-top: 1px solid #e0e0e0;
     font-size: 12px;
-    color: #888;
+    color: #555;
     flex-wrap: wrap;
   }
   .rm-legend-item {
@@ -337,8 +350,8 @@
 
   /* Record link */
   .rm-record-link {
-    display: inline-block;
-    margin-top: 8px;
+    display: block;
+    margin-top: 10px;
     font-size: 12px;
     color: #003f72;
     text-decoration: none;
@@ -346,25 +359,30 @@
   .rm-record-link:hover {
     text-decoration: underline;
   }
+  .rm-record-link:focus-visible {
+    outline: 2px solid #003f72;
+    outline-offset: 2px;
+  }
 </style>
 
-<div id="uxRoadmap">
-  <div class="rm-header">
-    <div class="rm-title" id="rmTitle">UX Roadmap</div>
+<div id="uxRoadmap" role="region" aria-label="UX Roadmap">
+  <header class="rm-header">
+    <h1 class="rm-title" id="rmTitle">UX Roadmap</h1>
     <div class="rm-meta">
       <span id="rmOwner"></span>
     </div>
-    <div class="rm-vision" id="rmVision">
+    <p class="rm-vision" id="rmVision">
       Edit the title, owner, date, and vision text in the CONFIGURATION section
       of this page's source code.
-    </div>
-  </div>
+    </p>
+  </header>
 
-  <div class="rm-toolbar" id="rmToolbar">
-    <label>Filter:</label>
+  <nav class="rm-toolbar" id="rmToolbar" aria-label="Filter by product area">
+    <label id="rmFilterLabel">Filter:</label>
     <button
       class="rm-filter-btn active"
       onclick="roadmap.filterCards('all', this)"
+      aria-pressed="true"
     >
       All
     </button>
@@ -378,47 +396,85 @@
     >
       + New Theme
     </button>
-  </div>
+  </nav>
 
-  <div class="rm-loading" id="rmLoading">
+  <div class="rm-loading" id="rmLoading" role="status" aria-live="polite">
     <img src="images/indicator.gif" alt="" style="vertical-align: middle" />
     Loading roadmap...
   </div>
 
-  <div class="rm-columns" id="rmColumns" style="display: none">
-    <div class="rm-col-now">
-      <div class="rm-col-header">
-        Now <span class="rm-count" id="rmCountNow">0</span>
-      </div>
-      <div id="rmCardsNow"></div>
-    </div>
-    <div class="rm-col-next">
-      <div class="rm-col-header">
-        Next <span class="rm-count" id="rmCountNext">0</span>
-      </div>
-      <div id="rmCardsNext"></div>
-    </div>
-    <div class="rm-col-future">
-      <div class="rm-col-header">
-        Future <span class="rm-count" id="rmCountFuture">0</span>
-      </div>
-      <div id="rmCardsFuture"></div>
-    </div>
+  <div
+    class="rm-columns"
+    id="rmColumns"
+    style="display: none"
+    role="list"
+    aria-label="Roadmap time horizons"
+  >
+    <section class="rm-col-now" role="listitem" aria-label="Now — in progress">
+      <h2 class="rm-col-header">
+        Now
+        <span class="rm-count" id="rmCountNow" aria-label="theme count">0</span>
+      </h2>
+      <div id="rmCardsNow" role="list" aria-label="Now themes"></div>
+    </section>
+    <section
+      class="rm-col-next"
+      role="listitem"
+      aria-label="Next — near future"
+    >
+      <h2 class="rm-col-header">
+        Next
+        <span class="rm-count" id="rmCountNext" aria-label="theme count"
+          >0</span
+        >
+      </h2>
+      <div id="rmCardsNext" role="list" aria-label="Next themes"></div>
+    </section>
+    <section
+      class="rm-col-future"
+      role="listitem"
+      aria-label="Future — 6+ months"
+    >
+      <h2 class="rm-col-header">
+        Future
+        <span class="rm-count" id="rmCountFuture" aria-label="theme count"
+          >0</span
+        >
+      </h2>
+      <div id="rmCardsFuture" role="list" aria-label="Future themes"></div>
+    </section>
   </div>
 
-  <div class="rm-error" id="rmError" style="display: none"></div>
+  <div class="rm-error" id="rmError" style="display: none" role="alert"></div>
 
-  <div class="rm-legend" id="rmLegend" style="display: none">
+  <footer
+    class="rm-legend"
+    id="rmLegend"
+    style="display: none"
+    aria-label="Legend"
+  >
     <div class="rm-legend-item">
-      <div class="rm-legend-dot" style="background: #2e8540"></div>
+      <div
+        class="rm-legend-dot"
+        style="background: #2e8540"
+        aria-hidden="true"
+      ></div>
       Now — in progress
     </div>
     <div class="rm-legend-item">
-      <div class="rm-legend-dot" style="background: #0071bc"></div>
+      <div
+        class="rm-legend-dot"
+        style="background: #0071bc"
+        aria-hidden="true"
+      ></div>
       Next — near future
     </div>
     <div class="rm-legend-item">
-      <div class="rm-legend-dot" style="background: #6b3a9e"></div>
+      <div
+        class="rm-legend-dot"
+        style="background: #6b3a9e"
+        aria-hidden="true"
+      ></div>
       Future — 6+ months
     </div>
     <span class="rm-spacer"></span>
@@ -432,7 +488,7 @@
     <div class="rm-legend-item">
       <span class="rm-badge rm-badge-low">Low</span>
     </div>
-  </div>
+  </footer>
 </div>
 
 <script>
@@ -460,9 +516,9 @@
 
     // Page display settings
     pageTitle: "UX Roadmap",
-    owner: "Sarah Sherman",
+    owner: "UX Design Team",
     vision:
-      "Prioritize and communicate UX work to align developers and stakeholders around a shared vision.",
+      "Prioritize and communicate UX work to align designers, researchers, developers, and stakeholders around a shared vision.",
 
     // Set to the categoryID number to enable "New Theme" button.
     // Leave as '' to hide the button.
@@ -1143,6 +1199,7 @@
           .addClass("rm-filter-btn rm-filter-dynamic")
           .text(area)
           .attr("data-area", area)
+          .attr("aria-pressed", "false")
           .on("click", function () {
             roadmap.filterCards($(this).attr("data-area"), this);
           });
@@ -1194,14 +1251,25 @@
         theme.confidence.charAt(0).toUpperCase() + theme.confidence.slice(1);
       var initials = getInitials(theme.owner);
 
-      var html = '<div class="rm-card" onclick="roadmap.toggleCard(this)">';
+      // Card is keyboard-accessible with role=listitem, tabindex, and aria-expanded
+      var html =
+        '<div class="rm-card" role="listitem" tabindex="0"' +
+        ' aria-expanded="false"' +
+        ' onclick="roadmap.toggleCard(this)"' +
+        ' onkeydown="roadmap.cardKeyHandler(event, this)">';
 
       // Top row: title + confidence badge
       html += '<div class="rm-card-top">';
       html +=
         '<div class="rm-card-title">' + escapeHtml(theme.title) + "</div>";
       html +=
-        '<span class="rm-badge ' + confClass + '">' + confLabel + "</span>";
+        '<span class="rm-badge ' +
+        confClass +
+        '" aria-label="Confidence: ' +
+        confLabel +
+        '">' +
+        confLabel +
+        "</span>";
       html += "</div>";
 
       // Beneficiary + need
@@ -1260,18 +1328,24 @@
       if (theme.owner) {
         html += '<div class="rm-owner">';
         html +=
-          '<span class="rm-owner-dot">' + escapeHtml(initials) + "</span>";
-        html += escapeHtml(theme.owner);
+          '<span class="rm-owner-dot" aria-hidden="true">' +
+          escapeHtml(initials) +
+          "</span>";
+        html += "<span>" + escapeHtml(theme.owner) + "</span>";
         html += "</div>";
       }
 
       // Link to LEAF record (on its own line)
       html +=
-        '<a class="rm-record-link" style="display:block; margin-top:10px" href="index.php?a=printview&recordID=' +
+        '<a class="rm-record-link" href="index.php?a=printview&recordID=' +
         theme.recordID +
         '" ';
-      html += 'onclick="event.stopPropagation()" target="_blank">';
-      html += "Open record #" + theme.recordID + " →</a>";
+      html +=
+        'onclick="event.stopPropagation()" target="_blank" rel="noopener">';
+      html +=
+        "Open record #" +
+        theme.recordID +
+        ' <span aria-hidden="true">\u2192</span></a>';
 
       html += "</div>"; // end details
       html += "</div>"; // end card
@@ -1283,15 +1357,27 @@
      * Toggle card expanded state
      */
     function toggleCard(el) {
+      var isExpanded = $(el).hasClass("expanded");
       $(el).toggleClass("expanded");
+      $(el).attr("aria-expanded", !isExpanded);
+    }
+
+    /**
+     * Handle keyboard events on cards (Enter/Space to toggle)
+     */
+    function cardKeyHandler(event, el) {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggleCard(el);
+      }
     }
 
     /**
      * Filter cards by product area
      */
     function filterCards(area, btnEl) {
-      $(".rm-filter-btn").removeClass("active");
-      $(btnEl).addClass("active");
+      $(".rm-filter-btn").removeClass("active").attr("aria-pressed", "false");
+      $(btnEl).addClass("active").attr("aria-pressed", "true");
       renderCards(area);
     }
 
@@ -1334,13 +1420,14 @@
      */
     function showError(msg) {
       $("#rmLoading").hide();
-      $("#rmError").html(msg).show();
+      $("#rmError").text(msg).show();
     }
 
     // Public API
     return {
       init: init,
       toggleCard: toggleCard,
+      cardKeyHandler: cardKeyHandler,
       filterCards: filterCards,
       createNewTheme: createNewTheme,
     };
