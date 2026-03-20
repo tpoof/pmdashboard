@@ -1095,7 +1095,7 @@ function fetchUserSubmissions() {
     ],
     joins: [],
     sort: {},
-    getData: ["5", "8", "9", "13", "stepID"],
+    getData: ["5", "8", "9", "12", "13", "stepID"],
   };
 
   const baseUrl = "https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q=";
@@ -1105,6 +1105,8 @@ function fetchUserSubmissions() {
     apiGetJson(baseUrl + JSON.stringify(draftQuery)),
   ])
     .then(function ([submittedData, draftData]) {
+      console.log('[MyIdeas] submittedData:', JSON.stringify(submittedData));
+      console.log('[MyIdeas] draftData:', JSON.stringify(draftData));
       // Merge both result sets, deduplicating by recordID
       const seen = new Set();
       const merged = [];
@@ -1114,8 +1116,8 @@ function fetchUserSubmissions() {
           if (!key || seen.has(key)) return;
           // Filter out vote records — they have null id5 or title starting with "Idea #"
           const title = (idea.title || '');
-          const id5 = idea.s1 && idea.s1.id5;
-          if (!id5 && title.startsWith('Idea #')) return;
+          const id5 = (idea.s1 && idea.s1.id5) || idea.title || '';
+          if (title.startsWith('Idea #') && !id5) return;
           seen.add(key);
           if (!idea.s1 && ideasById[key]) {
             merged.push(ideasById[key]);
@@ -1124,6 +1126,7 @@ function fetchUserSubmissions() {
           }
         });
       });
+      console.log('[MyIdeas] merged count:', merged.length, 'records:', merged.map(r => r.recordID));
 
       if (merged.length === 0) {
         myIdeasCache = filterIdeasByUser();
@@ -1135,6 +1138,7 @@ function fetchUserSubmissions() {
           return Object.assign({}, vm, { isDraft: !step || step === 'notSubmitted' });
         });
       }
+      console.log('[MyIdeas] myIdeasCache count:', myIdeasCache.length);
       renderMyIdeas();
       setStatus("my", "", "");
     })
