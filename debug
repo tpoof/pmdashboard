@@ -1,34 +1,12 @@
-// Test 1 — userID match (what we've been using)
-fetch(
-  'https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q={"terms":[{"id":"userID","operator":"=","match":"oitauslumags","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5"]}',
-  {
-    credentials: "same-origin",
-  },
-)
+// Simulate exactly what fetchUserSubmissions sends
+const userID = window.leafIdeaPortal.userID;
+const url = `https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q={"terms":[{"id":"userID","operator":"=","match":"${userID}","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","12","13","stepID"]}`;
+console.log("URL:", url);
+fetch(url, {
+  method: "GET",
+  credentials: "same-origin",
+  cache: "no-store",
+  headers: { Accept: "application/json" },
+})
   .then((r) => r.text())
-  .then((data) => console.log("userID match:", data));
-
-// Test 2 — empUID match
-fetch(
-  'https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q={"terms":[{"id":"empUID","operator":"=","match":"539772","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5"]}',
-  {
-    credentials: "same-origin",
-  },
-)
-  .then((r) => r.text())
-  .then((data) => console.log("empUID match:", data));
-
-// Test 3 — check what userID value is actually stored on your records
-fetch(
-  'https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q={"terms":[{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5"]}',
-  {
-    credentials: "same-origin",
-  },
-)
-  .then((r) => r.text())
-  .then((data) => {
-    const records = JSON.parse(data);
-    Object.values(records).forEach((r) =>
-      console.log("recordID:", r.recordID, "userID:", r.userID),
-    );
-  });
+  .then((data) => console.log("response:", data));
