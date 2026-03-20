@@ -1090,7 +1090,6 @@ function fetchUserSubmissions() {
   const draftQuery = {
     terms: [
       { id: "userID", operator: "=", match: userID, gate: "AND" },
-      { id: "categoryID", operator: "=", match: FORM_IDS.idea, gate: "AND" },
       { id: "deleted", operator: "=", match: 0, gate: "AND" },
       { id: "stepID", operator: "=", match: "notSubmitted", gate: "AND" },
     ],
@@ -1113,8 +1112,11 @@ function fetchUserSubmissions() {
         Object.values(data || {}).forEach(function(idea) {
           const key = idea && idea.recordID ? String(idea.recordID) : null;
           if (!key || seen.has(key)) return;
+          // Filter out vote records — they have null id5 or title starting with "Idea #"
+          const title = (idea.title || '');
+          const id5 = idea.s1 && idea.s1.id5;
+          if (!id5 && title.startsWith('Idea #')) return;
           seen.add(key);
-          // Prefer the richer ideasById entry for submitted records that are already loaded
           if (!idea.s1 && ideasById[key]) {
             merged.push(ideasById[key]);
           } else {
