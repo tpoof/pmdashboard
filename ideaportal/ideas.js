@@ -1040,45 +1040,54 @@ function fetchUserSubmissions() {
     myIdeasCache = [];
     setStatus("my", "No user ID found", "error");
     renderMyIdeas();
-    return Promise.resolve();
+    return;
   }
 
   setPanelBusy("my", true);
   setStatus("my", "Loading your ideas...", "loading");
   renderTableMessage(ui.myResults, "Loading...");
 
-  const url = `https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"categoryID","operator":"=","match":"${FORM_IDS.idea}","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","12","13","stepID"]}&x-filterData=recordID,title,created_date,userID&_=${Date.now()}`;
+  const query = {
+    terms: [
+      { id: "userID", operator: "=", match: userID, gate: "AND" },
+      { id: "deleted", operator: "=", match: 0, gate: "AND" },
+    ],
+    joins: [],
+    sort: {},
+    getData: ["5", "8", "9", "12", "13", "stepID"],
+  };
 
-  return fetch(url, {
-    credentials: "same-origin"
-  })
-    .then(r => r.text())
-    .then(function(text) {
-      const data = (text && text !== '""') ? JSON.parse(text) : {};
-      const myRecords = Object.values(data).filter(function(idea) {
+  $.ajax({
+    url: `https://leaf.va.gov/platform/ideas/api/form/query/?q=${encodeURIComponent(JSON.stringify(query))}&x-filterData=recordID,title,created_date,userID`,
+    type: "GET",
+    cache: false,
+    dataType: "json",
+    success: function(data) {
+      let userIdeas = Object.values(data || {}).filter(function(idea) {
         if (!idea || !idea.recordID) return false;
         if ((idea.title || '').startsWith('Idea #')) return false;
-        return idea.userID === userID;
+        return true;
       });
 
-      console.log('[MyIdeas] my records:', myRecords.length);
-
-      if (myRecords.length === 0) {
-        myIdeasCache = [];
-      } else {
-        myIdeasCache = buildIdeasViewModelList(myRecords, false);
+      if (userIdeas.length === 0) {
+        // Fallback — filter the already-loaded ideas array by userID client-side
+        userIdeas = ideas.filter(function(idea) {
+          return idea && (idea.userID || '') === userID;
+        });
       }
+
+      myIdeasCache = buildIdeasViewModelList(userIdeas, false);
       renderMyIdeas();
       setStatus("my", "", "");
-    })
-    .catch(function(error) {
-      console.error("AJAX Error:", error);
+      setPanelBusy("my", false);
+    },
+    error: function(_xhr, status, error) {
+      console.error("AJAX Error:", status, error);
       renderTableMessage(ui.myResults, "Error loading user ideas.", { retry: true });
       setStatus("my", "Error loading user ideas.", "error");
-    })
-    .finally(function() {
       setPanelBusy("my", false);
-    });
+    }
+  });
 }
 
 function loadIdeasAndVotes() {
