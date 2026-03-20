@@ -1917,9 +1917,14 @@ function doSubmit(recordID) {
 
 <!-- ── Data loader ──────────────────────────────────────────────────────── -->
 <script>
+var _pvRecordID  = <!--{$recordID|strip_tags|escape:'javascript'}-->;
+var _pvPortalURL = '<!--{$portal_url|escape:'javascript'}-->';
+</script>
+<script>
+<!--{literal}-->
 (function() {
-    var recordID  = <!--{$recordID|strip_tags|escape:'javascript'}-->;
-    var portalURL = '<!--{$portal_url|escape:'javascript'}-->';
+    var recordID  = _pvRecordID;
+    var portalURL = _pvPortalURL;
 
     /*
      * Map of indicatorID -> config
@@ -2084,6 +2089,7 @@ function doSubmit(recordID) {
     });
 
 }());
+<!--{/literal}-->
 </script>
 
 </div>
