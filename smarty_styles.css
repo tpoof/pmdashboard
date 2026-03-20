@@ -284,7 +284,7 @@ body.smarty.page-ideaportal .ip-tableWrap {
 body.smarty.page-ideaportal .ip-tableTitle {
   font-size: 22px;
   font-weight: 700;
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 body.smarty.page-ideaportal .ip-search {
