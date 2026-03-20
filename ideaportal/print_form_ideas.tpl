@@ -19,7 +19,6 @@
 
 <!-- ── Scoped styles ── -->
 <style>
-<!--{literal}-->
 /* ── Reset & scope ─────────────────────────────────── */
 #public-view *,
 #public-view *::before,
@@ -317,7 +316,6 @@
     outline-offset: 2px;
     border-radius: 2px;
 }
-<!--{/literal}-->
 </style>
 
 <!-- ── Back nav ─────────────────────────────────────────────────────────── -->
@@ -404,14 +402,9 @@
 
 <!-- ── Data loader ──────────────────────────────────────────────────────── -->
 <script>
-var _pvRecordID  = <!--{$recordID|strip_tags|escape:'javascript'}-->;
-var _pvPortalURL = '<!--{$portal_url|escape:'javascript'}-->';
-</script>
-<script>
-<!--{literal}-->
 (function() {
-    var recordID  = _pvRecordID;
-    var portalURL = _pvPortalURL;
+    var recordID  = <!--{$recordID|strip_tags|escape:'javascript'}-->;
+    var portalURL = '<!--{$portal_url|escape:'javascript'}-->';
 
     /*
      * Map of indicatorID -> config
@@ -576,7 +569,6 @@ var _pvPortalURL = '<!--{$portal_url|escape:'javascript'}-->';
     });
 
 }());
-<!--{/literal}-->
 </script>
 
 
