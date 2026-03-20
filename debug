@@ -1,8 +1,19 @@
+// Check if records still exist at all
 fetch(
-  'https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q={"terms":[{"id":"userID","operator":"=","match":"oitauslumags","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","12","13","stepID"]}',
+  'https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,userID&q={"terms":[{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5"]}',
   {
     credentials: "same-origin",
   },
 )
   .then((r) => r.text())
-  .then((data) => console.log("response:", data));
+  .then(console.log);
+
+// Check if userID filter specifically is broken now
+fetch(
+  'https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,userID&q={"terms":[{"id":"categoryID","operator":"=","match":"form_ae642","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5"]}',
+  {
+    credentials: "same-origin",
+  },
+)
+  .then((r) => r.text())
+  .then(console.log);
