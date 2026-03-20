@@ -1,6 +1,30 @@
-const testUID = userID;
-const testUrl = `https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"userID","operator":"=","match":"${testUID}","gate":"AND"},{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","12","13","stepID"]}&x-filterData=recordID,title,created_date,userID`;
-console.log("built url:", testUrl);
-fetch(testUrl, { credentials: "same-origin" })
+fetch(
+  'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5","8","9","12","13","stepID"]}&x-filterData=recordID,title,created_date,userID',
+  {
+    credentials: "same-origin",
+  },
+)
   .then((r) => r.text())
   .then(console.log);
+
+fetch(
+  'https://leaf.va.gov/platform/ideas/api/form/query/?q={"terms":[{"id":"deleted","operator":"=","match":0,"gate":"AND"}],"joins":[],"sort":{},"getData":["5"]}&x-filterData=recordID,title,userID',
+  {
+    credentials: "same-origin",
+  },
+)
+  .then((r) => r.text())
+  .then((data) => {
+    const records = JSON.parse(data);
+    console.log("portal userID:", window.leafIdeaPortal.userID);
+    Object.values(records)
+      .slice(0, 3)
+      .forEach((r) => {
+        console.log(
+          "record userID:",
+          r.userID,
+          "match:",
+          r.userID === window.leafIdeaPortal.userID,
+        );
+      });
+  });
