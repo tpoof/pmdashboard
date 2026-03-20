@@ -1076,36 +1076,59 @@ function fetchUserSubmissions() {
   setStatus("my", "Loading your ideas...", "loading");
   renderTableMessage(ui.myResults, "Loading...");
 
-  const query = {
+  const submittedQuery = {
     terms: [
       { id: "userID", operator: "=", match: userID, gate: "AND" },
+      { id: "categoryID", operator: "=", match: FORM_IDS.idea, gate: "AND" },
       { id: "deleted", operator: "=", match: 0, gate: "AND" },
     ],
     joins: [],
     sort: {},
     getData: ["5", "8", "9", "13", "stepID"],
   };
-  const queryString = JSON.stringify(query);
 
-  return apiGetJson(
-    "https://leaf.va.gov/platform/ideas/api/form/query/?q=" +
-      queryString +
-      "&x-filterData=recordID,title,created_date,userID",
-  )
-    .then(function (data) {
-      let userIdeas = Object.values(data || {}).map((idea) => {
-        const recordKey = idea && idea.recordID ? String(idea.recordID) : "";
-        if (!idea.s1 && recordKey && ideasById[recordKey]) {
-          return ideasById[recordKey];
-        }
-        return idea;
+  const draftQuery = {
+    terms: [
+      { id: "userID", operator: "=", match: userID, gate: "AND" },
+      { id: "categoryID", operator: "=", match: FORM_IDS.idea, gate: "AND" },
+      { id: "deleted", operator: "=", match: 0, gate: "AND" },
+      { id: "stepID", operator: "=", match: "notSubmitted", gate: "AND" },
+    ],
+    joins: [],
+    sort: {},
+    getData: ["5", "8", "9", "13", "stepID"],
+  };
+
+  const baseUrl = "https://leaf.va.gov/platform/ideas/api/form/query/?x-filterData=recordID,title,created_date,userID&q=";
+
+  return Promise.all([
+    apiGetJson(baseUrl + JSON.stringify(submittedQuery)),
+    apiGetJson(baseUrl + JSON.stringify(draftQuery)),
+  ])
+    .then(function ([submittedData, draftData]) {
+      // Merge both result sets, deduplicating by recordID
+      const seen = new Set();
+      const merged = [];
+      [submittedData, draftData].forEach(function(data) {
+        Object.values(data || {}).forEach(function(idea) {
+          const key = idea && idea.recordID ? String(idea.recordID) : null;
+          if (!key || seen.has(key)) return;
+          seen.add(key);
+          // Prefer the richer ideasById entry for submitted records that are already loaded
+          if (!idea.s1 && ideasById[key]) {
+            merged.push(ideasById[key]);
+          } else {
+            merged.push(idea);
+          }
+        });
       });
-      if (userIdeas.length === 0) {
-        myIdeasCache = [];
+
+      if (merged.length === 0) {
+        myIdeasCache = filterIdeasByUser();
       } else {
-        const vms = buildIdeasViewModelList(userIdeas, false);
+        const vms = buildIdeasViewModelList(merged, false);
         myIdeasCache = vms.map(function(vm) {
-          const raw = userIdeas.find(function(r) { return String(r.recordID) === String(vm.recordID); });
+          const raw = merged.find(function(r) { return String(r.recordID) === String(vm.recordID); });
           const step = raw && raw.s1 && raw.s1.stepID;
           return Object.assign({}, vm, { isDraft: !step || step === 'notSubmitted' });
         });
