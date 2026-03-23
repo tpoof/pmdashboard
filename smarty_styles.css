@@ -1590,6 +1590,11 @@ body.smarty.page-ideaportal .lp-bottom-safe {
   box-shadow: var(--lp-shadow);
   width: 100%;
   flex: 1;
+  transition: none;
+}
+
+.lp-scope .result-container:hover {
+  transform: none;
 }
 
 .lp-scope .result-icon {
