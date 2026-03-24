@@ -309,7 +309,29 @@
     outline-offset: 2px;
     border-radius: 2px;
 }
+.pm-transfer-wrap {
+    padding-bottom: 12px;
+}
+.pm-transfer-btn {
+    background: #c5ee93 !important;
+    color: #000 !important;
+    cursor: pointer;
+}
+.pm-transfer-btn:hover,
+.pm-transfer-btn:focus {
+    background: #7fb135 !important;
+    color: #fff !important;
+    cursor: pointer;
+}
 </style>
+
+<!--{if $empMembership['groupID'][226]}-->
+<div class="noprint pm-transfer-wrap">
+    <button type="button" class="tools pm-transfer-btn" onclick="transferToPMDashboard()" title="Transfer to LEAF Projects">
+        <img src="dynicons/?img=go-next.svg&amp;w=32" alt="" aria-hidden="true" style="vertical-align: middle" /> Transfer to LEAF Projects
+    </button>
+</div>
+<!--{/if}-->
 
 <!-- ── Back nav ─────────────────────────────────────────────────────────── -->
 <div class="pv-topbar" role="navigation" aria-label="Breadcrumb">
@@ -718,6 +740,15 @@ function scrollPage(id) {
 	if($(document).height() < $('#'+id).offset().top + 100) {
 		$('html, body').animate({scrollTop: $('#'+id).offset().top}, 500);
 	}
+}
+
+function transferToPMDashboard() {
+    var params = new URLSearchParams(window.location.search || "");
+    var id = params.get("recordID");
+    if (!id) return;
+    window.location.href =
+        "https://leaf.va.gov/platform/projects/?tab=tasks&transferFromIdea=" +
+        encodeURIComponent(id);
 }
 
 // attempt to force a consistent width for the sidebar if there is enough desktop resolution

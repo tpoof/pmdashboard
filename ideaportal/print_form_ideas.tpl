@@ -344,6 +344,20 @@
     outline-offset: 2px;
     border-radius: 2px;
 }
+.pm-transfer-wrap {
+    padding-bottom: 12px;
+}
+.pm-transfer-btn {
+    background: #c5ee93 !important;
+    color: #000 !important;
+    cursor: pointer;
+}
+.pm-transfer-btn:hover,
+.pm-transfer-btn:focus {
+    background: #7fb135 !important;
+    color: #fff !important;
+    cursor: pointer;
+}
 </style>
 
 <!-- ── Back nav ─────────────────────────────────────────────────────────── -->
@@ -619,6 +633,12 @@
 <!-- Group 226 toolbar: shown only to idea managers -->
 <!--{if $empMembership['groupID'][226]}-->
 <div id="toolbar226" class="toolbar_right toolbar noprint">
+
+    <div class="pm-transfer-wrap">
+        <button type="button" class="tools pm-transfer-btn" onclick="transferToPMDashboard()" title="Transfer to LEAF Projects">
+            <img src="dynicons/?img=go-next.svg&amp;w=32" alt="" aria-hidden="true" style="vertical-align: middle" /> Transfer to LEAF Projects
+        </button>
+    </div>
 
     <div id="tools226" class="tools">
         <h1>Idea Tools</h1>
@@ -2019,6 +2039,15 @@ function doSubmit(recordID) {
     this.portalAPI = LEAFRequestPortalAPI();
     this.portalAPI.setBaseURL('api/?a=');
     this.portalAPI.setCSRFToken('<!--{$CSRFToken}-->');
+
+function transferToPMDashboard() {
+    var params = new URLSearchParams(window.location.search || "");
+    var id = params.get("recordID");
+    if (!id) return;
+    window.location.href =
+        "https://leaf.va.gov/platform/projects/?tab=tasks&transferFromIdea=" +
+        encodeURIComponent(id);
+}
 
     $(function() {
         $('#progressBar').progressbar({max: 100});
