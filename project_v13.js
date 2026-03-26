@@ -1006,9 +1006,16 @@
     var closeBtn = document.getElementById('pmModalCloseBtn');
     if (!modal || !frame || !titleEl) return;
 
-    titleEl.textContent = projectKey +
+    // Push project key modal view to history so back button works when
+    // the user clicks a task record link from inside this view
+    var pkModalTitle = projectKey +
       (projectName && projectName !== projectKey ? '  \u2014  ' + projectName : '') +
       '  \u2014  Tasks';
+    state.modalPrev = state.modalCurrent || null;
+    state.modalCurrent = { url: '__projectKey__:' + projectKey, title: pkModalTitle };
+    updateModalNav();
+
+    titleEl.textContent = pkModalTitle;
 
     // Inject or update the project record link in the modal header actions row
     var existingPkLink = document.getElementById('pmModalProjectKeyLink');
@@ -7066,7 +7073,12 @@
         var goTo = state.modalPrev;
         state.modalPrev = null;
         state.modalCurrent = goTo;
-        openModal(goTo.title, goTo.url, null, true);
+        if (goTo.url && goTo.url.indexOf('__projectKey__:') === 0) {
+          var pk = goTo.url.replace('__projectKey__:', '');
+          openProjectTasksModal(pk);
+        } else {
+          openModal(goTo.title, goTo.url, null, true);
+        }
         // After going back, enable forward
         var fwdBtn = document.getElementById('pmModalNextBtn');
         if (fwdBtn) {
@@ -7084,7 +7096,12 @@
         nextBtn._goTo = null;
         nextBtn.disabled = true;
         state.modalCurrent = goTo;
-        openModal(goTo.title, goTo.url, null, true);
+        if (goTo.url && goTo.url.indexOf('__projectKey__:') === 0) {
+          var pk = goTo.url.replace('__projectKey__:', '');
+          openProjectTasksModal(pk);
+        } else {
+          openModal(goTo.title, goTo.url, null, true);
+        }
         updateModalNav();
       });
     }
