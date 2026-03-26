@@ -2612,9 +2612,9 @@ body {
 }
 
 .pm-analyticsDrilldownClose {
-  color: #fff;
-  background: var(--accent, #2563eb);
-  border-color: var(--accent-strong, #1d4ed8);
+  color: var(--accent, #2563eb);
+  background: #fff;
+  border-color: #fff;
   font-size: 13px;
   display: flex;
   align-items: center;
@@ -2622,9 +2622,9 @@ body {
 }
 
 .pm-analyticsDrilldownClose:hover {
-  background: var(--accent-strong, #1d4ed8);
-  border-color: var(--accent-strong, #1d4ed8);
-  color: #fff;
+  background: var(--accent-soft, #e7efff);
+  border-color: var(--accent-soft, #e7efff);
+  color: var(--accent-strong, #1d4ed8);
 }
 
 #pmAnalyticsDrilldownBody {
