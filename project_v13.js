@@ -152,6 +152,8 @@
     dataReady: false,
     devOnly: false,
     recurringOnly: false,
+    modalNavList: [],
+    modalNavIndex: -1,
     okrTableView: "objectives",
     filters: {
       projectFiscalYear: new Set(),
@@ -732,6 +734,56 @@
     return !!(modal && modal.getAttribute("aria-hidden") === "false");
   }
 
+  function buildModalNavList(clickedHref) {
+    var list = [];
+    var activeTab = getActiveTab();
+
+    if (activeTab === 'tasks') {
+      var rows = state.taskTableCurrentRows || [];
+      rows.forEach(function(t) {
+        if (t.href) list.push({ url: t.href, title: 'Task ' + t.recordID });
+      });
+    } else if (activeTab === 'projects') {
+      var prows = state.projectTableCurrentRows || [];
+      prows.forEach(function(p) {
+        var href = getProjectRecordHrefFromKey(p.projectKey) || p.href || '';
+        if (href) list.push({ url: href, title: 'Project ' + p.projectKey });
+      });
+    }
+
+    // Find the index of the clicked record in the list
+    var cleanHref = String(clickedHref || '').split('&iframe')[0].split('?iframe')[0];
+    var idx = -1;
+    for (var i = 0; i < list.length; i++) {
+      var cleanItem = String(list[i].url || '').split('&iframe')[0].split('?iframe')[0];
+      if (cleanItem === cleanHref) { idx = i; break; }
+    }
+
+    state.modalNavList = list;
+    state.modalNavIndex = idx;
+  }
+
+  function updateModalNav() {
+    var nav = document.getElementById('pmModalNav');
+    var prevBtn = document.getElementById('pmModalPrevBtn');
+    var nextBtn = document.getElementById('pmModalNextBtn');
+    var counter = document.getElementById('pmModalNavCounter');
+    if (!nav) return;
+
+    var list = state.modalNavList || [];
+    var idx = state.modalNavIndex;
+
+    if (list.length < 2 || idx === -1) {
+      nav.hidden = true;
+      return;
+    }
+
+    nav.hidden = false;
+    if (prevBtn) prevBtn.disabled = idx <= 0;
+    if (nextBtn) nextBtn.disabled = idx >= list.length - 1;
+    if (counter) counter.textContent = (idx + 1) + ' / ' + list.length;
+  }
+
   function openModal(title, url, postLoadCallback) {
     var modal = document.getElementById("pmModal");
     var frame = document.getElementById("pmModalFrame");
@@ -783,6 +835,7 @@
     if (openTabBtn) openTabBtn.setAttribute("data-url", url || "");
     var _rMatch = String(url || "").match(/[?&]recordID=(\d+)/i);
     state.lastModalRecordID = _rMatch ? _rMatch[1] : null;
+    updateModalNav();
     lastFocusedElement = document.activeElement;
     modal.hidden = false;
     modal.setAttribute("aria-hidden", "false");
@@ -814,6 +867,10 @@
     var existingPkLink = document.getElementById('pmModalProjectKeyLink');
     if (existingPkLink) existingPkLink.remove();
     if (openTabBtn) openTabBtn.style.display = '';
+    state.modalNavList = [];
+    state.modalNavIndex = -1;
+    var nav = document.getElementById('pmModalNav');
+    if (nav) nav.hidden = true;
     modal.hidden = true;
     modal.setAttribute("aria-hidden", "true");
     toggleAppInert(false);
@@ -6752,7 +6809,13 @@
       // Default behavior for ALL other pm-recordLink clicks including task IDs
       var href = a.getAttribute("href");
       var title = a.getAttribute("data-title") || "Details";
-      if (href) openModal(title, href);
+      if (href) {
+        if (!a.classList.contains('pm-pkProjectLink')) {
+          buildModalNavList(href);
+        }
+        openModal(title, href);
+        updateModalNav();
+      }
     });
   }
 
@@ -6785,6 +6848,47 @@
         if (!url) return;
         window.open(url, "_blank", "noopener");
       });
+
+    var prevBtn = document.getElementById('pmModalPrevBtn');
+    var nextBtn = document.getElementById('pmModalNextBtn');
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', function() {
+        var idx = state.modalNavIndex - 1;
+        if (idx < 0 || idx >= state.modalNavList.length) return;
+        var item = state.modalNavList[idx];
+        state.modalNavIndex = idx;
+        var iframeUrl = item.url + (item.url.indexOf('?') !== -1 ? '&' : '?') + 'iframe=1';
+        var frame = document.getElementById('pmModalFrame');
+        var titleEl = document.getElementById('pmModalTitle');
+        var openTabBtn = document.getElementById('pmModalOpenTabBtn');
+        if (frame) frame.src = iframeUrl;
+        if (titleEl) titleEl.textContent = item.title;
+        if (openTabBtn) openTabBtn.setAttribute('data-url', item.url);
+        var _rMatch = item.url.match(/[?&]recordID=(\d+)/i);
+        state.lastModalRecordID = _rMatch ? _rMatch[1] : null;
+        updateModalNav();
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', function() {
+        var idx = state.modalNavIndex + 1;
+        if (idx < 0 || idx >= state.modalNavList.length) return;
+        var item = state.modalNavList[idx];
+        state.modalNavIndex = idx;
+        var iframeUrl = item.url + (item.url.indexOf('?') !== -1 ? '&' : '?') + 'iframe=1';
+        var frame = document.getElementById('pmModalFrame');
+        var titleEl = document.getElementById('pmModalTitle');
+        var openTabBtn = document.getElementById('pmModalOpenTabBtn');
+        if (frame) frame.src = iframeUrl;
+        if (titleEl) titleEl.textContent = item.title;
+        if (openTabBtn) openTabBtn.setAttribute('data-url', item.url);
+        var _rMatch = item.url.match(/[?&]recordID=(\d+)/i);
+        state.lastModalRecordID = _rMatch ? _rMatch[1] : null;
+        updateModalNav();
+      });
+    }
 
     if (modal) {
       modal.addEventListener("click", function (e) {
@@ -7743,6 +7847,7 @@
       catCounts: catCounts,
       ticketCounts: ticketCounts,
       projectTypeData: projectTypeData,
+      tasksForGeneralCharts: tasksForGeneralCharts,
     };
   }
 
@@ -7925,7 +8030,11 @@
 
   function drilldownScheduleVariance(label, cache) {
     var MS_PER_DAY = 1000 * 60 * 60 * 24;
-    var tasks = (state.tasksAll || []).filter(function(t) {
+    var sourceTasks = (cache && cache.tasksForGeneralCharts)
+      ? cache.tasksForGeneralCharts
+      : getAnalyticsBaseTasks();
+
+    var tasks = (sourceTasks || []).filter(function(t) {
       if (!t.actualCompletion || !t.due) return false;
       if (String(t.status || '').toLowerCase().indexOf('completed') === -1) return false;
       var due = mmddyyyyToDate(t.due);
@@ -7943,6 +8052,7 @@
       var gap = Math.round((actual.getTime() - due.getTime()) / MS_PER_DAY);
       return { task: t, gap: gap };
     }).sort(function(a, b) { return b.gap - a.gap; });
+
     var rows = tasks.map(function(item) {
       var gapLabel = item.gap <= 0
         ? (Math.abs(item.gap) + ' days early')
@@ -7953,9 +8063,11 @@
         '<td>' + safe(item.task.assignedTo) + '</td>' +
         '<td>' + safe(item.task.due) + '</td>' +
         '<td>' + safe(item.task.actualCompletion) + '</td>' +
-        '<td style="font-weight:600;color:' + (item.gap > 0 ? '#c62828' : '#2e7d32') + ';">' + gapLabel + '</td>' +
+        '<td style="font-weight:600;color:' + (item.gap > 0 ? '#c62828' : '#2e7d32') + ';">' +
+          gapLabel + '</td>' +
         '</tr>';
     });
+
     renderDrilldownTable('pmDrilldownScheduleVariance', label,
       ['Task ID', 'Task Name', 'Assigned To', 'Due Date', 'Completed Date', 'Variance'],
       rows);
@@ -8525,7 +8637,7 @@
       "Projects",
     );
 
-    var svData = computeScheduleVariance(state.tasksAll || []);
+    var svData = computeScheduleVariance(cache.tasksForGeneralCharts || []);
     setChartSummary(
       "pmChartScheduleVarianceDesc",
       "Schedule variance (" +

@@ -772,21 +772,24 @@
     >
       <div class="pm-modalHeader">
         <h2 class="pm-modalTitle" id="pmModalTitle">Details</h2>
+        <div class="pm-modalNav" id="pmModalNav" hidden>
+          <button type="button" class="pm-modalNavBtn" id="pmModalPrevBtn"
+            aria-label="Previous record" title="Previous">
+            <span class="material-icons" style="font-size:18px;">chevron_left</span>
+          </button>
+          <span class="pm-modalNavCounter" id="pmModalNavCounter"></span>
+          <button type="button" class="pm-modalNavBtn" id="pmModalNextBtn"
+            aria-label="Next record" title="Next">
+            <span class="material-icons" style="font-size:18px;">chevron_right</span>
+          </button>
+        </div>
         <div class="pm-modalActions">
-          <button
-            type="button"
-            class="pm-modalOpenTab"
-            id="pmModalOpenTabBtn"
-            aria-label="Open in new tab"
-          >
+          <button type="button" class="pm-modalOpenTab" id="pmModalOpenTabBtn"
+            aria-label="Open in new tab">
             Open in new tab
           </button>
-          <button
-            type="button"
-            class="pm-modalClose"
-            id="pmModalCloseBtn"
-            aria-label="Close"
-          >
+          <button type="button" class="pm-modalClose" id="pmModalCloseBtn"
+            aria-label="Close">
             ✕
           </button>
         </div>

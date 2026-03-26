@@ -2657,3 +2657,49 @@ canvas.pm-chartClickable {
 .pm-recurringFilterBtn[aria-pressed="true"] .material-icons {
   color: #fff;
 }
+
+.pm-modalNav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  margin-right: 12px;
+}
+
+.pm-modalNav[hidden] {
+  display: none;
+}
+
+.pm-modalNavBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.pm-modalNavBtn:hover:not(:disabled) {
+  background: var(--accent-soft, #e7efff);
+  border-color: var(--accent, #2563eb);
+  color: var(--accent-strong, #1d4ed8);
+}
+
+.pm-modalNavBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.pm-modalNavCounter {
+  font-size: 12px;
+  color: var(--text-muted, #555);
+  min-width: 44px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
