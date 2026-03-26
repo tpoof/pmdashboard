@@ -762,81 +762,19 @@
                 (frame.contentWindow && frame.contentWindow.document);
       if (!doc) return;
 
-      // Suppress the LEAF header
       if (!doc.getElementById('pm-iframe-header-suppression')) {
         var style = doc.createElement('style');
         style.id = 'pm-iframe-header-suppression';
         style.textContent = [
-          '#header,',
-          '#siteHeader,',
-          '.siteHeader,',
-          '#leafHeader,',
-          '.leaf-header,',
-          '#topNav,',
-          '.topNav,',
-          '#mainNav,',
-          '.site-header,',
-          '#site-header,',
-          'header.main,',
-          'nav.main-nav,',
-          '#headerWrap,',
-          '.headerWrap,',
-          '#globalHeader,',
-          '.globalHeader',
-          '{ display: none !important; }'
+          '#header,#siteHeader,.siteHeader,#leafHeader,.leaf-header,',
+          '#topNav,.topNav,#mainNav,.site-header,#site-header,',
+          'header.main,nav.main-nav,#headerWrap,.headerWrap,',
+          '#globalHeader,.globalHeader { display: none !important; }'
         ].join('\n');
         doc.head.appendChild(style);
-
-        // Also directly hide #header immediately as a fallback
         var headerEl = doc.getElementById('header');
         if (headerEl) headerEl.style.display = 'none';
       }
-
-      // Intercept link clicks inside the iframe so they push to modal history
-      // instead of navigating the iframe directly
-      if (doc._pmLinksWired) return;
-      doc._pmLinksWired = true;
-
-      doc.addEventListener('click', function(e) {
-        var a = e.target.closest('a[href]');
-        if (!a) return;
-
-        var href = a.getAttribute('href') || '';
-
-        // Only intercept internal LEAF record links (printview or Start_Request)
-        // Let external links, anchors, and javascript: links pass through
-        if (!href ||
-            href.charAt(0) === '#' ||
-            href.indexOf('javascript:') === 0 ||
-            href.indexOf('http') === 0 ||
-            href.indexOf('mailto:') === 0) return;
-
-        // Only intercept links that look like LEAF record pages
-        if (href.indexOf('printview') === -1 &&
-            href.indexOf('LEAF_Start_Request') === -1 &&
-            href.indexOf('a=view') === -1) return;
-
-        e.preventDefault();
-
-        // Build absolute URL in case href is relative
-        var absoluteUrl = href;
-        try {
-          absoluteUrl = new frame.contentWindow.URL(href, frame.contentWindow.location.href).href;
-          // Strip to path+query only (same origin)
-          var u = new frame.contentWindow.URL(absoluteUrl);
-          absoluteUrl = u.pathname + u.search;
-        } catch(ex) {
-          absoluteUrl = href;
-        }
-
-        var title = a.getAttribute('title') ||
-                    a.textContent.trim().slice(0, 60) ||
-                    'Details';
-
-        // Call openModal on the parent page — this pushes to history
-        openModal(title, absoluteUrl);
-      });
-
     } catch(e) {
       // Cross-origin or doc not ready — silently ignore
     }
@@ -886,14 +824,64 @@
 
     var iframeUrl = url ? url + (url.indexOf('?') !== -1 ? '&' : '?') + 'iframe=1' : url;
     frame.src = iframeUrl;
-    // Remove any existing suppression listener before adding a new one
-    if (frame._headerSuppressionHandler) {
-      frame.removeEventListener('load', frame._headerSuppressionHandler);
+
+    // Wire a single persistent load listener on the frame if not already done.
+    // This fires for ALL iframe navigations (links, forms, JS redirects, etc.)
+    if (!frame._pmNavHandler) {
+      frame._pmNavHandler = function() {
+        // Always suppress the header
+        suppressIframeHeader(frame);
+
+        // Skip history push if this load was triggered by openModal itself
+        // (detected via frame._pmInternalNav flag)
+        if (frame._pmInternalNav) {
+          frame._pmInternalNav = false;
+          return;
+        }
+
+        // Skip if modal is not open
+        if (!isModalOpen()) return;
+
+        // Get the current URL and title from the iframe
+        try {
+          var iframeWin = frame.contentWindow;
+          var iframeDoc = frame.contentDocument || iframeWin.document;
+          var currentUrl = iframeWin.location.pathname + iframeWin.location.search;
+          // Strip &iframe=1 from the stored URL
+          currentUrl = currentUrl.replace(/[?&]iframe=1/g, '').replace(/\?$/, '');
+          var currentTitle = iframeDoc.title ||
+                             frame.getAttribute('title') ||
+                             'Details';
+          // Clean up LEAF page titles (often "LEAF - Record #123")
+          currentTitle = currentTitle.replace(/^LEAF\s*[-–]\s*/i, '').trim() || 'Details';
+
+          // Push to history
+          if (state.modalHistoryIndex < state.modalHistory.length - 1) {
+            state.modalHistory = state.modalHistory.slice(0, state.modalHistoryIndex + 1);
+          }
+          state.modalHistory.push({ url: currentUrl, title: currentTitle });
+          state.modalHistoryIndex = state.modalHistory.length - 1;
+          updateModalNav();
+
+          // Also update the modal header title to match
+          var titleEl = document.getElementById('pmModalTitle');
+          if (titleEl) titleEl.textContent = currentTitle;
+
+          // Update open-in-tab button URL
+          var openTabBtn = document.getElementById('pmModalOpenTabBtn');
+          if (openTabBtn) openTabBtn.setAttribute('data-url', currentUrl);
+
+        } catch(e) {
+          // Cross-origin — silently ignore
+        }
+      };
+      frame.addEventListener('load', frame._pmNavHandler);
     }
-    frame._headerSuppressionHandler = function() {
-      suppressIframeHeader(frame);
-    };
-    frame.addEventListener('load', frame._headerSuppressionHandler);
+
+    // Mark this load as internal so the persistent handler skips pushing history
+    // (openModal handles the history push itself via the _skipHistory param)
+    frame._pmInternalNav = true;
+
     frame.setAttribute(
       "title",
       title ? "LEAF content - " + String(title) : "LEAF content"
@@ -940,6 +928,11 @@
     var existingPkLink = document.getElementById('pmModalProjectKeyLink');
     if (existingPkLink) existingPkLink.remove();
     if (openTabBtn) openTabBtn.style.display = '';
+    if (frame._pmNavHandler) {
+      frame.removeEventListener('load', frame._pmNavHandler);
+      frame._pmNavHandler = null;
+    }
+    frame._pmInternalNav = false;
     state.modalHistory = [];
     state.modalHistoryIndex = -1;
     updateModalNav();
