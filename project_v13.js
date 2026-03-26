@@ -184,6 +184,7 @@
       projectsByType: null,
       scheduleVariance: null,
     },
+    drilldownActive: {},
     keyResultsAll: [],
         projectsLoaded: false,
     tasksVersion: 0,
@@ -788,7 +789,16 @@
     frame.src = "about:blank";
     frame.setAttribute("title", "LEAF content");
     if (openTabBtn) openTabBtn.setAttribute("data-url", "");
-    if (openTabBtn) openTabBtn.style.display = "";
+    // Restore iframe and clean up inline content container
+    if (frame) frame.style.display = '';
+    var inlineContainer = document.getElementById('pmModalInlineContent');
+    if (inlineContainer) {
+      inlineContainer.style.display = 'none';
+      inlineContainer.innerHTML = '';
+    }
+    var existingPkLink = document.getElementById('pmModalProjectKeyLink');
+    if (existingPkLink) existingPkLink.remove();
+    if (openTabBtn) openTabBtn.style.display = '';
     modal.hidden = true;
     modal.setAttribute("aria-hidden", "true");
     toggleAppInert(false);
@@ -801,87 +811,107 @@
   }
 
   function openProjectTasksModal(projectKey) {
-    // Filter all loaded tasks to those matching this project key
-    var tasks = (state.filteredTasks || state.tasks || []).filter(function(t) {
-      return String(t.projectKey || "").trim() === String(projectKey).trim();
-    });
-
     var projectName = state.projectKeyToTitle[projectKey] || projectKey;
     var projectHref = getProjectRecordHrefFromKey(projectKey);
-    var projectRecordLink = projectHref
-      ? '<a href="' + safeAttr(projectHref) + '" ' +
-        'class="pm-recordLink" ' +
-        'data-title="Project ' + safeAttr(projectKey) + '" ' +
-        'style="font-size:13px;margin-left:12px;vertical-align:middle;">' +
-        '<span class="material-icons" style="font-size:14px;vertical-align:middle;margin-right:3px;">open_in_new</span>' +
-        'View Project Record</a>'
-      : '';
 
-    // Build table rows
+    // Filter from the full unfiltered task list, not the current view
+    var tasks = (state.tasksAll || []).filter(function(t) {
+      return String(t.projectKey || '').trim() === String(projectKey).trim();
+    });
+
+    // Build table rows as DOM-safe HTML strings
+    var now = new Date();
     var rows = tasks.map(function(t) {
-      var taskHref = t.href || "";
-      var taskIdCell = taskHref
-        ? '<a href="' + safeAttr(taskHref) + '" class="pm-recordLink pm-taskIdBadge" data-title="Task ' + safe(t.recordID) + '">' + safe(t.recordID) + '</a>'
-        : safe(t.recordID);
-
-      var overdueClass = isOverdueTask(t, new Date()) ? " pm-overdueRed" : "";
-
+      var taskIdCell = t.href
+        ? '<td><a href="' + safeAttr(t.href) + '" class="pm-recordLink pm-taskIdBadge" ' +
+          'data-title="Task ' + safe(t.recordID) + '">' + safe(t.recordID) + '</a></td>'
+        : '<td><span class="pm-taskIdBadge">' + safe(t.recordID) + '</span></td>';
+      var overdueClass = isOverdueTask(t, now) ? ' pm-overdueRed' : '';
       return '<tr>' +
-        '<td>' + taskIdCell + '</td>' +
-        '<td>' + safe(t.title || "(No title)") + '</td>' +
+        taskIdCell +
+        '<td>' + safe(t.title || '(No title)') + '</td>' +
         '<td>' + renderStatusCell(t) + '</td>' +
         '<td>' + getPriorityPill(t.priority) + '</td>' +
         '<td>' + safe(t.start) + '</td>' +
         '<td class="' + overdueClass + '">' + safe(t.due) + '</td>' +
         '<td>' + safe(t.assignedTo) + '</td>' +
         '</tr>';
-    }).join("");
+    }).join('');
 
     if (!rows) {
-      rows = '<tr><td colspan="7" style="text-align:center;padding:16px;">No tasks found for this project.</td></tr>';
+      rows = '<tr><td colspan="7" style="text-align:center;padding:16px;color:#888;">' +
+             'No tasks found for this project.</td></tr>';
     }
 
-    var modal = document.getElementById("pmModal");
-    var frame = document.getElementById("pmModalFrame");
-    var titleEl = document.getElementById("pmModalTitle");
-    var openTabBtn = document.getElementById("pmModalOpenTabBtn");
+    // Build the full modal content as an inline div — NOT srcdoc
+    // This keeps it in the same DOM so pm-recordLink delegation fires correctly
+    var contentHtml =
+      '<div style="padding:16px;overflow:auto;">' +
+        '<table class="pm-table" style="width:100%;border-collapse:collapse;">' +
+          '<thead><tr>' +
+            '<th>Task ID</th><th>Task Name</th><th>Status</th><th>Priority</th>' +
+            '<th>Start</th><th>Due</th><th>Assigned To</th>' +
+          '</tr></thead>' +
+          '<tbody>' + rows + '</tbody>' +
+        '</table>' +
+      '</div>';
+
+    // Use the existing pmModal but replace the iframe with an inline content div.
+    // Hide the iframe, inject content into a sibling div instead.
+    var modal = document.getElementById('pmModal');
+    var frame = document.getElementById('pmModalFrame');
+    var titleEl = document.getElementById('pmModalTitle');
+    var openTabBtn = document.getElementById('pmModalOpenTabBtn');
+    var closeBtn = document.getElementById('pmModalCloseBtn');
     if (!modal || !frame || !titleEl) return;
 
-    titleEl.textContent = "Tasks for Project " + projectKey;
+    titleEl.textContent = projectKey +
+      (projectName && projectName !== projectKey ? '  \u2014  ' + projectName : '') +
+      '  \u2014  Tasks';
 
-    // Hide the open-in-tab button since this is inline-generated content
-    if (openTabBtn) openTabBtn.style.display = "none";
+    // Inject or update the project record link in the modal header actions row
+    var existingPkLink = document.getElementById('pmModalProjectKeyLink');
+    if (existingPkLink) existingPkLink.remove();
+    if (projectHref) {
+      var pkHeaderLink = document.createElement('a');
+      pkHeaderLink.id = 'pmModalProjectKeyLink';
+      pkHeaderLink.href = projectHref;
+      pkHeaderLink.className = 'pm-recordLink pm-modalOpenTab';
+      pkHeaderLink.setAttribute('data-title', 'Project ' + projectKey);
+      pkHeaderLink.style.cssText = 'text-decoration:none;font-size:13px;';
+      pkHeaderLink.innerHTML = '<span class="material-icons" ' +
+        'style="font-size:14px;vertical-align:middle;margin-right:3px;">open_in_new</span>' +
+        'View Project Record';
+      var modalActions = document.querySelector('.pm-modalActions');
+      if (modalActions && openTabBtn) {
+        modalActions.insertBefore(pkHeaderLink, openTabBtn);
+      }
+    }
 
-    // Inject HTML directly via srcdoc so it renders inside the existing iframe
-    frame.srcdoc = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
-      '<style>' +
-      'body{font-family:inherit;margin:0;padding:0;background:#fff;}' +
-      'table{width:100%;border-collapse:collapse;font-size:14px;}' +
-      'th{background:var(--pm-header-bg,#f5f5f5);padding:8px 10px;text-align:left;border-bottom:2px solid #ddd;font-weight:600;}' +
-      'td{padding:8px 10px;border-bottom:1px solid #eee;vertical-align:middle;}' +
-      'tr:hover td{background:#fafafa;}' +
-      'a{color:#1a73e8;text-decoration:none;}' +
-      'a:hover{text-decoration:underline;}' +
-      '.pm-overdueRed{color:#c62828;}' +
-      'p{padding:16px 16px 0;color:#555;margin:0;}' +
-      '</style></head><body>' +
-      '<p>' + safe(projectName) + projectRecordLink + '</p>' +
-      '<div style="padding:16px;">' +
-      '<table><thead><tr>' +
-      '<th>Task ID</th><th>Task Name</th><th>Status</th><th>Priority</th>' +
-      '<th>Start</th><th>Due</th><th>Assigned To</th>' +
-      '</tr></thead><tbody>' + rows + '</tbody></table>' +
-      '</div></body></html>';
+    // Hide iframe, show inline content container
+    frame.style.display = 'none';
+    frame.src = 'about:blank';
 
-    frame.setAttribute("title", "Tasks for Project " + projectKey);
+    var inlineContainer = document.getElementById('pmModalInlineContent');
+    if (!inlineContainer) {
+      inlineContainer = document.createElement('div');
+      inlineContainer.id = 'pmModalInlineContent';
+      inlineContainer.style.cssText = 'flex:1;overflow:auto;';
+      frame.parentNode.insertBefore(inlineContainer, frame.nextSibling);
+    }
+    inlineContainer.innerHTML = contentHtml;
+    inlineContainer.style.display = '';
+
+    // Hide open-in-tab button since content is client-side generated
+    if (openTabBtn) openTabBtn.style.display = 'none';
+
     state.lastModalRecordID = null;
     lastFocusedElement = document.activeElement;
     modal.hidden = false;
-    modal.setAttribute("aria-hidden", "false");
+    modal.setAttribute('aria-hidden', 'false');
     toggleAppInert(true);
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
     requestAnimationFrame(function() {
-      var closeBtn = document.getElementById("pmModalCloseBtn");
       if (closeBtn) closeBtn.focus();
       else modal.focus();
     });
@@ -1696,10 +1726,10 @@
       okrAssociation: extractFromS1(row, TASK_IND.okrAssociation),
       keyResultSelection: extractFromS1(row, TASK_IND.keyResultSelection),
       actualCompletion: extractFromS1(row, TASK_IND.actualCompletionDate),
-      isRecurring: row[TASK_IND.isRecurring] === "Yes" ||
-                   row[TASK_IND.isRecurring] === "1" ||
-                   row[TASK_IND.isRecurring] === true ||
-                   row[TASK_IND.isRecurring] === 1,
+      isRecurring: (function() {
+        var v = extractFromS1(row, TASK_IND.isRecurring);
+        return v === "Yes" || v === "1" || v === "yes";
+      })(),
       createdAt: createdAt,
       dependenciesRaw: depsRaw,
       depIds: depIds,
@@ -3336,10 +3366,6 @@
     var titleText = String(t.title || "(No title)");
     var titleAttr = safeAttr(titleText);
 
-    var recurringIcon = t.isRecurring
-      ? '<span class="material-icons pm-recurringIcon" title="Recurring Task">change_circle</span>'
-      : "";
-
     return (
       '<tr class="pm-virtualRow" data-taskid="' +
       safeAttr(t.recordID) +
@@ -3356,7 +3382,9 @@
       titleAttr +
       '" tabindex="0">' +
       safe(titleText) +
-      recurringIcon +
+      (t.isRecurring
+        ? '<span class="material-icons pm-recurringIcon" title="Recurring Task" aria-label="Recurring Task">change_circle</span>'
+        : '') +
       "</span></td>" +
       "<td>" +
       renderStatusCell(t) +
@@ -6343,6 +6371,10 @@
     if (activeTab !== "analytics") return;
     var view = getAnalyticsView();
     if (view !== "main") return;
+    // Clear any open drilldowns so stale data is not shown after filter change
+    Object.keys(CHART_DRILLDOWN_MAP).forEach(function(slot) {
+      closeDrilldown(CHART_DRILLDOWN_MAP[slot].containerId);
+    });
     var sig = buildAnalyticsSignature();
     var cache = state.cache.analytics.get(sig);
     if (cache) {
@@ -6681,9 +6713,11 @@
       if (!a) return;
       e.preventDefault();
 
-      // If this is a project-key link clicked from within the tasks table, show
-      // an inline task summary modal instead of the LEAF record modal.
-      if (a.classList.contains("pm-pkProjectLink")) {
+      // Only intercept project-key links when clicked from within the tasks table
+      if (
+        a.classList.contains("pm-pkProjectLink") &&
+        a.closest("#pmTasksTable")
+      ) {
         var projectKey = a.getAttribute("data-projectkey") || "";
         if (projectKey) {
           openProjectTasksModal(projectKey);
@@ -6691,6 +6725,7 @@
         }
       }
 
+      // Default behavior for ALL other pm-recordLink clicks including task IDs
       var href = a.getAttribute("href");
       var title = a.getAttribute("data-title") || "Details";
       if (href) openModal(title, href);
@@ -7687,6 +7722,52 @@
     };
   }
 
+  var CHART_DRILLDOWN_MAP = {
+    scheduleVariance:    { containerId: 'pmDrilldownScheduleVariance',    resolver: drilldownScheduleVariance },
+    dueBuckets:          { containerId: 'pmDrilldownDueBuckets',          resolver: drilldownDueBuckets },
+    completedByQuarter:  { containerId: 'pmDrilldownCompletedByQuarter',  resolver: drilldownCompletedByQuarter },
+    completedByCategory: { containerId: 'pmDrilldownCompletedByCategory', resolver: drilldownCompletedByCategory },
+    priority:            { containerId: 'pmDrilldownTasksByPriority',     resolver: drilldownTasksByPriority },
+    status:              { containerId: 'pmDrilldownTasksByStatus',       resolver: drilldownTasksByStatus },
+    projectKey:          { containerId: 'pmDrilldownTasksByProject',      resolver: drilldownTasksByProject },
+    ticketsImported:     { containerId: 'pmDrilldownTicketsImported',     resolver: drilldownTicketsImported },
+    projectsByType:      { containerId: 'pmDrilldownProjectsByType',      resolver: drilldownProjectsByType },
+  };
+
+  function wireChartDrilldown(slot, canvasId) {
+    var drilldownCfg = CHART_DRILLDOWN_MAP[slot];
+    if (!drilldownCfg) return;
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    canvas.classList.add('pm-chartClickable');
+    if (canvas._pmDrilldownHandler) {
+      canvas.removeEventListener('click', canvas._pmDrilldownHandler);
+    }
+    canvas._pmDrilldownHandler = function(e) {
+      var chartInstance = state.charts[slot];
+      if (!chartInstance) return;
+      var elements = chartInstance.getElementsAtEventForMode
+        ? chartInstance.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false)
+        : (chartInstance.getElementsAtEvent ? chartInstance.getElementsAtEvent(e) : []);
+      if (!elements || !elements.length) return;
+      var index = elements[0].index != null ? elements[0].index
+        : (elements[0]._index != null ? elements[0]._index : null);
+      if (index === null) return;
+      var clickedLabel = chartInstance.data.labels[index];
+      var containerId = drilldownCfg.containerId;
+      if (state.drilldownActive[containerId] === clickedLabel) {
+        closeDrilldown(containerId);
+        return;
+      }
+      state.drilldownActive[containerId] = clickedLabel;
+      var cache = state.cache.analytics && state.cache.analytics.size
+        ? state.cache.analytics.values().next().value
+        : null;
+      drilldownCfg.resolver(clickedLabel, cache);
+    };
+    canvas.addEventListener('click', canvas._pmDrilldownHandler);
+  }
+
   function updateOrCreateChart(slot, canvasId, labels, data, datasetLabel, colors) {
     var ctx = sizeChartBox(canvasId, labels.length || 1);
     if (!ctx) return;
@@ -7703,6 +7784,7 @@
       chart.data.labels = labels;
       chart.data.datasets = [dataset];
       chart.update();
+      wireChartDrilldown(slot, canvasId);
       return;
     }
 
@@ -7714,6 +7796,7 @@
       },
       options: buildHorizontalBarOptions(),
     });
+    wireChartDrilldown(slot, canvasId);
   }
 
   function ensureAnalyticsTableState() {
@@ -7727,6 +7810,278 @@
     }
     return state.analyticsTables;
   }
+
+  // ── Drilldown engine ──────────────────────────────────────────────────────
+
+  function renderDrilldownTable(containerId, label, columns, rows) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var headerCells = columns.map(function(c) {
+      return '<th>' + safe(c) + '</th>';
+    }).join('');
+    var bodyHtml = rows.length
+      ? rows.join('')
+      : '<tr><td colspan="' + columns.length + '" style="text-align:center;padding:12px;color:#888;">No data for this selection.</td></tr>';
+    container.innerHTML =
+      '<div class="pm-drilldownHeader">' +
+        '<span class="pm-drilldownTitle">Showing: ' + safe(label) + '</span>' +
+        '<button type="button" class="pm-drilldownClose" data-close-drilldown="' + containerId + '" ' +
+        'title="Close" aria-label="Close drilldown">&#x2715;</button>' +
+      '</div>' +
+      '<table class="pm-table" style="width:100%;">' +
+        '<thead><tr>' + headerCells + '</tr></thead>' +
+        '<tbody>' + bodyHtml + '</tbody>' +
+      '</table>';
+    container.hidden = false;
+    container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function closeDrilldown(containerId) {
+    var container = document.getElementById(containerId);
+    if (container) {
+      container.hidden = true;
+      container.innerHTML = '';
+    }
+    delete state.drilldownActive[containerId];
+  }
+
+  function drilldownTaskIdCell(t) {
+    return t.href
+      ? '<td><a href="' + safeAttr(t.href) + '" class="pm-recordLink pm-taskIdBadge" data-title="Task ' + safe(t.recordID) + '">' + safe(t.recordID) + '</a></td>'
+      : '<td><span class="pm-taskIdBadge">' + safe(t.recordID) + '</span></td>';
+  }
+
+  function wireDrilldownCloseButtons() {
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-close-drilldown]');
+      if (!btn) return;
+      var id = btn.getAttribute('data-close-drilldown');
+      closeDrilldown(id);
+    });
+  }
+
+  // ── Per-chart drilldown resolvers ─────────────────────────────────────────
+
+  function drilldownScheduleVariance(label, cache) {
+    var MS_PER_DAY = 1000 * 60 * 60 * 24;
+    var tasks = (state.tasksAll || []).filter(function(t) {
+      if (!t.actualCompletion || !t.due) return false;
+      if (String(t.status || '').toLowerCase().indexOf('completed') === -1) return false;
+      var due = mmddyyyyToDate(t.due);
+      var actual = mmddyyyyToDate(t.actualCompletion);
+      if (!due || !actual) return false;
+      var gap = Math.round((actual.getTime() - due.getTime()) / MS_PER_DAY);
+      if (label === 'Early/On Time') return gap <= 0;
+      if (label === '1\u20137 days late') return gap >= 1 && gap <= 7;
+      if (label === '8\u201314 days late') return gap >= 8 && gap <= 14;
+      if (label === '15+ days late') return gap >= 15;
+      return false;
+    }).map(function(t) {
+      var due = mmddyyyyToDate(t.due);
+      var actual = mmddyyyyToDate(t.actualCompletion);
+      var gap = Math.round((actual.getTime() - due.getTime()) / MS_PER_DAY);
+      return { task: t, gap: gap };
+    }).sort(function(a, b) { return b.gap - a.gap; });
+    var rows = tasks.map(function(item) {
+      var gapLabel = item.gap <= 0
+        ? (Math.abs(item.gap) + ' days early')
+        : (item.gap + ' days late');
+      return '<tr>' +
+        drilldownTaskIdCell(item.task) +
+        '<td>' + safe(item.task.title || '(No title)') + '</td>' +
+        '<td>' + safe(item.task.assignedTo) + '</td>' +
+        '<td>' + safe(item.task.due) + '</td>' +
+        '<td>' + safe(item.task.actualCompletion) + '</td>' +
+        '<td style="font-weight:600;color:' + (item.gap > 0 ? '#c62828' : '#2e7d32') + ';">' + gapLabel + '</td>' +
+        '</tr>';
+    });
+    renderDrilldownTable('pmDrilldownScheduleVariance', label,
+      ['Task ID', 'Task Name', 'Assigned To', 'Due Date', 'Completed Date', 'Variance'],
+      rows);
+  }
+
+  function drilldownDueBuckets(label, cache) {
+    var now = new Date();
+    var tasks = (state.tasksAll || []).filter(function(t) {
+      return getDueBucketForTask(t, now) === label;
+    });
+    var rows = tasks.map(function(t) {
+      return '<tr>' +
+        drilldownTaskIdCell(t) +
+        '<td>' + safe(t.title || '(No title)') + '</td>' +
+        '<td>' + safe(t.status) + '</td>' +
+        '<td>' + safe(t.priority) + '</td>' +
+        '<td>' + safe(t.due) + '</td>' +
+        '<td>' + safe(t.assignedTo) + '</td>' +
+        '</tr>';
+    });
+    renderDrilldownTable('pmDrilldownDueBuckets', label,
+      ['Task ID', 'Task Name', 'Status', 'Priority', 'Due Date', 'Assigned To'],
+      rows);
+  }
+
+  function drilldownCompletedByQuarter(label, cache) {
+    var qIndex = parseInt(label.replace('Q', '')) - 1;
+    var tasks = (state.tasksAll || []).filter(function(t) {
+      if (!isCompletedStatus(t.status)) return false;
+      var date = getCompletionDateForTask(t);
+      if (!date) return false;
+      return Math.floor(date.getMonth() / 3) === qIndex;
+    });
+    var rows = tasks.map(function(t) {
+      return '<tr>' +
+        drilldownTaskIdCell(t) +
+        '<td>' + safe(t.title || '(No title)') + '</td>' +
+        '<td>' + safe(t.category) + '</td>' +
+        '<td>' + safe(t.assignedTo) + '</td>' +
+        '<td>' + safe(t.actualCompletion) + '</td>' +
+        '</tr>';
+    });
+    renderDrilldownTable('pmDrilldownCompletedByQuarter', label,
+      ['Task ID', 'Task Name', 'Category', 'Assigned To', 'Completed Date'],
+      rows);
+  }
+
+  function drilldownCompletedByCategory(label, cache) {
+    var tasks = (state.tasksAll || []).filter(function(t) {
+      if (!isCompletedStatus(t.status)) return false;
+      var cat = String(t.category || '').trim() || 'Unspecified';
+      return cat === label;
+    });
+    var rows = tasks.map(function(t) {
+      return '<tr>' +
+        drilldownTaskIdCell(t) +
+        '<td>' + safe(t.title || '(No title)') + '</td>' +
+        '<td>' + safe(t.assignedTo) + '</td>' +
+        '<td>' + safe(t.actualCompletion) + '</td>' +
+        '</tr>';
+    });
+    renderDrilldownTable('pmDrilldownCompletedByCategory', label,
+      ['Task ID', 'Task Name', 'Assigned To', 'Completed Date'],
+      rows);
+  }
+
+  function drilldownTasksByPriority(label, cache) {
+    var tasks = (state.tasksAll || []).filter(function(t) {
+      var p = String(t.priority || '').trim();
+      var normalized = !p ? 'Unspecified'
+        : p.toLowerCase() === 'high' ? 'High'
+        : p.toLowerCase() === 'medium' ? 'Medium'
+        : p.toLowerCase() === 'low' ? 'Low'
+        : 'Unspecified';
+      return normalized === label;
+    });
+    var rows = tasks.map(function(t) {
+      return '<tr>' +
+        drilldownTaskIdCell(t) +
+        '<td>' + safe(t.title || '(No title)') + '</td>' +
+        '<td>' + safe(t.status) + '</td>' +
+        '<td>' + safe(t.projectKey) + '</td>' +
+        '<td>' + safe(t.assignedTo) + '</td>' +
+        '<td>' + safe(t.due) + '</td>' +
+        '</tr>';
+    });
+    renderDrilldownTable('pmDrilldownTasksByPriority', label,
+      ['Task ID', 'Task Name', 'Status', 'Project Key', 'Assigned To', 'Due Date'],
+      rows);
+  }
+
+  function drilldownTasksByStatus(label, cache) {
+    var tasks = (state.tasksAll || []).filter(function(t) {
+      var primary = normalizePrimaryStatus(t.status);
+      if (label === 'Other (Blocked)') {
+        return primary === 'Other' && getOtherSubTypeValue(t.otherSubType) === 'Blocked';
+      }
+      if (label === 'Other (On Hold)') {
+        return primary === 'Other' && getOtherSubTypeValue(t.otherSubType) === 'On Hold';
+      }
+      if (label === 'Unknown') {
+        return primary === 'Unknown' || primary === 'Other';
+      }
+      return primary === label;
+    });
+    var rows = tasks.map(function(t) {
+      return '<tr>' +
+        drilldownTaskIdCell(t) +
+        '<td>' + safe(t.title || '(No title)') + '</td>' +
+        '<td>' + safe(t.projectKey) + '</td>' +
+        '<td>' + safe(t.priority) + '</td>' +
+        '<td>' + safe(t.assignedTo) + '</td>' +
+        '<td>' + safe(t.due) + '</td>' +
+        '</tr>';
+    });
+    renderDrilldownTable('pmDrilldownTasksByStatus', label,
+      ['Task ID', 'Task Name', 'Project Key', 'Priority', 'Assigned To', 'Due Date'],
+      rows);
+  }
+
+  function drilldownTasksByProject(label, cache) {
+    var tasks = (state.tasksAll || []).filter(function(t) {
+      var pk = String(t.projectKey || '').trim() || '(Blank)';
+      return pk === label;
+    });
+    var rows = tasks.map(function(t) {
+      return '<tr>' +
+        drilldownTaskIdCell(t) +
+        '<td>' + safe(t.title || '(No title)') + '</td>' +
+        '<td>' + safe(t.status) + '</td>' +
+        '<td>' + safe(t.priority) + '</td>' +
+        '<td>' + safe(t.assignedTo) + '</td>' +
+        '<td>' + safe(t.due) + '</td>' +
+        '</tr>';
+    });
+    renderDrilldownTable('pmDrilldownTasksByProject', label,
+      ['Task ID', 'Task Name', 'Status', 'Priority', 'Assigned To', 'Due Date'],
+      rows);
+  }
+
+  function drilldownTicketsImported(label, cache) {
+    var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var monthIndex = monthNames.indexOf(label);
+    var tasks = (state.tasksAll || []).filter(function(t) {
+      if (!String(t.supportTicket || '').trim()) return false;
+      var date = getTicketImportedDate(t);
+      if (!date) return false;
+      return date.getMonth() === monthIndex;
+    });
+    var rows = tasks.map(function(t) {
+      return '<tr>' +
+        drilldownTaskIdCell(t) +
+        '<td>' + safe(t.title || '(No title)') + '</td>' +
+        '<td>' + safe(t.supportTicket) + '</td>' +
+        '<td>' + safe(t.projectKey) + '</td>' +
+        '<td>' + safe(t.assignedTo) + '</td>' +
+        '</tr>';
+    });
+    renderDrilldownTable('pmDrilldownTicketsImported', label,
+      ['Task ID', 'Task Name', 'Ticket #', 'Project Key', 'Assigned To'],
+      rows);
+  }
+
+  function drilldownProjectsByType(label, cache) {
+    var projects = (state.projects || []).filter(function(p) {
+      var pt = String(p.projectType || '').trim() || 'Unspecified';
+      return pt === label;
+    });
+    var rows = projects.map(function(p) {
+      var pkHref = getProjectRecordHrefFromKey(p.projectKey);
+      var pkCell = pkHref
+        ? '<td><a href="' + safeAttr(pkHref) + '" class="pm-recordLink" data-title="Project ' + safeAttr(p.projectKey) + '">' + safe(p.projectKey) + '</a></td>'
+        : '<td>' + safe(p.projectKey) + '</td>';
+      return '<tr>' +
+        pkCell +
+        '<td>' + safe(p.projectName) + '</td>' +
+        '<td>' + safe(p.projectStatus) + '</td>' +
+        '<td>' + safe(p.owner) + '</td>' +
+        '<td>' + safe(p.projectFiscalYear) + '</td>' +
+        '</tr>';
+    });
+    renderDrilldownTable('pmDrilldownProjectsByType', label,
+      ['Project Key', 'Project Name', 'Status', 'Owner', 'Fiscal Year'],
+      rows);
+  }
+
+  // ── End drilldown engine ──────────────────────────────────────────────────
 
   function renderAnalyticsTable(
     containerId,
@@ -8476,6 +8831,7 @@
       fetchAndRenderInboxCount();
       wireRecurringFieldHider();
       wireAnalyticsSharedFilters();
+      wireDrilldownCloseButtons();
       wireJumpToTop();
       wireFeedbackWidget();
       initTour();

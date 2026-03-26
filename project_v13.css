@@ -2568,3 +2568,54 @@ body {
   color: var(--pm-accent, #1a73e8);
   cursor: default;
 }
+
+.pm-chartDrilldown {
+  margin-top: 12px;
+  border-top: 2px solid var(--pm-accent, #1a73e8);
+  padding-top: 10px;
+  animation: pm-fadeIn 0.18s ease;
+}
+
+.pm-chartDrilldown[hidden] {
+  display: none;
+}
+
+.pm-drilldownHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.pm-drilldownTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pm-text, #1f2933);
+}
+
+.pm-drilldownClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--pm-text-muted, #555);
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.pm-drilldownClose:hover {
+  color: var(--pm-text, #1f2933);
+}
+
+.pm-chartCard {
+  cursor: default;
+}
+
+canvas.pm-chartClickable {
+  cursor: pointer;
+}
+
+@keyframes pm-fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
