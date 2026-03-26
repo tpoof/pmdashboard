@@ -745,7 +745,7 @@
     var history = state.modalHistory || [];
     var idx = state.modalHistoryIndex;
 
-    if (history.length < 2) {
+    if (history.length === 0) {
       nav.hidden = true;
       return;
     }
@@ -753,7 +753,9 @@
     nav.hidden = false;
     if (prevBtn) prevBtn.disabled = idx <= 0;
     if (nextBtn) nextBtn.disabled = idx >= history.length - 1;
-    if (counter) counter.textContent = (idx + 1) + ' / ' + history.length;
+    if (counter) counter.textContent = history.length > 1
+      ? (idx + 1) + ' / ' + history.length
+      : '';
   }
 
   function suppressIframeHeader(frame) {
@@ -775,9 +777,7 @@
         var headerEl = doc.getElementById('header');
         if (headerEl) headerEl.style.display = 'none';
       }
-    } catch(e) {
-      // Cross-origin or doc not ready — silently ignore
-    }
+    } catch(e) {}
   }
 
   function openModal(title, url, postLoadCallback, _skipHistory) {
@@ -823,53 +823,53 @@
     }
 
     var iframeUrl = url ? url + (url.indexOf('?') !== -1 ? '&' : '?') + 'iframe=1' : url;
+
+    // Tag this navigation as internal so the persistent handler skips it
+    frame._pmSkipNextHistory = true;
     frame.src = iframeUrl;
 
-    // Wire a single persistent load listener on the frame if not already done.
-    // This fires for ALL iframe navigations (links, forms, JS redirects, etc.)
+    // Add a persistent load listener ONCE for the lifetime of the modal.
+    // It fires for ALL iframe navigations — links, buttons, forms, JS redirects.
     if (!frame._pmNavHandler) {
       frame._pmNavHandler = function() {
-        // Always suppress the header
+        // Always suppress the header first
         suppressIframeHeader(frame);
 
-        // Skip history push if this load was triggered by openModal itself
-        // (detected via frame._pmInternalNav flag)
-        if (frame._pmInternalNav) {
-          frame._pmInternalNav = false;
+        // If this load was triggered by openModal directly, skip history push
+        if (frame._pmSkipNextHistory) {
+          frame._pmSkipNextHistory = false;
           return;
         }
 
-        // Skip if modal is not open
+        // Skip if modal is closed
         if (!isModalOpen()) return;
 
-        // Get the current URL and title from the iframe
         try {
-          var iframeWin = frame.contentWindow;
-          var iframeDoc = frame.contentDocument || iframeWin.document;
-          var currentUrl = iframeWin.location.pathname + iframeWin.location.search;
-          // Strip &iframe=1 from the stored URL
-          currentUrl = currentUrl.replace(/[?&]iframe=1/g, '').replace(/\?$/, '');
-          var currentTitle = iframeDoc.title ||
-                             frame.getAttribute('title') ||
-                             'Details';
-          // Clean up LEAF page titles (often "LEAF - Record #123")
-          currentTitle = currentTitle.replace(/^LEAF\s*[-–]\s*/i, '').trim() || 'Details';
+          var iwin = frame.contentWindow;
+          var idoc = frame.contentDocument || iwin.document;
 
-          // Push to history
+          // Get URL from iframe — strip &iframe=1 param
+          var currentUrl = iwin.location.pathname + iwin.location.search;
+          currentUrl = currentUrl.replace(/[?&]iframe=1/g, '').replace(/\?&/, '?').replace(/\?$/, '');
+
+          // Get a clean title
+          var pageTitle = (idoc.title || '').replace(/^LEAF\s*[-–]\s*/i, '').trim() || 'Details';
+
+          // Truncate forward history if we navigated back then went somewhere new
           if (state.modalHistoryIndex < state.modalHistory.length - 1) {
             state.modalHistory = state.modalHistory.slice(0, state.modalHistoryIndex + 1);
           }
-          state.modalHistory.push({ url: currentUrl, title: currentTitle });
+
+          state.modalHistory.push({ url: currentUrl, title: pageTitle });
           state.modalHistoryIndex = state.modalHistory.length - 1;
-          updateModalNav();
 
-          // Also update the modal header title to match
+          // Update modal header title and open-in-tab URL
           var titleEl = document.getElementById('pmModalTitle');
-          if (titleEl) titleEl.textContent = currentTitle;
-
-          // Update open-in-tab button URL
+          if (titleEl) titleEl.textContent = pageTitle;
           var openTabBtn = document.getElementById('pmModalOpenTabBtn');
           if (openTabBtn) openTabBtn.setAttribute('data-url', currentUrl);
+
+          updateModalNav();
 
         } catch(e) {
           // Cross-origin — silently ignore
@@ -877,10 +877,6 @@
       };
       frame.addEventListener('load', frame._pmNavHandler);
     }
-
-    // Mark this load as internal so the persistent handler skips pushing history
-    // (openModal handles the history push itself via the _skipHistory param)
-    frame._pmInternalNav = true;
 
     frame.setAttribute(
       "title",
@@ -932,7 +928,7 @@
       frame.removeEventListener('load', frame._pmNavHandler);
       frame._pmNavHandler = null;
     }
-    frame._pmInternalNav = false;
+    frame._pmSkipNextHistory = false;
     state.modalHistory = [];
     state.modalHistoryIndex = -1;
     updateModalNav();

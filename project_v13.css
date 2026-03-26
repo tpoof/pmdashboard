@@ -1942,7 +1942,7 @@ body {
 .pm-modalBody {
   flex: 1;
   background: #fff;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .pm-modalFrame {
