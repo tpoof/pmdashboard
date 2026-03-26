@@ -810,3 +810,65 @@ button {
     min-height: 220px;
   }
 }
+
+/* ═══════════════════════════════════════════════
+   LEAF SHELL OVERRIDES
+   Suppresses the native LEAF header, nav menu,
+   and footer so the design system owns the full
+   viewport. Targets elements from main.tpl.
+   ═══════════════════════════════════════════════ */
+
+/* Native header — VA seal + site title + menu bar */
+#header,
+header#header {
+  display: none !important;
+}
+
+/* Native nav menu rendered inside #header */
+#headerMenuNav,
+#headerMenu,
+#headerMenu_links,
+#headerMenu_help,
+#headerMenuHelp_container,
+#headerMenu_container,
+#button_showLinks,
+#button_showHelp {
+  display: none !important;
+}
+
+/* Native footer — version number link */
+#footer,
+footer#footer {
+  display: none !important;
+}
+
+/* LEAF wraps page content in #body > #content > #bodyarea.
+   Strip all padding/margin so our shell sits flush. */
+#body,
+main#body {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#content {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#bodyarea {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove any top offset LEAF's style.css may add to compensate
+   for the header height */
+body {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* Environment banners (PREPROD / VAPO TESTING) — keep visible
+   but push them below our own top-bar so they don't overlap */
+body > div[style*="position: fixed"][style*="z-index: 9999"] {
+  top: var(--topbar-height) !important;
+}
