@@ -1,171 +1,110 @@
 /**
- * LEAF Design System — app.js
- * Handles: top-nav routing, sidebar switching, page rendering,
- *          search overlay, and LEAF API integration hooks.
+ * LEAF Design System — design-system.js
+ * Flat left-nav router. No top bar, no section switching.
  */
 
-/* ─── NAV STATE ─── */
-const NAV_MAP = {
-  home: { sidebar: "sidebarHome", defaultPage: "overview" },
-  foundations: { sidebar: "sidebarFoundations", defaultPage: "color" },
-  components: { sidebar: "sidebarComponents", defaultPage: "button" },
-  patterns: { sidebar: "sidebarPatterns", defaultPage: "dashboard" },
-  data: { sidebar: "sidebarData", defaultPage: "query-builder" },
-};
-
-let currentSection = "home";
-let currentPage = "overview";
-
 /* ─── ELEMENTS ─── */
-const topNavLinks = document.querySelectorAll(".top-bar__nav-link");
 const sidebarLinks = document.querySelectorAll(".sidebar__link");
-const sidebarSects = document.querySelectorAll(".sidebar__section");
 const pages = document.querySelectorAll(".page");
-const searchToggle = document.getElementById("searchToggle");
-const searchOverlay = document.getElementById("searchOverlay");
-const searchClose = document.getElementById("searchClose");
-const searchInput = document.getElementById("searchInput");
+const searchInput = document.getElementById("sidebarSearch");
+const brandLink = document.querySelector(".sidebar__brand");
 
-/* ─── TOP NAV ─── */
-topNavLinks.forEach((link) => {
-  link.addEventListener("click", (e) => {
-    e.preventDefault();
-    const section = link.dataset.section;
-    navigateTo(section, NAV_MAP[section]?.defaultPage);
-  });
-});
-
-/* ─── SIDEBAR LINKS ─── */
+/* ─── SIDEBAR NAV ─── */
 sidebarLinks.forEach((link) => {
   link.addEventListener("click", (e) => {
     e.preventDefault();
-    showPage(link.dataset.page);
-    setActiveSidebarLink(link);
+    navigateTo(link.dataset.page);
   });
 });
 
-/* ─── HERO / CARD DATA-NAV LINKS ─── */
-document.addEventListener("click", (e) => {
-  const el = e.target.closest("[data-nav]");
-  if (!el) return;
+/* ─── BRAND CLICK → OVERVIEW ─── */
+brandLink?.addEventListener("click", (e) => {
   e.preventDefault();
-  const target = el.dataset.nav;
+  navigateTo("overview");
+});
 
-  // Is it a top-level section?
-  if (NAV_MAP[target]) {
-    navigateTo(target, NAV_MAP[target].defaultPage);
+/* ─── HERO / CARD data-page LINKS ─── */
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-page]");
+  if (
+    !el ||
+    el.classList.contains("sidebar__link") ||
+    el.classList.contains("sidebar__brand")
+  )
     return;
-  }
-  // Otherwise treat as a page within the current section
-  const link = document.querySelector(`.sidebar__link[data-page="${target}"]`);
-  if (link) {
-    showPage(target);
-    setActiveSidebarLink(link);
-  }
+  e.preventDefault();
+  navigateTo(el.dataset.page);
 });
 
 /* ─── CORE NAVIGATION ─── */
-function navigateTo(section, page) {
-  if (!NAV_MAP[section]) return;
-  currentSection = section;
+function navigateTo(pageKey) {
+  if (!pageKey) return;
 
-  // Update top nav active state
-  topNavLinks.forEach((l) =>
-    l.classList.toggle(
-      "top-bar__nav-link--active",
-      l.dataset.section === section,
-    ),
-  );
-
-  // Show the correct sidebar panel
-  sidebarSects.forEach((s) => {
-    s.classList.toggle(
-      "sidebar__section--hidden",
-      s.id !== NAV_MAP[section].sidebar,
-    );
-  });
-
-  // Show the requested page
-  showPage(page || NAV_MAP[section].defaultPage);
-
-  // Activate the correct sidebar link
-  const targetLink = document.querySelector(
-    `.sidebar__link[data-page="${page || NAV_MAP[section].defaultPage}"]`,
-  );
-  if (targetLink) setActiveSidebarLink(targetLink);
-}
-
-function showPage(pageKey) {
-  currentPage = pageKey;
+  // Show/hide pages
   pages.forEach((p) => {
-    p.classList.toggle("page--active", p.id === "page" + capitalize(pageKey));
+    p.classList.toggle("page--active", p.id === "page" + cap(pageKey));
   });
-  // Scroll top of content area
+
+  // Active sidebar link
+  sidebarLinks.forEach((l) => {
+    l.classList.toggle("sidebar__link--active", l.dataset.page === pageKey);
+  });
+
+  // Scroll content to top
   document
     .getElementById("mainContent")
     ?.scrollTo({ top: 0, behavior: "smooth" });
+
+  // Update URL hash for deep linking
+  history.replaceState(null, "", "#" + pageKey);
 }
 
-function setActiveSidebarLink(activeLink) {
-  sidebarLinks.forEach((l) => l.classList.remove("sidebar__link--active"));
-  activeLink?.classList.add("sidebar__link--active");
-}
-
-function capitalize(str) {
-  // Matches the ID convention: pageOverview, pageWhats-new, etc.
+function cap(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-/* ─── SEARCH OVERLAY ─── */
-searchToggle?.addEventListener("click", () => {
-  searchOverlay.classList.add("is-open");
-  searchOverlay.setAttribute("aria-hidden", "false");
-  setTimeout(() => searchInput?.focus(), 80);
+/* ─── SIDEBAR SEARCH ─── */
+searchInput?.addEventListener("input", () => {
+  const q = searchInput.value.trim().toLowerCase();
+  sidebarLinks.forEach((link) => {
+    const text = link.textContent.toLowerCase();
+    link.classList.toggle(
+      "sidebar__link--hidden",
+      q !== "" && !text.includes(q),
+    );
+  });
+  // Show/hide headings if all children hidden
+  document.querySelectorAll(".sidebar__heading").forEach((heading) => {
+    const list = heading.nextElementSibling;
+    if (!list) return;
+    const anyVisible = [...list.querySelectorAll(".sidebar__link")].some(
+      (l) => !l.classList.contains("sidebar__link--hidden"),
+    );
+    heading.style.display = q !== "" && !anyVisible ? "none" : "";
+  });
 });
 
-searchClose?.addEventListener("click", closeSearch);
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeSearch();
-  // Cmd/Ctrl+K shortcut
-  if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-    e.preventDefault();
-    searchOverlay.classList.toggle("is-open");
-    if (searchOverlay.classList.contains("is-open")) {
-      searchOverlay.setAttribute("aria-hidden", "false");
-      setTimeout(() => searchInput?.focus(), 80);
-    } else {
-      searchOverlay.setAttribute("aria-hidden", "true");
-    }
+/* ─── KEYBOARD: ESC clears search ─── */
+searchInput?.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    searchInput.value = "";
+    searchInput.dispatchEvent(new Event("input"));
+    searchInput.blur();
   }
 });
 
-function closeSearch() {
-  searchOverlay.classList.remove("is-open");
-  searchOverlay.setAttribute("aria-hidden", "true");
-  searchToggle?.focus();
-}
-
-/* ─── LEAF API INTEGRATION STUB ─────────────────────────────────────────────
+/* ─── LEAF API STUB ──────────────────────────────────────────────────────────
  *
- * Replace the BASE_URL with your portal's URL when wiring real data.
- *
- * Usage:
- *   LeafDS.api.query({ ... }).then(data => renderComponent(data));
+ * Set baseURL and csrfToken when wiring real data.
+ * Usage: LeafDS.api.query({ terms: [...], joins: ['data'] }).then(render)
  *
  * ─────────────────────────────────────────────────────────────────────────── */
 const LeafDS = {
   config: {
-    baseURL: "api/?a=", // ← update to your LEAF portal path
-    csrfToken: "", // ← populated at runtime from meta tag / template var
+    baseURL: "api/?a=",
+    csrfToken: "",
   },
-
   api: {
-    /**
-     * Perform a LEAF form query.
-     * @param {Object} query  – LeafFormQuery-compatible query object
-     * @returns {Promise}
-     */
     query(query) {
       const url =
         LeafDS.config.baseURL +
@@ -174,72 +113,31 @@ const LeafDS = {
       return fetch(url, {
         headers: { "X-Requested-With": "XMLHttpRequest" },
       }).then((r) => {
-        if (!r.ok) throw new Error(`LEAF API error: ${r.status}`);
+        if (!r.ok) throw new Error("LEAF API " + r.status);
         return r.json();
       });
     },
-
-    /**
-     * Fetch a single record.
-     * @param {number|string} recordID
-     */
     getRecord(recordID) {
-      return fetch(`${LeafDS.config.baseURL}form/${recordID}`, {
+      return fetch(LeafDS.config.baseURL + "form/" + recordID, {
         headers: { "X-Requested-With": "XMLHttpRequest" },
       }).then((r) => r.json());
     },
-
-    /**
-     * POST data to LEAF.
-     * @param {string} endpoint  – e.g. 'form/new'
-     * @param {Object} payload
-     */
     post(endpoint, payload) {
-      const formData = new FormData();
-      formData.append("CSRFToken", LeafDS.config.csrfToken);
-      Object.entries(payload).forEach(([k, v]) => formData.append(k, v));
-
+      const fd = new FormData();
+      fd.append("CSRFToken", LeafDS.config.csrfToken);
+      Object.entries(payload).forEach(([k, v]) => fd.append(k, v));
       return fetch(LeafDS.config.baseURL + endpoint, {
         method: "POST",
-        body: formData,
+        body: fd,
       }).then((r) => r.json());
     },
   },
 };
 
-/* Expose globally so inline scripts or future modules can reach it */
 window.LeafDS = LeafDS;
 
 /* ─── INIT ─── */
 (function init() {
-  // Check URL hash for deep linking (e.g. #components/button)
   const hash = window.location.hash.replace("#", "");
-  if (hash) {
-    const [section, page] = hash.split("/");
-    if (NAV_MAP[section]) {
-      navigateTo(section, page);
-      return;
-    }
-  }
-  // Default: show home / overview
-  navigateTo("home", "overview");
+  navigateTo(hash || "overview");
 })();
-
-/* ─── UPDATE HASH ON NAVIGATION ─── */
-const _origNavigateTo = navigateTo;
-function navigateWithHash(section, page) {
-  _origNavigateTo(section, page);
-  history.replaceState(
-    null,
-    "",
-    `#${section}/${page || NAV_MAP[section]?.defaultPage}`,
-  );
-}
-// Override global reference
-// (wrapped after the fact to avoid circular ref at parse time)
-sidebarLinks.forEach((link) => {
-  link.addEventListener("click", () => {
-    const page = link.dataset.page;
-    history.replaceState(null, "", `#${currentSection}/${page}`);
-  });
-});

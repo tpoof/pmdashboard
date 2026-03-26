@@ -13,12 +13,18 @@
     <link rel="stylesheet" href="./files/design-system.css" />
   </head>
   <body>
-    <!-- ─── TOP BAR ─── -->
-    <header class="top-bar" role="banner">
-      <div class="top-bar__inner">
-        <a href="#" class="top-bar__logo" aria-label="LEAF Design System home">
+    <div class="app-shell">
+      <!-- LEFT SIDEBAR -->
+      <nav class="sidebar" id="sidebar" aria-label="Design system navigation">
+        <!-- Brand -->
+        <a
+          href="#"
+          class="sidebar__brand"
+          data-page="overview"
+          aria-label="LEAF Design System home"
+        >
           <svg
-            class="top-bar__logo-mark"
+            class="sidebar__brand-mark"
             viewBox="0 0 32 32"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -44,111 +50,50 @@
               stroke-width="1.5"
             />
           </svg>
-          <span class="top-bar__product-name">LEAF</span>
-          <span class="top-bar__system-name">Design System</span>
+          <div class="sidebar__brand-text">
+            <span class="sidebar__brand-product">LEAF</span>
+            <span class="sidebar__brand-system">Design System</span>
+          </div>
         </a>
 
-        <nav class="top-bar__nav" aria-label="Primary navigation">
-          <a
-            href="#"
-            class="top-bar__nav-link top-bar__nav-link--active"
-            data-section="home"
-            >Home</a
+        <!-- Search -->
+        <div class="sidebar__search-wrap">
+          <svg
+            class="sidebar__search-icon"
+            viewBox="0 0 32 32"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
           >
-          <a href="#" class="top-bar__nav-link" data-section="foundations"
-            >Foundations</a
-          >
-          <a href="#" class="top-bar__nav-link" data-section="components"
-            >Components</a
-          >
-          <a href="#" class="top-bar__nav-link" data-section="patterns"
-            >Patterns</a
-          >
-          <a href="#" class="top-bar__nav-link" data-section="data"
-            >Data &amp; API</a
-          >
-        </nav>
-
-        <div class="top-bar__actions">
-          <button
-            class="top-bar__search-btn"
-            aria-label="Search"
-            id="searchToggle"
-          >
-            <svg
-              viewBox="0 0 32 32"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-            >
-              <circle
-                cx="14"
-                cy="14"
-                r="8"
-                stroke="currentColor"
-                stroke-width="2"
-              />
-              <line
-                x1="20"
-                y1="20"
-                x2="29"
-                y2="29"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-            </svg>
-          </button>
-          <a
-            href="https://github.com/department-of-veterans-affairs/LEAF-Developer-Examples"
-            target="_blank"
-            rel="noopener"
-            class="top-bar__github-link"
-            aria-label="GitHub"
-          >
-            <svg
-              viewBox="0 0 32 32"
-              fill="currentColor"
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-            >
-              <path
-                d="M16 2C8.27 2 2 8.27 2 16c0 6.18 4.01 11.43 9.57 13.29.7.13.95-.3.95-.67v-2.34c-3.89.84-4.71-1.88-4.71-1.88-.63-1.61-1.55-2.04-1.55-2.04-1.27-.87.1-.85.1-.85 1.4.1 2.14 1.44 2.14 1.44 1.25 2.14 3.27 1.52 4.07 1.16.13-.9.49-1.52.89-1.87-3.1-.35-6.37-1.55-6.37-6.9 0-1.52.54-2.77 1.43-3.74-.14-.35-.62-1.77.14-3.69 0 0 1.17-.37 3.83 1.43A13.3 13.3 0 0 1 16 9.07c1.18.01 2.37.16 3.48.47 2.65-1.8 3.82-1.43 3.82-1.43.76 1.92.28 3.34.14 3.69.89.97 1.43 2.22 1.43 3.74 0 5.36-3.28 6.54-6.4 6.89.5.43.95 1.29.95 2.6v3.85c0 .37.25.81.96.67C25.99 27.43 30 22.18 30 16 30 8.27 23.73 2 16 2Z"
-              />
-            </svg>
-          </a>
-        </div>
-      </div>
-
-      <!-- Search overlay -->
-      <div class="search-overlay" id="searchOverlay" aria-hidden="true">
-        <div class="search-overlay__inner">
+            <circle
+              cx="14"
+              cy="14"
+              r="8"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+            <line
+              x1="20"
+              y1="20"
+              x2="29"
+              y2="29"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
           <input
             type="search"
-            class="search-overlay__input"
-            placeholder="Search the design system…"
+            class="sidebar__search"
+            id="sidebarSearch"
+            placeholder="Search..."
             aria-label="Search design system"
-            id="searchInput"
           />
-          <button
-            class="search-overlay__close"
-            id="searchClose"
-            aria-label="Close search"
-          >
-            ✕
-          </button>
         </div>
-      </div>
-    </header>
 
-    <!-- ─── BODY WRAPPER ─── -->
-    <div class="app-shell">
-      <!-- ─── LEFT SIDEBAR ─── -->
-      <nav class="sidebar" id="sidebar" aria-label="Section navigation">
-        <div class="sidebar__section" id="sidebarHome">
-          <p class="sidebar__heading">Getting Started</p>
+        <!-- Nav links -->
+        <div class="sidebar__nav">
+          <p class="sidebar__heading">Getting started</p>
           <ul class="sidebar__list">
             <li>
               <a
@@ -164,31 +109,13 @@
               >
             </li>
             <li>
-              <a href="#" class="sidebar__link" data-page="contributing"
-                >Contributing</a
-              >
-            </li>
-          </ul>
-          <p class="sidebar__heading">Resources</p>
-          <ul class="sidebar__list">
-            <li>
-              <a href="#" class="sidebar__link" data-page="leaf-api"
-                >LEAF API</a
-              >
-            </li>
-            <li>
               <a href="#" class="sidebar__link" data-page="changelog"
                 >Changelog</a
               >
             </li>
           </ul>
-        </div>
 
-        <div
-          class="sidebar__section sidebar__section--hidden"
-          id="sidebarFoundations"
-        >
-          <p class="sidebar__heading">Visual Style</p>
+          <p class="sidebar__heading">Foundations</p>
           <ul class="sidebar__list">
             <li>
               <a href="#" class="sidebar__link" data-page="color">Color</a>
@@ -206,25 +133,17 @@
             </li>
             <li>
               <a href="#" class="sidebar__link" data-page="grid"
-                >Grid &amp; Layout</a
+                >Grid &amp; layout</a
               >
             </li>
           </ul>
-        </div>
 
-        <div
-          class="sidebar__section sidebar__section--hidden"
-          id="sidebarComponents"
-        >
-          <p class="sidebar__heading">Actions</p>
+          <p class="sidebar__heading">Components</p>
           <ul class="sidebar__list">
             <li>
               <a href="#" class="sidebar__link" data-page="button">Button</a>
             </li>
             <li><a href="#" class="sidebar__link" data-page="link">Link</a></li>
-          </ul>
-          <p class="sidebar__heading">Forms</p>
-          <ul class="sidebar__list">
             <li>
               <a href="#" class="sidebar__link" data-page="text-input"
                 >Text input</a
@@ -245,9 +164,6 @@
                 >Date picker</a
               >
             </li>
-          </ul>
-          <p class="sidebar__heading">Data Display</p>
-          <ul class="sidebar__list">
             <li>
               <a href="#" class="sidebar__link" data-page="data-table"
                 >Data table</a
@@ -259,9 +175,6 @@
                 >Notification</a
               >
             </li>
-          </ul>
-          <p class="sidebar__heading">Navigation</p>
-          <ul class="sidebar__list">
             <li>
               <a href="#" class="sidebar__link" data-page="breadcrumb"
                 >Breadcrumb</a
@@ -276,57 +189,35 @@
           </ul>
         </div>
 
-        <div
-          class="sidebar__section sidebar__section--hidden"
-          id="sidebarPatterns"
-        >
-          <p class="sidebar__heading">Layout Patterns</p>
-          <ul class="sidebar__list">
-            <li>
-              <a href="#" class="sidebar__link" data-page="dashboard"
-                >Dashboard</a
-              >
-            </li>
-            <li>
-              <a href="#" class="sidebar__link" data-page="form-pattern"
-                >Form pages</a
-              >
-            </li>
-            <li>
-              <a href="#" class="sidebar__link" data-page="empty-state"
-                >Empty state</a
-              >
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar__section sidebar__section--hidden" id="sidebarData">
-          <p class="sidebar__heading">LEAF Integration</p>
-          <ul class="sidebar__list">
-            <li>
-              <a href="#" class="sidebar__link" data-page="query-builder"
-                >Query builder</a
-              >
-            </li>
-            <li>
-              <a href="#" class="sidebar__link" data-page="form-query"
-                >Form query API</a
-              >
-            </li>
-            <li>
-              <a href="#" class="sidebar__link" data-page="portal-api"
-                >Portal API</a
-              >
-            </li>
-          </ul>
+        <!-- Sidebar footer -->
+        <div class="sidebar__footer">
+          <a
+            href="https://va.ghe.com/software/LEAF"
+            target="_blank"
+            rel="noopener"
+            class="sidebar__footer-link"
+          >
+            <svg
+              viewBox="0 0 32 32"
+              fill="currentColor"
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              aria-hidden="true"
+            >
+              <path
+                d="M16 2C8.27 2 2 8.27 2 16c0 6.18 4.01 11.43 9.57 13.29.7.13.95-.3.95-.67v-2.34c-3.89.84-4.71-1.88-4.71-1.88-.63-1.61-1.55-2.04-1.55-2.04-1.27-.87.1-.85.1-.85 1.4.1 2.14 1.44 2.14 1.44 1.25 2.14 3.27 1.52 4.07 1.16.13-.9.49-1.52.89-1.87-3.1-.35-6.37-1.55-6.37-6.9 0-1.52.54-2.77 1.43-3.74-.14-.35-.62-1.77.14-3.69 0 0 1.17-.37 3.83 1.43A13.3 13.3 0 0 1 16 9.07c1.18.01 2.37.16 3.48.47 2.65-1.8 3.82-1.43 3.82-1.43.76 1.92.28 3.34.14 3.69.89.97 1.43 2.22 1.43 3.74 0 5.36-3.28 6.54-6.4 6.89.5.43.95 1.29.95 2.6v3.85c0 .37.25.81.96.67C25.99 27.43 30 22.18 30 16 30 8.27 23.73 2 16 2Z"
+              />
+            </svg>
+            GitHub
+          </a>
         </div>
       </nav>
 
-      <!-- ─── MAIN CONTENT ─── -->
+      <!-- MAIN CONTENT -->
       <main class="content" id="mainContent" role="main">
-        <!-- ── HOME / OVERVIEW PAGE ── -->
+        <!-- OVERVIEW -->
         <section class="page page--active" id="pageOverview">
-          <!-- Hero -->
           <div class="hero">
             <div class="hero__eyebrow">
               <span class="hero__badge">v1.0</span>
@@ -339,18 +230,17 @@
               consistent digital experiences on the VA LEAF platform.
             </p>
             <div class="hero__cta-group">
-              <a href="#" class="btn btn--primary" data-nav="components"
-                >Explore components</a
+              <a href="#" class="btn btn--primary" data-page="color"
+                >Explore foundations</a
               >
-              <a href="#" class="btn btn--ghost" data-nav="leaf-api"
-                >View API docs</a
+              <a href="#" class="btn btn--ghost" data-page="button"
+                >View components</a
               >
             </div>
           </div>
 
-          <!-- Cards grid -->
           <div class="card-grid">
-            <a href="#" class="card card--design" data-nav="foundations">
+            <a href="#" class="card card--design" data-page="color">
               <div class="card__eyebrow">Foundations</div>
               <h2 class="card__title">Design</h2>
               <p class="card__body">
@@ -359,7 +249,7 @@
               </p>
               <span class="card__arrow">→</span>
             </a>
-            <a href="#" class="card card--develop" data-nav="components">
+            <a href="#" class="card card--develop" data-page="button">
               <div class="card__eyebrow">Components</div>
               <h2 class="card__title">Develop</h2>
               <p class="card__body">
@@ -368,178 +258,24 @@
               </p>
               <span class="card__arrow">→</span>
             </a>
-            <a href="#" class="card card--data" data-nav="data">
-              <div class="card__eyebrow">Integration</div>
-              <h2 class="card__title">Data &amp; API</h2>
+            <a href="#" class="card card--data" data-page="whats-new">
+              <div class="card__eyebrow">Updates</div>
+              <h2 class="card__title">What's new</h2>
               <p class="card__body">
-                Query patterns, API helpers, and examples for connecting your UI
-                to LEAF's backend.
+                Latest additions, changes, and release notes pulled from LEAF
+                records.
               </p>
               <span class="card__arrow">→</span>
             </a>
           </div>
 
-          <!-- Divider section: "Learn about..." -->
-          <div class="learn-section">
-            <h2 class="learn-section__heading">Learn about the system</h2>
-            <div class="learn-grid">
-              <a href="#" class="learn-tile" data-nav="whats-new">
-                <svg
-                  class="learn-tile__icon"
-                  viewBox="0 0 32 32"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle
-                    cx="16"
-                    cy="16"
-                    r="13"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                  />
-                  <line
-                    x1="16"
-                    y1="9"
-                    x2="16"
-                    y2="17"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                  />
-                  <circle cx="16" cy="21" r="1.2" fill="currentColor" />
-                </svg>
-                <div>
-                  <p class="learn-tile__title">What's new</p>
-                  <p class="learn-tile__desc">
-                    Latest updates, additions, and deprecations.
-                  </p>
-                </div>
-              </a>
-              <a href="#" class="learn-tile" data-nav="contributing">
-                <svg
-                  class="learn-tile__icon"
-                  viewBox="0 0 32 32"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect
-                    x="3"
-                    y="6"
-                    width="26"
-                    height="20"
-                    rx="1"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                  />
-                  <line
-                    x1="3"
-                    y1="12"
-                    x2="29"
-                    y2="12"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                  />
-                  <line
-                    x1="10"
-                    y1="6"
-                    x2="10"
-                    y2="12"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                  />
-                  <line
-                    x1="22"
-                    y1="6"
-                    x2="22"
-                    y2="12"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                  />
-                </svg>
-                <div>
-                  <p class="learn-tile__title">Contributing</p>
-                  <p class="learn-tile__desc">
-                    Guidelines for proposing components and patterns.
-                  </p>
-                </div>
-              </a>
-              <a href="#" class="learn-tile" data-nav="leaf-api">
-                <svg
-                  class="learn-tile__icon"
-                  viewBox="0 0 32 32"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <polyline
-                    points="8,12 4,16 8,20"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                  <polyline
-                    points="24,12 28,16 24,20"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                  <line
-                    x1="18"
-                    y1="8"
-                    x2="14"
-                    y2="24"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                  />
-                </svg>
-                <div>
-                  <p class="learn-tile__title">LEAF API reference</p>
-                  <p class="learn-tile__desc">
-                    Connect your pages to LEAF's form and data APIs.
-                  </p>
-                </div>
-              </a>
-              <a href="#" class="learn-tile" data-nav="changelog">
-                <svg
-                  class="learn-tile__icon"
-                  viewBox="0 0 32 32"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle
-                    cx="16"
-                    cy="16"
-                    r="13"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                  />
-                  <polyline
-                    points="16,9 16,17 21,21"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-                <div>
-                  <p class="learn-tile__title">Changelog</p>
-                  <p class="learn-tile__desc">
-                    Version history and migration notes.
-                  </p>
-                </div>
-              </a>
-            </div>
-          </div>
-
-          <!-- Footer band -->
           <footer class="page-footer">
             <p>
-              Built on the <strong>VA LEAF</strong> platform &nbsp;·&nbsp; Based
-              on the IBM Carbon Design System &nbsp;·&nbsp;
+              Built on the <strong>VA LEAF</strong> platform
+              &nbsp;&middot;&nbsp; Based on the IBM Carbon Design System
+              &nbsp;&middot;&nbsp;
               <a
-                href="https://github.com/department-of-veterans-affairs/LEAF-Developer-Examples"
+                href="https://va.ghe.com/software/LEAF"
                 target="_blank"
                 rel="noopener"
                 >GitHub</a
@@ -548,40 +284,29 @@
           </footer>
         </section>
 
-        <!-- ── PLACEHOLDER PAGES ── -->
+        <!-- WHAT'S NEW -->
         <section class="page" id="pageWhats-new">
           <div class="placeholder-page">
-            <h1>What's New</h1>
+            <h1>What's new</h1>
             <p class="placeholder-page__body">
-              Version history and recent updates will appear here once connected
-              to LEAF data.
+              Recent updates and additions will appear here once connected to
+              LEAF data.
             </p>
           </div>
         </section>
-        <section class="page" id="pageContributing">
-          <div class="placeholder-page">
-            <h1>Contributing</h1>
-            <p class="placeholder-page__body">
-              Contribution guidelines and proposal templates coming soon.
-            </p>
-          </div>
-        </section>
-        <section class="page" id="pageLeaf-api">
-          <div class="placeholder-page">
-            <h1>LEAF API Reference</h1>
-            <p class="placeholder-page__body">
-              API query builder and documentation will be wired here.
-            </p>
-          </div>
-        </section>
+
+        <!-- CHANGELOG -->
         <section class="page" id="pageChangelog">
           <div class="placeholder-page">
             <h1>Changelog</h1>
             <p class="placeholder-page__body">
-              Release notes will be pulled from LEAF data records.
+              Version history and release notes will be pulled from LEAF form
+              records.
             </p>
           </div>
         </section>
+
+        <!-- FOUNDATIONS -->
         <section class="page" id="pageColor">
           <div class="placeholder-page">
             <h1>Color</h1>
@@ -616,12 +341,14 @@
         </section>
         <section class="page" id="pageGrid">
           <div class="placeholder-page">
-            <h1>Grid &amp; Layout</h1>
+            <h1>Grid &amp; layout</h1>
             <p class="placeholder-page__body">
               Grid specifications and layout examples coming soon.
             </p>
           </div>
         </section>
+
+        <!-- COMPONENTS -->
         <section class="page" id="pageButton">
           <div class="placeholder-page">
             <h1>Button</h1>
@@ -638,7 +365,7 @@
         </section>
         <section class="page" id="pageText-input">
           <div class="placeholder-page">
-            <h1>Text Input</h1>
+            <h1>Text input</h1>
             <p class="placeholder-page__body">Coming soon.</p>
           </div>
         </section>
@@ -656,13 +383,13 @@
         </section>
         <section class="page" id="pageDate-picker">
           <div class="placeholder-page">
-            <h1>Date Picker</h1>
+            <h1>Date picker</h1>
             <p class="placeholder-page__body">Coming soon.</p>
           </div>
         </section>
         <section class="page" id="pageData-table">
           <div class="placeholder-page">
-            <h1>Data Table</h1>
+            <h1>Data table</h1>
             <p class="placeholder-page__body">Coming soon.</p>
           </div>
         </section>
@@ -693,44 +420,6 @@
         <section class="page" id="pagePagination">
           <div class="placeholder-page">
             <h1>Pagination</h1>
-            <p class="placeholder-page__body">Coming soon.</p>
-          </div>
-        </section>
-        <section class="page" id="pageDashboard">
-          <div class="placeholder-page">
-            <h1>Dashboard Pattern</h1>
-            <p class="placeholder-page__body">Coming soon.</p>
-          </div>
-        </section>
-        <section class="page" id="pageForm-pattern">
-          <div class="placeholder-page">
-            <h1>Form Pages</h1>
-            <p class="placeholder-page__body">Coming soon.</p>
-          </div>
-        </section>
-        <section class="page" id="pageEmpty-state">
-          <div class="placeholder-page">
-            <h1>Empty State</h1>
-            <p class="placeholder-page__body">Coming soon.</p>
-          </div>
-        </section>
-        <section class="page" id="pageQuery-builder">
-          <div class="placeholder-page">
-            <h1>Query Builder</h1>
-            <p class="placeholder-page__body">
-              LEAF query builder UI coming soon.
-            </p>
-          </div>
-        </section>
-        <section class="page" id="pageForm-query">
-          <div class="placeholder-page">
-            <h1>Form Query API</h1>
-            <p class="placeholder-page__body">Coming soon.</p>
-          </div>
-        </section>
-        <section class="page" id="pagePortal-api">
-          <div class="placeholder-page">
-            <h1>Portal API</h1>
             <p class="placeholder-page__body">Coming soon.</p>
           </div>
         </section>
