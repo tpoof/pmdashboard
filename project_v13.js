@@ -152,8 +152,9 @@
     dataReady: false,
     devOnly: false,
     recurringOnly: false,
-    modalNavList: [],
-    modalNavIndex: -1,
+    modalHistory: [],
+    modalHistoryIndex: -1,
+    pendingProjectKeyRefresh: null,
     okrTableView: "objectives",
     filters: {
       projectFiscalYear: new Set(),
@@ -734,35 +735,6 @@
     return !!(modal && modal.getAttribute("aria-hidden") === "false");
   }
 
-  function buildModalNavList(clickedHref) {
-    var list = [];
-    var activeTab = getActiveTab();
-
-    if (activeTab === 'tasks') {
-      var rows = state.taskTableCurrentRows || [];
-      rows.forEach(function(t) {
-        if (t.href) list.push({ url: t.href, title: 'Task ' + t.recordID });
-      });
-    } else if (activeTab === 'projects') {
-      var prows = state.projectTableCurrentRows || [];
-      prows.forEach(function(p) {
-        var href = getProjectRecordHrefFromKey(p.projectKey) || p.href || '';
-        if (href) list.push({ url: href, title: 'Project ' + p.projectKey });
-      });
-    }
-
-    // Find the index of the clicked record in the list
-    var cleanHref = String(clickedHref || '').split('&iframe')[0].split('?iframe')[0];
-    var idx = -1;
-    for (var i = 0; i < list.length; i++) {
-      var cleanItem = String(list[i].url || '').split('&iframe')[0].split('?iframe')[0];
-      if (cleanItem === cleanHref) { idx = i; break; }
-    }
-
-    state.modalNavList = list;
-    state.modalNavIndex = idx;
-  }
-
   function updateModalNav() {
     var nav = document.getElementById('pmModalNav');
     var prevBtn = document.getElementById('pmModalPrevBtn');
@@ -770,21 +742,21 @@
     var counter = document.getElementById('pmModalNavCounter');
     if (!nav) return;
 
-    var list = state.modalNavList || [];
-    var idx = state.modalNavIndex;
+    var history = state.modalHistory || [];
+    var idx = state.modalHistoryIndex;
 
-    if (list.length < 2 || idx === -1) {
+    if (history.length < 2) {
       nav.hidden = true;
       return;
     }
 
     nav.hidden = false;
     if (prevBtn) prevBtn.disabled = idx <= 0;
-    if (nextBtn) nextBtn.disabled = idx >= list.length - 1;
-    if (counter) counter.textContent = (idx + 1) + ' / ' + list.length;
+    if (nextBtn) nextBtn.disabled = idx >= history.length - 1;
+    if (counter) counter.textContent = (idx + 1) + ' / ' + history.length;
   }
 
-  function openModal(title, url, postLoadCallback) {
+  function openModal(title, url, postLoadCallback, _skipHistory) {
     var modal = document.getElementById("pmModal");
     var frame = document.getElementById("pmModalFrame");
     var titleEl = document.getElementById("pmModalTitle");
@@ -835,6 +807,13 @@
     if (openTabBtn) openTabBtn.setAttribute("data-url", url || "");
     var _rMatch = String(url || "").match(/[?&]recordID=(\d+)/i);
     state.lastModalRecordID = _rMatch ? _rMatch[1] : null;
+    if (!_skipHistory) {
+      if (state.modalHistoryIndex < state.modalHistory.length - 1) {
+        state.modalHistory = state.modalHistory.slice(0, state.modalHistoryIndex + 1);
+      }
+      state.modalHistory.push({ url: url, title: title || 'Details' });
+      state.modalHistoryIndex = state.modalHistory.length - 1;
+    }
     updateModalNav();
     lastFocusedElement = document.activeElement;
     modal.hidden = false;
@@ -867,10 +846,9 @@
     var existingPkLink = document.getElementById('pmModalProjectKeyLink');
     if (existingPkLink) existingPkLink.remove();
     if (openTabBtn) openTabBtn.style.display = '';
-    state.modalNavList = [];
-    state.modalNavIndex = -1;
-    var nav = document.getElementById('pmModalNav');
-    if (nav) nav.hidden = true;
+    state.modalHistory = [];
+    state.modalHistoryIndex = -1;
+    updateModalNav();
     modal.hidden = true;
     modal.setAttribute("aria-hidden", "true");
     toggleAppInert(false);
@@ -880,6 +858,53 @@
     }
     lastFocusedElement = null;
     if (_syncID) syncTaskAfterModalClose(_syncID);
+    if (state.pendingProjectKeyRefresh) {
+      var pk = state.pendingProjectKeyRefresh;
+      state.pendingProjectKeyRefresh = null;
+      reloadTasksAndOpenProjectModal(pk);
+    }
+  }
+
+  function reloadTasksAndOpenProjectModal(projectKey) {
+    var tasksUrl = buildQueryUrl(
+      [
+        TASK_IND.projectKey,
+        TASK_IND.title,
+        TASK_IND.status,
+        TASK_IND.otherSubType,
+        TASK_IND.priority,
+        TASK_IND.category,
+        TASK_IND.dependencies,
+        TASK_IND.assignedTo,
+        TASK_IND.startDate,
+        TASK_IND.dueDate,
+        TASK_IND.supportTicket,
+        TASK_IND.okrAssociation,
+        TASK_IND.keyResultSelection,
+        TASK_IND.isRecurring,
+        TASK_IND.actualCompletionDate,
+        TASK_IND.recurringCopied,
+      ],
+      []
+    );
+
+    fetchJSON(tasksUrl).then(function(tasksJson) {
+      var taskRowsAll = coerceRows(tasksJson) || [];
+      var taskRows = taskRowsAll.filter(function(r) {
+        return hasAnyS1Value(r, [8, 9, 10, 44, 11, 12, 13, 14, 16, 17, 18, 30, 39, 47]);
+      });
+      state.tasksAll = taskRows.map(normalizeTask);
+      state.tasksById = new Map();
+      state.tasksAll.forEach(function(t) {
+        state.tasksById.set(String(t.recordID), t);
+      });
+      state.tasksVersion = (state.tasksVersion || 0) + 1;
+      invalidateTaskCaches();
+      openProjectTasksModal(projectKey);
+    }).catch(function(err) {
+      console.warn('pm-dashboard: failed to reload tasks after new task creation', err);
+      openProjectTasksModal(projectKey);
+    });
   }
 
   function openProjectTasksModal(projectKey) {
@@ -915,10 +940,20 @@
              'No tasks found for this project.</td></tr>';
     }
 
+    var newTaskUrl = START_TASK_URL +
+      '&' + encodeURIComponent(TASK_IND.projectKey) + '=' + encodeURIComponent(projectKey);
+
     // Build the full modal content as an inline div — NOT srcdoc
     // This keeps it in the same DOM so pm-recordLink delegation fires correctly
     var contentHtml =
       '<div style="padding:16px;overflow:auto;">' +
+        '<div class="pm-pkModalToolbar">' +
+          '<button type="button" class="pm-primaryBtn pm-pkAddTaskBtn" ' +
+            'id="pmPkAddTaskBtn" data-url="' + safeAttr(newTaskUrl) + '" ' +
+            'data-projectkey="' + safeAttr(projectKey) + '">' +
+            '+ Task' +
+          '</button>' +
+        '</div>' +
         '<table class="pm-table" style="width:100%;border-collapse:collapse;">' +
           '<thead><tr>' +
             '<th>Task ID</th><th>Task Name</th><th>Status</th><th>Priority</th>' +
@@ -973,6 +1008,18 @@
     }
     inlineContainer.innerHTML = contentHtml;
     inlineContainer.style.display = '';
+
+    var addTaskBtn = document.getElementById('pmPkAddTaskBtn');
+    if (addTaskBtn) {
+      addTaskBtn.addEventListener('click', function() {
+        var url = addTaskBtn.getAttribute('data-url') || '';
+        var pk = addTaskBtn.getAttribute('data-projectkey') || '';
+        if (url) {
+          state.pendingProjectKeyRefresh = pk;
+          openModal('New Task \u2014 ' + pk, url);
+        }
+      });
+    }
 
     // Hide open-in-tab button since content is client-side generated
     if (openTabBtn) openTabBtn.style.display = 'none';
@@ -3988,6 +4035,9 @@
       safeAttr(cardLabel) +
       '" aria-describedby="pmKanbanHint">' +
       '<div class="pm-card-header">' +
+      (t.isRecurring
+        ? '<span class="material-icons pm-recurringIcon pm-recurringIconCard" title="Recurring Task" aria-label="Recurring Task">change_circle</span>'
+        : '') +
       '<div class="pm-card-title">' +
       safe(t.title || "(No title)") +
       "</div>" +
@@ -6809,13 +6859,7 @@
       // Default behavior for ALL other pm-recordLink clicks including task IDs
       var href = a.getAttribute("href");
       var title = a.getAttribute("data-title") || "Details";
-      if (href) {
-        if (!a.classList.contains('pm-pkProjectLink')) {
-          buildModalNavList(href);
-        }
-        openModal(title, href);
-        updateModalNav();
-      }
+      if (href) openModal(title, href);
     });
   }
 
@@ -6854,39 +6898,21 @@
 
     if (prevBtn) {
       prevBtn.addEventListener('click', function() {
-        var idx = state.modalNavIndex - 1;
-        if (idx < 0 || idx >= state.modalNavList.length) return;
-        var item = state.modalNavList[idx];
-        state.modalNavIndex = idx;
-        var iframeUrl = item.url + (item.url.indexOf('?') !== -1 ? '&' : '?') + 'iframe=1';
-        var frame = document.getElementById('pmModalFrame');
-        var titleEl = document.getElementById('pmModalTitle');
-        var openTabBtn = document.getElementById('pmModalOpenTabBtn');
-        if (frame) frame.src = iframeUrl;
-        if (titleEl) titleEl.textContent = item.title;
-        if (openTabBtn) openTabBtn.setAttribute('data-url', item.url);
-        var _rMatch = item.url.match(/[?&]recordID=(\d+)/i);
-        state.lastModalRecordID = _rMatch ? _rMatch[1] : null;
-        updateModalNav();
+        var idx = state.modalHistoryIndex - 1;
+        if (idx < 0) return;
+        var item = state.modalHistory[idx];
+        state.modalHistoryIndex = idx;
+        openModal(item.title, item.url, null, true);
       });
     }
 
     if (nextBtn) {
       nextBtn.addEventListener('click', function() {
-        var idx = state.modalNavIndex + 1;
-        if (idx < 0 || idx >= state.modalNavList.length) return;
-        var item = state.modalNavList[idx];
-        state.modalNavIndex = idx;
-        var iframeUrl = item.url + (item.url.indexOf('?') !== -1 ? '&' : '?') + 'iframe=1';
-        var frame = document.getElementById('pmModalFrame');
-        var titleEl = document.getElementById('pmModalTitle');
-        var openTabBtn = document.getElementById('pmModalOpenTabBtn');
-        if (frame) frame.src = iframeUrl;
-        if (titleEl) titleEl.textContent = item.title;
-        if (openTabBtn) openTabBtn.setAttribute('data-url', item.url);
-        var _rMatch = item.url.match(/[?&]recordID=(\d+)/i);
-        state.lastModalRecordID = _rMatch ? _rMatch[1] : null;
-        updateModalNav();
+        var idx = state.modalHistoryIndex + 1;
+        if (idx >= state.modalHistory.length) return;
+        var item = state.modalHistory[idx];
+        state.modalHistoryIndex = idx;
+        openModal(item.title, item.url, null, true);
       });
     }
 
