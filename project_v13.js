@@ -1054,10 +1054,66 @@
       addTaskBtn.addEventListener('click', function() {
         var url = addTaskBtn.getAttribute('data-url') || '';
         var pk = addTaskBtn.getAttribute('data-projectkey') || '';
-        if (url) {
-          state.pendingProjectKeyRefresh = pk;
-          openModal('New Task \u2014 ' + pk, url);
-        }
+        if (!url) return;
+
+        state.pendingProjectKeyRefresh = pk;
+
+        openModal('New Task \u2014 ' + pk, url, function(frame) {
+          // postLoadCallback — iframe has loaded, now inject the project key
+          // The picker calls loadProjects() async, so we poll until the hidden
+          // input[name="8"] exists and the picker has populated its project list
+          var attempts = 0;
+          var maxAttempts = 40; // 4 seconds max (40 x 100ms)
+
+          function tryInject() {
+            attempts++;
+            try {
+              var doc = frame.contentDocument ||
+                        (frame.contentWindow && frame.contentWindow.document);
+              if (!doc) {
+                if (attempts < maxAttempts) setTimeout(tryInject, 100);
+                return;
+              }
+
+              // Find the hidden LEAF field for indicator 8
+              var hiddenField = doc.querySelector('input[name="8"], textarea[name="8"], select[name="8"]');
+              if (!hiddenField) {
+                if (attempts < maxAttempts) setTimeout(tryInject, 100);
+                return;
+              }
+
+              // Check if the picker has finished loading projects by looking
+              // for the picker list element being populated
+              var pkList = doc.getElementById('pkList8');
+              var pickerReady = pkList && pkList.children.length > 0;
+              if (!pickerReady && attempts < maxAttempts) {
+                setTimeout(tryInject, 100);
+                return;
+              }
+
+              // Set the value on the hidden field
+              hiddenField.value = pk;
+              hiddenField.dispatchEvent(new frame.contentWindow.Event('input', { bubbles: true }));
+              hiddenField.dispatchEvent(new frame.contentWindow.Event('change', { bubbles: true }));
+
+              // Also directly call renderAll on the picker if accessible
+              // by triggering a change event on the radio that matches our key
+              var radios = doc.querySelectorAll('input.pkRadio8[data-key]');
+              for (var i = 0; i < radios.length; i++) {
+                if (radios[i].getAttribute('data-key') === pk) {
+                  radios[i].checked = true;
+                  radios[i].dispatchEvent(new frame.contentWindow.Event('change', { bubbles: true }));
+                  break;
+                }
+              }
+
+            } catch(e) {
+              console.warn('pm-dashboard: could not inject project key into task form', e);
+            }
+          }
+
+          setTimeout(tryInject, 300);
+        });
       });
     }
 
