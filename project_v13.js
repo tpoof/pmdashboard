@@ -756,6 +756,38 @@
     if (counter) counter.textContent = (idx + 1) + ' / ' + history.length;
   }
 
+  function suppressIframeHeader(frame) {
+    try {
+      var doc = frame.contentDocument || (frame.contentWindow && frame.contentWindow.document);
+      if (!doc) return;
+      if (doc.getElementById('pm-iframe-header-suppression')) return;
+      var style = doc.createElement('style');
+      style.id = 'pm-iframe-header-suppression';
+      style.textContent = [
+        '#header,',
+        '#siteHeader,',
+        '.siteHeader,',
+        '#leafHeader,',
+        '.leaf-header,',
+        '#topNav,',
+        '.topNav,',
+        '#mainNav,',
+        '.site-header,',
+        '#site-header,',
+        'header.main,',
+        'nav.main-nav,',
+        '#headerWrap,',
+        '.headerWrap,',
+        '#globalHeader,',
+        '.globalHeader',
+        '{ display: none !important; }'
+      ].join('\n');
+      doc.head.appendChild(style);
+    } catch(e) {
+      // Cross-origin or doc not ready — silently ignore
+    }
+  }
+
   function openModal(title, url, postLoadCallback, _skipHistory) {
     var modal = document.getElementById("pmModal");
     var frame = document.getElementById("pmModalFrame");
@@ -800,6 +832,14 @@
 
     var iframeUrl = url ? url + (url.indexOf('?') !== -1 ? '&' : '?') + 'iframe=1' : url;
     frame.src = iframeUrl;
+    // Remove any existing suppression listener before adding a new one
+    if (frame._headerSuppressionHandler) {
+      frame.removeEventListener('load', frame._headerSuppressionHandler);
+    }
+    frame._headerSuppressionHandler = function() {
+      suppressIframeHeader(frame);
+    };
+    frame.addEventListener('load', frame._headerSuppressionHandler);
     frame.setAttribute(
       "title",
       title ? "LEAF content - " + String(title) : "LEAF content"
