@@ -758,31 +758,85 @@
 
   function suppressIframeHeader(frame) {
     try {
-      var doc = frame.contentDocument || (frame.contentWindow && frame.contentWindow.document);
+      var doc = frame.contentDocument ||
+                (frame.contentWindow && frame.contentWindow.document);
       if (!doc) return;
-      if (doc.getElementById('pm-iframe-header-suppression')) return;
-      var style = doc.createElement('style');
-      style.id = 'pm-iframe-header-suppression';
-      style.textContent = [
-        '#header,',
-        '#siteHeader,',
-        '.siteHeader,',
-        '#leafHeader,',
-        '.leaf-header,',
-        '#topNav,',
-        '.topNav,',
-        '#mainNav,',
-        '.site-header,',
-        '#site-header,',
-        'header.main,',
-        'nav.main-nav,',
-        '#headerWrap,',
-        '.headerWrap,',
-        '#globalHeader,',
-        '.globalHeader',
-        '{ display: none !important; }'
-      ].join('\n');
-      doc.head.appendChild(style);
+
+      // Suppress the LEAF header
+      if (!doc.getElementById('pm-iframe-header-suppression')) {
+        var style = doc.createElement('style');
+        style.id = 'pm-iframe-header-suppression';
+        style.textContent = [
+          '#header,',
+          '#siteHeader,',
+          '.siteHeader,',
+          '#leafHeader,',
+          '.leaf-header,',
+          '#topNav,',
+          '.topNav,',
+          '#mainNav,',
+          '.site-header,',
+          '#site-header,',
+          'header.main,',
+          'nav.main-nav,',
+          '#headerWrap,',
+          '.headerWrap,',
+          '#globalHeader,',
+          '.globalHeader',
+          '{ display: none !important; }'
+        ].join('\n');
+        doc.head.appendChild(style);
+
+        // Also directly hide #header immediately as a fallback
+        var headerEl = doc.getElementById('header');
+        if (headerEl) headerEl.style.display = 'none';
+      }
+
+      // Intercept link clicks inside the iframe so they push to modal history
+      // instead of navigating the iframe directly
+      if (doc._pmLinksWired) return;
+      doc._pmLinksWired = true;
+
+      doc.addEventListener('click', function(e) {
+        var a = e.target.closest('a[href]');
+        if (!a) return;
+
+        var href = a.getAttribute('href') || '';
+
+        // Only intercept internal LEAF record links (printview or Start_Request)
+        // Let external links, anchors, and javascript: links pass through
+        if (!href ||
+            href.charAt(0) === '#' ||
+            href.indexOf('javascript:') === 0 ||
+            href.indexOf('http') === 0 ||
+            href.indexOf('mailto:') === 0) return;
+
+        // Only intercept links that look like LEAF record pages
+        if (href.indexOf('printview') === -1 &&
+            href.indexOf('LEAF_Start_Request') === -1 &&
+            href.indexOf('a=view') === -1) return;
+
+        e.preventDefault();
+
+        // Build absolute URL in case href is relative
+        var absoluteUrl = href;
+        try {
+          absoluteUrl = new frame.contentWindow.URL(href, frame.contentWindow.location.href).href;
+          // Strip to path+query only (same origin)
+          var u = new frame.contentWindow.URL(absoluteUrl);
+          absoluteUrl = u.pathname + u.search;
+        } catch(ex) {
+          absoluteUrl = href;
+        }
+
+        var title = a.getAttribute('title') ||
+                    a.textContent.trim().slice(0, 60) ||
+                    'Details';
+
+        // Call openModal on the parent page — this pushes to history
+        openModal(title, absoluteUrl);
+      });
+
     } catch(e) {
       // Cross-origin or doc not ready — silently ignore
     }
@@ -996,8 +1050,13 @@
         '</div>' +
         '<table class="pm-table" style="width:100%;border-collapse:collapse;">' +
           '<thead><tr>' +
-            '<th>Task ID</th><th>Task Name</th><th>Status</th><th>Priority</th>' +
-            '<th>Start</th><th>Due</th><th>Assigned To</th>' +
+            '<th scope="col" class="pm-sortable" data-type="number"><button type="button" class="pm-sortBtn">Task ID</button></th>' +
+            '<th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Task Name</button></th>' +
+            '<th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
+            '<th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Priority</button></th>' +
+            '<th scope="col" class="pm-sortable" data-type="date"><button type="button" class="pm-sortBtn">Start</button></th>' +
+            '<th scope="col" class="pm-sortable" data-type="date"><button type="button" class="pm-sortBtn">Due</button></th>' +
+            '<th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Assigned To</button></th>' +
           '</tr></thead>' +
           '<tbody>' + rows + '</tbody>' +
         '</table>' +
@@ -1049,6 +1108,9 @@
     inlineContainer.innerHTML = contentHtml;
     inlineContainer.style.display = '';
 
+    var pkTable = inlineContainer.querySelector('table.pm-table');
+    if (pkTable) wireInlineTableSort(pkTable);
+
     var addTaskBtn = document.getElementById('pmPkAddTaskBtn');
     if (addTaskBtn) {
       addTaskBtn.addEventListener('click', function() {
@@ -1070,39 +1132,47 @@
             try {
               var doc = frame.contentDocument ||
                         (frame.contentWindow && frame.contentWindow.document);
-              if (!doc) {
+              if (!doc || doc.readyState !== 'complete') {
                 if (attempts < maxAttempts) setTimeout(tryInject, 100);
                 return;
               }
 
-              // Find the hidden LEAF field for indicator 8
-              var hiddenField = doc.querySelector('input[name="8"], textarea[name="8"], select[name="8"]');
+              // Wait for the hidden LEAF field for indicator 8
+              var hiddenField = doc.querySelector(
+                'input[name="8"], textarea[name="8"], select[name="8"]'
+              );
               if (!hiddenField) {
                 if (attempts < maxAttempts) setTimeout(tryInject, 100);
                 return;
               }
 
-              // Check if the picker has finished loading projects by looking
-              // for the picker list element being populated
-              var pkList = doc.getElementById('pkList8');
-              var pickerReady = pkList && pkList.children.length > 0;
-              if (!pickerReady && attempts < maxAttempts) {
-                setTimeout(tryInject, 100);
-                return;
+              // Set value directly on hidden field
+              hiddenField.value = pk;
+              hiddenField.dispatchEvent(
+                new frame.contentWindow.Event('input', { bubbles: true })
+              );
+              hiddenField.dispatchEvent(
+                new frame.contentWindow.Event('change', { bubbles: true })
+              );
+
+              // Update the picker summary UI to reflect the selection
+              // without needing the panel to be open
+              var summaryValEl = doc.getElementById('pkSummaryVal8');
+              if (summaryValEl) {
+                summaryValEl.innerHTML =
+                  '<span class="pm-picker-badge">' +
+                  '<span class="pm-picker-badge-check" aria-hidden="true">✓</span>' +
+                  '<span>' + pk + '</span></span>';
               }
 
-              // Set the value on the hidden field
-              hiddenField.value = pk;
-              hiddenField.dispatchEvent(new frame.contentWindow.Event('input', { bubbles: true }));
-              hiddenField.dispatchEvent(new frame.contentWindow.Event('change', { bubbles: true }));
-
-              // Also directly call renderAll on the picker if accessible
-              // by triggering a change event on the radio that matches our key
+              // Also try to trigger the radio if projects have loaded
               var radios = doc.querySelectorAll('input.pkRadio8[data-key]');
               for (var i = 0; i < radios.length; i++) {
                 if (radios[i].getAttribute('data-key') === pk) {
                   radios[i].checked = true;
-                  radios[i].dispatchEvent(new frame.contentWindow.Event('change', { bubbles: true }));
+                  radios[i].dispatchEvent(
+                    new frame.contentWindow.Event('change', { bubbles: true })
+                  );
                   break;
                 }
               }
@@ -2119,6 +2189,69 @@
         sensitivity: "base",
       })
     );
+  }
+
+  function wireInlineTableSort(tableEl) {
+    if (!tableEl || tableEl._pmSortWired) return;
+    tableEl._pmSortWired = true;
+
+    var sortState = { col: -1, dir: 1 };
+
+    tableEl.addEventListener('click', function(e) {
+      var th = e.target.closest('th.pm-sortable');
+      if (!th) return;
+
+      var ths = Array.prototype.slice.call(tableEl.querySelectorAll('thead th'));
+      var col = ths.indexOf(th);
+      if (col === -1) return;
+
+      var type = th.getAttribute('data-type') || 'string';
+
+      if (sortState.col === col) {
+        sortState.dir *= -1;
+      } else {
+        sortState.col = col;
+        sortState.dir = 1;
+      }
+
+      // Update sort indicators on headers
+      ths.forEach(function(t) {
+        t.classList.remove('is-asc', 'is-desc');
+        t.setAttribute('aria-sort', 'none');
+        var btn = t.querySelector('.pm-sortBtn');
+        if (btn) btn.setAttribute('data-dir', '');
+      });
+      th.classList.add(sortState.dir === 1 ? 'is-asc' : 'is-desc');
+      th.setAttribute('aria-sort', sortState.dir === 1 ? 'ascending' : 'descending');
+
+      // Collect and sort rows
+      var tbody = tableEl.querySelector('tbody');
+      if (!tbody) return;
+      var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+
+      rows.sort(function(a, b) {
+        var aCell = a.querySelectorAll('td')[col];
+        var bCell = b.querySelectorAll('td')[col];
+        var aVal = aCell ? aCell.textContent.trim() : '';
+        var bVal = bCell ? bCell.textContent.trim() : '';
+
+        if (type === 'number') {
+          var aNum = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
+          var bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
+          return (aNum - bNum) * sortState.dir;
+        }
+        if (type === 'date') {
+          var aDate = new Date(aVal);
+          var bDate = new Date(bVal);
+          var aTime = isNaN(aDate) ? 0 : aDate.getTime();
+          var bTime = isNaN(bDate) ? 0 : bDate.getTime();
+          return (aTime - bTime) * sortState.dir;
+        }
+        return aVal.localeCompare(bVal, undefined, { sensitivity: 'base' }) * sortState.dir;
+      });
+
+      rows.forEach(function(r) { tbody.appendChild(r); });
+    });
   }
 
   function setSortIndicator(containerId, activeKey, dir) {
@@ -8064,7 +8197,7 @@
 
   // ── Drilldown engine ──────────────────────────────────────────────────────
 
-  function renderDrilldownTable(containerId, label, columns, rows) {
+  function renderDrilldownTable(containerId, label, columns, rows, columnTypes) {
     // containerId is now ignored — all drilldowns go to the shared panel
     var panel = document.getElementById('pmAnalyticsDrilldown');
     var titleEl = panel && panel.querySelector('.pm-analyticsDrilldownTitle');
@@ -8099,8 +8232,11 @@
     if (titleEl) titleEl.textContent = (chartLabel ? chartLabel + '  \u2014  ' : '') + label;
     if (iconEl) iconEl.textContent = 'bar_chart';
 
-    var headerCells = columns.map(function(c) {
-      return '<th>' + safe(c) + '</th>';
+    var headerCells = columns.map(function(c, i) {
+      var type = (columnTypes && columnTypes[i]) || 'string';
+      return '<th scope="col" class="pm-sortable" data-type="' + type + '">' +
+        '<button type="button" class="pm-sortBtn">' + safe(c) + '</button>' +
+        '</th>';
     }).join('');
     var bodyHtml = rows.length
       ? rows.join('')
@@ -8111,6 +8247,9 @@
         '<thead><tr>' + headerCells + '</tr></thead>' +
         '<tbody>' + bodyHtml + '</tbody>' +
       '</table>';
+
+    var tableEl = body.querySelector('table');
+    if (tableEl) wireInlineTableSort(tableEl);
 
     panel.hidden = false;
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -8192,7 +8331,8 @@
 
     renderDrilldownTable('pmDrilldownScheduleVariance', label,
       ['Task ID', 'Task Name', 'Assigned To', 'Due Date', 'Completed Date', 'Variance'],
-      rows);
+      rows,
+      ['number', 'string', 'string', 'date', 'date', 'string']);
   }
 
   function drilldownDueBuckets(label, cache) {
@@ -8212,7 +8352,8 @@
     });
     renderDrilldownTable('pmDrilldownDueBuckets', label,
       ['Task ID', 'Task Name', 'Status', 'Priority', 'Due Date', 'Assigned To'],
-      rows);
+      rows,
+      ['number', 'string', 'string', 'string', 'date', 'string']);
   }
 
   function drilldownCompletedByQuarter(label, cache) {
@@ -8234,7 +8375,8 @@
     });
     renderDrilldownTable('pmDrilldownCompletedByQuarter', label,
       ['Task ID', 'Task Name', 'Category', 'Assigned To', 'Completed Date'],
-      rows);
+      rows,
+      ['number', 'string', 'string', 'string', 'date']);
   }
 
   function drilldownCompletedByCategory(label, cache) {
@@ -8253,7 +8395,8 @@
     });
     renderDrilldownTable('pmDrilldownCompletedByCategory', label,
       ['Task ID', 'Task Name', 'Assigned To', 'Completed Date'],
-      rows);
+      rows,
+      ['number', 'string', 'string', 'date']);
   }
 
   function drilldownTasksByPriority(label, cache) {
@@ -8278,7 +8421,8 @@
     });
     renderDrilldownTable('pmDrilldownTasksByPriority', label,
       ['Task ID', 'Task Name', 'Status', 'Project Key', 'Assigned To', 'Due Date'],
-      rows);
+      rows,
+      ['number', 'string', 'string', 'string', 'string', 'date']);
   }
 
   function drilldownTasksByStatus(label, cache) {
@@ -8307,7 +8451,8 @@
     });
     renderDrilldownTable('pmDrilldownTasksByStatus', label,
       ['Task ID', 'Task Name', 'Project Key', 'Priority', 'Assigned To', 'Due Date'],
-      rows);
+      rows,
+      ['number', 'string', 'string', 'string', 'string', 'date']);
   }
 
   function drilldownTasksByProject(label, cache) {
@@ -8327,7 +8472,8 @@
     });
     renderDrilldownTable('pmDrilldownTasksByProject', label,
       ['Task ID', 'Task Name', 'Status', 'Priority', 'Assigned To', 'Due Date'],
-      rows);
+      rows,
+      ['number', 'string', 'string', 'string', 'string', 'date']);
   }
 
   function drilldownTicketsImported(label, cache) {
@@ -8350,7 +8496,8 @@
     });
     renderDrilldownTable('pmDrilldownTicketsImported', label,
       ['Task ID', 'Task Name', 'Ticket #', 'Project Key', 'Assigned To'],
-      rows);
+      rows,
+      ['number', 'string', 'string', 'string', 'string']);
   }
 
   function drilldownProjectsByType(label, cache) {
@@ -8381,7 +8528,8 @@
 
     renderDrilldownTable('pmDrilldownProjectsByType', label,
       ['Project Key', 'Project Name', 'Status', 'Owner', 'Fiscal Year'],
-      rows);
+      rows,
+      ['string', 'string', 'string', 'string', 'string']);
   }
 
   // ── End drilldown engine ──────────────────────────────────────────────────
