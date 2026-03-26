@@ -739,6 +739,20 @@
     var openTabBtn = document.getElementById("pmModalOpenTabBtn");
     var closeBtn = document.getElementById("pmModalCloseBtn");
     if (!modal || !frame || !titleEl) return;
+
+    // If inline content mode is active, restore the iframe and clean up
+    var inlineContainer = document.getElementById('pmModalInlineContent');
+    if (inlineContainer) {
+      inlineContainer.style.display = 'none';
+      inlineContainer.innerHTML = '';
+    }
+    frame.style.display = '';
+
+    // Restore the open-in-tab button and remove any injected project key link
+    if (openTabBtn) openTabBtn.style.display = '';
+    var existingPkLink = document.getElementById('pmModalProjectKeyLink');
+    if (existingPkLink) existingPkLink.remove();
+
     titleEl.textContent = title || "Details";
 
     // Remove any previous load listener
@@ -8106,14 +8120,21 @@
   }
 
   function drilldownProjectsByType(label, cache) {
-    var projects = (state.projects || []).filter(function(p) {
-      var pt = String(p.projectType || '').trim() || 'Unspecified';
-      return pt === label;
+    var projects = (state.projectsAll || []).filter(function(p) {
+      // Apply the same label transformation used when building the chart
+      // so "IT - Infrastructure" correctly matches chart label "IT"
+      var rawType = String(p.projectType || '').trim() || 'Unknown';
+      var formattedType = formatProjectTypeLabel(rawType);
+      return formattedType === label;
     });
+
     var rows = projects.map(function(p) {
       var pkHref = getProjectRecordHrefFromKey(p.projectKey);
       var pkCell = pkHref
-        ? '<td><a href="' + safeAttr(pkHref) + '" class="pm-recordLink" data-title="Project ' + safeAttr(p.projectKey) + '">' + safe(p.projectKey) + '</a></td>'
+        ? '<td><a href="' + safeAttr(pkHref) + '" class="pm-recordLink pm-pkProjectLink" ' +
+          'data-title="Project ' + safeAttr(p.projectKey) + '" ' +
+          'data-projectkey="' + safeAttr(p.projectKey) + '">' +
+          safe(p.projectKey) + '</a></td>'
         : '<td>' + safe(p.projectKey) + '</td>';
       return '<tr>' +
         pkCell +
@@ -8123,6 +8144,7 @@
         '<td>' + safe(p.projectFiscalYear) + '</td>' +
         '</tr>';
     });
+
     renderDrilldownTable('pmDrilldownProjectsByType', label,
       ['Project Key', 'Project Name', 'Status', 'Owner', 'Fiscal Year'],
       rows);

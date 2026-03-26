@@ -2603,15 +2603,18 @@ body {
 .pm-analyticsDrilldownIcon {
   font-size: 18px;
   opacity: 0.9;
+  color: #fff;
 }
 
 .pm-analyticsDrilldownTitle {
   font-size: 14px;
+  color: #fff;
 }
 
 .pm-analyticsDrilldownClose {
   color: #fff;
-  border-color: rgba(255,255,255,0.5);
+  background: var(--accent, #2563eb);
+  border-color: var(--accent-strong, #1d4ed8);
   font-size: 13px;
   display: flex;
   align-items: center;
@@ -2619,8 +2622,9 @@ body {
 }
 
 .pm-analyticsDrilldownClose:hover {
-  background: rgba(255,255,255,0.15);
-  border-color: #fff;
+  background: var(--accent-strong, #1d4ed8);
+  border-color: var(--accent-strong, #1d4ed8);
+  color: #fff;
 }
 
 #pmAnalyticsDrilldownBody {
