@@ -151,6 +151,7 @@
     kanbanColumns: [],
     dataReady: false,
     devOnly: false,
+    recurringOnly: false,
     okrTableView: "objectives",
     filters: {
       projectFiscalYear: new Set(),
@@ -2009,8 +2010,10 @@
     var pkLink = pkHref
       ? '<a href="' +
         safe(pkHref) +
-        '" class="pm-recordLink" data-title="' +
+        '" class="pm-recordLink pm-pkProjectLink" data-title="' +
         safe("Project " + projectKeyText) +
+        '" data-projectkey="' +
+        safeAttr(projectKeyText) +
         '" title="' +
         safeAttr(projectKeyText) +
         '">' +
@@ -3381,10 +3384,10 @@
       '" aria-label="' +
       titleAttr +
       '" tabindex="0">' +
-      safe(titleText) +
       (t.isRecurring
         ? '<span class="material-icons pm-recurringIcon" title="Recurring Task" aria-label="Recurring Task">change_circle</span>'
         : '') +
+      safe(titleText) +
       "</span></td>" +
       "<td>" +
       renderStatusCell(t) +
@@ -3867,8 +3870,10 @@
     var pkLink = pkHref
       ? '<a href="' +
         safe(pkHref) +
-        '" class="pm-recordLink" data-title="' +
+        '" class="pm-recordLink pm-pkProjectLink" data-title="' +
         safe("Project " + t.projectKey) +
+        '" data-projectkey="' +
+        safeAttr(String(t.projectKey || '')) +
         '">' +
         safe(t.projectKey) +
         "</a>"
@@ -5814,6 +5819,7 @@
       priorities: new Set(getFilterSet("priority")),
       categories: new Set(getFilterSet("category")),
       devOnly: state.devOnly,
+      recurringOnly: !!state.recurringOnly,
     };
   }
 
@@ -5855,6 +5861,7 @@
       }
     }
     if (filters && filters.devOnly && !isDevelopmentTask(task)) return false;
+    if (filters && filters.recurringOnly && !task.isRecurring) return false;
     if (
       filters &&
       !matchesFilterSet(task.projectKey, filters.projectKeys)
@@ -5877,6 +5884,7 @@
       state.tasksVersion,
       sigPart(filters.q),
       filters.devOnly ? "1" : "0",
+      filters.recurringOnly ? "r" : "0",
       signatureFromSet(filters.projectKeys),
       signatureFromSet(filters.statuses),
       signatureFromSet(filters.assignees),
@@ -6372,9 +6380,11 @@
     var view = getAnalyticsView();
     if (view !== "main") return;
     // Clear any open drilldowns so stale data is not shown after filter change
-    Object.keys(CHART_DRILLDOWN_MAP).forEach(function(slot) {
-      closeDrilldown(CHART_DRILLDOWN_MAP[slot].containerId);
-    });
+    state.drilldownActive = {};
+    var panel = document.getElementById('pmAnalyticsDrilldown');
+    var body = document.getElementById('pmAnalyticsDrilldownBody');
+    if (panel) panel.hidden = true;
+    if (body) body.innerHTML = '';
     var sig = buildAnalyticsSignature();
     var cache = state.cache.analytics.get(sig);
     if (cache) {
@@ -6518,6 +6528,9 @@
       );
       setFilterValues("status", ["In Progress"]);
       if (state.filterControls.status) state.filterControls.status.setSelectedValues(new Set(["In Progress"]));
+      state.recurringOnly = false;
+      var recurringFilterBtn = document.getElementById('pmRecurringFilterBtn');
+      if (recurringFilterBtn) recurringFilterBtn.setAttribute('aria-pressed', 'false');
       applySearchAndFilters(true);
       saveFilterState();
     }
@@ -6714,10 +6727,7 @@
       e.preventDefault();
 
       // Only intercept project-key links when clicked from within the tasks table
-      if (
-        a.classList.contains("pm-pkProjectLink") &&
-        a.closest("#pmTasksTable")
-      ) {
+      if (a.classList.contains("pm-pkProjectLink")) {
         var projectKey = a.getAttribute("data-projectkey") || "";
         if (projectKey) {
           openProjectTasksModal(projectKey);
@@ -7814,35 +7824,68 @@
   // ── Drilldown engine ──────────────────────────────────────────────────────
 
   function renderDrilldownTable(containerId, label, columns, rows) {
-    var container = document.getElementById(containerId);
-    if (!container) return;
+    // containerId is now ignored — all drilldowns go to the shared panel
+    var panel = document.getElementById('pmAnalyticsDrilldown');
+    var titleEl = panel && panel.querySelector('.pm-analyticsDrilldownTitle');
+    var iconEl = panel && panel.querySelector('.pm-analyticsDrilldownIcon');
+    var body = document.getElementById('pmAnalyticsDrilldownBody');
+    if (!panel || !body) return;
+
+    // Find the chart title for context — look up from CHART_DRILLDOWN_MAP
+    var slotToCanvasId = {
+      scheduleVariance:    'pmChartScheduleVariance',
+      dueBuckets:          'pmChartDueBuckets',
+      completedByQuarter:  'pmChartCompletedByQuarter',
+      completedByCategory: 'pmChartCompletedByCategory',
+      priority:            'pmChartTasksByPriority',
+      status:              'pmChartTasksByStatus',
+      projectKey:          'pmChartTasksByProject',
+      ticketsImported:     'pmChartTicketsImported',
+      projectsByType:      'pmChartProjectsByType',
+    };
+    var chartLabel = '';
+    Object.keys(CHART_DRILLDOWN_MAP).forEach(function(slot) {
+      if (CHART_DRILLDOWN_MAP[slot].containerId === containerId) {
+        var canvas = document.getElementById(slotToCanvasId[slot]);
+        if (canvas) {
+          var card = canvas.closest('.pm-chartCard');
+          var titleNode = card && card.querySelector('.pm-chartTitle');
+          chartLabel = titleNode ? titleNode.textContent.trim() : '';
+        }
+      }
+    });
+
+    if (titleEl) titleEl.textContent = (chartLabel ? chartLabel + '  \u2014  ' : '') + label;
+    if (iconEl) iconEl.textContent = 'bar_chart';
+
     var headerCells = columns.map(function(c) {
       return '<th>' + safe(c) + '</th>';
     }).join('');
     var bodyHtml = rows.length
       ? rows.join('')
-      : '<tr><td colspan="' + columns.length + '" style="text-align:center;padding:12px;color:#888;">No data for this selection.</td></tr>';
-    container.innerHTML =
-      '<div class="pm-drilldownHeader">' +
-        '<span class="pm-drilldownTitle">Showing: ' + safe(label) + '</span>' +
-        '<button type="button" class="pm-drilldownClose" data-close-drilldown="' + containerId + '" ' +
-        'title="Close" aria-label="Close drilldown">&#x2715;</button>' +
-      '</div>' +
+      : '<tr><td colspan="' + columns.length + '" style="text-align:center;padding:16px;color:#888;">No data for this selection.</td></tr>';
+
+    body.innerHTML =
       '<table class="pm-table" style="width:100%;">' +
         '<thead><tr>' + headerCells + '</tr></thead>' +
         '<tbody>' + bodyHtml + '</tbody>' +
       '</table>';
-    container.hidden = false;
-    container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    panel.hidden = false;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function closeDrilldown(containerId) {
-    var container = document.getElementById(containerId);
-    if (container) {
-      container.hidden = true;
-      container.innerHTML = '';
-    }
+    // Clear the active state for this container
     delete state.drilldownActive[containerId];
+
+    // Only hide the panel if no other drilldowns are active
+    if (Object.keys(state.drilldownActive).length === 0) {
+      var panel = document.getElementById('pmAnalyticsDrilldown');
+      var body = document.getElementById('pmAnalyticsDrilldownBody');
+      if (panel) panel.hidden = true;
+      if (body) body.innerHTML = '';
+    }
   }
 
   function drilldownTaskIdCell(t) {
@@ -7852,12 +7895,16 @@
   }
 
   function wireDrilldownCloseButtons() {
-    document.addEventListener('click', function(e) {
-      var btn = e.target.closest('[data-close-drilldown]');
-      if (!btn) return;
-      var id = btn.getAttribute('data-close-drilldown');
-      closeDrilldown(id);
-    });
+    var closeBtn = document.getElementById('pmAnalyticsDrilldownClose');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function() {
+        state.drilldownActive = {};
+        var panel = document.getElementById('pmAnalyticsDrilldown');
+        var body = document.getElementById('pmAnalyticsDrilldownBody');
+        if (panel) panel.hidden = true;
+        if (body) body.innerHTML = '';
+      });
+    }
   }
 
   // ── Per-chart drilldown resolvers ─────────────────────────────────────────
@@ -8226,8 +8273,10 @@
       var pkLink = pkHref
         ? "<a href='" +
           safe(pkHref) +
-          "' class='pm-recordLink' data-title='" +
+          "' class='pm-recordLink pm-pkProjectLink' data-title='" +
           safe("Project " + t.projectKey) +
+          "' data-projectkey='" +
+          safeAttr(String(t.projectKey || '')) +
           "'>" +
           safe(t.projectKey) +
           "</a>"
@@ -8832,6 +8881,15 @@
       wireRecurringFieldHider();
       wireAnalyticsSharedFilters();
       wireDrilldownCloseButtons();
+      var recurringFilterBtn = document.getElementById('pmRecurringFilterBtn');
+      if (recurringFilterBtn) {
+        recurringFilterBtn.addEventListener('click', function() {
+          state.recurringOnly = !state.recurringOnly;
+          recurringFilterBtn.setAttribute('aria-pressed', state.recurringOnly ? 'true' : 'false');
+          invalidateTaskCaches();
+          applySearchAndFilters(true);
+        });
+      }
       wireJumpToTop();
       wireFeedbackWidget();
       initTour();

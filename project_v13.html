@@ -295,6 +295,19 @@
           data-filter="priority"
         ></div>
       </div>
+      <div class="pm-field pm-fieldRecurringToggle">
+        <label class="pm-label">&nbsp;</label>
+        <button
+          type="button"
+          id="pmRecurringFilterBtn"
+          class="pm-ghostBtn pm-recurringFilterBtn"
+          aria-pressed="false"
+          title="Show recurring tasks only"
+        >
+          <span class="material-icons" style="font-size:16px;vertical-align:middle;margin-right:4px;">change_circle</span>
+          Recurring
+        </button>
+      </div>
       <div class="pm-field pm-fieldInlineBtn">
         <button type="button" class="pm-ghostBtn" id="pmClearFiltersBtn_tasks">
           Clear all filters
@@ -461,7 +474,6 @@
               <div class="pm-srOnly" id="pmChartDueBucketsDesc"></div>
             </div>
           </div>
-          <div class="pm-chartDrilldown" id="pmDrilldownDueBuckets" hidden></div>
         </div>
 
         <div class="pm-chartCard">
@@ -478,7 +490,6 @@
               <div class="pm-srOnly" id="pmChartCompletedByQuarterDesc"></div>
             </div>
           </div>
-          <div class="pm-chartDrilldown" id="pmDrilldownCompletedByQuarter" hidden></div>
         </div>
 
         <div class="pm-chartCard">
@@ -495,7 +506,6 @@
               <div class="pm-srOnly" id="pmChartCompletedByCategoryDesc"></div>
             </div>
           </div>
-          <div class="pm-chartDrilldown" id="pmDrilldownCompletedByCategory" hidden></div>
         </div>
 
         <div class="pm-chartCard">
@@ -510,7 +520,6 @@
               <div class="pm-srOnly" id="pmChartTasksByPriorityDesc"></div>
             </div>
           </div>
-          <div class="pm-chartDrilldown" id="pmDrilldownTasksByPriority" hidden></div>
         </div>
 
         <div class="pm-chartCard">
@@ -525,7 +534,6 @@
               <div class="pm-srOnly" id="pmChartTasksByStatusDesc"></div>
             </div>
           </div>
-          <div class="pm-chartDrilldown" id="pmDrilldownTasksByStatus" hidden></div>
         </div>
 
         <div class="pm-chartCard">
@@ -540,7 +548,6 @@
               <div class="pm-srOnly" id="pmChartTasksByProjectDesc"></div>
             </div>
           </div>
-          <div class="pm-chartDrilldown" id="pmDrilldownTasksByProject" hidden></div>
         </div>
 
         <div class="pm-chartCard">
@@ -557,7 +564,6 @@
               <div class="pm-srOnly" id="pmChartTicketsImportedDesc"></div>
             </div>
           </div>
-          <div class="pm-chartDrilldown" id="pmDrilldownTicketsImported" hidden></div>
         </div>
 
         <div class="pm-chartCard">
@@ -572,7 +578,6 @@
               <div class="pm-srOnly" id="pmChartProjectsByTypeDesc"></div>
             </div>
           </div>
-          <div class="pm-chartDrilldown" id="pmDrilldownProjectsByType" hidden></div>
         </div>
 
         <div class="pm-chartCard">
@@ -583,8 +588,26 @@
               <div class="pm-srOnly" id="pmChartScheduleVarianceDesc"></div>
             </div>
           </div>
-          <div class="pm-chartDrilldown" id="pmDrilldownScheduleVariance" hidden></div>
         </div>
+      </div>
+
+      <div id="pmAnalyticsDrilldown" class="pm-analyticsDrilldown" hidden>
+        <div class="pm-analyticsDrilldownHeader">
+          <div class="pm-analyticsDrilldownMeta">
+            <span class="material-icons pm-analyticsDrilldownIcon"></span>
+            <span class="pm-analyticsDrilldownTitle"></span>
+          </div>
+          <button
+            type="button"
+            class="pm-ghostBtn pm-analyticsDrilldownClose"
+            id="pmAnalyticsDrilldownClose"
+            aria-label="Close detail panel"
+          >
+            <span class="material-icons" style="font-size:18px;vertical-align:middle;">close</span>
+            Close
+          </button>
+        </div>
+        <div id="pmAnalyticsDrilldownBody"></div>
       </div>
     </div>
 

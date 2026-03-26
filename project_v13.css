@@ -2569,46 +2569,70 @@ body {
   cursor: default;
 }
 
-.pm-chartDrilldown {
-  margin-top: 12px;
-  border-top: 2px solid var(--pm-accent, #1a73e8);
-  padding-top: 10px;
+.pm-analyticsDrilldown {
+  margin-top: var(--space-3);
+  border: 1px solid var(--pm-accent, #1a73e8);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
   animation: pm-fadeIn 0.18s ease;
+  overflow: hidden;
 }
 
-.pm-chartDrilldown[hidden] {
+.pm-analyticsDrilldown[hidden] {
   display: none;
 }
 
-.pm-drilldownHeader {
+.pm-analyticsDrilldownHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  padding: 10px 16px;
+  background: var(--pm-accent, #1a73e8);
+  color: #fff;
 }
 
-.pm-drilldownTitle {
-  font-size: 13px;
+.pm-analyticsDrilldownMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 600;
-  color: var(--pm-text, #1f2933);
+  font-size: 14px;
 }
 
-.pm-drilldownClose {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--pm-text-muted, #555);
+.pm-analyticsDrilldownIcon {
   font-size: 18px;
-  line-height: 1;
-  padding: 0 4px;
+  opacity: 0.9;
 }
 
-.pm-drilldownClose:hover {
-  color: var(--pm-text, #1f2933);
+.pm-analyticsDrilldownTitle {
+  font-size: 14px;
+}
+
+.pm-analyticsDrilldownClose {
+  color: #fff;
+  border-color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pm-analyticsDrilldownClose:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: #fff;
+}
+
+#pmAnalyticsDrilldownBody {
+  padding: 16px;
+  overflow-x: auto;
+  max-height: 480px;
+  overflow-y: auto;
 }
 
 .pm-chartCard {
   cursor: default;
+  overflow: visible;
 }
 
 canvas.pm-chartClickable {
@@ -2618,4 +2642,14 @@ canvas.pm-chartClickable {
 @keyframes pm-fadeIn {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+.pm-recurringFilterBtn[aria-pressed="true"] {
+  background-color: var(--pm-accent, #1a73e8);
+  color: #fff;
+  border-color: var(--pm-accent, #1a73e8);
+}
+
+.pm-recurringFilterBtn[aria-pressed="true"] .material-icons {
+  color: #fff;
 }
