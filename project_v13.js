@@ -152,8 +152,8 @@
     dataReady: false,
     devOnly: false,
     recurringOnly: false,
-    modalHistory: [],
-    modalHistoryIndex: -1,
+    modalPrev: null,
+    modalCurrent: null,
     pendingProjectKeyRefresh: null,
     okrTableView: "objectives",
     filters: {
@@ -742,20 +742,17 @@
     var counter = document.getElementById('pmModalNavCounter');
     if (!nav) return;
 
-    var history = state.modalHistory || [];
-    var idx = state.modalHistoryIndex;
+    var hasPrev = !!state.modalPrev;
 
-    if (history.length === 0) {
+    if (!hasPrev) {
       nav.hidden = true;
       return;
     }
 
     nav.hidden = false;
-    if (prevBtn) prevBtn.disabled = idx <= 0;
-    if (nextBtn) nextBtn.disabled = idx >= history.length - 1;
-    if (counter) counter.textContent = history.length > 1
-      ? (idx + 1) + ' / ' + history.length
-      : '';
+    if (prevBtn) prevBtn.disabled = false;
+    if (nextBtn) nextBtn.disabled = true;
+    if (counter) counter.textContent = '';
   }
 
   function suppressIframeHeader(frame) {
@@ -823,60 +820,16 @@
     }
 
     var iframeUrl = url ? url + (url.indexOf('?') !== -1 ? '&' : '?') + 'iframe=1' : url;
-
-    // Tag this navigation as internal so the persistent handler skips it
-    frame._pmSkipNextHistory = true;
     frame.src = iframeUrl;
 
-    // Add a persistent load listener ONCE for the lifetime of the modal.
-    // It fires for ALL iframe navigations — links, buttons, forms, JS redirects.
-    if (!frame._pmNavHandler) {
-      frame._pmNavHandler = function() {
-        // Always suppress the header first
-        suppressIframeHeader(frame);
-
-        // If this load was triggered by openModal directly, skip history push
-        if (frame._pmSkipNextHistory) {
-          frame._pmSkipNextHistory = false;
-          return;
-        }
-
-        // Skip if modal is closed
-        if (!isModalOpen()) return;
-
-        try {
-          var iwin = frame.contentWindow;
-          var idoc = frame.contentDocument || iwin.document;
-
-          // Get URL from iframe — strip &iframe=1 param
-          var currentUrl = iwin.location.pathname + iwin.location.search;
-          currentUrl = currentUrl.replace(/[?&]iframe=1/g, '').replace(/\?&/, '?').replace(/\?$/, '');
-
-          // Get a clean title
-          var pageTitle = (idoc.title || '').replace(/^LEAF\s*[-–]\s*/i, '').trim() || 'Details';
-
-          // Truncate forward history if we navigated back then went somewhere new
-          if (state.modalHistoryIndex < state.modalHistory.length - 1) {
-            state.modalHistory = state.modalHistory.slice(0, state.modalHistoryIndex + 1);
-          }
-
-          state.modalHistory.push({ url: currentUrl, title: pageTitle });
-          state.modalHistoryIndex = state.modalHistory.length - 1;
-
-          // Update modal header title and open-in-tab URL
-          var titleEl = document.getElementById('pmModalTitle');
-          if (titleEl) titleEl.textContent = pageTitle;
-          var openTabBtn = document.getElementById('pmModalOpenTabBtn');
-          if (openTabBtn) openTabBtn.setAttribute('data-url', currentUrl);
-
-          updateModalNav();
-
-        } catch(e) {
-          // Cross-origin — silently ignore
-        }
-      };
-      frame.addEventListener('load', frame._pmNavHandler);
+    // Suppress the LEAF header on every load
+    if (frame._headerSuppressionHandler) {
+      frame.removeEventListener('load', frame._headerSuppressionHandler);
     }
+    frame._headerSuppressionHandler = function() {
+      suppressIframeHeader(frame);
+    };
+    frame.addEventListener('load', frame._headerSuppressionHandler);
 
     frame.setAttribute(
       "title",
@@ -886,11 +839,9 @@
     var _rMatch = String(url || "").match(/[?&]recordID=(\d+)/i);
     state.lastModalRecordID = _rMatch ? _rMatch[1] : null;
     if (!_skipHistory) {
-      if (state.modalHistoryIndex < state.modalHistory.length - 1) {
-        state.modalHistory = state.modalHistory.slice(0, state.modalHistoryIndex + 1);
-      }
-      state.modalHistory.push({ url: url, title: title || 'Details' });
-      state.modalHistoryIndex = state.modalHistory.length - 1;
+      // Shift current into prev, set new current
+      state.modalPrev = state.modalCurrent || null;
+      state.modalCurrent = { url: url, title: title || 'Details' };
     }
     updateModalNav();
     lastFocusedElement = document.activeElement;
@@ -924,13 +875,8 @@
     var existingPkLink = document.getElementById('pmModalProjectKeyLink');
     if (existingPkLink) existingPkLink.remove();
     if (openTabBtn) openTabBtn.style.display = '';
-    if (frame._pmNavHandler) {
-      frame.removeEventListener('load', frame._pmNavHandler);
-      frame._pmNavHandler = null;
-    }
-    frame._pmSkipNextHistory = false;
-    state.modalHistory = [];
-    state.modalHistoryIndex = -1;
+    state.modalPrev = null;
+    state.modalCurrent = null;
     updateModalNav();
     modal.hidden = true;
     modal.setAttribute("aria-hidden", "true");
@@ -7116,21 +7062,30 @@
 
     if (prevBtn) {
       prevBtn.addEventListener('click', function() {
-        var idx = state.modalHistoryIndex - 1;
-        if (idx < 0) return;
-        var item = state.modalHistory[idx];
-        state.modalHistoryIndex = idx;
-        openModal(item.title, item.url, null, true);
+        if (!state.modalPrev) return;
+        var goTo = state.modalPrev;
+        state.modalPrev = null;
+        state.modalCurrent = goTo;
+        openModal(goTo.title, goTo.url, null, true);
+        // After going back, enable forward
+        var fwdBtn = document.getElementById('pmModalNextBtn');
+        if (fwdBtn) {
+          fwdBtn.disabled = false;
+          fwdBtn._goTo = state.modalCurrent;
+        }
+        updateModalNav();
       });
     }
 
     if (nextBtn) {
       nextBtn.addEventListener('click', function() {
-        var idx = state.modalHistoryIndex + 1;
-        if (idx >= state.modalHistory.length) return;
-        var item = state.modalHistory[idx];
-        state.modalHistoryIndex = idx;
-        openModal(item.title, item.url, null, true);
+        var goTo = nextBtn._goTo;
+        if (!goTo) return;
+        nextBtn._goTo = null;
+        nextBtn.disabled = true;
+        state.modalCurrent = goTo;
+        openModal(goTo.title, goTo.url, null, true);
+        updateModalNav();
       });
     }
 
