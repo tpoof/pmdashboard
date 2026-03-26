@@ -152,8 +152,8 @@
     dataReady: false,
     devOnly: false,
     recurringOnly: false,
-    modalPrev: null,
-    modalCurrent: null,
+    modalHistory: [],
+    modalHistoryIndex: -1,
     pendingProjectKeyRefresh: null,
     okrTableView: "objectives",
     filters: {
@@ -742,17 +742,20 @@
     var counter = document.getElementById('pmModalNavCounter');
     if (!nav) return;
 
-    var hasPrev = !!state.modalPrev;
+    var history = state.modalHistory || [];
+    var idx = state.modalHistoryIndex;
 
-    if (!hasPrev) {
+    if (history.length === 0 || idx < 0) {
       nav.hidden = true;
       return;
     }
 
     nav.hidden = false;
-    if (prevBtn) prevBtn.disabled = false;
-    if (nextBtn) nextBtn.disabled = true;
-    if (counter) counter.textContent = '';
+    if (prevBtn) prevBtn.disabled = idx <= 0;
+    if (nextBtn) nextBtn.disabled = idx >= history.length - 1;
+    if (counter) counter.textContent = history.length > 1
+      ? (idx + 1) + ' / ' + history.length
+      : '';
   }
 
   function suppressIframeHeader(frame) {
@@ -839,9 +842,11 @@
     var _rMatch = String(url || "").match(/[?&]recordID=(\d+)/i);
     state.lastModalRecordID = _rMatch ? _rMatch[1] : null;
     if (!_skipHistory) {
-      // Shift current into prev, set new current
-      state.modalPrev = state.modalCurrent || null;
-      state.modalCurrent = { url: url, title: title || 'Details' };
+      if (state.modalHistoryIndex < state.modalHistory.length - 1) {
+        state.modalHistory = state.modalHistory.slice(0, state.modalHistoryIndex + 1);
+      }
+      state.modalHistory.push({ url: url, title: title || 'Details' });
+      state.modalHistoryIndex = state.modalHistory.length - 1;
     }
     updateModalNav();
     lastFocusedElement = document.activeElement;
@@ -875,8 +880,8 @@
     var existingPkLink = document.getElementById('pmModalProjectKeyLink');
     if (existingPkLink) existingPkLink.remove();
     if (openTabBtn) openTabBtn.style.display = '';
-    state.modalPrev = null;
-    state.modalCurrent = null;
+    state.modalHistory = [];
+    state.modalHistoryIndex = -1;
     updateModalNav();
     modal.hidden = true;
     modal.setAttribute("aria-hidden", "true");
@@ -936,7 +941,7 @@
     });
   }
 
-  function openProjectTasksModal(projectKey) {
+  function openProjectTasksModal(projectKey, _skipHistory) {
     var projectName = state.projectKeyToTitle[projectKey] || projectKey;
     var projectHref = getProjectRecordHrefFromKey(projectKey);
 
@@ -1006,13 +1011,20 @@
     var closeBtn = document.getElementById('pmModalCloseBtn');
     if (!modal || !frame || !titleEl) return;
 
-    // Push project key modal view to history so back button works when
-    // the user clicks a task record link from inside this view
     var pkModalTitle = projectKey +
       (projectName && projectName !== projectKey ? '  \u2014  ' + projectName : '') +
       '  \u2014  Tasks';
-    state.modalPrev = state.modalCurrent || null;
-    state.modalCurrent = { url: '__projectKey__:' + projectKey, title: pkModalTitle };
+
+    if (!_skipHistory) {
+      if (state.modalHistoryIndex < state.modalHistory.length - 1) {
+        state.modalHistory = state.modalHistory.slice(0, state.modalHistoryIndex + 1);
+      }
+      state.modalHistory.push({
+        url: '__projectKey__:' + projectKey,
+        title: pkModalTitle
+      });
+      state.modalHistoryIndex = state.modalHistory.length - 1;
+    }
     updateModalNav();
 
     titleEl.textContent = pkModalTitle;
@@ -7069,40 +7081,33 @@
 
     if (prevBtn) {
       prevBtn.addEventListener('click', function() {
-        if (!state.modalPrev) return;
-        var goTo = state.modalPrev;
-        state.modalPrev = null;
-        state.modalCurrent = goTo;
-        if (goTo.url && goTo.url.indexOf('__projectKey__:') === 0) {
-          var pk = goTo.url.replace('__projectKey__:', '');
-          openProjectTasksModal(pk);
-        } else {
-          openModal(goTo.title, goTo.url, null, true);
-        }
-        // After going back, enable forward
-        var fwdBtn = document.getElementById('pmModalNextBtn');
-        if (fwdBtn) {
-          fwdBtn.disabled = false;
-          fwdBtn._goTo = state.modalCurrent;
-        }
+        var idx = state.modalHistoryIndex - 1;
+        if (idx < 0) return;
+        var item = state.modalHistory[idx];
+        state.modalHistoryIndex = idx;
         updateModalNav();
+        if (item.url && item.url.indexOf('__projectKey__:') === 0) {
+          var pk = item.url.replace('__projectKey__:', '');
+          openProjectTasksModal(pk, true);
+        } else {
+          openModal(item.title, item.url, null, true);
+        }
       });
     }
 
     if (nextBtn) {
       nextBtn.addEventListener('click', function() {
-        var goTo = nextBtn._goTo;
-        if (!goTo) return;
-        nextBtn._goTo = null;
-        nextBtn.disabled = true;
-        state.modalCurrent = goTo;
-        if (goTo.url && goTo.url.indexOf('__projectKey__:') === 0) {
-          var pk = goTo.url.replace('__projectKey__:', '');
-          openProjectTasksModal(pk);
-        } else {
-          openModal(goTo.title, goTo.url, null, true);
-        }
+        var idx = state.modalHistoryIndex + 1;
+        if (idx >= state.modalHistory.length) return;
+        var item = state.modalHistory[idx];
+        state.modalHistoryIndex = idx;
         updateModalNav();
+        if (item.url && item.url.indexOf('__projectKey__:') === 0) {
+          var pk = item.url.replace('__projectKey__:', '');
+          openProjectTasksModal(pk, true);
+        } else {
+          openModal(item.title, item.url, null, true);
+        }
       });
     }
 
