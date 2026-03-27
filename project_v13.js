@@ -2081,7 +2081,7 @@
     var rawSample = [];
     (projects || []).forEach(function (p) {
       var rawType = String(p.projectType || "").trim();
-      if (!rawType) rawType = "Unknown";
+      if (!rawType) return;
       if (rawSample.length < 10) rawSample.push(rawType);
       counts[rawType] = (counts[rawType] || 0) + 1;
     });
@@ -8948,7 +8948,13 @@
     var analyticsTasks = (tasks || []).filter(function (t) {
       return !isArchivedStatus(t.status);
     });
-    var analyticsProjects = (state.projectsAll || []).slice();
+    var analyticsProjects = (state.projectsAll || []).filter(function(p) {
+      var status = String(p.projectStatus || '').toLowerCase();
+      return status.indexOf('cancel') === -1 &&
+             status.indexOf('delet') === -1 &&
+             status.indexOf('archive') === -1 &&
+             status.indexOf('inactive') === -1;
+    });
     var now = new Date();
     var yearControl = state.filterControls.analyticsYear;
     var quarterControl = state.filterControls.analyticsQuarter;
