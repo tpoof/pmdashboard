@@ -7305,6 +7305,16 @@
         openModal("Inbox", "report.php?a=LEAF_Inbox");
       });
 
+    var reportBuilder = document.getElementById("pmReportBuilderBtn");
+    if (reportBuilder)
+      reportBuilder.addEventListener("click", function () {
+        window.open(
+          "https://leaf.va.gov/platform/projects/?a=reports&v=3",
+          "_blank",
+          "noopener",
+        );
+      });
+
     var menuBtn = document.getElementById("pmAddMenuBtn");
     var menu = document.getElementById("pmAddMenuList");
     if (!menuBtn || !menu) return;

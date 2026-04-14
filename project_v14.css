@@ -104,16 +104,14 @@ body {
 }
 
 .pm-primaryBtn.pm-inboxBtn,
-#pmViewInboxBtn,
-#pmReportBuilderBtn {
+#pmViewInboxBtn {
   background: var(--surface) !important;
   border-color: var(--border) !important;
   color: var(--text) !important;
 }
 
 .pm-primaryBtn.pm-inboxBtn:hover,
-#pmViewInboxBtn:hover,
-#pmReportBuilderBtn:hover {
+#pmViewInboxBtn:hover {
   background: var(--accent-soft) !important;
   border-color: var(--accent) !important;
   color: var(--accent-strong) !important;
@@ -230,8 +228,7 @@ body {
 .pm-jumpTop:focus-visible,
 .pm-recordLink:focus-visible,
 .pm-taskIdBadge:focus-visible,
-.pm-sortBtn:focus-visible,
-#pmReportBuilderBtn:focus-visible {
+.pm-sortBtn:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
