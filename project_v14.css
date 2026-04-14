@@ -104,43 +104,19 @@ body {
 }
 
 .pm-primaryBtn.pm-inboxBtn,
-#pmViewInboxBtn {
+#pmViewInboxBtn,
+#pmReportBuilderBtn {
   background: var(--surface) !important;
   border-color: var(--border) !important;
   color: var(--text) !important;
 }
 
 .pm-primaryBtn.pm-inboxBtn:hover,
-#pmViewInboxBtn:hover {
+#pmViewInboxBtn:hover,
+#pmReportBuilderBtn:hover {
   background: var(--accent-soft) !important;
   border-color: var(--accent) !important;
   color: var(--accent-strong) !important;
-}
-
-.pm-reportBuilderBtn {
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  color: var(--text) !important;
-  font-weight: 700;
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.pm-reportBuilderBtn:hover {
-  background: var(--accent-soft) !important;
-  border-color: var(--accent) !important;
-  color: var(--accent-strong) !important;
-}
-
-.pm-reportBuilderBtn:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
 }
 
 .pm-controls {
@@ -254,7 +230,8 @@ body {
 .pm-jumpTop:focus-visible,
 .pm-recordLink:focus-visible,
 .pm-taskIdBadge:focus-visible,
-.pm-sortBtn:focus-visible {
+.pm-sortBtn:focus-visible,
+#pmReportBuilderBtn:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
