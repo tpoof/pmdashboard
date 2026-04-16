@@ -4,12 +4,16 @@ $.ajax({
     data: {
         q: JSON.stringify({
             terms: [{ id: 'categoryID', operator: '=', match: 'form_9b302' }],
-            joins: []
+            joins: ['9']
         }),
         'x-filterData': 'recordID,9'
     },
     dataType: 'json',
     success: function(res) {
-        console.log(JSON.stringify(res));
+        // Show just one record to see structure
+        var keys = Object.keys(res);
+        console.log(JSON.stringify(res[keys[0]]));
+        console.log(JSON.stringify(res[keys[1]]));
+        console.log(JSON.stringify(res[keys[2]]));
     }
 });
