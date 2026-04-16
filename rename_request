@@ -1,3 +1,8 @@
-$("input[type=hidden]").each(function () {
-  console.log($(this).attr("name") + " = " + $(this).val());
+$.ajax({
+  type: "GET",
+  url: "./api/form/582/data",
+  dataType: "json",
+  success: function (res) {
+    console.log(JSON.stringify(res));
+  },
 });
