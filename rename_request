@@ -1,8 +1,17 @@
-$.ajax({
-  type: "GET",
-  url: "./api/form/50/9/1",
-  dataType: "json",
-  success: function (res) {
-    console.log(JSON.stringify(res));
-  },
-});
+<script>
+  $(document).ready(function () {
+    $("#9").on("change", function () {
+      var newTitle = $(this).val().trim();
+      if (newTitle !== "") {
+        $.ajax({
+          type: "POST",
+          url: "./api/form/" + recordID + "/title",
+          data: {
+            title: newTitle,
+            CSRFToken: CSRFToken,
+          },
+        });
+      }
+    });
+  });
+</script>
