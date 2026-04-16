@@ -1,6 +1,6 @@
 $.ajax({
   type: "GET",
-  url: "./api/form/582/data",
+  url: "./api/form/50/9/1",
   dataType: "json",
   success: function (res) {
     console.log(JSON.stringify(res));
