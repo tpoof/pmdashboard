@@ -1,17 +1,15 @@
-<script>
-  $(document).ready(function () {
-    $("#9").on("change", function () {
-      var newTitle = $(this).val().trim();
-      if (newTitle !== "") {
-        $.ajax({
-          type: "POST",
-          url: "./api/form/" + recordID + "/title",
-          data: {
-            title: newTitle,
-            CSRFToken: CSRFToken,
-          },
-        });
-      }
-    });
-  });
-</script>
+$.ajax({
+    type: 'GET',
+    url: './api/form/query',
+    data: {
+        q: JSON.stringify({
+            terms: [{ id: 'categoryID', operator: '=', match: 'form_9b302' }],
+            joins: []
+        }),
+        'x-filterData': 'recordID,9'
+    },
+    dataType: 'json',
+    success: function(res) {
+        console.log(JSON.stringify(res));
+    }
+});
