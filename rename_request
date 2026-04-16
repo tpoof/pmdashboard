@@ -1,0 +1,27 @@
+<script>
+    function RenameRequest() {
+    // First, GET the value of indicatorID 9 (series 1)
+    $.ajax({
+        type: 'GET',
+        url: './api/form/{{ recordID }}/9/1',
+        dataType: 'json',
+        success: function(res) {
+            // The response object contains the indicator data; extract the data value
+            var indicator9Value = res[9] && res[9][1] ? res[9][1].data : '';
+
+            // Set new title in LEAF using the value from indicatorID 9
+            $.ajax({
+                type: 'POST',
+                url: './api/form/{{ recordID }}/title',
+                data: {
+                    title: indicator9Value,
+                    CSRFToken: CSRFToken
+                }
+            });
+        },
+        error: function() {
+            console.log('Failed to retrieve indicatorID 9 for title rename.');
+        }
+    });
+}
+</script>
