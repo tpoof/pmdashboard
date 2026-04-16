@@ -1,28 +1,24 @@
 <script>
-    function RenameRequest() {
-    // GET all form data for this record, then extract indicatorID 9
+function RenameRequest() {
     $.ajax({
         type: 'GET',
         url: './api/form/{{ recordID }}/data',
         dataType: 'json',
         success: function(res) {
-            console.log('Full data response:', res); // DEBUG - open browser console to inspect
+            console.log('LEAF data response:', res);
 
             var indicator9Value = '';
 
-            // Loop through the response to find indicatorID 9
             $.each(res, function(key, indicator) {
-                // Each entry may be keyed by indicatorID or be an array/object
-                var entry = indicator[1] || indicator; // series 1 fallback
+                var entry = indicator[1] || indicator;
                 if (entry && entry.indicatorID == 9) {
                     indicator9Value = entry.data || '';
                 }
             });
 
-            console.log('Indicator 9 value found:', indicator9Value); // DEBUG
+            console.log('Indicator 9 value:', indicator9Value);
 
             if (indicator9Value !== '') {
-                // Set new title in LEAF
                 $.ajax({
                     type: 'POST',
                     url: './api/form/{{ recordID }}/title',
@@ -30,20 +26,31 @@
                         title: indicator9Value,
                         CSRFToken: CSRFToken
                     },
-                    success: function(res) {
-                        console.log('Title updated successfully:', res);
+                    success: function() {
+                        console.log('Title updated to: ' + indicator9Value);
                     },
                     error: function(err) {
                         console.log('Title POST failed:', err);
                     }
                 });
-            } else {
-                console.log('Indicator 9 data was empty — title not updated.');
             }
         },
         error: function(err) {
-            console.log('Failed to GET form data:', err);
+            console.log('GET data failed:', err);
         }
     });
 }
-</script>>
+
+// Hook into the workflow action success event so RenameRequest fires automatically
+$(document).ready(function() {
+    var workflowCheckInterval = setInterval(function() {
+        if (typeof workflow !== 'undefined' && workflow !== null) {
+            clearInterval(workflowCheckInterval);
+            workflow.setActionSuccessCallback(function() {
+                RenameRequest();
+            });
+            console.log('RenameRequest wired to workflow action.');
+        }
+    }, 300);
+});
+</script>
