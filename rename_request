@@ -1,56 +1,18 @@
 <script>
-function RenameRequest() {
-    $.ajax({
-        type: 'GET',
-        url: './api/form/{{ recordID }}/data',
-        dataType: 'json',
-        success: function(res) {
-            console.log('LEAF data response:', res);
-
-            var indicator9Value = '';
-
-            $.each(res, function(key, indicator) {
-                var entry = indicator[1] || indicator;
-                if (entry && entry.indicatorID == 9) {
-                    indicator9Value = entry.data || '';
+$(document).ready(function() {
+    // Any time indicator 9's value changes, update the title immediately
+    $('#9').on('change', function() {
+        var newTitle = $(this).val().trim();
+        if (newTitle !== '') {
+            $.ajax({
+                type: 'POST',
+                url: './api/form/{{ recordID }}/title',
+                data: {
+                    title: newTitle,
+                    CSRFToken: CSRFToken
                 }
             });
-
-            console.log('Indicator 9 value:', indicator9Value);
-
-            if (indicator9Value !== '') {
-                $.ajax({
-                    type: 'POST',
-                    url: './api/form/{{ recordID }}/title',
-                    data: {
-                        title: indicator9Value,
-                        CSRFToken: CSRFToken
-                    },
-                    success: function() {
-                        console.log('Title updated to: ' + indicator9Value);
-                    },
-                    error: function(err) {
-                        console.log('Title POST failed:', err);
-                    }
-                });
-            }
-        },
-        error: function(err) {
-            console.log('GET data failed:', err);
         }
     });
-}
-
-// Hook into the workflow action success event so RenameRequest fires automatically
-$(document).ready(function() {
-    var workflowCheckInterval = setInterval(function() {
-        if (typeof workflow !== 'undefined' && workflow !== null) {
-            clearInterval(workflowCheckInterval);
-            workflow.setActionSuccessCallback(function() {
-                RenameRequest();
-            });
-            console.log('RenameRequest wired to workflow action.');
-        }
-    }, 300);
 });
 </script>
