@@ -1,27 +1,49 @@
 <script>
     function RenameRequest() {
-    // First, GET the value of indicatorID 9 (series 1)
+    // GET all form data for this record, then extract indicatorID 9
     $.ajax({
         type: 'GET',
-        url: './api/form/{{ recordID }}/9/1',
+        url: './api/form/{{ recordID }}/data',
         dataType: 'json',
         success: function(res) {
-            // The response object contains the indicator data; extract the data value
-            var indicator9Value = res[9] && res[9][1] ? res[9][1].data : '';
+            console.log('Full data response:', res); // DEBUG - open browser console to inspect
 
-            // Set new title in LEAF using the value from indicatorID 9
-            $.ajax({
-                type: 'POST',
-                url: './api/form/{{ recordID }}/title',
-                data: {
-                    title: indicator9Value,
-                    CSRFToken: CSRFToken
+            var indicator9Value = '';
+
+            // Loop through the response to find indicatorID 9
+            $.each(res, function(key, indicator) {
+                // Each entry may be keyed by indicatorID or be an array/object
+                var entry = indicator[1] || indicator; // series 1 fallback
+                if (entry && entry.indicatorID == 9) {
+                    indicator9Value = entry.data || '';
                 }
             });
+
+            console.log('Indicator 9 value found:', indicator9Value); // DEBUG
+
+            if (indicator9Value !== '') {
+                // Set new title in LEAF
+                $.ajax({
+                    type: 'POST',
+                    url: './api/form/{{ recordID }}/title',
+                    data: {
+                        title: indicator9Value,
+                        CSRFToken: CSRFToken
+                    },
+                    success: function(res) {
+                        console.log('Title updated successfully:', res);
+                    },
+                    error: function(err) {
+                        console.log('Title POST failed:', err);
+                    }
+                });
+            } else {
+                console.log('Indicator 9 data was empty — title not updated.');
+            }
         },
-        error: function() {
-            console.log('Failed to retrieve indicatorID 9 for title rename.');
+        error: function(err) {
+            console.log('Failed to GET form data:', err);
         }
     });
 }
-</script>
+</script>>
