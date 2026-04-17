@@ -583,6 +583,7 @@
     }
 
     showRecurringBanner(newRecordID);
+    scheduleSilentRefresh(5000); // 5 second delay after banner shows
     try {
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'pmRecurringBannerMsg', newRecordID: String(newRecordID) }, '*');
@@ -907,7 +908,16 @@
       lastFocusedElement.focus();
     }
     lastFocusedElement = null;
-    if (_syncID) syncTaskAfterModalClose(_syncID);
+    if (_syncID) {
+      if (isNewRecord(_syncID)) {
+        // Brand new record not yet in state — do a full silent re-fetch
+        scheduleSilentRefresh(0);
+      } else if (isProjectRecord(_syncID)) {
+        syncProjectAfterModalClose(_syncID);
+      } else {
+        syncTaskAfterModalClose(_syncID);
+      }
+    }
     if (state.pendingProjectKeyRefresh) {
       var pk = state.pendingProjectKeyRefresh;
       state.pendingProjectKeyRefresh = null;
@@ -1182,78 +1192,151 @@
         break;
       }
     }
-    if (taskIdx === -1) return; // Not a task record (project, OKR, etc.)
+    if (taskIdx === -1) return; // not a known task record
 
-    var task = state.tasksAll[taskIdx];
-    var fetchedStatus = "";
-    var fetchedActualCompletion = "";
     try {
-      var q = JSON.stringify({
-        terms: [{ id: "recordIDs", operator: "=", match: recordID, gate: "AND" }],
-        joins: [],
-        sort: {},
-        getData: [TASK_IND.status, TASK_IND.actualCompletionDate],
-      });
-      var resp = await fetch(
-        "api/form/query?q=" + encodeURIComponent(q) + "&x-filterData=recordID",
-        { credentials: "include", headers: { Accept: "application/json" } }
-      );
-      var data = await resp.json();
-      var rec = data && data[String(recordID)];
-      if (rec && rec.s1) {
-        fetchedStatus = rec.s1["id" + TASK_IND.status] || "";
-        fetchedActualCompletion = rec.s1["id" + TASK_IND.actualCompletionDate] || "";
+      var row = await fetchSingleRecord(recordID, [
+        TASK_IND.projectKey,
+        TASK_IND.title,
+        TASK_IND.status,
+        TASK_IND.otherSubType,
+        TASK_IND.assignedTo,
+        TASK_IND.startDate,
+        TASK_IND.dueDate,
+        TASK_IND.priority,
+        TASK_IND.category,
+        TASK_IND.dependencies,
+        TASK_IND.supportTicket,
+        TASK_IND.okrAssociation,
+        TASK_IND.keyResultSelection,
+        TASK_IND.isRecurring,
+        TASK_IND.actualCompletionDate,
+        TASK_IND.recurringCopied,
+      ]);
+      if (!row) return;
+
+      var prev = cloneTaskForUpdate(state.tasksAll[taskIdx]);
+      var updated = normalizeTask(row);
+
+      // Auto-stamp actual completion date if completed but missing
+      if (isCompletedStatus(updated.status) && !updated.actualCompletion) {
+        var n = new Date();
+        var mm = String(n.getMonth() + 1).padStart(2, '0');
+        var dd = String(n.getDate()).padStart(2, '0');
+        var today = mm + '/' + dd + '/' + n.getFullYear();
+        updated.actualCompletion = today;
+        try {
+          var token = await ensureCSRFToken(recordID);
+          var tokenField = state.csrfField || getCSRFFieldName();
+          var bodyObj = { 47: today, recordID: recordID, series: 1 };
+          bodyObj[tokenField] = token;
+          await fetch(FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordID), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            credentials: 'include',
+            body: encodeFormBody(bodyObj),
+          });
+        } catch (e) {
+          console.warn('syncTaskAfterModalClose: write ind 47 failed', e);
+        }
+      } else if (!isCompletedStatus(updated.status) && updated.actualCompletion) {
+        updated.actualCompletion = '';
+        try {
+          var token2 = await ensureCSRFToken(recordID);
+          var tokenField2 = state.csrfField || getCSRFFieldName();
+          var bodyObj2 = { 47: '', recordID: recordID, series: 1 };
+          bodyObj2[tokenField2] = token2;
+          await fetch(FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordID), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            credentials: 'include',
+            body: encodeFormBody(bodyObj2),
+          });
+        } catch (e) {
+          console.warn('syncTaskAfterModalClose: clear ind 47 failed', e);
+        }
+      }
+
+      state.tasksAll[taskIdx] = updated;
+      state.tasksById.set(String(updated.recordID), updated);
+
+      var next = cloneTaskForUpdate(updated);
+      updateTaskDerivedCaches(prev, next);
+      refreshAfterTaskUpdate(prev, next);
+      refreshOkrsIfVisible();
+      syncProjectCompletionStatus(updated.projectKey);
+
+      // Re-populate dropdowns in case assignee/category changed
+      populateAssigneeDropdown(state.tasksAll);
+      populateCategoryDropdown(state.tasksAll);
+
+    } catch (e) {
+      console.warn('pm-dashboard: syncTaskAfterModalClose failed', e);
+    }
+  }
+
+  async function syncProjectAfterModalClose(recordID) {
+    var idx = -1;
+    for (var i = 0; i < (state.projectsAll || []).length; i++) {
+      if (String(state.projectsAll[i].recordID) === String(recordID)) {
+        idx = i;
+        break;
+      }
+    }
+    if (idx === -1) return; // not a project record
+
+    try {
+      var row = await fetchSingleRecord(recordID, [
+        PROJECT_IND.projectKey,
+        PROJECT_IND.projectName,
+        PROJECT_IND.description,
+        PROJECT_IND.owner,
+        PROJECT_IND.projectStatus,
+        PROJECT_IND.projectFiscalYear,
+        PROJECT_IND.okrAssociation,
+        PROJECT_IND.projectType,
+        PROJECT_IND.keyResultSelection,
+        OKR_IND.okrKey,
+        OKR_IND.objective,
+        OKR_IND.startDate,
+        OKR_IND.endDate,
+        OKR_IND.fiscalYear,
+      ]);
+      if (!row) return;
+
+      var updated = normalizeProject(row);
+      state.projectsAll[idx] = updated;
+
+      // Refresh lookup maps
+      var pk = String(updated.projectKey || '').trim();
+      var rid = String(updated.recordID || '').trim();
+      if (pk && rid) {
+        state.projectKeyToRecordID[pk] = rid;
+        if (updated.projectName) state.projectKeyToTitle[pk] = updated.projectName;
+      }
+
+      // Invalidate project caches and re-render
+      state.projectsVersion = (state.projectsVersion || 0) + 1;
+      state.cache.projects = new Map();
+      state.renderState.projectsSig = '';
+      state.renderState.analyticsMainSig = '';
+
+      // Re-populate dropdowns in case owner/status changed
+      populateProjectOwnerDropdown(state.projectsAll);
+      populateProjectStatusDropdown(state.projectsAll);
+      populateProjectFiscalYearDropdown(state.projectsAll);
+
+      // Re-render whichever tab is active
+      var activeTab = getActiveTab();
+      if (activeTab === 'projects') {
+        renderProjectsView(true);
+      }
+      if (activeTab === 'analytics') {
+        refreshAnalyticsIfVisible();
       }
     } catch (e) {
-      return;
+      console.warn('pm-dashboard: syncProjectAfterModalClose failed', e);
     }
-    if (!fetchedStatus) return;
-
-    var prev = cloneTaskForUpdate(task);
-    task.status = fetchedStatus;
-    task.actualCompletion = fetchedActualCompletion;
-
-    if (isCompletedStatus(fetchedStatus) && !fetchedActualCompletion) {
-      var n = new Date();
-      var mm = String(n.getMonth() + 1).padStart(2, "0");
-      var dd = String(n.getDate()).padStart(2, "0");
-      var today = mm + "/" + dd + "/" + n.getFullYear();
-      task.actualCompletion = today;
-      try {
-        var token = await ensureCSRFToken(recordID);
-        var tokenField = state.csrfField || getCSRFFieldName();
-        var bodyObj = { 47: today, recordID: recordID, series: 1 };
-        bodyObj[tokenField] = token;
-        await fetch(FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordID), {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          credentials: "include",
-          body: encodeFormBody(bodyObj),
-        });
-      } catch (e) {
-        console.warn("syncTaskAfterModalClose: write ind 47 failed", e);
-      }
-    } else if (!isCompletedStatus(fetchedStatus) && fetchedActualCompletion) {
-      task.actualCompletion = "";
-      try {
-        var token2 = await ensureCSRFToken(recordID);
-        var tokenField2 = state.csrfField || getCSRFFieldName();
-        var bodyObj2 = { 47: "", recordID: recordID, series: 1 };
-        bodyObj2[tokenField2] = token2;
-        await fetch(FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordID), {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          credentials: "include",
-          body: encodeFormBody(bodyObj2),
-        });
-      } catch (e) {
-        console.warn("syncTaskAfterModalClose: clear ind 47 failed", e);
-      }
-    }
-
-    var next = cloneTaskForUpdate(task);
-    updateTaskDerivedCaches(prev, next);
-    refreshAfterTaskUpdate(prev, next);
   }
 
   function isOtherModalOpen() {
@@ -1656,6 +1739,21 @@
     var r = await fetch(url, { credentials: "same-origin" });
     if (!r.ok) throw new Error("HTTP " + r.status);
     return r.json();
+  }
+
+  async function fetchSingleRecord(recordID, indicatorIds) {
+    var q = JSON.stringify({
+      terms: [{ id: 'recordIDs', operator: '=', match: String(recordID), gate: 'AND' }],
+      joins: [],
+      sort: {},
+      getData: indicatorIds.map(String),
+    });
+    var url = BASE_QUERY_ENDPOINT +
+      '?q=' + encodeURIComponent(q) +
+      '&x-filterData=recordID,date';
+    var json = await fetchJSON(url);
+    var rows = coerceRows(json);
+    return rows && rows.length ? rows[0] : null;
   }
 
   function coerceRows(json) {
@@ -5009,6 +5107,22 @@
     var yyyy = parseInt(parts[2], 10);
     var d2 = new Date(yyyy, mm, dd);
     return isNaN(d2.getTime()) ? null : d2;
+  }
+
+  function isProjectRecord(recordID) {
+    var rid = String(recordID || '').trim();
+    if (!rid) return false;
+    return (state.projectsAll || []).some(function(p) {
+      return String(p.recordID || '').trim() === rid;
+    });
+  }
+
+  function isNewRecord(recordID) {
+    var rid = String(recordID || '').trim();
+    if (!rid) return false;
+    var knownTask = state.tasksById && state.tasksById.has(rid);
+    var knownProject = isProjectRecord(rid);
+    return !knownTask && !knownProject;
   }
 
   function isCompletedStatus(status) {
@@ -9298,6 +9412,155 @@
       if (!overlay.hidden) showStep(currentStep);
     });
 
+  }
+
+  var _silentRefreshTimer = null;
+
+  function scheduleSilentRefresh(delayMs) {
+    if (_silentRefreshTimer) clearTimeout(_silentRefreshTimer);
+    var delay = (delayMs != null) ? delayMs : 30000;
+    _silentRefreshTimer = setTimeout(function() {
+      _silentRefreshTimer = null;
+      runSilentRefresh();
+    }, delay);
+  }
+
+  async function runSilentRefresh() {
+    try {
+      var projectsUrl = buildQueryUrl(
+        [
+          PROJECT_IND.projectKey,
+          PROJECT_IND.projectName,
+          PROJECT_IND.description,
+          PROJECT_IND.owner,
+          PROJECT_IND.projectStatus,
+          PROJECT_IND.projectFiscalYear,
+          PROJECT_IND.okrAssociation,
+          PROJECT_IND.projectType,
+          PROJECT_IND.keyResultSelection,
+          OKR_IND.okrKey,
+          OKR_IND.objective,
+          OKR_IND.startDate,
+          OKR_IND.endDate,
+          OKR_IND.fiscalYear,
+        ],
+        []
+      );
+
+      var tasksUrl = buildQueryUrl(
+        [
+          TASK_IND.projectKey,
+          TASK_IND.title,
+          TASK_IND.status,
+          TASK_IND.otherSubType,
+          TASK_IND.priority,
+          TASK_IND.category,
+          TASK_IND.dependencies,
+          TASK_IND.assignedTo,
+          TASK_IND.startDate,
+          TASK_IND.dueDate,
+          TASK_IND.supportTicket,
+          TASK_IND.okrAssociation,
+          TASK_IND.keyResultSelection,
+          TASK_IND.isRecurring,
+          TASK_IND.actualCompletionDate,
+          TASK_IND.recurringCopied,
+        ],
+        []
+      );
+
+      var keyResultsUrl = buildQueryUrl(
+        [KEY_RESULT_IND.okrKey, KEY_RESULT_IND.name],
+        []
+      );
+
+      var results = await Promise.all([
+        fetchJSON(projectsUrl),
+        fetchJSON(tasksUrl),
+        fetchJSON(keyResultsUrl),
+      ]);
+
+      var projectRowsAll = coerceRows(results[0]) || [];
+      var taskRowsAll = coerceRows(results[1]) || [];
+      var keyResultRows = (coerceRows(results[2]) || []).filter(function(r) {
+        return hasAnyIndicatorValue(r, [35, 36]);
+      });
+
+      var projectRows = projectRowsAll.filter(function(r) {
+        return hasAnyS1Value(r, [2, 3, 4, 5, 6, 23, 24, 25, 26, 29, 32, 33, 37, 38]);
+      });
+      var taskRows = taskRowsAll.filter(function(r) {
+        return hasAnyS1Value(r, [8, 9, 10, 44, 11, 12, 13, 14, 16, 17, 18, 30, 39, 47]);
+      });
+
+      var newProjects = projectRows.map(normalizeProject);
+      var newTasks = taskRows.map(normalizeTask);
+      var newKeyResults = keyResultRows.map(normalizeKeyResult);
+
+      // Only update state if data actually changed (compare record counts
+      // and a lightweight content fingerprint to avoid unnecessary re-renders)
+      var projectSig = newProjects.map(function(p) {
+        return p.recordID + ':' + p.projectStatus + ':' + p.projectName;
+      }).join('|');
+      var taskSig = newTasks.map(function(t) {
+        return t.recordID + ':' + t.status + ':' + t.title;
+      }).join('|');
+
+      var oldProjectSig = (state.projectsAll || []).map(function(p) {
+        return p.recordID + ':' + p.projectStatus + ':' + p.projectName;
+      }).join('|');
+      var oldTaskSig = (state.tasksAll || []).map(function(t) {
+        return t.recordID + ':' + t.status + ':' + t.title;
+      }).join('|');
+
+      var projectsChanged = projectSig !== oldProjectSig;
+      var tasksChanged = taskSig !== oldTaskSig;
+
+      if (!projectsChanged && !tasksChanged) return; // nothing changed, skip re-render
+
+      if (projectsChanged) {
+        state.projectsAll = newProjects;
+        state.projectsVersion = (state.projectsVersion || 0) + 1;
+        state.cache.projects = new Map();
+        state.renderState.projectsSig = '';
+
+        state.projectKeyToRecordID = {};
+        state.projectKeyToTitle = {};
+        state.projectsAll.forEach(function(p) {
+          var pk = String(p.projectKey || '').trim();
+          var rid = String(p.recordID || '').trim();
+          if (pk && rid && !state.projectKeyToRecordID[pk])
+            state.projectKeyToRecordID[pk] = rid;
+          if (pk && p.projectName && !state.projectKeyToTitle[pk])
+            state.projectKeyToTitle[pk] = p.projectName;
+        });
+
+        populateProjectKeyDropdown(state.projectsAll);
+        populateProjectFiscalYearDropdown(state.projectsAll);
+        populateProjectOwnerDropdown(state.projectsAll);
+        populateProjectStatusDropdown(state.projectsAll);
+        populateOkrFiscalYearDropdown(state.projectsAll);
+      }
+
+      if (tasksChanged) {
+        state.tasksAll = newTasks;
+        state.tasksById = new Map();
+        state.tasksAll.forEach(function(t) {
+          state.tasksById.set(String(t.recordID), t);
+        });
+        state.keyResultsAll = newKeyResults;
+        invalidateTaskCaches();
+        populateAssigneeDropdown(state.tasksAll);
+        populateCategoryDropdown(state.tasksAll);
+        refreshStatusDropdown();
+      }
+
+      // Re-render active tab only
+      applySearchAndFilters(true);
+
+    } catch (e) {
+      console.warn('pm-dashboard: runSilentRefresh failed', e);
+    }
   }
 
   async function main() {
