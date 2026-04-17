@@ -190,18 +190,19 @@
                 dataType: "text",
               });
 
-              // Remove script blocks entirely, then strip remaining HTML tags and decode entities
-              titleValue = titleValue
-                ? titleValue
-                    .replace(/<script[\s\S]*?<\/script>/gi, "")
-                    .replace(/<br\s*\/?>/gi, " ")
-                    .replace(/<[^>]*>/g, "")
-                    .replace(/&amp;/g, "&")
-                    .replace(/&lt;/g, "<")
-                    .replace(/&gt;/g, ">")
-                    .replace(/&nbsp;/g, " ")
-                    .trim()
-                : "";
+              // Parse response as HTML so the browser handles all tags and scripts
+              var parser = new DOMParser();
+              var doc = parser.parseFromString(titleValue, "text/html");
+              // Remove all script elements
+              doc.querySelectorAll("script").forEach(function (s) {
+                s.remove();
+              });
+              // Get plain text only
+              titleValue = (
+                doc.body.innerText ||
+                doc.body.textContent ||
+                ""
+              ).trim();
 
               if (!titleValue) {
                 log("#" + recordID + " — skipped (empty)");
