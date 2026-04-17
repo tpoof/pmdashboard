@@ -912,7 +912,7 @@
       state.pendingProjectKeyRefresh = null;
       reloadTasksAndOpenProjectModal(pk);
     }
-    scheduleSilentRefresh(1500);
+    scheduleSilentRefresh(500);
   }
 
   function reloadTasksAndOpenProjectModal(projectKey) {
@@ -4646,6 +4646,7 @@
       state.cache.kanban.clear();
       refreshOkrsIfVisible();
       syncProjectCompletionStatus(task.projectKey);
+      scheduleSilentRefresh(500);
     } catch (err) {
       task.status = prev.status;
       task.otherSubType = prev.otherSubType;
@@ -4848,7 +4849,7 @@
           draggingId = null;
           card.classList.remove("is-dragging");
           document
-            .querySelectorAll(".pm-kanban-col-body")
+            .querySelectorAll(".pm-kanban-col")
             .forEach(function (b) {
               b.classList.remove("is-over");
             });
@@ -4874,29 +4875,37 @@
         });
       });
 
-    document.querySelectorAll(".pm-kanban-col-body").forEach(function (body) {
-      if (body.dataset.dndBound === "1") return;
-      body.dataset.dndBound = "1";
+    document.querySelectorAll('.pm-kanban-col').forEach(function(col) {
+      if (col.dataset.dndBound === '1') return;
+      col.dataset.dndBound = '1';
 
-      body.addEventListener("dragover", function (e) {
+      var body = col.querySelector('.pm-kanban-col-body');
+      var status = body ? body.getAttribute('data-status') : '';
+      if (!status) return;
+
+      col.addEventListener('dragover', function(e) {
         e.preventDefault();
-        body.classList.add("is-over");
+        e.stopPropagation();
+        col.classList.add('is-over');
       });
 
-      body.addEventListener("dragleave", function () {
-        body.classList.remove("is-over");
+      col.addEventListener('dragleave', function(e) {
+        // Only remove highlight when leaving the column entirely,
+        // not when moving between child elements inside it
+        var related = e.relatedTarget;
+        if (related && col.contains(related)) return;
+        col.classList.remove('is-over');
       });
 
-      body.addEventListener("drop", async function (e) {
+      col.addEventListener('drop', async function(e) {
         e.preventDefault();
-        body.classList.remove("is-over");
+        e.stopPropagation();
+        col.classList.remove('is-over');
 
-        var newStatus = body.getAttribute("data-status") || "";
+        var newStatus = status;
         var id = draggingId;
         if (!id) {
-          try {
-            id = e.dataTransfer.getData("text/plain");
-          } catch (err2) {}
+          try { id = e.dataTransfer.getData('text/plain'); } catch(err2) {}
         }
         if (!id || !newStatus) return;
 
@@ -4958,14 +4967,35 @@
         colObj.hasMore = total > visible;
       }
 
-      var cards = colTasks
-        .slice(0, visible)
-        .map(function (t) {
-          return renderKanbanCard(t, col);
-        })
-        .join("");
+      var statusChanged = oldStatus !== newStatus;
 
-      body.innerHTML = cards || '<div class="pm-card-meta">No tasks</div>';
+      if (!statusChanged) {
+        // Card stayed in same column — find and update just that card's DOM
+        var existingCard = body.querySelector(
+          '.pm-card[data-taskid="' + String(newTask.recordID).replace(/"/g, '\\"') + '"]'
+        );
+        if (existingCard) {
+          var tpl = document.createElement('template');
+          tpl.innerHTML = renderKanbanCard(newTask, col);
+          var newCardEl = tpl.content.firstElementChild;
+          if (newCardEl) {
+            body.replaceChild(newCardEl, existingCard);
+          }
+        } else {
+          // Not found in DOM — rebuild column
+          var cards = colTasks.slice(0, visible).map(function(t) {
+            return renderKanbanCard(t, col);
+          }).join('');
+          body.innerHTML = cards || '<div class="pm-card-meta">No tasks</div>';
+        }
+      } else {
+        // Card moved columns — rebuild both affected columns fully
+        var cards = colTasks.slice(0, visible).map(function(t) {
+          return renderKanbanCard(t, col);
+        }).join('');
+        body.innerHTML = cards || '<div class="pm-card-meta">No tasks</div>';
+      }
+
       updateKanbanColumnMeta(colEl, visible, total);
 
       var meta = colEl.querySelector(".pm-kanban-col-meta");
@@ -6504,7 +6534,7 @@
         removeTaskFromList(entry.list, oldTask.recordID);
         entry.changed = true;
       } else if (!oldMatch && newMatch) {
-        entry.list.push(newTask);
+        entry.list.unshift(newTask);
         entry.changed = true;
       } else if (oldMatch && newMatch) {
         entry.changed = entry.changed || false;
@@ -6579,7 +6609,25 @@
       }
       if (newMatch) {
         ensureColumn(newStatus);
-        entry.grouped[newStatus].push(newTask);
+        var targetList = entry.grouped[newStatus];
+        var existingIdx = -1;
+        for (var ei = 0; ei < targetList.length; ei++) {
+          if (String(targetList[ei].recordID) === String(newTask.recordID)) {
+            existingIdx = ei;
+            break;
+          }
+        }
+        if (existingIdx !== -1) {
+          // Already in this column — update in place, preserve position
+          targetList[existingIdx] = newTask;
+        } else if (oldStatus !== newStatus) {
+          // Moving to a different column — insert at the top so it is
+          // visible immediately without scrolling
+          targetList.unshift(newTask);
+        } else {
+          // Same column, not found — fallback to push
+          targetList.push(newTask);
+        }
         touched[newStatus] = true;
       }
 
@@ -9331,7 +9379,7 @@
     _silentRefreshTimer = setTimeout(function() {
       _silentRefreshTimer = null;
       runSilentRefresh();
-    }, delayMs != null ? delayMs : 1500);
+    }, delayMs != null ? delayMs : 500);
   }
 
   async function runSilentRefresh() {

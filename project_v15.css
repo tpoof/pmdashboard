@@ -1590,6 +1590,8 @@ body {
   border-radius: var(--radius-md);
   background: var(--surface);
   min-width: 240px;
+  display: flex;
+  flex-direction: column;
 }
 
 .pm-kanban-col-header {
@@ -1626,12 +1628,19 @@ body {
 
 .pm-kanban-col-body {
   padding: 10px;
-  min-height: 120px;
+  min-height: 300px;
+  flex: 1;
+  box-sizing: border-box;
 }
 
-.pm-kanban-col-body.is-over {
+.pm-kanban-col.is-over {
   outline: 2px dashed #0b5cab;
-  outline-offset: 2px;
+  outline-offset: -2px;
+  background: var(--accent-soft);
+}
+
+.pm-kanban-col.is-over .pm-kanban-col-body {
+  outline: none;
 }
 
 .pm-card {
