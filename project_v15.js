@@ -83,7 +83,6 @@
   var START_KEY_RESULT_URL =
     "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_6530b&title=Key+Result";
 
-  var LOAD_MORE_BATCH = 100;
   var PROJECTS_INITIAL_BATCH = 50;
   var PROJECTS_LOAD_MORE_BATCH = 50;
 
@@ -176,8 +175,6 @@
       okrFiscalYear: new Set(),
     },
     filterControls: {},
-    taskTableCurrentRows: null,
-    taskTableRenderedCount: 0,
     projectTableCurrentRows: [],
     projectTableRenderedCount: 0,
     sort: {
@@ -230,16 +227,6 @@
       tasksGantt: false,
       analyticsMain: false,
       analyticsOkrs: false,
-    },
-    virtualTasks: {
-      inited: false,
-      rowHeight: 52,
-      buffer: 6,
-      lastStart: 0,
-      lastEnd: 0,
-      total: 0,
-      lastFocusId: "",
-      pendingFocusId: "",
     },
     pagination: {
       tasks: {
@@ -3589,89 +3576,6 @@
 
 
   
-  function initTasksVirtualTable() {
-    var container = document.querySelector("#pmTasksTableWrap .pm-tableWrap");
-    var el = document.getElementById("pmTasksTable");
-    if (!container || !el) return null;
-
-    function readTasksRowHeight() {
-      var computed = window.getComputedStyle(container);
-      var rh = parseFloat(
-        computed.getPropertyValue("--pm-tasks-row-height"),
-      );
-      if (!rh || isNaN(rh)) {
-        rh = parseFloat(computed.getPropertyValue("--pm-row-height"));
-      }
-      return rh && !isNaN(rh) ? rh : 52;
-    }
-
-    if (!state.virtualTasks) {
-      state.virtualTasks = {
-        inited: false,
-        rowHeight: 52,
-        buffer: 6,
-        lastStart: 0,
-        lastEnd: 0,
-        total: 0,
-        lastFocusId: "",
-        pendingFocusId: "",
-      };
-    }
-
-    if (!state.virtualTasks.inited) {
-      var headerHtml =
-        "<thead><tr>" +
-        '<th scope="col" class="pm-sortable" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>' +
-        '<th scope="col" class="pm-sortable" data-sort="recordID" data-type="number"><button type="button" class="pm-sortBtn">Task ID</button></th>' +
-        '<th scope="col" class="pm-sortable pm-wrapCol" data-sort="title" data-type="string"><button type="button" class="pm-sortBtn">Title</button></th>' +
-        '<th scope="col" class="pm-sortable" data-sort="status" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
-        '<th scope="col" class="pm-sortable" data-sort="dependencies" data-type="string"><button type="button" class="pm-sortBtn">Dependencies</button></th>' +
-        '<th scope="col" class="pm-sortable" data-sort="priority" data-type="string"><button type="button" class="pm-sortBtn">Priority</button></th>' +
-        '<th scope="col" class="pm-sortable" data-sort="category" data-type="string"><button type="button" class="pm-sortBtn">Category</button></th>' +
-        '<th scope="col" class="pm-sortable" data-sort="assignedTo" data-type="string"><button type="button" class="pm-sortBtn">Assigned To</button></th>' +
-        '<th scope="col" class="pm-sortable" data-sort="start" data-type="date"><button type="button" class="pm-sortBtn">Start</button></th>' +
-        '<th scope="col" class="pm-sortable" data-sort="due" data-type="date"><button type="button" class="pm-sortBtn">Due</button></th>' +
-        '<th scope="col" class="pm-sortable" data-sort="actualCompletion" data-type="date"><button type="button" class="pm-sortBtn">Completed</button></th>' +
-        '<th scope="col" class="pm-sortable" data-sort="supportTicket" data-type="string"><button type="button" class="pm-sortBtn">Ticket</button></th>' +
-        "</tr></thead>";
-
-      el.innerHTML =
-        '<table class="pm-table pm-virtualTable">' +
-        headerHtml +
-        "<tbody></tbody></table>";
-
-      state.virtualTasks.container = container;
-      state.virtualTasks.tbody = el.querySelector("tbody");
-      state.virtualTasks.colCount = 12;
-      state.virtualTasks.inited = true;
-
-      state.virtualTasks.rowHeight = readTasksRowHeight();
-
-      container.addEventListener(
-        "scroll",
-        function () {
-          updateTasksVirtualSlice(false);
-        },
-        { passive: true },
-      );
-
-      window.addEventListener("resize", function () {
-        state.virtualTasks.rowHeight = readTasksRowHeight();
-        updateTasksVirtualSlice(true);
-      });
-
-      el.addEventListener("focusin", function (e) {
-        var row = e.target.closest("tr[data-taskid]");
-        if (row) {
-          state.virtualTasks.lastFocusId =
-            row.getAttribute("data-taskid") || "";
-        }
-      });
-    }
-
-    return state.virtualTasks;
-  }
-
   function buildTasksRowHtml(t, now) {
     var pkHref = getProjectRecordHrefFromKey(t.projectKey);
     var pkLink = pkHref
@@ -3702,25 +3606,19 @@
     var titleAttr = safeAttr(titleText);
 
     return (
-      '<tr class="pm-virtualRow" data-taskid="' +
-      safeAttr(t.recordID) +
-      '">' +
+      '<tr>' +
       "<td>" +
       pkLink +
       "</td>" +
       "<td>" +
       taskLink +
       "</td>" +
-      '<td><span class="pm-titleClamp" title="' +
-      titleAttr +
-      '" aria-label="' +
-      titleAttr +
-      '" tabindex="0">' +
+      '<td title="' + titleAttr + '">' +
       (t.isRecurring
         ? '<span class="material-icons pm-recurringIcon" title="Recurring Task" aria-label="Recurring Task">change_circle</span>'
         : '') +
       safe(titleText) +
-      "</span></td>" +
+      "</td>" +
       "<td>" +
       renderStatusCell(t) +
       "</td>" +
@@ -3754,125 +3652,12 @@
     );
   }
 
-  function buildTasksTableRowsHtml(items, start, end, rowHeight, colCount) {
-    var now = new Date();
-    var topHeight = start * rowHeight;
-    var bottomHeight = (items.length - end) * rowHeight;
-    var html = "";
-
-    if (topHeight > 0) {
-      html +=
-        '<tr class="pm-virtualSpacer" aria-hidden="true"><td colspan="' +
-        colCount +
-        '" style="height:' +
-        topHeight +
-        'px"></td></tr>';
-    }
-
-    for (var i = start; i < end; i++) {
-      html += buildTasksRowHtml(items[i], now);
-    }
-
-    if (bottomHeight > 0) {
-      html +=
-        '<tr class="pm-virtualSpacer" aria-hidden="true"><td colspan="' +
-        colCount +
-        '" style="height:' +
-        bottomHeight +
-        'px"></td></tr>';
-    }
-
-    return html;
-  }
-
-  function updateTasksVirtualSlice(force) {
-    var v = state.virtualTasks;
-    if (!v || !v.inited) return;
-    var items = v.items || [];
-    var total = items.length;
-    var container = v.container;
-    var tbody = v.tbody;
-    if (!container || !tbody) return;
-
-    var active = document.activeElement;
-    if (active && tbody.contains(active)) {
-      var row = active.closest("tr[data-taskid]");
-      if (row) v.pendingFocusId = row.getAttribute("data-taskid") || "";
-    }
-
-    if (!total) {
-      if (force || v.total !== 0) tbody.innerHTML = "";
-      v.total = 0;
-      v.lastStart = 0;
-      v.lastEnd = 0;
-      return;
-    }
-
-    var rowHeight = v.rowHeight || 52;
-    var viewportHeight = container.clientHeight || 0;
-    if (!viewportHeight) {
-      viewportHeight = Math.min(600, window.innerHeight || 600);
-    }
-    var scrollTop = container.scrollTop || 0;
-    var buffer = v.buffer || 6;
-
-    var start = Math.max(0, Math.floor(scrollTop / rowHeight) - buffer);
-    var end = Math.min(
-      total,
-      Math.ceil((scrollTop + viewportHeight) / rowHeight) + buffer,
-    );
-
-    if (!force && start === v.lastStart && end === v.lastEnd && total === v.total)
-      return;
-
-    v.lastStart = start;
-    v.lastEnd = end;
-    v.total = total;
-
-    var html = buildTasksTableRowsHtml(
-      items,
-      start,
-      end,
-      rowHeight,
-      v.colCount || 11,
-    );
-    var tpl = document.createElement("template");
-    tpl.innerHTML = html;
-    tbody.replaceChildren(tpl.content);
-
-    if (v.pendingFocusId) {
-      var selector =
-        'tr[data-taskid="' +
-        String(v.pendingFocusId).replace(/"/g, '\\"') +
-        '"]';
-      var focusRow = tbody.querySelector(selector);
-      if (focusRow) {
-        var focusTarget = focusRow.querySelector(
-          'a,button,[tabindex]:not([tabindex="-1"])',
-        );
-        if (focusTarget) focusTarget.focus({ preventScroll: true });
-        v.pendingFocusId = "";
-      } else if (v.container) {
-        v.container.focus({ preventScroll: true });
-      }
-    }
-  }
-
-  function buildTaskTableRow(task) {
-    var tpl = document.createElement("template");
-    tpl.innerHTML = buildTasksRowHtml(task, new Date());
-    return tpl.content.firstElementChild;
-  }
-
   function renderTasksTable(tasks) {
-    var el = document.getElementById("pmTasksTable");
+    var el = document.getElementById('pmTasksTable');
     if (!el) return;
 
-    state.taskTableCurrentRows = tasks || [];
-    state.taskTableRenderedCount = Math.min(LOAD_MORE_BATCH, state.taskTableCurrentRows.length);
-
     var headerHtml =
-      "<thead><tr>" +
+      '<thead><tr>' +
       '<th scope="col" class="pm-sortable" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="recordID" data-type="number"><button type="button" class="pm-sortBtn">Task ID</button></th>' +
       '<th scope="col" class="pm-sortable pm-wrapCol" data-sort="title" data-type="string"><button type="button" class="pm-sortBtn">Title</button></th>' +
@@ -3885,29 +3670,23 @@
       '<th scope="col" class="pm-sortable" data-sort="due" data-type="date"><button type="button" class="pm-sortBtn">Due</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="actualCompletion" data-type="date"><button type="button" class="pm-sortBtn">Completed</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="supportTicket" data-type="string"><button type="button" class="pm-sortBtn">Ticket</button></th>' +
-      "</tr></thead>";
+      '</tr></thead>';
 
     var now = new Date();
-    var rowsHtml = "";
-    for (var i = 0; i < state.taskTableRenderedCount; i++) {
-      rowsHtml += buildTasksRowHtml(state.taskTableCurrentRows[i], now);
+    var rowsHtml = '';
+    for (var i = 0; i < (tasks || []).length; i++) {
+      rowsHtml += buildTasksRowHtml(tasks[i], now);
     }
 
-    el.innerHTML = '<table class="pm-table">' + headerHtml + "<tbody>" + rowsHtml + "</tbody></table>";
-
-    var existing = document.getElementById("pmLoadMoreWrap");
-    if (existing) existing.remove();
-    var remaining = state.taskTableCurrentRows.length - state.taskTableRenderedCount;
-    if (remaining > 0) {
-      var wrap = document.createElement("div");
-      wrap.id = "pmLoadMoreWrap";
-      wrap.className = "pm-loadMoreWrap";
-      wrap.innerHTML = '<button type="button" class="pm-ghostBtn" id="pmLoadMoreBtn">Load more records (' + remaining + " remaining)</button>";
-      el.appendChild(wrap);
-    }
+    el.innerHTML =
+      '<table class="pm-table">' +
+      headerHtml +
+      '<tbody>' +
+      (rowsHtml || '<tr><td colspan="12" style="text-align:center;padding:16px;color:#888;">No tasks found.</td></tr>') +
+      '</tbody></table>';
 
     var s = state.sort.tasks;
-    setSortIndicator("pmTasksTable", s.key, s.dir);
+    setSortIndicator('pmTasksTable', s.key, s.dir);
   }
 
 
@@ -6081,11 +5860,6 @@
     };
   }
 
-  function resetTasksTableScroll() {
-    var wrap = document.querySelector("#pmTasksTableWrap .pm-tableWrap");
-    if (wrap) wrap.scrollTop = 0;
-  }
-
   function resetProjectsTableScroll() {
     var wrap = document.querySelector('#pmProjectsTableWrap');
     if (wrap) wrap.scrollTop = 0;
@@ -6093,7 +5867,6 @@
 
   function handlePaginationChange(key) {
     if (key === "tasks") {
-      resetTasksTableScroll();
       renderTasksView("table", true);
     }
     if (key === "projects") {
@@ -6121,7 +5894,6 @@
     if (signature && pag.signature !== signature) {
       pag.page = 1;
       pag.signature = signature;
-      resetTasksTableScroll();
     }
 
     var model = buildPaginationModel(total, pag.page, pag.pageSize);
@@ -6912,35 +6684,6 @@
 
   }
 
-
-  function wireLoadMore() {
-    document.addEventListener("click", function (e) {
-      if (!e.target || e.target.id !== "pmLoadMoreBtn") return;
-      var tasks = state.taskTableCurrentRows;
-      if (!tasks) return;
-      var start = state.taskTableRenderedCount;
-      var end = Math.min(start + LOAD_MORE_BATCH, tasks.length);
-      var tbody = document.querySelector("#pmTasksTable tbody");
-      if (!tbody) return;
-
-      var now = new Date();
-      for (var i = start; i < end; i++) {
-        var tpl = document.createElement("template");
-        tpl.innerHTML = buildTasksRowHtml(tasks[i], now);
-        tbody.appendChild(tpl.content.firstElementChild);
-      }
-      state.taskTableRenderedCount = end;
-
-      var remaining = tasks.length - end;
-      var wrap = document.getElementById("pmLoadMoreWrap");
-      if (remaining <= 0) {
-        if (wrap) wrap.remove();
-      } else {
-        var btn = document.getElementById("pmLoadMoreBtn");
-        if (btn) btn.textContent = "Load more records (" + remaining + " remaining)";
-      }
-    });
-  }
 
   function wireClearFilters() {
     function clearAll() {
@@ -9506,7 +9249,6 @@
       wireAnalyticsViewToggle();
       wireOkrTableViewToggle();
       wireSortingDelegation();
-      wireLoadMore();
       loadFilterState();
       initFilterControls();
       wireClearFilters();
