@@ -851,26 +851,6 @@
     };
     frame.addEventListener('load', frame._headerSuppressionHandler);
 
-    if (frame._saveDetectionHandler) {
-      frame.removeEventListener('load', frame._saveDetectionHandler);
-    }
-    var _savedModalRecordID = state.lastModalRecordID;
-    var _loadCount = 0;
-    frame._saveDetectionHandler = function() {
-      _loadCount++;
-      if (_loadCount < 2) return; // skip the initial load, only react to reloads
-      var rid = _savedModalRecordID;
-      if (!rid) return;
-      if (isNewRecord(rid)) {
-        scheduleSilentRefresh(2000);
-      } else if (isProjectRecord(rid)) {
-        syncProjectAfterModalClose(rid);
-      } else {
-        syncTaskAfterModalClose(rid);
-      }
-    };
-    frame.addEventListener('load', frame._saveDetectionHandler);
-
     frame.setAttribute(
       "title",
       title ? "LEAF content - " + String(title) : "LEAF content"
@@ -887,8 +867,6 @@
     }
     updateModalNav();
     lastFocusedElement = document.activeElement;
-    var _watchId = state.lastModalRecordID;
-    if (_watchId) startIframeWatch(_watchId);
     modal.hidden = false;
     modal.setAttribute("aria-hidden", "false");
     toggleAppInert(true);
@@ -900,19 +878,13 @@
   }
 
   function closeModal() {
-    stopIframeWatch();
     var modal = document.getElementById("pmModal");
     var frame = document.getElementById("pmModalFrame");
     var openTabBtn = document.getElementById("pmModalOpenTabBtn");
     if (!modal || !frame) return;
-    var _syncID = state.lastModalRecordID;
     state.lastModalRecordID = null;
     frame.src = "about:blank";
     frame.setAttribute("title", "LEAF content");
-    if (frame._saveDetectionHandler) {
-      frame.removeEventListener('load', frame._saveDetectionHandler);
-      frame._saveDetectionHandler = null;
-    }
     if (openTabBtn) openTabBtn.setAttribute("data-url", "");
     // Restore iframe and clean up inline content container
     if (frame) frame.style.display = '';
@@ -935,66 +907,12 @@
       lastFocusedElement.focus();
     }
     lastFocusedElement = null;
-    if (_syncID) {
-      if (isNewRecord(_syncID)) {
-        // Brand new record not yet in state — do a full silent re-fetch
-        scheduleSilentRefresh(3000);
-      } else if (isProjectRecord(_syncID)) {
-        syncProjectAfterModalClose(_syncID);
-      } else {
-        syncTaskAfterModalClose(_syncID);
-      }
-    }
     if (state.pendingProjectKeyRefresh) {
       var pk = state.pendingProjectKeyRefresh;
       state.pendingProjectKeyRefresh = null;
       reloadTasksAndOpenProjectModal(pk);
     }
-  }
-
-  var _iframeWatchTimer = null;
-  var _iframeLastUrl = '';
-  var _iframeWatchRecordID = null;
-
-  function startIframeWatch(recordID) {
-    stopIframeWatch();
-    _iframeWatchRecordID = recordID;
-    var frame = document.getElementById('pmModalFrame');
-    if (!frame) return;
-    try { _iframeLastUrl = frame.contentWindow.location.href; } catch(e) { _iframeLastUrl = ''; }
-
-    _iframeWatchTimer = setInterval(function() {
-      var frame = document.getElementById('pmModalFrame');
-      if (!frame) { stopIframeWatch(); return; }
-      var currentUrl = '';
-      try { currentUrl = frame.contentWindow.location.href; } catch(e) { return; }
-      if (!currentUrl || currentUrl === 'about:blank') return;
-
-      if (_iframeLastUrl && currentUrl !== _iframeLastUrl) {
-        // URL changed inside iframe — a save/navigation happened
-        _iframeLastUrl = currentUrl;
-        var rid = _iframeWatchRecordID;
-        if (rid) {
-          if (isNewRecord(rid)) {
-            // Still new — schedule refresh with a delay to let LEAF finish writing
-            scheduleSilentRefresh(2000);
-          } else if (isProjectRecord(rid)) {
-            syncProjectAfterModalClose(rid);
-          } else {
-            syncTaskAfterModalClose(rid);
-          }
-        }
-      }
-    }, 800); // poll every 800ms — fast enough to feel responsive, slow enough to not thrash
-  }
-
-  function stopIframeWatch() {
-    if (_iframeWatchTimer) {
-      clearInterval(_iframeWatchTimer);
-      _iframeWatchTimer = null;
-    }
-    _iframeWatchRecordID = null;
-    _iframeLastUrl = '';
+    scheduleSilentRefresh(1500);
   }
 
   function reloadTasksAndOpenProjectModal(projectKey) {
@@ -1344,70 +1262,6 @@
 
     } catch (e) {
       console.warn('pm-dashboard: syncTaskAfterModalClose failed', e);
-    }
-  }
-
-  async function syncProjectAfterModalClose(recordID) {
-    var idx = -1;
-    for (var i = 0; i < (state.projectsAll || []).length; i++) {
-      if (String(state.projectsAll[i].recordID) === String(recordID)) {
-        idx = i;
-        break;
-      }
-    }
-    if (idx === -1) return; // not a project record
-
-    try {
-      var row = await fetchSingleRecord(recordID, [
-        PROJECT_IND.projectKey,
-        PROJECT_IND.projectName,
-        PROJECT_IND.description,
-        PROJECT_IND.owner,
-        PROJECT_IND.projectStatus,
-        PROJECT_IND.projectFiscalYear,
-        PROJECT_IND.okrAssociation,
-        PROJECT_IND.projectType,
-        PROJECT_IND.keyResultSelection,
-        OKR_IND.okrKey,
-        OKR_IND.objective,
-        OKR_IND.startDate,
-        OKR_IND.endDate,
-        OKR_IND.fiscalYear,
-      ]);
-      if (!row) return;
-
-      var updated = normalizeProject(row);
-      state.projectsAll[idx] = updated;
-
-      // Refresh lookup maps
-      var pk = String(updated.projectKey || '').trim();
-      var rid = String(updated.recordID || '').trim();
-      if (pk && rid) {
-        state.projectKeyToRecordID[pk] = rid;
-        if (updated.projectName) state.projectKeyToTitle[pk] = updated.projectName;
-      }
-
-      // Invalidate project caches and re-render
-      state.projectsVersion = (state.projectsVersion || 0) + 1;
-      state.cache.projects = new Map();
-      state.renderState.projectsSig = '';
-      state.renderState.analyticsMainSig = '';
-
-      // Re-populate dropdowns in case owner/status changed
-      populateProjectOwnerDropdown(state.projectsAll);
-      populateProjectStatusDropdown(state.projectsAll);
-      populateProjectFiscalYearDropdown(state.projectsAll);
-
-      // Re-render whichever tab is active
-      var activeTab = getActiveTab();
-      if (activeTab === 'projects') {
-        renderProjectsView(true);
-      }
-      if (activeTab === 'analytics') {
-        refreshAnalyticsIfVisible();
-      }
-    } catch (e) {
-      console.warn('pm-dashboard: syncProjectAfterModalClose failed', e);
     }
   }
 
@@ -5179,22 +5033,6 @@
     var yyyy = parseInt(parts[2], 10);
     var d2 = new Date(yyyy, mm, dd);
     return isNaN(d2.getTime()) ? null : d2;
-  }
-
-  function isProjectRecord(recordID) {
-    var rid = String(recordID || '').trim();
-    if (!rid) return false;
-    return (state.projectsAll || []).some(function(p) {
-      return String(p.recordID || '').trim() === rid;
-    });
-  }
-
-  function isNewRecord(recordID) {
-    var rid = String(recordID || '').trim();
-    if (!rid) return false;
-    var knownTask = state.tasksById && state.tasksById.has(rid);
-    var knownProject = isProjectRecord(rid);
-    return !knownTask && !knownProject;
   }
 
   function isCompletedStatus(status) {
@@ -9490,14 +9328,15 @@
 
   function scheduleSilentRefresh(delayMs) {
     if (_silentRefreshTimer) clearTimeout(_silentRefreshTimer);
-    var delay = (delayMs != null) ? delayMs : 30000;
     _silentRefreshTimer = setTimeout(function() {
       _silentRefreshTimer = null;
       runSilentRefresh();
-    }, delay);
+    }, delayMs != null ? delayMs : 1500);
   }
 
   async function runSilentRefresh() {
+    if (state._silentRefreshInProgress) return;
+    state._silentRefreshInProgress = true;
     try {
       var projectsUrl = buildQueryUrl(
         [
@@ -9518,7 +9357,6 @@
         ],
         []
       );
-
       var tasksUrl = buildQueryUrl(
         [
           TASK_IND.projectKey,
@@ -9540,7 +9378,6 @@
         ],
         []
       );
-
       var keyResultsUrl = buildQueryUrl(
         [KEY_RESULT_IND.okrKey, KEY_RESULT_IND.name],
         []
@@ -9553,8 +9390,8 @@
       ]);
 
       var projectRowsAll = coerceRows(results[0]) || [];
-      var taskRowsAll = coerceRows(results[1]) || [];
-      var keyResultRows = (coerceRows(results[2]) || []).filter(function(r) {
+      var taskRowsAll    = coerceRows(results[1]) || [];
+      var keyResultRows  = (coerceRows(results[2]) || []).filter(function(r) {
         return hasAnyIndicatorValue(r, [35, 36]);
       });
 
@@ -9565,73 +9402,50 @@
         return hasAnyS1Value(r, [8, 9, 10, 44, 11, 12, 13, 14, 16, 17, 18, 30, 39, 47]);
       });
 
-      var newProjects = projectRows.map(normalizeProject);
-      var newTasks = taskRows.map(normalizeTask);
-      var newKeyResults = keyResultRows.map(normalizeKeyResult);
+      // Update projects state
+      state.projectsAll = projectRows.map(normalizeProject);
+      state.projectsVersion = (state.projectsVersion || 0) + 1;
+      state.cache.projects = new Map();
+      state.renderState.projectsSig = '';
+      state.renderState.analyticsMainSig = '';
 
-      // Only update state if data actually changed (compare record counts
-      // and a lightweight content fingerprint to avoid unnecessary re-renders)
-      var projectSig = newProjects.map(function(p) {
-        return p.recordID + ':' + p.projectStatus + ':' + p.projectName;
-      }).join('|');
-      var taskSig = newTasks.map(function(t) {
-        return t.recordID + ':' + t.status + ':' + t.title;
-      }).join('|');
+      state.projectKeyToRecordID = {};
+      state.projectKeyToTitle = {};
+      state.projectsAll.forEach(function(p) {
+        var pk = String(p.projectKey || '').trim();
+        var rid = String(p.recordID || '').trim();
+        if (pk && rid && !state.projectKeyToRecordID[pk])
+          state.projectKeyToRecordID[pk] = rid;
+        if (pk && p.projectName && !state.projectKeyToTitle[pk])
+          state.projectKeyToTitle[pk] = p.projectName;
+      });
 
-      var oldProjectSig = (state.projectsAll || []).map(function(p) {
-        return p.recordID + ':' + p.projectStatus + ':' + p.projectName;
-      }).join('|');
-      var oldTaskSig = (state.tasksAll || []).map(function(t) {
-        return t.recordID + ':' + t.status + ':' + t.title;
-      }).join('|');
+      // Update tasks state
+      state.tasksAll = taskRows.map(normalizeTask);
+      state.tasksById = new Map();
+      state.tasksAll.forEach(function(t) {
+        state.tasksById.set(String(t.recordID), t);
+      });
+      state.keyResultsAll = keyResultRows.map(normalizeKeyResult);
+      invalidateTaskCaches();
 
-      var projectsChanged = projectSig !== oldProjectSig;
-      var tasksChanged = taskSig !== oldTaskSig;
+      // Refresh all dropdowns
+      populateProjectKeyDropdown(state.projectsAll);
+      populateProjectFiscalYearDropdown(state.projectsAll);
+      populateProjectOwnerDropdown(state.projectsAll);
+      populateProjectStatusDropdown(state.projectsAll);
+      populateOkrFiscalYearDropdown(state.projectsAll);
+      populateAssigneeDropdown(state.tasksAll);
+      populateCategoryDropdown(state.tasksAll);
+      refreshStatusDropdown();
 
-      if (!projectsChanged && !tasksChanged) return; // nothing changed, skip re-render
-
-      if (projectsChanged) {
-        state.projectsAll = newProjects;
-        state.projectsVersion = (state.projectsVersion || 0) + 1;
-        state.cache.projects = new Map();
-        state.renderState.projectsSig = '';
-
-        state.projectKeyToRecordID = {};
-        state.projectKeyToTitle = {};
-        state.projectsAll.forEach(function(p) {
-          var pk = String(p.projectKey || '').trim();
-          var rid = String(p.recordID || '').trim();
-          if (pk && rid && !state.projectKeyToRecordID[pk])
-            state.projectKeyToRecordID[pk] = rid;
-          if (pk && p.projectName && !state.projectKeyToTitle[pk])
-            state.projectKeyToTitle[pk] = p.projectName;
-        });
-
-        populateProjectKeyDropdown(state.projectsAll);
-        populateProjectFiscalYearDropdown(state.projectsAll);
-        populateProjectOwnerDropdown(state.projectsAll);
-        populateProjectStatusDropdown(state.projectsAll);
-        populateOkrFiscalYearDropdown(state.projectsAll);
-      }
-
-      if (tasksChanged) {
-        state.tasksAll = newTasks;
-        state.tasksById = new Map();
-        state.tasksAll.forEach(function(t) {
-          state.tasksById.set(String(t.recordID), t);
-        });
-        state.keyResultsAll = newKeyResults;
-        invalidateTaskCaches();
-        populateAssigneeDropdown(state.tasksAll);
-        populateCategoryDropdown(state.tasksAll);
-        refreshStatusDropdown();
-      }
-
-      // Re-render active tab only
+      // Always re-render the active tab
       applySearchAndFilters(true);
 
     } catch (e) {
       console.warn('pm-dashboard: runSilentRefresh failed', e);
+    } finally {
+      state._silentRefreshInProgress = false;
     }
   }
 
