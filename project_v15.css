@@ -1548,7 +1548,9 @@ body {
   grid-auto-flow: column;
   grid-auto-columns: minmax(240px, 1fr);
   overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 6px;
+  align-items: start;
 }
 
 .pm-kanban-col {
@@ -1558,6 +1560,9 @@ body {
   min-width: 240px;
   display: flex;
   flex-direction: column;
+  max-height: 75vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .pm-kanban-col-header {
@@ -1570,6 +1575,9 @@ body {
   border-bottom: 1px solid var(--border);
   border-top-left-radius: var(--radius-md);
   border-top-right-radius: var(--radius-md);
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .pm-kanban-col-meta {
@@ -1581,6 +1589,9 @@ body {
   color: var(--muted);
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+  position: sticky;
+  top: 37px;
+  z-index: 2;
 }
 
 .pm-kanban-count {
