@@ -851,6 +851,26 @@
     };
     frame.addEventListener('load', frame._headerSuppressionHandler);
 
+    if (frame._saveDetectionHandler) {
+      frame.removeEventListener('load', frame._saveDetectionHandler);
+    }
+    var _savedModalRecordID = state.lastModalRecordID;
+    var _loadCount = 0;
+    frame._saveDetectionHandler = function() {
+      _loadCount++;
+      if (_loadCount < 2) return; // skip the initial load, only react to reloads
+      var rid = _savedModalRecordID;
+      if (!rid) return;
+      if (isNewRecord(rid)) {
+        scheduleSilentRefresh(2000);
+      } else if (isProjectRecord(rid)) {
+        syncProjectAfterModalClose(rid);
+      } else {
+        syncTaskAfterModalClose(rid);
+      }
+    };
+    frame.addEventListener('load', frame._saveDetectionHandler);
+
     frame.setAttribute(
       "title",
       title ? "LEAF content - " + String(title) : "LEAF content"
@@ -867,6 +887,8 @@
     }
     updateModalNav();
     lastFocusedElement = document.activeElement;
+    var _watchId = state.lastModalRecordID;
+    if (_watchId) startIframeWatch(_watchId);
     modal.hidden = false;
     modal.setAttribute("aria-hidden", "false");
     toggleAppInert(true);
@@ -878,6 +900,7 @@
   }
 
   function closeModal() {
+    stopIframeWatch();
     var modal = document.getElementById("pmModal");
     var frame = document.getElementById("pmModalFrame");
     var openTabBtn = document.getElementById("pmModalOpenTabBtn");
@@ -886,6 +909,10 @@
     state.lastModalRecordID = null;
     frame.src = "about:blank";
     frame.setAttribute("title", "LEAF content");
+    if (frame._saveDetectionHandler) {
+      frame.removeEventListener('load', frame._saveDetectionHandler);
+      frame._saveDetectionHandler = null;
+    }
     if (openTabBtn) openTabBtn.setAttribute("data-url", "");
     // Restore iframe and clean up inline content container
     if (frame) frame.style.display = '';
@@ -911,7 +938,7 @@
     if (_syncID) {
       if (isNewRecord(_syncID)) {
         // Brand new record not yet in state — do a full silent re-fetch
-        scheduleSilentRefresh(0);
+        scheduleSilentRefresh(3000);
       } else if (isProjectRecord(_syncID)) {
         syncProjectAfterModalClose(_syncID);
       } else {
@@ -923,6 +950,51 @@
       state.pendingProjectKeyRefresh = null;
       reloadTasksAndOpenProjectModal(pk);
     }
+  }
+
+  var _iframeWatchTimer = null;
+  var _iframeLastUrl = '';
+  var _iframeWatchRecordID = null;
+
+  function startIframeWatch(recordID) {
+    stopIframeWatch();
+    _iframeWatchRecordID = recordID;
+    var frame = document.getElementById('pmModalFrame');
+    if (!frame) return;
+    try { _iframeLastUrl = frame.contentWindow.location.href; } catch(e) { _iframeLastUrl = ''; }
+
+    _iframeWatchTimer = setInterval(function() {
+      var frame = document.getElementById('pmModalFrame');
+      if (!frame) { stopIframeWatch(); return; }
+      var currentUrl = '';
+      try { currentUrl = frame.contentWindow.location.href; } catch(e) { return; }
+      if (!currentUrl || currentUrl === 'about:blank') return;
+
+      if (_iframeLastUrl && currentUrl !== _iframeLastUrl) {
+        // URL changed inside iframe — a save/navigation happened
+        _iframeLastUrl = currentUrl;
+        var rid = _iframeWatchRecordID;
+        if (rid) {
+          if (isNewRecord(rid)) {
+            // Still new — schedule refresh with a delay to let LEAF finish writing
+            scheduleSilentRefresh(2000);
+          } else if (isProjectRecord(rid)) {
+            syncProjectAfterModalClose(rid);
+          } else {
+            syncTaskAfterModalClose(rid);
+          }
+        }
+      }
+    }, 800); // poll every 800ms — fast enough to feel responsive, slow enough to not thrash
+  }
+
+  function stopIframeWatch() {
+    if (_iframeWatchTimer) {
+      clearInterval(_iframeWatchTimer);
+      _iframeWatchTimer = null;
+    }
+    _iframeWatchRecordID = null;
+    _iframeLastUrl = '';
   }
 
   function reloadTasksAndOpenProjectModal(projectKey) {
