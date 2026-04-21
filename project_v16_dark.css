@@ -574,3 +574,277 @@ body.pm-dark .pm-switchThumb {
   background: #e2e8f0;
   border-color: var(--border);
 }
+
+/* ── Black text targeted fixes ── */
+
+/* 1. Material Icons */
+body.pm-dark .material-icons {
+  color: var(--text);
+}
+
+body.pm-dark .pm-primaryBtn .material-icons {
+  color: #fff;
+}
+
+body.pm-dark .pm-feedbackBtn .material-icons {
+  color: #fff;
+}
+
+body.pm-dark .pm-analyticsDrilldownIcon {
+  color: #fff;
+}
+
+/* 2. Search input text */
+body.pm-dark .pm-input {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+/* 3. Filter dropdown text */
+body.pm-dark .pm-select {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-paginationSelect {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-multiSelectToggle {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-multiSelectList {
+  color: var(--text);
+}
+
+body.pm-dark .pm-multiSelectOption {
+  color: var(--text);
+}
+
+body.pm-dark .pm-multiSelectOption input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+body.pm-dark .pm-multiSelectSearch input {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-multiSelectSearch input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+/* 4. View label and Dev Only label */
+body.pm-dark .pm-viewLabel {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-switchLabel {
+  color: var(--text);
+}
+
+body.pm-dark .pm-filterHeaderLabel {
+  color: var(--text);
+}
+
+body.pm-dark .pm-label {
+  color: var(--muted);
+}
+
+/* 5. Completion percentage label */
+body.pm-dark .pm-compPctLabel {
+  color: var(--text);
+}
+
+body.pm-dark .pm-compPctWrap span:not(.pm-completeGreen):not(.pm-completeMid).pm-compPctLabel {
+  color: var(--muted);
+}
+
+/* 6. Pagination controls */
+body.pm-dark .pm-pagination {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-paginationRange {
+  color: var(--text);
+}
+
+/* 7. OKR details */
+body.pm-dark .pm-okrCardBody {
+  background: var(--surface);
+  color: var(--text);
+}
+
+body.pm-dark .pm-krSection {
+  color: var(--text);
+}
+
+body.pm-dark .pm-krHeaderTitle {
+  color: var(--text);
+}
+
+body.pm-dark .pm-krName {
+  color: var(--text);
+}
+
+body.pm-dark .pm-krCounts {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-krPercent {
+  color: var(--text);
+}
+
+body.pm-dark .pm-krProjectName {
+  color: var(--text);
+}
+
+body.pm-dark .pm-krProjectMeta {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-krOtherMeta {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-okrItem {
+  color: var(--text);
+}
+
+body.pm-dark .pm-okrStats {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-okrStat {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-okrMeta {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-okrTitle {
+  color: var(--text);
+}
+
+body.pm-dark .pm-okrQuickTitle {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-okrQuickStat {
+  color: var(--text);
+  background: var(--surface-alt);
+  border-color: var(--border);
+}
+
+body.pm-dark .pm-okrCardToggle {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-okrCardToggle:hover {
+  background: var(--surface);
+}
+
+body.pm-dark .pm-krRowToggle {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-krRowToggle:hover {
+  background: var(--surface);
+}
+
+body.pm-dark .pm-okrToggle {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-okrToggle:hover {
+  background: var(--surface);
+}
+
+body.pm-dark .pm-okrShowMoreBtn {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-okrShowMoreBtn:hover {
+  background: var(--surface);
+}
+
+body.pm-dark .pm-okrDetails {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-krEmpty {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-okrFallback {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-okrSep {
+  color: var(--muted);
+}
+
+/* 8. Ghost buttons */
+body.pm-dark .pm-ghostBtn {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-ghostBtn:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+/* 9. Subtitle and panel headings */
+body.pm-dark .pm-subtitle {
+  color: var(--text);
+}
+
+body.pm-dark .pm-title {
+  color: var(--text);
+}
+
+/* 10. Health sticky cells */
+body.pm-dark .pm-healthLabel {
+  color: var(--text);
+}
+
+body.pm-dark .pm-healthValue {
+  color: var(--text);
+}
+
+/* 11. Table meta and toggle */
+body.pm-dark .pm-tableMeta {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-tableRange {
+  color: var(--text);
+}
