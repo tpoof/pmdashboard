@@ -1,0 +1,399 @@
+/* ============================================================
+   LEAF Project Dashboard — Dark Mode
+   Activated by: body.pm-dark
+   Toggle: Ctrl+Shift+Q
+
+   Color derivation from light mode:
+     --bg:           #f4f6f9  →  #0d1117  (deep blue-grey page bg)
+     --surface:      #ffffff  →  #161b27  (card/panel bg)
+     --surface-alt:  #f8fafc  →  #1e2535  (header/alt bg, stays blue-grey family)
+     --border:       #dbe1e8  →  #2d3748  (blue-grey border)
+     --text:         #1f2933  →  #e2e8f0  (inverted, same blue-grey family)
+     --muted:        #3f4a57  →  #8896a8  (mid blue-grey, matches original hue)
+     --accent:       #2563eb  →  #5b8dee  (lightened for dark bg, same hue)
+     --accent-soft:  #e7efff  →  #1a2540  (deep blue tint)
+     --accent-strong:#1d4ed8  →  #7ba7f7  (lighter for dark bg readability)
+     --focus:        #0b5cab  →  #5b8dee  (matches new accent)
+============================================================ */
+
+body.pm-dark {
+  --bg:            #0d1117;
+  --surface:       #161b27;
+  --surface-alt:   #1e2535;
+  --border:        #2d3748;
+  --text:          #e2e8f0;
+  --muted:         #8896a8;
+  --accent:        #5b8dee;
+  --accent-soft:   #1a2540;
+  --accent-strong: #7ba7f7;
+  --focus:         #5b8dee;
+  --shadow-sm:     0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md:     0 6px 16px rgba(0, 0, 0, 0.6);
+  --ticket-ideas:  #4ade80;
+  --ticket-ux:     #fbbf24;
+
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ── Hardcoded light colors that don't inherit from variables ── */
+
+/* Table row striping: light #fbfcfe / #f1f5fb → dark equivalents */
+body.pm-dark .pm-table tbody tr:nth-child(even) {
+  background: #1a2030;
+}
+
+body.pm-dark .pm-table tbody tr:hover {
+  background: #202840;
+}
+
+/* Sortable hover: light #e6eefb → dark blue-grey */
+body.pm-dark .pm-sortable:hover,
+body.pm-dark .pm-sortable.is-asc,
+body.pm-dark .pm-sortable.is-desc {
+  background: #1e2d4a;
+}
+
+/* Switch track: light #cbd5e1 → dark */
+body.pm-dark .pm-switchTrack {
+  background: #2d3748;
+  border-color: var(--border);
+}
+
+body.pm-dark .pm-switchThumb {
+  background: #e2e8f0;
+  border-color: var(--border);
+}
+
+body.pm-dark .pm-switchInput:checked + .pm-switchTrack {
+  background: var(--accent);
+  border-color: var(--accent-strong);
+}
+
+/* Task ID badge: light #1f1f1f bg with #fff text works in dark too,
+   but soften to a lighter badge for better dark contrast */
+body.pm-dark .pm-taskIdBadge {
+  background: #e2e8f0;
+  color: #0d1117 !important;
+}
+
+body.pm-dark .pm-taskIdBadge:hover,
+body.pm-dark .pm-taskIdBadge:focus {
+  background: #c8d6e8;
+  color: #0d1117 !important;
+}
+
+/* Priority pills: keep hues, adjust for dark bg contrast
+   High: #f2938c bg with #111 → darken bg, use light text
+   Med:  #e6c74c bg with #111 → darken bg, use light text
+   Low:  #aacdec bg with #111 → darken bg, use dark text */
+body.pm-dark .pm-pill-high {
+  background: #7c2020;
+  color: #fca5a5;
+  border-color: #a83232;
+}
+
+body.pm-dark .pm-pill-med {
+  background: #6b4f0a;
+  color: #fcd34d;
+  border-color: #8a6610;
+}
+
+body.pm-dark .pm-pill-low {
+  background: #1a3a5c;
+  color: #93c5fd;
+  border-color: #254d7a;
+}
+
+/* Status badge default */
+body.pm-dark .pm-statusBadge {
+  --badge-bg:     #1a2540;
+  --badge-border: #2d3f6a;
+  --badge-text:   #93c5fd;
+}
+
+/* OKR percent badge variants */
+body.pm-dark .pm-okrPercentBadge--none {
+  --badge-bg:     #7c1a1a;
+  --badge-border: #a82424;
+  --badge-text:   #fca5a5;
+}
+
+body.pm-dark .pm-okrPercentBadge--complete {
+  --badge-bg:     #14532d;
+  --badge-border: #166534;
+  --badge-text:   #86efac;
+}
+
+/* Overdue red: light #b00020 → brighter for dark bg readability */
+body.pm-dark .pm-overdueRed {
+  color: #f87171;
+}
+
+/* Complete green: light #2e7d32 → brighter for dark bg */
+body.pm-dark .pm-completeGreen {
+  color: #4ade80;
+}
+
+/* Completion mid (orange): light #b26a00 → brighter */
+body.pm-dark .pm-completeMid {
+  color: #fbbf24;
+}
+
+/* Cancelled status: light #f3f4f6 bg / #6b7280 text → dark */
+body.pm-dark .pm-statusCancelled {
+  background: #1e2535;
+  color: #6b7280;
+}
+
+/* KR highlight: light #fff4cc bg / #b7791f border → dark */
+body.pm-dark .pm-krHighlight {
+  background: #3d2e00;
+  border-left-color: #d97706;
+}
+
+body.pm-dark .pm-krRow--hasExceptions {
+  border-left-color: #d97706;
+}
+
+/* Gantt bar wrap: light #f2f2f2 → dark */
+body.pm-dark .pm-ganttBarWrap {
+  background: #1e2535;
+}
+
+body.pm-dark .pm-ganttRow {
+  border-top-color: var(--border);
+}
+
+/* Gantt priority bars — keep same hues, adjust for dark bg */
+body.pm-dark .pm-ganttHigh { background: #f87171; }
+body.pm-dark .pm-ganttMed  { background: #fbbf24; }
+body.pm-dark .pm-ganttLow  { background: #60a5fa; }
+body.pm-dark .pm-ganttNone { background: #374151; }
+
+/* Recurring banner */
+body.pm-dark .pm-recurringBanner {
+  background: #0f2d0f;
+  color: #e2e8f0;
+}
+
+/* Drilldown panel */
+body.pm-dark .pm-analyticsDrilldown {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+body.pm-dark .pm-analyticsDrilldownHeader {
+  background: var(--accent);
+  color: #fff;
+}
+
+body.pm-dark .pm-analyticsDrilldownClose {
+  background: var(--surface);
+  color: var(--accent-strong);
+  border-color: var(--border);
+}
+
+/* Kanban is-over drop highlight */
+body.pm-dark .pm-kanban-col.is-over {
+  background: var(--accent-soft);
+  outline-color: var(--accent);
+}
+
+/* Feedback modal */
+body.pm-dark .pm-feedbackModal {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+body.pm-dark .pm-feedbackClose {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-feedbackClose:hover {
+  color: var(--text);
+}
+
+/* Modal backdrop darker on dark mode */
+body.pm-dark .pm-modalBackdrop {
+  background: rgba(0, 0, 0, 0.72);
+}
+
+/* Tour overlay */
+body.pm-dark .pm-tourTooltip {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+body.pm-dark .pm-tourStepLabel {
+  color: var(--accent-strong);
+}
+
+body.pm-dark .pm-tourTitle {
+  color: var(--text);
+}
+
+body.pm-dark .pm-tourBody {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-tourBack {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-tourNext {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+body.pm-dark .pm-tourSkip {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-tourSpotlight {
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72);
+}
+
+/* Inbox badge */
+body.pm-dark .pm-inboxBadge {
+  background: #dc2626;
+}
+
+/* Jump to top */
+body.pm-dark .pm-jumpTop {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+body.pm-dark .pm-jumpTop:hover {
+  background: var(--surface-alt);
+}
+
+/* Add menu popover */
+body.pm-dark .pm-addMenuPopover {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+body.pm-dark .pm-menuItem {
+  color: var(--text);
+}
+
+body.pm-dark .pm-menuItem:hover,
+body.pm-dark .pm-menuItem:focus {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* Multi-select panel */
+body.pm-dark .pm-multiSelectPanel {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+body.pm-dark .pm-multiSelectActionBtn {
+  color: var(--accent-strong);
+}
+
+body.pm-dark .pm-multiSelectEmpty {
+  color: var(--muted);
+}
+
+/* Pagination */
+body.pm-dark .pm-pagination {
+  color: var(--muted);
+}
+
+/* Progress completion bar */
+body.pm-dark .pm-compPctBar {
+  --pct-bar-color: var(--accent-strong);
+}
+
+body.pm-dark .pm-compPctWrap:has(.pm-completeGreen) .pm-compPctBar {
+  --pct-bar-color: #4ade80;
+}
+
+body.pm-dark .pm-compPctWrap:has(.pm-completeMid) .pm-compPctBar {
+  --pct-bar-color: #fbbf24;
+}
+
+/* OKR index progress bar */
+body.pm-dark .pm-okrIndexBar,
+body.pm-dark .pm-okrProgressBar,
+body.pm-dark .pm-krProgressBar {
+  background: var(--accent-strong);
+}
+
+/* Health sticky banner */
+body.pm-dark .pm-healthSticky {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Dark mode toggle button — lit up when active */
+body.pm-dark #pmDarkModeBtn {
+  background: var(--accent-soft) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-strong) !important;
+}
+
+body.pm-dark #pmDarkModeBtn .material-icons {
+  color: var(--accent-strong);
+}
+
+/* Record links stay readable on dark */
+body.pm-dark .pm-recordLink {
+  color: var(--accent-strong);
+}
+
+/* OKR helper text */
+body.pm-dark .pm-okrHelper {
+  color: var(--muted);
+}
+
+/* Ticket chips on dark */
+body.pm-dark .pm-ticketChip--support {
+  --chip-text: var(--accent-strong);
+  --chip-border: var(--accent);
+}
+
+body.pm-dark .pm-ticketChip--ideas {
+  --chip-text: #4ade80;
+  --chip-border: #4ade80;
+}
+
+body.pm-dark .pm-ticketChip--ux {
+  --chip-text: #fbbf24;
+  --chip-border: #fbbf24;
+}
+
+/* Chart title stays readable */
+body.pm-dark .pm-chartTitle,
+body.pm-dark h3.pm-chartTitle {
+  color: var(--text);
+}
+
+/* Recurring filter button when active */
+body.pm-dark .pm-recurringFilterBtn[aria-pressed="true"] {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Modal nav buttons */
+body.pm-dark .pm-modalNavBtn {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-modalNavBtn:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
