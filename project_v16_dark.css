@@ -397,3 +397,180 @@ body.pm-dark .pm-modalNavBtn:hover:not(:disabled) {
   border-color: var(--accent);
   color: var(--accent-strong);
 }
+
+/* ── Targeted fixes ── */
+
+/* 1. Modal body background */
+body.pm-dark .pm-modalBody {
+  background: var(--surface);
+}
+
+body.pm-dark #pmModalInlineContent {
+  background: var(--surface);
+  color: var(--text);
+}
+
+body.pm-dark #pmModalInlineContent table {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* 2. Modal close button */
+body.pm-dark .pm-modalClose {
+  color: var(--text);
+  background: transparent;
+}
+
+body.pm-dark .pm-modalClose:hover {
+  background: var(--surface-alt);
+  color: var(--text);
+}
+
+/* 3. Modal nav counter */
+body.pm-dark .pm-modalNavCounter {
+  color: var(--muted);
+}
+
+/* 4. Modal nav buttons */
+body.pm-dark .pm-modalNavBtn {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-modalNavBtn:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+/* 5. Recurring icon */
+body.pm-dark .pm-recurringIcon {
+  color: var(--accent-strong);
+}
+
+body.pm-dark .pm-recurringIconCard {
+  color: var(--accent-strong);
+}
+
+/* 6. Recurring filter button active */
+body.pm-dark .pm-recurringFilterBtn[aria-pressed="true"] {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* 7. Analytics drilldown */
+body.pm-dark .pm-analyticsDrilldown {
+  border-color: var(--accent);
+}
+
+body.pm-dark .pm-analyticsDrilldownHeader {
+  background: var(--accent);
+}
+
+body.pm-dark .pm-analyticsDrilldownClose {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--accent-strong);
+}
+
+body.pm-dark .pm-analyticsDrilldownClose:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* 8. Tab hover and active */
+body.pm-dark .pm-tab:hover {
+  background: var(--surface-alt);
+  color: var(--text);
+}
+
+body.pm-dark .pm-tab.is-active,
+body.pm-dark .pm-tab[aria-selected="true"] {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+/* 9. Help button */
+body.pm-dark .pm-helpBtn {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+body.pm-dark .pm-helpBtn .material-icons {
+  color: var(--text);
+}
+
+body.pm-dark .pm-helpBtn:hover {
+  background: var(--accent-soft) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-strong) !important;
+}
+
+body.pm-dark .pm-helpBtn:hover .material-icons {
+  color: var(--accent-strong);
+}
+
+/* 10. Tooltip pseudo-elements */
+body.pm-dark .pm-helpBtn::after,
+body.pm-dark .pm-menuItemTip::after,
+body.pm-dark .pm-feedbackBtn::after {
+  background: #e2e8f0;
+  color: #0d1117;
+}
+
+/* 11. Task table project key column */
+body.pm-dark #pmTasksTableWrap .pm-table td:first-child .pm-recordLink,
+body.pm-dark #pmTasksTableWrap .pm-table td:first-child {
+  color: #8896a8;
+}
+
+body.pm-dark #pmTasksTableWrap .pm-table th:first-child .pm-sortBtn {
+  color: #8896a8;
+}
+
+/* 12. Tour tooltip */
+body.pm-dark .pm-tourTooltip {
+  background: var(--surface);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+body.pm-dark .pm-tourBody {
+  color: var(--muted);
+}
+
+/* 13. Other modal (Blocked/On Hold) */
+body.pm-dark .pm-otherModalBody {
+  background: var(--surface);
+  color: var(--text);
+}
+
+body.pm-dark .pm-otherModalLegend {
+  color: var(--text);
+}
+
+body.pm-dark .pm-otherOption {
+  color: var(--text);
+}
+
+body.pm-dark .pm-otherModalText {
+  color: var(--muted);
+}
+
+body.pm-dark .pm-otherModalFieldset {
+  border-color: var(--border);
+}
+
+/* 14. Gantt row divider */
+body.pm-dark .pm-ganttRow {
+  border-top-color: var(--border);
+}
+
+/* 15. Switch thumb */
+body.pm-dark .pm-switchThumb {
+  background: #e2e8f0;
+  border-color: var(--border);
+}
