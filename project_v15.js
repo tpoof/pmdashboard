@@ -381,6 +381,7 @@
       var query = new LeafFormQuery();
       query.addTerm('stepID', '=', 'resolved');
       query.addDataTerm('data', TASK_IND.isRecurring, '=', 'Yes');
+      query.addTerm('categoryID', '=', 'form_9b302');
       query.getData([
         TASK_IND.projectKey,
         TASK_IND.title,
@@ -922,7 +923,7 @@
         TASK_IND.actualCompletionDate,
         TASK_IND.recurringCopied,
       ],
-      []
+      [{ id: 'categoryID', operator: '=', match: 'form_9b302', gate: 'AND' }]
     );
 
     fetchJSON(tasksUrl).then(function(tasksJson) {
@@ -9167,7 +9168,7 @@
           TASK_IND.actualCompletionDate,
           TASK_IND.recurringCopied,
         ],
-        []
+        [{ id: 'categoryID', operator: '=', match: 'form_9b302', gate: 'AND' }]
       );
       var keyResultsUrl = buildQueryUrl(
         [KEY_RESULT_IND.okrKey, KEY_RESULT_IND.name],
@@ -9316,7 +9317,7 @@
           TASK_IND.actualCompletionDate,
           TASK_IND.recurringCopied,
         ],
-        [],
+        [{ id: 'categoryID', operator: '=', match: 'form_9b302', gate: 'AND' }],
       );
 
       var keyResultsUrl = buildQueryUrl(
