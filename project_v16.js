@@ -7588,17 +7588,33 @@
   }
 
   function buildHorizontalBarOptions() {
+    var dark = document.body.classList.contains('pm-dark');
+    var tickColor = dark ? '#e2e8f0' : '#1f2933';
+    var gridColor = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
     var options = { responsive: true, maintainAspectRatio: false };
     if (isChartV2()) {
       options.scales = {
-        xAxes: [{ ticks: { beginAtZero: true, fontColor: "#1f2933" } }],
-        yAxes: [{ ticks: { autoSkip: false, fontColor: "#1f2933" } }],
+        xAxes: [{
+          ticks: { beginAtZero: true, fontColor: tickColor },
+          gridLines: { color: gridColor }
+        }],
+        yAxes: [{
+          ticks: { autoSkip: false, fontColor: tickColor },
+          gridLines: { color: gridColor }
+        }],
       };
     } else {
-      options.indexAxis = "y";
+      options.indexAxis = 'y';
       options.scales = {
-        x: { beginAtZero: true, ticks: { color: "#1f2933" } },
-        y: { ticks: { autoSkip: false, color: "#1f2933" } },
+        x: {
+          beginAtZero: true,
+          ticks: { color: tickColor },
+          grid: { color: gridColor }
+        },
+        y: {
+          ticks: { autoSkip: false, color: tickColor },
+          grid: { color: gridColor }
+        },
       };
     }
     return options;
@@ -9248,17 +9264,54 @@
     try { return localStorage.getItem(DARK_MODE_KEY) === '1'; } catch(e) { return false; }
   }
 
+  function refreshChartsForTheme(dark) {
+    var tickColor = dark ? '#e2e8f0' : '#1f2933';
+    var gridColor = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+    var chartKeys = Object.keys(state.charts || {});
+    chartKeys.forEach(function(key) {
+      var chart = state.charts[key];
+      if (!chart) return;
+      try {
+        if (isChartV2()) {
+          if (chart.options.scales.xAxes) {
+            chart.options.scales.xAxes.forEach(function(axis) {
+              if (axis.ticks) axis.ticks.fontColor = tickColor;
+              if (axis.gridLines) axis.gridLines.color = gridColor;
+            });
+          }
+          if (chart.options.scales.yAxes) {
+            chart.options.scales.yAxes.forEach(function(axis) {
+              if (axis.ticks) axis.ticks.fontColor = tickColor;
+              if (axis.gridLines) axis.gridLines.color = gridColor;
+            });
+          }
+        } else {
+          if (chart.options.scales) {
+            Object.keys(chart.options.scales).forEach(function(axisKey) {
+              var axis = chart.options.scales[axisKey];
+              if (axis.ticks) axis.ticks.color = tickColor;
+              if (axis.grid) axis.grid.color = gridColor;
+            });
+          }
+        }
+        chart.update();
+      } catch(e) {
+        console.warn('pm-dashboard: refreshChartsForTheme failed for', key, e);
+      }
+    });
+
+    // Force analytics to re-render so new charts pick up the right color
+    state.renderState.analyticsMainSig = '';
+    if (getActiveTab() === 'analytics' && getAnalyticsView() === 'main') {
+      var analyticsTasks = getAnalyticsBaseTasks();
+      renderAnalytics(analyticsTasks);
+    }
+  }
+
   function applyDarkMode(enabled) {
     document.body.classList.toggle('pm-dark', enabled);
-    var btn = document.getElementById('pmDarkModeBtn');
-    if (btn) {
-      btn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-      btn.setAttribute('data-tooltip',
-        enabled ? 'Switch to light mode (Ctrl+Shift+Q)' : 'Toggle dark mode (Ctrl+Shift+Q)');
-      var icon = btn.querySelector('.material-icons');
-      if (icon) icon.textContent = enabled ? 'light_mode' : 'dark_mode';
-    }
     try { localStorage.setItem(DARK_MODE_KEY, enabled ? '1' : '0'); } catch(e) {}
+    refreshChartsForTheme(enabled);
   }
 
   function toggleDarkMode() {

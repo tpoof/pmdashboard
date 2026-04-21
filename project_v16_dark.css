@@ -335,16 +335,6 @@ body.pm-dark .pm-healthSticky {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
 }
 
-/* Dark mode toggle button — lit up when active */
-body.pm-dark #pmDarkModeBtn {
-  background: var(--accent-soft) !important;
-  border-color: var(--accent) !important;
-  color: var(--accent-strong) !important;
-}
-
-body.pm-dark #pmDarkModeBtn .material-icons {
-  color: var(--accent-strong);
-}
 
 /* Record links stay readable on dark */
 body.pm-dark .pm-recordLink {
@@ -847,4 +837,48 @@ body.pm-dark .pm-tableMeta {
 
 body.pm-dark .pm-tableRange {
   color: var(--text);
+}
+
+/* ── Multiselect panel targeted fixes ── */
+body.pm-dark .pm-multiSelectPanel {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.pm-dark .pm-multiSelectList {
+  background: var(--surface-alt);
+}
+
+body.pm-dark .pm-multiSelectOption {
+  color: var(--text) !important;
+}
+
+body.pm-dark .pm-multiSelectOption span {
+  color: var(--text) !important;
+}
+
+body.pm-dark .pm-multiSelectActions {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+body.pm-dark .pm-multiSelectActionBtn {
+  color: var(--accent-strong);
+  background: none;
+}
+
+body.pm-dark .pm-multiSelectSearch input {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text) !important;
+}
+
+body.pm-dark .pm-multiSelectSearch input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+body.pm-dark .pm-multiSelectEmpty {
+  color: var(--muted) !important;
 }
