@@ -301,6 +301,7 @@
     font-size: 13px;
     color: #333;
     line-height: 1.5;
+    white-space: pre-wrap;
   }
 
   /* Owner */
@@ -1279,7 +1280,8 @@
           html += "<strong>" + escapeHtml(theme.beneficiary) + "</strong>";
         }
         if (theme.need) {
-          html += (theme.beneficiary ? " — " : "") + escapeHtml(theme.need);
+          html +=
+            (theme.beneficiary ? " — " : "") + escapeHtmlWithBreaks(theme.need);
         }
         html += "</div>";
       }
@@ -1299,7 +1301,7 @@
         html += '<div class="rm-detail-label">Business Outcome</div>';
         html +=
           '<div class="rm-detail-value">' +
-          escapeHtml(theme.outcome) +
+          escapeHtmlWithBreaks(theme.outcome) +
           "</div>";
         html += "</div>";
       }
@@ -1309,7 +1311,9 @@
         html += '<div class="rm-detail-section">';
         html += '<div class="rm-detail-label">Work Involved</div>';
         html +=
-          '<div class="rm-detail-value">' + escapeHtml(theme.work) + "</div>";
+          '<div class="rm-detail-value">' +
+          escapeHtmlWithBreaks(theme.work) +
+          "</div>";
         html += "</div>";
       }
 
@@ -1319,7 +1323,7 @@
         html += '<div class="rm-detail-label">Subthemes</div>';
         html +=
           '<div class="rm-detail-value">' +
-          escapeHtml(theme.subthemes) +
+          escapeHtmlWithBreaks(theme.subthemes) +
           "</div>";
         html += "</div>";
       }
@@ -1413,6 +1417,22 @@
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
+    }
+
+    /**
+     * Escape HTML and preserve <br> line breaks from LEAF textarea fields.
+     * LEAF stores newlines as <br> tags in textarea values; this converts
+     * them to actual line breaks rendered via CSS white-space: pre-wrap.
+     */
+    function escapeHtmlWithBreaks(str) {
+      if (!str) return "";
+      // Strip <br> / <br/> / <BR> etc. before escaping, then restore as \n
+      var lines = str.split(/<br\s*\/?>/gi);
+      return lines
+        .map(function (line) {
+          return escapeHtml(line);
+        })
+        .join("\n");
     }
 
     /**
