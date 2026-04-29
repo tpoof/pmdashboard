@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>LEAF Sitemap Bulk Importer</title>
+  </head>
+  <body>
+    <h1>LEAF Sitemap Bulk Importer</h1>
+    <p>
+      Reads your current sitemap, merges your CSV, and writes it back. Nothing
+      existing is removed.
+    </p>
+    <hr />
+
+    <h2>Step 1 — Connect</h2>
+    <p>
+      <label
+        >Base URL (e.g. https://leaf.va.gov/platform/your_site)<br />
+        <input
+          type="url"
+          id="baseUrl"
+          size="60"
+          placeholder="https://leaf.va.gov/platform/your_site"
+        />
+      </label>
+    </p>
+    <p>
+      <label
+        >CSRF Token (copy from Network tab → sitemap_json request → Payload)<br />
+        <input
+          type="text"
+          id="csrfToken"
+          size="60"
+          placeholder="Paste CSRFToken here"
+        />
+      </label>
+    </p>
+    <p>
+      <button onclick="loadExistingSitemap()">
+        Connect &amp; Load Current Sitemap
+      </button>
+      <span id="conn-status"></span>
+    </p>
+    <p id="existing-info" style="display: none; color: green"></p>
+
+    <hr />
+
+    <h2>Step 2 — Load CSV</h2>
+    <p>
+      Required columns: <code>title</code>, <code>target</code> — Optional:
+      <code>description</code>, <code>color</code>, <code>fontColor</code>,
+      <code>icon</code>
+    </p>
+    <p><button onclick="downloadTemplate()">Download CSV Template</button></p>
+    <p>
+      <label
+        >Choose CSV file:<br />
+        <input
+          type="file"
+          id="csvFile"
+          accept=".csv"
+          onchange="handleFile(this.files[0])"
+        />
+      </label>
+    </p>
+    <p id="parse-status"></p>
+
+    <hr />
+
+    <h2>Step 3 — Preview</h2>
+    <div id="section-preview" style="display: none">
+      <p id="preview-summary"></p>
+      <div style="overflow-x: auto">
+        <table border="1" cellpadding="4" cellspacing="0" id="preview-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Title</th>
+              <th>Target URL</th>
+              <th>Description</th>
+              <th>Color</th>
+              <th>Font Color</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="preview-body"></tbody>
+        </table>
+      </div>
+      <br />
+      <button onclick="startImport()" id="btn-import" disabled>
+        Write to Sitemap
+      </button>
+      <button onclick="resetAll()">Start Over</button>
+    </div>
+    <p id="preview-placeholder">Load a CSV file above to see a preview.</p>
+
+    <hr />
+
+    <h2>Step 4 — Result</h2>
+    <div id="section-result" style="display: none">
+      <p id="result-summary"></p>
+      <pre
+        id="import-log"
+        style="
+          background: #f4f4f4;
+          padding: 8px;
+          max-height: 300px;
+          overflow-y: auto;
+          font-size: 13px;
+        "
+      ></pre>
+      <p id="done-row" style="display: none">
+        <button onclick="resetAll()">Import More</button>
+        <button id="btn-view-sitemap">View Sitemap</button>
+      </p>
+    </div>
+
+    <script>
+      let parsedRows = [];
+      let existingSites = [];
+
+      const getBase = () =>
+        document
+          .getElementById("baseUrl")
+          .value.trim()
+          .replace(/\/+$/, "")
+          .replace(/\/index\.php.*$/, "");
+      const getCsrf = () => document.getElementById("csrfToken").value.trim();
+
+      function addLog(msg) {
+        const el = document.getElementById("import-log");
+        el.textContent += msg + "\n";
+        el.scrollTop = el.scrollHeight;
+      }
+
+      // ── CSV Template ──────────────────────────────────────────
+      function downloadTemplate() {
+        const csv = [
+          "title,target,description,color,fontColor,icon",
+          "HR Portal,https://hr.example.gov,Employee HR resources,#1a3a6b,#ffffff,",
+          "IT Help Desk,https://ithelp.example.gov,Submit IT tickets,#2d6a4f,#ffffff,",
+          "Training Site,https://training.example.gov,Online training,#4a1f63,#ffffff,",
+        ].join("\n");
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+        a.download = "leaf_sitemap_template.csv";
+        a.click();
+      }
+
+      // ── Step 1: Connect ───────────────────────────────────────
+      async function loadExistingSitemap() {
+        const base = getBase();
+        const csrf = getCsrf();
+        const statusEl = document.getElementById("conn-status");
+
+        if (!base) {
+          statusEl.textContent = " ⚠ Enter a Base URL first";
+          return;
+        }
+        if (!csrf) {
+          statusEl.textContent = " ⚠ Enter your CSRF Token first";
+          return;
+        }
+
+        statusEl.textContent = " Connecting…";
+
+        try {
+          const res = await fetch(`${base}/api/site/settings/sitemap_json`, {
+            credentials: "include",
+          });
+
+          if (!res.ok) {
+            statusEl.textContent = ` ✗ HTTP ${res.status} — check Base URL and that you're logged in to LEAF`;
+            return;
+          }
+
+          const raw = await res.text();
+          let sites = [];
+
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              sites = parsed;
+            } else if (parsed && typeof parsed === "object") {
+              const inner =
+                parsed.data ?? parsed.value ?? parsed.setting ?? null;
+              sites = Array.isArray(inner)
+                ? inner
+                : typeof inner === "string"
+                  ? JSON.parse(inner)
+                  : [];
+            }
+          } catch (_) {
+            sites = [];
+          }
+
+          existingSites = sites;
+          statusEl.textContent = ` ✓ Connected`;
+
+          const info = document.getElementById("existing-info");
+          info.style.display = "block";
+          info.textContent = `✓ ${existingSites.length} existing site(s) loaded from your sitemap. Your CSV entries will be appended — nothing existing will be removed.`;
+        } catch (e) {
+          statusEl.textContent = ` ✗ Could not reach endpoint (${e.message}) — open this tool from within the same browser session you use for LEAF`;
+        }
+      }
+
+      // ── Step 2: Parse CSV ─────────────────────────────────────
+      function handleFile(file) {
+        if (!file) return;
+        const r = new FileReader();
+        r.onload = (e) => parseCSV(e.target.result);
+        r.readAsText(file);
+      }
+
+      function parseCSV(text) {
+        const lines = text.trim().split(/\r?\n/);
+        if (lines.length < 2) {
+          document.getElementById("parse-status").textContent =
+            "⚠ CSV appears empty.";
+          return;
+        }
+
+        const headers = lines[0]
+          .split(",")
+          .map((h) => h.trim().toLowerCase().replace(/['"]/g, ""));
+        if (!headers.includes("title") || !headers.includes("target")) {
+          document.getElementById("parse-status").textContent =
+            `⚠ CSV must have "title" and "target" columns. Found: ${headers.join(", ")}`;
+          return;
+        }
+
+        parsedRows = [];
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          const cols = splitCSV(line);
+          const row = {};
+          headers.forEach((h, idx) => {
+            row[h] = (cols[idx] || "").trim().replace(/^["']|["']$/g, "");
+          });
+          row._valid = !!(row.title && row.target);
+          row._rowNum = i;
+          parsedRows.push(row);
+        }
+
+        document.getElementById("parse-status").textContent =
+          `✓ Parsed ${parsedRows.length} row(s).`;
+        buildPreview();
+      }
+
+      function splitCSV(line) {
+        const result = [];
+        let cur = "",
+          inQ = false;
+        for (const c of line) {
+          if (c === '"') inQ = !inQ;
+          else if (c === "," && !inQ) {
+            result.push(cur);
+            cur = "";
+          } else cur += c;
+        }
+        result.push(cur);
+        return result;
+      }
+
+      // ── Step 3: Preview ───────────────────────────────────────
+      function buildPreview() {
+        document.getElementById("section-preview").style.display = "block";
+        document.getElementById("preview-placeholder").style.display = "none";
+
+        const valid = parsedRows.filter((r) => r._valid).length;
+        const invalid = parsedRows.length - valid;
+
+        document.getElementById("preview-summary").innerHTML =
+          `<strong>${parsedRows.length}</strong> rows in CSV &nbsp;|&nbsp; ` +
+          `<strong>${valid}</strong> will be added &nbsp;|&nbsp; ` +
+          (invalid > 0
+            ? `<strong>${invalid}</strong> skipped (missing title or target) &nbsp;|&nbsp; `
+            : "") +
+          `<strong>${existingSites.length}</strong> already in sitemap &nbsp;→&nbsp; ` +
+          `<strong>${existingSites.length + valid}</strong> total after import`;
+
+        const tbody = document.getElementById("preview-body");
+        tbody.innerHTML = "";
+        parsedRows.forEach((row) => {
+          const tr = document.createElement("tr");
+          if (!row._valid) tr.style.background = "#fff0f0";
+          tr.innerHTML = `
+      <td>${row._rowNum}</td>
+      <td>${row.title || "<em>MISSING</em>"}</td>
+      <td>${row.target || "<em>MISSING</em>"}</td>
+      <td>${row.description || ""}</td>
+      <td>${row.color || ""}</td>
+      <td>${row.fontColor || ""}</td>
+      <td>${row._valid ? "✓ ready" : "✗ missing fields"}</td>
+    `;
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("btn-import").disabled = valid === 0;
+      }
+
+      // ── Step 4: Import ────────────────────────────────────────
+      async function startImport() {
+        const base = getBase();
+        const csrf = getCsrf();
+
+        document.getElementById("section-result").style.display = "block";
+        document.getElementById("section-preview").style.display = "none";
+        document.getElementById("import-log").textContent = "";
+        document.getElementById("done-row").style.display = "none";
+
+        const toAdd = parsedRows
+          .filter((r) => r._valid)
+          .map((r) => ({
+            title: r.title,
+            target: r.target,
+            description: r.description || "",
+            color: r.color || "#ffffff",
+            fontColor: r.fontColor || "#000000",
+            icon: r.icon || "",
+          }));
+
+        addLog(
+          `Merging ${toAdd.length} new site(s) with ${existingSites.length} existing…`,
+        );
+        const merged = [...existingSites, ...toAdd];
+        addLog(`Total after merge: ${merged.length} sites`);
+        addLog(`Sending to ${base}/api/site/settings/sitemap_json …`);
+
+        try {
+          const body = new URLSearchParams();
+          body.append("CSRFToken", csrf);
+          body.append("data", JSON.stringify(merged));
+
+          const res = await fetch(`${base}/api/site/settings/sitemap_json`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: body.toString(),
+          });
+
+          const text = await res.text();
+          const denied =
+            text.toLowerCase().includes("denied") ||
+            text.toLowerCase().includes("error");
+
+          if (res.ok && !denied) {
+            addLog(
+              `\n✓ Success! Server accepted the update (HTTP ${res.status})`,
+            );
+            addLog(`✓ ${toAdd.length} site(s) added:`);
+            toAdd.forEach((s, i) =>
+              addLog(`   ${i + 1}. "${s.title}"  →  ${s.target}`),
+            );
+
+            document.getElementById("result-summary").textContent =
+              `✓ Done — ${toAdd.length} site(s) added. Sitemap now has ${merged.length} total.`;
+
+            document.getElementById("btn-view-sitemap").onclick = () =>
+              window.open(`${base}/?a=sitemap`, "_blank");
+            document.getElementById("done-row").style.display = "block";
+          } else {
+            addLog(
+              `\n✗ Server returned an unexpected response (HTTP ${res.status}):`,
+            );
+            addLog(text.substring(0, 400));
+            addLog(
+              `\nTip: CSRF tokens expire — grab a fresh one from the Network tab and try again.`,
+            );
+            document.getElementById("result-summary").textContent =
+              "✗ Import failed — see log above.";
+          }
+        } catch (e) {
+          addLog(`\n✗ Network error: ${e.message}`);
+          addLog(
+            `Make sure this page is open in the same browser session you use to log into LEAF.`,
+          );
+          document.getElementById("result-summary").textContent =
+            "✗ Import failed — see log above.";
+        }
+      }
+
+      // ── Reset ─────────────────────────────────────────────────
+      function resetAll() {
+        parsedRows = [];
+        document.getElementById("csvFile").value = "";
+        document.getElementById("parse-status").textContent = "";
+        document.getElementById("preview-body").innerHTML = "";
+        document.getElementById("preview-summary").textContent = "";
+        document.getElementById("import-log").textContent = "";
+        document.getElementById("result-summary").textContent = "";
+        document.getElementById("done-row").style.display = "none";
+        document.getElementById("section-preview").style.display = "none";
+        document.getElementById("section-result").style.display = "none";
+        document.getElementById("preview-placeholder").style.display = "block";
+      }
+    </script>
+  </body>
+</html>
