@@ -1,0 +1,1 @@
+fetch('https://leaf.va.gov/platform/your_site/api/site/settings/sitemap_json', {credentials:'include'}).then(r=>r.text()).then(console.log)
