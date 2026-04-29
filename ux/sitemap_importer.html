@@ -37,38 +37,7 @@
       </button>
       <span id="conn-status"></span>
     </p>
-
-    <p>
-      <strong>Raw GET response (what the server actually returned):</strong>
-    </p>
-    <pre
-      id="raw-response"
-      style="
-        background: #f4f4f4;
-        padding: 8px;
-        max-height: 200px;
-        overflow: auto;
-        font-size: 12px;
-        border: 1px solid #ccc;
-      "
-    >
-— not loaded yet —</pre
-    >
-
-    <p><strong>Parsed sitemap array:</strong></p>
-    <pre
-      id="parsed-response"
-      style="
-        background: #f4f4f4;
-        padding: 8px;
-        max-height: 200px;
-        overflow: auto;
-        font-size: 12px;
-        border: 1px solid #ccc;
-      "
-    >
-— not loaded yet —</pre
-    >
+    <p id="existing-info" style="display: none"></p>
 
     <hr />
 
@@ -114,21 +83,6 @@
         </table>
       </div>
       <br />
-      <p>
-        <strong>Payload that will be sent (preview before writing):</strong>
-      </p>
-      <pre
-        id="payload-preview"
-        style="
-          background: #f4f4f4;
-          padding: 8px;
-          max-height: 200px;
-          overflow: auto;
-          font-size: 12px;
-          border: 1px solid #ccc;
-        "
-      ></pre>
-      <br />
       <button onclick="startImport()" id="btn-import" disabled>
         Write to Sitemap
       </button>
@@ -141,7 +95,6 @@
     <h2>Step 4 — Result</h2>
     <div id="section-result" style="display: none">
       <p id="result-summary"></p>
-      <p><strong>Server response:</strong></p>
       <pre
         id="import-log"
         style="
@@ -161,8 +114,7 @@
 
     <script>
       let parsedRows = [];
-      let existingSites = [];
-      let rawResponseText = "";
+      let existingButtons = []; // the buttons array inside data
 
       const getBase = () =>
         document
@@ -219,71 +171,21 @@
             return;
           }
 
-          rawResponseText = await res.text();
-          document.getElementById("raw-response").textContent = rawResponseText;
+          const raw = await res.text();
 
-          // Try every known LEAF wrapping pattern and show what we find
-          let sites = [];
-          let parseNote = "";
+          // Structure is: [{"data":"{\"buttons\":[...]}"}]
+          // Parse the outer array, then parse the inner data string to get buttons
+          const outer = JSON.parse(raw); // → [{data: "..."}]
+          const inner = JSON.parse(outer[0].data); // → {buttons: [...]}
+          existingButtons = Array.isArray(inner.buttons) ? inner.buttons : [];
 
-          try {
-            const parsed = JSON.parse(rawResponseText);
+          statusEl.textContent = ` ✓ Connected`;
 
-            if (Array.isArray(parsed)) {
-              sites = parsed;
-              parseNote = "Format: plain JSON array";
-            } else if (parsed && typeof parsed === "object") {
-              // Check common wrapper keys
-              const keys = Object.keys(parsed);
-              parseNote = `Format: object with keys [${keys.join(", ")}]\n`;
-
-              // Try each likely key
-              for (const key of [
-                "data",
-                "value",
-                "setting",
-                "sitemap_json",
-                "json",
-                "sites",
-              ]) {
-                if (parsed[key] !== undefined) {
-                  parseNote += `  Found key "${key}": ${JSON.stringify(parsed[key]).substring(0, 80)}\n`;
-                  let val = parsed[key];
-                  if (typeof val === "string") {
-                    try {
-                      val = JSON.parse(val);
-                    } catch (_) {}
-                  }
-                  if (Array.isArray(val) && sites.length === 0) {
-                    sites = val;
-                    parseNote += `  → Using "${key}" as the sitemap array\n`;
-                  }
-                }
-              }
-
-              // If still empty, show all values for inspection
-              if (sites.length === 0) {
-                parseNote += `  Could not find array in any known key. Full object:\n`;
-                parseNote += JSON.stringify(parsed, null, 2);
-              }
-            }
-          } catch (e) {
-            parseNote = `Could not parse as JSON: ${e.message}\nRaw value shown above.`;
-          }
-
-          existingSites = Array.isArray(sites) ? sites : [];
-
-          document.getElementById("parsed-response").textContent =
-            parseNote +
-            "\n\n--- Resulting array (" +
-            existingSites.length +
-            " items) ---\n" +
-            JSON.stringify(existingSites, null, 2);
-
-          statusEl.textContent = ` ✓ Connected — ${existingSites.length} existing site(s) found`;
+          const info = document.getElementById("existing-info");
+          info.style.display = "block";
+          info.textContent = `✓ ${existingButtons.length} existing button(s) loaded from your sitemap. Your CSV entries will be appended — nothing existing will be removed.`;
         } catch (e) {
           statusEl.textContent = ` ✗ Error: ${e.message}`;
-          document.getElementById("raw-response").textContent = e.message;
         }
       }
 
@@ -360,8 +262,8 @@
           (invalid > 0
             ? `<strong>${invalid}</strong> skipped &nbsp;|&nbsp; `
             : "") +
-          `<strong>${existingSites.length}</strong> already in sitemap &nbsp;→&nbsp; ` +
-          `<strong>${existingSites.length + valid}</strong> total after import`;
+          `<strong>${existingButtons.length}</strong> already in sitemap &nbsp;→&nbsp; ` +
+          `<strong>${existingButtons.length + valid}</strong> total after import`;
 
         const tbody = document.getElementById("preview-body");
         tbody.innerHTML = "";
@@ -379,21 +281,6 @@
     `;
           tbody.appendChild(tr);
         });
-
-        // Show exactly what will be POSTed
-        const toAdd = parsedRows
-          .filter((r) => r._valid)
-          .map((r) => ({
-            title: r.title,
-            target: r.target,
-            description: r.description || "",
-            color: r.color || "#ffffff",
-            fontColor: r.fontColor || "#000000",
-            icon: r.icon || "",
-          }));
-        const merged = [...existingSites, ...toAdd];
-        document.getElementById("payload-preview").textContent =
-          "data=" + JSON.stringify(merged, null, 2);
 
         document.getElementById("btn-import").disabled = valid === 0;
       }
@@ -419,23 +306,21 @@
             icon: r.icon || "",
           }));
 
-        const merged = [...existingSites, ...toAdd];
+        // Rebuild the exact structure LEAF expects:
+        // [{"data":"{\"buttons\":[...]}"}]
+        const mergedButtons = [...existingButtons, ...toAdd];
+        const innerJson = JSON.stringify({ buttons: mergedButtons });
+        const outerPayload = JSON.stringify([{ data: innerJson }]);
 
-        addLog(`Existing sites: ${existingSites.length}`);
-        addLog(`New sites from CSV: ${toAdd.length}`);
-        addLog(`Total being sent: ${merged.length}`);
-        addLog(`POSTing to: ${base}/api/site/settings/sitemap_json`);
+        addLog(`Existing buttons: ${existingButtons.length}`);
+        addLog(`New from CSV:     ${toAdd.length}`);
+        addLog(`Total sending:    ${mergedButtons.length}`);
         addLog(`---`);
 
         try {
           const body = new URLSearchParams();
           body.append("CSRFToken", csrf);
-          body.append("data", JSON.stringify(merged));
-
-          addLog(
-            `Payload (first 300 chars): ${body.toString().substring(0, 300)}`,
-          );
-          addLog(`---`);
+          body.append("data", outerPayload);
 
           const res = await fetch(`${base}/api/site/settings/sitemap_json`, {
             method: "POST",
@@ -445,7 +330,6 @@
           });
 
           const text = await res.text();
-
           addLog(`HTTP Status: ${res.status}`);
           addLog(`Server response: ${text}`);
 
@@ -455,16 +339,20 @@
 
           if (res.ok && !denied) {
             addLog(
-              `\n✓ Looks good! Now verify by clicking "View Sitemap" below.`,
+              `\n✓ Success! ${toAdd.length} site(s) added to the sitemap.`,
+            );
+            toAdd.forEach((s, i) =>
+              addLog(`   ${i + 1}. "${s.title}"  →  ${s.target}`),
             );
             document.getElementById("result-summary").textContent =
-              `✓ Done — ${toAdd.length} site(s) added.`;
+              `✓ Done — ${toAdd.length} site(s) added. Sitemap now has ${mergedButtons.length} total.`;
             document.getElementById("btn-view-sitemap").onclick = () =>
               window.open(`${base}/?a=sitemap`, "_blank");
             document.getElementById("done-row").style.display = "block";
           } else {
+            addLog(`\n✗ Something went wrong — see server response above.`);
             addLog(
-              `\n✗ Something went wrong. Share the response above so we can diagnose.`,
+              `Tip: CSRF tokens expire — grab a fresh one from the Network tab and try again.`,
             );
             document.getElementById("result-summary").textContent =
               "✗ Import failed — see log above.";
@@ -479,19 +367,15 @@
       // ── Reset ─────────────────────────────────────────────────
       function resetAll() {
         parsedRows = [];
-        existingSites = [];
+        existingButtons = [];
         document.getElementById("csvFile").value = "";
         document.getElementById("parse-status").textContent = "";
         document.getElementById("preview-body").innerHTML = "";
         document.getElementById("preview-summary").textContent = "";
-        document.getElementById("payload-preview").textContent = "";
         document.getElementById("import-log").textContent = "";
         document.getElementById("result-summary").textContent = "";
-        document.getElementById("raw-response").textContent =
-          "— not loaded yet —";
-        document.getElementById("parsed-response").textContent =
-          "— not loaded yet —";
         document.getElementById("conn-status").textContent = "";
+        document.getElementById("existing-info").style.display = "none";
         document.getElementById("done-row").style.display = "none";
         document.getElementById("section-preview").style.display = "none";
         document.getElementById("section-result").style.display = "none";
