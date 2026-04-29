@@ -6,16 +6,12 @@
   </head>
   <body>
     <h1>LEAF Sitemap Bulk Importer</h1>
-    <p>
-      Reads your current sitemap, merges your CSV, and writes it back. Nothing
-      existing is removed.
-    </p>
     <hr />
 
     <h2>Step 1 — Connect</h2>
     <p>
       <label
-        >Base URL (e.g. https://leaf.va.gov/platform/your_site)<br />
+        >Base URL<br />
         <input
           type="url"
           id="baseUrl"
@@ -26,7 +22,7 @@
     </p>
     <p>
       <label
-        >CSRF Token (copy from Network tab → sitemap_json request → Payload)<br />
+        >CSRF Token<br />
         <input
           type="text"
           id="csrfToken"
@@ -41,7 +37,38 @@
       </button>
       <span id="conn-status"></span>
     </p>
-    <p id="existing-info" style="display: none; color: green"></p>
+
+    <p>
+      <strong>Raw GET response (what the server actually returned):</strong>
+    </p>
+    <pre
+      id="raw-response"
+      style="
+        background: #f4f4f4;
+        padding: 8px;
+        max-height: 200px;
+        overflow: auto;
+        font-size: 12px;
+        border: 1px solid #ccc;
+      "
+    >
+— not loaded yet —</pre
+    >
+
+    <p><strong>Parsed sitemap array:</strong></p>
+    <pre
+      id="parsed-response"
+      style="
+        background: #f4f4f4;
+        padding: 8px;
+        max-height: 200px;
+        overflow: auto;
+        font-size: 12px;
+        border: 1px solid #ccc;
+      "
+    >
+— not loaded yet —</pre
+    >
 
     <hr />
 
@@ -71,7 +98,7 @@
     <div id="section-preview" style="display: none">
       <p id="preview-summary"></p>
       <div style="overflow-x: auto">
-        <table border="1" cellpadding="4" cellspacing="0" id="preview-table">
+        <table border="1" cellpadding="4" cellspacing="0">
           <thead>
             <tr>
               <th>#</th>
@@ -87,6 +114,21 @@
         </table>
       </div>
       <br />
+      <p>
+        <strong>Payload that will be sent (preview before writing):</strong>
+      </p>
+      <pre
+        id="payload-preview"
+        style="
+          background: #f4f4f4;
+          padding: 8px;
+          max-height: 200px;
+          overflow: auto;
+          font-size: 12px;
+          border: 1px solid #ccc;
+        "
+      ></pre>
+      <br />
       <button onclick="startImport()" id="btn-import" disabled>
         Write to Sitemap
       </button>
@@ -99,6 +141,7 @@
     <h2>Step 4 — Result</h2>
     <div id="section-result" style="display: none">
       <p id="result-summary"></p>
+      <p><strong>Server response:</strong></p>
       <pre
         id="import-log"
         style="
@@ -107,6 +150,7 @@
           max-height: 300px;
           overflow-y: auto;
           font-size: 13px;
+          border: 1px solid #ccc;
         "
       ></pre>
       <p id="done-row" style="display: none">
@@ -118,6 +162,7 @@
     <script>
       let parsedRows = [];
       let existingSites = [];
+      let rawResponseText = "";
 
       const getBase = () =>
         document
@@ -170,38 +215,75 @@
           });
 
           if (!res.ok) {
-            statusEl.textContent = ` ✗ HTTP ${res.status} — check Base URL and that you're logged in to LEAF`;
+            statusEl.textContent = ` ✗ HTTP ${res.status} — check Base URL and that you're logged in`;
             return;
           }
 
-          const raw = await res.text();
+          rawResponseText = await res.text();
+          document.getElementById("raw-response").textContent = rawResponseText;
+
+          // Try every known LEAF wrapping pattern and show what we find
           let sites = [];
+          let parseNote = "";
 
           try {
-            const parsed = JSON.parse(raw);
+            const parsed = JSON.parse(rawResponseText);
+
             if (Array.isArray(parsed)) {
               sites = parsed;
+              parseNote = "Format: plain JSON array";
             } else if (parsed && typeof parsed === "object") {
-              const inner =
-                parsed.data ?? parsed.value ?? parsed.setting ?? null;
-              sites = Array.isArray(inner)
-                ? inner
-                : typeof inner === "string"
-                  ? JSON.parse(inner)
-                  : [];
+              // Check common wrapper keys
+              const keys = Object.keys(parsed);
+              parseNote = `Format: object with keys [${keys.join(", ")}]\n`;
+
+              // Try each likely key
+              for (const key of [
+                "data",
+                "value",
+                "setting",
+                "sitemap_json",
+                "json",
+                "sites",
+              ]) {
+                if (parsed[key] !== undefined) {
+                  parseNote += `  Found key "${key}": ${JSON.stringify(parsed[key]).substring(0, 80)}\n`;
+                  let val = parsed[key];
+                  if (typeof val === "string") {
+                    try {
+                      val = JSON.parse(val);
+                    } catch (_) {}
+                  }
+                  if (Array.isArray(val) && sites.length === 0) {
+                    sites = val;
+                    parseNote += `  → Using "${key}" as the sitemap array\n`;
+                  }
+                }
+              }
+
+              // If still empty, show all values for inspection
+              if (sites.length === 0) {
+                parseNote += `  Could not find array in any known key. Full object:\n`;
+                parseNote += JSON.stringify(parsed, null, 2);
+              }
             }
-          } catch (_) {
-            sites = [];
+          } catch (e) {
+            parseNote = `Could not parse as JSON: ${e.message}\nRaw value shown above.`;
           }
 
-          existingSites = sites;
-          statusEl.textContent = ` ✓ Connected`;
+          existingSites = Array.isArray(sites) ? sites : [];
 
-          const info = document.getElementById("existing-info");
-          info.style.display = "block";
-          info.textContent = `✓ ${existingSites.length} existing site(s) loaded from your sitemap. Your CSV entries will be appended — nothing existing will be removed.`;
+          document.getElementById("parsed-response").textContent =
+            parseNote +
+            "\n\n--- Resulting array (" +
+            existingSites.length +
+            " items) ---\n" +
+            JSON.stringify(existingSites, null, 2);
+
+          statusEl.textContent = ` ✓ Connected — ${existingSites.length} existing site(s) found`;
         } catch (e) {
-          statusEl.textContent = ` ✗ Could not reach endpoint (${e.message}) — open this tool from within the same browser session you use for LEAF`;
+          statusEl.textContent = ` ✗ Error: ${e.message}`;
+          document.getElementById("raw-response").textContent = e.message;
         }
       }
 
@@ -276,7 +358,7 @@
           `<strong>${parsedRows.length}</strong> rows in CSV &nbsp;|&nbsp; ` +
           `<strong>${valid}</strong> will be added &nbsp;|&nbsp; ` +
           (invalid > 0
-            ? `<strong>${invalid}</strong> skipped (missing title or target) &nbsp;|&nbsp; `
+            ? `<strong>${invalid}</strong> skipped &nbsp;|&nbsp; `
             : "") +
           `<strong>${existingSites.length}</strong> already in sitemap &nbsp;→&nbsp; ` +
           `<strong>${existingSites.length + valid}</strong> total after import`;
@@ -297,6 +379,21 @@
     `;
           tbody.appendChild(tr);
         });
+
+        // Show exactly what will be POSTed
+        const toAdd = parsedRows
+          .filter((r) => r._valid)
+          .map((r) => ({
+            title: r.title,
+            target: r.target,
+            description: r.description || "",
+            color: r.color || "#ffffff",
+            fontColor: r.fontColor || "#000000",
+            icon: r.icon || "",
+          }));
+        const merged = [...existingSites, ...toAdd];
+        document.getElementById("payload-preview").textContent =
+          "data=" + JSON.stringify(merged, null, 2);
 
         document.getElementById("btn-import").disabled = valid === 0;
       }
@@ -322,17 +419,23 @@
             icon: r.icon || "",
           }));
 
-        addLog(
-          `Merging ${toAdd.length} new site(s) with ${existingSites.length} existing…`,
-        );
         const merged = [...existingSites, ...toAdd];
-        addLog(`Total after merge: ${merged.length} sites`);
-        addLog(`Sending to ${base}/api/site/settings/sitemap_json …`);
+
+        addLog(`Existing sites: ${existingSites.length}`);
+        addLog(`New sites from CSV: ${toAdd.length}`);
+        addLog(`Total being sent: ${merged.length}`);
+        addLog(`POSTing to: ${base}/api/site/settings/sitemap_json`);
+        addLog(`---`);
 
         try {
           const body = new URLSearchParams();
           body.append("CSRFToken", csrf);
           body.append("data", JSON.stringify(merged));
+
+          addLog(
+            `Payload (first 300 chars): ${body.toString().substring(0, 300)}`,
+          );
+          addLog(`---`);
 
           const res = await fetch(`${base}/api/site/settings/sitemap_json`, {
             method: "POST",
@@ -342,41 +445,32 @@
           });
 
           const text = await res.text();
+
+          addLog(`HTTP Status: ${res.status}`);
+          addLog(`Server response: ${text}`);
+
           const denied =
             text.toLowerCase().includes("denied") ||
             text.toLowerCase().includes("error");
 
           if (res.ok && !denied) {
             addLog(
-              `\n✓ Success! Server accepted the update (HTTP ${res.status})`,
+              `\n✓ Looks good! Now verify by clicking "View Sitemap" below.`,
             );
-            addLog(`✓ ${toAdd.length} site(s) added:`);
-            toAdd.forEach((s, i) =>
-              addLog(`   ${i + 1}. "${s.title}"  →  ${s.target}`),
-            );
-
             document.getElementById("result-summary").textContent =
-              `✓ Done — ${toAdd.length} site(s) added. Sitemap now has ${merged.length} total.`;
-
+              `✓ Done — ${toAdd.length} site(s) added.`;
             document.getElementById("btn-view-sitemap").onclick = () =>
               window.open(`${base}/?a=sitemap`, "_blank");
             document.getElementById("done-row").style.display = "block";
           } else {
             addLog(
-              `\n✗ Server returned an unexpected response (HTTP ${res.status}):`,
-            );
-            addLog(text.substring(0, 400));
-            addLog(
-              `\nTip: CSRF tokens expire — grab a fresh one from the Network tab and try again.`,
+              `\n✗ Something went wrong. Share the response above so we can diagnose.`,
             );
             document.getElementById("result-summary").textContent =
               "✗ Import failed — see log above.";
           }
         } catch (e) {
           addLog(`\n✗ Network error: ${e.message}`);
-          addLog(
-            `Make sure this page is open in the same browser session you use to log into LEAF.`,
-          );
           document.getElementById("result-summary").textContent =
             "✗ Import failed — see log above.";
         }
@@ -385,12 +479,19 @@
       // ── Reset ─────────────────────────────────────────────────
       function resetAll() {
         parsedRows = [];
+        existingSites = [];
         document.getElementById("csvFile").value = "";
         document.getElementById("parse-status").textContent = "";
         document.getElementById("preview-body").innerHTML = "";
         document.getElementById("preview-summary").textContent = "";
+        document.getElementById("payload-preview").textContent = "";
         document.getElementById("import-log").textContent = "";
         document.getElementById("result-summary").textContent = "";
+        document.getElementById("raw-response").textContent =
+          "— not loaded yet —";
+        document.getElementById("parsed-response").textContent =
+          "— not loaded yet —";
+        document.getElementById("conn-status").textContent = "";
         document.getElementById("done-row").style.display = "none";
         document.getElementById("section-preview").style.display = "none";
         document.getElementById("section-result").style.display = "none";
