@@ -334,13 +334,13 @@
         addLog(`New from CSV:     ${toAdd.length}`);
         addLog(`Total sending:    ${mergedButtons.length}`);
         addLog(`---`);
-        addLog(`Payload preview: ${dataValue.substring(0, 200)}…`);
+        addLog(`Payload preview: sitemap_json=${dataValue.substring(0, 200)}…`);
         addLog(`---`);
 
         try {
           const body = new URLSearchParams();
           body.append("CSRFToken", csrf);
-          body.append("data", dataValue);
+          body.append("sitemap_json", dataValue);
 
           const res = await fetch(`${base}/api/site/settings/sitemap_json`, {
             method: "POST",
