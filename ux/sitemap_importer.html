@@ -71,11 +71,13 @@
           <thead>
             <tr>
               <th>#</th>
+              <th>ID</th>
               <th>Title</th>
               <th>Target URL</th>
               <th>Description</th>
               <th>Color</th>
               <th>Font Color</th>
+              <th>Order</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -114,7 +116,7 @@
 
     <script>
       let parsedRows = [];
-      let existingButtons = []; // the buttons array inside data
+      let existingButtons = [];
 
       const getBase = () =>
         document
@@ -123,6 +125,16 @@
           .replace(/\/+$/, "")
           .replace(/\/index\.php.*$/, "");
       const getCsrf = () => document.getElementById("csrfToken").value.trim();
+
+      // Generate a random 5-character alphanumeric ID matching LEAF's format
+      function makeId() {
+        const chars =
+          "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let id = "";
+        for (let i = 0; i < 5; i++)
+          id += chars[Math.floor(Math.random() * chars.length)];
+        return id;
+      }
 
       function addLog(msg) {
         const el = document.getElementById("import-log");
@@ -173,17 +185,16 @@
 
           const raw = await res.text();
 
-          // Structure is: [{"data":"{\"buttons\":[...]}"}]
-          // Parse the outer array, then parse the inner data string to get buttons
-          const outer = JSON.parse(raw); // → [{data: "..."}]
-          const inner = JSON.parse(outer[0].data); // → {buttons: [...]}
+          // Structure from server: [{"data":"{\"buttons\":[...]}"}]
+          // Parse outer array, then parse the inner data string
+          const outer = JSON.parse(raw);
+          const inner = JSON.parse(outer[0].data); // → { buttons: [...] }
           existingButtons = Array.isArray(inner.buttons) ? inner.buttons : [];
 
           statusEl.textContent = ` ✓ Connected`;
-
           const info = document.getElementById("existing-info");
           info.style.display = "block";
-          info.textContent = `✓ ${existingButtons.length} existing button(s) loaded from your sitemap. Your CSV entries will be appended — nothing existing will be removed.`;
+          info.textContent = `✓ ${existingButtons.length} existing button(s) loaded. Your CSV entries will be appended — nothing existing will be removed.`;
         } catch (e) {
           statusEl.textContent = ` ✗ Error: ${e.message}`;
         }
@@ -225,6 +236,9 @@
           });
           row._valid = !!(row.title && row.target);
           row._rowNum = i;
+          // Pre-generate id and order now so preview shows exactly what will be sent
+          row._id = makeId();
+          row._order = existingButtons.length + (i - 1);
           parsedRows.push(row);
         }
 
@@ -272,11 +286,13 @@
           if (!row._valid) tr.style.background = "#fff0f0";
           tr.innerHTML = `
       <td>${row._rowNum}</td>
+      <td><code>${row._id}</code></td>
       <td>${row.title || "<em>MISSING</em>"}</td>
       <td>${row.target || "<em>MISSING</em>"}</td>
       <td>${row.description || ""}</td>
-      <td>${row.color || ""}</td>
-      <td>${row.fontColor || ""}</td>
+      <td>${row.color || "#ffffff"}</td>
+      <td>${row.fontColor || "#000000"}</td>
+      <td>${row._order}</td>
       <td>${row._valid ? "✓ ready" : "✗ missing fields"}</td>
     `;
           tbody.appendChild(tr);
@@ -298,29 +314,33 @@
         const toAdd = parsedRows
           .filter((r) => r._valid)
           .map((r) => ({
+            id: r._id,
             title: r.title,
-            target: r.target,
             description: r.description || "",
+            target: r.target,
             color: r.color || "#ffffff",
             fontColor: r.fontColor || "#000000",
             icon: r.icon || "",
+            order: r._order,
           }));
 
-        // Rebuild the exact structure LEAF expects:
-        // [{"data":"{\"buttons\":[...]}"}]
         const mergedButtons = [...existingButtons, ...toAdd];
-        const innerJson = JSON.stringify({ buttons: mergedButtons });
-        const outerPayload = JSON.stringify([{ data: innerJson }]);
+
+        // Exact payload structure LEAF expects on POST:
+        // data = {"buttons":[...]}   (plain JSON string, not double-wrapped)
+        const dataValue = JSON.stringify({ buttons: mergedButtons });
 
         addLog(`Existing buttons: ${existingButtons.length}`);
         addLog(`New from CSV:     ${toAdd.length}`);
         addLog(`Total sending:    ${mergedButtons.length}`);
         addLog(`---`);
+        addLog(`Payload preview: ${dataValue.substring(0, 200)}…`);
+        addLog(`---`);
 
         try {
           const body = new URLSearchParams();
           body.append("CSRFToken", csrf);
-          body.append("data", outerPayload);
+          body.append("data", dataValue);
 
           const res = await fetch(`${base}/api/site/settings/sitemap_json`, {
             method: "POST",
@@ -338,11 +358,9 @@
             text.toLowerCase().includes("error");
 
           if (res.ok && !denied) {
-            addLog(
-              `\n✓ Success! ${toAdd.length} site(s) added to the sitemap.`,
-            );
+            addLog(`\n✓ Success! ${toAdd.length} site(s) added.`);
             toAdd.forEach((s, i) =>
-              addLog(`   ${i + 1}. "${s.title}"  →  ${s.target}`),
+              addLog(`   ${i + 1}. [${s.id}] "${s.title}"  →  ${s.target}`),
             );
             document.getElementById("result-summary").textContent =
               `✓ Done — ${toAdd.length} site(s) added. Sitemap now has ${mergedButtons.length} total.`;
