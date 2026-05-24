@@ -452,6 +452,24 @@ function doSubmit(recordID) {
                 if (isAdmin !== "1") {
                     $('#btn_cancelRequest').hide();
                 }
+                // Write default status (indicator10 = "Not Started") if not already set
+                $.ajax({
+                    type: 'GET',
+                    url: './api/form/' + recordID + '/10/1',
+                    success: function(existing) {
+                        if(existing === null || existing === '' || existing === undefined) {
+                            $.ajax({
+                                type: 'POST',
+                                url: './api/form/' + recordID,
+                                data: {
+                                    CSRFToken: '<!--{$CSRFToken}-->',
+                                    10: 'Not Started',
+                                    series: 1
+                                }
+                            });
+                        }
+                    }
+                });
                 workflow.setExtraParams('masquerade=nonAdmin');
                 workflow.getWorkflow(recordID);
             } else {
