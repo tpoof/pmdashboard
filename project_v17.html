@@ -6,8 +6,36 @@
     data-csrf="{$CSRFToken}"
     data-csrf-alt="{$csrf_token}"
     data-csrf2="{$csrfToken}"
+    data-userid="<!--{$userID|unescape|escape:'html'}-->"
+    data-username="<!--{$name|unescape|escape:'html'}-->"
     style="display: none"
   ></span>
+
+  <div
+    id="pmOverdueAlert"
+    class="pm-overdueAlert"
+    role="alert"
+    aria-live="polite"
+    aria-atomic="true"
+    hidden
+  >
+    <div class="pm-overdueAlert-inner">
+      <span class="pm-overdueAlert-icon material-icons" aria-hidden="true">warning_amber</span>
+      <div class="pm-overdueAlert-body">
+        <p class="pm-overdueAlert-heading" id="pmOverdueAlertHeading"></p>
+        <ul class="pm-overdueAlert-list" id="pmOverdueAlertList"></ul>
+        <p class="pm-overdueAlert-more" id="pmOverdueAlertMore"></p>
+      </div>
+      <button
+        type="button"
+        class="pm-overdueAlert-dismiss"
+        id="pmOverdueAlertDismiss"
+        aria-label="Dismiss overdue tasks alert"
+      >
+        <span class="material-icons" aria-hidden="true">close</span>
+      </button>
+    </div>
+  </div>
 
   <div class="pm-header">
     <h1 class="pm-title">LEAF Project Dashboard</h1>
@@ -179,6 +207,14 @@
         <label class="pm-label" for="pmProjectStatusSelectToggle">Status</label>
         <div id="pmProjectStatusSelect" class="pm-multiSelect" data-filter="projectStatus"></div>
       </div>
+      <div class="pm-field">
+        <label class="pm-label" for="pmProjectTypeSelectToggle">Project Type</label>
+        <div
+          id="pmProjectTypeSelect"
+          class="pm-multiSelect"
+          data-filter="projectType"
+        ></div>
+      </div>
       <div class="pm-field pm-fieldInlineBtn">
         <button type="button" class="pm-ghostBtn" id="pmClearProjectFilters">
           Clear all filters
@@ -315,6 +351,14 @@
           class="pm-multiSelect"
           data-filter="priority"
         ></div>
+      </div>
+      <div class="pm-field pm-fieldDateRange">
+        <label class="pm-label">Activity</label>
+        <div class="pm-dateRangeBtns" role="group" aria-label="Filter by activity date range">
+          <button type="button" class="pm-ghostBtn pm-dateRangeBtn" data-days="7"  aria-pressed="false">Last 7 days</button>
+          <button type="button" class="pm-ghostBtn pm-dateRangeBtn" data-days="14" aria-pressed="false">Last 14 days</button>
+          <button type="button" class="pm-ghostBtn pm-dateRangeBtn" data-days="30" aria-pressed="false">Last 30 days</button>
+        </div>
       </div>
       <div class="pm-field pm-fieldRecurringToggle">
         <label class="pm-label">&nbsp;</label>

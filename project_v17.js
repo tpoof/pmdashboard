@@ -1,12 +1,16 @@
 (function () {
   var env = document.getElementById("pmEnv");
   var CSRFToken = "";
+  var CURRENT_USER_ID = "";
+  var CURRENT_USER_NAME = "";
   if (env) {
     CSRFToken =
       env.getAttribute("data-csrf") ||
       env.getAttribute("data-csrf-alt") ||
       env.getAttribute("data-csrf2") ||
       "";
+    CURRENT_USER_ID   = env.getAttribute("data-userid")   || "";
+    CURRENT_USER_NAME = env.getAttribute("data-username") || "";
   }
 
   // Indicator ID for the isRecurring checkbox field on the Task form.
@@ -94,7 +98,10 @@
     tasksDevOnly: "pmdashboard_tasks_devOnly_v17",
     tasksPagination: "pm_tasks_pagination_v17",
     FILTER_STATE_KEY: "pm_filter_state_v17",
+    dateRange: "pm_date_range_v17",
   };
+
+  var OVERDUE_ALERT_DISMISSED_KEY = 'pm_overdue_alert_dismissed_v17';
 
   var STATUS_CONFIG = {
     ALL_STATUSES: [
@@ -157,6 +164,7 @@
     dataReady: false,
     devOnly: false,
     recurringOnly: false,
+    dateRangeFilter: null,
     modalHistory: [],
     modalHistoryIndex: -1,
     pendingProjectKeyRefresh: null,
@@ -1247,6 +1255,7 @@
       // Re-populate dropdowns in case assignee/category changed
       populateAssigneeDropdown(state.tasksAll);
       populateCategoryDropdown(state.tasksAll);
+      renderOverdueAlert();
 
     } catch (e) {
       console.warn('pm-dashboard: syncTaskAfterModalClose failed', e);
@@ -5340,6 +5349,22 @@
     );
   }
 
+  function populateProjectTypeDropdown(projects) {
+    var seen = {};
+    var opts = [];
+    (projects || []).forEach(function (p) {
+      var raw = String(p.projectType || '').trim();
+      if (!raw) return;
+      var label = formatProjectTypeLabel(raw);
+      if (!label || label === 'Unknown') return;
+      if (seen[label]) return;
+      seen[label] = true;
+      opts.push({ value: label, label: label });
+    });
+    opts.sort(function (a, b) { return a.label.localeCompare(b.label); });
+    setFilterOptions('projectType', opts);
+  }
+
   function populateOkrFiscalYearDropdown(projects) {
     var vals = Array.from(
       new Set(
@@ -5514,6 +5539,10 @@
           setFilterValues(k, obj[k]);
         }
       });
+      var savedRange = localStorage.getItem(STORAGE_KEYS.dateRange);
+      if (savedRange && !isNaN(parseInt(savedRange, 10))) {
+        state.dateRangeFilter = parseInt(savedRange, 10);
+      }
       return true;
     } catch (e) { return false; }
   }
@@ -6007,6 +6036,7 @@
       categories: new Set(getFilterSet("category")),
       devOnly: state.devOnly,
       recurringOnly: !!state.recurringOnly,
+      dateRange: state.dateRangeFilter,
     };
   }
 
@@ -6062,6 +6092,22 @@
       return false;
     if (filters && !matchesFilterSet(task.category, filters.categories))
       return false;
+    if (filters && filters.dateRange) {
+      var cutoff = new Date();
+      cutoff.setHours(0, 0, 0, 0);
+      cutoff.setDate(cutoff.getDate() - filters.dateRange);
+
+      var startDate = parseLeafDate(task.start);
+      var completed = parseLeafDate(task.actualCompletion);
+
+      // Exclude tasks with no relevant dates when filter is active
+      if (!startDate && !completed) return false;
+
+      var startedInRange   = startDate && startDate >= cutoff;
+      var completedInRange = completed && completed >= cutoff;
+
+      if (!startedInRange && !completedInRange) return false;
+    }
     return true;
   }
 
@@ -6072,6 +6118,7 @@
       sigPart(filters.q),
       filters.devOnly ? "1" : "0",
       filters.recurringOnly ? "r" : "0",
+      sigPart(String(filters.dateRange || 0)),
       signatureFromSet(filters.projectKeys),
       signatureFromSet(filters.statuses),
       signatureFromSet(filters.assignees),
@@ -6137,6 +6184,7 @@
       fiscalYears: new Set(getFilterSet("projectFiscalYear")),
       owners: new Set(getFilterSet("projectOwner")),
       projectStatuses: new Set(getFilterSet("projectStatus")),
+      projectType: new Set(getFilterSet("projectType")),
     };
   }
 
@@ -6190,6 +6238,12 @@
       return false;
     if (filters && !matchesFilterSet(project.owner, filters.owners)) return false;
     if (filters && !matchesFilterSet(project.projectStatus, filters.projectStatuses)) return false;
+    if (filters && filters.projectType && filters.projectType.size > 0) {
+      var typeLabel = formatProjectTypeLabel(
+        String(project.projectType || '').trim()
+      );
+      if (!matchesFilterSet(typeLabel, filters.projectType)) return false;
+    }
     return true;
   }
 
@@ -6201,6 +6255,7 @@
       signatureFromSet(filters.fiscalYears),
       signatureFromSet(filters.owners),
       signatureFromSet(filters.projectStatuses),
+      signatureFromSet(filters.projectType),
       buildTaskSortSignature(sortState),
     ].join("|");
   }
@@ -6634,6 +6689,11 @@
       selected: getFilterSet("projectStatus"),
       onChange: tasksOnChange,
     });
+    state.filterControls.projectType = multiSelectDropdown({
+      id: "pmProjectTypeSelect",
+      selected: getFilterSet("projectType"),
+      onChange: tasksOnChange,
+    });
     state.filterControls.projectKey = multiSelectDropdown({
       id: "pmProjectKeySelect",
       selected: getFilterSet("projectKey"),
@@ -6686,6 +6746,140 @@
   }
 
 
+  function currentUserMatchesTask(task) {
+    if (!CURRENT_USER_ID && !CURRENT_USER_NAME) return false;
+    var assigned = String(task.assignedTo || '').trim().toLowerCase();
+    if (!assigned) return false;
+    if (CURRENT_USER_ID && assigned === CURRENT_USER_ID.trim().toLowerCase()) return true;
+    if (CURRENT_USER_NAME) {
+      var name = CURRENT_USER_NAME.trim().toLowerCase();
+      if (assigned === name) return true;
+      // Handle "Last, First" → "First Last" reversal
+      if (name.indexOf(',') !== -1) {
+        var parts = name.split(',');
+        var reversed = (parts[1] || '').trim() + ' ' + (parts[0] || '').trim();
+        if (assigned === reversed.toLowerCase()) return true;
+      }
+    }
+    return false;
+  }
+
+  function renderOverdueAlert() {
+    var alertEl = document.getElementById('pmOverdueAlert');
+    if (!alertEl) return;
+
+    // Stay hidden if user dismissed this session
+    if (sessionStorage.getItem(OVERDUE_ALERT_DISMISSED_KEY)) {
+      alertEl.hidden = true;
+      return;
+    }
+
+    // Need tasks loaded before we can evaluate
+    if (!state.tasksAll || !state.tasksAll.length) {
+      alertEl.hidden = true;
+      return;
+    }
+
+    // If both user identity fields are empty, Smarty vars didn't resolve — bail silently
+    if (!CURRENT_USER_ID && !CURRENT_USER_NAME) {
+      alertEl.hidden = true;
+      return;
+    }
+
+    var now = new Date();
+    var overdueMine = state.tasksAll.filter(function (t) {
+      if (!currentUserMatchesTask(t)) return false;
+      if (isCompletedStatus(t.status)) return false;
+      if (isArchivedStatus(t.status)) return false;
+      return isOverdueTask(t, now);
+    });
+
+    if (!overdueMine.length) {
+      alertEl.hidden = true;
+      return;
+    }
+
+    // Sort by due date ascending (most overdue first)
+    overdueMine = overdueMine.slice().sort(function (a, b) {
+      var da = mmddyyyyToDate(a.due) || new Date(8640000000000000);
+      var db = mmddyyyyToDate(b.due) || new Date(8640000000000000);
+      return da - db;
+    });
+
+    var total   = overdueMine.length;
+    var shown   = overdueMine.slice(0, 5);
+    var remaining = total - shown.length;
+
+    var headingEl = document.getElementById('pmOverdueAlertHeading');
+    if (headingEl) {
+      headingEl.textContent = 'You have ' + total +
+        ' overdue task' + (total === 1 ? '' : 's') + '.';
+    }
+
+    var listEl = document.getElementById('pmOverdueAlertList');
+    if (listEl) {
+      listEl.innerHTML = shown.map(function (t) {
+        var title = String(t.title || '(No title)');
+        var safeTitle    = safe(title);
+        var safeAttrTitle = safeAttr('Task ' + t.recordID + ' — ' + title);
+        if (t.href) {
+          return '<li><a href="' + safe(t.href) +
+            '" class="pm-recordLink pm-overdueAlert-link" data-title="' +
+            safeAttrTitle + '">' + safeTitle + '</a></li>';
+        }
+        return '<li>' + safeTitle + '</li>';
+      }).join('');
+    }
+
+    var moreEl = document.getElementById('pmOverdueAlertMore');
+    if (moreEl) {
+      moreEl.textContent = remaining > 0
+        ? 'and ' + remaining + ' more overdue task' +
+          (remaining === 1 ? '' : 's') + '.'
+        : '';
+      moreEl.hidden = remaining === 0;
+    }
+
+    alertEl.hidden = false;
+  }
+
+  function wireDismissOverdueAlert() {
+    var btn = document.getElementById('pmOverdueAlertDismiss');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var alertEl = document.getElementById('pmOverdueAlert');
+      if (alertEl) alertEl.hidden = true;
+      sessionStorage.setItem(OVERDUE_ALERT_DISMISSED_KEY, '1');
+    });
+  }
+
+  function syncDateRangeBtnUI() {
+    document.querySelectorAll('.pm-dateRangeBtn').forEach(function (btn) {
+      var days = parseInt(btn.getAttribute('data-days'), 10);
+      var active = state.dateRangeFilter === days;
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      btn.classList.toggle('is-active', active);
+    });
+  }
+
+  function wireDateRangeFilter() {
+    document.querySelectorAll('.pm-dateRangeBtn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var days = parseInt(btn.getAttribute('data-days'), 10);
+        if (state.dateRangeFilter === days) {
+          state.dateRangeFilter = null;
+          localStorage.setItem(STORAGE_KEYS.dateRange, '');
+        } else {
+          state.dateRangeFilter = days;
+          localStorage.setItem(STORAGE_KEYS.dateRange, days);
+        }
+        syncDateRangeBtnUI();
+        invalidateTaskCaches();
+        applySearchAndFilters(true);
+      });
+    });
+  }
+
   function wireClearFilters() {
     function clearAll() {
       var s = document.getElementById("pmSearchInput");
@@ -6700,6 +6894,9 @@
       state.recurringOnly = false;
       var recurringFilterBtn = document.getElementById('pmRecurringFilterBtn');
       if (recurringFilterBtn) recurringFilterBtn.setAttribute('aria-pressed', 'false');
+      state.dateRangeFilter = null;
+      localStorage.removeItem(STORAGE_KEYS.dateRange);
+      syncDateRangeBtnUI();
       applySearchAndFilters(true);
       saveFilterState();
     }
@@ -6714,6 +6911,8 @@
       if (state.filterControls.projectOwner) state.filterControls.projectOwner.clear();
       setFilterValues("projectStatus", []);
       if (state.filterControls.projectStatus) state.filterControls.projectStatus.clear();
+      setFilterValues("projectType", []);
+      if (state.filterControls.projectType) state.filterControls.projectType.clear();
       applySearchAndFilters();
     });
   }
@@ -9242,6 +9441,7 @@
       populateProjectFiscalYearDropdown(state.projectsAll);
       populateProjectOwnerDropdown(state.projectsAll);
       populateProjectStatusDropdown(state.projectsAll);
+      populateProjectTypeDropdown(state.projectsAll);
       populateOkrFiscalYearDropdown(state.projectsAll);
       populateAssigneeDropdown(state.tasksAll);
       populateCategoryDropdown(state.tasksAll);
@@ -9346,13 +9546,16 @@
       wireOkrTableViewToggle();
       wireSortingDelegation();
       loadFilterState();
+      syncDateRangeBtnUI();
       initFilterControls();
+      wireDateRangeFilter();
       wireClearFilters();
       wireOkrFilters();
       wireOkrRollupToggle();
       wireRecordModalLinks();
       wireSupportMessageListener();
       wireModalControls();
+      wireDismissOverdueAlert();
       wireOtherStatusModal();
       wireAddButtons();
       fetchAndRenderInboxCount();
@@ -9465,6 +9668,7 @@
       state.projectsLoaded = true;
       backfillSupportTicketLabels(state.tasksAll);
       checkAndCopyResolvedRecurringTasks();
+      renderOverdueAlert();
 
       // Warn once if indicator 48 (recurringCopied) doesn't appear in any task row,
       // which likely means it hasn't been created in LEAF Form Editor yet.
@@ -9495,12 +9699,13 @@
       populateProjectFiscalYearDropdown(state.projectsAll);
       populateProjectOwnerDropdown(state.projectsAll);
       populateProjectStatusDropdown(state.projectsAll);
+      populateProjectTypeDropdown(state.projectsAll);
       populateOkrFiscalYearDropdown(state.projectsAll);
       populateAssigneeDropdown(state.tasksAll);
       populateCategoryDropdown(state.tasksAll);
       refreshStatusDropdown();
 
-      
+
       var debouncedSearch = debounce(function () {
         applySearchAndFilters(true);
       }, 275);
