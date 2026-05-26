@@ -891,6 +891,16 @@
       if (!rec) throw new Error('No record found for ID ' + recordID);
       var s1 = rec.s1 || rec;
       if (CONFIG.debug) console.log('[CustomerOverview] Raw s1:', s1);
+      console.log('[CustomerOverview] s1 full dump:', JSON.stringify(s1));
+      console.log('[CustomerOverview] Looking for indicators:');
+      console.log('  IND_PROJECT_NAME (' + CONFIG.IND_PROJECT_NAME + '):', s1['id' + CONFIG.IND_PROJECT_NAME]);
+      console.log('  IND_PROJECT_TYPE (' + CONFIG.IND_PROJECT_TYPE + '):', s1['id' + CONFIG.IND_PROJECT_TYPE]);
+      console.log('  IND_CURRENT_PHASE (' + CONFIG.IND_CURRENT_PHASE + '):', s1['id' + CONFIG.IND_CURRENT_PHASE]);
+      console.log('  IND_PHASE_1 (' + CONFIG.IND_PHASE_1 + '):', s1['id' + CONFIG.IND_PHASE_1]);
+      console.log('  IND_PHASE_2 (' + CONFIG.IND_PHASE_2 + '):', s1['id' + CONFIG.IND_PHASE_2]);
+      console.log('  IND_PHASE_3 (' + CONFIG.IND_PHASE_3 + '):', s1['id' + CONFIG.IND_PHASE_3]);
+      console.log('  IND_PHASE_4 (' + CONFIG.IND_PHASE_4 + '):', s1['id' + CONFIG.IND_PHASE_4]);
+      console.log('  IND_PHASE_5 (' + CONFIG.IND_PHASE_5 + '):', s1['id' + CONFIG.IND_PHASE_5]);
       return s1;
     });
   }
