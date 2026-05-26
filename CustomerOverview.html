@@ -654,13 +654,13 @@
      URL helper
      ============================================================ */
 
-  /** Read ?recordID=XXXX from the current page URL. */
+  /** Read the record ID from the ?a= URL parameter (e.g., ?a=1234). */
   function getRecordID() {
     try {
-      return new URLSearchParams(window.location.search).get('recordID') || '';
+      return new URLSearchParams(window.location.search).get('a') || '';
     } catch (e) {
       // Fallback for environments without URLSearchParams
-      var match = window.location.search.match(/[?&]recordID=([^&]+)/);
+      var match = window.location.search.match(/[?&]a=([^&]+)/);
       return match ? decodeURIComponent(match[1]) : '';
     }
   }
@@ -896,7 +896,7 @@
           done = true;
           clearTimeout(timer);
           if (CONFIG.debug) {
-            console.log('[CustomerOverview] LeafFormQuery response:', data);
+            console.log('[CustomerOverview] recordID (from ?a=):', recordID, '| LeafFormQuery response:', data);
           }
           resolve(data);
         });
@@ -941,7 +941,7 @@
     if (!recordID) {
       showError(
         'No project specified. ' +
-        'Please check the link — it should include a recordID parameter (e.g., ?recordID=1234).'
+        'Please check the link — it should include an “a” parameter (e.g., ?a=1234).'
       );
       return;
     }
