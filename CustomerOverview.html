@@ -133,12 +133,16 @@
     font-size: 1rem;
     color: #3d4551;
     margin-bottom: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   #customerOverview .co-project-poc {
     font-size: 1rem;
     color: #3d4551;
     margin-bottom: 12px;
+    font-weight: 700;
   }
 
   /* ============================================================
@@ -221,7 +225,12 @@
   #customerOverview .co-step--complete .co-step-circle {
     background: #1a7a4a;
     border-color: #1a7a4a;
-    color: #ffffff;
+    color: #ffffff !important;
+  }
+
+  #customerOverview .co-step--complete .co-step-circle span,
+  #customerOverview .co-step--complete .co-step-circle * {
+    color: #ffffff !important;
   }
 
   #customerOverview .co-step--complete .co-step-label {
@@ -326,17 +335,32 @@
 
   #customerOverview .co-phase--complete .co-phase-number {
     background: #1a7a4a;
-    color: #ffffff;
+    color: #ffffff !important;
+  }
+
+  #customerOverview .co-phase--complete .co-phase-number span,
+  #customerOverview .co-phase--complete .co-phase-number * {
+    color: #ffffff !important;
   }
 
   #customerOverview .co-phase--active .co-phase-number {
     background: #003f72;
-    color: #ffffff;
+    color: #ffffff !important;
+  }
+
+  #customerOverview .co-phase--active .co-phase-number span,
+  #customerOverview .co-phase--active .co-phase-number * {
+    color: #ffffff !important;
   }
 
   #customerOverview .co-phase--upcoming .co-phase-number {
-    background: #d6d7d9;
-    color: #3d4551;
+    background: #71767a;
+    color: #ffffff !important;
+  }
+
+  #customerOverview .co-phase--upcoming .co-phase-number span,
+  #customerOverview .co-phase--upcoming .co-phase-number * {
+    color: #ffffff !important;
   }
 
   #customerOverview .co-phase-title {
