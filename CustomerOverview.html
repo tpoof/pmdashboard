@@ -1,0 +1,1019 @@
+<style>
+/* ============================================================
+   CustomerOverview — LEAF Programmer Page
+   All styles scoped to #customerOverview to avoid conflicts
+   with LEAF's own stylesheet.
+   ============================================================ */
+
+#customerOverview *,
+#customerOverview *::before,
+#customerOverview *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+#customerOverview {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  color: #1b1b1b;
+  line-height: 1.5;
+  position: relative;
+}
+
+/* ---- Skip link ---- */
+#customerOverview .co-skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: -999;
+  background: #003f72;
+  color: #ffffff;
+  padding: 10px 20px;
+  text-decoration: underline;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: 0 0 4px 0;
+  white-space: nowrap;
+}
+
+#customerOverview .co-skip-link:focus {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  z-index: 9999;
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* ---- Visually hidden utility (screen-reader only) ---- */
+#customerOverview .co-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================================
+   Loading state
+   ============================================================ */
+#customerOverview .co-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  gap: 16px;
+  color: #3d4551;
+  font-size: 1rem;
+}
+
+#customerOverview .co-spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid #d6d7d9;
+  border-top-color: #0071bb;
+  border-radius: 50%;
+  animation: co-spin 0.75s linear infinite;
+}
+
+@keyframes co-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   Error state
+   ============================================================ */
+#customerOverview .co-error {
+  background: #fff3f3;
+  border: 1px solid #b51d1d;
+  border-left: 5px solid #b51d1d;
+  border-radius: 4px;
+  padding: 20px 24px;
+  color: #4a0101;  /* ~8:1 contrast on #fff3f3 */
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   Page header
+   ============================================================ */
+#customerOverview .co-header {
+  margin-bottom: 36px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid #dfe1e2;
+}
+
+#customerOverview .co-project-name {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #003f72;
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+#customerOverview .co-project-type {
+  font-size: 1rem;
+  color: #3d4551;
+  margin-bottom: 12px;
+}
+
+#customerOverview .co-last-updated {
+  font-size: 0.875rem;
+  color: #3d4551;
+}
+
+#customerOverview .co-last-updated time {
+  font-weight: 600;
+  color: #1b1b1b;
+}
+
+/* ============================================================
+   Progress bar section
+   ============================================================ */
+#customerOverview .co-progress-section {
+  margin-bottom: 40px;
+}
+
+#customerOverview .co-progress-heading {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #003f72;
+  margin-bottom: 28px;
+}
+
+/* The <nav> + <ol> */
+#customerOverview .co-progress-nav {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#customerOverview .co-progress-track {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  list-style: none;
+  min-width: 320px;  /* prevent total collapse on very small screens */
+  padding-bottom: 4px;
+}
+
+/* Horizontal connector line — sits behind circles */
+#customerOverview .co-progress-track::before {
+  content: '';
+  position: absolute;
+  top: 20px;          /* vertically center on the 40px circle */
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  background: #a9aeb1;
+  z-index: 0;
+}
+
+/* ---- Individual step ---- */
+#customerOverview .co-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  gap: 6px;
+}
+
+#customerOverview .co-step-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid #a9aeb1;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #3d4551;
+  flex-shrink: 0;
+}
+
+#customerOverview .co-step-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #3d4551;
+  text-align: center;
+  max-width: 80px;
+  line-height: 1.3;
+}
+
+#customerOverview .co-step-state-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #3d4551;
+}
+
+/* ---- Complete step ---- */
+#customerOverview .co-step--complete .co-step-circle {
+  background: #1a7a4a;   /* passes 4.5:1 on white */
+  border-color: #1a7a4a;
+  color: #ffffff;
+}
+
+#customerOverview .co-step--complete .co-step-label {
+  color: #1b1b1b;
+}
+
+#customerOverview .co-step--complete .co-step-state-label {
+  color: #1a7a4a;
+}
+
+/* ---- Active step ---- */
+#customerOverview .co-step--active .co-step-circle {
+  background: #003f72;
+  border-color: #003f72;
+  color: #ffffff;
+  box-shadow: 0 0 0 4px #cce0f5;  /* focus-ring-style emphasis */
+}
+
+#customerOverview .co-step--active .co-step-label {
+  font-weight: 700;
+  color: #003f72;
+}
+
+#customerOverview .co-step--active .co-step-state-label {
+  color: #003f72;
+}
+
+/* ---- Upcoming step ---- */
+#customerOverview .co-step--upcoming .co-step-circle {
+  background: #f0f0f0;
+  border-color: #a9aeb1;
+  color: #3d4551;
+}
+
+#customerOverview .co-step--upcoming .co-step-label {
+  color: #71767a;
+}
+
+#customerOverview .co-step--upcoming .co-step-state-label {
+  color: #71767a;
+}
+
+/* ============================================================
+   Phase detail cards
+   ============================================================ */
+#customerOverview .co-phases-section {
+  margin-top: 8px;
+}
+
+#customerOverview .co-phases-heading {
+  /* visually hidden — heading hierarchy maintained for SR */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+#customerOverview .co-phases {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#customerOverview .co-phase {
+  background: #ffffff;
+  border: 1px solid #dfe1e2;
+  border-radius: 6px;
+  padding: 20px 24px;
+}
+
+/* Complete phase — slightly muted */
+#customerOverview .co-phase--complete {
+  border-color: #d6d7d9;
+  background: #fafafa;
+}
+
+/* Active phase — blue left accent + tinted background */
+#customerOverview .co-phase--active {
+  border-left: 5px solid #0071bb;
+  background: #f0f7ff;
+  border-color: #b5d0eb;
+  padding-left: 20px;  /* compensate for thicker border */
+}
+
+/* Upcoming phase */
+#customerOverview .co-phase--upcoming {
+  background: #fafafa;
+  border-color: #e6e6e6;
+}
+
+#customerOverview .co-phase-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+#customerOverview .co-phase-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 0.875rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+#customerOverview .co-phase--complete .co-phase-number {
+  background: #1a7a4a;
+  color: #ffffff;
+}
+
+#customerOverview .co-phase--active .co-phase-number {
+  background: #003f72;
+  color: #ffffff;
+}
+
+#customerOverview .co-phase--upcoming .co-phase-number {
+  background: #d6d7d9;
+  color: #3d4551;
+}
+
+#customerOverview .co-phase-title {
+  font-size: 1.075rem;
+  font-weight: 600;
+  color: #1b1b1b;
+  flex: 1;
+}
+
+#customerOverview .co-phase--upcoming .co-phase-title {
+  color: #3d4551;
+}
+
+#customerOverview .co-phase-badge {
+  font-size: 0.725rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 10px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+#customerOverview .co-phase--complete .co-phase-badge {
+  background: #e5f5ed;
+  color: #1a7a4a;
+  border: 1px solid #1a7a4a;
+}
+
+#customerOverview .co-phase--active .co-phase-badge {
+  background: #ddeeff;
+  color: #003f72;
+  border: 1px solid #0071bb;
+}
+
+#customerOverview .co-phase--upcoming .co-phase-badge {
+  background: #f0f0f0;
+  color: #3d4551;
+  border: 1px solid #a9aeb1;
+}
+
+#customerOverview .co-phase-content {
+  font-size: 0.9375rem;
+  color: #1b1b1b;
+  line-height: 1.65;
+  white-space: pre-wrap;   /* preserve multi-line text from LEAF */
+  word-break: break-word;
+}
+
+#customerOverview .co-phase--complete .co-phase-content {
+  color: #3d4551;
+}
+
+#customerOverview .co-phase--upcoming .co-phase-content {
+  color: #3d4551;
+}
+
+#customerOverview .co-phase-placeholder {
+  font-style: italic;
+  color: #71767a;
+  font-size: 0.9375rem;
+}
+
+/* ============================================================
+   Focus styles (WCAG 2.1 AA — 3:1 minimum for UI components)
+   ============================================================ */
+#customerOverview a:focus-visible {
+  outline: 3px solid #0071bb;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ============================================================
+   Responsive — mobile
+   ============================================================ */
+@media (max-width: 640px) {
+  #customerOverview {
+    padding: 16px;
+  }
+
+  #customerOverview .co-project-name {
+    font-size: 1.5rem;
+  }
+
+  #customerOverview .co-step-circle {
+    width: 34px;
+    height: 34px;
+    font-size: 0.875rem;
+  }
+
+  /* Align connector line with smaller circles */
+  #customerOverview .co-progress-track::before {
+    top: 17px;
+  }
+
+  #customerOverview .co-step-label {
+    font-size: 0.65rem;
+    max-width: 60px;
+  }
+
+  #customerOverview .co-step-state-label {
+    display: none;   /* too cramped on small screens; state still in aria-label */
+  }
+
+  #customerOverview .co-phase {
+    padding: 14px 16px;
+  }
+
+  #customerOverview .co-phase--active {
+    padding-left: 14px;
+  }
+
+  #customerOverview .co-phase-title {
+    font-size: 1rem;
+  }
+
+  #customerOverview .co-phase-badge {
+    display: none;   /* state conveyed by heading + left border */
+  }
+}
+</style>
+
+<!-- ============================================================
+     CustomerOverview — LEAF Programmer page markup
+     LEAF injects Programmer pages into an existing page shell;
+     this fragment must NOT include <html>, <head>, or <body>.
+     ============================================================ -->
+<div id="customerOverview" lang="en">
+
+  <!-- Skip link: hidden at rest, visible on keyboard focus -->
+  <a class="co-skip-link" href="#co-phase-details">Skip to phase details</a>
+
+  <!-- ── Polite live region: announces successful data load ── -->
+  <div id="co-live-polite"
+       class="co-sr-only"
+       aria-live="polite"
+       aria-atomic="true"></div>
+
+  <!-- ── Assertive live region: announces errors immediately ── -->
+  <div id="co-live-assertive"
+       class="co-sr-only"
+       aria-live="assertive"
+       aria-atomic="true"></div>
+
+  <!-- ── Loading state (visible by default; hidden once data arrives) ── -->
+  <div id="co-loading"
+       class="co-loading"
+       role="status"
+       aria-label="Loading project data">
+    <div class="co-spinner" aria-hidden="true"></div>
+    <p>Loading project data…</p>
+  </div>
+
+  <!-- ── Error state (hidden by default) ── -->
+  <div id="co-error"
+       class="co-error"
+       role="alert"
+       hidden></div>
+
+  <!-- ── Main content (hidden until data loads successfully) ── -->
+  <div id="co-content" hidden>
+
+    <!-- Page header -->
+    <header class="co-header">
+      <h1 id="co-project-name" class="co-project-name"></h1>
+      <p  id="co-project-type" class="co-project-type"></p>
+      <p class="co-last-updated">
+        Last updated:
+        <time id="co-last-updated" datetime=""></time>
+      </p>
+    </header>
+
+    <!-- Progress bar -->
+    <section class="co-progress-section" aria-labelledby="co-progress-heading">
+      <h2 id="co-progress-heading" class="co-progress-heading">Project Phases</h2>
+      <nav class="co-progress-nav" aria-label="Project phases">
+        <!-- Steps are rendered by JavaScript -->
+        <ol id="co-progress-track" class="co-progress-track"></ol>
+      </nav>
+    </section>
+
+    <!-- Phase detail cards -->
+    <section class="co-phases-section" aria-labelledby="co-phases-heading">
+      <h2 id="co-phases-heading" class="co-phases-heading">Phase Details</h2>
+      <!-- Cards are rendered by JavaScript -->
+      <div id="co-phase-details" class="co-phases"></div>
+    </section>
+
+  </div><!-- /#co-content -->
+
+</div><!-- /#customerOverview -->
+
+<script>
+/* jshint esversion: 6 */
+(function () {
+  'use strict';
+
+  /* ============================================================
+     CONFIG
+     All indicator IDs are placeholders. Replace each value
+     with the real indicator ID from the LEAF form builder
+     before deploying.
+     ============================================================ */
+  var CONFIG = {
+
+    /** Set to true to log raw API responses to the browser console. */
+    debug: false,
+
+    /** Projects form category ID (used by LeafFormQuery.addForm). */
+    categoryID: '55445',
+
+    /** Indicator IDs — replace every placeholder before deploying. */
+    indicators: {
+      projectName:  'IND_PROJECT_NAME',   // TODO: replace with real indicator ID
+      projectType:  'IND_PROJECT_TYPE',   // TODO: replace with real indicator ID
+      currentPhase: 'IND_CURRENT_PHASE',  // TODO: replace with real indicator ID (dropdown)
+      phase1:       'IND_PHASE_1',        // TODO: replace with real indicator ID — Phase 1: Discovery
+      phase2:       'IND_PHASE_2',        // TODO: replace with real indicator ID — Phase 2: Planning
+      phase3:       'IND_PHASE_3',        // TODO: replace with real indicator ID — Phase 3: Execution
+      phase4:       'IND_PHASE_4',        // TODO: replace with real indicator ID — Phase 4: Launch
+      phase5:       'IND_PHASE_5',        // TODO: replace with real indicator ID — Phase 5: Monitoring
+    },
+
+    /**
+     * Phase metadata in display order.
+     * `key` must match a key in CONFIG.indicators above.
+     */
+    phases: [
+      { step: 1, label: 'Discovery',  key: 'phase1' },
+      { step: 2, label: 'Planning',   key: 'phase2' },
+      { step: 3, label: 'Execution',  key: 'phase3' },
+      { step: 4, label: 'Launch',     key: 'phase4' },
+      { step: 5, label: 'Monitoring', key: 'phase5' },
+    ],
+
+    /**
+     * Map from the IND_CURRENT_PHASE dropdown's raw data value
+     * to the corresponding step number (1–5).
+     *
+     * TODO: update these keys to exactly match the option values
+     * stored by LEAF for the IND_CURRENT_PHASE dropdown.
+     * You can find them in the form builder or by inspecting the
+     * raw API response with CONFIG.debug = true.
+     */
+    phaseValueMap: {
+      'discovery':  1,
+      'planning':   2,
+      'execution':  3,
+      'launch':     4,
+      'monitoring': 5,
+    },
+
+    /** Timeout (ms) for the LeafFormQuery callback. */
+    queryTimeout: 15000,
+  };
+
+  /* ============================================================
+     Tiny DOM / utility helpers
+     ============================================================ */
+
+  /** @param {string} id */
+  function byId(id) { return document.getElementById(id); }
+
+  /**
+   * Escape a string for safe insertion as HTML text content.
+   * @param {string} str
+   * @returns {string}
+   */
+  function esc(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /**
+   * Announce a message via an aria-live region.
+   * @param {string}  message
+   * @param {boolean} assertive — true = aria-live="assertive" (errors)
+   */
+  function announce(message, assertive) {
+    var node = byId(assertive ? 'co-live-assertive' : 'co-live-polite');
+    if (!node) return;
+    // Blank first so screen readers re-announce identical strings.
+    node.textContent = '';
+    setTimeout(function () { node.textContent = message; }, 60);
+  }
+
+  /* ============================================================
+     URL helper
+     ============================================================ */
+
+  /** Read ?recordID=XXXX from the current page URL. */
+  function getRecordID() {
+    try {
+      return new URLSearchParams(window.location.search).get('recordID') || '';
+    } catch (e) {
+      // Fallback for environments without URLSearchParams
+      var match = window.location.search.match(/[?&]recordID=([^&]+)/);
+      return match ? decodeURIComponent(match[1]) : '';
+    }
+  }
+
+  /* ============================================================
+     State management — show / hide page regions
+     ============================================================ */
+
+  function showLoading() {
+    byId('co-loading').hidden = false;
+    byId('co-error').hidden   = true;
+    byId('co-content').hidden = true;
+  }
+
+  function showError(message) {
+    byId('co-loading').hidden = true;
+    byId('co-content').hidden = true;
+    var errEl = byId('co-error');
+    errEl.textContent = message;
+    errEl.hidden = false;
+    announce(message, /* assertive */ true);
+  }
+
+  function showContent() {
+    byId('co-loading').hidden = true;
+    byId('co-error').hidden   = true;
+    byId('co-content').hidden = false;
+    announce('Project data loaded.', /* assertive */ false);
+  }
+
+  /* ============================================================
+     Phase / step helpers
+     ============================================================ */
+
+  /**
+   * @param {number} stepNumber  1–5
+   * @param {number} activeStep  1–5
+   * @returns {'complete'|'active'|'upcoming'}
+   */
+  function stepState(stepNumber, activeStep) {
+    if (stepNumber < activeStep)  return 'complete';
+    if (stepNumber === activeStep) return 'active';
+    return 'upcoming';
+  }
+
+  /**
+   * Convert a raw IND_CURRENT_PHASE value to a 1-based step number.
+   * Falls back to step 1 if the value is unrecognized.
+   * @param {string} raw
+   * @returns {number}
+   */
+  function resolveActiveStep(raw) {
+    if (!raw) return 1;
+    var norm = String(raw).toLowerCase().trim();
+
+    // Exact match
+    if (Object.prototype.hasOwnProperty.call(CONFIG.phaseValueMap, norm)) {
+      return CONFIG.phaseValueMap[norm];
+    }
+
+    // Partial / substring match (handles "Phase 2 - Planning" style values)
+    var keys = Object.keys(CONFIG.phaseValueMap);
+    for (var i = 0; i < keys.length; i++) {
+      if (norm.indexOf(keys[i]) !== -1 || keys[i].indexOf(norm) !== -1) {
+        return CONFIG.phaseValueMap[keys[i]];
+      }
+    }
+
+    if (CONFIG.debug) {
+      console.warn('[CustomerOverview] Unrecognized phase value:', raw);
+    }
+    return 1;
+  }
+
+  /* ============================================================
+     Extract a single field value from a LeafFormQuery response.
+     LeafFormQuery typically returns:
+       data[recordID][indicatorID].data  — the stored value
+     ============================================================ */
+  function extractValue(data, recordID, indicatorID) {
+    if (!data) return '';
+    var record = data[recordID];
+    if (!record) return '';
+    var field = record[indicatorID];
+    if (!field) return '';
+    if (typeof field === 'object' && field.data !== undefined) {
+      return field.data == null ? '' : String(field.data);
+    }
+    return String(field);
+  }
+
+  /* ============================================================
+     Date formatting
+     ============================================================ */
+
+  /**
+   * @param {string} dateStr — anything parseable by Date()
+   * @returns {{ iso: string, display: string }}
+   */
+  function formatDate(dateStr) {
+    if (!dateStr) return { iso: '', display: 'Unknown' };
+    var d = new Date(dateStr);
+    if (isNaN(d.getTime())) return { iso: '', display: String(dateStr) };
+    var iso = d.toISOString();
+    var display = d.toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+    return { iso: iso, display: display };
+  }
+
+  /* ============================================================
+     Progress bar renderer
+     ============================================================ */
+  function renderProgressBar(activeStep) {
+    var track = byId('co-progress-track');
+    track.innerHTML = '';
+
+    CONFIG.phases.forEach(function (phase) {
+      var state = stepState(phase.step, activeStep);
+
+      var li = document.createElement('li');
+      li.className = 'co-step co-step--' + state;
+
+      // Accessible label conveying both name and state
+      var stateWord = { complete: 'Completed', active: 'Current phase', upcoming: 'Upcoming' }[state];
+      li.setAttribute('aria-label', phase.label + ' — ' + stateWord);
+      if (state === 'active') li.setAttribute('aria-current', 'step');
+
+      // Circle: checkmark for complete, number otherwise
+      var circleInner = state === 'complete'
+        ? '<span aria-hidden="true">&#10003;</span>'   /* ✓ */
+        : '<span aria-hidden="true">' + phase.step + '</span>';
+
+      var stateLabel = { complete: 'Complete', active: 'In Progress', upcoming: 'Upcoming' }[state];
+
+      li.innerHTML =
+        '<div class="co-step-circle" aria-hidden="true">' + circleInner + '</div>' +
+        '<span class="co-step-label"  aria-hidden="true">' + esc(phase.label) + '</span>' +
+        '<span class="co-step-state-label" aria-hidden="true">' + stateLabel + '</span>';
+
+      track.appendChild(li);
+    });
+  }
+
+  /* ============================================================
+     Phase cards renderer
+     ============================================================ */
+  function renderPhaseDetails(activeStep, contents) {
+    var container = byId('co-phase-details');
+    container.innerHTML = '';
+
+    CONFIG.phases.forEach(function (phase) {
+      var state   = stepState(phase.step, activeStep);
+      var content = contents[phase.key] || '';
+
+      var article = document.createElement('article');
+      article.className = 'co-phase co-phase--' + state;
+
+      var stateLabel = { complete: 'Complete', active: 'In Progress', upcoming: 'Upcoming' }[state];
+
+      // Number badge: checkmark for complete, step number otherwise
+      var numberInner = state === 'complete'
+        ? '<span aria-hidden="true">&#10003;</span>'
+        : '<span aria-hidden="true">' + phase.step + '</span>';
+
+      // Content area
+      var contentHtml;
+      if (content.trim()) {
+        contentHtml =
+          '<p class="co-phase-content">' + esc(content) + '</p>';
+      } else {
+        // Placeholder — aria-label gives screen readers full context
+        var placeholderLabel = esc(phase.label) + ' phase: Details coming soon';
+        contentHtml =
+          '<p class="co-phase-content co-phase-placeholder"' +
+             ' aria-label="' + placeholderLabel + '">' +
+            '<span aria-hidden="true">Details coming soon</span>' +
+          '</p>';
+      }
+
+      article.innerHTML =
+        '<div class="co-phase-header">' +
+          '<div class="co-phase-number" aria-hidden="true">' + numberInner + '</div>' +
+          '<h3 class="co-phase-title">Phase ' + phase.step + ' — ' + esc(phase.label) + '</h3>' +
+          '<span class="co-phase-badge" aria-hidden="true">' + stateLabel + '</span>' +
+        '</div>' +
+        contentHtml;
+
+      container.appendChild(article);
+    });
+  }
+
+  /* ============================================================
+     LeafFormQuery — wrapped in a Promise
+     LeafFormQuery is globally available on all LEAF Programmer
+     pages (jQuery-based). This wrapper converts its callback
+     API to a Promise and adds a safety timeout.
+
+     TODO: verify method names against your LEAF version:
+       - query.addForm()      vs addCategory() or setCategoryID()
+       - query.addField()     vs addIndicator()
+       - query.setRecordID()  vs query.recordID = …
+       - callback arg shape:  data[recordID][indicatorID].data
+     ============================================================ */
+  function leafQuery(recordID) {
+    return new Promise(function (resolve, reject) {
+      var done = false;
+
+      var timer = setTimeout(function () {
+        if (!done) {
+          done = true;
+          reject(new Error('LeafFormQuery timed out after ' + CONFIG.queryTimeout + 'ms'));
+        }
+      }, CONFIG.queryTimeout);
+
+      try {
+        var query = new LeafFormQuery(); // eslint-disable-line no-undef
+
+        query.addForm(CONFIG.categoryID); // TODO: verify method name for your LEAF version
+
+        // Register every indicator we need
+        var inds = CONFIG.indicators;
+        var keys = Object.keys(inds);
+        keys.forEach(function (k) {
+          query.addField(inds[k]); // TODO: verify — may be addIndicator() in some LEAF versions
+        });
+
+        query.setRecordID(recordID); // TODO: verify — may be query.recordID = recordID
+
+        query.query(function (data) {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          if (CONFIG.debug) {
+            console.log('[CustomerOverview] LeafFormQuery response:', data);
+          }
+          resolve(data);
+        });
+      } catch (err) {
+        if (!done) {
+          done = true;
+          clearTimeout(timer);
+          reject(err);
+        }
+      }
+    });
+  }
+
+  /* ============================================================
+     Record metadata fetch — last modified date
+     LEAF exposes record metadata at api/form/{recordID}.
+     The last-modified field is typically `date` or `modified`.
+
+     TODO: confirm the exact property name by inspecting the
+     response with CONFIG.debug = true.
+     ============================================================ */
+  function fetchMeta(recordID) {
+    return fetch('api/form/' + encodeURIComponent(recordID))
+      .then(function (res) {
+        if (!res.ok) throw new Error('Metadata request failed: HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        if (CONFIG.debug) {
+          console.log('[CustomerOverview] Record metadata:', data);
+        }
+        return data;
+      });
+  }
+
+  /* ============================================================
+     Main — orchestrate data fetching and rendering
+     ============================================================ */
+  function init() {
+    var recordID = getRecordID();
+
+    if (!recordID) {
+      showError(
+        'No project specified. ' +
+        'Please check the link — it should include a recordID parameter (e.g., ?recordID=1234).'
+      );
+      return;
+    }
+
+    showLoading();
+
+    // Run both API calls in parallel
+    Promise.all([
+      leafQuery(recordID),
+      fetchMeta(recordID),
+    ])
+    .then(function (results) {
+      var leafData = results[0];
+      var metaData = results[1];
+
+      /* ---- Extract indicator values ---- */
+      var inds = CONFIG.indicators;
+      var projectName  = extractValue(leafData, recordID, inds.projectName);
+      var projectType  = extractValue(leafData, recordID, inds.projectType);
+      var currentPhase = extractValue(leafData, recordID, inds.currentPhase);
+      var phaseContents = {
+        phase1: extractValue(leafData, recordID, inds.phase1),
+        phase2: extractValue(leafData, recordID, inds.phase2),
+        phase3: extractValue(leafData, recordID, inds.phase3),
+        phase4: extractValue(leafData, recordID, inds.phase4),
+        phase5: extractValue(leafData, recordID, inds.phase5),
+      };
+
+      /* ---- Active step ---- */
+      var activeStep = resolveActiveStep(currentPhase);
+
+      /* ---- Last modified timestamp ---- */
+      // TODO: verify the property name from api/form/{recordID}
+      // Common candidates: metaData.date, metaData.modified, metaData.lastModified
+      var rawDate = (metaData && (metaData.date || metaData.modified || metaData.lastModified)) || '';
+      var dateParts = formatDate(rawDate);
+
+      /* ---- Populate header ---- */
+      byId('co-project-name').textContent = projectName || 'Project Details';
+
+      var typeEl = byId('co-project-type');
+      if (projectType) {
+        typeEl.textContent = 'Type: ' + projectType;
+        typeEl.hidden = false;
+      } else {
+        typeEl.hidden = true;
+      }
+
+      var timeEl = byId('co-last-updated');
+      timeEl.textContent = dateParts.display;
+      if (dateParts.iso) timeEl.setAttribute('datetime', dateParts.iso);
+
+      /* ---- Build dynamic sections ---- */
+      renderProgressBar(activeStep);
+      renderPhaseDetails(activeStep, phaseContents);
+
+      showContent();
+    })
+    .catch(function (err) {
+      if (CONFIG.debug) {
+        console.error('[CustomerOverview] Error loading project data:', err);
+      }
+      showError('Unable to load project data. Please try again later or contact support.');
+    });
+  }
+
+  /* ---- Kick off after the DOM is ready ---- */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+}());
+</script>
