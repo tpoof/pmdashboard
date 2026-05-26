@@ -855,81 +855,75 @@
   }
 
   /* ============================================================
-     LeafFormQuery — wrapped in a Promise
-     LeafFormQuery is globally available on all LEAF Programmer
-     pages (jQuery-based). This wrapper converts its callback
-     API to a Promise and adds a safety timeout.
-
-     TODO: verify method names against your LEAF version:
-       - query.addForm()      vs addCategory() or setCategoryID()
-       - query.addField()     vs addIndicator()
-       - query.setRecordID()  vs query.recordID = …
-       - callback arg shape:  data[recordID][indicatorID].data
+     fetchProjectData — direct fetch replacing LeafFormQuery
+     Queries the LEAF form/query API for all indicator values
+     for the given record ID.
+     Resolves to s1: the indicator data object keyed by
+     indicator ID (e.g. s1['59'] → project name field).
      ============================================================ */
-  function leafQuery(recordID) {
-    return new Promise(function (resolve, reject) {
-      var done = false;
+  function fetchProjectData(recordID) {
+    var q = JSON.stringify({
+      terms: [
+        { id: 'recordIDs', operator: '=', match: String(recordID), gate: 'AND' }
+      ],
+      joins: [],
+      sort: {},
+      getData: [
+        CONFIG.indicators.projectName,
+        CONFIG.indicators.projectType,
+        CONFIG.indicators.currentPhase,
+        CONFIG.indicators.phase1,
+        CONFIG.indicators.phase2,
+        CONFIG.indicators.phase3,
+        CONFIG.indicators.phase4,
+        CONFIG.indicators.phase5
+      ]
+    });
 
-      var timer = setTimeout(function () {
-        if (!done) {
-          done = true;
-          reject(new Error('LeafFormQuery timed out after ' + CONFIG.queryTimeout + 'ms'));
-        }
-      }, CONFIG.queryTimeout);
-
-      try {
-        var query = new LeafFormQuery(); // eslint-disable-line no-undef
-
-        query.addForm(CONFIG.categoryID); // TODO: verify method name for your LEAF version
-
-        // Register every indicator we need
-        var inds = CONFIG.indicators;
-        var keys = Object.keys(inds);
-        keys.forEach(function (k) {
-          query.addField(inds[k]); // TODO: verify — may be addIndicator() in some LEAF versions
-        });
-
-        query.setRecordID(recordID); // TODO: verify — may be query.recordID = recordID
-
-        query.query(function (data) {
-          if (done) return;
-          done = true;
-          clearTimeout(timer);
-          if (CONFIG.debug) {
-            console.log('[CustomerOverview] recordID (from ?a=):', recordID, '| LeafFormQuery response:', data);
-          }
-          resolve(data);
-        });
-      } catch (err) {
-        if (!done) {
-          done = true;
-          clearTimeout(timer);
-          reject(err);
-        }
+    return fetch('api/form/query?q=' + encodeURIComponent(q) + '&x-filterData=recordID', {
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'x-requested-with': 'XMLHttpRequest'
       }
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('Query failed HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      var rec = data && data[String(recordID)];
+      if (!rec) throw new Error('No record found for ID ' + recordID);
+      var s1 = rec.s1 || rec;
+      if (CONFIG.debug) console.log('[CustomerOverview] Raw s1:', s1);
+      return s1;
     });
   }
 
   /* ============================================================
-     Record metadata fetch — last modified date
-     LEAF exposes record metadata at api/form/{recordID}.
-     The last-modified field is typically `date` or `modified`.
-
-     TODO: confirm the exact property name by inspecting the
-     response with CONFIG.debug = true.
+     fetchLastUpdated — retrieves the lastUpdated timestamp
+     for the given record ID via the form/query API.
+     Resolves to a timestamp string, or null if unavailable.
      ============================================================ */
-  function fetchMeta(recordID) {
-    return fetch('api/form/' + encodeURIComponent(recordID))
-      .then(function (res) {
-        if (!res.ok) throw new Error('Metadata request failed: HTTP ' + res.status);
-        return res.json();
-      })
-      .then(function (data) {
-        if (CONFIG.debug) {
-          console.log('[CustomerOverview] Record metadata:', data);
-        }
-        return data;
-      });
+  function fetchLastUpdated(recordID) {
+    return fetch('api/form/query?q=' + encodeURIComponent(JSON.stringify({
+      terms: [{ id: 'recordIDs', operator: '=', match: String(recordID), gate: 'AND' }],
+      joins: [],
+      sort: {},
+      getData: []
+    })) + '&x-filterData=recordID,lastUpdated', {
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'x-requested-with': 'XMLHttpRequest'
+      }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var rec = data && data[String(recordID)];
+      return rec && rec.lastUpdated ? rec.lastUpdated : null;
+    })
+    .catch(function() { return null; });
   }
 
   /* ============================================================
@@ -973,12 +967,15 @@
 
     // Run both API calls in parallel
     Promise.all([
-      leafQuery(recordID),
-      fetchMeta(recordID),
+      fetchProjectData(recordID),
+      fetchLastUpdated(recordID),
     ])
     .then(function (results) {
-      var leafData = results[0];
-      var metaData = results[1];
+      // fetchProjectData resolves to s1 (indicator data keyed by indicator ID).
+      // Re-wrap it so the existing extractValue(data, recordID, indicatorID) signature
+      // works unchanged — extractValue expects data[recordID][indicatorID].
+      var leafData = {};
+      leafData[String(recordID)] = results[0];
 
       /* ---- Extract indicator values ---- */
       var inds = CONFIG.indicators;
@@ -997,9 +994,8 @@
       var activeStep = resolveActiveStep(currentPhase);
 
       /* ---- Last modified timestamp ---- */
-      // TODO: verify the property name from api/form/{recordID}
-      // Common candidates: metaData.date, metaData.modified, metaData.lastModified
-      var rawDate = (metaData && (metaData.date || metaData.modified || metaData.lastModified)) || '';
+      // fetchLastUpdated resolves to the lastUpdated string directly (or null).
+      var rawDate = results[1] || '';
       var dateParts = formatDate(rawDate);
 
       /* ---- Populate header ---- */
