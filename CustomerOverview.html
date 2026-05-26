@@ -133,16 +133,18 @@
     font-size: 1rem;
     color: #3d4551;
     margin-bottom: 6px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
   }
 
   #customerOverview .co-project-poc {
     font-size: 1rem;
     color: #3d4551;
     margin-bottom: 12px;
+  }
+
+  #customerOverview .co-project-label {
     font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   /* ============================================================
@@ -1018,7 +1020,9 @@
 
           var typeEl = byId("co-project-type");
           if (projectType) {
-            typeEl.textContent = "Type: " + projectType;
+            typeEl.innerHTML =
+              '<strong class="co-project-label">Type:</strong> ' +
+              esc(projectType);
             typeEl.style.display = "";
           } else {
             typeEl.style.display = "none";
@@ -1026,7 +1030,8 @@
 
           var pocEl = byId("co-project-poc");
           if (poc) {
-            pocEl.textContent = "LEAF POC: " + poc;
+            pocEl.innerHTML =
+              '<strong class="co-project-label">LEAF POC:</strong> ' + esc(poc);
             pocEl.style.display = "";
           } else {
             pocEl.style.display = "none";
