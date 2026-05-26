@@ -135,16 +135,6 @@
     margin-bottom: 12px;
   }
 
-  #customerOverview .co-last-updated {
-    font-size: 0.875rem;
-    color: #3d4551;
-  }
-
-  #customerOverview .co-last-updated time {
-    font-weight: 600;
-    color: #1b1b1b;
-  }
-
   /* ============================================================
    Progress bar section
    ============================================================ */
@@ -234,10 +224,14 @@
 
   /* ---- Active step ---- */
   #customerOverview .co-step--active .co-step-circle {
-    background: #003f72;
-    border-color: #003f72;
-    color: #ffffff;
+    background: #003f72 !important;
+    border-color: #003f72 !important;
+    color: #ffffff !important;
     box-shadow: 0 0 0 4px #cce0f5;
+  }
+  #customerOverview .co-step--active .co-step-circle span,
+  #customerOverview .co-step--active .co-step-circle * {
+    color: #ffffff !important;
   }
 
   #customerOverview .co-step--active .co-step-label {
@@ -478,16 +472,12 @@
     <p>Loading project data…</p>
   </div>
 
-  <div id="co-error" class="co-error" role="alert" hidden></div>
+  <div id="co-error" class="co-error" role="alert" style="display: none"></div>
 
-  <div id="co-content" hidden>
+  <div id="co-content" style="display: none">
     <header class="co-header">
       <h1 id="co-project-name" class="co-project-name"></h1>
       <p id="co-project-type" class="co-project-type"></p>
-      <p class="co-last-updated">
-        Last updated:
-        <time id="co-last-updated" datetime=""></time>
-      </p>
     </header>
 
     <section class="co-progress-section" aria-labelledby="co-progress-heading">
@@ -608,25 +598,34 @@
     /* ============================================================
      State helpers
      ============================================================ */
+    function showEl(id) {
+      var el = byId(id);
+      if (el) el.style.display = "";
+    }
+    function hideEl(id) {
+      var el = byId(id);
+      if (el) el.style.display = "none";
+    }
+
     function showLoading() {
-      byId("co-loading").hidden = false;
-      byId("co-error").hidden = true;
-      byId("co-content").hidden = true;
+      showEl("co-loading");
+      hideEl("co-error");
+      hideEl("co-content");
     }
 
     function showError(message) {
-      byId("co-loading").hidden = true;
-      byId("co-content").hidden = true;
+      hideEl("co-loading");
+      hideEl("co-content");
       var errEl = byId("co-error");
       errEl.textContent = message;
-      errEl.hidden = false;
+      showEl("co-error");
       announce(message, true);
     }
 
     function showContent() {
-      byId("co-loading").hidden = true;
-      byId("co-error").hidden = true;
-      byId("co-content").hidden = false;
+      hideEl("co-loading");
+      hideEl("co-error");
+      showEl("co-content");
       announce("Project data loaded.", false);
     }
 
@@ -986,10 +985,6 @@
           } else {
             typeEl.hidden = true;
           }
-
-          var timeEl = byId("co-last-updated");
-          timeEl.textContent = dateParts.display;
-          if (dateParts.iso) timeEl.setAttribute("datetime", dateParts.iso);
 
           /* ---- Render progress bar and phase cards ---- */
           renderProgressBar(activeStep);
