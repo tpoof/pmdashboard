@@ -3624,10 +3624,14 @@
       taskLink +
       "</td>" +
       '<td title="' + titleAttr + '">' +
+      '<div style="display:inline-flex;align-items:center;gap:4px;max-width:100%;overflow:hidden;">' +
       (t.isRecurring
-        ? '<span class="material-icons pm-recurringIcon" title="Recurring Task" aria-label="Recurring Task">change_circle</span>'
+        ? '<span class="material-icons pm-recurringIcon" style="flex-shrink:0;font-size:15px;" title="Recurring Task" aria-label="Recurring Task">change_circle</span>'
         : '') +
+      '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
       safe(titleText) +
+      '</span>' +
+      '</div>' +
       "</td>" +
       "<td>" +
       renderStatusCell(t) +

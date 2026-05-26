@@ -265,6 +265,14 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
+/* Force activity date range onto its own row in the tasks filter */
+#pmTab-tasks .pm-filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  row-gap: 10px;
+}
+
 #pmOkrsFilterRow {
   margin-bottom: 10px;
 }
@@ -2839,29 +2847,45 @@ canvas.pm-chartClickable {
   font-size: 1.1rem;
 }
 
-/* Activity label alignment — matches Filter by label style */
+/* Activity label — full-width zero-height row-break anchor */
 .pm-activityHeader {
-  min-width: auto;
-  padding-right: 6px;
-  padding-left: 0;
+  width: 100%;
+  flex-basis: 100%;
+  height: 0;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  display: flex;
+  align-items: flex-end;
 }
 
-/* Clear all filters — universal light blue variant */
+.pm-activityHeader .pm-filterHeaderLabel {
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+  line-height: 1;
+  padding-bottom: 2px;
+}
+
+/* Clear all filters — accent-soft background, neutral border and text */
 .pm-ghostBtn.pm-clearFiltersBtn {
-  background: #cce4f5;
-  border-color: #7ab8e0;
-  color: #00406b;
+  background: var(--accent-soft);
+  border-color: var(--border);
+  color: var(--text);
   font-weight: 700;
 }
 
 .pm-ghostBtn.pm-clearFiltersBtn:hover {
-  background: #b3d4ed;
-  border-color: #5a9ecf;
-  color: #003050;
+  background: #d4e4ff;
+  border-color: var(--border);
+  color: var(--text);
 }
 
 .pm-ghostBtn.pm-clearFiltersBtn:focus-visible {
-  outline: 2px solid #005ea2;
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
