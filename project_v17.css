@@ -2838,3 +2838,51 @@ canvas.pm-chartClickable {
 .pm-overdueAlert-dismiss .material-icons {
   font-size: 1.1rem;
 }
+
+/* Activity label alignment — matches Filter by label style */
+.pm-activityHeader {
+  min-width: auto;
+  padding-right: 6px;
+  padding-left: 0;
+}
+
+/* Clear all filters — universal light blue variant */
+.pm-ghostBtn.pm-clearFiltersBtn {
+  background: #cce4f5;
+  border-color: #7ab8e0;
+  color: #00406b;
+  font-weight: 700;
+}
+
+.pm-ghostBtn.pm-clearFiltersBtn:hover {
+  background: #b3d4ed;
+  border-color: #5a9ecf;
+  color: #003050;
+}
+
+.pm-ghostBtn.pm-clearFiltersBtn:focus-visible {
+  outline: 2px solid #005ea2;
+  outline-offset: 2px;
+}
+
+/* Tasks table — Title column truncation with ellipsis */
+#pmTasksTableWrap .pm-table th:nth-child(3),
+#pmTasksTableWrap .pm-table td:nth-child(3) {
+  max-width: 280px;
+  min-width: 160px;
+  width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Title cell inner content — enforce truncation on the text node wrapper */
+#pmTasksTableWrap .pm-table td:nth-child(3) .pm-wrapCol,
+#pmTasksTableWrap .pm-table td:nth-child(3) > span,
+#pmTasksTableWrap .pm-table td:nth-child(3) > div {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
