@@ -567,7 +567,7 @@
     /** Set to true to log raw API responses to the browser console. */
     debug: true,
 
-    /** Projects form category ID (used by LeafFormQuery.addForm). */
+    /** Projects form category ID. */
     categoryID: '55445',
 
     /** Indicator IDs. */
@@ -611,8 +611,6 @@
       'monitoring': 5,
     },
 
-    /** Timeout (ms) for the LeafFormQuery callback. */
-    queryTimeout: 15000,
   };
 
   /* ============================================================
@@ -736,9 +734,9 @@
   }
 
   /* ============================================================
-     Extract a single field value from a LeafFormQuery response.
-     LeafFormQuery typically returns:
-       data[recordID][indicatorID].data  — the stored value
+     Extract a single field value from a fetchProjectData s1 object.
+     s1 is keyed by indicator ID; each field is either
+     { data: '...' } or a raw scalar value.
      ============================================================ */
   function extractValue(data, recordID, indicatorID) {
     if (!data) return '';
@@ -795,12 +793,9 @@
         ? '<span aria-hidden="true">&#10003;</span>'   /* ✓ */
         : '<span aria-hidden="true">' + phase.step + '</span>';
 
-      var stateLabel = { complete: 'Complete', active: 'In Progress', upcoming: 'Upcoming' }[state];
-
       li.innerHTML =
         '<div class="co-step-circle" aria-hidden="true">' + circleInner + '</div>' +
-        '<span class="co-step-label"  aria-hidden="true">' + esc(phase.label) + '</span>' +
-        '<span class="co-step-state-label" aria-hidden="true">' + stateLabel + '</span>';
+        '<span class="co-step-label"  aria-hidden="true">' + esc(phase.label) + '</span>';
 
       track.appendChild(li);
     });
