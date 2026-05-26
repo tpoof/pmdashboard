@@ -613,8 +613,10 @@
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">")
         .replace(/&quot;/g, '"')
+        .replace(/&#039;/g, "'")
         .replace(/&#39;/g, "'")
-        .replace(/&#x27;/g, "'");
+        .replace(/&#x27;/g, "'")
+        .replace(/&apos;/g, "'");
     }
 
     /* ============================================================
@@ -797,7 +799,7 @@
 
         var contentHtml;
         if (content.trim()) {
-          contentHtml = '<p class="co-phase-content">' + esc(content) + "</p>";
+          contentHtml = '<p class="co-phase-content"></p>';
         } else {
           contentHtml =
             '<p class="co-phase-content co-phase-placeholder"' +
@@ -821,6 +823,15 @@
           badgeHtml +
           "</div>" +
           contentHtml;
+
+        // Set phase text via textContent AFTER building innerHTML so LEAF's
+        // pre-encoded entities (&#039; &amp; etc.) are never double-encoded.
+        // decodeEntities() unwraps whatever LEAF stored; textContent then sets
+        // it as a plain string so the browser renders the literal characters.
+        if (content.trim()) {
+          var contentEl = article.querySelector(".co-phase-content");
+          if (contentEl) contentEl.textContent = decodeEntities(content);
+        }
 
         container.appendChild(article);
       });
