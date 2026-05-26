@@ -265,11 +265,8 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-/* Force activity date range onto its own row in the tasks filter */
+/* Tasks filter row — enable row wrapping with consistent gap */
 #pmTab-tasks .pm-filterRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
   row-gap: 10px;
 }
 
@@ -2847,27 +2844,35 @@ canvas.pm-chartClickable {
   font-size: 1.1rem;
 }
 
-/* Activity label — full-width zero-height row-break anchor */
+/* Activity header — full-width invisible spacer that forces a line break.
+   The label text is pushed to the start of the new row via a following sibling. */
 .pm-activityHeader {
+  flex: 0 0 100%;
   width: 100%;
-  flex-basis: 100%;
+  min-width: 100%;
   height: 0;
-  min-width: 0;
+  min-height: 0;
   padding: 0;
   margin: 0;
+  border: none;
+  background: none;
   overflow: visible;
-  display: flex;
-  align-items: flex-end;
+  pointer-events: none;
 }
 
+/* The visible "ACTIVITY" text renders outside normal flow so it
+   doesn't contribute height to the break row */
 .pm-activityHeader .pm-filterHeaderLabel {
+  display: block;
+  position: relative;
+  top: 10px;
   font-weight: 900;
   font-size: 13px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text);
-  line-height: 1;
-  padding-bottom: 2px;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 /* Clear all filters — accent-soft background, neutral border and text */
