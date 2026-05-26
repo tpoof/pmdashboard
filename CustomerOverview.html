@@ -565,21 +565,21 @@
   var CONFIG = {
 
     /** Set to true to log raw API responses to the browser console. */
-    debug: false,
+    debug: true,
 
     /** Projects form category ID (used by LeafFormQuery.addForm). */
     categoryID: '55445',
 
-    /** Indicator IDs — replace every placeholder before deploying. */
+    /** Indicator IDs. */
     indicators: {
-      projectName:  'IND_PROJECT_NAME',   // TODO: replace with real indicator ID
-      projectType:  'IND_PROJECT_TYPE',   // TODO: replace with real indicator ID
-      currentPhase: 'IND_CURRENT_PHASE',  // TODO: replace with real indicator ID (dropdown)
-      phase1:       'IND_PHASE_1',        // TODO: replace with real indicator ID — Phase 1: Discovery
-      phase2:       'IND_PHASE_2',        // TODO: replace with real indicator ID — Phase 2: Planning
-      phase3:       'IND_PHASE_3',        // TODO: replace with real indicator ID — Phase 3: Execution
-      phase4:       'IND_PHASE_4',        // TODO: replace with real indicator ID — Phase 4: Launch
-      phase5:       'IND_PHASE_5',        // TODO: replace with real indicator ID — Phase 5: Monitoring
+      projectName:  '59',  // Project Name
+      projectType:  '60',  // Project Type
+      currentPhase: '61',  // Current Phase (dropdown)
+      phase1:       '62',  // Phase 1: Discovery
+      phase2:       '63',  // Phase 2: Planning
+      phase3:       '64',  // Phase 3: Execution
+      phase4:       '65',  // Phase 4: Launch
+      phase5:       '66',  // Phase 5: Monitoring
     },
 
     /**
@@ -937,6 +937,29 @@
      ============================================================ */
   function init() {
     var recordID = getRecordID();
+
+    console.log('--- CustomerOverview Debug ---');
+    console.log('recordID from ?a=:', recordID);
+    console.log('typeof LeafFormQuery:', typeof LeafFormQuery);
+    console.log('typeof $:', typeof $);
+
+    // Raw fetch test — bypass LeafFormQuery entirely
+    fetch('api/form/query?a=' + recordID + '&x-filterData=recordID', {
+      credentials: 'include',
+      headers: { 'Accept': 'application/json', 'x-requested-with': 'XMLHttpRequest' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { console.log('Raw API test response:', d); })
+    .catch(function(e) { console.error('Raw API test failed:', e); });
+
+    // Also test direct record fetch
+    fetch('api/form/' + recordID, {
+      credentials: 'include',
+      headers: { 'Accept': 'application/json', 'x-requested-with': 'XMLHttpRequest' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { console.log('Direct record fetch:', d); })
+    .catch(function(e) { console.error('Direct record fetch failed:', e); });
 
     if (!recordID) {
       showError(
