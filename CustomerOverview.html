@@ -132,6 +132,12 @@
   #customerOverview .co-project-type {
     font-size: 1rem;
     color: #3d4551;
+    margin-bottom: 6px;
+  }
+
+  #customerOverview .co-project-poc {
+    font-size: 1rem;
+    color: #3d4551;
     margin-bottom: 12px;
   }
 
@@ -478,6 +484,7 @@
     <header class="co-header">
       <h1 id="co-project-name" class="co-project-name"></h1>
       <p id="co-project-type" class="co-project-type"></p>
+      <p id="co-project-poc" class="co-project-poc"></p>
     </header>
 
     <section class="co-progress-section" aria-labelledby="co-progress-heading">
@@ -511,6 +518,7 @@
       indicators: {
         projectName: 59, // Project Name
         projectType: 60, // Project Type
+        poc: 67, // LEAF POC
         currentPhase: 61, // Current Phase (dropdown)
         phase1: 62, // Phase 1: Discovery
         phase2: 63, // Phase 2: Planning
@@ -813,6 +821,7 @@
         getData: [
           String(inds.projectName),
           String(inds.projectType),
+          String(inds.poc),
           String(inds.currentPhase),
           String(inds.phase1),
           String(inds.phase2),
@@ -859,6 +868,10 @@
             console.log(
               "[CustomerOverview] projectType  (id" + inds.projectType + "):",
               s1["id" + inds.projectType],
+            );
+            console.log(
+              "[CustomerOverview] poc          (id" + inds.poc + "):",
+              s1["id" + inds.poc],
             );
             console.log(
               "[CustomerOverview] currentPhase (id" + inds.currentPhase + "):",
@@ -962,6 +975,7 @@
           /* ---- Extract values directly from s1 ---- */
           var projectName = getField(s1, inds.projectName);
           var projectType = getField(s1, inds.projectType);
+          var poc = getField(s1, inds.poc);
           var currentPhase = getField(s1, inds.currentPhase);
           var phaseContents = {
             phase1: getField(s1, inds.phase1),
@@ -981,9 +995,17 @@
           var typeEl = byId("co-project-type");
           if (projectType) {
             typeEl.textContent = "Type: " + projectType;
-            typeEl.hidden = false;
+            typeEl.style.display = "";
           } else {
-            typeEl.hidden = true;
+            typeEl.style.display = "none";
+          }
+
+          var pocEl = byId("co-project-poc");
+          if (poc) {
+            pocEl.textContent = "LEAF POC: " + poc;
+            pocEl.style.display = "";
+          } else {
+            pocEl.style.display = "none";
           }
 
           /* ---- Render progress bar and phase cards ---- */
