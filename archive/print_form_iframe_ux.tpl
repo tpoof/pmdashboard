@@ -41,6 +41,7 @@
 <!--{include file="site_elements/generic_xhrDialog.tpl"}-->
 <!--{include file="site_elements/generic_confirm_xhrDialog.tpl"}-->
 <!--{include file="site_elements/generic_dialog.tpl"}-->
+<!--{include file="site_elements/generic_OkDialog.tpl"}-->
 
 <script type="text/javascript" src="js/functions/toggleZoom.js"></script>
 <script type="text/javascript">
@@ -54,9 +55,36 @@ function transferToPMDashboard() {
     var params = new URLSearchParams(window.location.search || "");
     var id = params.get("recordID");
     if (!id) return;
+
+    dialog_ok.setTitle('Transfer to LEAF Projects');
+    dialog_ok.setContent(
+        '<p style="margin-bottom:14px;">How would you like to transfer this record?</p>' +
+        '<div style="display:flex;gap:10px;">' +
+            '<button type="button" class="buttonNorm" style="flex:1;padding:10px 6px;" ' +
+                'onclick="doTransferAs(\'task\',' + id + ')">' +
+                '<img src="dynicons/?img=go-next.svg&amp;w=22" alt="" style="vertical-align:middle" /> ' +
+                'As a Task' +
+            '</button>' +
+            '<button type="button" class="buttonNorm" style="flex:1;padding:10px 6px;" ' +
+                'onclick="doTransferAs(\'project\',' + id + ')">' +
+                '<img src="dynicons/?img=go-next.svg&amp;w=22" alt="" style="vertical-align:middle" /> ' +
+                'As a Project' +
+            '</button>' +
+        '</div>'
+    );
+    dialog_ok.setSaveHandler(function() {
+        dialog_ok.clearDialog();
+        dialog_ok.hide();
+    });
+    dialog_ok.show();
+}
+
+function doTransferAs(type, id) {
+    dialog_ok.hide();
+    var param = type === 'project' ? 'transferProjectFromUX' : 'transferTaskFromUX';
     window.location.href =
-        "https://leaf.va.gov/platform/projects/?tab=tasks&transferFromUX=" +
-        encodeURIComponent(id);
+        'https://leaf.va.gov/platform/projects/?tab=' + (type === 'project' ? 'projects' : 'tasks') +
+        '&' + param + '=' + encodeURIComponent(id);
 }
 
 function wireUXTicket18() {
@@ -256,6 +284,7 @@ $(function() {
     dialog = new dialogController('xhrDialog', 'xhr', 'loadIndicator', 'button_save', 'button_cancelchange');
     dialog_message = new dialogController('genericDialog', 'genericDialogxhr', 'genericDialogloadIndicator', 'genericDialogbutton_save', 'genericDialogbutton_cancelchange');
     dialog_confirm = new dialogController('confirm_xhrDialog', 'confirm_xhr', 'confirm_loadIndicator', 'confirm_button_save', 'confirm_button_cancelchange');
+    dialog_ok = new dialogController('ok_xhrDialog', 'ok_xhr', 'ok_loadIndicator', 'confirm_button_ok', 'confirm_button_cancelchange');
 
     <!--{if $childCategoryID == ''}-->
     openContent('ajaxIndex.php?a=printview&recordID=<!--{$recordID|strip_tags}-->');

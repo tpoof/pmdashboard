@@ -246,9 +246,36 @@ function transferToPMDashboard() {
     var params = new URLSearchParams(window.location.search || "");
     var id = params.get("recordID");
     if (!id) return;
+
+    dialog_ok.setTitle('Transfer to LEAF Projects');
+    dialog_ok.setContent(
+        '<p style="margin-bottom:14px;">How would you like to transfer this record?</p>' +
+        '<div style="display:flex;gap:10px;">' +
+            '<button type="button" class="buttonNorm" style="flex:1;padding:10px 6px;" ' +
+                'onclick="doTransferAs(\'task\',' + id + ')">' +
+                '<img src="dynicons/?img=go-next.svg&amp;w=22" alt="" style="vertical-align:middle" /> ' +
+                'As a Task' +
+            '</button>' +
+            '<button type="button" class="buttonNorm" style="flex:1;padding:10px 6px;" ' +
+                'onclick="doTransferAs(\'project\',' + id + ')">' +
+                '<img src="dynicons/?img=go-next.svg&amp;w=22" alt="" style="vertical-align:middle" /> ' +
+                'As a Project' +
+            '</button>' +
+        '</div>'
+    );
+    dialog_ok.setSaveHandler(function() {
+        dialog_ok.clearDialog();
+        dialog_ok.hide();
+    });
+    dialog_ok.show();
+}
+
+function doTransferAs(type, id) {
+    dialog_ok.hide();
+    var param = type === 'project' ? 'transferProjectFromUX' : 'transferTaskFromUX';
     window.location.href =
-        "https://leaf.va.gov/platform/projects/?tab=tasks&transferFromUX=" +
-        encodeURIComponent(id);
+        'https://leaf.va.gov/platform/projects/?tab=' + (type === 'project' ? 'projects' : 'tasks') +
+        '&' + param + '=' + encodeURIComponent(id);
 }
 
 function wireUXTicket18() {
