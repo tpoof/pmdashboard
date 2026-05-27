@@ -9700,6 +9700,17 @@
       delete state.charts["ticketsImported"];
     }
 
+    // Lock container height to prevent resize loop on hover
+    var ticketsChartBox = document.querySelector('#pmChartTicketsImported');
+    if (ticketsChartBox) {
+      var ticketsBox = ticketsChartBox.closest('.pm-chartBox');
+      if (ticketsBox) {
+        ticketsBox.style.height = '280px';
+        ticketsBox.style.maxHeight = '280px';
+        ticketsBox.style.overflow = 'hidden';
+      }
+    }
+
     var ticketsCanvas = document.getElementById("pmChartTicketsImported");
     if (ticketsCanvas && typeof Chart !== "undefined") {
       var ticketsCtx = ticketsCanvas.getContext("2d");
@@ -9732,7 +9743,7 @@
           if (isChartV2()) {
             return {
               responsive: true,
-              maintainAspectRatio: true,
+              maintainAspectRatio: false,
               legend: { display: true, position: "top",
                 labels: { fontColor: tickColor, boxWidth: 14, padding: 12 } },
               scales: {
@@ -9745,7 +9756,7 @@
           }
           return {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             plugins: {
               legend: { display: true, position: "top",
                 labels: { color: tickColor, boxWidth: 14, padding: 12 } },
