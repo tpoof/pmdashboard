@@ -2151,13 +2151,24 @@
 
     var depIds = extractDependencyIds(depsRaw);
 
+    // Indicator 11 (assignedTo) may be an orgchart object with a userName
+    // property. Extract userName when present so matching works regardless
+    // of how LEAF serialized the field.
+    var assignedToRaw = extractRawIndicator(row, TASK_IND.assignedTo);
+    var assignedToValue =
+      assignedToRaw &&
+      typeof assignedToRaw === "object" &&
+      assignedToRaw.userName
+        ? String(assignedToRaw.userName).trim()
+        : extractFromS1(row, TASK_IND.assignedTo);
+
     return {
       recordID: recordID,
       projectKey: extractFromS1(row, TASK_IND.projectKey),
       title: extractFromS1(row, TASK_IND.title),
       status: extractFromS1(row, TASK_IND.status),
       otherSubType: extractFromS1(row, TASK_IND.otherSubType),
-      assignedTo: extractFromS1(row, TASK_IND.assignedTo),
+      assignedTo: assignedToValue,
       start: extractFromS1(row, TASK_IND.startDate),
       due: extractFromS1(row, TASK_IND.dueDate),
       priority: extractFromS1(row, TASK_IND.priority),
@@ -2195,7 +2206,13 @@
       projectKey: extractFromS1(row, PROJECT_IND.projectKey),
       projectName: extractFromS1(row, PROJECT_IND.projectName),
       description: extractFromS1(row, PROJECT_IND.description),
-      owner: extractFromS1(row, PROJECT_IND.owner),
+      // Indicator 5 (owner) may be an orgchart object — extract userName when present
+      owner: (function () {
+        var raw = extractRawIndicator(row, PROJECT_IND.owner);
+        if (raw && typeof raw === "object" && raw.userName)
+          return String(raw.userName).trim();
+        return extractFromS1(row, PROJECT_IND.owner);
+      })(),
       projectStatus: extractFromS1(row, PROJECT_IND.projectStatus),
       projectFiscalYear: extractFromS1(row, PROJECT_IND.projectFiscalYear),
       okrAssociation: extractFromS1(row, PROJECT_IND.okrAssociation),
@@ -7201,6 +7218,15 @@
       return;
     }
 
+    // Neither tasks nor projects loaded yet — wait
+    if (
+      (!state.tasksAll || !state.tasksAll.length) &&
+      (!state.projectsAll || !state.projectsAll.length)
+    ) {
+      alertEl.hidden = true;
+      return;
+    }
+
     var now = new Date();
 
     // --- Overdue tasks: indicator 13 (dueDate) past today, not completed/archived ---
@@ -7341,6 +7367,108 @@
           : "";
       moreEl.hidden = remaining === 0;
     }
+
+    // ── DEBUG: overdue alert diagnostics ────────────────────────────────────
+    // Open the browser console and run: pmOverdueDebug() to see a full report.
+    // Remove this block once the alert is confirmed working in production.
+    window.pmOverdueDebug = function () {
+      var _now = new Date();
+      console.group(
+        "%c[pmOverdueDebug] Overdue Alert Diagnostics",
+        "color:#b26a00;font-weight:bold",
+      );
+
+      console.group("1) Identity");
+      console.log("CURRENT_USER_ID  :", JSON.stringify(CURRENT_USER_ID));
+      console.log("CURRENT_USER_NAME:", JSON.stringify(CURRENT_USER_NAME));
+      console.groupEnd();
+
+      console.group(
+        "2) Tasks (indicator 11 = assignedTo, indicator 13 = dueDate)",
+      );
+      console.log("Total tasks loaded:", (state.tasksAll || []).length);
+      var taskSample = (state.tasksAll || []).slice(0, 5).map(function (t) {
+        return {
+          recordID: t.recordID,
+          title: t.title,
+          assignedTo: t.assignedTo,
+          due: t.due,
+          status: t.status,
+          matchesUser: currentUserMatchesTask(t),
+          isCompleted: isCompletedStatus(t.status),
+          isArchived: isArchivedStatus(t.status),
+          isOverdue: isOverdueTask(t, _now),
+        };
+      });
+      console.table(taskSample);
+
+      var myOverdueTasks = (state.tasksAll || []).filter(function (t) {
+        return (
+          currentUserMatchesTask(t) &&
+          !isCompletedStatus(t.status) &&
+          !isArchivedStatus(t.status) &&
+          isOverdueTask(t, _now)
+        );
+      });
+      console.log(
+        "My overdue tasks:",
+        myOverdueTasks.length,
+        myOverdueTasks.map(function (t) {
+          return t.recordID + " - " + t.title;
+        }),
+      );
+      console.groupEnd();
+
+      console.group(
+        "3) Projects (indicator 5 = owner, indicator 70 = projectEndDate)",
+      );
+      console.log("Total projects loaded:", (state.projectsAll || []).length);
+      var projSample = (state.projectsAll || []).slice(0, 5).map(function (p) {
+        return {
+          recordID: p.recordID,
+          projectKey: p.projectKey,
+          projectName: p.projectName,
+          owner: p.owner,
+          projectEndDate: p.projectEndDate,
+          projectStatus: p.projectStatus,
+          matchesUser: currentUserMatchesProject(p),
+          isCompleted: isCompletedStatus(p.projectStatus),
+          isArchived: isArchivedStatus(p.projectStatus),
+          endDateParsed: String(mmddyyyyToDate(p.projectEndDate)),
+        };
+      });
+      console.table(projSample);
+
+      var myOverdueProjects = (state.projectsAll || []).filter(function (p) {
+        if (!currentUserMatchesProject(p)) return false;
+        if (
+          isCompletedStatus(p.projectStatus) ||
+          isArchivedStatus(p.projectStatus)
+        )
+          return false;
+        var endDate = mmddyyyyToDate(p.projectEndDate);
+        return !!(endDate && endDate.getTime() < _now.getTime());
+      });
+      console.log(
+        "My overdue projects:",
+        myOverdueProjects.length,
+        myOverdueProjects.map(function (p) {
+          return p.recordID + " - " + p.projectName;
+        }),
+      );
+      console.groupEnd();
+
+      console.group("4) Session dismiss key");
+      console.log("OVERDUE_ALERT_DISMISSED_KEY:", OVERDUE_ALERT_DISMISSED_KEY);
+      console.log(
+        "Dismissed this session?:",
+        !!sessionStorage.getItem(OVERDUE_ALERT_DISMISSED_KEY),
+      );
+      console.groupEnd();
+
+      console.groupEnd();
+    };
+    // ── END DEBUG ─────────────────────────────────────────────────────────────
 
     alertEl.hidden = false;
   }
