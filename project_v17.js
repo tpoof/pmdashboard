@@ -6467,6 +6467,9 @@
     if (filters && !matchesFilterSet(task.category, filters.categories))
       return false;
     if (filters && filters.dateRange) {
+      var today = new Date();
+      today.setHours(0, 0, 0, 0);
+
       var cutoff = new Date();
       cutoff.setHours(0, 0, 0, 0);
       cutoff.setDate(cutoff.getDate() - filters.dateRange);
@@ -6474,34 +6477,12 @@
       var startDate = strictMmDdYyyy(task.start);
       var completed = strictMmDdYyyy(task.actualCompletion);
 
-      // ── TEMP DEBUG ──────────────────────────────────────────
-      // Open browser console and select Last 7 days to see output.
-      // Remove this block once the issue is diagnosed.
-      if (task.start || task.actualCompletion) {
-        var startParsed  = startDate  ? startDate.toLocaleDateString()  : 'null';
-        var compParsed   = completed  ? completed.toLocaleDateString()  : 'null';
-        var startInRange = startDate  && startDate  >= cutoff && startDate  <= new Date();
-        var compInRange  = completed  && completed  >= cutoff && completed  <= new Date();
-        console.log(
-          '[dateRange debug]',
-          'recordID:', task.recordID,
-          '| raw start:', JSON.stringify(task.start),
-          '| raw completion:', JSON.stringify(task.actualCompletion),
-          '| parsed start:', startParsed,
-          '| parsed completion:', compParsed,
-          '| cutoff:', cutoff.toLocaleDateString(),
-          '| startInRange:', startInRange,
-          '| compInRange:', compInRange,
-          '| PASSES:', (startDate && startDate >= cutoff && startDate <= new Date()) ||
-                       (completed && completed >= cutoff && completed <= new Date())
-        );
-      }
-      // ── END DEBUG ────────────────────────────────────────────
-
       if (!startDate && !completed) return false;
 
-      var startedInRange   = startDate && startDate >= cutoff;
-      var completedInRange = completed && completed >= cutoff;
+      // Must fall within the window: cutoff <= date <= today
+      // Excludes future dates and dates older than the selected range
+      var startedInRange   = startDate && startDate >= cutoff && startDate <= today;
+      var completedInRange = completed && completed >= cutoff && completed <= today;
 
       if (!startedInRange && !completedInRange) return false;
     }
