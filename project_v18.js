@@ -55,6 +55,7 @@
     projectType: 32,
     keyResultSelection: 37,
     ticketNumber: 68,
+    projectEndDate: 70,
   };
 
   // OKR indicator IDs (Project form)
@@ -2201,6 +2202,7 @@
       projectType: extractFromS1(row, PROJECT_IND.projectType),
       keyResultSelection: extractFromS1(row, PROJECT_IND.keyResultSelection),
       ticketNumber: extractFromS1(row, PROJECT_IND.ticketNumber),
+      projectEndDate: extractFromS1(row, PROJECT_IND.projectEndDate),
       okrKey: extractFromS1(row, OKR_IND.okrKey),
       okrObjective: extractFromS1(row, OKR_IND.objective),
       okrStartDate: extractFromS1(row, OKR_IND.startDate),
@@ -5181,12 +5183,12 @@
   // Never calls new Date(string), which is ambiguous and browser-dependent.
   // Only accepts exactly "MM/DD/YYYY" — no fallbacks, no guessing.
   function strictMmDdYyyy(s) {
-    var v = String(s || '').trim();
+    var v = String(s || "").trim();
     if (!v) return null;
-    var parts = v.split('/');
+    var parts = v.split("/");
     if (parts.length !== 3) return null;
-    var mm   = parseInt(parts[0], 10);
-    var dd   = parseInt(parts[1], 10);
+    var mm = parseInt(parts[0], 10);
+    var dd = parseInt(parts[1], 10);
     var yyyy = parseInt(parts[2], 10);
     if (isNaN(mm) || isNaN(dd) || isNaN(yyyy)) return null;
     if (mm < 1 || mm > 12) return null;
@@ -6481,8 +6483,10 @@
 
       // Must fall within the window: cutoff <= date <= today
       // Excludes future dates and dates older than the selected range
-      var startedInRange   = startDate && startDate >= cutoff && startDate <= today;
-      var completedInRange = completed && completed >= cutoff && completed <= today;
+      var startedInRange =
+        startDate && startDate >= cutoff && startDate <= today;
+      var completedInRange =
+        completed && completed >= cutoff && completed <= today;
 
       if (!startedInRange && !completedInRange) return false;
     }
@@ -7159,18 +7163,34 @@
     return false;
   }
 
+  // Checks whether the logged-in user is the owner of a project.
+  // Uses the same name-matching logic as currentUserMatchesTask.
+  function currentUserMatchesProject(project) {
+    if (!CURRENT_USER_ID && !CURRENT_USER_NAME) return false;
+    var owner = String(project.owner || "")
+      .trim()
+      .toLowerCase();
+    if (!owner) return false;
+    if (CURRENT_USER_ID && owner === CURRENT_USER_ID.trim().toLowerCase())
+      return true;
+    if (CURRENT_USER_NAME) {
+      var name = CURRENT_USER_NAME.trim().toLowerCase();
+      if (owner === name) return true;
+      if (name.indexOf(",") !== -1) {
+        var parts = name.split(",");
+        var reversed = (parts[1] || "").trim() + " " + (parts[0] || "").trim();
+        if (owner === reversed.toLowerCase()) return true;
+      }
+    }
+    return false;
+  }
+
   function renderOverdueAlert() {
     var alertEl = document.getElementById("pmOverdueAlert");
     if (!alertEl) return;
 
     // Stay hidden if user dismissed this session
     if (sessionStorage.getItem(OVERDUE_ALERT_DISMISSED_KEY)) {
-      alertEl.hidden = true;
-      return;
-    }
-
-    // Need tasks loaded before we can evaluate
-    if (!state.tasksAll || !state.tasksAll.length) {
       alertEl.hidden = true;
       return;
     }
@@ -7182,54 +7202,129 @@
     }
 
     var now = new Date();
-    var overdueMine = state.tasksAll.filter(function (t) {
+
+    // --- Overdue tasks: indicator 13 (dueDate) past today, not completed/archived ---
+    var overdueTasks = (state.tasksAll || []).filter(function (t) {
       if (!currentUserMatchesTask(t)) return false;
       if (isCompletedStatus(t.status)) return false;
       if (isArchivedStatus(t.status)) return false;
       return isOverdueTask(t, now);
     });
 
-    if (!overdueMine.length) {
-      alertEl.hidden = true;
-      return;
-    }
-
-    // Sort by due date ascending (most overdue first)
-    overdueMine = overdueMine.slice().sort(function (a, b) {
+    // Sort tasks by due date ascending (most overdue first)
+    overdueTasks = overdueTasks.slice().sort(function (a, b) {
       var da = mmddyyyyToDate(a.due) || new Date(8640000000000000);
       var db = mmddyyyyToDate(b.due) || new Date(8640000000000000);
       return da - db;
     });
 
-    var total = overdueMine.length;
-    var shown = overdueMine.slice(0, 5);
-    var remaining = total - shown.length;
+    // --- Overdue projects: indicator 70 (projectEndDate) past today, not completed/archived ---
+    var overdueProjects = (state.projectsAll || []).filter(function (p) {
+      if (!currentUserMatchesProject(p)) return false;
+      if (isCompletedStatus(p.projectStatus)) return false;
+      if (isArchivedStatus(p.projectStatus)) return false;
+      var endDate = mmddyyyyToDate(p.projectEndDate);
+      return !!(endDate && endDate.getTime() < now.getTime());
+    });
 
+    // Sort projects by end date ascending (most overdue first)
+    overdueProjects = overdueProjects.slice().sort(function (a, b) {
+      var da = mmddyyyyToDate(a.projectEndDate) || new Date(8640000000000000);
+      var db = mmddyyyyToDate(b.projectEndDate) || new Date(8640000000000000);
+      return da - db;
+    });
+
+    var totalTasks = overdueTasks.length;
+    var totalProjects = overdueProjects.length;
+    var totalAll = totalTasks + totalProjects;
+
+    if (!totalAll) {
+      alertEl.hidden = true;
+      return;
+    }
+
+    // Build heading copy
     var headingEl = document.getElementById("pmOverdueAlertHeading");
     if (headingEl) {
-      headingEl.textContent =
-        "You have " + total + " overdue task" + (total === 1 ? "" : "s") + ".";
+      var parts = [];
+      if (totalTasks > 0)
+        parts.push(
+          totalTasks + " overdue task" + (totalTasks === 1 ? "" : "s"),
+        );
+      if (totalProjects > 0)
+        parts.push(
+          totalProjects + " overdue project" + (totalProjects === 1 ? "" : "s"),
+        );
+      headingEl.textContent = "You have " + parts.join(" and ") + ".";
     }
+
+    // Merge and cap at 5 shown items; tasks listed before projects
+    var CAP = 5;
+    var allItems = [];
+
+    overdueTasks.forEach(function (t) {
+      allItems.push({ type: "task", record: t });
+    });
+    overdueProjects.forEach(function (p) {
+      allItems.push({ type: "project", record: p });
+    });
+
+    var shown = allItems.slice(0, CAP);
+    var remaining = allItems.length - shown.length;
 
     var listEl = document.getElementById("pmOverdueAlertList");
     if (listEl) {
       listEl.innerHTML = shown
-        .map(function (t) {
-          var title = String(t.title || "(No title)");
-          var safeTitle = safe(title);
-          var safeAttrTitle = safeAttr("Task " + t.recordID + " — " + title);
-          if (t.href) {
-            return (
-              '<li><a href="' +
-              safe(t.href) +
-              '" class="pm-recordLink pm-overdueAlert-link" data-title="' +
-              safeAttrTitle +
-              '">' +
-              safeTitle +
-              "</a></li>"
+        .map(function (item) {
+          if (item.type === "task") {
+            var t = item.record;
+            var title = String(t.title || "(No title)");
+            var safeTitle = safe(title);
+            var safeAttrTitle = safeAttr("Task " + t.recordID + " — " + title);
+            var badge =
+              '<span class="pm-overdueAlert-badge pm-overdueAlert-badge--task">Task</span>';
+            if (t.href) {
+              return (
+                "<li>" +
+                badge +
+                '<a href="' +
+                safe(t.href) +
+                '" class="pm-recordLink pm-overdueAlert-link"' +
+                ' data-title="' +
+                safeAttrTitle +
+                '"' +
+                ' target="_blank" rel="noopener noreferrer">' +
+                safeTitle +
+                "</a></li>"
+              );
+            }
+            return "<li>" + badge + safeTitle + "</li>";
+          } else {
+            var p = item.record;
+            var name = String(p.projectName || p.projectKey || "(No name)");
+            var safeName = safe(name);
+            var safeAttrName = safeAttr(
+              "Project " + (p.projectKey || p.recordID) + " — " + name,
             );
+            var badge =
+              '<span class="pm-overdueAlert-badge pm-overdueAlert-badge--project">Project</span>';
+            if (p.href) {
+              return (
+                "<li>" +
+                badge +
+                '<a href="' +
+                safe(p.href) +
+                '" class="pm-recordLink pm-overdueAlert-link"' +
+                ' data-title="' +
+                safeAttrName +
+                '"' +
+                ' target="_blank" rel="noopener noreferrer">' +
+                safeName +
+                "</a></li>"
+              );
+            }
+            return "<li>" + badge + safeName + "</li>";
           }
-          return "<li>" + safeTitle + "</li>";
         })
         .join("");
     }
@@ -7240,7 +7335,7 @@
         remaining > 0
           ? "and " +
             remaining +
-            " more overdue task" +
+            " more overdue item" +
             (remaining === 1 ? "" : "s") +
             "."
           : "";
@@ -8598,7 +8693,7 @@
 
     // Projects imported by month — uses createdAt via getProjectGeneralDate
     var projectImportCounts = new Array(12).fill(0);
-    (projectsForGeneralCharts || []).forEach(function(p) {
+    (projectsForGeneralCharts || []).forEach(function (p) {
       var date = getProjectGeneralDate(p);
       if (!date || !inSelectedYear(date)) return;
       if (!inSelectedQuarter(date)) return;
@@ -9223,11 +9318,23 @@
   }
 
   function drilldownTicketsImported(label, cache) {
-    var monthIndex = ["Jan","Feb","Mar","Apr","May","Jun",
-      "Jul","Aug","Sep","Oct","Nov","Dec"].indexOf(label);
+    var monthIndex = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ].indexOf(label);
 
     // Ticket-linked tasks
-    var ticketTasks = (state.tasksAll || []).filter(function(t) {
+    var ticketTasks = (state.tasksAll || []).filter(function (t) {
       if (!String(t.supportTicket || "").trim()) return false;
       var date = getTicketImportedDate(t);
       if (!date) return false;
@@ -9235,48 +9342,82 @@
     });
 
     // Projects imported in this month
-    var importedProjects = (state.projectsAll || []).filter(function(p) {
+    var importedProjects = (state.projectsAll || []).filter(function (p) {
       var date = getProjectGeneralDate(p);
       if (!date) return false;
       return date.getMonth() === monthIndex;
     });
 
     // Build combined rows — tickets first, then projects
-    var ticketRows = ticketTasks.map(function(t) {
-      return "<tr>" +
+    var ticketRows = ticketTasks.map(function (t) {
+      return (
+        "<tr>" +
         drilldownTaskIdCell(t) +
-        "<td>" + safe(t.title || "(No title)") + "</td>" +
-        "<td>" + safe(t.supportTicket) + "</td>" +
-        "<td>" + safe(t.projectKey) + "</td>" +
-        "<td>" + safe(t.assignedTo) + "</td>" +
+        "<td>" +
+        safe(t.title || "(No title)") +
+        "</td>" +
+        "<td>" +
+        safe(t.supportTicket) +
+        "</td>" +
+        "<td>" +
+        safe(t.projectKey) +
+        "</td>" +
+        "<td>" +
+        safe(t.assignedTo) +
+        "</td>" +
         "<td>Ticket</td>" +
-        "</tr>";
+        "</tr>"
+      );
     });
 
-    var projectRows = importedProjects.map(function(p) {
+    var projectRows = importedProjects.map(function (p) {
       var pkHref = getProjectRecordHrefFromKey(p.projectKey);
       var pkCell = pkHref
-        ? "<a href=\"" + safe(pkHref) + "\" class=\"pm-recordLink pm-pkProjectLink\" " +
-          "data-title=\"Project " + safeAttr(p.projectKey) + "\" " +
-          "data-projectkey=\"" + safeAttr(p.projectKey) + "\">" +
-          safe(p.projectKey) + "</a>"
+        ? '<a href="' +
+          safe(pkHref) +
+          '" class="pm-recordLink pm-pkProjectLink" ' +
+          'data-title="Project ' +
+          safeAttr(p.projectKey) +
+          '" ' +
+          'data-projectkey="' +
+          safeAttr(p.projectKey) +
+          '">' +
+          safe(p.projectKey) +
+          "</a>"
         : safe(p.projectKey);
-      return "<tr>" +
-        "<td>" + pkCell + "</td>" +
-        "<td>" + safe(p.projectName || "(No name)") + "</td>" +
+      return (
+        "<tr>" +
+        "<td>" +
+        pkCell +
+        "</td>" +
+        "<td>" +
+        safe(p.projectName || "(No name)") +
+        "</td>" +
         "<td>—</td>" +
-        "<td>" + safe(p.projectKey) + "</td>" +
-        "<td>" + safe(p.owner) + "</td>" +
+        "<td>" +
+        safe(p.projectKey) +
+        "</td>" +
+        "<td>" +
+        safe(p.owner) +
+        "</td>" +
         "<td>Project</td>" +
-        "</tr>";
+        "</tr>"
+      );
     });
 
     renderDrilldownTable(
       "pmDrilldownTicketsImported",
       label,
-      ["ID / Key", "Name", "Ticket #", "Project Key", "Assigned / Owner", "Type"],
+      [
+        "ID / Key",
+        "Name",
+        "Ticket #",
+        "Project Key",
+        "Assigned / Owner",
+        "Type",
+      ],
       ticketRows.concat(projectRows),
-      ["string", "string", "string", "string", "string", "string"]
+      ["string", "string", "string", "string", "string", "string"],
     );
   }
 
@@ -9670,22 +9811,39 @@
     );
 
     var ticketLabels = [
-      "Jan","Feb","Mar","Apr","May","Jun",
-      "Jul","Aug","Sep","Oct","Nov","Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
     ];
 
-    var projectImportCounts = cache.projectImportCounts || new Array(12).fill(0);
+    var projectImportCounts =
+      cache.projectImportCounts || new Array(12).fill(0);
 
     setChartSummary(
       "pmChartTicketsImportedDesc",
-      "Tickets & Projects imported by month (" + filterLabel + "): " +
-      "Tickets — " + summarizeLabelData(ticketLabels, cache.ticketCounts) +
-      "; Projects — " + summarizeLabelData(ticketLabels, projectImportCounts)
+      "Tickets & Projects imported by month (" +
+        filterLabel +
+        "): " +
+        "Tickets — " +
+        summarizeLabelData(ticketLabels, cache.ticketCounts) +
+        "; Projects — " +
+        summarizeLabelData(ticketLabels, projectImportCounts),
     );
 
     // Destroy existing chart instance before replacing with multi-dataset
     if (state.charts && state.charts["ticketsImported"]) {
-      try { state.charts["ticketsImported"].destroy(); } catch(e) {}
+      try {
+        state.charts["ticketsImported"].destroy();
+      } catch (e) {}
       delete state.charts["ticketsImported"];
     }
 
@@ -9694,7 +9852,9 @@
       var ticketsCtx = ticketsCanvas.getContext("2d");
       var isDarkMode = document.body.classList.contains("pm-dark");
       var tickColor = isDarkMode ? "#e2e8f0" : "#1f2933";
-      var gridColor = isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
+      var gridColor = isDarkMode
+        ? "rgba(255,255,255,0.08)"
+        : "rgba(0,0,0,0.08)";
 
       var multiChart = new Chart(ticketsCtx, {
         type: "bar",
@@ -9717,18 +9877,33 @@
             },
           ],
         },
-        options: (function() {
+        options: (function () {
           if (isChartV2()) {
             return {
               responsive: true,
               maintainAspectRatio: true,
-              legend: { display: true, position: "top",
-                labels: { fontColor: tickColor, boxWidth: 14, padding: 12 } },
+              legend: {
+                display: true,
+                position: "top",
+                labels: { fontColor: tickColor, boxWidth: 14, padding: 12 },
+              },
               scales: {
-                xAxes: [{ ticks: { fontColor: tickColor },
-                  gridLines: { color: gridColor } }],
-                yAxes: [{ ticks: { fontColor: tickColor, beginAtZero: true,
-                  precision: 0 }, gridLines: { color: gridColor } }],
+                xAxes: [
+                  {
+                    ticks: { fontColor: tickColor },
+                    gridLines: { color: gridColor },
+                  },
+                ],
+                yAxes: [
+                  {
+                    ticks: {
+                      fontColor: tickColor,
+                      beginAtZero: true,
+                      precision: 0,
+                    },
+                    gridLines: { color: gridColor },
+                  },
+                ],
               },
             };
           }
@@ -9736,13 +9911,19 @@
             responsive: true,
             maintainAspectRatio: true,
             plugins: {
-              legend: { display: true, position: "top",
-                labels: { color: tickColor, boxWidth: 14, padding: 12 } },
+              legend: {
+                display: true,
+                position: "top",
+                labels: { color: tickColor, boxWidth: 14, padding: 12 },
+              },
             },
             scales: {
               x: { ticks: { color: tickColor }, grid: { color: gridColor } },
-              y: { beginAtZero: true, ticks: { color: tickColor, precision: 0 },
-                grid: { color: gridColor } },
+              y: {
+                beginAtZero: true,
+                ticks: { color: tickColor, precision: 0 },
+                grid: { color: gridColor },
+              },
             },
           };
         })(),
@@ -10170,6 +10351,7 @@
           PROJECT_IND.projectType,
           PROJECT_IND.keyResultSelection,
           PROJECT_IND.ticketNumber,
+          PROJECT_IND.projectEndDate,
           OKR_IND.okrKey,
           OKR_IND.objective,
           OKR_IND.startDate,
@@ -10415,6 +10597,7 @@
           PROJECT_IND.projectType,
           PROJECT_IND.keyResultSelection,
           PROJECT_IND.ticketNumber,
+          PROJECT_IND.projectEndDate,
           OKR_IND.okrKey,
           OKR_IND.objective,
           OKR_IND.startDate,

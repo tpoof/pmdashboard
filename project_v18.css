@@ -944,10 +944,9 @@ body {
 
 .pm-krRow {
   display: grid;
-  grid-template-columns: minmax(180px, 2fr) minmax(140px, 1fr) minmax(
-      180px,
-      1.2fr
-    ) auto;
+  grid-template-columns:
+    minmax(180px, 2fr) minmax(140px, 1fr) minmax(180px, 1.2fr)
+    auto;
   gap: 8px 12px;
   align-items: center;
 }
@@ -2915,6 +2914,30 @@ canvas.pm-chartClickable {
 
 .pm-overdueAlert-dismiss .material-icons {
   font-size: 1.1rem;
+}
+
+/* Type badges inside the overdue alert list */
+.pm-overdueAlert-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-right: 6px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.pm-overdueAlert-badge--task {
+  background-color: #d9e8ff;
+  color: #1a4480;
+}
+
+.pm-overdueAlert-badge--project {
+  background-color: #fde8d0;
+  color: #7a3e00;
 }
 
 /* Activity header — zero-height full-width flex break.
