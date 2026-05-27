@@ -20,7 +20,9 @@
     hidden
   >
     <div class="pm-overdueAlert-inner">
-      <span class="pm-overdueAlert-icon material-icons" aria-hidden="true">warning_amber</span>
+      <span class="pm-overdueAlert-icon material-icons" aria-hidden="true"
+        >warning_amber</span
+      >
       <div class="pm-overdueAlert-body">
         <p class="pm-overdueAlert-heading" id="pmOverdueAlertHeading"></p>
         <ul class="pm-overdueAlert-list" id="pmOverdueAlertList"></ul>
@@ -106,10 +108,21 @@
         </div>
       </div>
       <div class="pm-inboxWrap">
-        <button type="button" class="pm-primaryBtn pm-inboxBtn"
-          id="pmViewInboxBtn">View Inbox</button>
-        <span class="pm-inboxBadge" id="pmInboxBadge" hidden
-          aria-label="inbox items" aria-live="polite">0</span>
+        <button
+          type="button"
+          class="pm-primaryBtn pm-inboxBtn"
+          id="pmViewInboxBtn"
+        >
+          View Inbox
+        </button>
+        <span
+          class="pm-inboxBadge"
+          id="pmInboxBadge"
+          hidden
+          aria-label="inbox items"
+          aria-live="polite"
+          >0</span
+        >
       </div>
       <button
         type="button"
@@ -118,9 +131,13 @@
       >
         Report Builder
       </button>
-      <button type="button" class="pm-primaryBtn pm-helpBtn" id="pmTourBtn"
+      <button
+        type="button"
+        class="pm-primaryBtn pm-helpBtn"
+        id="pmTourBtn"
         aria-label="First time here? Launch a quick interactive tutorial"
-        data-tooltip="First time here? Launch a quick interactive tutorial">
+        data-tooltip="First time here? Launch a quick interactive tutorial"
+      >
         <span class="material-icons" aria-hidden="true">tour</span>
       </button>
     </div>
@@ -201,14 +218,24 @@
       </div>
       <div class="pm-field">
         <label class="pm-label" for="pmProjectOwnerSelectToggle">Owner</label>
-        <div id="pmProjectOwnerSelect" class="pm-multiSelect" data-filter="projectOwner"></div>
+        <div
+          id="pmProjectOwnerSelect"
+          class="pm-multiSelect"
+          data-filter="projectOwner"
+        ></div>
       </div>
       <div class="pm-field">
         <label class="pm-label" for="pmProjectStatusSelectToggle">Status</label>
-        <div id="pmProjectStatusSelect" class="pm-multiSelect" data-filter="projectStatus"></div>
+        <div
+          id="pmProjectStatusSelect"
+          class="pm-multiSelect"
+          data-filter="projectStatus"
+        ></div>
       </div>
       <div class="pm-field">
-        <label class="pm-label" for="pmProjectTypeSelectToggle">Project Type</label>
+        <label class="pm-label" for="pmProjectTypeSelectToggle"
+          >Project Type</label
+        >
         <div
           id="pmProjectTypeSelect"
           class="pm-multiSelect"
@@ -216,7 +243,11 @@
         ></div>
       </div>
       <div class="pm-field pm-fieldInlineBtn">
-        <button type="button" class="pm-ghostBtn pm-clearFiltersBtn" id="pmClearProjectFilters">
+        <button
+          type="button"
+          class="pm-ghostBtn pm-clearFiltersBtn"
+          id="pmClearProjectFilters"
+        >
           Clear all filters
         </button>
       </div>
@@ -289,11 +320,7 @@
       </div>
       <div class="pm-viewToggle">
         <label class="pm-switch" for="pmDevOnlyToggle">
-          <input
-            type="checkbox"
-            id="pmDevOnlyToggle"
-            class="pm-switchInput"
-          />
+          <input type="checkbox" id="pmDevOnlyToggle" class="pm-switchInput" />
           <span class="pm-switchTrack" aria-hidden="true">
             <span class="pm-switchThumb"></span>
           </span>
@@ -325,9 +352,7 @@
       </div>
 
       <div class="pm-field">
-        <label class="pm-label" for="pmAssigneeSelectToggle"
-          >Assigned To</label
-        >
+        <label class="pm-label" for="pmAssigneeSelectToggle">Assigned To</label>
         <div
           id="pmAssigneeSelect"
           class="pm-multiSelect"
@@ -355,10 +380,35 @@
       <div class="pm-field pm-filterHeader pm-activityHeader"></div>
       <div class="pm-field pm-fieldDateRange">
         <span class="pm-filterHeaderLabel">Activity</span>
-        <div class="pm-dateRangeBtns" role="group" aria-label="Filter by activity date range">
-          <button type="button" class="pm-ghostBtn pm-dateRangeBtn" data-days="7"  aria-pressed="false">Last 7 days</button>
-          <button type="button" class="pm-ghostBtn pm-dateRangeBtn" data-days="14" aria-pressed="false">Last 14 days</button>
-          <button type="button" class="pm-ghostBtn pm-dateRangeBtn" data-days="30" aria-pressed="false">Last 30 days</button>
+        <div
+          class="pm-dateRangeBtns"
+          role="group"
+          aria-label="Filter by activity date range"
+        >
+          <button
+            type="button"
+            class="pm-ghostBtn pm-dateRangeBtn"
+            data-days="7"
+            aria-pressed="false"
+          >
+            Last 7 days
+          </button>
+          <button
+            type="button"
+            class="pm-ghostBtn pm-dateRangeBtn"
+            data-days="14"
+            aria-pressed="false"
+          >
+            Last 14 days
+          </button>
+          <button
+            type="button"
+            class="pm-ghostBtn pm-dateRangeBtn"
+            data-days="30"
+            aria-pressed="false"
+          >
+            Last 30 days
+          </button>
         </div>
       </div>
       <div class="pm-field pm-fieldRecurringToggle">
@@ -369,22 +419,26 @@
           aria-pressed="false"
           title="Show recurring tasks only"
         >
-          <span class="material-icons" style="font-size:16px;vertical-align:middle;margin-right:4px;">change_circle</span>
+          <span
+            class="material-icons"
+            style="font-size: 16px; vertical-align: middle; margin-right: 4px"
+            >change_circle</span
+          >
           Recurring
         </button>
       </div>
       <div class="pm-field pm-fieldInlineBtn">
-        <button type="button" class="pm-ghostBtn pm-clearFiltersBtn" id="pmClearFiltersBtn_tasks">
+        <button
+          type="button"
+          class="pm-ghostBtn pm-clearFiltersBtn"
+          id="pmClearFiltersBtn_tasks"
+        >
           Clear all filters
         </button>
       </div>
     </div>
 
-    <div
-      id="pmProjectHealthSticky"
-      class="pm-healthSticky"
-      hidden
-    >
+    <div id="pmProjectHealthSticky" class="pm-healthSticky" hidden>
       <div class="pm-healthInner"></div>
     </div>
 
@@ -488,10 +542,7 @@
             class="pm-multiSelect"
             data-filter="analyticsYear"
           ></div>
-          <label
-            class="pm-label"
-            for="pmAnalyticsGeneralQuarterSelectToggle"
-          >
+          <label class="pm-label" for="pmAnalyticsGeneralQuarterSelectToggle">
             Quarter
           </label>
           <div
@@ -649,7 +700,11 @@
           <h3 class="pm-chartTitle">Schedule Variance (Days Late/Early)</h3>
           <div class="pm-chartBox">
             <div class="pm-chartInner">
-              <canvas id="pmChartScheduleVariance" role="img" aria-describedby="pmChartScheduleVarianceDesc"></canvas>
+              <canvas
+                id="pmChartScheduleVariance"
+                role="img"
+                aria-describedby="pmChartScheduleVarianceDesc"
+              ></canvas>
               <div class="pm-srOnly" id="pmChartScheduleVarianceDesc"></div>
             </div>
           </div>
@@ -668,7 +723,11 @@
             id="pmAnalyticsDrilldownClose"
             aria-label="Close detail panel"
           >
-            <span class="material-icons" style="font-size:18px;vertical-align:middle;">close</span>
+            <span
+              class="material-icons"
+              style="font-size: 18px; vertical-align: middle"
+              >close</span
+            >
             Close
           </button>
         </div>
@@ -698,7 +757,11 @@
           ></div>
         </div>
         <div class="pm-field pm-fieldInlineBtn">
-          <button type="button" class="pm-ghostBtn pm-clearFiltersBtn" id="pmClearFiltersBtn_okrs">
+          <button
+            type="button"
+            class="pm-ghostBtn pm-clearFiltersBtn"
+            id="pmClearFiltersBtn_okrs"
+          >
             Clear all filters
           </button>
         </div>
@@ -809,18 +872,10 @@
         </fieldset>
       </div>
       <div class="pm-otherModalActions">
-        <button
-          type="button"
-          class="pm-ghostBtn"
-          id="pmOtherModalCancelBtn"
-        >
+        <button type="button" class="pm-ghostBtn" id="pmOtherModalCancelBtn">
           Cancel
         </button>
-        <button
-          type="button"
-          class="pm-primaryBtn"
-          id="pmOtherModalConfirmBtn"
-        >
+        <button type="button" class="pm-primaryBtn" id="pmOtherModalConfirmBtn">
           Confirm
         </button>
       </div>
@@ -838,23 +893,45 @@
       <div class="pm-modalHeader">
         <h2 class="pm-modalTitle" id="pmModalTitle">Details</h2>
         <div class="pm-modalNav" id="pmModalNav" hidden>
-          <button type="button" class="pm-modalNavBtn" id="pmModalPrevBtn"
-            aria-label="Go back" title="Back">
-            <span class="material-icons" style="font-size:18px;">chevron_left</span>
+          <button
+            type="button"
+            class="pm-modalNavBtn"
+            id="pmModalPrevBtn"
+            aria-label="Go back"
+            title="Back"
+          >
+            <span class="material-icons" style="font-size: 18px"
+              >chevron_left</span
+            >
           </button>
           <span class="pm-modalNavCounter" id="pmModalNavCounter"></span>
-          <button type="button" class="pm-modalNavBtn" id="pmModalNextBtn"
-            aria-label="Go forward" title="Forward">
-            <span class="material-icons" style="font-size:18px;">chevron_right</span>
+          <button
+            type="button"
+            class="pm-modalNavBtn"
+            id="pmModalNextBtn"
+            aria-label="Go forward"
+            title="Forward"
+          >
+            <span class="material-icons" style="font-size: 18px"
+              >chevron_right</span
+            >
           </button>
         </div>
         <div class="pm-modalActions">
-          <button type="button" class="pm-modalOpenTab" id="pmModalOpenTabBtn"
-            aria-label="Open in new tab">
+          <button
+            type="button"
+            class="pm-modalOpenTab"
+            id="pmModalOpenTabBtn"
+            aria-label="Open in new tab"
+          >
             Open in new tab
           </button>
-          <button type="button" class="pm-modalClose" id="pmModalCloseBtn"
-            aria-label="Close">
+          <button
+            type="button"
+            class="pm-modalClose"
+            id="pmModalCloseBtn"
+            aria-label="Close"
+          >
             ✕
           </button>
         </div>
@@ -902,8 +979,17 @@
   >
     <div class="pm-feedbackInner">
       <div class="pm-feedbackHeader">
-        <h2 class="pm-feedbackTitle" id="pmFeedbackModalTitle">Submit your feedback for the LEAF Project Dashboard</h2>
-        <button type="button" class="pm-feedbackClose" id="pmFeedbackClose" aria-label="Close feedback">✕</button>
+        <h2 class="pm-feedbackTitle" id="pmFeedbackModalTitle">
+          Submit your feedback for the LEAF Project Dashboard
+        </h2>
+        <button
+          type="button"
+          class="pm-feedbackClose"
+          id="pmFeedbackClose"
+          aria-label="Close feedback"
+        >
+          ✕
+        </button>
       </div>
       <textarea
         id="pmFeedbackText"
@@ -913,8 +999,16 @@
         aria-label="Your feedback"
       ></textarea>
       <div class="pm-feedbackFooter">
-        <span class="pm-feedbackStatus" id="pmFeedbackStatus" role="status" aria-live="polite" aria-atomic="true"></span>
-        <button type="button" class="pm-primaryBtn" id="pmFeedbackSubmit">Submit</button>
+        <span
+          class="pm-feedbackStatus"
+          id="pmFeedbackStatus"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        ></span>
+        <button type="button" class="pm-primaryBtn" id="pmFeedbackSubmit">
+          Submit
+        </button>
       </div>
     </div>
   </div>
@@ -922,27 +1016,40 @@
 
 <div id="pmTourOverlay" class="pm-tourOverlay" hidden>
   <div id="pmTourSpotlight" class="pm-tourSpotlight"></div>
-  <div id="pmTourTooltip" class="pm-tourTooltip" role="dialog"
-    aria-modal="true" aria-labelledby="pmTourTitle">
+  <div
+    id="pmTourTooltip"
+    class="pm-tourTooltip"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="pmTourTitle"
+  >
     <div id="pmTourStepLabel" class="pm-tourStepLabel" aria-live="polite"></div>
     <div id="pmTourTitle" class="pm-tourTitle"></div>
     <div id="pmTourBody" class="pm-tourBody"></div>
     <div class="pm-tourFooter">
-      <button type="button" class="pm-tourSkip" id="pmTourSkip">Skip tour</button>
+      <button type="button" class="pm-tourSkip" id="pmTourSkip">
+        Skip tour
+      </button>
       <div class="pm-tourNav">
-        <button type="button" class="pm-tourBack" id="pmTourBack">← Back</button>
-        <button type="button" class="pm-tourNext" id="pmTourNext">Next →</button>
+        <button type="button" class="pm-tourBack" id="pmTourBack">
+          ← Back
+        </button>
+        <button type="button" class="pm-tourNext" id="pmTourNext">
+          Next →
+        </button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- PERF: Ideally move preconnect + font link to <head> in host template -->
-<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/icon?family=Material+Icons"
+  rel="stylesheet"
+/>
 <link rel="stylesheet" href="./files/project_v17.css" />
-    <link rel="stylesheet" href="./files/project_v17_dark.css" />
+<link rel="stylesheet" href="./files/project_v16_dark.css" />
 
 <script src="./files/chart.js"></script>
 <script src="./files/project_v17.js"></script>

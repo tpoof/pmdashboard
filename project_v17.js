@@ -6467,20 +6467,39 @@
     if (filters && !matchesFilterSet(task.category, filters.categories))
       return false;
     if (filters && filters.dateRange) {
-      // cutoff = midnight N days ago, local time
       var cutoff = new Date();
       cutoff.setHours(0, 0, 0, 0);
       cutoff.setDate(cutoff.getDate() - filters.dateRange);
 
-      // Use strictMmDdYyyy — always local-time, never new Date(string)
       var startDate = strictMmDdYyyy(task.start);
       var completed = strictMmDdYyyy(task.actualCompletion);
 
-      // Exclude tasks with neither date when filter is active
+      // ── TEMP DEBUG ──────────────────────────────────────────
+      // Open browser console and select Last 7 days to see output.
+      // Remove this block once the issue is diagnosed.
+      if (task.start || task.actualCompletion) {
+        var startParsed  = startDate  ? startDate.toLocaleDateString()  : 'null';
+        var compParsed   = completed  ? completed.toLocaleDateString()  : 'null';
+        var startInRange = startDate  && startDate  >= cutoff && startDate  <= new Date();
+        var compInRange  = completed  && completed  >= cutoff && completed  <= new Date();
+        console.log(
+          '[dateRange debug]',
+          'recordID:', task.recordID,
+          '| raw start:', JSON.stringify(task.start),
+          '| raw completion:', JSON.stringify(task.actualCompletion),
+          '| parsed start:', startParsed,
+          '| parsed completion:', compParsed,
+          '| cutoff:', cutoff.toLocaleDateString(),
+          '| startInRange:', startInRange,
+          '| compInRange:', compInRange,
+          '| PASSES:', (startDate && startDate >= cutoff && startDate <= new Date()) ||
+                       (completed && completed >= cutoff && completed <= new Date())
+        );
+      }
+      // ── END DEBUG ────────────────────────────────────────────
+
       if (!startDate && !completed) return false;
 
-      // Both cutoff and parsed dates are already midnight local time —
-      // comparison is purely day-based with no time component interference
       var startedInRange   = startDate && startDate >= cutoff;
       var completedInRange = completed && completed >= cutoff;
 
