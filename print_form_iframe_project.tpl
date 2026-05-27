@@ -72,6 +72,40 @@ function wirePortalLink18() {
     });
 }
 
+function wirePortalLink68() {
+    var nodes = document.querySelectorAll("[id^='xhrIndicator_68_']");
+    if (!nodes || !nodes.length) return;
+    nodes.forEach(function(el) {
+        if (!el || el.querySelector("a.pm-portal-link")) return;
+        var text = (el.textContent || "").trim();
+        var match = text.match(/^(Support|UX|Idea)\s*Ticket\s*#(\d+)/i);
+        if (!match) return;
+        var ticketType = match[1].toLowerCase();
+        var ticketId = match[2];
+        if (!ticketId) return;
+        var urlBase =
+            ticketType === "ux"
+                ? "/platform/ux/index.php?a=printview&recordID="
+                : ticketType === "idea"
+                ? "/platform/ideas/index.php?a=printview&recordID="
+                : "/platform/support/index.php?a=printview&recordID=";
+        var url = urlBase + encodeURIComponent(ticketId);
+        var link = document.createElement("a");
+        link.href = "#";
+        link.className = "pm-portal-link";
+        link.setAttribute("data-portal-url", url);
+        link.textContent =
+            (ticketType === "ux"
+                ? "UX Ticket #"
+                : ticketType === "idea"
+                ? "Idea Ticket #"
+                : "Support Ticket #") +
+            ticketId;
+        el.innerHTML = "";
+        el.appendChild(link);
+    });
+}
+
 function decodeEntities(text) {
     var ta = document.createElement("textarea");
     ta.innerHTML = String(text || "");
@@ -214,6 +248,7 @@ function initPortalLinkWatcher() {
     if (!target || target.__pmPortalLinkObserver) return;
     var observer = new MutationObserver(function() {
         wirePortalLink18();
+        wirePortalLink68();
         wireDependencies17();
         wireSourceRecord46();
     });
@@ -302,6 +337,7 @@ function getIndicator(indicatorID, series) {
                 $("#xhrIndicator_" + indicatorID + "_" + series).fadeIn(250);
             });
             wirePortalLink18();
+            wirePortalLink68();
             wireDependencies17();
         },
         cache: false
@@ -355,6 +391,7 @@ function openContent(url) {
                 });
     		});
             wirePortalLink18();
+            wirePortalLink68();
             wireDependencies17();
             wireSourceRecord46();
     	},
