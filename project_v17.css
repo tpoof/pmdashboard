@@ -89,7 +89,9 @@ body {
   border-radius: var(--radius-sm);
   cursor: pointer;
   box-shadow: var(--shadow-sm);
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .pm-primaryBtn:hover {
@@ -548,7 +550,9 @@ body {
   border-radius: 999px;
   background: #cbd5e1;
   border: 1px solid var(--border);
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
   display: inline-flex;
   align-items: center;
   padding: 2px;
@@ -560,7 +564,9 @@ body {
   border-radius: 999px;
   background: #fff;
   border: 1px solid var(--border);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
   box-shadow: var(--shadow-sm);
 }
 
@@ -704,7 +710,6 @@ body {
   font-size: 0.85rem;
   color: var(--muted);
 }
-
 
 @media (max-width: 720px) {
   .pm-okrIndexItem {
@@ -939,7 +944,10 @@ body {
 
 .pm-krRow {
   display: grid;
-  grid-template-columns: minmax(180px, 2fr) minmax(140px, 1fr) minmax(180px, 1.2fr) auto;
+  grid-template-columns: minmax(180px, 2fr) minmax(140px, 1fr) minmax(
+      180px,
+      1.2fr
+    ) auto;
   gap: 8px 12px;
   align-items: center;
 }
@@ -1369,7 +1377,6 @@ body {
   box-sizing: border-box;
 }
 
-
 .pm-loadMoreWrap {
   text-align: center;
   padding: 16px 0 8px;
@@ -1539,7 +1546,6 @@ body {
 .pm-ticketLink:focus {
   text-decoration: underline;
 }
-
 
 .pm-kanbanHint {
   margin: var(--space-2) 0 var(--space-2) 0;
@@ -1831,7 +1837,8 @@ body {
   overflow: visible;
 }
 
-.pm-chartTitle, h3.pm-chartTitle {
+.pm-chartTitle,
+h3.pm-chartTitle {
   font-weight: 900;
   margin-bottom: 0;
   color: var(--text);
@@ -2167,7 +2174,7 @@ body {
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   text-align: center;
   white-space: nowrap;
   pointer-events: none;
@@ -2294,9 +2301,12 @@ body {
 .pm-tourSpotlight {
   position: fixed;
   border-radius: 6px;
-  box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
-  transition: top 0.3s ease, left 0.3s ease,
-              width 0.3s ease, height 0.3s ease;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+  transition:
+    top 0.3s ease,
+    left 0.3s ease,
+    width 0.3s ease,
+    height 0.3s ease;
   pointer-events: none;
   z-index: 10001;
 }
@@ -2306,11 +2316,13 @@ body {
   position: fixed;
   background: #fff;
   border-radius: 10px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
   padding: 20px 22px 16px;
   width: 300px;
   z-index: 10002;
-  transition: top 0.3s ease, left 0.3s ease;
+  transition:
+    top 0.3s ease,
+    left 0.3s ease;
 }
 .pm-tourStepLabel {
   font-size: 11px;
@@ -2346,7 +2358,9 @@ body {
   cursor: pointer;
   padding: 0;
 }
-.pm-tourSkip:hover { color: var(--text); }
+.pm-tourSkip:hover {
+  color: var(--text);
+}
 .pm-tourNav {
   display: flex;
   gap: 8px;
@@ -2367,9 +2381,16 @@ body {
   border-color: var(--accent);
   color: #fff;
 }
-.pm-tourNext:hover { background: var(--accent-strong); }
-.pm-tourBack:hover { background: var(--accent-soft); }
-.pm-tourBack[disabled] { opacity: 0.35; pointer-events: none; }
+.pm-tourNext:hover {
+  background: var(--accent-strong);
+}
+.pm-tourBack:hover {
+  background: var(--accent-soft);
+}
+.pm-tourBack[disabled] {
+  opacity: 0.35;
+  pointer-events: none;
+}
 
 .pm-tourBack:focus-visible,
 .pm-tourNext:focus-visible,
@@ -2416,7 +2437,7 @@ body {
   padding: 0 4px;
   pointer-events: none;
   line-height: 1;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   z-index: 1;
 }
 
@@ -2464,12 +2485,21 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-  transition: opacity 0.2s ease, background 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  transition:
+    opacity 0.2s ease,
+    background 0.2s ease;
 }
-.pm-feedbackBtn .material-icons { color: #ffffff; }
-.pm-feedbackBtn:hover { opacity: 0.88; }
-.pm-feedbackBtn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.pm-feedbackBtn .material-icons {
+  color: #ffffff;
+}
+.pm-feedbackBtn:hover {
+  opacity: 0.88;
+}
+.pm-feedbackBtn:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
 .pm-feedbackBtn::after {
   content: attr(data-tooltip);
   position: absolute;
@@ -2489,7 +2519,9 @@ body {
   z-index: 10002;
 }
 .pm-feedbackBtn:hover::after,
-.pm-feedbackBtn:focus-visible::after { opacity: 1; }
+.pm-feedbackBtn:focus-visible::after {
+  opacity: 1;
+}
 
 .pm-feedbackModal {
   position: fixed;
@@ -2500,9 +2532,11 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
 }
-.pm-feedbackInner { padding: 20px; }
+.pm-feedbackInner {
+  padding: 20px;
+}
 .pm-feedbackHeader {
   display: flex;
   align-items: flex-start;
@@ -2527,8 +2561,13 @@ body {
   border-radius: 4px;
   flex-shrink: 0;
 }
-.pm-feedbackClose:hover { color: var(--text); }
-.pm-feedbackClose:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pm-feedbackClose:hover {
+  color: var(--text);
+}
+.pm-feedbackClose:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 .pm-feedbackTextarea {
   width: 100%;
   box-sizing: border-box;
@@ -2542,7 +2581,10 @@ body {
   color: var(--text);
   margin-bottom: 12px;
 }
-.pm-feedbackTextarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pm-feedbackTextarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 .pm-feedbackFooter {
   display: flex;
   align-items: center;
@@ -2639,8 +2681,14 @@ canvas.pm-chartClickable {
 }
 
 @keyframes pm-fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .pm-recurringFilterBtn[aria-pressed="true"] {
@@ -2677,7 +2725,9 @@ canvas.pm-chartClickable {
   background: var(--surface);
   cursor: pointer;
   color: var(--text);
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .pm-modalNavBtn:hover:not(:disabled) {
@@ -2914,4 +2964,157 @@ canvas.pm-chartClickable {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ── Transfer to LEAF Projects modal ── */
+.pm-transferOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pm-transferOverlay[hidden] {
+  display: none !important;
+}
+
+.pm-transferBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.pm-transferDialog {
+  position: relative;
+  width: min(92vw, 440px);
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  animation: pm-fadeIn 0.15s ease;
+}
+
+.pm-transferHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-alt);
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.pm-transferTitle {
+  font-weight: 900;
+  font-size: 1rem;
+  color: var(--text);
+  margin: 0;
+}
+
+.pm-transferClose {
+  border: 0;
+  background: transparent;
+  font-size: 18px;
+  cursor: pointer;
+  min-width: 36px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.pm-transferClose:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.pm-transferClose:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.pm-transferBody {
+  padding: var(--space-4);
+}
+
+.pm-transferPrompt {
+  margin: 0 0 var(--space-3);
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.pm-transferChoices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.pm-transferChoice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-3);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+  text-align: center;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.pm-transferChoice:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.pm-transferChoice:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.pm-transferChoice:active {
+  transform: translateY(1px);
+}
+
+.pm-transferChoiceIcon {
+  font-size: 28px;
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+.pm-transferChoice:hover .pm-transferChoiceIcon {
+  opacity: 1;
+}
+
+.pm-transferChoiceLabel {
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.pm-transferChoiceDesc {
+  font-weight: 400;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.pm-transferChoice:hover .pm-transferChoiceDesc {
+  color: var(--accent-strong);
 }
