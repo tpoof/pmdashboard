@@ -2591,9 +2591,6 @@
       okrCombined +
       "</td>" +
       "<td>" +
-      (p.ticketNumber ? supportTicketChip(p.ticketNumber) : "") +
-      "</td>" +
-      "<td>" +
       safe(p.projectStatus) +
       "</td>" +
       '<td class="pm-colCompletion"><span class="pm-compPctWrap"><span class="pm-compPctBar" style="--pct-width:' +
@@ -2605,6 +2602,9 @@
       ' pm-compPctLabel">' +
       compPct +
       "%</span></span></td>" +
+      "<td>" +
+      (p.ticketNumber ? supportTicketChip(p.ticketNumber) : "") +
+      "</td>" +
       "</tr>"
     );
   }
@@ -2640,9 +2640,9 @@
       '<th scope="col" class="pm-sortable" data-sort="owner" data-type="string"><button type="button" class="pm-sortBtn">Owner</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="projectFiscalYear" data-type="string"><button type="button" class="pm-sortBtn">FY</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="okrAssociation" data-type="string"><button type="button" class="pm-sortBtn">OKR | Key Result</button></th>' +
-      '<th scope="col" class="pm-sortable" data-sort="ticketNumber" data-type="string"><button type="button" class="pm-sortBtn">Ticket #</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
       '<th scope="col" class="pm-sortable pm-colCompletion" data-sort="completionPct" data-type="number"><button type="button" class="pm-sortBtn">% Complete</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="ticketNumber" data-type="string"><button type="button" class="pm-sortBtn">Ticket #</button></th>' +
       "</tr></thead>" +
       "<tbody>" +
       rowsHtml +
