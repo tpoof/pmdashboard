@@ -8596,6 +8596,15 @@
       ticketCounts[date.getMonth()] += 1;
     });
 
+    // Projects imported by month — uses createdAt via getProjectGeneralDate
+    var projectImportCounts = new Array(12).fill(0);
+    (projectsForGeneralCharts || []).forEach(function(p) {
+      var date = getProjectGeneralDate(p);
+      if (!date || !inSelectedYear(date)) return;
+      if (!inSelectedQuarter(date)) return;
+      projectImportCounts[date.getMonth()] += 1;
+    });
+
     var projectTypeData = buildProjectTypeChartData(projectsForGeneralCharts);
 
     var yearLabel = isAllYears
@@ -8620,6 +8629,7 @@
       quarters: quarters,
       catCounts: catCounts,
       ticketCounts: ticketCounts,
+      projectImportCounts: projectImportCounts,
       projectTypeData: projectTypeData,
       tasksForGeneralCharts: tasksForGeneralCharts,
     };
@@ -9213,52 +9223,60 @@
   }
 
   function drilldownTicketsImported(label, cache) {
-    var monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    var monthIndex = monthNames.indexOf(label);
-    var tasks = (state.tasksAll || []).filter(function (t) {
+    var monthIndex = ["Jan","Feb","Mar","Apr","May","Jun",
+      "Jul","Aug","Sep","Oct","Nov","Dec"].indexOf(label);
+
+    // Ticket-linked tasks
+    var ticketTasks = (state.tasksAll || []).filter(function(t) {
       if (!String(t.supportTicket || "").trim()) return false;
       var date = getTicketImportedDate(t);
       if (!date) return false;
       return date.getMonth() === monthIndex;
     });
-    var rows = tasks.map(function (t) {
-      return (
-        "<tr>" +
-        drilldownTaskIdCell(t) +
-        "<td>" +
-        safe(t.title || "(No title)") +
-        "</td>" +
-        "<td>" +
-        safe(t.supportTicket) +
-        "</td>" +
-        "<td>" +
-        safe(t.projectKey) +
-        "</td>" +
-        "<td>" +
-        safe(t.assignedTo) +
-        "</td>" +
-        "</tr>"
-      );
+
+    // Projects imported in this month
+    var importedProjects = (state.projectsAll || []).filter(function(p) {
+      var date = getProjectGeneralDate(p);
+      if (!date) return false;
+      return date.getMonth() === monthIndex;
     });
+
+    // Build combined rows — tickets first, then projects
+    var ticketRows = ticketTasks.map(function(t) {
+      return "<tr>" +
+        drilldownTaskIdCell(t) +
+        "<td>" + safe(t.title || "(No title)") + "</td>" +
+        "<td>" + safe(t.supportTicket) + "</td>" +
+        "<td>" + safe(t.projectKey) + "</td>" +
+        "<td>" + safe(t.assignedTo) + "</td>" +
+        "<td>Ticket</td>" +
+        "</tr>";
+    });
+
+    var projectRows = importedProjects.map(function(p) {
+      var pkHref = getProjectRecordHrefFromKey(p.projectKey);
+      var pkCell = pkHref
+        ? "<a href=\"" + safe(pkHref) + "\" class=\"pm-recordLink pm-pkProjectLink\" " +
+          "data-title=\"Project " + safeAttr(p.projectKey) + "\" " +
+          "data-projectkey=\"" + safeAttr(p.projectKey) + "\">" +
+          safe(p.projectKey) + "</a>"
+        : safe(p.projectKey);
+      return "<tr>" +
+        "<td>" + pkCell + "</td>" +
+        "<td>" + safe(p.projectName || "(No name)") + "</td>" +
+        "<td>—</td>" +
+        "<td>" + safe(p.projectKey) + "</td>" +
+        "<td>" + safe(p.owner) + "</td>" +
+        "<td>Project</td>" +
+        "</tr>";
+    });
+
     renderDrilldownTable(
       "pmDrilldownTicketsImported",
       label,
-      ["Task ID", "Task Name", "Ticket #", "Project Key", "Assigned To"],
-      rows,
-      ["number", "string", "string", "string", "string"],
+      ["ID / Key", "Name", "Ticket #", "Project Key", "Assigned / Owner", "Type"],
+      ticketRows.concat(projectRows),
+      ["string", "string", "string", "string", "string", "string"]
     );
   }
 
@@ -9652,33 +9670,88 @@
     );
 
     var ticketLabels = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
+      "Jan","Feb","Mar","Apr","May","Jun",
+      "Jul","Aug","Sep","Oct","Nov","Dec",
     ];
+
+    var projectImportCounts = cache.projectImportCounts || new Array(12).fill(0);
+
     setChartSummary(
       "pmChartTicketsImportedDesc",
-      "Tickets imported by month (" +
-        filterLabel +
-        "): " +
-        summarizeLabelData(ticketLabels, cache.ticketCounts),
+      "Tickets & Projects imported by month (" + filterLabel + "): " +
+      "Tickets — " + summarizeLabelData(ticketLabels, cache.ticketCounts) +
+      "; Projects — " + summarizeLabelData(ticketLabels, projectImportCounts)
     );
-    updateOrCreateChart(
-      "ticketsImported",
-      "pmChartTicketsImported",
-      ticketLabels,
-      cache.ticketCounts,
-      "Tickets imported",
-    );
+
+    // Destroy existing chart instance before replacing with multi-dataset
+    if (state.charts && state.charts["ticketsImported"]) {
+      try { state.charts["ticketsImported"].destroy(); } catch(e) {}
+      delete state.charts["ticketsImported"];
+    }
+
+    var ticketsCanvas = document.getElementById("pmChartTicketsImported");
+    if (ticketsCanvas && typeof Chart !== "undefined") {
+      var ticketsCtx = ticketsCanvas.getContext("2d");
+      var isDarkMode = document.body.classList.contains("pm-dark");
+      var tickColor = isDarkMode ? "#e2e8f0" : "#1f2933";
+      var gridColor = isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
+
+      var multiChart = new Chart(ticketsCtx, {
+        type: "bar",
+        data: {
+          labels: ticketLabels,
+          datasets: [
+            {
+              label: "Tickets",
+              data: cache.ticketCounts,
+              backgroundColor: "rgba(37,99,235,0.75)",
+              borderColor: "rgba(37,99,235,1)",
+              borderWidth: 1,
+            },
+            {
+              label: "Projects",
+              data: projectImportCounts,
+              backgroundColor: "rgba(16,185,129,0.75)",
+              borderColor: "rgba(16,185,129,1)",
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: (function() {
+          if (isChartV2()) {
+            return {
+              responsive: true,
+              maintainAspectRatio: true,
+              legend: { display: true, position: "top",
+                labels: { fontColor: tickColor, boxWidth: 14, padding: 12 } },
+              scales: {
+                xAxes: [{ ticks: { fontColor: tickColor },
+                  gridLines: { color: gridColor } }],
+                yAxes: [{ ticks: { fontColor: tickColor, beginAtZero: true,
+                  precision: 0 }, gridLines: { color: gridColor } }],
+              },
+            };
+          }
+          return {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: { display: true, position: "top",
+                labels: { color: tickColor, boxWidth: 14, padding: 12 } },
+            },
+            scales: {
+              x: { ticks: { color: tickColor }, grid: { color: gridColor } },
+              y: { beginAtZero: true, ticks: { color: tickColor, precision: 0 },
+                grid: { color: gridColor } },
+            },
+          };
+        })(),
+      });
+
+      if (!state.charts) state.charts = {};
+      state.charts["ticketsImported"] = multiChart;
+      wireChartDrilldown("ticketsImported", "pmChartTicketsImported");
+    }
 
     var projectTypeData = cache.projectTypeData || { labels: [], data: [] };
     setChartSummary(
