@@ -2200,6 +2200,7 @@
       okrAssociation: extractFromS1(row, PROJECT_IND.okrAssociation),
       projectType: extractFromS1(row, PROJECT_IND.projectType),
       keyResultSelection: extractFromS1(row, PROJECT_IND.keyResultSelection),
+      ticketNumber: extractFromS1(row, PROJECT_IND.ticketNumber),
       okrKey: extractFromS1(row, OKR_IND.okrKey),
       okrObjective: extractFromS1(row, OKR_IND.objective),
       okrStartDate: extractFromS1(row, OKR_IND.startDate),
@@ -2590,6 +2591,9 @@
       okrCombined +
       "</td>" +
       "<td>" +
+      (p.ticketNumber ? supportTicketChip(p.ticketNumber) : "") +
+      "</td>" +
+      "<td>" +
       safe(p.projectStatus) +
       "</td>" +
       '<td class="pm-colCompletion"><span class="pm-compPctWrap"><span class="pm-compPctBar" style="--pct-width:' +
@@ -2636,6 +2640,7 @@
       '<th scope="col" class="pm-sortable" data-sort="owner" data-type="string"><button type="button" class="pm-sortBtn">Owner</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="projectFiscalYear" data-type="string"><button type="button" class="pm-sortBtn">FY</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="okrAssociation" data-type="string"><button type="button" class="pm-sortBtn">OKR | Key Result</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="ticketNumber" data-type="string"><button type="button" class="pm-sortBtn">Ticket #</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
       '<th scope="col" class="pm-sortable pm-colCompletion" data-sort="completionPct" data-type="number"><button type="button" class="pm-sortBtn">% Complete</button></th>' +
       "</tr></thead>" +
@@ -10068,6 +10073,7 @@
           PROJECT_IND.okrAssociation,
           PROJECT_IND.projectType,
           PROJECT_IND.keyResultSelection,
+          PROJECT_IND.ticketNumber,
           OKR_IND.okrKey,
           OKR_IND.objective,
           OKR_IND.startDate,
@@ -10312,6 +10318,7 @@
           PROJECT_IND.okrAssociation,
           PROJECT_IND.projectType,
           PROJECT_IND.keyResultSelection,
+          PROJECT_IND.ticketNumber,
           OKR_IND.okrKey,
           OKR_IND.objective,
           OKR_IND.startDate,
@@ -10455,7 +10462,5 @@
     }
   }
 
-  handleTransferFromSupport();
-  window.addEventListener("load", handleTransferFromSupport);
   document.addEventListener("DOMContentLoaded", main);
 })();

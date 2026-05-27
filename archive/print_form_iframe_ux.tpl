@@ -314,8 +314,8 @@ $(function() {
 .pm-transferChoice:hover{border-color:#2563eb;background:#e7efff;color:#1d4ed8;box-shadow:0 4px 12px rgba(37,99,235,.15);}
 .pm-transferChoice:focus-visible{outline:2px solid #0b5cab;outline-offset:2px;}
 .pm-transferChoice:active{transform:translateY(1px);}
-.pm-transferChoiceIcon{font-size:28px;color:#2563eb;opacity:.85;}
-.pm-transferChoice:hover .pm-transferChoiceIcon{opacity:1;}
+.pm-transferChoiceIcon{font-size:28px;line-height:1;}
+.pm-transferChoice:hover .pm-transferChoiceIcon{}
 .pm-transferChoiceLabel{font-weight:800;font-size:1rem;}
 .pm-transferChoiceDesc{font-weight:400;font-size:.82rem;color:#3f4a57;line-height:1.35;}
 .pm-transferChoice:hover .pm-transferChoiceDesc{color:#1d4ed8;}
@@ -336,13 +336,13 @@ $(function() {
             <div class="pm-transferChoices">
                 <button type="button" class="pm-transferChoice" id="pmTransferChoiceTask"
                         onclick="doTransferAs('task')">
-                    <span class="pm-transferChoiceIcon material-icons" aria-hidden="true">check_box</span>
+                    <span class="pm-transferChoiceIcon" aria-hidden="true">&#9989;</span>
                     <span class="pm-transferChoiceLabel">As a Task</span>
                     <span class="pm-transferChoiceDesc">Add to the Tasks table with ticket reference</span>
                 </button>
                 <button type="button" class="pm-transferChoice" id="pmTransferChoiceProject"
                         onclick="doTransferAs('project')">
-                    <span class="pm-transferChoiceIcon material-icons" aria-hidden="true">folder</span>
+                    <span class="pm-transferChoiceIcon" aria-hidden="true">&#128193;</span>
                     <span class="pm-transferChoiceLabel">As a Project</span>
                     <span class="pm-transferChoiceDesc">Create a new Project with ticket reference</span>
                 </button>
