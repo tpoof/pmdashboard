@@ -6448,17 +6448,26 @@
     if (filters && !matchesFilterSet(task.category, filters.categories))
       return false;
     if (filters && filters.dateRange) {
+      // Compute cutoff as midnight N days ago — purely day-based, no time component
       var cutoff = new Date();
       cutoff.setHours(0, 0, 0, 0);
       cutoff.setDate(cutoff.getDate() - filters.dateRange);
 
-      var startDate = parseLeafDate(task.start);
-      var completed = parseLeafDate(task.actualCompletion);
+      // Use mmddyyyyToDate — the same parser used everywhere else in the codebase
+      // for LEAF MM/DD/YYYY date strings. Avoids the ambiguous new Date(str) call
+      // in parseLeafDate which can misparse or produce wrong dates cross-browser.
+      var startDate = mmddyyyyToDate(task.start);
+      var completed = mmddyyyyToDate(task.actualCompletion);
 
-      // Exclude tasks with no relevant dates when filter is active
+      // Exclude tasks with neither date when filter is active
       if (!startDate && !completed) return false;
 
-      var startedInRange = startDate && startDate >= cutoff;
+      // Normalize parsed dates to midnight so comparison is day-based only,
+      // not affected by any time component that may be present on the date object
+      if (startDate) startDate.setHours(0, 0, 0, 0);
+      if (completed) completed.setHours(0, 0, 0, 0);
+
+      var startedInRange   = startDate && startDate >= cutoff;
       var completedInRange = completed && completed >= cutoff;
 
       if (!startedInRange && !completedInRange) return false;
