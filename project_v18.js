@@ -55,7 +55,6 @@
     projectType: 32,
     keyResultSelection: 37,
     ticketNumber: 68,
-    supportTicket: 68,
   };
 
   // OKR indicator IDs (Project form)
@@ -95,16 +94,16 @@
 
   // Persistence keys
   var STORAGE_KEYS = {
-    activeTab: "pm_active_tab_v17",
-    tasksView: "pm_tasks_view_v17",
-    analyticsView: "pm_analytics_view_v17",
-    tasksDevOnly: "pmdashboard_tasks_devOnly_v17",
-    tasksPagination: "pm_tasks_pagination_v17",
-    FILTER_STATE_KEY: "pm_filter_state_v17",
-    dateRange: "pm_date_range_v17",
+    activeTab: "pm_active_tab_v18",
+    tasksView: "pm_tasks_view_v18",
+    analyticsView: "pm_analytics_view_v18",
+    tasksDevOnly: "pmdashboard_tasks_devOnly_v18",
+    tasksPagination: "pm_tasks_pagination_v18",
+    FILTER_STATE_KEY: "pm_filter_state_v18",
+    dateRange: "pm_date_range_v18",
   };
 
-  var OVERDUE_ALERT_DISMISSED_KEY = "pm_overdue_alert_dismissed_v17";
+  var OVERDUE_ALERT_DISMISSED_KEY = "pm_overdue_alert_dismissed_v18";
 
   var STATUS_CONFIG = {
     ALL_STATUSES: [
@@ -148,7 +147,7 @@
       pageSizes: [50, 100, 200],
     },
     projects: {
-      storageKey: "pm_projects_pagination_v17",
+      storageKey: "pm_projects_pagination_v18",
       containerId: "pmProjectsTablePagination",
       defaultPageSize: 25,
       pageSizes: [25, 50, 100],
@@ -270,7 +269,7 @@
 
   // Persistent dedup — survives page refresh
   // Stores recordIDs that have already been copied as recurring tasks
-  var RECURRING_COPIED_KEY = "pm_recurring_copied_v17";
+  var RECURRING_COPIED_KEY = "pm_recurring_copied_v18";
 
   function getRecurringCopiedSet() {
     try {
@@ -2202,7 +2201,6 @@
       projectType: extractFromS1(row, PROJECT_IND.projectType),
       keyResultSelection: extractFromS1(row, PROJECT_IND.keyResultSelection),
       ticketNumber: extractFromS1(row, PROJECT_IND.ticketNumber),
-      supportTicket: extractFromS1(row, PROJECT_IND.supportTicket),
       okrKey: extractFromS1(row, OKR_IND.okrKey),
       okrObjective: extractFromS1(row, OKR_IND.objective),
       okrStartDate: extractFromS1(row, OKR_IND.startDate),
@@ -8598,12 +8596,11 @@
       ticketCounts[date.getMonth()] += 1;
     });
 
+    // Projects imported by month — uses createdAt via getProjectGeneralDate
     var projectImportCounts = new Array(12).fill(0);
-    (state.projectsAll || []).forEach(function(p) {
-      if (!String(p.supportTicket || '').trim()) return;
+    (projectsForGeneralCharts || []).forEach(function(p) {
       var date = getProjectGeneralDate(p);
-      if (!date) return;
-      if (!inSelectedYear(date)) return;
+      if (!date || !inSelectedYear(date)) return;
       if (!inSelectedQuarter(date)) return;
       projectImportCounts[date.getMonth()] += 1;
     });
@@ -9237,20 +9234,11 @@
       return date.getMonth() === monthIndex;
     });
 
-    // Projects imported in this month — only those with a supportTicket value
+    // Projects imported in this month
     var importedProjects = (state.projectsAll || []).filter(function(p) {
-      if (!String(p.supportTicket || '').trim()) return false;
       var date = getProjectGeneralDate(p);
       if (!date) return false;
-      if (date.getMonth() !== monthIndex) return false;
-      var config = (cache && cache.config) || {};
-      var years = config.years;
-      if (years && years.length) {
-        var yr = date.getFullYear();
-        if (years.indexOf(yr) === -1 && years.indexOf(String(yr)) === -1)
-          return false;
-      }
-      return true;
+      return date.getMonth() === monthIndex;
     });
 
     // Build combined rows — tickets first, then projects
@@ -9276,7 +9264,8 @@
       return "<tr>" +
         "<td>" + pkCell + "</td>" +
         "<td>" + safe(p.projectName || "(No name)") + "</td>" +
-        "<td>" + safe(p.supportTicket) + "</td>" +
+        "<td>—</td>" +
+        "<td>" + safe(p.projectKey) + "</td>" +
         "<td>" + safe(p.owner) + "</td>" +
         "<td>Project</td>" +
         "</tr>";
@@ -10230,7 +10219,7 @@
       var projectRows = projectRowsAll.filter(function (r) {
         return hasAnyS1Value(
           r,
-          [2, 3, 4, 5, 6, 23, 24, 25, 26, 29, 32, 33, 37, 38, 68],
+          [2, 3, 4, 5, 6, 23, 24, 25, 26, 29, 32, 33, 37, 38],
         );
       });
       var taskRows = taskRowsAll.filter(function (r) {
@@ -10288,7 +10277,7 @@
   }
 
   /* ── Dark Mode ── */
-  var DARK_MODE_KEY = "pm_dark_mode_v17";
+  var DARK_MODE_KEY = "pm_dark_mode_v18";
 
   function isDarkMode() {
     try {
@@ -10478,7 +10467,7 @@
       var projectRows = projectRowsAll.filter(function (r) {
         return hasAnyS1Value(
           r,
-          [2, 3, 4, 5, 6, 23, 24, 25, 26, 29, 32, 33, 37, 38, 68],
+          [2, 3, 4, 5, 6, 23, 24, 25, 26, 29, 32, 33, 37, 38],
         );
       });
       var taskRows = taskRowsAll.filter(function (r) {
