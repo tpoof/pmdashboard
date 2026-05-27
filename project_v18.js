@@ -2151,16 +2151,19 @@
 
     var depIds = extractDependencyIds(depsRaw);
 
-    // Indicator 11 (assignedTo) may be an orgchart object with a userName
-    // property. Extract userName when present so matching works regardless
-    // of how LEAF serialized the field.
-    var assignedToRaw = extractRawIndicator(row, TASK_IND.assignedTo);
-    var assignedToValue =
-      assignedToRaw &&
-      typeof assignedToRaw === "object" &&
-      assignedToRaw.userName
-        ? String(assignedToRaw.userName).trim()
-        : extractFromS1(row, TASK_IND.assignedTo);
+    // Indicator 11 (assignedTo): s1.id11 = display name (e.g. "Harlie Haag"),
+    // s1.id11_orgchart = object with userName (e.g. "hhaag") and empUID.
+    // Store both so matching can compare against either CURRENT_USER_ID (username)
+    // or CURRENT_USER_NAME (display name).
+    var assignedToDisplayName = extractFromS1(row, TASK_IND.assignedTo);
+    var assignedToOrgchart =
+      row.s1 && row.s1["id" + TASK_IND.assignedTo + "_orgchart"];
+    var assignedToUserName =
+      assignedToOrgchart &&
+      typeof assignedToOrgchart === "object" &&
+      assignedToOrgchart.userName
+        ? String(assignedToOrgchart.userName).trim()
+        : "";
 
     return {
       recordID: recordID,
@@ -2168,7 +2171,8 @@
       title: extractFromS1(row, TASK_IND.title),
       status: extractFromS1(row, TASK_IND.status),
       otherSubType: extractFromS1(row, TASK_IND.otherSubType),
-      assignedTo: assignedToValue,
+      assignedTo: assignedToDisplayName,
+      assignedToUserName: assignedToUserName,
       start: extractFromS1(row, TASK_IND.startDate),
       due: extractFromS1(row, TASK_IND.dueDate),
       priority: extractFromS1(row, TASK_IND.priority),
@@ -2206,12 +2210,14 @@
       projectKey: extractFromS1(row, PROJECT_IND.projectKey),
       projectName: extractFromS1(row, PROJECT_IND.projectName),
       description: extractFromS1(row, PROJECT_IND.description),
-      // Indicator 5 (owner) may be an orgchart object — extract userName when present
-      owner: (function () {
-        var raw = extractRawIndicator(row, PROJECT_IND.owner);
-        if (raw && typeof raw === "object" && raw.userName)
-          return String(raw.userName).trim();
-        return extractFromS1(row, PROJECT_IND.owner);
+      // Indicator 5 (owner): s1.id5 = display name, s1.id5_orgchart.userName = username.
+      // Store both so matching works against either identity field.
+      owner: extractFromS1(row, PROJECT_IND.owner),
+      ownerUserName: (function () {
+        var og = row.s1 && row.s1["id" + PROJECT_IND.owner + "_orgchart"];
+        return og && typeof og === "object" && og.userName
+          ? String(og.userName).trim()
+          : "";
       })(),
       projectStatus: extractFromS1(row, PROJECT_IND.projectStatus),
       projectFiscalYear: extractFromS1(row, PROJECT_IND.projectFiscalYear),
@@ -7161,44 +7167,85 @@
 
   function currentUserMatchesTask(task) {
     if (!CURRENT_USER_ID && !CURRENT_USER_NAME) return false;
-    var assigned = String(task.assignedTo || "")
-      .trim()
-      .toLowerCase();
-    if (!assigned) return false;
-    if (CURRENT_USER_ID && assigned === CURRENT_USER_ID.trim().toLowerCase())
-      return true;
-    if (CURRENT_USER_NAME) {
-      var name = CURRENT_USER_NAME.trim().toLowerCase();
-      if (assigned === name) return true;
-      // Handle "Last, First" → "First Last" reversal
-      if (name.indexOf(",") !== -1) {
-        var parts = name.split(",");
-        var reversed = (parts[1] || "").trim() + " " + (parts[0] || "").trim();
-        if (assigned === reversed.toLowerCase()) return true;
+
+    // 1. Match via orgchart userName (id11_orgchart.userName) vs CURRENT_USER_ID
+    //    This is the most reliable path: both are system usernames.
+    if (CURRENT_USER_ID) {
+      var uid = CURRENT_USER_ID.trim().toLowerCase();
+      if (uid) {
+        // assignedToUserName comes from id11_orgchart.userName
+        var taskUserName = String(task.assignedToUserName || "")
+          .trim()
+          .toLowerCase();
+        if (taskUserName && taskUserName === uid) return true;
+        // Also try the plain assignedTo field in case it was stored as a username
+        var assignedLower = String(task.assignedTo || "")
+          .trim()
+          .toLowerCase();
+        if (assignedLower && assignedLower === uid) return true;
       }
     }
+
+    // 2. Match via display name (id11 plain string) vs CURRENT_USER_NAME
+    if (CURRENT_USER_NAME) {
+      var displayName = CURRENT_USER_NAME.trim().toLowerCase();
+      if (displayName) {
+        var assignedDisplay = String(task.assignedTo || "")
+          .trim()
+          .toLowerCase();
+        if (assignedDisplay && assignedDisplay === displayName) return true;
+        // Handle "Last, First" → "First Last" reversal
+        if (displayName.indexOf(",") !== -1) {
+          var parts = displayName.split(",");
+          var reversed =
+            (parts[1] || "").trim() + " " + (parts[0] || "").trim();
+          if (assignedDisplay === reversed) return true;
+        }
+      }
+    }
+
     return false;
   }
 
   // Checks whether the logged-in user is the owner of a project.
-  // Uses the same name-matching logic as currentUserMatchesTask.
+  // Mirrors currentUserMatchesTask: tries username first, then display name.
   function currentUserMatchesProject(project) {
     if (!CURRENT_USER_ID && !CURRENT_USER_NAME) return false;
-    var owner = String(project.owner || "")
-      .trim()
-      .toLowerCase();
-    if (!owner) return false;
-    if (CURRENT_USER_ID && owner === CURRENT_USER_ID.trim().toLowerCase())
-      return true;
-    if (CURRENT_USER_NAME) {
-      var name = CURRENT_USER_NAME.trim().toLowerCase();
-      if (owner === name) return true;
-      if (name.indexOf(",") !== -1) {
-        var parts = name.split(",");
-        var reversed = (parts[1] || "").trim() + " " + (parts[0] || "").trim();
-        if (owner === reversed.toLowerCase()) return true;
+
+    // 1. Match via orgchart userName (id5_orgchart.userName) vs CURRENT_USER_ID
+    if (CURRENT_USER_ID) {
+      var uid = CURRENT_USER_ID.trim().toLowerCase();
+      if (uid) {
+        // ownerUserName comes from id5_orgchart.userName
+        var projUserName = String(project.ownerUserName || "")
+          .trim()
+          .toLowerCase();
+        if (projUserName && projUserName === uid) return true;
+        // Also try the plain owner field in case it was stored as a username
+        var ownerLower = String(project.owner || "")
+          .trim()
+          .toLowerCase();
+        if (ownerLower && ownerLower === uid) return true;
       }
     }
+
+    // 2. Match via display name (id5 plain string) vs CURRENT_USER_NAME
+    if (CURRENT_USER_NAME) {
+      var displayName = CURRENT_USER_NAME.trim().toLowerCase();
+      if (displayName) {
+        var ownerDisplay = String(project.owner || "")
+          .trim()
+          .toLowerCase();
+        if (ownerDisplay && ownerDisplay === displayName) return true;
+        if (displayName.indexOf(",") !== -1) {
+          var parts = displayName.split(",");
+          var reversed =
+            (parts[1] || "").trim() + " " + (parts[0] || "").trim();
+          if (ownerDisplay === reversed) return true;
+        }
+      }
+    }
+
     return false;
   }
 
@@ -7404,6 +7451,7 @@
         recordID: t.recordID,
         title: t.title,
         assignedTo: t.assignedTo,
+        assignedToUserName: t.assignedToUserName,
         due: t.due,
         status: t.status,
         matchesUser: currentUserMatchesTask(t),
@@ -7438,6 +7486,7 @@
         projectKey: p.projectKey,
         projectName: p.projectName,
         owner: p.owner,
+        ownerUserName: p.ownerUserName,
         projectEndDate: p.projectEndDate,
         projectStatus: p.projectStatus,
         matchesUser: currentUserMatchesProject(p),
