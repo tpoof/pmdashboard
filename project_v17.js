@@ -5177,6 +5177,25 @@
     return isNaN(d2.getTime()) ? null : d2;
   }
 
+  // Strict MM/DD/YYYY parser — always uses local-time constructor.
+  // Never calls new Date(string), which is ambiguous and browser-dependent.
+  // Only accepts exactly "MM/DD/YYYY" — no fallbacks, no guessing.
+  function strictMmDdYyyy(s) {
+    var v = String(s || '').trim();
+    if (!v) return null;
+    var parts = v.split('/');
+    if (parts.length !== 3) return null;
+    var mm   = parseInt(parts[0], 10);
+    var dd   = parseInt(parts[1], 10);
+    var yyyy = parseInt(parts[2], 10);
+    if (isNaN(mm) || isNaN(dd) || isNaN(yyyy)) return null;
+    if (mm < 1 || mm > 12) return null;
+    if (dd < 1 || dd > 31) return null;
+    if (yyyy < 1900 || yyyy > 2100) return null;
+    var d = new Date(yyyy, mm - 1, dd);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
   function isCompletedStatus(status) {
     var st = String(status || "").toLowerCase();
     return (
@@ -6448,25 +6467,20 @@
     if (filters && !matchesFilterSet(task.category, filters.categories))
       return false;
     if (filters && filters.dateRange) {
-      // Compute cutoff as midnight N days ago — purely day-based, no time component
+      // cutoff = midnight N days ago, local time
       var cutoff = new Date();
       cutoff.setHours(0, 0, 0, 0);
       cutoff.setDate(cutoff.getDate() - filters.dateRange);
 
-      // Use mmddyyyyToDate — the same parser used everywhere else in the codebase
-      // for LEAF MM/DD/YYYY date strings. Avoids the ambiguous new Date(str) call
-      // in parseLeafDate which can misparse or produce wrong dates cross-browser.
-      var startDate = mmddyyyyToDate(task.start);
-      var completed = mmddyyyyToDate(task.actualCompletion);
+      // Use strictMmDdYyyy — always local-time, never new Date(string)
+      var startDate = strictMmDdYyyy(task.start);
+      var completed = strictMmDdYyyy(task.actualCompletion);
 
       // Exclude tasks with neither date when filter is active
       if (!startDate && !completed) return false;
 
-      // Normalize parsed dates to midnight so comparison is day-based only,
-      // not affected by any time component that may be present on the date object
-      if (startDate) startDate.setHours(0, 0, 0, 0);
-      if (completed) completed.setHours(0, 0, 0, 0);
-
+      // Both cutoff and parsed dates are already midnight local time —
+      // comparison is purely day-based with no time component interference
       var startedInRange   = startDate && startDate >= cutoff;
       var completedInRange = completed && completed >= cutoff;
 
