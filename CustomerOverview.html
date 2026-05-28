@@ -1,8 +1,16 @@
 <style>
   /* ============================================================
-   CustomerOverview — LEAF Programmer Page
-   All styles scoped to #customerOverview to avoid conflicts
-   with LEAF's own stylesheet.
+   CustomerOverview v3 — LEAF Programmer Page
+   All styles scoped to #customerOverview.
+
+   v3 changes (on top of v2):
+     - Removed: print button, record ID display, last-updated display
+     - POC rendered as mailto: link (opens email client to POC address)
+       TODO: set CONFIG.indicators.pocEmail once you know the indicator ID
+     - Per-phase file + image attachments fetched via
+       ajaxIndex.php?a=getprintindicator and rendered below phase text
+     - Image thumbnails open in a lightbox overlay (keyboard + focus trap)
+     - File attachments render as styled download links
    ============================================================ */
 
   #customerOverview *,
@@ -55,7 +63,6 @@
     outline-offset: 2px;
   }
 
-  /* ---- Visually hidden utility (screen-reader only) ---- */
   #customerOverview .co-sr-only {
     position: absolute;
     width: 1px;
@@ -69,7 +76,7 @@
   }
 
   /* ============================================================
-   Loading state
+   Loading / error states
    ============================================================ */
   #customerOverview .co-loading {
     display: flex;
@@ -97,9 +104,6 @@
     }
   }
 
-  /* ============================================================
-   Error state
-   ============================================================ */
   #customerOverview .co-error {
     background: #fff3f3;
     border: 1px solid #b51d1d;
@@ -113,12 +117,78 @@
   }
 
   /* ============================================================
+   Fade-in
+   ============================================================ */
+  @keyframes co-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  #customerOverview .co-content-visible {
+    animation: co-fade-in 0.3s ease both;
+  }
+
+  /* ============================================================
    Page header
    ============================================================ */
   #customerOverview .co-header {
     margin-bottom: 36px;
     padding-bottom: 24px;
     border-bottom: 2px solid #dfe1e2;
+  }
+
+  /* v3: Welcome banner — sits above the project name */
+  #customerOverview .co-welcome-banner {
+    background: linear-gradient(135deg, #003f72 0%, #0071bb 100%);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  #customerOverview .co-welcome-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+  }
+
+  #customerOverview .co-welcome-icon svg {
+    width: 22px;
+    height: 22px;
+    color: #ffffff;
+  }
+
+  #customerOverview .co-welcome-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  #customerOverview .co-welcome-headline {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  #customerOverview .co-welcome-sub {
+    font-size: 0.9375rem;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.5;
   }
 
   #customerOverview .co-project-name {
@@ -132,13 +202,23 @@
   #customerOverview .co-project-type {
     font-size: 1rem;
     color: #3d4551;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
+  }
+
+  /* v3: italicized project type blurb */
+  #customerOverview .co-project-type-blurb {
+    font-size: 0.9rem;
+    font-style: italic;
+    color: #71767a;
+    line-height: 1.55;
+    margin-bottom: 10px;
+    padding-left: 2px;
   }
 
   #customerOverview .co-project-poc {
     font-size: 1rem;
     color: #3d4551;
-    margin-bottom: 12px;
+    margin-bottom: 4px;
   }
 
   #customerOverview .co-project-label {
@@ -147,8 +227,26 @@
     letter-spacing: 0.04em;
   }
 
+  /* v3: POC mailto link */
+  #customerOverview .co-poc-link {
+    color: #0071bb;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    font-weight: 500;
+  }
+
+  #customerOverview .co-poc-link:hover {
+    color: #003f72;
+  }
+
+  #customerOverview .co-poc-link:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
   /* ============================================================
-   Progress bar section
+   Progress bar
    ============================================================ */
   #customerOverview .co-progress-section {
     margin-bottom: 40px;
@@ -176,7 +274,7 @@
     padding-bottom: 4px;
   }
 
-  /* Horizontal connector line */
+  /* Grey base connector line */
   #customerOverview .co-progress-track::before {
     content: "";
     position: absolute;
@@ -188,7 +286,19 @@
     z-index: 0;
   }
 
-  /* ---- Individual step ---- */
+  /* Green completed-segment overlay */
+  #customerOverview .co-progress-track::after {
+    content: "";
+    position: absolute;
+    top: 20px;
+    left: 10%;
+    height: 3px;
+    width: calc(var(--co-progress-pct, 0%) * 0.8);
+    background: #1a7a4a;
+    z-index: 0;
+    transition: width 0.4s ease;
+  }
+
   #customerOverview .co-step {
     display: flex;
     flex-direction: column;
@@ -223,46 +333,37 @@
     line-height: 1.3;
   }
 
-  /* ---- Complete step ---- */
   #customerOverview .co-step--complete .co-step-circle {
     background: #1a7a4a;
     border-color: #1a7a4a;
     color: #ffffff !important;
   }
-
-  #customerOverview .co-step--complete .co-step-circle span,
-  #customerOverview .co-step--complete .co-step-circle * {
+  #customerOverview .co-step--complete .co-step-circle span {
     color: #ffffff !important;
   }
-
   #customerOverview .co-step--complete .co-step-label {
     color: #1b1b1b;
   }
 
-  /* ---- Active step ---- */
   #customerOverview .co-step--active .co-step-circle {
     background: #003f72 !important;
     border-color: #003f72 !important;
     color: #ffffff !important;
     box-shadow: 0 0 0 4px #cce0f5;
   }
-  #customerOverview .co-step--active .co-step-circle span,
-  #customerOverview .co-step--active .co-step-circle * {
+  #customerOverview .co-step--active .co-step-circle span {
     color: #ffffff !important;
   }
-
   #customerOverview .co-step--active .co-step-label {
     font-weight: 700;
     color: #003f72;
   }
 
-  /* ---- Upcoming step ---- */
   #customerOverview .co-step--upcoming .co-step-circle {
     background: #f0f0f0;
     border-color: #a9aeb1;
     color: #3d4551;
   }
-
   #customerOverview .co-step--upcoming .co-step-label {
     color: #71767a;
   }
@@ -286,6 +387,35 @@
     border: 0;
   }
 
+  #customerOverview .co-phases-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+  }
+
+  #customerOverview .co-toggle-completed-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    padding: 4px 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #0071bb;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  #customerOverview .co-toggle-completed-btn:hover {
+    color: #003f72;
+  }
+  #customerOverview .co-toggle-completed-btn:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
   #customerOverview .co-phases {
     display: flex;
     flex-direction: column;
@@ -303,14 +433,18 @@
     border-color: #d6d7d9;
     background: #fafafa;
   }
-
+  #customerOverview .co-phase--complete.co-phase--collapsed .co-phase-body {
+    display: none;
+  }
+  #customerOverview .co-phase--complete.co-phase--collapsed .co-phase-header {
+    margin-bottom: 0;
+  }
   #customerOverview .co-phase--active {
     border-left: 5px solid #0071bb;
     background: #f0f7ff;
     border-color: #b5d0eb;
     padding-left: 20px;
   }
-
   #customerOverview .co-phase--upcoming {
     background: #fafafa;
     border-color: #e6e6e6;
@@ -321,6 +455,11 @@
     align-items: center;
     gap: 12px;
     margin-bottom: 14px;
+  }
+
+  #customerOverview .co-phase--complete .co-phase-header {
+    cursor: pointer;
+    user-select: none;
   }
 
   #customerOverview .co-phase-number {
@@ -339,29 +478,21 @@
     background: #1a7a4a;
     color: #ffffff !important;
   }
-
-  #customerOverview .co-phase--complete .co-phase-number span,
-  #customerOverview .co-phase--complete .co-phase-number * {
+  #customerOverview .co-phase--complete .co-phase-number span {
     color: #ffffff !important;
   }
-
   #customerOverview .co-phase--active .co-phase-number {
     background: #003f72;
     color: #ffffff !important;
   }
-
-  #customerOverview .co-phase--active .co-phase-number span,
-  #customerOverview .co-phase--active .co-phase-number * {
+  #customerOverview .co-phase--active .co-phase-number span {
     color: #ffffff !important;
   }
-
   #customerOverview .co-phase--upcoming .co-phase-number {
     background: #71767a;
     color: #ffffff !important;
   }
-
-  #customerOverview .co-phase--upcoming .co-phase-number span,
-  #customerOverview .co-phase--upcoming .co-phase-number * {
+  #customerOverview .co-phase--upcoming .co-phase-number span {
     color: #ffffff !important;
   }
 
@@ -371,7 +502,6 @@
     color: #1b1b1b;
     flex: 1;
   }
-
   #customerOverview .co-phase--upcoming .co-phase-title {
     color: #3d4551;
   }
@@ -385,17 +515,37 @@
     border-radius: 20px;
     flex-shrink: 0;
   }
-
   #customerOverview .co-phase--complete .co-phase-badge {
     background: #e5f5ed;
     color: #1a7a4a;
     border: 1px solid #1a7a4a;
   }
-
   #customerOverview .co-phase--active .co-phase-badge {
     background: #ddeeff;
     color: #003f72;
     border: 1px solid #0071bb;
+  }
+
+  #customerOverview .co-phase-chevron {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: #71767a;
+    transition: transform 0.2s ease;
+    display: none;
+  }
+  #customerOverview .co-phase--complete .co-phase-chevron {
+    display: block;
+  }
+  #customerOverview .co-phase--complete.co-phase--collapsed .co-phase-chevron {
+    transform: rotate(-90deg);
+  }
+
+  /* v3: phase body wraps both text content and attachments */
+  #customerOverview .co-phase-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
 
   #customerOverview .co-phase-content {
@@ -405,11 +555,9 @@
     white-space: pre-wrap;
     word-break: break-word;
   }
-
   #customerOverview .co-phase--complete .co-phase-content {
     color: #3d4551;
   }
-
   #customerOverview .co-phase--upcoming .co-phase-content {
     color: #3d4551;
   }
@@ -418,6 +566,211 @@
     font-style: italic;
     color: #71767a;
     font-size: 0.9375rem;
+  }
+
+  /* ============================================================
+   v3: Attachment area
+   ============================================================ */
+  #customerOverview .co-attachments {
+    border-top: 1px solid #dfe1e2;
+    padding-top: 14px;
+  }
+
+  #customerOverview .co-attachments-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #71767a;
+    margin-bottom: 10px;
+  }
+
+  /* Loading shimmer for attachments */
+  #customerOverview .co-attach-loading {
+    font-size: 0.875rem;
+    color: #71767a;
+    font-style: italic;
+  }
+
+  /* Image grid */
+  #customerOverview .co-img-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  #customerOverview .co-img-thumb-btn {
+    display: block;
+    padding: 0;
+    background: none;
+    border: 2px solid #dfe1e2;
+    border-radius: 6px;
+    cursor: pointer;
+    line-height: 0;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+  }
+
+  #customerOverview .co-img-thumb-btn:hover,
+  #customerOverview .co-img-thumb-btn:focus {
+    border-color: #0071bb;
+  }
+
+  #customerOverview .co-img-thumb-btn:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+  }
+
+  #customerOverview .co-img-thumb {
+    width: 120px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 4px;
+    display: block;
+  }
+
+  #customerOverview .co-img-caption {
+    font-size: 0.7rem;
+    color: #71767a;
+    text-align: center;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 4px;
+  }
+
+  #customerOverview .co-img-figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* File list */
+  #customerOverview .co-file-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  #customerOverview .co-file-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #customerOverview .co-file-icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    background: #ddeeff;
+    border: 1px solid #b5d0eb;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #customerOverview .co-file-icon svg {
+    width: 14px;
+    height: 14px;
+    color: #003f72;
+  }
+
+  #customerOverview .co-file-link {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #0071bb;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  #customerOverview .co-file-link:hover {
+    color: #003f72;
+  }
+  #customerOverview .co-file-link:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* ============================================================
+   v3: Lightbox overlay
+   ============================================================ */
+  #co-lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.88);
+    align-items: center;
+    justify-content: center;
+  }
+
+  #co-lightbox.co-lightbox--open {
+    display: flex;
+  }
+
+  #co-lightbox-inner {
+    position: relative;
+    max-width: 92vw;
+    max-height: 92vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #co-lightbox-img {
+    display: block;
+    max-width: 90vw;
+    max-height: 88vh;
+    border-radius: 4px;
+    box-shadow: 0 8px 48px rgba(0, 0, 0, 0.6);
+    object-fit: contain;
+  }
+
+  #co-lightbox-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: none;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+
+  #co-lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  #co-lightbox-close:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 3px;
+  }
+
+  #co-lightbox-caption {
+    position: absolute;
+    bottom: -32px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.875rem;
+    pointer-events: none;
   }
 
   /* ============================================================
@@ -436,47 +789,136 @@
     #customerOverview {
       padding: 16px;
     }
-
     #customerOverview .co-project-name {
       font-size: 1.5rem;
     }
-
+    #customerOverview .co-welcome-banner {
+      padding: 16px;
+      gap: 12px;
+    }
+    #customerOverview .co-welcome-headline {
+      font-size: 1rem;
+    }
+    #customerOverview .co-welcome-icon {
+      width: 34px;
+      height: 34px;
+    }
+    #customerOverview .co-welcome-icon svg {
+      width: 18px;
+      height: 18px;
+    }
     #customerOverview .co-step-circle {
       width: 34px;
       height: 34px;
       font-size: 0.875rem;
     }
-
-    #customerOverview .co-progress-track::before {
+    #customerOverview .co-progress-track::before,
+    #customerOverview .co-progress-track::after {
       top: 17px;
     }
-
     #customerOverview .co-step-label {
       font-size: 0.65rem;
       max-width: 60px;
     }
-
     #customerOverview .co-phase {
       padding: 14px 16px;
     }
-
     #customerOverview .co-phase--active {
       padding-left: 14px;
     }
-
     #customerOverview .co-phase-title {
       font-size: 1rem;
     }
-
     #customerOverview .co-phase-badge {
+      display: none;
+    }
+    #customerOverview .co-img-thumb {
+      width: 90px;
+      height: 68px;
+    }
+    #customerOverview .co-img-thumb-btn {
+      border-width: 1px;
+    }
+    #customerOverview .co-img-caption {
+      max-width: 90px;
+    }
+  }
+
+  /* ============================================================
+   Print styles
+   ============================================================ */
+  @media print {
+    #customerOverview .co-phases-toolbar,
+    #customerOverview .co-phase-chevron {
+      display: none !important;
+    }
+    #customerOverview .co-phase--collapsed .co-phase-body {
+      display: flex !important;
+    }
+    #customerOverview .co-phase--collapsed .co-phase-header {
+      margin-bottom: 14px !important;
+    }
+    #co-lightbox {
+      display: none !important;
+    }
+    #customerOverview .co-img-thumb-btn {
+      border: 1px solid #ccc;
+    }
+    #customerOverview .co-welcome-banner {
+      background: none !important;
+      border: 1px solid #dfe1e2;
+      padding: 14px 16px;
+    }
+    #customerOverview .co-welcome-headline {
+      color: #003f72 !important;
+    }
+    #customerOverview .co-welcome-sub {
+      color: #3d4551 !important;
+    }
+    #customerOverview .co-welcome-icon {
       display: none;
     }
   }
 </style>
 
 <!-- ============================================================
-     CustomerOverview — LEAF Programmer page markup
+     CustomerOverview v3 — LEAF Programmer page markup
      ============================================================ -->
+
+<!-- v3: Lightbox overlay (singleton, outside scoped wrapper) -->
+<div
+  id="co-lightbox"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Image preview"
+>
+  <div id="co-lightbox-inner">
+    <button
+      id="co-lightbox-close"
+      type="button"
+      aria-label="Close image preview"
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          d="M3 3l10 10M13 3L3 13"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+      </svg>
+    </button>
+    <img id="co-lightbox-img" src="" alt="" />
+    <span id="co-lightbox-caption"></span>
+  </div>
+</div>
+
 <div id="customerOverview" lang="en">
   <a class="co-skip-link" href="#co-phase-details">Skip to phase details</a>
 
@@ -486,7 +928,6 @@
     aria-live="polite"
     aria-atomic="true"
   ></div>
-
   <div
     id="co-live-assertive"
     class="co-sr-only"
@@ -501,16 +942,52 @@
     aria-label="Loading project data"
   >
     <div class="co-spinner" aria-hidden="true"></div>
-    <p>Loading project data…</p>
+    <p>Loading project data&hellip;</p>
   </div>
 
   <div id="co-error" class="co-error" role="alert" style="display: none"></div>
 
   <div id="co-content" style="display: none">
     <header class="co-header">
+      <!-- v3: Welcome banner -->
+      <div class="co-welcome-banner" aria-label="Welcome message">
+        <div class="co-welcome-icon" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 00-3-3.87" />
+            <path d="M16 3.13a4 4 0 010 7.75" />
+          </svg>
+        </div>
+        <div class="co-welcome-text">
+          <p class="co-welcome-headline">Welcome to your LEAF Project Hub.</p>
+          <p class="co-welcome-sub">
+            This is your central view of progress, milestones, and the team
+            behind your project.
+          </p>
+        </div>
+      </div>
+
       <h1 id="co-project-name" class="co-project-name"></h1>
       <p id="co-project-type" class="co-project-type"></p>
+      <!-- v3: italicized type blurb — populated by JS for known project types -->
+      <p
+        id="co-project-type-blurb"
+        class="co-project-type-blurb"
+        style="display: none"
+      ></p>
       <p id="co-project-poc" class="co-project-poc"></p>
+      <!-- v3: Service POC stacked below LEAF POC -->
+      <p id="co-service-poc" class="co-project-poc"></p>
     </header>
 
     <section class="co-progress-section" aria-labelledby="co-progress-heading">
@@ -524,6 +1001,20 @@
 
     <section class="co-phases-section" aria-labelledby="co-phases-heading">
       <h2 id="co-phases-heading" class="co-phases-heading">Phase Details</h2>
+      <div
+        id="co-phases-toolbar"
+        class="co-phases-toolbar"
+        style="display: none"
+      >
+        <button
+          id="co-toggle-completed-btn"
+          class="co-toggle-completed-btn"
+          type="button"
+          aria-expanded="false"
+        >
+          <span id="co-toggle-completed-label">Show completed phases</span>
+        </button>
+      </div>
       <div id="co-phase-details" class="co-phases"></div>
     </section>
   </div>
@@ -537,42 +1028,81 @@
      CONFIG
      ============================================================ */
     var CONFIG = {
-      debug: true,
+      debug: false,
 
       categoryID: "55445",
 
       indicators: {
-        projectName: 59, // Project Name
-        projectType: 60, // Project Type
+        projectName: 59,
+        projectType: 60,
+        /*
+         * Indicators 67 and 74 are orgchart_employee fields.
+         * LEAF stores the empUID as the raw value and populates
+         * s1["id{N}_orgchart"] with { empUID, userName, … }.
+         * We call /platform/orgchart/api/employee/{empUID} to resolve
+         * the full name and email for the mailto: link.
+         */
         poc: 67, // LEAF POC
-        currentPhase: 61, // Current Phase (dropdown)
-        phase1: 62, // Phase 1: Discovery
-        phase2: 63, // Phase 2: Planning
-        phase3: 64, // Phase 3: Execution
-        phase4: 65, // Phase 4: Launch
-        phase5: 66, // Phase 5: Monitoring
+        servicePoc: 74, // Service POC
+
+        currentPhase: 61,
+        phase1: 62,
+        phase2: 63,
+        phase3: 64,
+        phase4: 65,
+        phase5: 66,
       },
 
       phases: [
-        { step: 1, label: "Discovery", key: "phase1" },
-        { step: 2, label: "Planning", key: "phase2" },
-        { step: 3, label: "Execution", key: "phase3" },
-        { step: 4, label: "Launch", key: "phase4" },
-        { step: 5, label: "Monitoring", key: "phase5" },
+        {
+          step: 1,
+          label: "Discovery",
+          key: "phase1",
+          fileInd: 76,
+          imageInd: 77,
+        },
+        {
+          step: 2,
+          label: "Planning",
+          key: "phase2",
+          fileInd: 78,
+          imageInd: 79,
+        },
+        {
+          step: 3,
+          label: "Execution",
+          key: "phase3",
+          fileInd: 80,
+          imageInd: 81,
+        },
+        { step: 4, label: "Launch", key: "phase4", fileInd: 82, imageInd: 83 },
+        {
+          step: 5,
+          label: "Monitoring",
+          key: "phase5",
+          fileInd: 84,
+          imageInd: 85,
+        },
       ],
 
-      /*
-       * Map the raw dropdown value stored by LEAF for IND_CURRENT_PHASE
-       * to a step number 1–5.
-       * TODO: verify these match the exact values LEAF stores for that field.
-       * Enable CONFIG.debug = true and check the console dump to confirm.
-       */
       phaseValueMap: {
         discovery: 1,
         planning: 2,
         execution: 3,
         launch: 4,
         monitoring: 5,
+      },
+
+      /*
+       * Italicized blurbs rendered beneath the project type label.
+       * Keys are lowercased, trimmed versions of the raw LEAF dropdown value.
+       * Unrecognised types render no blurb (silently omitted).
+       */
+      PROJECT_TYPE_BLURBS: {
+        "national project":
+          "A National Project is a structured, full-service engagement where the LEAF team guides your agency through every phase \u2014 from discovery to launch \u2014 with dedicated support along the way.",
+        "managed services":
+          "With Managed Services, the LEAF team remains a dedicated resource for your organization \u2014 available to help with questions, changes, and ongoing needs as your environment evolves.",
       },
     };
 
@@ -602,10 +1132,6 @@
       }, 60);
     }
 
-    /* ============================================================
-     Decode HTML entities that LEAF may encode (e.g. &amp; → &)
-     Mirrors decodeEntities from project_v16.js
-     ============================================================ */
     function decodeEntities(str) {
       if (!str || typeof str !== "string") return str;
       return str
@@ -619,9 +1145,6 @@
         .replace(/&apos;/g, "'");
     }
 
-    /* ============================================================
-     URL helper — reads ?a= for the record ID
-     ============================================================ */
     function getRecordIDFromURL() {
       try {
         return new URLSearchParams(window.location.search).get("a") || "";
@@ -631,9 +1154,6 @@
       }
     }
 
-    /* ============================================================
-     State helpers
-     ============================================================ */
     function showEl(id) {
       var el = byId(id);
       if (el) el.style.display = "";
@@ -661,15 +1181,12 @@
     function showContent() {
       hideEl("co-loading");
       hideEl("co-error");
-      showEl("co-content");
+      var contentEl = byId("co-content");
+      contentEl.style.display = "";
+      contentEl.classList.add("co-content-visible");
       announce("Project data loaded.", false);
     }
 
-    /* ============================================================
-     Extract a field value from s1 using LEAF's keying convention.
-     LEAF stores values in s1 as:  s1['id' + indicatorID] = 'raw string'
-     This mirrors extractFromS1 in project_v16.js exactly.
-     ============================================================ */
     function getField(s1, indicatorID) {
       if (!s1) return "";
       var key = "id" + String(indicatorID);
@@ -678,9 +1195,6 @@
       return decodeEntities(String(v).trim());
     }
 
-    /* ============================================================
-     Phase / step helpers
-     ============================================================ */
     function stepState(stepNumber, activeStep) {
       if (stepNumber < activeStep) return "complete";
       if (stepNumber === activeStep) return "active";
@@ -690,55 +1204,307 @@
     function resolveActiveStep(raw) {
       if (!raw) return 1;
       var norm = String(raw).toLowerCase().trim();
-
       if (Object.prototype.hasOwnProperty.call(CONFIG.phaseValueMap, norm)) {
         return CONFIG.phaseValueMap[norm];
       }
-
-      // Partial match — handles values like "Phase 2 - Planning"
       var keys = Object.keys(CONFIG.phaseValueMap);
       for (var i = 0; i < keys.length; i++) {
         if (norm.indexOf(keys[i]) !== -1 || keys[i].indexOf(norm) !== -1) {
           return CONFIG.phaseValueMap[keys[i]];
         }
       }
-
       if (CONFIG.debug) {
         console.warn(
           "[CustomerOverview] Unrecognized phase value:",
           JSON.stringify(raw),
-        );
-        console.warn(
-          "[CustomerOverview] Expected one of:",
-          Object.keys(CONFIG.phaseValueMap),
         );
       }
       return 1;
     }
 
     /* ============================================================
-     Date formatting
+     fetchOrgchartEmployee
+     Resolves an empUID to { displayName, email } via the orgchart API.
+     Always resolves — never rejects — so callers can fall back safely.
      ============================================================ */
-    function formatDate(dateStr) {
-      if (!dateStr) return { iso: "", display: "Unknown" };
-      var d = new Date(dateStr);
-      if (isNaN(d.getTime())) return { iso: "", display: String(dateStr) };
-      return {
-        iso: d.toISOString(),
-        display: d.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
-      };
+    function fetchOrgchartEmployee(empUID) {
+      if (!empUID) return Promise.resolve({ displayName: "", email: "" });
+
+      return fetch(
+        "/platform/orgchart/api/employee/" + encodeURIComponent(empUID),
+        {
+          credentials: "include",
+          headers: { "x-requested-with": "XMLHttpRequest" },
+        },
+      )
+        .then(function (r) {
+          if (!r.ok) throw new Error("Orgchart API HTTP " + r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          var emp = data && data.employee;
+          if (!emp) return { displayName: "", email: "" };
+
+          /* Build display name: "First [Middle] Last" */
+          var parts = [emp.firstName, emp.middleName, emp.lastName]
+            .map(function (p) {
+              return (p || "").trim();
+            })
+            .filter(Boolean);
+          var displayName = parts.join(" ");
+
+          /* email field may be "email" or "Email" depending on orgchart version */
+          var email = (emp.email || emp.Email || "").trim();
+
+          if (CONFIG.debug) {
+            console.log("[CustomerOverview] orgchart employee:", {
+              empUID: empUID,
+              displayName: displayName,
+              email: email,
+            });
+          }
+
+          return { displayName: displayName, email: email };
+        })
+        .catch(function (err) {
+          if (CONFIG.debug)
+            console.warn("[CustomerOverview] orgchart lookup failed:", err);
+          return { displayName: "", email: "" };
+        });
     }
 
     /* ============================================================
-     Progress bar renderer
+     Lightbox
+     ============================================================ */
+    var lightbox = {
+      el: null,
+      imgEl: null,
+      captionEl: null,
+      closeBtn: null,
+      prevFocus: null,
+
+      init: function () {
+        this.el = byId("co-lightbox");
+        this.imgEl = byId("co-lightbox-img");
+        this.captionEl = byId("co-lightbox-caption");
+        this.closeBtn = byId("co-lightbox-close");
+        if (!this.el) return;
+
+        var self = this;
+
+        /* Close on backdrop click */
+        this.el.addEventListener("click", function (e) {
+          if (e.target === self.el) self.close();
+        });
+
+        /* Close button */
+        this.closeBtn.addEventListener("click", function () {
+          self.close();
+        });
+
+        /* Keyboard: Escape closes, Tab stays trapped inside */
+        this.el.addEventListener("keydown", function (e) {
+          if (e.key === "Escape") {
+            self.close();
+            return;
+          }
+          if (e.key === "Tab") {
+            /* Only focusable element inside is the close button */
+            e.preventDefault();
+            self.closeBtn.focus();
+          }
+        });
+      },
+
+      open: function (src, caption) {
+        if (!this.el) return;
+        this.prevFocus = document.activeElement;
+        this.imgEl.setAttribute("src", src);
+        this.imgEl.setAttribute("alt", caption || "");
+        this.captionEl.textContent = caption || "";
+        this.el.classList.add("co-lightbox--open");
+        this.closeBtn.focus();
+      },
+
+      close: function () {
+        if (!this.el) return;
+        this.el.classList.remove("co-lightbox--open");
+        this.imgEl.setAttribute("src", "");
+        if (this.prevFocus && typeof this.prevFocus.focus === "function") {
+          this.prevFocus.focus();
+        }
+      },
+    };
+
+    /* ============================================================
+     Attachment renderer
+     Calls ajaxIndex.php?a=getprintindicator for both file and image
+     indicators of a phase, then builds the attachment section.
+     ============================================================ */
+    function fetchIndicatorHTML(recordID, indicatorID) {
+      return fetch(
+        "ajaxIndex.php?a=getprintindicator" +
+          "&recordID=" +
+          encodeURIComponent(recordID) +
+          "&indicatorID=" +
+          encodeURIComponent(indicatorID) +
+          "&series=1",
+        {
+          credentials: "include",
+          headers: { "x-requested-with": "XMLHttpRequest" },
+        },
+      )
+        .then(function (r) {
+          return r.text();
+        })
+        .catch(function () {
+          return "";
+        });
+    }
+
+    function parseAttachmentsFromHTML(html) {
+      var tmp = document.createElement("div");
+      tmp.innerHTML = html;
+      return {
+        images: Array.prototype.slice.call(
+          tmp.querySelectorAll('img[src*="image.php"]'),
+        ),
+        files: Array.prototype.slice.call(
+          tmp.querySelectorAll('a[href*="file.php"]'),
+        ),
+      };
+    }
+
+    function buildAttachmentSection(attachEl, images, files) {
+      /* Nothing at all */
+      if (images.length === 0 && files.length === 0) {
+        attachEl.style.display = "none";
+        return;
+      }
+
+      var html = '<p class="co-attachments-label">Attachments</p>';
+
+      /* Image grid */
+      if (images.length > 0) {
+        html +=
+          '<div class="co-img-grid" role="list" aria-label="Image attachments">';
+        images.forEach(function (img, i) {
+          var src = img.getAttribute("src") || "";
+          var altRaw = img.getAttribute("alt") || "";
+          var caption =
+            altRaw.replace(/^image upload:\s*/i, "").trim() ||
+            "Image " + (i + 1);
+          var safeCaption = esc(caption);
+
+          html += '<figure class="co-img-figure" role="listitem">';
+          html +=
+            '<button type="button" class="co-img-thumb-btn"' +
+            ' data-src="' +
+            esc(src) +
+            '"' +
+            ' data-caption="' +
+            safeCaption +
+            '"' +
+            ' aria-label="View full size: ' +
+            safeCaption +
+            '">';
+          html +=
+            '<img src="' +
+            esc(src) +
+            '"' +
+            ' alt="' +
+            safeCaption +
+            '"' +
+            ' class="co-img-thumb"' +
+            ' loading="lazy"' +
+            "/>";
+          html += "</button>";
+          html +=
+            '<span class="co-img-caption" aria-hidden="true" title="' +
+            safeCaption +
+            '">' +
+            caption +
+            "</span>";
+          html += "</figure>";
+        });
+        html += "</div>";
+      }
+
+      /* File list */
+      if (files.length > 0) {
+        html += '<ul class="co-file-list" aria-label="File attachments">';
+        files.forEach(function (a) {
+          var href = a.getAttribute("href") || "#";
+          var filename = (a.textContent || "").trim() || "Download file";
+          html += '<li class="co-file-item">';
+          html +=
+            '<span class="co-file-icon" aria-hidden="true">' +
+            '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false">' +
+            '<path d="M9 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V6L9 2z"/>' +
+            '<path d="M9 2v4h4"/>' +
+            "</svg>" +
+            "</span>";
+          html +=
+            '<a href="' +
+            esc(href) +
+            '" target="_blank" rel="noopener noreferrer"' +
+            ' class="co-file-link"' +
+            ' aria-label="Download ' +
+            esc(filename) +
+            ' (opens in new tab)">' +
+            esc(filename) +
+            "</a>";
+          html += "</li>";
+        });
+        html += "</ul>";
+      }
+
+      attachEl.innerHTML = html;
+      attachEl.style.display = "";
+
+      /* Wire lightbox buttons */
+      var btns = attachEl.querySelectorAll(".co-img-thumb-btn");
+      Array.prototype.slice.call(btns).forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          lightbox.open(
+            btn.getAttribute("data-src"),
+            btn.getAttribute("data-caption"),
+          );
+        });
+      });
+    }
+
+    function loadPhaseAttachments(recordID, phase, attachEl) {
+      Promise.all([
+        fetchIndicatorHTML(recordID, phase.fileInd),
+        fetchIndicatorHTML(recordID, phase.imageInd),
+      ])
+        .then(function (results) {
+          var fileData = parseAttachmentsFromHTML(results[0]);
+          var imageData = parseAttachmentsFromHTML(results[1]);
+
+          var combined = {
+            images: imageData.images,
+            files: fileData.files,
+          };
+
+          buildAttachmentSection(attachEl, combined.images, combined.files);
+        })
+        .catch(function () {
+          attachEl.style.display = "none";
+        });
+    }
+
+    /* ============================================================
+     renderProgressBar
      ============================================================ */
     function renderProgressBar(activeStep) {
       var track = byId("co-progress-track");
       track.innerHTML = "";
+
+      var total = CONFIG.phases.length;
+      var fraction = total > 1 ? (activeStep - 1) / (total - 1) : 0;
+      track.style.setProperty("--co-progress-pct", fraction * 100 + "%");
 
       CONFIG.phases.forEach(function (phase) {
         var state = stepState(phase.step, activeStep);
@@ -750,10 +1516,9 @@
 
         var li = document.createElement("li");
         li.className = "co-step co-step--" + state;
-        li.setAttribute("aria-label", phase.label + " — " + stateWord);
+        li.setAttribute("aria-label", phase.label + " \u2014 " + stateWord);
         if (state === "active") li.setAttribute("aria-current", "step");
 
-        // Checkmark for complete, number for active/upcoming
         var circleInner =
           state === "complete"
             ? '<span aria-hidden="true">&#10003;</span>'
@@ -772,11 +1537,13 @@
     }
 
     /* ============================================================
-     Phase cards renderer
+     renderPhaseDetails
      ============================================================ */
-    function renderPhaseDetails(activeStep, contents) {
+    function renderPhaseDetails(recordID, activeStep, contents) {
       var container = byId("co-phase-details");
       container.innerHTML = "";
+
+      var completedWithContentCount = 0;
 
       CONFIG.phases.forEach(function (phase) {
         var state = stepState(phase.step, activeStep);
@@ -785,31 +1552,33 @@
         var article = document.createElement("article");
         article.className = "co-phase co-phase--" + state;
 
-        // Number badge: checkmark for complete, step number otherwise
         var numberInner =
           state === "complete"
             ? '<span aria-hidden="true">&#10003;</span>'
             : '<span aria-hidden="true">' + phase.step + "</span>";
 
-        // Only show "Complete" badge on completed phases
-        var badgeHtml =
-          state === "complete"
-            ? '<span class="co-phase-badge" aria-hidden="true">Complete</span>'
-            : "";
-
-        var contentHtml;
-        if (content.trim()) {
-          contentHtml = '<p class="co-phase-content"></p>';
-        } else {
-          contentHtml =
-            '<p class="co-phase-content co-phase-placeholder"' +
-            ' aria-label="' +
-            esc(phase.label) +
-            ' phase: Details coming soon">' +
-            '<span aria-hidden="true">Details coming soon</span>' +
-            "</p>";
+        var badgeHtml = "";
+        if (state === "complete") {
+          badgeHtml =
+            '<span class="co-phase-badge" aria-hidden="true">Complete</span>';
+        } else if (state === "active") {
+          badgeHtml =
+            '<span class="co-phase-badge" aria-hidden="true">In Progress</span>';
         }
 
+        var chevronHtml =
+          '<svg class="co-phase-chevron" viewBox="0 0 18 18" fill="none" aria-hidden="true" focusable="false">' +
+          '<path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>' +
+          "</svg>";
+
+        var contentHtml = content.trim()
+          ? '<p class="co-phase-content"></p>'
+          : '<p class="co-phase-content co-phase-placeholder" aria-label="' +
+            esc(phase.label) +
+            ' phase: Details coming soon">' +
+            '<span aria-hidden="true">Details coming soon</span></p>';
+
+        /* v3: phase-body wraps both text and attachment placeholder */
         article.innerHTML =
           '<div class="co-phase-header">' +
           '<div class="co-phase-number" aria-hidden="true">' +
@@ -817,33 +1586,175 @@
           "</div>" +
           '<h3 class="co-phase-title">Phase ' +
           phase.step +
-          " — " +
+          " \u2014 " +
           esc(phase.label) +
           "</h3>" +
           badgeHtml +
+          chevronHtml +
           "</div>" +
-          contentHtml;
+          '<div class="co-phase-body">' +
+          contentHtml +
+          '<div class="co-attachments" style="display:none">' +
+          '<p class="co-attach-loading">Loading attachments\u2026</p>' +
+          "</div>" +
+          "</div>";
 
-        // Set phase text via textContent AFTER building innerHTML so LEAF's
-        // pre-encoded entities (&#039; &amp; etc.) are never double-encoded.
-        // decodeEntities() unwraps whatever LEAF stored; textContent then sets
-        // it as a plain string so the browser renders the literal characters.
         if (content.trim()) {
           var contentEl = article.querySelector(".co-phase-content");
           if (contentEl) contentEl.textContent = decodeEntities(content);
         }
 
+        /* Start completed phases collapsed when they have content */
+        if (state === "complete" && content.trim()) {
+          article.classList.add("co-phase--collapsed");
+          completedWithContentCount++;
+        }
+
+        /* Wire toggle on completed phase headers */
+        if (state === "complete") {
+          var header = article.querySelector(".co-phase-header");
+          if (header) {
+            header.setAttribute("role", "button");
+            header.setAttribute("tabindex", "0");
+            header.setAttribute(
+              "aria-expanded",
+              article.classList.contains("co-phase--collapsed")
+                ? "false"
+                : "true",
+            );
+            header.setAttribute(
+              "aria-label",
+              "Phase " +
+                phase.step +
+                " \u2014 " +
+                phase.label +
+                ": click to expand",
+            );
+
+            (function (art, hdr) {
+              hdr.addEventListener("click", function () {
+                togglePhase(art, hdr);
+              });
+              hdr.addEventListener("keydown", function (e) {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  togglePhase(art, hdr);
+                }
+              });
+            })(article, header);
+          }
+        }
+
         container.appendChild(article);
+
+        /* v3: kick off attachment loading for this phase */
+        var attachEl = article.querySelector(".co-attachments");
+        loadPhaseAttachments(recordID, phase, attachEl);
       });
+
+      if (completedWithContentCount > 0) {
+        showEl("co-phases-toolbar");
+        syncToggleAllLabel();
+        wireToggleAllButton(container);
+      }
+    }
+
+    /* ============================================================
+     Collapse / expand helpers
+     ============================================================ */
+    function togglePhase(article, header) {
+      var isCollapsed = article.classList.contains("co-phase--collapsed");
+      var titleEl = article.querySelector(".co-phase-title");
+      var label = titleEl ? titleEl.textContent : "Phase";
+
+      if (isCollapsed) {
+        article.classList.remove("co-phase--collapsed");
+        header.setAttribute("aria-expanded", "true");
+        header.setAttribute("aria-label", label + ": click to collapse");
+      } else {
+        article.classList.add("co-phase--collapsed");
+        header.setAttribute("aria-expanded", "false");
+        header.setAttribute("aria-label", label + ": click to expand");
+      }
+
+      syncToggleAllLabel();
+    }
+
+    function wireToggleAllButton(container) {
+      var btn = byId("co-toggle-completed-btn");
+      if (!btn) return;
+
+      btn.addEventListener("click", function () {
+        var completedPhases = container.querySelectorAll(".co-phase--complete");
+        var anyExpanded = false;
+        completedPhases.forEach(function (p) {
+          if (!p.classList.contains("co-phase--collapsed")) anyExpanded = true;
+        });
+
+        completedPhases.forEach(function (p) {
+          var hdr = p.querySelector(".co-phase-header");
+          var titleEl = p.querySelector(".co-phase-title");
+          var lbl = titleEl ? titleEl.textContent : "Phase";
+
+          if (anyExpanded) {
+            p.classList.add("co-phase--collapsed");
+            if (hdr) {
+              hdr.setAttribute("aria-expanded", "false");
+              hdr.setAttribute("aria-label", lbl + ": click to expand");
+            }
+          } else {
+            p.classList.remove("co-phase--collapsed");
+            if (hdr) {
+              hdr.setAttribute("aria-expanded", "true");
+              hdr.setAttribute("aria-label", lbl + ": click to collapse");
+            }
+          }
+        });
+
+        syncToggleAllLabel();
+      });
+    }
+
+    function syncToggleAllLabel() {
+      var btn = byId("co-toggle-completed-btn");
+      var labelEl = byId("co-toggle-completed-label");
+      if (!btn || !labelEl) return;
+
+      var container = byId("co-phase-details");
+      if (!container) return;
+
+      var anyExpanded = false;
+      container.querySelectorAll(".co-phase--complete").forEach(function (p) {
+        if (!p.classList.contains("co-phase--collapsed")) anyExpanded = true;
+      });
+
+      if (anyExpanded) {
+        labelEl.textContent = "Hide completed phases";
+        btn.setAttribute("aria-expanded", "true");
+      } else {
+        labelEl.textContent = "Show completed phases";
+        btn.setAttribute("aria-expanded", "false");
+      }
     }
 
     /* ============================================================
      fetchProjectData
-     Queries api/form/query for all indicator values for one record.
-     Resolves to the raw s1 object: { id59: 'value', id60: 'value', … }
      ============================================================ */
     function fetchProjectData(recordID) {
       var inds = CONFIG.indicators;
+      var getData = [
+        String(inds.projectName),
+        String(inds.projectType),
+        String(inds.poc),
+        String(inds.servicePoc),
+        String(inds.currentPhase),
+        String(inds.phase1),
+        String(inds.phase2),
+        String(inds.phase3),
+        String(inds.phase4),
+        String(inds.phase5),
+      ];
+
       var q = JSON.stringify({
         terms: [
           {
@@ -855,17 +1766,7 @@
         ],
         joins: [],
         sort: {},
-        getData: [
-          String(inds.projectName),
-          String(inds.projectType),
-          String(inds.poc),
-          String(inds.currentPhase),
-          String(inds.phase1),
-          String(inds.phase2),
-          String(inds.phase3),
-          String(inds.phase4),
-          String(inds.phase5),
-        ],
+        getData: getData,
       });
 
       return fetch(
@@ -888,97 +1789,17 @@
               "[CustomerOverview] Full API response:",
               JSON.stringify(data),
             );
-
           var rec = data && data[String(recordID)];
           if (!rec) throw new Error("No record found for ID " + recordID);
-
-          // LEAF returns indicator data under rec.s1, keyed as 'id' + indicatorID
           var s1 = rec.s1 || rec;
-
-          if (CONFIG.debug) {
+          if (CONFIG.debug)
             console.log("[CustomerOverview] s1 keys:", Object.keys(s1));
-            var inds = CONFIG.indicators;
-            console.log(
-              "[CustomerOverview] projectName  (id" + inds.projectName + "):",
-              s1["id" + inds.projectName],
-            );
-            console.log(
-              "[CustomerOverview] projectType  (id" + inds.projectType + "):",
-              s1["id" + inds.projectType],
-            );
-            console.log(
-              "[CustomerOverview] poc          (id" + inds.poc + "):",
-              s1["id" + inds.poc],
-            );
-            console.log(
-              "[CustomerOverview] currentPhase (id" + inds.currentPhase + "):",
-              s1["id" + inds.currentPhase],
-            );
-            console.log(
-              "[CustomerOverview] phase1       (id" + inds.phase1 + "):",
-              s1["id" + inds.phase1],
-            );
-            console.log(
-              "[CustomerOverview] phase2       (id" + inds.phase2 + "):",
-              s1["id" + inds.phase2],
-            );
-            console.log(
-              "[CustomerOverview] phase3       (id" + inds.phase3 + "):",
-              s1["id" + inds.phase3],
-            );
-            console.log(
-              "[CustomerOverview] phase4       (id" + inds.phase4 + "):",
-              s1["id" + inds.phase4],
-            );
-            console.log(
-              "[CustomerOverview] phase5       (id" + inds.phase5 + "):",
-              s1["id" + inds.phase5],
-            );
-          }
-
-          return s1;
-        });
-    }
-
-    /* ============================================================
-     fetchLastUpdated
-     ============================================================ */
-    function fetchLastUpdated(recordID) {
-      var q = JSON.stringify({
-        terms: [
-          {
-            id: "recordIDs",
-            operator: "=",
-            match: String(recordID),
-            gate: "AND",
-          },
-        ],
-        joins: [],
-        sort: {},
-        getData: [],
-      });
-
-      return fetch(
-        "api/form/query?q=" +
-          encodeURIComponent(q) +
-          "&x-filterData=recordID,lastUpdated",
-        {
-          credentials: "include",
-          headers: {
-            Accept: "application/json",
-            "x-requested-with": "XMLHttpRequest",
-          },
-        },
-      )
-        .then(function (r) {
-          return r.json();
-        })
-        .then(function (data) {
-          var rec = data && data[String(recordID)];
-          return rec && rec.lastUpdated ? rec.lastUpdated : null;
-        })
-        .catch(function () {
-          return null;
+          /*
+           * Return s1 and the raw record.
+           * LEAF stores orgchart employee metadata at s1["id{N}_orgchart"]
+           * as { empUID, userName, … } — we need this to resolve the email.
+           */
+          return { s1: s1 };
         });
     }
 
@@ -989,30 +1810,27 @@
       var recordID = getRecordIDFromURL();
 
       if (CONFIG.debug) {
-        console.log("--- CustomerOverview Debug ---");
+        console.log("--- CustomerOverview v3 Debug ---");
         console.log("recordID from ?a=:", recordID);
       }
 
       if (!recordID) {
         showError(
-          "No project specified. " +
-            "Please check the link — it should include a record ID (e.g., ?a=1234).",
+          "No project specified. Please check the link — it should include a record ID (e.g., ?a=1234).",
         );
         return;
       }
 
+      lightbox.init();
       showLoading();
 
-      Promise.all([fetchProjectData(recordID), fetchLastUpdated(recordID)])
-        .then(function (results) {
-          var s1 = results[0]; // raw s1 object: { id59: '...', id60: '...', … }
-          var lastUpdated = results[1];
+      fetchProjectData(recordID)
+        .then(function (result) {
+          var s1 = result.s1;
           var inds = CONFIG.indicators;
 
-          /* ---- Extract values directly from s1 ---- */
           var projectName = getField(s1, inds.projectName);
           var projectType = getField(s1, inds.projectType);
-          var poc = getField(s1, inds.poc);
           var currentPhase = getField(s1, inds.currentPhase);
           var phaseContents = {
             phase1: getField(s1, inds.phase1),
@@ -1023,9 +1841,8 @@
           };
 
           var activeStep = resolveActiveStep(currentPhase);
-          var dateParts = formatDate(lastUpdated);
 
-          /* ---- Populate header ---- */
+          /* ---- Header: name + type + blurb ---- */
           byId("co-project-name").textContent =
             projectName || "Project Details";
 
@@ -1039,20 +1856,91 @@
             typeEl.style.display = "none";
           }
 
-          var pocEl = byId("co-project-poc");
-          if (poc) {
-            pocEl.innerHTML =
-              '<strong class="co-project-label">LEAF POC:</strong> ' + esc(poc);
-            pocEl.style.display = "";
-          } else {
-            pocEl.style.display = "none";
+          /* v3: italicized project type blurb — only for known types */
+          var blurbEl = byId("co-project-type-blurb");
+          var blurbKey = projectType ? projectType.toLowerCase().trim() : "";
+          var blurbText = CONFIG.PROJECT_TYPE_BLURBS[blurbKey] || "";
+          if (blurbText && blurbEl) {
+            blurbEl.textContent = blurbText;
+            blurbEl.style.display = "";
+          } else if (blurbEl) {
+            blurbEl.style.display = "none";
           }
 
-          /* ---- Render progress bar and phase cards ---- */
-          renderProgressBar(activeStep);
-          renderPhaseDetails(activeStep, phaseContents);
+          /* ---- Helper: build a POC element's content asynchronously ---- */
+          function renderPocEl(el, indID, label) {
+            var rawVal = s1["id" + String(indID)];
+            var orgMeta = s1["id" + String(indID) + "_orgchart"];
 
-          showContent();
+            if (CONFIG.debug) {
+              console.log("[CustomerOverview] id" + indID + " raw:", rawVal);
+              console.log(
+                "[CustomerOverview] id" + indID + "_orgchart:",
+                orgMeta,
+              );
+            }
+
+            var empUID =
+              (orgMeta && (orgMeta.empUID || orgMeta.UID)) || rawVal || null;
+            if (empUID) empUID = String(empUID).replace(/\D/g, "") || null;
+
+            if (!empUID) {
+              el.style.display = "none";
+              return;
+            }
+
+            /* Show placeholder while lookup is in flight */
+            el.innerHTML =
+              '<strong class="co-project-label">' +
+              label +
+              ':</strong> <span style="color:#71767a">Loading\u2026</span>';
+            el.style.display = "";
+
+            fetchOrgchartEmployee(empUID).then(function (emp) {
+              var displayName =
+                emp.displayName || decodeEntities(String(rawVal || "").trim());
+              if (!displayName) {
+                el.style.display = "none";
+                return;
+              }
+
+              var pocContent;
+              if (emp.email) {
+                pocContent =
+                  '<strong class="co-project-label">' +
+                  label +
+                  ":</strong> " +
+                  '<a class="co-poc-link"' +
+                  '   href="mailto:' +
+                  esc(emp.email) +
+                  '"' +
+                  '   aria-label="Email ' +
+                  esc(displayName) +
+                  " at " +
+                  esc(emp.email) +
+                  '">' +
+                  esc(displayName) +
+                  "</a>";
+              } else {
+                pocContent =
+                  '<strong class="co-project-label">' +
+                  label +
+                  ":</strong> " +
+                  esc(displayName);
+              }
+              el.innerHTML = pocContent;
+              el.style.display = "";
+            });
+          }
+
+          /* ---- LEAF POC (indicator 67) ---- */
+          var pocEl = byId("co-project-poc");
+          if (pocEl) renderPocEl(pocEl, inds.poc, "LEAF POC");
+
+          /* ---- Service POC (indicator 74) ---- */
+          var servicePocEl = byId("co-service-poc");
+          if (servicePocEl)
+            renderPocEl(servicePocEl, inds.servicePoc, "Service POC");
         })
         .catch(function (err) {
           console.error("[CustomerOverview] Error loading project data:", err);
