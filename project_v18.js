@@ -7640,36 +7640,78 @@
     ]),
   };
 
-  // Cache: { task: { indicatorId: { format, options[] } }, project: { ... } }
-  var indicatorMetaCache = { task: null, project: null };
+  // Static indicator map — avoids the formEditor API which requires admin perms.
+  // Options for dynamic fields (category, projectType, FY) are resolved at
+  // open-time from state via getDynamicOptions().
+  var INLINE_INDICATOR_STATIC_MAP = {
+    // ── Task indicators ──────────────────────────────────────────────────────
+    9: { format: "text", options: [] }, // title
+    10: { format: "dropdown", options: STATUS_CONFIG.ALL_STATUSES }, // status
+    12: { format: "date", options: [] }, // startDate
+    13: { format: "date", options: [] }, // dueDate
+    14: { format: "dropdown", options: ["High", "Medium", "Low"] }, // priority
+    16: { format: "dropdown", options: [] }, // category — resolved from state
+    47: { format: "date", options: [] }, // actualCompletionDate
+    // ── Project indicators ───────────────────────────────────────────────────
+    3: { format: "text", options: [] }, // projectName
+    4: { format: "textarea", options: [] }, // description
+    6: { format: "dropdown", options: [] }, // projectStatus — resolved from state
+    32: { format: "dropdown", options: [] }, // projectType — resolved from state
+    38: { format: "text", options: [] }, // projectFiscalYear
+    70: { format: "date", options: [] }, // projectEndDate
+    73: { format: "text", options: [] }, // customerOverviewUrl
+  };
 
-  // Fetch and cache indicator metadata for a form type (task | project).
-  // Returns a promise resolving to { indicatorId: { format, options } }.
-  function fetchIndicatorMeta(formType) {
-    if (indicatorMetaCache[formType]) {
-      return Promise.resolve(indicatorMetaCache[formType]);
-    }
-    var categoryId = INLINE_EDIT_CATEGORY[formType];
-    var url =
-      "/platform/projects/api/formEditor/indicator/list/category/" + categoryId;
-    return fetch(url, { credentials: "include" })
-      .then(function (r) {
-        if (!r.ok) throw new Error("fetchIndicatorMeta HTTP " + r.status);
-        return r.json();
-      })
-      .then(function (raw) {
-        var map = {};
-        if (raw && typeof raw === "object") {
-          Object.keys(raw).forEach(function (id) {
-            var ind = raw[id];
-            var fmt = String(ind.format || ind.input_type || "").toLowerCase();
-            var opts = Array.isArray(ind.options) ? ind.options : [];
-            map[String(id)] = { format: fmt, options: opts };
-          });
-        }
-        indicatorMetaCache[formType] = map;
-        return map;
+  // Returns dynamic options for indicators whose option lists come from state.
+  function getDynamicOptions(indicatorId) {
+    var id = String(indicatorId);
+    if (id === String(TASK_IND.category)) {
+      // Pull from the existing category filter options
+      return Array.from(
+        new Set(
+          (state.tasksAll || [])
+            .map(function (t) {
+              return String(t.category || "").trim();
+            })
+            .filter(Boolean),
+        ),
+      ).sort(function (a, b) {
+        return a.localeCompare(b);
       });
+    }
+    if (id === String(PROJECT_IND.projectStatus)) {
+      return Array.from(
+        new Set(
+          (state.projectsAll || [])
+            .map(function (p) {
+              return String(p.projectStatus || "").trim();
+            })
+            .filter(Boolean),
+        ),
+      ).sort(function (a, b) {
+        return a.localeCompare(b);
+      });
+    }
+    if (id === String(PROJECT_IND.projectType)) {
+      return Array.from(
+        new Set(
+          (state.projectsAll || [])
+            .map(function (p) {
+              return String(p.projectType || "").trim();
+            })
+            .filter(Boolean),
+        ),
+      ).sort(function (a, b) {
+        return a.localeCompare(b);
+      });
+    }
+    return null; // no dynamic options for this indicator
+  }
+
+  // Resolves indicator metadata synchronously from the static map.
+  // Returns a Promise for API compatibility with the old dynamic path.
+  function fetchIndicatorMeta(formType) {
+    return Promise.resolve(INLINE_INDICATOR_STATIC_MAP);
   }
 
   // Determine editor type from indicator format string.
@@ -7731,8 +7773,17 @@
     fetchIndicatorMeta(formType)
       .then(function (meta) {
         var indMeta = meta[String(indicatorId)];
-        var fmt = indMeta ? indMeta.format : "text";
-        var options = indMeta ? indMeta.options : [];
+        if (!indMeta) {
+          // Indicator not in static map — not editable inline
+          closeInlineEditor(true);
+          if (skeleton) skeleton.hidden = true;
+          return;
+        }
+        var fmt = indMeta.format;
+        // Merge static options with any dynamic state-derived options
+        var dynOpts = getDynamicOptions(indicatorId);
+        var options =
+          dynOpts && dynOpts.length > 0 ? dynOpts : indMeta.options || [];
         var editorType = resolveEditorType(fmt);
 
         if (skeleton) skeleton.hidden = true;
