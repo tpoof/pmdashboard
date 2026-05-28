@@ -1046,7 +1046,7 @@
      CONFIG
      ============================================================ */
     var CONFIG = {
-      debug: true /* ← temp: diagnosing orgchart metadata */,
+      debug: false,
 
       categoryID: "55445",
 
@@ -1118,9 +1118,9 @@
        */
       PROJECT_TYPE_BLURBS: {
         "national project":
-          "A National Project is a structured, full-service engagement where the LEAF team guides your agency through every phase \u2014 from discovery to launch \u2014 with dedicated support along the way.",
+          "A National Project is a structured, full-service engagement where the LEAF team guides your agency through every phase - from discovery to launch -with dedicated support along the way.",
         "managed services":
-          "With Managed Services, the LEAF team remains a dedicated resource for your organization \u2014 available to help with questions, changes, and ongoing needs as your environment evolves.",
+          "With Managed Services, the LEAF team remains a dedicated resource for your organization - available to help with questions, changes, and ongoing needs as your environment evolves.",
       },
     };
 
@@ -1988,10 +1988,10 @@
             blurbEl.style.display = "none";
           }
 
-          /* ---- Helper: build a POC element's content asynchronously ---- */
+          /* ---- Helper: render a POC row from _orgchart metadata ---- */
           function renderPocEl(el, indID, label) {
-            var rawVal = s1["id" + String(indID)]; // display name string
-            var orgMeta = s1["id" + String(indID) + "_orgchart"]; // { empUID, userName, … }
+            var rawVal = s1["id" + String(indID)];
+            var orgMeta = s1["id" + String(indID) + "_orgchart"];
 
             if (CONFIG.debug) {
               dbg(label + " raw (id" + indID + "): " + JSON.stringify(rawVal));
@@ -1999,69 +1999,59 @@
             }
 
             /*
-             * The raw value is the display name (e.g. "Stephanie Lumagui").
-             * The empUID lives only in the _orgchart metadata object.
+             * All data we need is already in _orgchart:
+             * { empUID, email, firstName, middleName, lastName, userName }
+             * No secondary fetch required.
              */
-            var displayName = decodeEntities(String(rawVal || "").trim());
-            var empUID =
-              orgMeta && (orgMeta.empUID || orgMeta.UID || orgMeta.id)
-                ? String(orgMeta.empUID || orgMeta.UID || orgMeta.id).replace(
-                    /\D/g,
-                    "",
-                  )
-                : null;
+            var displayName = "";
+            var email = "";
 
-            if (!displayName && !empUID) {
+            if (orgMeta) {
+              var parts = [orgMeta.firstName, orgMeta.lastName]
+                .map(function (p) {
+                  return (p || "").trim();
+                })
+                .filter(Boolean);
+              displayName = parts.join(" ");
+              email = (orgMeta.email || "").trim();
+            }
+
+            /* Fall back to the plain stored value if orgchart gave us nothing */
+            if (!displayName)
+              displayName = decodeEntities(String(rawVal || "").trim());
+
+            if (!displayName) {
               el.style.display = "none";
               return;
             }
 
-            /* Show the display name immediately — no loading flicker */
-            el.innerHTML =
-              '<strong class="co-project-label">' +
-              label +
-              ":</strong> " +
-              esc(displayName);
-            el.style.display = "";
-
-            /* Then enhance with a mailto: link if we have an empUID to look up */
-            if (empUID) {
-              fetchOrgchartEmployee(empUID).then(function (emp) {
-                /* Prefer orgchart full name if richer than the raw stored value */
-                var resolvedName = emp.displayName || displayName;
-                if (!resolvedName) {
-                  el.style.display = "none";
-                  return;
-                }
-
-                var pocContent;
-                if (emp.email) {
-                  pocContent =
-                    '<strong class="co-project-label">' +
-                    label +
-                    ":</strong> " +
-                    '<a class="co-poc-link"' +
-                    '   href="mailto:' +
-                    esc(emp.email) +
-                    '"' +
-                    '   aria-label="Email ' +
-                    esc(resolvedName) +
-                    " at " +
-                    esc(emp.email) +
-                    '">' +
-                    esc(resolvedName) +
-                    "</a>";
-                } else {
-                  pocContent =
-                    '<strong class="co-project-label">' +
-                    label +
-                    ":</strong> " +
-                    esc(resolvedName);
-                }
-                el.innerHTML = pocContent;
-                el.style.display = "";
-              });
+            var pocContent;
+            if (email) {
+              pocContent =
+                '<strong class="co-project-label">' +
+                label +
+                ":</strong> " +
+                '<a class="co-poc-link"' +
+                '   href="mailto:' +
+                esc(email) +
+                '"' +
+                '   aria-label="Email ' +
+                esc(displayName) +
+                " at " +
+                esc(email) +
+                '">' +
+                esc(displayName) +
+                "</a>";
+            } else {
+              pocContent =
+                '<strong class="co-project-label">' +
+                label +
+                ":</strong> " +
+                esc(displayName);
             }
+
+            el.innerHTML = pocContent;
+            el.style.display = "";
           }
 
           /* ---- Render progress bar + phase cards + reveal page ---- */
