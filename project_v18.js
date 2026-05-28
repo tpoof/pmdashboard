@@ -1249,6 +1249,66 @@
 
         state.pendingProjectKeyRefresh = pk;
 
+        // After the user submits the new task form, the iframe navigates to
+        // the printview of the newly created record. We intercept that second
+        // load to silently write "Not Started" to indicator 10 — LEAF shows it
+        // as the default in the UI but doesn't persist it unless the field is
+        // explicitly submitted with a value.
+        var frame = document.getElementById("pmModalFrame");
+        if (frame) {
+          if (frame._addTaskStatusHandler) {
+            frame.removeEventListener("load", frame._addTaskStatusHandler);
+          }
+          frame._addTaskStatusHandler = function () {
+            try {
+              var frameSrc =
+                (frame.contentWindow &&
+                  frame.contentWindow.location &&
+                  frame.contentWindow.location.href) ||
+                frame.src ||
+                "";
+              var ridMatch = frameSrc.match(/[?&]recordID=(\d+)/i);
+              if (!ridMatch) return; // still on start-request form, not yet submitted
+              var newRecordID = ridMatch[1];
+              // Clean up — only fire once per +Task open
+              frame.removeEventListener("load", frame._addTaskStatusHandler);
+              frame._addTaskStatusHandler = null;
+              // Silent POST: force-save "Not Started" to indicator 10
+              ensureCSRFToken(newRecordID)
+                .then(function (token) {
+                  var tokenField = state.csrfField || getCSRFFieldName();
+                  var bodyObj = { recordID: newRecordID, series: 1 };
+                  bodyObj[TASK_IND.status] = "Not Started";
+                  bodyObj[tokenField] = token;
+                  return fetch(
+                    FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(newRecordID),
+                    {
+                      method: "POST",
+                      credentials: "include",
+                      headers: {
+                        "content-type":
+                          "application/x-www-form-urlencoded; charset=UTF-8",
+                        "x-requested-with": "XMLHttpRequest",
+                        "x-csrf-token": token,
+                        "x-xsrf-token": token,
+                      },
+                      body: encodeFormBody(bodyObj),
+                    },
+                  );
+                })
+                .catch(function (err) {
+                  console.warn(
+                    "pm-dashboard: could not force-save Not Started on new task",
+                    err,
+                  );
+                });
+            } catch (e) {
+              // Cross-origin or other error — ignore silently
+            }
+          };
+          frame.addEventListener("load", frame._addTaskStatusHandler);
+        }
+
         openModal("New Task \u2014 " + pk, url, function (frame) {
           // postLoadCallback — iframe has loaded, now inject the project key
           // The picker calls loadProjects() async, so we poll until the hidden
