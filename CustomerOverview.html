@@ -1046,7 +1046,7 @@
      CONFIG
      ============================================================ */
     var CONFIG = {
-      debug: true /* ← temporarily ON to diagnose loading issue */,
+      debug: false,
 
       categoryID: "55445",
 
@@ -1990,68 +1990,78 @@
 
           /* ---- Helper: build a POC element's content asynchronously ---- */
           function renderPocEl(el, indID, label) {
-            var rawVal = s1["id" + String(indID)];
-            var orgMeta = s1["id" + String(indID) + "_orgchart"];
+            var rawVal = s1["id" + String(indID)]; // display name string
+            var orgMeta = s1["id" + String(indID) + "_orgchart"]; // { empUID, userName, … }
 
             if (CONFIG.debug) {
-              console.log("[CustomerOverview] id" + indID + " raw:", rawVal);
-              console.log(
-                "[CustomerOverview] id" + indID + "_orgchart:",
-                orgMeta,
-              );
+              dbg(label + " raw (id" + indID + "): " + JSON.stringify(rawVal));
+              dbg(label + " orgchart meta: " + JSON.stringify(orgMeta));
             }
 
+            /*
+             * The raw value is the display name (e.g. "Stephanie Lumagui").
+             * The empUID lives only in the _orgchart metadata object.
+             */
+            var displayName = decodeEntities(String(rawVal || "").trim());
             var empUID =
-              (orgMeta && (orgMeta.empUID || orgMeta.UID)) || rawVal || null;
-            if (empUID) empUID = String(empUID).replace(/\D/g, "") || null;
+              orgMeta && (orgMeta.empUID || orgMeta.UID || orgMeta.id)
+                ? String(orgMeta.empUID || orgMeta.UID || orgMeta.id).replace(
+                    /\D/g,
+                    "",
+                  )
+                : null;
 
-            if (!empUID) {
+            if (!displayName && !empUID) {
               el.style.display = "none";
               return;
             }
 
-            /* Show placeholder while lookup is in flight */
+            /* Show the display name immediately — no loading flicker */
             el.innerHTML =
               '<strong class="co-project-label">' +
               label +
-              ':</strong> <span style="color:#71767a">Loading\u2026</span>';
+              ":</strong> " +
+              esc(displayName);
             el.style.display = "";
 
-            fetchOrgchartEmployee(empUID).then(function (emp) {
-              var displayName =
-                emp.displayName || decodeEntities(String(rawVal || "").trim());
-              if (!displayName) {
-                el.style.display = "none";
-                return;
-              }
+            /* Then enhance with a mailto: link if we have an empUID to look up */
+            if (empUID) {
+              fetchOrgchartEmployee(empUID).then(function (emp) {
+                /* Prefer orgchart full name if richer than the raw stored value */
+                var resolvedName = emp.displayName || displayName;
+                if (!resolvedName) {
+                  el.style.display = "none";
+                  return;
+                }
 
-              var pocContent;
-              if (emp.email) {
-                pocContent =
-                  '<strong class="co-project-label">' +
-                  label +
-                  ":</strong> " +
-                  '<a class="co-poc-link"' +
-                  '   href="mailto:' +
-                  esc(emp.email) +
-                  '"' +
-                  '   aria-label="Email ' +
-                  esc(displayName) +
-                  " at " +
-                  esc(emp.email) +
-                  '">' +
-                  esc(displayName) +
-                  "</a>";
-              } else {
-                pocContent =
-                  '<strong class="co-project-label">' +
-                  label +
-                  ":</strong> " +
-                  esc(displayName);
-              }
-              el.innerHTML = pocContent;
-              el.style.display = "";
-            });
+                var pocContent;
+                if (emp.email) {
+                  pocContent =
+                    '<strong class="co-project-label">' +
+                    label +
+                    ":</strong> " +
+                    '<a class="co-poc-link"' +
+                    '   href="mailto:' +
+                    esc(emp.email) +
+                    '"' +
+                    '   aria-label="Email ' +
+                    esc(resolvedName) +
+                    " at " +
+                    esc(emp.email) +
+                    '">' +
+                    esc(resolvedName) +
+                    "</a>";
+                } else {
+                  pocContent =
+                    '<strong class="co-project-label">' +
+                    label +
+                    ":</strong> " +
+                    esc(resolvedName);
+                }
+                el.innerHTML = pocContent;
+                el.style.display = "";
+              });
+            }
           }
 
           /* ---- LEAF POC (indicator 67) ---- */
