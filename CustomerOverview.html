@@ -945,6 +945,24 @@
     <p>Loading project data&hellip;</p>
   </div>
 
+  <!-- debug panel — only shown when CONFIG.debug = true -->
+  <div
+    id="co-debug-panel"
+    style="
+      display: none;
+      background: #1b1b1b;
+      color: #a8ff78;
+      font-family: monospace;
+      font-size: 0.8rem;
+      padding: 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.6;
+    "
+  ></div>
+
   <div id="co-error" class="co-error" role="alert" style="display: none"></div>
 
   <div id="co-content" style="display: none">
@@ -1028,7 +1046,7 @@
      CONFIG
      ============================================================ */
     var CONFIG = {
-      debug: false,
+      debug: true /* ← temporarily ON to diagnose loading issue */,
 
       categoryID: "55445",
 
@@ -1145,13 +1163,91 @@
         .replace(/&apos;/g, "'");
     }
 
+    /* ============================================================
+     getRecordIDFromURL
+     Tries multiple sources in order — LEAF programmer pages may
+     surface the record ID in different places depending on context:
+       1. ?a= on the current window (standard programmer page URL)
+       2. ?a= on the parent frame URL (when embedded in an iframe)
+       3. ?recordID= on either window
+     Logs each attempt when debug is on so the source is visible.
+     ============================================================ */
     function getRecordIDFromURL() {
-      try {
-        return new URLSearchParams(window.location.search).get("a") || "";
-      } catch (e) {
-        var match = window.location.search.match(/[?&]a=([^&]+)/);
-        return match ? decodeURIComponent(match[1]) : "";
+      function fromSearch(search, label) {
+        try {
+          var params = new URLSearchParams(search);
+          var v = params.get("a") || params.get("recordID") || "";
+          if (CONFIG.debug && v)
+            console.log("[CustomerOverview] recordID from " + label + ":", v);
+          return v;
+        } catch (e) {
+          var match = search.match(/[?&](?:a|recordID)=([^&]+)/);
+          var v2 = match ? decodeURIComponent(match[1]) : "";
+          if (CONFIG.debug && v2)
+            console.log(
+              "[CustomerOverview] recordID (regex) from " + label + ":",
+              v2,
+            );
+          return v2;
+        }
       }
+
+      /* 1. Current window */
+      var id = fromSearch(window.location.search, "window.location");
+      if (id) return id;
+
+      /* 2. Parent frame (if embedded in iframe) */
+      try {
+        if (window.parent && window.parent !== window) {
+          id = fromSearch(window.parent.location.search, "parent.location");
+          if (id) return id;
+        }
+      } catch (e) {
+        /* Cross-origin parent — silently skip */
+        if (CONFIG.debug)
+          console.log(
+            "[CustomerOverview] parent.location inaccessible (cross-origin)",
+          );
+      }
+
+      if (CONFIG.debug) {
+        console.warn(
+          "[CustomerOverview] Could not find recordID in any URL source.",
+        );
+        console.log(
+          "[CustomerOverview] window.location.href:",
+          window.location.href,
+        );
+        try {
+          console.log(
+            "[CustomerOverview] parent.location.href:",
+            window.parent.location.href,
+          );
+        } catch (e) {}
+      }
+
+      return "";
+    }
+
+    /* ============================================================
+     getAPIBase
+     Returns the base URL for LEAF API calls, e.g.
+       "https://yoursite.gov/platform/projects"
+     Derived from the current page href so it works regardless of
+     iframe nesting depth or server path configuration.
+     ============================================================ */
+    function getAPIBase() {
+      /* Try current window first; fall back to parent if cross-origin access fails */
+      var href = "";
+      try {
+        href = window.location.href;
+      } catch (e) {}
+
+      /* Strip everything after the last "/" before any query string */
+      var base = href.replace(/\/[^\/]*(\?.*)?$/, "");
+
+      if (CONFIG.debug) console.log("[CustomerOverview] API base:", base);
+      return base;
     }
 
     function showEl(id) {
@@ -1161,6 +1257,18 @@
     function hideEl(id) {
       var el = byId(id);
       if (el) el.style.display = "none";
+    }
+
+    /* ============================================================
+     dbg — write a line to the on-page debug panel (debug mode only)
+     ============================================================ */
+    function dbg(msg) {
+      if (!CONFIG.debug) return;
+      console.log("[CustomerOverview] " + msg);
+      var panel = byId("co-debug-panel");
+      if (!panel) return;
+      panel.style.display = "block";
+      panel.textContent += msg + "\n";
     }
 
     function showLoading() {
@@ -1343,7 +1451,8 @@
      ============================================================ */
     function fetchIndicatorHTML(recordID, indicatorID) {
       return fetch(
-        "ajaxIndex.php?a=getprintindicator" +
+        getAPIBase() +
+          "/ajaxIndex.php?a=getprintindicator" +
           "&recordID=" +
           encodeURIComponent(recordID) +
           "&indicatorID=" +
@@ -1770,7 +1879,10 @@
       });
 
       return fetch(
-        "api/form/query?q=" + encodeURIComponent(q) + "&x-filterData=recordID",
+        getAPIBase() +
+          "/api/form/query?q=" +
+          encodeURIComponent(q) +
+          "&x-filterData=recordID",
         {
           credentials: "include",
           headers: {
@@ -1784,21 +1896,23 @@
           return r.json();
         })
         .then(function (data) {
-          if (CONFIG.debug)
-            console.log(
-              "[CustomerOverview] Full API response:",
-              JSON.stringify(data),
-            );
+          if (CONFIG.debug) {
+            dbg("API response keys: " + Object.keys(data || {}).join(", "));
+            dbg("Full response: " + JSON.stringify(data).slice(0, 500));
+          }
           var rec = data && data[String(recordID)];
-          if (!rec) throw new Error("No record found for ID " + recordID);
+          if (!rec) {
+            if (CONFIG.debug)
+              dbg(
+                "ERROR: No record found for ID " +
+                  recordID +
+                  ". Keys in response: " +
+                  Object.keys(data || {}).join(", "),
+              );
+            throw new Error("No record found for ID " + recordID);
+          }
           var s1 = rec.s1 || rec;
-          if (CONFIG.debug)
-            console.log("[CustomerOverview] s1 keys:", Object.keys(s1));
-          /*
-           * Return s1 and the raw record.
-           * LEAF stores orgchart employee metadata at s1["id{N}_orgchart"]
-           * as { empUID, userName, … } — we need this to resolve the email.
-           */
+          if (CONFIG.debug) dbg("s1 keys: " + Object.keys(s1).join(", "));
           return { s1: s1 };
         });
     }
@@ -1810,8 +1924,15 @@
       var recordID = getRecordIDFromURL();
 
       if (CONFIG.debug) {
-        console.log("--- CustomerOverview v3 Debug ---");
-        console.log("recordID from ?a=:", recordID);
+        dbg("=== CustomerOverview v3 Debug ===");
+        dbg("window.location.href: " + window.location.href);
+        try {
+          dbg("parent.location.href: " + window.parent.location.href);
+        } catch (e) {
+          dbg("parent.location.href: (cross-origin)");
+        }
+        dbg("recordID resolved to: " + (recordID || "(empty)"));
+        dbg("API base: " + getAPIBase());
       }
 
       if (!recordID) {
@@ -1944,8 +2065,10 @@
         })
         .catch(function (err) {
           console.error("[CustomerOverview] Error loading project data:", err);
+          if (CONFIG.debug) dbg("FETCH ERROR: " + err.message);
           showError(
-            "Unable to load project data. Please try again later or contact support.",
+            "Unable to load project data. Please try again later or contact support." +
+              (CONFIG.debug ? "\n\nDebug: " + err.message : ""),
           );
         });
     }
