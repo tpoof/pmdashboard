@@ -7675,6 +7675,33 @@
   };
   // ── END DEBUG ────────────────────────────────────────────────────────────────
 
+  window.pmFYDebug = function () {
+    var allFY = (state.projectsAll || []).map(function (p) {
+      return {
+        recordID: p.recordID,
+        projectKey: p.projectKey,
+        projectFiscalYear: p.projectFiscalYear,
+        raw: JSON.stringify(p.projectFiscalYear),
+      };
+    });
+    console.group(
+      "%c[pmFYDebug] Fiscal Year values across all projects",
+      "color:#1a4480;font-weight:bold",
+    );
+    console.table(allFY);
+    var unique = Array.from(
+      new Set(
+        (state.projectsAll || [])
+          .map(function (p) {
+            return String(p.projectFiscalYear || "").trim();
+          })
+          .filter(Boolean),
+      ),
+    );
+    console.log("Unique non-blank FY values (" + unique.length + "):", unique);
+    console.groupEnd();
+  };
+
   // ═══════════════════════════════════════════════════════════════════════════
   // INLINE CELL EDITOR
   // ═══════════════════════════════════════════════════════════════════════════
