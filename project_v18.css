@@ -2928,16 +2928,19 @@ canvas.pm-chartClickable {
   margin-right: 6px;
   vertical-align: middle;
   flex-shrink: 0;
+  /* Outlined style: dark border + dark text on transparent —
+     readable against the USWDS warning yellow background */
+  background-color: transparent;
+  color: #1b1b1b;
+  border: 1.5px solid #1b1b1b;
 }
 
 .pm-overdueAlert-badge--task {
-  background-color: #d9e8ff;
-  color: #1a4480;
+  /* Inherits outlined base style */
 }
 
 .pm-overdueAlert-badge--project {
-  background-color: #fde8d0;
-  color: #7a3e00;
+  /* Inherits outlined base style */
 }
 
 /* Activity header — zero-height full-width flex break.
