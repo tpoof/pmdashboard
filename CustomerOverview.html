@@ -1,4 +1,18 @@
 <style>
+  /* ============================================================
+   CustomerOverview v3 — LEAF Programmer Page
+   All styles scoped to #customerOverview.
+
+   v3 changes (on top of v2):
+     - Removed: print button, record ID display, last-updated display
+     - POC rendered as mailto: link (opens email client to POC address)
+       TODO: set CONFIG.indicators.pocEmail once you know the indicator ID
+     - Per-phase file + image attachments fetched via
+       ajaxIndex.php?a=getprintindicator and rendered below phase text
+     - Image thumbnails open in a lightbox overlay (keyboard + focus trap)
+     - File attachments render as styled download links
+   ============================================================ */
+
   #customerOverview *,
   #customerOverview *::before,
   #customerOverview *::after {
@@ -186,6 +200,59 @@
     font-size: 0.9375rem;
     color: rgba(255, 255, 255, 0.8);
     line-height: 1.5;
+  }
+
+  /* Share button */
+  #customerOverview .co-share-wrap {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    align-self: stretch;
+  }
+
+  #customerOverview .co-share-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      background 0.15s,
+      border-color 0.15s;
+    flex-shrink: 0;
+  }
+
+  #customerOverview .co-share-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  #customerOverview .co-share-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.9);
+  }
+
+  #customerOverview .co-share-btn:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 3px;
+  }
+
+  #customerOverview .co-share-toast {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    white-space: nowrap;
+    min-height: 1em;
+    letter-spacing: 0.02em;
   }
 
   #customerOverview .co-project-type {
@@ -1059,6 +1126,39 @@
             This is your central view of progress, milestones, and the team
             behind your project.
           </p>
+        </div>
+        <!-- Share button -->
+        <div class="co-share-wrap">
+          <button
+            id="co-share-btn"
+            class="co-share-btn"
+            type="button"
+            aria-label="Copy link to this project"
+            title="Copy link"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+          </button>
+          <span
+            id="co-share-toast"
+            class="co-share-toast"
+            aria-live="polite"
+            aria-atomic="true"
+          ></span>
         </div>
       </div>
 
@@ -2039,6 +2139,7 @@
       }
 
       lightbox.init();
+      wireShareButton();
       showLoading();
 
       fetchProjectData(recordID)
@@ -2184,6 +2285,61 @@
               (CONFIG.debug ? "\n\nDebug: " + err.message : ""),
           );
         });
+    }
+
+    /* ============================================================
+     wireShareButton
+     Copies the current page URL to the clipboard on click and
+     shows a brief "Copied!" confirmation toast beneath the button.
+     ============================================================ */
+    function wireShareButton() {
+      var btn = document.getElementById("co-share-btn");
+      var toast = document.getElementById("co-share-toast");
+      if (!btn || !toast) return;
+
+      var toastTimer = null;
+
+      btn.addEventListener("click", function () {
+        var url = window.location.href;
+
+        function showToast(msg) {
+          toast.textContent = msg;
+          if (toastTimer) clearTimeout(toastTimer);
+          toastTimer = setTimeout(function () {
+            toast.textContent = "";
+          }, 2500);
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard
+            .writeText(url)
+            .then(function () {
+              showToast("Copied!");
+            })
+            .catch(function () {
+              fallbackCopy(url, showToast);
+            });
+        } else {
+          fallbackCopy(url, showToast);
+        }
+      });
+
+      function fallbackCopy(url, showToast) {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = url;
+          ta.style.cssText =
+            "position:fixed;top:-9999px;left:-9999px;opacity:0;";
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          var ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+          showToast(ok ? "Copied!" : "Copy failed");
+        } catch (e) {
+          showToast("Copy failed");
+        }
+      }
     }
 
     /* ============================================================
