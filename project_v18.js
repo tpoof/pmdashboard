@@ -1108,7 +1108,13 @@
       "&" +
       encodeURIComponent(TASK_IND.projectKey) +
       "=" +
-      encodeURIComponent(projectKey);
+      encodeURIComponent(projectKey) +
+      // Pre-fill status to "Not Started" so new tasks don't appear as Unknown.
+      // LEAF_Start_Request sets indicator values passed as query params on load.
+      "&" +
+      encodeURIComponent(TASK_IND.status) +
+      "=" +
+      encodeURIComponent("Not Started");
 
     // Build the full modal content as an inline div — NOT srcdoc
     // This keeps it in the same DOM so pm-recordLink delegation fires correctly
