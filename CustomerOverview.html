@@ -2064,6 +2064,11 @@
             }
           }
 
+          /* ---- Render progress bar + phase cards + reveal page ---- */
+          renderProgressBar(activeStep);
+          renderPhaseDetails(recordID, activeStep, phaseContents);
+          showContent();
+
           /* ---- LEAF POC (indicator 67) ---- */
           var pocEl = byId("co-project-poc");
           if (pocEl) renderPocEl(pocEl, inds.poc, "LEAF POC");
