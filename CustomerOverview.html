@@ -178,25 +178,28 @@
   }
 
   #customerOverview .co-welcome-headline {
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
     line-height: 1.3;
     margin-bottom: 4px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* Project title — large, bold, white, inside the banner */
+  #customerOverview .co-welcome-project-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.15;
+    margin-bottom: 10px;
   }
 
   #customerOverview .co-welcome-sub {
     font-size: 0.9375rem;
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(255, 255, 255, 0.8);
     line-height: 1.5;
-  }
-
-  #customerOverview .co-project-name {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #003f72;
-    margin-bottom: 6px;
-    line-height: 1.2;
   }
 
   #customerOverview .co-project-type {
@@ -213,6 +216,14 @@
     line-height: 1.55;
     margin-bottom: 10px;
     padding-left: 2px;
+  }
+
+  /* objective line */
+  #customerOverview .co-project-objective {
+    font-size: 1rem;
+    color: #3d4551;
+    margin-bottom: 6px;
+    line-height: 1.5;
   }
 
   #customerOverview .co-project-poc {
@@ -789,7 +800,7 @@
     #customerOverview {
       padding: 16px;
     }
-    #customerOverview .co-project-name {
+    #customerOverview .co-welcome-project-title {
       font-size: 1.5rem;
     }
     #customerOverview .co-welcome-banner {
@@ -870,6 +881,9 @@
       padding: 14px 16px;
     }
     #customerOverview .co-welcome-headline {
+      color: #3d4551 !important;
+    }
+    #customerOverview .co-welcome-project-title {
       color: #003f72 !important;
     }
     #customerOverview .co-welcome-sub {
@@ -877,6 +891,73 @@
     }
     #customerOverview .co-welcome-icon {
       display: none;
+    }
+  }
+
+  /* ============================================================
+   Jump-to-top button
+   ============================================================ */
+  #co-jump-top {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 1200;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: #003f72;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
+    transition:
+      opacity 0.2s ease,
+      transform 0.2s ease,
+      background 0.15s;
+  }
+
+  #co-jump-top.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  #co-jump-top:hover {
+    background: #0071bb;
+  }
+  #co-jump-top:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+    background: #0071bb;
+  }
+
+  #co-jump-top svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  @media (max-width: 640px) {
+    #co-jump-top {
+      bottom: 20px;
+      right: 16px;
+      width: 40px;
+      height: 40px;
+    }
+    #co-jump-top svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  @media print {
+    #co-jump-top {
+      display: none !important;
     }
   }
 </style>
@@ -967,27 +1048,28 @@
 
   <div id="co-content" style="display: none">
     <header class="co-header">
-      <!-- v3: Welcome banner -->
+      <!-- v3: Welcome banner — project title lives here -->
       <div class="co-welcome-banner" aria-label="Welcome message">
         <div class="co-welcome-icon" aria-hidden="true">
           <svg
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            stroke-width="2"
+            stroke-width="1.75"
             stroke-linecap="round"
             stroke-linejoin="round"
             aria-hidden="true"
             focusable="false"
           >
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 00-3-3.87" />
-            <path d="M16 3.13a4 4 0 010 7.75" />
+            <path d="M14 11l2-2 4 4-6 6-4-4 1-1" />
+            <path d="M10 13l-2 2-4-4 6-6 4 4-1 1" />
+            <path d="M9.5 6.5L12 4l2.5 2.5" />
+            <path d="M14.5 17.5L12 20l-2.5-2.5" />
           </svg>
         </div>
         <div class="co-welcome-text">
-          <p class="co-welcome-headline">Welcome to your LEAF Project Hub.</p>
+          <p class="co-welcome-headline">Welcome to your LEAF Project Hub,</p>
+          <h1 id="co-project-name" class="co-welcome-project-title"></h1>
           <p class="co-welcome-sub">
             This is your central view of progress, milestones, and the team
             behind your project.
@@ -995,12 +1077,17 @@
         </div>
       </div>
 
-      <h1 id="co-project-name" class="co-project-name"></h1>
       <p id="co-project-type" class="co-project-type"></p>
       <!-- v3: italicized type blurb — populated by JS for known project types -->
       <p
         id="co-project-type-blurb"
         class="co-project-type-blurb"
+        style="display: none"
+      ></p>
+      <!-- objective line — indicatorID 86 -->
+      <p
+        id="co-project-objective"
+        class="co-project-objective"
         style="display: none"
       ></p>
       <p id="co-project-poc" class="co-project-poc"></p>
@@ -1038,6 +1125,28 @@
   </div>
 </div>
 
+<!-- Jump-to-top — outside scoped wrapper so fixed positioning is viewport-relative -->
+<button
+  id="co-jump-top"
+  type="button"
+  aria-label="Back to top"
+  aria-hidden="true"
+  tabindex="-1"
+>
+  <svg
+    viewBox="0 0 20 20"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M10 15V5M5 9l5-5 5 5" />
+  </svg>
+</button>
+
 <script>
   (function () {
     "use strict";
@@ -1062,6 +1171,7 @@
          */
         poc: 67, // LEAF POC
         servicePoc: 74, // Service POC
+        objective: 86, // Project Objective
 
         currentPhase: 61,
         phase1: 62,
@@ -1118,9 +1228,9 @@
        */
       PROJECT_TYPE_BLURBS: {
         "national project":
-          "A National Project is a structured, full-service engagement where the LEAF team guides your agency through every phase - from discovery to launch -with dedicated support along the way.",
+          "A National Project is a structured, full-service engagement where the LEAF team guides your agency through every phase \u2014 from discovery to launch \u2014 with dedicated support along the way.",
         "managed services":
-          "With Managed Services, the LEAF team remains a dedicated resource for your organization - available to help with questions, changes, and ongoing needs as your environment evolves.",
+          "With Managed Services, the LEAF team remains a dedicated resource for your organization \u2014 available to help with questions, changes, and ongoing needs as your environment evolves.",
       },
     };
 
@@ -1854,6 +1964,7 @@
       var getData = [
         String(inds.projectName),
         String(inds.projectType),
+        String(inds.objective),
         String(inds.poc),
         String(inds.servicePoc),
         String(inds.currentPhase),
@@ -1970,7 +2081,7 @@
           var typeEl = byId("co-project-type");
           if (projectType) {
             typeEl.innerHTML =
-              '<strong class="co-project-label">Type:</strong> ' +
+              '<strong class="co-project-label">Project Type:</strong> ' +
               esc(projectType);
             typeEl.style.display = "";
           } else {
@@ -1986,6 +2097,18 @@
             blurbEl.style.display = "";
           } else if (blurbEl) {
             blurbEl.style.display = "none";
+          }
+
+          /* objective line — indicatorID 86 */
+          var objective = getField(s1, inds.objective);
+          var objectiveEl = byId("co-project-objective");
+          if (objective && objectiveEl) {
+            objectiveEl.innerHTML =
+              '<strong class="co-project-label">Objective:</strong> ' +
+              esc(objective);
+            objectiveEl.style.display = "";
+          } else if (objectiveEl) {
+            objectiveEl.style.display = "none";
           }
 
           /* ---- Helper: render a POC row from _orgchart metadata ---- */
@@ -2078,10 +2201,51 @@
         });
     }
 
+    /* ============================================================
+     wireJumpToTop
+     Mirrors the dashboard pattern — shows the button only when the
+     page is scrollable AND the user has scrolled down > 120px.
+     ============================================================ */
+    function wireJumpToTop() {
+      var btn = document.getElementById("co-jump-top");
+      if (!btn) return;
+
+      function setVisible(visible) {
+        btn.classList.toggle("is-visible", visible);
+        btn.setAttribute("aria-hidden", String(!visible));
+        btn.tabIndex = visible ? 0 : -1;
+      }
+
+      function updateVisibility() {
+        var scrollTop =
+          window.pageYOffset || document.documentElement.scrollTop;
+        var scrollHeight = Math.max(
+          document.body.scrollHeight,
+          document.documentElement.scrollHeight,
+        );
+        var clientHeight =
+          window.innerHeight || document.documentElement.clientHeight;
+        var needsScroll = scrollHeight - clientHeight > 80;
+        setVisible(needsScroll && scrollTop > 120);
+      }
+
+      btn.addEventListener("click", function () {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+
+      window.addEventListener("scroll", updateVisibility, { passive: true });
+      window.addEventListener("resize", updateVisibility);
+      updateVisibility();
+    }
+
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", init);
+      document.addEventListener("DOMContentLoaded", function () {
+        init();
+        wireJumpToTop();
+      });
     } else {
       init();
+      wireJumpToTop();
     }
   })();
 </script>
