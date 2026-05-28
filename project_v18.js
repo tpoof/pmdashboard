@@ -56,6 +56,7 @@
     keyResultSelection: 37,
     ticketNumber: 68,
     projectEndDate: 70,
+    customerOverviewUrl: 73,
   };
 
   // OKR indicator IDs (Project form)
@@ -1069,24 +1070,45 @@
             safe(t.recordID) +
             "</span></td>";
         var overdueClass = isOverdueTask(t, now) ? " pm-overdueRed" : "";
+        var mrid = safeAttr(String(t.recordID || ""));
         return (
           "<tr>" +
           taskIdCell +
-          "<td>" +
+          '<td class="pm-editableCell" data-ind="' +
+          String(TASK_IND.title) +
+          '" data-record-id="' +
+          mrid +
+          '" data-form-type="task" tabindex="0" title="Click to edit">' +
           safe(t.title || "(No title)") +
           "</td>" +
-          "<td>" +
+          '<td class="pm-editableCell" data-ind="' +
+          String(TASK_IND.status) +
+          '" data-record-id="' +
+          mrid +
+          '" data-form-type="task" tabindex="0" title="Click to edit">' +
           renderStatusCell(t) +
           "</td>" +
-          "<td>" +
+          '<td class="pm-editableCell" data-ind="' +
+          String(TASK_IND.priority) +
+          '" data-record-id="' +
+          mrid +
+          '" data-form-type="task" tabindex="0" title="Click to edit">' +
           getPriorityPill(t.priority) +
           "</td>" +
-          "<td>" +
+          '<td class="pm-editableCell" data-ind="' +
+          String(TASK_IND.startDate) +
+          '" data-record-id="' +
+          mrid +
+          '" data-form-type="task" tabindex="0" title="Click to edit">' +
           safe(t.start) +
           "</td>" +
-          '<td class="' +
+          '<td class="pm-editableCell ' +
           overdueClass +
-          '">' +
+          '" data-ind="' +
+          String(TASK_IND.dueDate) +
+          '" data-record-id="' +
+          mrid +
+          '" data-form-type="task" tabindex="0" title="Click to edit">' +
           safe(t.due) +
           "</td>" +
           "<td>" +
@@ -1134,11 +1156,11 @@
       '<table class="pm-table" style="width:100%;border-collapse:collapse;">' +
       "<thead><tr>" +
       '<th scope="col" class="pm-sortable" data-type="number"><button type="button" class="pm-sortBtn">Task ID</button></th>' +
-      '<th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Task Name</button></th>' +
-      '<th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
-      '<th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Priority</button></th>' +
-      '<th scope="col" class="pm-sortable" data-type="date"><button type="button" class="pm-sortBtn">Start</button></th>' +
-      '<th scope="col" class="pm-sortable" data-type="date"><button type="button" class="pm-sortBtn">Due</button></th>' +
+      '<th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Task Name <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
+      '<th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Status <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
+      '<th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Priority <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
+      '<th scope="col" class="pm-sortable" data-type="date"><button type="button" class="pm-sortBtn">Start <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
+      '<th scope="col" class="pm-sortable" data-type="date"><button type="button" class="pm-sortBtn">Due <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
       '<th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Assigned To</button></th>' +
       "</tr></thead>" +
       "<tbody>" +
@@ -2232,6 +2254,7 @@
       keyResultSelection: extractFromS1(row, PROJECT_IND.keyResultSelection),
       ticketNumber: extractFromS1(row, PROJECT_IND.ticketNumber),
       projectEndDate: extractFromS1(row, PROJECT_IND.projectEndDate),
+      customerOverviewUrl: extractFromS1(row, PROJECT_IND.customerOverviewUrl),
       okrKey: extractFromS1(row, OKR_IND.okrKey),
       okrObjective: extractFromS1(row, OKR_IND.objective),
       okrStartDate: extractFromS1(row, OKR_IND.startDate),
@@ -2593,21 +2616,37 @@
       ' <span class="pm-okrSep" aria-hidden="true">|</span> ' +
       krDisplay;
 
+    var rid = safeAttr(String(p.recordID || ""));
     return (
       "<tr>" +
       '<td class="pm-colKey">' +
       pkLink +
       "</td>" +
-      '<td class="pm-colName">' +
-      '<div class="pm-wrapCol pm-colNameText" tabindex="0" title="' +
-      safeAttr(projectNameText) +
-      '" aria-label="' +
-      safeAttr(projectNameText || "Project name") +
-      '">' +
+      '<td class="pm-colName pm-editableCell" data-ind="' +
+      String(PROJECT_IND.projectName) +
+      '" data-record-id="' +
+      rid +
+      '" data-form-type="project" tabindex="0" title="Click to edit">' +
+      '<div class="pm-projectNameCell">' +
+      (p.customerOverviewUrl
+        ? '<a href="' +
+          safeAttr(p.customerOverviewUrl) +
+          '" class="pm-customerOverviewGlobe" target="_blank" rel="noopener noreferrer" title="Open customer overview" aria-label="Open customer overview for ' +
+          safeAttr(projectNameText) +
+          '">' +
+          '<span class="material-icons" aria-hidden="true">language</span>' +
+          "</a>"
+        : "") +
+      '<span class="pm-wrapCol pm-colNameText">' +
       safe(projectNameText) +
+      "</span>" +
       "</div>" +
       "</td>" +
-      '<td class="pm-colDesc">' +
+      '<td class="pm-colDesc pm-editableCell" data-ind="' +
+      String(PROJECT_IND.description) +
+      '" data-record-id="' +
+      rid +
+      '" data-form-type="project" tabindex="0" title="Click to edit">' +
       '<div class="pm-wrapColLong">' +
       safe(p.description) +
       "</div>" +
@@ -2615,13 +2654,21 @@
       "<td>" +
       safe(p.owner) +
       "</td>" +
-      "<td>" +
+      '<td class="pm-editableCell" data-ind="' +
+      String(PROJECT_IND.projectFiscalYear) +
+      '" data-record-id="' +
+      rid +
+      '" data-form-type="project" tabindex="0" title="Click to edit">' +
       safe(p.projectFiscalYear) +
       "</td>" +
       "<td>" +
       okrCombined +
       "</td>" +
-      "<td>" +
+      '<td class="pm-editableCell" data-ind="' +
+      String(PROJECT_IND.projectStatus) +
+      '" data-record-id="' +
+      rid +
+      '" data-form-type="project" tabindex="0" title="Click to edit">' +
       safe(p.projectStatus) +
       "</td>" +
       '<td class="pm-colCompletion"><span class="pm-compPctWrap"><span class="pm-compPctBar" style="--pct-width:' +
@@ -2666,14 +2713,14 @@
       '<table class="pm-table">' +
       "<thead><tr>" +
       '<th scope="col" class="pm-sortable pm-colKey" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>' +
-      '<th scope="col" class="pm-sortable pm-colName" data-sort="projectName" data-type="string"><button type="button" class="pm-sortBtn">Project Name</button></th>' +
-      '<th scope="col" class="pm-sortable pm-colDesc" data-sort="description" data-type="string"><button type="button" class="pm-sortBtn">Description</button></th>' +
+      '<th scope="col" class="pm-sortable pm-colName" data-sort="projectName" data-type="string"><button type="button" class="pm-sortBtn">Project Name <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
+      '<th scope="col" class="pm-sortable pm-colDesc" data-sort="description" data-type="string"><button type="button" class="pm-sortBtn">Description <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="owner" data-type="string"><button type="button" class="pm-sortBtn">Owner</button></th>' +
-      '<th scope="col" class="pm-sortable" data-sort="projectFiscalYear" data-type="string"><button type="button" class="pm-sortBtn">FY</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="projectFiscalYear" data-type="string"><button type="button" class="pm-sortBtn">FY <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="okrAssociation" data-type="string"><button type="button" class="pm-sortBtn">OKR | Key Result</button></th>' +
-      '<th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
       '<th scope="col" class="pm-sortable pm-colCompletion" data-sort="completionPct" data-type="number"><button type="button" class="pm-sortBtn">% Complete</button></th>' +
-      '<th scope="col" class="pm-sortable" data-sort="ticketNumber" data-type="string"><button type="button" class="pm-sortBtn">Ticket #</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="ticketNumber" data-type="string"><button type="button" class="pm-sortBtn">Ticket</button></th>' +
       "</tr></thead>" +
       "<tbody>" +
       rowsHtml +
@@ -3836,6 +3883,7 @@
     var titleText = String(t.title || "(No title)");
     var titleAttr = safeAttr(titleText);
 
+    var rid = safeAttr(String(t.recordID || ""));
     return (
       "<tr>" +
       "<td>" +
@@ -3844,9 +3892,11 @@
       "<td>" +
       taskLink +
       "</td>" +
-      '<td title="' +
-      titleAttr +
-      '">' +
+      '<td class="pm-editableCell" data-ind="' +
+      String(TASK_IND.title) +
+      '" data-record-id="' +
+      rid +
+      '" data-form-type="task" tabindex="0" title="Click to edit">' +
       '<div style="display:inline-flex;align-items:center;gap:4px;max-width:100%;overflow:hidden;">' +
       (t.isRecurring
         ? '<span class="material-icons pm-recurringIcon" style="flex-shrink:0;font-size:15px;" title="Recurring Task" aria-label="Recurring Task">change_circle</span>'
@@ -3856,30 +3906,54 @@
       "</span>" +
       "</div>" +
       "</td>" +
-      "<td>" +
+      '<td class="pm-editableCell" data-ind="' +
+      String(TASK_IND.status) +
+      '" data-record-id="' +
+      rid +
+      '" data-form-type="task" tabindex="0" title="Click to edit">' +
       renderStatusCell(t) +
       "</td>" +
       "<td>" +
       renderDepsList(t.depIds) +
       "</td>" +
-      "<td>" +
+      '<td class="pm-editableCell" data-ind="' +
+      String(TASK_IND.priority) +
+      '" data-record-id="' +
+      rid +
+      '" data-form-type="task" tabindex="0" title="Click to edit">' +
       getPriorityPill(t.priority) +
       "</td>" +
-      "<td>" +
+      '<td class="pm-editableCell" data-ind="' +
+      String(TASK_IND.category) +
+      '" data-record-id="' +
+      rid +
+      '" data-form-type="task" tabindex="0" title="Click to edit">' +
       safe(t.category) +
       "</td>" +
       "<td>" +
       safe(t.assignedTo) +
       "</td>" +
-      "<td>" +
+      '<td class="pm-editableCell" data-ind="' +
+      String(TASK_IND.startDate) +
+      '" data-record-id="' +
+      rid +
+      '" data-form-type="task" tabindex="0" title="Click to edit">' +
       safe(t.start) +
       "</td>" +
-      '<td class="' +
+      '<td class="pm-editableCell ' +
       overdueClass +
-      '">' +
+      '" data-ind="' +
+      String(TASK_IND.dueDate) +
+      '" data-record-id="' +
+      rid +
+      '" data-form-type="task" tabindex="0" title="Click to edit">' +
       safe(t.due) +
       "</td>" +
-      "<td>" +
+      '<td class="pm-editableCell" data-ind="' +
+      String(TASK_IND.actualCompletionDate) +
+      '" data-record-id="' +
+      rid +
+      '" data-form-type="task" tabindex="0" title="Click to edit">' +
       formatDateCell(t.actualCompletion) +
       "</td>" +
       "<td>" +
@@ -3897,15 +3971,15 @@
       "<thead><tr>" +
       '<th scope="col" class="pm-sortable" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="recordID" data-type="number"><button type="button" class="pm-sortBtn">Task ID</button></th>' +
-      '<th scope="col" class="pm-sortable pm-wrapCol" data-sort="title" data-type="string"><button type="button" class="pm-sortBtn">Title</button></th>' +
-      '<th scope="col" class="pm-sortable" data-sort="status" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>' +
+      '<th scope="col" class="pm-sortable pm-wrapCol" data-sort="title" data-type="string"><button type="button" class="pm-sortBtn">Title <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="status" data-type="string"><button type="button" class="pm-sortBtn">Status <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="dependencies" data-type="string"><button type="button" class="pm-sortBtn">Dependencies</button></th>' +
-      '<th scope="col" class="pm-sortable" data-sort="priority" data-type="string"><button type="button" class="pm-sortBtn">Priority</button></th>' +
-      '<th scope="col" class="pm-sortable" data-sort="category" data-type="string"><button type="button" class="pm-sortBtn">Category</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="priority" data-type="string"><button type="button" class="pm-sortBtn">Priority <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="category" data-type="string"><button type="button" class="pm-sortBtn">Category <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="assignedTo" data-type="string"><button type="button" class="pm-sortBtn">Assigned To</button></th>' +
-      '<th scope="col" class="pm-sortable" data-sort="start" data-type="date"><button type="button" class="pm-sortBtn">Start</button></th>' +
-      '<th scope="col" class="pm-sortable" data-sort="due" data-type="date"><button type="button" class="pm-sortBtn">Due</button></th>' +
-      '<th scope="col" class="pm-sortable" data-sort="actualCompletion" data-type="date"><button type="button" class="pm-sortBtn">Completed</button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="start" data-type="date"><button type="button" class="pm-sortBtn">Start <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="due" data-type="date"><button type="button" class="pm-sortBtn">Due <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
+      '<th scope="col" class="pm-sortable" data-sort="actualCompletion" data-type="date"><button type="button" class="pm-sortBtn">Completed <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>' +
       '<th scope="col" class="pm-sortable" data-sort="supportTicket" data-type="string"><button type="button" class="pm-sortBtn">Ticket</button></th>' +
       "</tr></thead>";
 
@@ -4047,12 +4121,6 @@
     var subType = getOtherSubTypeValue(otherSubType);
     if (isOther && !subType) {
       throw new Error("Other status requires a subtype.");
-    }
-    function todayMMDDYYYY() {
-      var n = new Date();
-      var mm = String(n.getMonth() + 1).padStart(2, "0");
-      var dd = String(n.getDate()).padStart(2, "0");
-      return mm + "/" + dd + "/" + n.getFullYear();
     }
     var bodyObj = {
       10: newStatus,
@@ -7544,6 +7612,482 @@
   };
   // ── END DEBUG ────────────────────────────────────────────────────────────────
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // INLINE CELL EDITOR
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Category IDs for LEAF form editor API
+  var INLINE_EDIT_CATEGORY = {
+    task: "9b302",
+    project: "55445",
+  };
+
+  // Indicator IDs that must never open an inline editor.
+  // Keyed by form type; also enforced by the absence of data-ind on the cell.
+  var INLINE_EDIT_BLOCKLIST = {
+    task: new Set([
+      String(TASK_IND.projectKey), // 8
+      String(TASK_IND.assignedTo), // 11
+      String(TASK_IND.dependencies), // 17
+      String(TASK_IND.supportTicket), // 18
+    ]),
+    project: new Set([
+      String(PROJECT_IND.projectKey), // 2
+      String(PROJECT_IND.owner), // 5
+      String(PROJECT_IND.okrAssociation), // 29
+      String(PROJECT_IND.keyResultSelection), // 37
+      String(PROJECT_IND.ticketNumber), // 68
+    ]),
+  };
+
+  // Cache: { task: { indicatorId: { format, options[] } }, project: { ... } }
+  var indicatorMetaCache = { task: null, project: null };
+
+  // Fetch and cache indicator metadata for a form type (task | project).
+  // Returns a promise resolving to { indicatorId: { format, options } }.
+  function fetchIndicatorMeta(formType) {
+    if (indicatorMetaCache[formType]) {
+      return Promise.resolve(indicatorMetaCache[formType]);
+    }
+    var categoryId = INLINE_EDIT_CATEGORY[formType];
+    var url =
+      "/platform/projects/api/formEditor/indicator/list/category/" + categoryId;
+    return fetch(url, { credentials: "include" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("fetchIndicatorMeta HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (raw) {
+        var map = {};
+        if (raw && typeof raw === "object") {
+          Object.keys(raw).forEach(function (id) {
+            var ind = raw[id];
+            var fmt = String(ind.format || ind.input_type || "").toLowerCase();
+            var opts = Array.isArray(ind.options) ? ind.options : [];
+            map[String(id)] = { format: fmt, options: opts };
+          });
+        }
+        indicatorMetaCache[formType] = map;
+        return map;
+      });
+  }
+
+  // Determine editor type from indicator format string.
+  // Returns "dropdown" | "text" | "textarea" | "date" | null (blocked/unsupported).
+  function resolveEditorType(fmt) {
+    if (!fmt) return null;
+    if (fmt === "dropdown" || fmt === "radio") return "dropdown";
+    if (fmt === "date") return "date";
+    if (fmt === "textarea") return "textarea";
+    if (fmt === "text") return "text";
+    // checkbox, multiselect, orgchart, file, etc. — not supported inline
+    return null;
+  }
+
+  // ── Singleton state ──────────────────────────────────────────────────────
+  var _activeEditorCell = null; // the <td> currently being edited
+  var _activeEditorInput = null; // the <input>/<select>/<textarea> element
+  var _activeOriginalValue = ""; // value at time of open (for revert)
+
+  function isInlineEditorOpen() {
+    return !!_activeEditorCell;
+  }
+
+  // ── Open editor ──────────────────────────────────────────────────────────
+  function openInlineEditor(cell) {
+    var indicatorId = cell.getAttribute("data-ind");
+    var recordId = cell.getAttribute("data-record-id");
+    var formType = cell.getAttribute("data-form-type");
+
+    if (!indicatorId || !recordId || !formType) return;
+    var blocklist = INLINE_EDIT_BLOCKLIST[formType];
+    if (blocklist && blocklist.has(String(indicatorId))) return;
+
+    // If another editor is open, discard it silently first
+    if (_activeEditorCell && _activeEditorCell !== cell) {
+      closeInlineEditor(true);
+    }
+
+    // Capture current text content as the revert value
+    _activeEditorCell = cell;
+    _activeOriginalValue =
+      cell.getAttribute("data-current-value") || cell.textContent.trim();
+
+    var editorEl = document.getElementById("pmInlineEditor");
+    var skeleton = document.getElementById("pmInlineEditorSkeleton");
+    var bodyEl = document.getElementById("pmInlineEditorBody");
+    var hintEl = document.getElementById("pmInlineEditorHint");
+    if (!editorEl || !bodyEl) return;
+
+    // Show skeleton while fetching meta
+    bodyEl.innerHTML = "";
+    if (skeleton) skeleton.hidden = false;
+    if (hintEl) hintEl.textContent = "";
+
+    hideInlineEditorError();
+    positionEditorOverCell(editorEl, cell);
+    editorEl.hidden = false;
+
+    fetchIndicatorMeta(formType)
+      .then(function (meta) {
+        var indMeta = meta[String(indicatorId)];
+        var fmt = indMeta ? indMeta.format : "text";
+        var options = indMeta ? indMeta.options : [];
+        var editorType = resolveEditorType(fmt);
+
+        if (skeleton) skeleton.hidden = true;
+
+        if (!editorType) {
+          // Unsupported type — close silently
+          closeInlineEditor(true);
+          return;
+        }
+
+        var input;
+        if (editorType === "dropdown") {
+          input = document.createElement("select");
+          input.className = "pm-inlineEditor-select";
+          // Blank option allows clearing the value
+          var blankOpt = document.createElement("option");
+          blankOpt.value = "";
+          blankOpt.textContent = "— select —";
+          input.appendChild(blankOpt);
+          options.forEach(function (opt) {
+            var o = document.createElement("option");
+            o.value = opt;
+            o.textContent = opt;
+            if (opt === _activeOriginalValue) o.selected = true;
+            input.appendChild(o);
+          });
+          if (hintEl) hintEl.textContent = "↵ save  ·  Esc cancel";
+        } else if (editorType === "date") {
+          input = document.createElement("input");
+          input.type = "date";
+          input.className = "pm-inlineEditor-input";
+          // Convert MM/DD/YYYY → YYYY-MM-DD for the native date input
+          var iso = mmddyyyyToISO(_activeOriginalValue);
+          if (iso) input.value = iso;
+          if (hintEl) hintEl.textContent = "↵ save  ·  Esc cancel";
+        } else if (editorType === "textarea") {
+          input = document.createElement("textarea");
+          input.className = "pm-inlineEditor-textarea";
+          input.rows = 4;
+          input.value = _activeOriginalValue;
+          if (hintEl) hintEl.textContent = "↵ save  ·  Esc cancel";
+        } else {
+          // text
+          input = document.createElement("input");
+          input.type = "text";
+          input.className = "pm-inlineEditor-input";
+          input.value = _activeOriginalValue;
+          if (hintEl) hintEl.textContent = "↵ save  ·  Esc cancel";
+        }
+
+        _activeEditorInput = input;
+        bodyEl.appendChild(input);
+
+        // Key handlers
+        input.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" && editorType !== "textarea") {
+            e.preventDefault();
+            commitInlineEdit();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            closeInlineEditor(true);
+          }
+        });
+
+        // For textarea, Shift+Enter submits
+        if (editorType === "textarea") {
+          input.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" && e.shiftKey) {
+              e.preventDefault();
+              commitInlineEdit();
+            }
+          });
+          if (hintEl) hintEl.textContent = "Shift+↵ save  ·  Esc cancel";
+        }
+
+        input.focus();
+        if (input.select) input.select();
+      })
+      .catch(function (err) {
+        console.warn("openInlineEditor: could not fetch indicator meta", err);
+        if (skeleton) skeleton.hidden = true;
+        closeInlineEditor(true);
+      });
+  }
+
+  // ── Commit ───────────────────────────────────────────────────────────────
+  function commitInlineEdit() {
+    if (!_activeEditorCell || !_activeEditorInput) return;
+
+    var cell = _activeEditorCell;
+    var input = _activeEditorInput;
+    var indicatorId = cell.getAttribute("data-ind");
+    var recordId = cell.getAttribute("data-record-id");
+    var formType = cell.getAttribute("data-form-type");
+    var origValue = _activeOriginalValue;
+
+    var rawValue = input.value;
+
+    // For date inputs, convert YYYY-MM-DD back to MM/DD/YYYY for LEAF
+    var writeValue = rawValue;
+    if (input.type === "date" && rawValue) {
+      writeValue = isoToMMDDYYYY(rawValue);
+    }
+
+    // When editing the task status inline, mirror the kanban behaviour:
+    // auto-stamp ind 47 (actualCompletionDate) with today when moving to a
+    // completed status, and clear it when moving away from completed.
+    var isStatusEdit =
+      formType === "task" && parseInt(indicatorId, 10) === TASK_IND.status;
+    var completionDateValue = null; // null = no side-effect
+    if (isStatusEdit) {
+      completionDateValue = isCompletedStatus(writeValue)
+        ? todayMMDDYYYY()
+        : "";
+    }
+
+    // Optimistically update the cell display
+    updateCellDisplay(cell, indicatorId, formType, writeValue);
+
+    // Close the editor overlay
+    closeInlineEditor(false);
+
+    // Write to LEAF
+    ensureCSRFToken(recordId)
+      .then(function (token) {
+        var tokenField = state.csrfField || getCSRFFieldName();
+        var bodyObj = {
+          recordID: recordId,
+          series: 1,
+        };
+        bodyObj[indicatorId] = writeValue;
+        // Include the completion date side-effect in the same POST
+        if (completionDateValue !== null) {
+          bodyObj[TASK_IND.actualCompletionDate] = completionDateValue;
+        }
+        bodyObj[tokenField] = token;
+
+        return fetch(FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordId), {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "x-requested-with": "XMLHttpRequest",
+            "x-csrf-token": token,
+            "x-xsrf-token": token,
+          },
+          body: encodeFormBody(bodyObj),
+        });
+      })
+      .then(function (r) {
+        if (!r.ok) throw new Error("Save failed (HTTP " + r.status + ")");
+        // Update in-memory state so re-renders reflect the new value
+        updateStateAfterEdit(recordId, indicatorId, formType, writeValue);
+      })
+      .catch(function (err) {
+        console.warn("commitInlineEdit: write failed", err);
+        // Revert cell display and show error popover
+        updateCellDisplay(cell, indicatorId, formType, origValue);
+        showInlineEditorError(cell, "Could not save. Please try again.");
+      });
+  }
+
+  // Update the <td> display text after a successful (or reverted) edit.
+  function updateCellDisplay(cell, indicatorId, formType, value) {
+    // Store as data attribute for future open-editor revert reference
+    cell.setAttribute("data-current-value", value || "");
+
+    // For status cells the display is a rendered pill — re-render from state
+    var indNum = parseInt(indicatorId, 10);
+    if (formType === "task" && indNum === TASK_IND.status) {
+      // Find the in-memory task and temporarily update status for rendering
+      var rec =
+        state.tasksById &&
+        state.tasksById.get(String(cell.getAttribute("data-record-id")));
+      if (rec) {
+        var tmp = Object.assign({}, rec, { status: value });
+        cell.innerHTML = renderStatusCell(tmp);
+      } else {
+        cell.textContent = value;
+      }
+      return;
+    }
+    if (formType === "task" && indNum === TASK_IND.priority) {
+      cell.innerHTML = getPriorityPill(value);
+      return;
+    }
+    if (formType === "project" && indNum === PROJECT_IND.projectStatus) {
+      cell.textContent = value;
+      return;
+    }
+    // Default: plain text
+    cell.textContent = value;
+  }
+
+  // Push the new value into the appropriate state array so next render is correct.
+  function updateStateAfterEdit(recordId, indicatorId, formType, value) {
+    var indNum = parseInt(indicatorId, 10);
+    if (formType === "task") {
+      var taskIdx = -1;
+      for (var i = 0; i < (state.tasksAll || []).length; i++) {
+        if (String(state.tasksAll[i].recordID) === String(recordId)) {
+          taskIdx = i;
+          break;
+        }
+      }
+      if (taskIdx === -1) return;
+      var t = state.tasksAll[taskIdx];
+      if (indNum === TASK_IND.title) t.title = value;
+      else if (indNum === TASK_IND.status) {
+        t.status = value;
+        // Mirror kanban: keep actualCompletion in sync with status
+        t.actualCompletion = isCompletedStatus(value) ? todayMMDDYYYY() : "";
+      } else if (indNum === TASK_IND.priority) t.priority = value;
+      else if (indNum === TASK_IND.category) t.category = value;
+      else if (indNum === TASK_IND.startDate) t.start = value;
+      else if (indNum === TASK_IND.dueDate) t.due = value;
+      else if (indNum === TASK_IND.actualCompletionDate)
+        t.actualCompletion = value;
+      if (state.tasksById) state.tasksById.set(String(recordId), t);
+    } else if (formType === "project") {
+      for (var j = 0; j < (state.projectsAll || []).length; j++) {
+        if (String(state.projectsAll[j].recordID) === String(recordId)) {
+          var p = state.projectsAll[j];
+          if (indNum === PROJECT_IND.projectName) p.projectName = value;
+          else if (indNum === PROJECT_IND.description) p.description = value;
+          else if (indNum === PROJECT_IND.projectFiscalYear)
+            p.projectFiscalYear = value;
+          else if (indNum === PROJECT_IND.projectStatus)
+            p.projectStatus = value;
+          break;
+        }
+      }
+    }
+  }
+
+  // ── Close (discard) ──────────────────────────────────────────────────────
+  function closeInlineEditor(discard) {
+    var editorEl = document.getElementById("pmInlineEditor");
+    var bodyEl = document.getElementById("pmInlineEditorBody");
+    var skeleton = document.getElementById("pmInlineEditorSkeleton");
+    if (editorEl) editorEl.hidden = true;
+    if (bodyEl) bodyEl.innerHTML = "";
+    if (skeleton) skeleton.hidden = false;
+    _activeEditorCell = null;
+    _activeEditorInput = null;
+    _activeOriginalValue = "";
+    void discard; // silence unused-var lint
+  }
+
+  // ── Error popover ────────────────────────────────────────────────────────
+  function showInlineEditorError(cell, message) {
+    var errEl = document.getElementById("pmInlineEditorError");
+    var msgEl = document.getElementById("pmInlineEditorErrorMsg");
+    if (!errEl) return;
+    if (msgEl) msgEl.textContent = message || "Save failed.";
+    positionEditorOverCell(errEl, cell);
+    errEl.hidden = false;
+    // Auto-hide after 4 seconds
+    clearTimeout(errEl._hideTimer);
+    errEl._hideTimer = setTimeout(function () {
+      errEl.hidden = true;
+    }, 4000);
+  }
+
+  function hideInlineEditorError() {
+    var errEl = document.getElementById("pmInlineEditorError");
+    if (errEl) {
+      clearTimeout(errEl._hideTimer);
+      errEl.hidden = true;
+    }
+  }
+
+  // ── Positioning ──────────────────────────────────────────────────────────
+  function positionEditorOverCell(overlayEl, cell) {
+    var rect = cell.getBoundingClientRect();
+    var scrollTop = window.scrollY || document.documentElement.scrollTop;
+    var scrollLeft = window.scrollX || document.documentElement.scrollLeft;
+    overlayEl.style.position = "absolute";
+    overlayEl.style.top = rect.top + scrollTop - 2 + "px";
+    overlayEl.style.left = rect.left + scrollLeft - 2 + "px";
+    overlayEl.style.minWidth = Math.max(rect.width, 160) + "px";
+  }
+
+  // ── Date helpers ─────────────────────────────────────────────────────────
+  // Returns today's date as MM/DD/YYYY — used for auto-stamping completion dates.
+  function todayMMDDYYYY() {
+    var n = new Date();
+    var mm = String(n.getMonth() + 1).padStart(2, "0");
+    var dd = String(n.getDate()).padStart(2, "0");
+    return mm + "/" + dd + "/" + n.getFullYear();
+  }
+
+  // MM/DD/YYYY → YYYY-MM-DD (for <input type="date"> value)
+  function mmddyyyyToISO(val) {
+    if (!val) return "";
+    var m = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!m) return "";
+    return m[3] + "-" + m[1].padStart(2, "0") + "-" + m[2].padStart(2, "0");
+  }
+
+  // YYYY-MM-DD → MM/DD/YYYY (to write back to LEAF)
+  function isoToMMDDYYYY(val) {
+    if (!val) return "";
+    var m = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return val;
+    return m[2] + "/" + m[3] + "/" + m[1];
+  }
+
+  // ── Click delegation ─────────────────────────────────────────────────────
+  function wireInlineCellEditor() {
+    document.addEventListener("click", function (e) {
+      var editorEl = document.getElementById("pmInlineEditor");
+      var errEl = document.getElementById("pmInlineEditorError");
+
+      // Ignore clicks inside the open editor or error popover
+      if (editorEl && !editorEl.hidden && editorEl.contains(e.target)) return;
+      if (errEl && !errEl.hidden && errEl.contains(e.target)) return;
+
+      // Walk up from click target to find a [data-ind] cell
+      var el = e.target;
+      var cell = null;
+      while (el && el !== document.body) {
+        if (
+          el.tagName === "TD" &&
+          el.hasAttribute("data-ind") &&
+          el.hasAttribute("data-record-id")
+        ) {
+          cell = el;
+          break;
+        }
+        el = el.parentElement;
+      }
+
+      if (cell) {
+        e.stopPropagation();
+        openInlineEditor(cell);
+        return;
+      }
+
+      // Clicked outside everything — if a second non-cell click happens,
+      // we intentionally do NOT close (per spec: only Enter/Esc closes).
+    });
+
+    // Escape key closes from anywhere
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && isInlineEditorOpen()) {
+        closeInlineEditor(true);
+      }
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // END INLINE CELL EDITOR
+  // ═══════════════════════════════════════════════════════════════════════════
+
   function syncDateRangeBtnUI() {
     document.querySelectorAll(".pm-dateRangeBtn").forEach(function (btn) {
       var days = parseInt(btn.getAttribute("data-days"), 10);
@@ -10541,6 +11085,7 @@
           PROJECT_IND.keyResultSelection,
           PROJECT_IND.ticketNumber,
           PROJECT_IND.projectEndDate,
+          PROJECT_IND.customerOverviewUrl,
           OKR_IND.okrKey,
           OKR_IND.objective,
           OKR_IND.startDate,
@@ -10752,6 +11297,7 @@
       wireSupportMessageListener();
       wireModalControls();
       wireDismissOverdueAlert();
+      wireInlineCellEditor();
       wireOtherStatusModal();
       wireAddButtons();
       fetchAndRenderInboxCount();
@@ -10787,6 +11333,7 @@
           PROJECT_IND.keyResultSelection,
           PROJECT_IND.ticketNumber,
           PROJECT_IND.projectEndDate,
+          PROJECT_IND.customerOverviewUrl,
           OKR_IND.okrKey,
           OKR_IND.objective,
           OKR_IND.startDate,

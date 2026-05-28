@@ -668,7 +668,9 @@
 
         <div class="pm-chartCard">
           <div class="pm-chartHeader">
-            <h3 class="pm-chartTitle">Tickets &amp; Projects imported by month</h3>
+            <h3 class="pm-chartTitle">
+              Tickets &amp; Projects imported by month
+            </h3>
           </div>
           <div class="pm-chartBox">
             <div class="pm-chartInner">
@@ -1040,6 +1042,36 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- Inline cell editor — singleton overlay, positioned by JS -->
+<div
+  id="pmInlineEditor"
+  class="pm-inlineEditor"
+  role="dialog"
+  aria-label="Edit cell value"
+  hidden
+>
+  <div class="pm-inlineEditor-inner">
+    <div id="pmInlineEditorSkeleton" class="pm-inlineEditor-skeleton" hidden>
+      <span class="pm-inlineEditor-skeletonBar"></span>
+      <span
+        class="pm-inlineEditor-skeletonBar pm-inlineEditor-skeletonBar--short"
+      ></span>
+      <span class="pm-inlineEditor-skeletonBar"></span>
+    </div>
+    <!-- populated dynamically by openInlineEditor() -->
+    <div id="pmInlineEditorBody"></div>
+    <p class="pm-inlineEditor-hint" id="pmInlineEditorHint"></p>
+  </div>
+</div>
+
+<!-- Inline editor error popover — repositioned by JS to the offending cell -->
+<div id="pmInlineEditorError" class="pm-inlineEditorError" role="alert" hidden>
+  <span class="material-icons pm-inlineEditorError-icon" aria-hidden="true"
+    >error_outline</span
+  >
+  <span id="pmInlineEditorErrorMsg"></span>
 </div>
 
 <!-- PERF: Ideally move preconnect + font link to <head> in host template -->
