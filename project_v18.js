@@ -1267,27 +1267,17 @@
                   frame.contentWindow.location.href) ||
                 frame.src ||
                 "";
-              console.log("[+Task debug] iframe load fired. src:", frameSrc);
               var ridMatch = frameSrc.match(/[?&]recordID=(\d+)/i);
               if (!ridMatch) {
-                console.log(
-                  "[+Task debug] No recordID in URL yet — still on form.",
-                );
                 return;
               }
               var newRecordID = ridMatch[1];
-              console.log(
-                "[+Task debug] recordID detected:",
-                newRecordID,
-                "— writing Not Started...",
-              );
               // Clean up — only fire once per +Task open
               frame.removeEventListener("load", frame._addTaskStatusHandler);
               frame._addTaskStatusHandler = null;
               // Silent POST: force-save "Not Started" to indicator 10
               ensureCSRFToken(newRecordID)
                 .then(function (token) {
-                  console.log("[+Task debug] CSRF token acquired:", !!token);
                   var tokenField = state.csrfField || getCSRFFieldName();
                   var bodyObj = { recordID: newRecordID, series: 1 };
                   bodyObj[TASK_IND.status] = "Not Started";
@@ -1308,22 +1298,17 @@
                     },
                   );
                 })
-                .then(function (r) {
-                  console.log(
-                    "[+Task debug] POST response status:",
-                    r && r.status,
-                  );
-                })
+                .then(function (r) {})
                 .catch(function (err) {
-                  console.warn("[+Task debug] POST failed:", err);
+                  console.warn(
+                    "pm-dashboard: force-save Not Started POST failed:",
+                    err,
+                  );
                 });
             } catch (e) {
-              console.warn("[+Task debug] Caught exception in handler:", e);
+              console.warn("pm-dashboard: addTaskStatusHandler error:", e);
             }
           };
-          console.log(
-            "[+Task debug] _addTaskStatusHandler attached to iframe.",
-          );
           frame.addEventListener("load", frame._addTaskStatusHandler);
         }
 
@@ -7735,7 +7720,7 @@
     4: { format: "textarea", options: [] }, // description
     6: { format: "dropdown", options: [] }, // projectStatus — resolved from state
     32: { format: "dropdown", options: [] }, // projectType — resolved from state
-    38: { format: "text", options: [] }, // projectFiscalYear
+    38: { format: "dropdown", options: [] }, // projectFiscalYear — resolved from state
     70: { format: "date", options: [] }, // projectEndDate
     73: { format: "text", options: [] }, // customerOverviewUrl
   };
@@ -7781,6 +7766,19 @@
         ),
       ).sort(function (a, b) {
         return a.localeCompare(b);
+      });
+    }
+    if (id === String(PROJECT_IND.projectFiscalYear)) {
+      return Array.from(
+        new Set(
+          (state.projectsAll || [])
+            .map(function (p) {
+              return String(p.projectFiscalYear || "").trim();
+            })
+            .filter(Boolean),
+        ),
+      ).sort(function (a, b) {
+        return a.localeCompare(b, undefined, { numeric: true });
       });
     }
     return null; // no dynamic options for this indicator
