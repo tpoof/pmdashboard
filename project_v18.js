@@ -1267,15 +1267,27 @@
                   frame.contentWindow.location.href) ||
                 frame.src ||
                 "";
+              console.log("[+Task debug] iframe load fired. src:", frameSrc);
               var ridMatch = frameSrc.match(/[?&]recordID=(\d+)/i);
-              if (!ridMatch) return; // still on start-request form, not yet submitted
+              if (!ridMatch) {
+                console.log(
+                  "[+Task debug] No recordID in URL yet — still on form.",
+                );
+                return;
+              }
               var newRecordID = ridMatch[1];
+              console.log(
+                "[+Task debug] recordID detected:",
+                newRecordID,
+                "— writing Not Started...",
+              );
               // Clean up — only fire once per +Task open
               frame.removeEventListener("load", frame._addTaskStatusHandler);
               frame._addTaskStatusHandler = null;
               // Silent POST: force-save "Not Started" to indicator 10
               ensureCSRFToken(newRecordID)
                 .then(function (token) {
+                  console.log("[+Task debug] CSRF token acquired:", !!token);
                   var tokenField = state.csrfField || getCSRFFieldName();
                   var bodyObj = { recordID: newRecordID, series: 1 };
                   bodyObj[TASK_IND.status] = "Not Started";
@@ -1296,16 +1308,22 @@
                     },
                   );
                 })
-                .catch(function (err) {
-                  console.warn(
-                    "pm-dashboard: could not force-save Not Started on new task",
-                    err,
+                .then(function (r) {
+                  console.log(
+                    "[+Task debug] POST response status:",
+                    r && r.status,
                   );
+                })
+                .catch(function (err) {
+                  console.warn("[+Task debug] POST failed:", err);
                 });
             } catch (e) {
-              // Cross-origin or other error — ignore silently
+              console.warn("[+Task debug] Caught exception in handler:", e);
             }
           };
+          console.log(
+            "[+Task debug] _addTaskStatusHandler attached to iframe.",
+          );
           frame.addEventListener("load", frame._addTaskStatusHandler);
         }
 
