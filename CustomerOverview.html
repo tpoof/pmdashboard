@@ -1,18 +1,4 @@
 <style>
-  /* ============================================================
-   CustomerOverview v3 — LEAF Programmer Page
-   All styles scoped to #customerOverview.
-
-   v3 changes (on top of v2):
-     - Removed: print button, record ID display, last-updated display
-     - POC rendered as mailto: link (opens email client to POC address)
-       TODO: set CONFIG.indicators.pocEmail once you know the indicator ID
-     - Per-phase file + image attachments fetched via
-       ajaxIndex.php?a=getprintindicator and rendered below phase text
-     - Image thumbnails open in a lightbox overlay (keyboard + focus trap)
-     - File attachments render as styled download links
-   ============================================================ */
-
   #customerOverview *,
   #customerOverview *::before,
   #customerOverview *::after {
@@ -252,50 +238,28 @@
     letter-spacing: 0.02em;
   }
 
-  #customerOverview .co-project-type {
-    font-size: 1rem;
-    color: #3d4551;
+  /* Header metadata table */
+  #customerOverview .co-meta-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
     margin-bottom: 4px;
   }
 
-  /* v3: italicized project type blurb */
-  #customerOverview .co-project-type-blurb {
-    font-size: 0.9rem;
-    font-style: italic;
-    color: #71767a;
-    line-height: 1.55;
-    margin-bottom: 10px;
-    padding-left: 2px;
-  }
-
-  /* objective line */
-  #customerOverview .co-project-objective {
+  #customerOverview .co-meta-table td {
+    padding: 5px 0;
+    vertical-align: top;
     font-size: 1rem;
     color: #3d4551;
-    margin-bottom: 6px;
     line-height: 1.5;
   }
 
-  #customerOverview .co-project-poc {
-    font-size: 1rem;
-    color: #3d4551;
-    margin-bottom: 4px;
-  }
-
-  #customerOverview .co-leaf-url {
-    font-size: 1rem;
-    color: #3d4551;
-    margin-bottom: 12px;
-  }
-
-  #customerOverview .co-leaf-url a {
-    color: #0071bb;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  #customerOverview .co-leaf-url a:hover {
-    color: #003f72;
+  #customerOverview .co-meta-table td:first-child {
+    width: 180px;
+    min-width: 140px;
+    padding-right: 16px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   #customerOverview .co-project-label {
@@ -304,7 +268,64 @@
     letter-spacing: 0.04em;
   }
 
-  /* v3: POC mailto link */
+  /* Project type row — value is a toggle button for the blurb */
+  #customerOverview .co-type-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 1rem;
+    color: #3d4551;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-align: left;
+    line-height: 1.5;
+  }
+
+  #customerOverview .co-type-toggle:hover {
+    color: #0071bb;
+  }
+
+  #customerOverview .co-type-toggle:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  #customerOverview .co-type-chevron {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: #71767a;
+    transition: transform 0.2s ease;
+  }
+
+  #customerOverview .co-type-toggle[aria-expanded="true"] .co-type-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* Collapsible blurb row */
+  #customerOverview .co-blurb-row {
+    display: none;
+  }
+  #customerOverview .co-blurb-row.co-blurb-open {
+    display: table-row;
+  }
+
+  #customerOverview .co-blurb-cell {
+    padding-top: 2px !important;
+    padding-bottom: 8px !important;
+  }
+
+  #customerOverview .co-project-type-blurb {
+    font-size: 0.875rem;
+    font-style: italic;
+    color: #71767a;
+    line-height: 1.55;
+  }
+
+  /* POC mailto link */
   #customerOverview .co-poc-link {
     color: #0071bb;
     text-decoration: underline;
@@ -319,6 +340,17 @@
     outline: 3px solid #0071bb;
     outline-offset: 3px;
     border-radius: 2px;
+  }
+
+  /* LEAF URL link */
+  #customerOverview .co-leaf-url-link {
+    color: #0071bb;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  #customerOverview .co-leaf-url-link:hover {
+    color: #003f72;
   }
 
   /* ============================================================
@@ -1300,24 +1332,38 @@
         </div>
       </div>
 
-      <p id="co-project-type" class="co-project-type"></p>
-      <!-- v3: italicized type blurb — populated by JS for known project types -->
-      <p
-        id="co-project-type-blurb"
-        class="co-project-type-blurb"
-        style="display: none"
-      ></p>
-      <!-- objective line — indicatorID 86 -->
-      <p
-        id="co-project-objective"
-        class="co-project-objective"
-        style="display: none"
-      ></p>
-      <p id="co-project-poc" class="co-project-poc"></p>
-      <!-- Service POC stacked below Customer POC -->
-      <p id="co-service-poc" class="co-project-poc"></p>
-      <!-- LEAF URL — indicatorID 87 -->
-      <p id="co-leaf-url" class="co-leaf-url"></p>
+      <table class="co-meta-table" role="presentation">
+        <tbody>
+          <tr id="co-row-type" style="display: none">
+            <td><strong class="co-project-label">Project Type</strong></td>
+            <td id="co-project-type"></td>
+          </tr>
+          <tr id="co-blurb-row" class="co-blurb-row">
+            <td></td>
+            <td class="co-blurb-cell">
+              <p id="co-project-type-blurb" class="co-project-type-blurb"></p>
+            </td>
+          </tr>
+          <tr id="co-row-objective" style="display: none">
+            <td><strong class="co-project-label">Scope</strong></td>
+            <td id="co-project-objective"></td>
+          </tr>
+          <tr id="co-row-poc" style="display: none">
+            <td><strong class="co-project-label">LEAF POC</strong></td>
+            <td id="co-project-poc"></td>
+          </tr>
+          <tr id="co-row-service-poc" style="display: none">
+            <td><strong class="co-project-label">Customer POC</strong></td>
+            <td id="co-service-poc"></td>
+          </tr>
+          <tr id="co-row-leaf-url" style="display: none">
+            <td>
+              <strong class="co-project-label">Customer LEAF Site</strong>
+            </td>
+            <td id="co-leaf-url"></td>
+          </tr>
+        </tbody>
+      </table>
     </header>
 
     <section class="co-progress-section" aria-labelledby="co-progress-heading">
@@ -1380,7 +1426,7 @@
      CONFIG
      ============================================================ */
     var CONFIG = {
-      debug: true /* ← temp: diagnosing fetchPhaseOptions response format */,
+      debug: false,
 
       categoryID: "55445",
 
@@ -2424,18 +2470,16 @@
           }
 
           /*
-           * Try every key LEAF may use across versions:
-           *   options          — most common, newline-delimited string
-           *   format_options   — older builds
-           *   selectList       — some builds return an array of {text,value}
-           *   listValues       — alternate key seen in some installs
+           * LEAF wraps the indicator under its own ID as the key:
+           *   { "61": { options: [...], format: "dropdown", … } }
            */
+          var indicator = data && data[String(CONFIG.indicators.currentPhase)];
           var raw =
-            data &&
-            (data.options ||
-              data.format_options ||
-              data.selectList ||
-              data.listValues);
+            indicator &&
+            (indicator.options ||
+              indicator.format_options ||
+              indicator.selectList ||
+              indicator.listValues);
 
           if (!raw) {
             if (CONFIG.debug)
@@ -2576,57 +2620,79 @@
           byId("co-project-name").textContent =
             projectName || "Project Details";
 
+          /* ---- Project type row + collapsible blurb ---- */
           var typeEl = byId("co-project-type");
-          if (projectType) {
-            typeEl.innerHTML =
-              '<strong class="co-project-label">Project Type:</strong> ' +
-              esc(projectType);
-            typeEl.style.display = "";
-          } else {
-            typeEl.style.display = "none";
-          }
-
-          /* v3: italicized project type blurb — only for known types */
           var blurbEl = byId("co-project-type-blurb");
           var blurbKey = projectType ? projectType.toLowerCase().trim() : "";
           var blurbText = CONFIG.PROJECT_TYPE_BLURBS[blurbKey] || "";
-          if (blurbText && blurbEl) {
-            blurbEl.textContent = blurbText;
-            blurbEl.style.display = "";
-          } else if (blurbEl) {
-            blurbEl.style.display = "none";
+
+          if (projectType && typeEl) {
+            if (blurbText && blurbEl) {
+              /* Render project type as a toggle button */
+              typeEl.innerHTML =
+                '<button type="button" class="co-type-toggle" aria-expanded="false"' +
+                ' aria-controls="co-blurb-row"' +
+                ' aria-label="' +
+                esc(projectType) +
+                ' — click to expand description">' +
+                esc(projectType) +
+                '<svg class="co-type-chevron" viewBox="0 0 14 14" fill="none"' +
+                '     stroke="currentColor" stroke-width="2" stroke-linecap="round"' +
+                '     stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+                '<path d="M2 4l5 5 5-5"/></svg>' +
+                "</button>";
+
+              blurbEl.textContent = blurbText;
+
+              /* Wire toggle */
+              var toggleBtn = typeEl.querySelector(".co-type-toggle");
+              var blurbRow = byId("co-blurb-row");
+              if (toggleBtn && blurbRow) {
+                toggleBtn.addEventListener("click", function () {
+                  var expanded =
+                    toggleBtn.getAttribute("aria-expanded") === "true";
+                  toggleBtn.setAttribute("aria-expanded", String(!expanded));
+                  toggleBtn.setAttribute(
+                    "aria-label",
+                    esc(projectType) +
+                      " — click to " +
+                      (!expanded ? "collapse" : "expand") +
+                      " description",
+                  );
+                  blurbRow.classList.toggle("co-blurb-open", !expanded);
+                });
+              }
+            } else {
+              /* No blurb for this type — plain text, no toggle */
+              typeEl.textContent = projectType;
+            }
+            byId("co-row-type").style.display = "";
           }
 
-          /* scope line — indicatorID 86 */
+          /* ---- Scope ---- */
           var objective = getField(s1, inds.objective);
           var objectiveEl = byId("co-project-objective");
           if (objective && objectiveEl) {
-            objectiveEl.innerHTML =
-              '<strong class="co-project-label">Scope:</strong> ' +
-              esc(objective);
-            objectiveEl.style.display = "";
-          } else if (objectiveEl) {
-            objectiveEl.style.display = "none";
+            objectiveEl.textContent = objective;
+            byId("co-row-objective").style.display = "";
           }
 
-          /* LEAF URL — indicatorID 87 */
+          /* ---- LEAF URL ---- */
           var leafURL = getField(s1, inds.leafURL);
           var leafURLEl = byId("co-leaf-url");
           if (leafURL && leafURLEl) {
             leafURLEl.innerHTML =
-              '<strong class="co-project-label">Customer LEAF Site:</strong> ' +
               '<a href="' +
               esc(leafURL) +
-              '" target="_blank" rel="noopener noreferrer">' +
+              '" target="_blank" rel="noopener noreferrer"' +
+              ' class="co-leaf-url-link">' +
               esc(leafURL) +
               "</a>";
-            leafURLEl.style.display = "";
-          } else if (leafURLEl) {
-            leafURLEl.style.display = "none";
+            byId("co-row-leaf-url").style.display = "";
           }
 
           /* ---- Helper: render a POC row from _orgchart metadata ---- */
-          function renderPocEl(el, indID, label) {
+          function renderPocEl(el, indID, label, rowID) {
             var rawVal = s1["id" + String(indID)];
             var orgMeta = s1["id" + String(indID) + "_orgchart"];
 
@@ -2635,11 +2701,6 @@
               dbg(label + " orgchart meta: " + JSON.stringify(orgMeta));
             }
 
-            /*
-             * All data we need is already in _orgchart:
-             * { empUID, email, firstName, middleName, lastName, userName }
-             * No secondary fetch required.
-             */
             var displayName = "";
             var email = "";
 
@@ -2653,26 +2714,17 @@
               email = (orgMeta.email || "").trim();
             }
 
-            /* Fall back to the plain stored value if orgchart gave us nothing */
             if (!displayName)
               displayName = decodeEntities(String(rawVal || "").trim());
+            if (!displayName) return;
 
-            if (!displayName) {
-              el.style.display = "none";
-              return;
-            }
-
-            var pocContent;
             if (email) {
-              pocContent =
-                '<strong class="co-project-label">' +
-                label +
-                ":</strong> " +
+              el.innerHTML =
                 '<a class="co-poc-link"' +
-                '   href="mailto:' +
+                ' href="mailto:' +
                 esc(email) +
                 '"' +
-                '   aria-label="Email ' +
+                ' aria-label="Email ' +
                 esc(displayName) +
                 " at " +
                 esc(email) +
@@ -2680,15 +2732,11 @@
                 esc(displayName) +
                 "</a>";
             } else {
-              pocContent =
-                '<strong class="co-project-label">' +
-                label +
-                ":</strong> " +
-                esc(displayName);
+              el.textContent = displayName;
             }
 
-            el.innerHTML = pocContent;
-            el.style.display = "";
+            var row = byId(rowID);
+            if (row) row.style.display = "";
           }
 
           /* ---- Render progress bar + phase cards + reveal page ---- */
@@ -2698,12 +2746,17 @@
 
           /* ---- LEAF POC (indicator 67) ---- */
           var pocEl = byId("co-project-poc");
-          if (pocEl) renderPocEl(pocEl, inds.poc, "LEAF POC");
+          if (pocEl) renderPocEl(pocEl, inds.poc, "LEAF POC", "co-row-poc");
 
           /* ---- Customer POC (indicator 74) ---- */
           var servicePocEl = byId("co-service-poc");
           if (servicePocEl)
-            renderPocEl(servicePocEl, inds.servicePoc, "Customer POC");
+            renderPocEl(
+              servicePocEl,
+              inds.servicePoc,
+              "Customer POC",
+              "co-row-service-poc",
+            );
         })
         .catch(function (err) {
           console.error("[CustomerOverview] Error loading project data:", err);
