@@ -295,7 +295,6 @@
     color: #0071bb;
     text-decoration: underline;
     text-underline-offset: 2px;
-    font-weight: 500;
   }
 
   #customerOverview .co-poc-link:hover {
@@ -2418,13 +2417,12 @@
           var leafURLEl = byId("co-leaf-url");
           if (leafURL && leafURLEl) {
             leafURLEl.innerHTML =
-              '<strong class="co-project-label">LEAF URL:</strong> ' +
+              '<strong class="co-project-label">Customer LEAF Site:</strong> ' +
               '<a href="' +
               esc(leafURL) +
               '" target="_blank" rel="noopener noreferrer">' +
-              "<strong>" +
               esc(leafURL) +
-              "</strong></a>";
+              "</a>";
             leafURLEl.style.display = "";
           } else if (leafURLEl) {
             leafURLEl.style.display = "none";
