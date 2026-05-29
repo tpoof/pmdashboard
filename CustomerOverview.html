@@ -799,6 +799,16 @@
     font-size: 0.9375rem;
   }
 
+  #customerOverview .co-phase-empty {
+    font-size: 0.9rem;
+    font-style: italic;
+    color: #71767a;
+    line-height: 1.55;
+    padding-top: 12px;
+    border-top: 1px solid #dfe1e2;
+    margin-top: 4px;
+  }
+
   /* ============================================================
    v3: Attachment area
    ============================================================ */
@@ -2127,6 +2137,19 @@
             files: fileData.files,
           };
 
+          var hasAttachments =
+            combined.images.length > 0 || combined.files.length > 0;
+
+          /* If attachments exist, hide the empty state placeholder */
+          if (hasAttachments) {
+            var emptyEl =
+              attachEl.closest(".co-phase-body") &&
+              attachEl
+                .closest(".co-phase-body")
+                .querySelector("[data-phase-empty]");
+            if (emptyEl) emptyEl.style.display = "none";
+          }
+
           buildAttachmentSection(attachEl, combined.images, combined.files);
         })
         .catch(function () {
@@ -2322,6 +2345,13 @@
             "</div>";
         }
 
+        /* Empty state — shown when no tasks; hidden if attachments load */
+        var emptyHtml = !hasTasks
+          ? '<p class="co-phase-empty" data-phase-empty="true">' +
+            "Your LEAF POC will update this section as the project progresses." +
+            "</p>"
+          : "";
+
         article.innerHTML =
           '<div class="co-phase-header">' +
           '<div class="co-phase-number" aria-hidden="true">' +
@@ -2338,6 +2368,7 @@
           '<div class="co-phase-body">' +
           contentHtml +
           taskHtml +
+          emptyHtml +
           '<div class="co-attachments" style="display:none">' +
           '<p class="co-attach-loading">Loading attachments\u2026</p>' +
           "</div>" +
