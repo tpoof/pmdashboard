@@ -1,18 +1,4 @@
 <style>
-  /* ============================================================
-   CustomerOverview v3 — LEAF Programmer Page
-   All styles scoped to #customerOverview.
-
-   v3 changes (on top of v2):
-     - Removed: print button, record ID display, last-updated display
-     - POC rendered as mailto: link (opens email client to POC address)
-       TODO: set CONFIG.indicators.pocEmail once you know the indicator ID
-     - Per-phase file + image attachments fetched via
-       ajaxIndex.php?a=getprintindicator and rendered below phase text
-     - Image thumbnails open in a lightbox overlay (keyboard + focus trap)
-     - File attachments render as styled download links
-   ============================================================ */
-
   #customerOverview *,
   #customerOverview *::before,
   #customerOverview *::after {
@@ -1987,13 +1973,21 @@
 
       var completedWithContentCount = 0;
 
+      /* ---- Helper: strip LEAF's appended <br /> tags from a string ---- */
+      function stripBR(str) {
+        if (!str) return str;
+        return str.replace(/<br\s*\/?>/gi, "").trim();
+      }
+
       /* ---- Helper: parse newline-delimited task list ---- */
       function parseTasks(raw) {
         if (!raw) return [];
         return raw
           .split(/\r?\n/)
           .map(function (line) {
-            return line.replace(/^[\-\u2022\*]\s*/, "").trim();
+            return stripBR(line)
+              .replace(/^[\-\u2022\*]\s*/, "")
+              .trim();
           })
           .filter(Boolean);
       }
@@ -2071,7 +2065,7 @@
           taskHtml =
             '<div class="co-task-container">' +
             buildTaskColumn("LEAF Team Tasks", leafTasks) +
-            buildTaskColumn("Your Organization Tasks", orgTasks) +
+            buildTaskColumn("Customer Tasks", orgTasks) +
             "</div>";
         }
 
@@ -2098,7 +2092,13 @@
 
         if (content.trim()) {
           var contentEl = article.querySelector(".co-phase-content");
-          if (contentEl) contentEl.textContent = decodeEntities(content);
+          if (contentEl) {
+            /* Strip LEAF's appended <br /> tags then set as plain text */
+            var cleanContent = decodeEntities(content)
+              .replace(/<br\s*\/?>/gi, "")
+              .trim();
+            contentEl.textContent = cleanContent;
+          }
         }
 
         /* Start completed phases collapsed when they have content */
@@ -2401,12 +2401,12 @@
             blurbEl.style.display = "none";
           }
 
-          /* objective line — indicatorID 86 */
+          /* scope line — indicatorID 86 */
           var objective = getField(s1, inds.objective);
           var objectiveEl = byId("co-project-objective");
           if (objective && objectiveEl) {
             objectiveEl.innerHTML =
-              '<strong class="co-project-label">Objective:</strong> ' +
+              '<strong class="co-project-label">Scope:</strong> ' +
               esc(objective);
             objectiveEl.style.display = "";
           } else if (objectiveEl) {
@@ -2422,8 +2422,9 @@
               '<a href="' +
               esc(leafURL) +
               '" target="_blank" rel="noopener noreferrer">' +
+              "<strong>" +
               esc(leafURL) +
-              "</a>";
+              "</strong></a>";
             leafURLEl.style.display = "";
           } else if (leafURLEl) {
             leafURLEl.style.display = "none";
@@ -2500,14 +2501,14 @@
           renderPhaseDetails(recordID, activeStep, phaseContents, taskContents);
           showContent();
 
-          /* ---- Customer POC (indicator 67) ---- */
+          /* ---- LEAF POC (indicator 67) ---- */
           var pocEl = byId("co-project-poc");
-          if (pocEl) renderPocEl(pocEl, inds.poc, "Customer POC");
+          if (pocEl) renderPocEl(pocEl, inds.poc, "LEAF POC");
 
-          /* ---- Service POC (indicator 74) ---- */
+          /* ---- Customer POC (indicator 74) ---- */
           var servicePocEl = byId("co-service-poc");
           if (servicePocEl)
-            renderPocEl(servicePocEl, inds.servicePoc, "Service POC");
+            renderPocEl(servicePocEl, inds.servicePoc, "Customer POC");
         })
         .catch(function (err) {
           console.error("[CustomerOverview] Error loading project data:", err);
