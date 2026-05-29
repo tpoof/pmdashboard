@@ -282,6 +282,22 @@
     margin-bottom: 4px;
   }
 
+  #customerOverview .co-leaf-url {
+    font-size: 1rem;
+    color: #3d4551;
+    margin-bottom: 12px;
+  }
+
+  #customerOverview .co-leaf-url a {
+    color: #0071bb;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  #customerOverview .co-leaf-url a:hover {
+    color: #003f72;
+  }
+
   #customerOverview .co-project-label {
     font-weight: 700;
     text-transform: uppercase;
@@ -941,6 +957,109 @@
   }
 
   /* ============================================================
+   Task checklists
+   ============================================================ */
+  #customerOverview .co-task-container {
+    display: flex;
+    gap: 24px;
+    margin-top: 16px;
+    border-top: 1px solid #dfe1e2;
+    padding-top: 14px;
+  }
+
+  #customerOverview .co-task-column {
+    flex: 1;
+    min-width: 0;
+  }
+
+  #customerOverview .co-task-heading {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #3d4551;
+    margin-bottom: 8px;
+  }
+
+  #customerOverview .co-task-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  #customerOverview .co-task-row input[type="checkbox"] {
+    flex-shrink: 0;
+    margin-top: 3px;
+    cursor: default;
+    accent-color: #003f72;
+  }
+
+  #customerOverview .co-task-text {
+    font-size: 0.9375rem;
+    color: #1b1b1b;
+    line-height: 1.5;
+  }
+
+  #customerOverview .co-task-empty {
+    font-size: 0.875rem;
+    font-style: italic;
+    color: #71767a;
+  }
+
+  @media (max-width: 640px) {
+    #customerOverview .co-task-container {
+      flex-direction: column;
+      gap: 16px;
+    }
+  }
+
+  /* ============================================================
+   Attachment pills
+   ============================================================ */
+  #customerOverview .co-attachment-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #customerOverview .co-attachment-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0f0f0;
+    border: 1px solid #d6d7d9;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #1b1b1b;
+    text-decoration: none;
+    transition:
+      background 0.15s,
+      border-color 0.15s;
+    max-width: 240px;
+  }
+
+  #customerOverview .co-attachment-pill:hover {
+    background: #e6e6e6;
+    border-color: #a9aeb1;
+  }
+
+  #customerOverview .co-attachment-pill:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+    border-radius: 20px;
+  }
+
+  #customerOverview .co-attachment-pill span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+  }
+
+  /* ============================================================
    Jump-to-top button
    ============================================================ */
   #co-jump-top {
@@ -1169,8 +1288,10 @@
         style="display: none"
       ></p>
       <p id="co-project-poc" class="co-project-poc"></p>
-      <!-- v3: Service POC stacked below LEAF POC -->
+      <!-- Service POC stacked below Customer POC -->
       <p id="co-service-poc" class="co-project-poc"></p>
+      <!-- LEAF URL — indicatorID 87 -->
+      <p id="co-leaf-url" class="co-leaf-url"></p>
     </header>
 
     <section class="co-progress-section" aria-labelledby="co-progress-heading">
@@ -1247,9 +1368,10 @@
          * We call /platform/orgchart/api/employee/{empUID} to resolve
          * the full name and email for the mailto: link.
          */
-        poc: 67, // LEAF POC
+        poc: 67, // Customer POC
         servicePoc: 74, // Service POC
         objective: 86, // Project Objective
+        leafURL: 87, // LEAF URL
 
         currentPhase: 61,
         phase1: 62,
@@ -1257,6 +1379,17 @@
         phase3: 64,
         phase4: 65,
         phase5: 66,
+
+        leafTasks1: 88, // Phase 1: LEAF Team Tasks
+        orgTasks1: 89, // Phase 1: Customer Org Tasks
+        leafTasks2: 90, // Phase 2: LEAF Team Tasks
+        orgTasks2: 91, // Phase 2: Customer Org Tasks
+        leafTasks3: 92, // Phase 3: LEAF Team Tasks
+        orgTasks3: 93, // Phase 3: Customer Org Tasks
+        leafTasks4: 94, // Phase 4: LEAF Team Tasks
+        orgTasks4: 95, // Phase 4: Customer Org Tasks
+        leafTasks5: 96, // Phase 5: LEAF Team Tasks
+        orgTasks5: 97, // Phase 5: Customer Org Tasks
       },
 
       phases: [
@@ -1266,6 +1399,8 @@
           key: "phase1",
           fileInd: 76,
           imageInd: 77,
+          leafTasksKey: "leafTasks1",
+          orgTasksKey: "orgTasks1",
         },
         {
           step: 2,
@@ -1273,6 +1408,8 @@
           key: "phase2",
           fileInd: 78,
           imageInd: 79,
+          leafTasksKey: "leafTasks2",
+          orgTasksKey: "orgTasks2",
         },
         {
           step: 3,
@@ -1280,14 +1417,26 @@
           key: "phase3",
           fileInd: 80,
           imageInd: 81,
+          leafTasksKey: "leafTasks3",
+          orgTasksKey: "orgTasks3",
         },
-        { step: 4, label: "Launch", key: "phase4", fileInd: 82, imageInd: 83 },
+        {
+          step: 4,
+          label: "Launch",
+          key: "phase4",
+          fileInd: 82,
+          imageInd: 83,
+          leafTasksKey: "leafTasks4",
+          orgTasksKey: "orgTasks4",
+        },
         {
           step: 5,
           label: "Monitoring",
           key: "phase5",
           fileInd: 84,
           imageInd: 85,
+          leafTasksKey: "leafTasks5",
+          orgTasksKey: "orgTasks5",
         },
       ],
 
@@ -1727,33 +1876,29 @@
         html += "</div>";
       }
 
-      /* File list */
+      /* File pills */
       if (files.length > 0) {
-        html += '<ul class="co-file-list" aria-label="File attachments">';
+        html +=
+          '<div class="co-attachment-pills" aria-label="File attachments">';
         files.forEach(function (a) {
           var href = a.getAttribute("href") || "#";
           var filename = (a.textContent || "").trim() || "Download file";
-          html += '<li class="co-file-item">';
-          html +=
-            '<span class="co-file-icon" aria-hidden="true">' +
-            '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false">' +
-            '<path d="M9 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V6L9 2z"/>' +
-            '<path d="M9 2v4h4"/>' +
-            "</svg>" +
-            "</span>";
           html +=
             '<a href="' +
             esc(href) +
             '" target="_blank" rel="noopener noreferrer"' +
-            ' class="co-file-link"' +
+            ' class="co-attachment-pill"' +
+            ' title="' +
+            esc(filename) +
+            '"' +
             ' aria-label="Download ' +
             esc(filename) +
-            ' (opens in new tab)">' +
-            esc(filename) +
-            "</a>";
-          html += "</li>";
+            ' (opens in new tab)">';
+          html += '<span aria-hidden="true">\uD83D\uDCCE</span>';
+          html += "<span>" + esc(filename) + "</span>";
+          html += "</a>";
         });
-        html += "</ul>";
+        html += "</div>";
       }
 
       attachEl.innerHTML = html;
@@ -1836,15 +1981,60 @@
     /* ============================================================
      renderPhaseDetails
      ============================================================ */
-    function renderPhaseDetails(recordID, activeStep, contents) {
+    function renderPhaseDetails(recordID, activeStep, contents, taskContents) {
       var container = byId("co-phase-details");
       container.innerHTML = "";
 
       var completedWithContentCount = 0;
 
+      /* ---- Helper: parse newline-delimited task list ---- */
+      function parseTasks(raw) {
+        if (!raw) return [];
+        return raw
+          .split(/\r?\n/)
+          .map(function (line) {
+            return line.replace(/^[\-\u2022\*]\s*/, "").trim();
+          })
+          .filter(Boolean);
+      }
+
+      /* ---- Helper: build one task column ---- */
+      function buildTaskColumn(heading, tasks) {
+        var headingId =
+          "co-task-heading-" + Math.random().toString(36).slice(2);
+        var html = '<div class="co-task-column">';
+        html +=
+          '<p class="co-task-heading" id="' +
+          headingId +
+          '">' +
+          esc(heading) +
+          "</p>";
+        html += '<div role="list" aria-labelledby="' + headingId + '">';
+        if (tasks.length === 0) {
+          html += '<p class="co-task-empty">No tasks listed</p>';
+        } else {
+          tasks.forEach(function (task) {
+            html += '<div class="co-task-row" role="listitem">';
+            html +=
+              '<input type="checkbox" disabled aria-hidden="true" tabindex="-1">';
+            html += '<span class="co-task-text">' + esc(task) + "</span>";
+            html += "</div>";
+          });
+        }
+        html += "</div></div>";
+        return html;
+      }
+
       CONFIG.phases.forEach(function (phase) {
         var state = stepState(phase.step, activeStep);
         var content = contents[phase.key] || "";
+        var leafTasks = parseTasks(
+          taskContents && taskContents[phase.leafTasksKey],
+        );
+        var orgTasks = parseTasks(
+          taskContents && taskContents[phase.orgTasksKey],
+        );
+        var hasTasks = leafTasks.length > 0 || orgTasks.length > 0;
 
         var article = document.createElement("article");
         article.className = "co-phase co-phase--" + state;
@@ -1875,7 +2065,16 @@
             ' phase: Details coming soon">' +
             '<span aria-hidden="true">Details coming soon</span></p>';
 
-        /* v3: phase-body wraps both text and attachment placeholder */
+        /* Task checklist block */
+        var taskHtml = "";
+        if (hasTasks) {
+          taskHtml =
+            '<div class="co-task-container">' +
+            buildTaskColumn("LEAF Team Tasks", leafTasks) +
+            buildTaskColumn("Your Organization Tasks", orgTasks) +
+            "</div>";
+        }
+
         article.innerHTML =
           '<div class="co-phase-header">' +
           '<div class="co-phase-number" aria-hidden="true">' +
@@ -1891,6 +2090,7 @@
           "</div>" +
           '<div class="co-phase-body">' +
           contentHtml +
+          taskHtml +
           '<div class="co-attachments" style="display:none">' +
           '<p class="co-attach-loading">Loading attachments\u2026</p>' +
           "</div>" +
@@ -1944,7 +2144,7 @@
 
         container.appendChild(article);
 
-        /* v3: kick off attachment loading for this phase */
+        /* Kick off attachment loading for this phase */
         var attachEl = article.querySelector(".co-attachments");
         loadPhaseAttachments(recordID, phase, attachEl);
       });
@@ -2043,6 +2243,7 @@
         String(inds.projectName),
         String(inds.projectType),
         String(inds.objective),
+        String(inds.leafURL),
         String(inds.poc),
         String(inds.servicePoc),
         String(inds.currentPhase),
@@ -2051,6 +2252,16 @@
         String(inds.phase3),
         String(inds.phase4),
         String(inds.phase5),
+        String(inds.leafTasks1),
+        String(inds.orgTasks1),
+        String(inds.leafTasks2),
+        String(inds.orgTasks2),
+        String(inds.leafTasks3),
+        String(inds.orgTasks3),
+        String(inds.leafTasks4),
+        String(inds.orgTasks4),
+        String(inds.leafTasks5),
+        String(inds.orgTasks5),
       ];
 
       var q = JSON.stringify({
@@ -2150,6 +2361,18 @@
             phase4: getField(s1, inds.phase4),
             phase5: getField(s1, inds.phase5),
           };
+          var taskContents = {
+            leafTasks1: getField(s1, inds.leafTasks1),
+            orgTasks1: getField(s1, inds.orgTasks1),
+            leafTasks2: getField(s1, inds.leafTasks2),
+            orgTasks2: getField(s1, inds.orgTasks2),
+            leafTasks3: getField(s1, inds.leafTasks3),
+            orgTasks3: getField(s1, inds.orgTasks3),
+            leafTasks4: getField(s1, inds.leafTasks4),
+            orgTasks4: getField(s1, inds.orgTasks4),
+            leafTasks5: getField(s1, inds.leafTasks5),
+            orgTasks5: getField(s1, inds.orgTasks5),
+          };
 
           var activeStep = resolveActiveStep(currentPhase);
 
@@ -2188,6 +2411,22 @@
             objectiveEl.style.display = "";
           } else if (objectiveEl) {
             objectiveEl.style.display = "none";
+          }
+
+          /* LEAF URL — indicatorID 87 */
+          var leafURL = getField(s1, inds.leafURL);
+          var leafURLEl = byId("co-leaf-url");
+          if (leafURL && leafURLEl) {
+            leafURLEl.innerHTML =
+              '<strong class="co-project-label">LEAF URL:</strong> ' +
+              '<a href="' +
+              esc(leafURL) +
+              '" target="_blank" rel="noopener noreferrer">' +
+              esc(leafURL) +
+              "</a>";
+            leafURLEl.style.display = "";
+          } else if (leafURLEl) {
+            leafURLEl.style.display = "none";
           }
 
           /* ---- Helper: render a POC row from _orgchart metadata ---- */
@@ -2258,12 +2497,12 @@
 
           /* ---- Render progress bar + phase cards + reveal page ---- */
           renderProgressBar(activeStep);
-          renderPhaseDetails(recordID, activeStep, phaseContents);
+          renderPhaseDetails(recordID, activeStep, phaseContents, taskContents);
           showContent();
 
-          /* ---- LEAF POC (indicator 67) ---- */
+          /* ---- Customer POC (indicator 67) ---- */
           var pocEl = byId("co-project-poc");
-          if (pocEl) renderPocEl(pocEl, inds.poc, "LEAF POC");
+          if (pocEl) renderPocEl(pocEl, inds.poc, "Customer POC");
 
           /* ---- Service POC (indicator 74) ---- */
           var servicePocEl = byId("co-service-poc");
