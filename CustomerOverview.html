@@ -430,6 +430,33 @@
     color: #71767a;
   }
 
+  /* Clickable step button */
+  #customerOverview .co-step-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  #customerOverview .co-step-btn:focus-visible .co-step-circle {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+  }
+
+  #customerOverview .co-step-btn:hover .co-step-circle {
+    filter: brightness(1.12);
+  }
+
+  #customerOverview .co-step--upcoming .co-step-btn:hover .co-step-circle {
+    border-color: #71767a;
+    background: #e6e6e6;
+  }
+
   /* ============================================================
    Phase detail cards
    ============================================================ */
@@ -1344,8 +1371,8 @@
       categoryID: "55445",
 
       indicators: {
-        projectName: 59,
-        projectType: 60,
+        projectName:  59,
+        projectType:  60,
         /*
          * Indicators 67 and 74 are orgchart_employee fields.
          * LEAF stores the empUID as the raw value and populates
@@ -1353,83 +1380,43 @@
          * We call /platform/orgchart/api/employee/{empUID} to resolve
          * the full name and email for the mailto: link.
          */
-        poc: 67, // Customer POC
-        servicePoc: 74, // Service POC
-        objective: 86, // Project Objective
-        leafURL: 87, // LEAF URL
+        poc:          67,   // Customer POC
+        servicePoc:   74,   // Service POC
+        objective:    86,   // Project Objective
+        leafURL:      87,   // LEAF URL
 
         currentPhase: 61,
-        phase1: 62,
-        phase2: 63,
-        phase3: 64,
-        phase4: 65,
-        phase5: 66,
+        phase1:       62,
+        phase2:       63,
+        phase3:       64,
+        phase4:       65,
+        phase5:       66,
 
-        leafTasks1: 88, // Phase 1: LEAF Team Tasks
-        orgTasks1: 89, // Phase 1: Customer Org Tasks
-        leafTasks2: 90, // Phase 2: LEAF Team Tasks
-        orgTasks2: 91, // Phase 2: Customer Org Tasks
-        leafTasks3: 92, // Phase 3: LEAF Team Tasks
-        orgTasks3: 93, // Phase 3: Customer Org Tasks
-        leafTasks4: 94, // Phase 4: LEAF Team Tasks
-        orgTasks4: 95, // Phase 4: Customer Org Tasks
-        leafTasks5: 96, // Phase 5: LEAF Team Tasks
-        orgTasks5: 97, // Phase 5: Customer Org Tasks
+        leafTasks1:   88,   // Phase 1: LEAF Team Tasks
+        orgTasks1:    89,   // Phase 1: Customer Org Tasks
+        leafTasks2:   90,   // Phase 2: LEAF Team Tasks
+        orgTasks2:    91,   // Phase 2: Customer Org Tasks
+        leafTasks3:   92,   // Phase 3: LEAF Team Tasks
+        orgTasks3:    93,   // Phase 3: Customer Org Tasks
+        leafTasks4:   94,   // Phase 4: LEAF Team Tasks
+        orgTasks4:    95,   // Phase 4: Customer Org Tasks
+        leafTasks5:   96,   // Phase 5: LEAF Team Tasks
+        orgTasks5:    97,   // Phase 5: Customer Org Tasks
       },
 
       phases: [
-        {
-          step: 1,
-          label: "Discovery",
-          key: "phase1",
-          fileInd: 76,
-          imageInd: 77,
-          leafTasksKey: "leafTasks1",
-          orgTasksKey: "orgTasks1",
-        },
-        {
-          step: 2,
-          label: "Planning",
-          key: "phase2",
-          fileInd: 78,
-          imageInd: 79,
-          leafTasksKey: "leafTasks2",
-          orgTasksKey: "orgTasks2",
-        },
-        {
-          step: 3,
-          label: "Execution",
-          key: "phase3",
-          fileInd: 80,
-          imageInd: 81,
-          leafTasksKey: "leafTasks3",
-          orgTasksKey: "orgTasks3",
-        },
-        {
-          step: 4,
-          label: "Launch",
-          key: "phase4",
-          fileInd: 82,
-          imageInd: 83,
-          leafTasksKey: "leafTasks4",
-          orgTasksKey: "orgTasks4",
-        },
-        {
-          step: 5,
-          label: "Monitoring",
-          key: "phase5",
-          fileInd: 84,
-          imageInd: 85,
-          leafTasksKey: "leafTasks5",
-          orgTasksKey: "orgTasks5",
-        },
+        { step: 1, label: "Discovery",  key: "phase1", fileInd: 76, imageInd: 77, leafTasksKey: "leafTasks1", orgTasksKey: "orgTasks1" },
+        { step: 2, label: "Planning",   key: "phase2", fileInd: 78, imageInd: 79, leafTasksKey: "leafTasks2", orgTasksKey: "orgTasks2" },
+        { step: 3, label: "Execution",  key: "phase3", fileInd: 80, imageInd: 81, leafTasksKey: "leafTasks3", orgTasksKey: "orgTasks3" },
+        { step: 4, label: "Launch",     key: "phase4", fileInd: 82, imageInd: 83, leafTasksKey: "leafTasks4", orgTasksKey: "orgTasks4" },
+        { step: 5, label: "Monitoring", key: "phase5", fileInd: 84, imageInd: 85, leafTasksKey: "leafTasks5", orgTasksKey: "orgTasks5" },
       ],
 
       phaseValueMap: {
-        discovery: 1,
-        planning: 2,
-        execution: 3,
-        launch: 4,
+        discovery:  1,
+        planning:   2,
+        execution:  3,
+        launch:     4,
         monitoring: 5,
       },
 
@@ -1449,38 +1436,34 @@
     /* ============================================================
      DOM helpers
      ============================================================ */
-    function byId(id) {
-      return document.getElementById(id);
-    }
+    function byId(id) { return document.getElementById(id); }
 
     function esc(str) {
       if (str == null) return "";
       return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+        .replace(/&/g,  "&amp;")
+        .replace(/</g,  "&lt;")
+        .replace(/>/g,  "&gt;")
+        .replace(/"/g,  "&quot;")
+        .replace(/'/g,  "&#39;");
     }
 
     function announce(message, assertive) {
       var node = byId(assertive ? "co-live-assertive" : "co-live-polite");
       if (!node) return;
       node.textContent = "";
-      setTimeout(function () {
-        node.textContent = message;
-      }, 60);
+      setTimeout(function () { node.textContent = message; }, 60);
     }
 
     function decodeEntities(str) {
       if (!str || typeof str !== "string") return str;
       return str
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
+        .replace(/&amp;/g,  "&")
+        .replace(/&lt;/g,   "<")
+        .replace(/&gt;/g,   ">")
         .replace(/&quot;/g, '"')
         .replace(/&#039;/g, "'")
-        .replace(/&#39;/g, "'")
+        .replace(/&#39;/g,  "'")
         .replace(/&#x27;/g, "'")
         .replace(/&apos;/g, "'");
     }
@@ -1499,17 +1482,12 @@
         try {
           var params = new URLSearchParams(search);
           var v = params.get("a") || params.get("recordID") || "";
-          if (CONFIG.debug && v)
-            console.log("[CustomerOverview] recordID from " + label + ":", v);
+          if (CONFIG.debug && v) console.log("[CustomerOverview] recordID from " + label + ":", v);
           return v;
         } catch (e) {
           var match = search.match(/[?&](?:a|recordID)=([^&]+)/);
           var v2 = match ? decodeURIComponent(match[1]) : "";
-          if (CONFIG.debug && v2)
-            console.log(
-              "[CustomerOverview] recordID (regex) from " + label + ":",
-              v2,
-            );
+          if (CONFIG.debug && v2) console.log("[CustomerOverview] recordID (regex) from " + label + ":", v2);
           return v2;
         }
       }
@@ -1526,26 +1504,13 @@
         }
       } catch (e) {
         /* Cross-origin parent — silently skip */
-        if (CONFIG.debug)
-          console.log(
-            "[CustomerOverview] parent.location inaccessible (cross-origin)",
-          );
+        if (CONFIG.debug) console.log("[CustomerOverview] parent.location inaccessible (cross-origin)");
       }
 
       if (CONFIG.debug) {
-        console.warn(
-          "[CustomerOverview] Could not find recordID in any URL source.",
-        );
-        console.log(
-          "[CustomerOverview] window.location.href:",
-          window.location.href,
-        );
-        try {
-          console.log(
-            "[CustomerOverview] parent.location.href:",
-            window.parent.location.href,
-          );
-        } catch (e) {}
+        console.warn("[CustomerOverview] Could not find recordID in any URL source.");
+        console.log("[CustomerOverview] window.location.href:", window.location.href);
+        try { console.log("[CustomerOverview] parent.location.href:", window.parent.location.href); } catch(e) {}
       }
 
       return "";
@@ -1572,14 +1537,8 @@
       return base;
     }
 
-    function showEl(id) {
-      var el = byId(id);
-      if (el) el.style.display = "";
-    }
-    function hideEl(id) {
-      var el = byId(id);
-      if (el) el.style.display = "none";
-    }
+    function showEl(id) { var el = byId(id); if (el) el.style.display = ""; }
+    function hideEl(id) { var el = byId(id); if (el) el.style.display = "none"; }
 
     /* ============================================================
      dbg — write a line to the on-page debug panel (debug mode only)
@@ -1593,15 +1552,10 @@
       panel.textContent += msg + "\n";
     }
 
-    function showLoading() {
-      showEl("co-loading");
-      hideEl("co-error");
-      hideEl("co-content");
-    }
+    function showLoading() { showEl("co-loading"); hideEl("co-error"); hideEl("co-content"); }
 
     function showError(message) {
-      hideEl("co-loading");
-      hideEl("co-content");
+      hideEl("co-loading"); hideEl("co-content");
       var errEl = byId("co-error");
       errEl.textContent = message;
       showEl("co-error");
@@ -1609,8 +1563,7 @@
     }
 
     function showContent() {
-      hideEl("co-loading");
-      hideEl("co-error");
+      hideEl("co-loading"); hideEl("co-error");
       var contentEl = byId("co-content");
       contentEl.style.display = "";
       contentEl.classList.add("co-content-visible");
@@ -1626,7 +1579,7 @@
     }
 
     function stepState(stepNumber, activeStep) {
-      if (stepNumber < activeStep) return "complete";
+      if (stepNumber < activeStep)   return "complete";
       if (stepNumber === activeStep) return "active";
       return "upcoming";
     }
@@ -1644,10 +1597,7 @@
         }
       }
       if (CONFIG.debug) {
-        console.warn(
-          "[CustomerOverview] Unrecognized phase value:",
-          JSON.stringify(raw),
-        );
+        console.warn("[CustomerOverview] Unrecognized phase value:", JSON.stringify(raw));
       }
       return 1;
     }
@@ -1665,7 +1615,7 @@
         {
           credentials: "include",
           headers: { "x-requested-with": "XMLHttpRequest" },
-        },
+        }
       )
         .then(function (r) {
           if (!r.ok) throw new Error("Orgchart API HTTP " + r.status);
@@ -1677,9 +1627,7 @@
 
           /* Build display name: "First [Middle] Last" */
           var parts = [emp.firstName, emp.middleName, emp.lastName]
-            .map(function (p) {
-              return (p || "").trim();
-            })
+            .map(function (p) { return (p || "").trim(); })
             .filter(Boolean);
           var displayName = parts.join(" ");
 
@@ -1688,17 +1636,14 @@
 
           if (CONFIG.debug) {
             console.log("[CustomerOverview] orgchart employee:", {
-              empUID: empUID,
-              displayName: displayName,
-              email: email,
+              empUID: empUID, displayName: displayName, email: email,
             });
           }
 
           return { displayName: displayName, email: email };
         })
         .catch(function (err) {
-          if (CONFIG.debug)
-            console.warn("[CustomerOverview] orgchart lookup failed:", err);
+          if (CONFIG.debug) console.warn("[CustomerOverview] orgchart lookup failed:", err);
           return { displayName: "", email: "" };
         });
     }
@@ -1707,17 +1652,17 @@
      Lightbox
      ============================================================ */
     var lightbox = {
-      el: null,
-      imgEl: null,
+      el:        null,
+      imgEl:     null,
       captionEl: null,
-      closeBtn: null,
+      closeBtn:  null,
       prevFocus: null,
 
       init: function () {
-        this.el = byId("co-lightbox");
-        this.imgEl = byId("co-lightbox-img");
+        this.el        = byId("co-lightbox");
+        this.imgEl     = byId("co-lightbox-img");
         this.captionEl = byId("co-lightbox-caption");
-        this.closeBtn = byId("co-lightbox-close");
+        this.closeBtn  = byId("co-lightbox-close");
         if (!this.el) return;
 
         var self = this;
@@ -1728,16 +1673,11 @@
         });
 
         /* Close button */
-        this.closeBtn.addEventListener("click", function () {
-          self.close();
-        });
+        this.closeBtn.addEventListener("click", function () { self.close(); });
 
         /* Keyboard: Escape closes, Tab stays trapped inside */
         this.el.addEventListener("keydown", function (e) {
-          if (e.key === "Escape") {
-            self.close();
-            return;
-          }
+          if (e.key === "Escape") { self.close(); return; }
           if (e.key === "Tab") {
             /* Only focusable element inside is the close button */
             e.preventDefault();
@@ -1763,7 +1703,7 @@
         if (this.prevFocus && typeof this.prevFocus.focus === "function") {
           this.prevFocus.focus();
         }
-      },
+      }
     };
 
     /* ============================================================
@@ -1773,36 +1713,25 @@
      ============================================================ */
     function fetchIndicatorHTML(recordID, indicatorID) {
       return fetch(
-        getAPIBase() +
-          "/ajaxIndex.php?a=getprintindicator" +
-          "&recordID=" +
-          encodeURIComponent(recordID) +
-          "&indicatorID=" +
-          encodeURIComponent(indicatorID) +
-          "&series=1",
+        getAPIBase() + "/ajaxIndex.php?a=getprintindicator"
+          + "&recordID=" + encodeURIComponent(recordID)
+          + "&indicatorID=" + encodeURIComponent(indicatorID)
+          + "&series=1",
         {
           credentials: "include",
           headers: { "x-requested-with": "XMLHttpRequest" },
-        },
+        }
       )
-        .then(function (r) {
-          return r.text();
-        })
-        .catch(function () {
-          return "";
-        });
+        .then(function (r) { return r.text(); })
+        .catch(function () { return ""; });
     }
 
     function parseAttachmentsFromHTML(html) {
       var tmp = document.createElement("div");
       tmp.innerHTML = html;
       return {
-        images: Array.prototype.slice.call(
-          tmp.querySelectorAll('img[src*="image.php"]'),
-        ),
-        files: Array.prototype.slice.call(
-          tmp.querySelectorAll('a[href*="file.php"]'),
-        ),
+        images: Array.prototype.slice.call(tmp.querySelectorAll('img[src*="image.php"]')),
+        files:  Array.prototype.slice.call(tmp.querySelectorAll('a[href*="file.php"]')),
       };
     }
 
@@ -1817,73 +1746,46 @@
 
       /* Image grid */
       if (images.length > 0) {
-        html +=
-          '<div class="co-img-grid" role="list" aria-label="Image attachments">';
+        html += '<div class="co-img-grid" role="list" aria-label="Image attachments">';
         images.forEach(function (img, i) {
-          var src = img.getAttribute("src") || "";
-          var altRaw = img.getAttribute("alt") || "";
-          var caption =
-            altRaw.replace(/^image upload:\s*/i, "").trim() ||
-            "Image " + (i + 1);
+          var src     = img.getAttribute("src") || "";
+          var altRaw  = img.getAttribute("alt") || "";
+          var caption = altRaw.replace(/^image upload:\s*/i, "").trim() || ("Image " + (i + 1));
           var safeCaption = esc(caption);
 
           html += '<figure class="co-img-figure" role="listitem">';
-          html +=
-            '<button type="button" class="co-img-thumb-btn"' +
-            ' data-src="' +
-            esc(src) +
-            '"' +
-            ' data-caption="' +
-            safeCaption +
-            '"' +
-            ' aria-label="View full size: ' +
-            safeCaption +
-            '">';
-          html +=
-            '<img src="' +
-            esc(src) +
-            '"' +
-            ' alt="' +
-            safeCaption +
-            '"' +
-            ' class="co-img-thumb"' +
-            ' loading="lazy"' +
-            "/>";
-          html += "</button>";
-          html +=
-            '<span class="co-img-caption" aria-hidden="true" title="' +
-            safeCaption +
-            '">' +
-            caption +
-            "</span>";
-          html += "</figure>";
+          html +=   '<button type="button" class="co-img-thumb-btn"'
+                +          ' data-src="' + esc(src) + '"'
+                +          ' data-caption="' + safeCaption + '"'
+                +          ' aria-label="View full size: ' + safeCaption + '">';
+          html +=     '<img src="' + esc(src) + '"'
+                +         ' alt="' + safeCaption + '"'
+                +         ' class="co-img-thumb"'
+                +         ' loading="lazy"'
+                +    '/>';
+          html +=   '</button>';
+          html +=   '<span class="co-img-caption" aria-hidden="true" title="' + safeCaption + '">'
+                +     caption + '</span>';
+          html += '</figure>';
         });
-        html += "</div>";
+        html += '</div>';
       }
 
       /* File pills */
       if (files.length > 0) {
-        html +=
-          '<div class="co-attachment-pills" aria-label="File attachments">';
+        html += '<div class="co-attachment-pills" aria-label="File attachments">';
         files.forEach(function (a) {
-          var href = a.getAttribute("href") || "#";
+          var href     = a.getAttribute("href") || "#";
           var filename = (a.textContent || "").trim() || "Download file";
-          html +=
-            '<a href="' +
-            esc(href) +
-            '" target="_blank" rel="noopener noreferrer"' +
-            ' class="co-attachment-pill"' +
-            ' title="' +
-            esc(filename) +
-            '"' +
-            ' aria-label="Download ' +
-            esc(filename) +
-            ' (opens in new tab)">';
-          html += '<span aria-hidden="true">\uD83D\uDCCE</span>';
-          html += "<span>" + esc(filename) + "</span>";
-          html += "</a>";
+          html += '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer"'
+                +    ' class="co-attachment-pill"'
+                +    ' title="' + esc(filename) + '"'
+                +    ' aria-label="Download ' + esc(filename) + ' (opens in new tab)">';
+          html +=   '<span aria-hidden="true">\uD83D\uDCCE</span>';
+          html +=   '<span>' + esc(filename) + '</span>';
+          html += '</a>';
         });
-        html += "</div>";
+        html += '</div>';
       }
 
       attachEl.innerHTML = html;
@@ -1893,10 +1795,7 @@
       var btns = attachEl.querySelectorAll(".co-img-thumb-btn");
       Array.prototype.slice.call(btns).forEach(function (btn) {
         btn.addEventListener("click", function () {
-          lightbox.open(
-            btn.getAttribute("data-src"),
-            btn.getAttribute("data-caption"),
-          );
+          lightbox.open(btn.getAttribute("data-src"), btn.getAttribute("data-caption"));
         });
       });
     }
@@ -1905,21 +1804,19 @@
       Promise.all([
         fetchIndicatorHTML(recordID, phase.fileInd),
         fetchIndicatorHTML(recordID, phase.imageInd),
-      ])
-        .then(function (results) {
-          var fileData = parseAttachmentsFromHTML(results[0]);
-          var imageData = parseAttachmentsFromHTML(results[1]);
+      ]).then(function (results) {
+        var fileData  = parseAttachmentsFromHTML(results[0]);
+        var imageData = parseAttachmentsFromHTML(results[1]);
 
-          var combined = {
-            images: imageData.images,
-            files: fileData.files,
-          };
+        var combined = {
+          images: imageData.images,
+          files:  fileData.files,
+        };
 
-          buildAttachmentSection(attachEl, combined.images, combined.files);
-        })
-        .catch(function () {
-          attachEl.style.display = "none";
-        });
+        buildAttachmentSection(attachEl, combined.images, combined.files);
+      }).catch(function () {
+        attachEl.style.display = "none";
+      });
     }
 
     /* ============================================================
@@ -1931,34 +1828,53 @@
 
       var total = CONFIG.phases.length;
       var fraction = total > 1 ? (activeStep - 1) / (total - 1) : 0;
-      track.style.setProperty("--co-progress-pct", fraction * 100 + "%");
+      track.style.setProperty("--co-progress-pct", (fraction * 100) + "%");
 
       CONFIG.phases.forEach(function (phase) {
         var state = stepState(phase.step, activeStep);
-        var stateWord = {
-          complete: "Completed",
-          active: "Current phase",
-          upcoming: "Upcoming",
-        }[state];
+        var stateWord = { complete: "Completed", active: "Current phase", upcoming: "Upcoming" }[state];
 
         var li = document.createElement("li");
         li.className = "co-step co-step--" + state;
-        li.setAttribute("aria-label", phase.label + " \u2014 " + stateWord);
         if (state === "active") li.setAttribute("aria-current", "step");
 
-        var circleInner =
-          state === "complete"
-            ? '<span aria-hidden="true">&#10003;</span>'
-            : '<span aria-hidden="true">' + phase.step + "</span>";
+        var circleInner = state === "complete"
+          ? '<span aria-hidden="true">&#10003;</span>'
+          : '<span aria-hidden="true">' + phase.step + "</span>";
 
-        li.innerHTML =
-          '<div class="co-step-circle" aria-hidden="true">' +
-          circleInner +
-          "</div>" +
-          '<span class="co-step-label" aria-hidden="true">' +
-          esc(phase.label) +
-          "</span>";
+        /* Wrap in a button so the whole step is keyboard-accessible */
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "co-step-btn";
+        btn.setAttribute("aria-label", "Jump to " + phase.label + " — " + stateWord);
+        btn.innerHTML =
+          '<div class="co-step-circle" aria-hidden="true">' + circleInner + "</div>" +
+          '<span class="co-step-label" aria-hidden="true">' + esc(phase.label) + "</span>";
 
+        /* Click: expand the phase card if collapsed, then scroll to it */
+        (function (step) {
+          btn.addEventListener("click", function () {
+            var target = document.getElementById("co-phase-step-" + step);
+            if (!target) return;
+
+            /* If it's a completed collapsed phase, expand it first */
+            if (target.classList.contains("co-phase--collapsed")) {
+              var hdr = target.querySelector(".co-phase-header");
+              if (hdr) togglePhase(target, hdr);
+            }
+
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+
+            /* Move focus to the phase heading for keyboard users */
+            var heading = target.querySelector(".co-phase-title");
+            if (heading) {
+              heading.setAttribute("tabindex", "-1");
+              heading.focus({ preventScroll: true });
+            }
+          });
+        }(phase.step));
+
+        li.appendChild(btn);
         track.appendChild(li);
       });
     }
@@ -1981,69 +1897,53 @@
       /* ---- Helper: parse newline-delimited task list ---- */
       function parseTasks(raw) {
         if (!raw) return [];
-        return raw
-          .split(/\r?\n/)
+        return raw.split(/\r?\n/)
           .map(function (line) {
-            return stripBR(line)
-              .replace(/^[\-\u2022\*]\s*/, "")
-              .trim();
+            return stripBR(line).replace(/^[\-\u2022\*]\s*/, "").trim();
           })
           .filter(Boolean);
       }
 
       /* ---- Helper: build one task column ---- */
       function buildTaskColumn(heading, tasks) {
-        var headingId =
-          "co-task-heading-" + Math.random().toString(36).slice(2);
+        var headingId = "co-task-heading-" + Math.random().toString(36).slice(2);
         var html = '<div class="co-task-column">';
-        html +=
-          '<p class="co-task-heading" id="' +
-          headingId +
-          '">' +
-          esc(heading) +
-          "</p>";
+        html += '<p class="co-task-heading" id="' + headingId + '">' + esc(heading) + '</p>';
         html += '<div role="list" aria-labelledby="' + headingId + '">';
         if (tasks.length === 0) {
           html += '<p class="co-task-empty">No tasks listed</p>';
         } else {
           tasks.forEach(function (task) {
             html += '<div class="co-task-row" role="listitem">';
-            html +=
-              '<input type="checkbox" disabled aria-hidden="true" tabindex="-1">';
-            html += '<span class="co-task-text">' + esc(task) + "</span>";
-            html += "</div>";
+            html +=   '<input type="checkbox" disabled aria-hidden="true" tabindex="-1">';
+            html +=   '<span class="co-task-text">' + esc(task) + '</span>';
+            html += '</div>';
           });
         }
-        html += "</div></div>";
+        html += '</div></div>';
         return html;
       }
 
       CONFIG.phases.forEach(function (phase) {
-        var state = stepState(phase.step, activeStep);
+        var state   = stepState(phase.step, activeStep);
         var content = contents[phase.key] || "";
-        var leafTasks = parseTasks(
-          taskContents && taskContents[phase.leafTasksKey],
-        );
-        var orgTasks = parseTasks(
-          taskContents && taskContents[phase.orgTasksKey],
-        );
-        var hasTasks = leafTasks.length > 0 || orgTasks.length > 0;
+        var leafTasks = parseTasks(taskContents && taskContents[phase.leafTasksKey]);
+        var orgTasks  = parseTasks(taskContents && taskContents[phase.orgTasksKey]);
+        var hasTasks  = leafTasks.length > 0 || orgTasks.length > 0;
 
         var article = document.createElement("article");
         article.className = "co-phase co-phase--" + state;
+        article.id = "co-phase-step-" + phase.step;
 
-        var numberInner =
-          state === "complete"
-            ? '<span aria-hidden="true">&#10003;</span>'
-            : '<span aria-hidden="true">' + phase.step + "</span>";
+        var numberInner = state === "complete"
+          ? '<span aria-hidden="true">&#10003;</span>'
+          : '<span aria-hidden="true">' + phase.step + "</span>";
 
         var badgeHtml = "";
         if (state === "complete") {
-          badgeHtml =
-            '<span class="co-phase-badge" aria-hidden="true">Complete</span>';
+          badgeHtml = '<span class="co-phase-badge" aria-hidden="true">Complete</span>';
         } else if (state === "active") {
-          badgeHtml =
-            '<span class="co-phase-badge" aria-hidden="true">In Progress</span>';
+          badgeHtml = '<span class="co-phase-badge" aria-hidden="true">In Progress</span>';
         }
 
         var chevronHtml =
@@ -2054,8 +1954,7 @@
         var contentHtml = content.trim()
           ? '<p class="co-phase-content"></p>'
           : '<p class="co-phase-content co-phase-placeholder" aria-label="' +
-            esc(phase.label) +
-            ' phase: Details coming soon">' +
+            esc(phase.label) + ' phase: Details coming soon">' +
             '<span aria-hidden="true">Details coming soon</span></p>';
 
         /* Task checklist block */
@@ -2070,16 +1969,9 @@
 
         article.innerHTML =
           '<div class="co-phase-header">' +
-          '<div class="co-phase-number" aria-hidden="true">' +
-          numberInner +
-          "</div>" +
-          '<h3 class="co-phase-title">Phase ' +
-          phase.step +
-          " \u2014 " +
-          esc(phase.label) +
-          "</h3>" +
-          badgeHtml +
-          chevronHtml +
+          '<div class="co-phase-number" aria-hidden="true">' + numberInner + "</div>" +
+          '<h3 class="co-phase-title">Phase ' + phase.step + " \u2014 " + esc(phase.label) + "</h3>" +
+          badgeHtml + chevronHtml +
           "</div>" +
           '<div class="co-phase-body">' +
           contentHtml +
@@ -2093,9 +1985,7 @@
           var contentEl = article.querySelector(".co-phase-content");
           if (contentEl) {
             /* Strip LEAF's appended <br /> tags then set as plain text */
-            var cleanContent = decodeEntities(content)
-              .replace(/<br\s*\/?>/gi, "")
-              .trim();
+            var cleanContent = decodeEntities(content).replace(/<br\s*\/?>/gi, "").trim();
             contentEl.textContent = cleanContent;
           }
         }
@@ -2110,34 +2000,17 @@
         if (state === "complete") {
           var header = article.querySelector(".co-phase-header");
           if (header) {
-            header.setAttribute("role", "button");
-            header.setAttribute("tabindex", "0");
-            header.setAttribute(
-              "aria-expanded",
-              article.classList.contains("co-phase--collapsed")
-                ? "false"
-                : "true",
-            );
-            header.setAttribute(
-              "aria-label",
-              "Phase " +
-                phase.step +
-                " \u2014 " +
-                phase.label +
-                ": click to expand",
-            );
+            header.setAttribute("role",          "button");
+            header.setAttribute("tabindex",      "0");
+            header.setAttribute("aria-expanded", article.classList.contains("co-phase--collapsed") ? "false" : "true");
+            header.setAttribute("aria-label",    "Phase " + phase.step + " \u2014 " + phase.label + ": click to expand");
 
             (function (art, hdr) {
-              hdr.addEventListener("click", function () {
-                togglePhase(art, hdr);
-              });
+              hdr.addEventListener("click",   function ()  { togglePhase(art, hdr); });
               hdr.addEventListener("keydown", function (e) {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  togglePhase(art, hdr);
-                }
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); togglePhase(art, hdr); }
               });
-            })(article, header);
+            }(article, header));
           }
         }
 
@@ -2161,7 +2034,7 @@
     function togglePhase(article, header) {
       var isCollapsed = article.classList.contains("co-phase--collapsed");
       var titleEl = article.querySelector(".co-phase-title");
-      var label = titleEl ? titleEl.textContent : "Phase";
+      var label   = titleEl ? titleEl.textContent : "Phase";
 
       if (isCollapsed) {
         article.classList.remove("co-phase--collapsed");
@@ -2188,22 +2061,16 @@
         });
 
         completedPhases.forEach(function (p) {
-          var hdr = p.querySelector(".co-phase-header");
+          var hdr     = p.querySelector(".co-phase-header");
           var titleEl = p.querySelector(".co-phase-title");
-          var lbl = titleEl ? titleEl.textContent : "Phase";
+          var lbl     = titleEl ? titleEl.textContent : "Phase";
 
           if (anyExpanded) {
             p.classList.add("co-phase--collapsed");
-            if (hdr) {
-              hdr.setAttribute("aria-expanded", "false");
-              hdr.setAttribute("aria-label", lbl + ": click to expand");
-            }
+            if (hdr) { hdr.setAttribute("aria-expanded", "false"); hdr.setAttribute("aria-label", lbl + ": click to expand"); }
           } else {
             p.classList.remove("co-phase--collapsed");
-            if (hdr) {
-              hdr.setAttribute("aria-expanded", "true");
-              hdr.setAttribute("aria-label", lbl + ": click to collapse");
-            }
+            if (hdr) { hdr.setAttribute("aria-expanded", "true");  hdr.setAttribute("aria-label", lbl + ": click to collapse"); }
           }
         });
 
@@ -2212,7 +2079,7 @@
     }
 
     function syncToggleAllLabel() {
-      var btn = byId("co-toggle-completed-btn");
+      var btn     = byId("co-toggle-completed-btn");
       var labelEl = byId("co-toggle-completed-label");
       if (!btn || !labelEl) return;
 
@@ -2239,57 +2106,28 @@
     function fetchProjectData(recordID) {
       var inds = CONFIG.indicators;
       var getData = [
-        String(inds.projectName),
-        String(inds.projectType),
-        String(inds.objective),
-        String(inds.leafURL),
-        String(inds.poc),
-        String(inds.servicePoc),
-        String(inds.currentPhase),
-        String(inds.phase1),
-        String(inds.phase2),
-        String(inds.phase3),
-        String(inds.phase4),
-        String(inds.phase5),
-        String(inds.leafTasks1),
-        String(inds.orgTasks1),
-        String(inds.leafTasks2),
-        String(inds.orgTasks2),
-        String(inds.leafTasks3),
-        String(inds.orgTasks3),
-        String(inds.leafTasks4),
-        String(inds.orgTasks4),
-        String(inds.leafTasks5),
-        String(inds.orgTasks5),
+        String(inds.projectName), String(inds.projectType),
+        String(inds.objective), String(inds.leafURL),
+        String(inds.poc), String(inds.servicePoc), String(inds.currentPhase),
+        String(inds.phase1), String(inds.phase2), String(inds.phase3),
+        String(inds.phase4), String(inds.phase5),
+        String(inds.leafTasks1), String(inds.orgTasks1),
+        String(inds.leafTasks2), String(inds.orgTasks2),
+        String(inds.leafTasks3), String(inds.orgTasks3),
+        String(inds.leafTasks4), String(inds.orgTasks4),
+        String(inds.leafTasks5), String(inds.orgTasks5),
       ];
 
       var q = JSON.stringify({
-        terms: [
-          {
-            id: "recordIDs",
-            operator: "=",
-            match: String(recordID),
-            gate: "AND",
-          },
-        ],
-        joins: [],
-        sort: {},
+        terms: [{ id: "recordIDs", operator: "=", match: String(recordID), gate: "AND" }],
+        joins: [], sort: {},
         getData: getData,
       });
 
-      return fetch(
-        getAPIBase() +
-          "/api/form/query?q=" +
-          encodeURIComponent(q) +
-          "&x-filterData=recordID",
-        {
-          credentials: "include",
-          headers: {
-            Accept: "application/json",
-            "x-requested-with": "XMLHttpRequest",
-          },
-        },
-      )
+      return fetch(getAPIBase() + "/api/form/query?q=" + encodeURIComponent(q) + "&x-filterData=recordID", {
+        credentials: "include",
+        headers: { Accept: "application/json", "x-requested-with": "XMLHttpRequest" },
+      })
         .then(function (r) {
           if (!r.ok) throw new Error("Query failed HTTP " + r.status);
           return r.json();
@@ -2301,19 +2139,79 @@
           }
           var rec = data && data[String(recordID)];
           if (!rec) {
-            if (CONFIG.debug)
-              dbg(
-                "ERROR: No record found for ID " +
-                  recordID +
-                  ". Keys in response: " +
-                  Object.keys(data || {}).join(", "),
-              );
+            if (CONFIG.debug) dbg("ERROR: No record found for ID " + recordID + ". Keys in response: " + Object.keys(data || {}).join(", "));
             throw new Error("No record found for ID " + recordID);
           }
           var s1 = rec.s1 || rec;
           if (CONFIG.debug) dbg("s1 keys: " + Object.keys(s1).join(", "));
           return { s1: s1 };
         });
+    }
+
+    /* ============================================================
+     fetchPhaseOptions
+     Fetches the ordered dropdown options for the currentPhase
+     indicator (ID 61) from the LEAF form editor API.
+     These become the phase labels — top-to-bottom = step 1…N.
+     Always resolves (never rejects) so a failure just keeps the
+     hardcoded fallback labels in CONFIG.phases.
+     ============================================================ */
+    function fetchPhaseOptions(indicatorID) {
+      return fetch(
+        getAPIBase() + "/api/formEditor/indicator/" + encodeURIComponent(indicatorID),
+        {
+          credentials: "include",
+          headers: { Accept: "application/json", "x-requested-with": "XMLHttpRequest" },
+        }
+      )
+        .then(function (r) {
+          if (!r.ok) throw new Error("formEditor API HTTP " + r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          if (CONFIG.debug) dbg("Phase options raw: " + JSON.stringify(data).slice(0, 300));
+
+          /*
+           * LEAF may return options as:
+           *   data.options  — newline-delimited string  "Discovery\nPlanning\n…"
+           *   data.selectList — array of { text, value } objects
+           *   data.format_options — newline-delimited string (older builds)
+           */
+          var raw = data && (data.options || data.format_options || data.selectList);
+          if (!raw) return [];
+
+          var list;
+          if (Array.isArray(raw)) {
+            /* selectList format: [{ text: "Discovery", value: "Discovery" }, …] */
+            list = raw.map(function (o) {
+              return (typeof o === "object" ? (o.text || o.value || "") : String(o)).trim();
+            });
+          } else {
+            /* newline-delimited string */
+            list = String(raw).split(/\r?\n/).map(function (s) { return s.trim(); });
+          }
+
+          list = list.filter(Boolean);
+          if (CONFIG.debug) dbg("Phase options parsed: " + JSON.stringify(list));
+          return list;
+        })
+        .catch(function (err) {
+          if (CONFIG.debug) dbg("fetchPhaseOptions failed: " + err.message + " — using fallback labels");
+          return [];
+        });
+    }
+
+    /* ============================================================
+     applyPhaseLabels
+     Overwrites CONFIG.phases[i].label with fetched option names.
+     If fewer options come back than phases, remaining phases keep
+     their hardcoded fallback label.
+     ============================================================ */
+    function applyPhaseLabels(options) {
+      if (!options || !options.length) return;
+      CONFIG.phases.forEach(function (phase, i) {
+        if (options[i]) phase.label = options[i];
+      });
     }
 
     /* ============================================================
@@ -2325,19 +2223,13 @@
       if (CONFIG.debug) {
         dbg("=== CustomerOverview v3 Debug ===");
         dbg("window.location.href: " + window.location.href);
-        try {
-          dbg("parent.location.href: " + window.parent.location.href);
-        } catch (e) {
-          dbg("parent.location.href: (cross-origin)");
-        }
+        try { dbg("parent.location.href: " + window.parent.location.href); } catch(e) { dbg("parent.location.href: (cross-origin)"); }
         dbg("recordID resolved to: " + (recordID || "(empty)"));
         dbg("API base: " + getAPIBase());
       }
 
       if (!recordID) {
-        showError(
-          "No project specified. Please check the link — it should include a record ID (e.g., ?a=1234).",
-        );
+        showError("No project specified. Please check the link — it should include a record ID (e.g., ?a=1234).");
         return;
       }
 
@@ -2345,13 +2237,22 @@
       wireShareButton();
       showLoading();
 
-      fetchProjectData(recordID)
-        .then(function (result) {
-          var s1 = result.s1;
+      Promise.all([
+        fetchProjectData(recordID),
+        fetchPhaseOptions(CONFIG.indicators.currentPhase),
+      ])
+        .then(function (results) {
+          var result  = results[0];
+          var options = results[1];
+
+          /* Apply dynamic phase labels before any rendering happens */
+          applyPhaseLabels(options);
+
+          var s1   = result.s1;
           var inds = CONFIG.indicators;
 
-          var projectName = getField(s1, inds.projectName);
-          var projectType = getField(s1, inds.projectType);
+          var projectName  = getField(s1, inds.projectName);
+          var projectType  = getField(s1, inds.projectType);
           var currentPhase = getField(s1, inds.currentPhase);
           var phaseContents = {
             phase1: getField(s1, inds.phase1),
@@ -2362,35 +2263,32 @@
           };
           var taskContents = {
             leafTasks1: getField(s1, inds.leafTasks1),
-            orgTasks1: getField(s1, inds.orgTasks1),
+            orgTasks1:  getField(s1, inds.orgTasks1),
             leafTasks2: getField(s1, inds.leafTasks2),
-            orgTasks2: getField(s1, inds.orgTasks2),
+            orgTasks2:  getField(s1, inds.orgTasks2),
             leafTasks3: getField(s1, inds.leafTasks3),
-            orgTasks3: getField(s1, inds.orgTasks3),
+            orgTasks3:  getField(s1, inds.orgTasks3),
             leafTasks4: getField(s1, inds.leafTasks4),
-            orgTasks4: getField(s1, inds.orgTasks4),
+            orgTasks4:  getField(s1, inds.orgTasks4),
             leafTasks5: getField(s1, inds.leafTasks5),
-            orgTasks5: getField(s1, inds.orgTasks5),
+            orgTasks5:  getField(s1, inds.orgTasks5),
           };
 
           var activeStep = resolveActiveStep(currentPhase);
 
           /* ---- Header: name + type + blurb ---- */
-          byId("co-project-name").textContent =
-            projectName || "Project Details";
+          byId("co-project-name").textContent = projectName || "Project Details";
 
           var typeEl = byId("co-project-type");
           if (projectType) {
-            typeEl.innerHTML =
-              '<strong class="co-project-label">Project Type:</strong> ' +
-              esc(projectType);
+            typeEl.innerHTML = '<strong class="co-project-label">Project Type:</strong> ' + esc(projectType);
             typeEl.style.display = "";
           } else {
             typeEl.style.display = "none";
           }
 
           /* v3: italicized project type blurb — only for known types */
-          var blurbEl = byId("co-project-type-blurb");
+          var blurbEl  = byId("co-project-type-blurb");
           var blurbKey = projectType ? projectType.toLowerCase().trim() : "";
           var blurbText = CONFIG.PROJECT_TYPE_BLURBS[blurbKey] || "";
           if (blurbText && blurbEl) {
@@ -2401,28 +2299,24 @@
           }
 
           /* scope line — indicatorID 86 */
-          var objective = getField(s1, inds.objective);
+          var objective   = getField(s1, inds.objective);
           var objectiveEl = byId("co-project-objective");
           if (objective && objectiveEl) {
             objectiveEl.innerHTML =
-              '<strong class="co-project-label">Scope:</strong> ' +
-              esc(objective);
+              '<strong class="co-project-label">Scope:</strong> ' + esc(objective);
             objectiveEl.style.display = "";
           } else if (objectiveEl) {
             objectiveEl.style.display = "none";
           }
 
           /* LEAF URL — indicatorID 87 */
-          var leafURL = getField(s1, inds.leafURL);
+          var leafURL   = getField(s1, inds.leafURL);
           var leafURLEl = byId("co-leaf-url");
           if (leafURL && leafURLEl) {
             leafURLEl.innerHTML =
               '<strong class="co-project-label">Customer LEAF Site:</strong> ' +
-              '<a href="' +
-              esc(leafURL) +
-              '" target="_blank" rel="noopener noreferrer">' +
-              esc(leafURL) +
-              "</a>";
+              '<a href="' + esc(leafURL) + '" target="_blank" rel="noopener noreferrer">' +
+              esc(leafURL) + '</a>';
             leafURLEl.style.display = "";
           } else if (leafURLEl) {
             leafURLEl.style.display = "none";
@@ -2430,7 +2324,7 @@
 
           /* ---- Helper: render a POC row from _orgchart metadata ---- */
           function renderPocEl(el, indID, label) {
-            var rawVal = s1["id" + String(indID)];
+            var rawVal  = s1["id" + String(indID)];
             var orgMeta = s1["id" + String(indID) + "_orgchart"];
 
             if (CONFIG.debug) {
@@ -2444,50 +2338,33 @@
              * No secondary fetch required.
              */
             var displayName = "";
-            var email = "";
+            var email       = "";
 
             if (orgMeta) {
               var parts = [orgMeta.firstName, orgMeta.lastName]
-                .map(function (p) {
-                  return (p || "").trim();
-                })
+                .map(function (p) { return (p || "").trim(); })
                 .filter(Boolean);
               displayName = parts.join(" ");
               email = (orgMeta.email || "").trim();
             }
 
             /* Fall back to the plain stored value if orgchart gave us nothing */
-            if (!displayName)
-              displayName = decodeEntities(String(rawVal || "").trim());
+            if (!displayName) displayName = decodeEntities(String(rawVal || "").trim());
 
-            if (!displayName) {
-              el.style.display = "none";
-              return;
-            }
+            if (!displayName) { el.style.display = "none"; return; }
 
             var pocContent;
             if (email) {
               pocContent =
-                '<strong class="co-project-label">' +
-                label +
-                ":</strong> " +
+                '<strong class="co-project-label">' + label + ':</strong> ' +
                 '<a class="co-poc-link"' +
-                '   href="mailto:' +
-                esc(email) +
-                '"' +
-                '   aria-label="Email ' +
+                '   href="mailto:' + esc(email) + '"' +
+                '   aria-label="Email ' + esc(displayName) + ' at ' + esc(email) + '">' +
                 esc(displayName) +
-                " at " +
-                esc(email) +
-                '">' +
-                esc(displayName) +
-                "</a>";
+                '</a>';
             } else {
               pocContent =
-                '<strong class="co-project-label">' +
-                label +
-                ":</strong> " +
-                esc(displayName);
+                '<strong class="co-project-label">' + label + ':</strong> ' + esc(displayName);
             }
 
             el.innerHTML = pocContent;
@@ -2505,16 +2382,14 @@
 
           /* ---- Customer POC (indicator 74) ---- */
           var servicePocEl = byId("co-service-poc");
-          if (servicePocEl)
-            renderPocEl(servicePocEl, inds.servicePoc, "Customer POC");
+          if (servicePocEl) renderPocEl(servicePocEl, inds.servicePoc, "Customer POC");
+        })
         })
         .catch(function (err) {
           console.error("[CustomerOverview] Error loading project data:", err);
           if (CONFIG.debug) dbg("FETCH ERROR: " + err.message);
-          showError(
-            "Unable to load project data. Please try again later or contact support." +
-              (CONFIG.debug ? "\n\nDebug: " + err.message : ""),
-          );
+          showError("Unable to load project data. Please try again later or contact support." +
+            (CONFIG.debug ? "\n\nDebug: " + err.message : ""));
         });
     }
 
@@ -2524,7 +2399,7 @@
      shows a brief "Copied!" confirmation toast beneath the button.
      ============================================================ */
     function wireShareButton() {
-      var btn = document.getElementById("co-share-btn");
+      var btn   = document.getElementById("co-share-btn");
       var toast = document.getElementById("co-share-toast");
       if (!btn || !toast) return;
 
@@ -2536,20 +2411,13 @@
         function showToast(msg) {
           toast.textContent = msg;
           if (toastTimer) clearTimeout(toastTimer);
-          toastTimer = setTimeout(function () {
-            toast.textContent = "";
-          }, 2500);
+          toastTimer = setTimeout(function () { toast.textContent = ""; }, 2500);
         }
 
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard
-            .writeText(url)
-            .then(function () {
-              showToast("Copied!");
-            })
-            .catch(function () {
-              fallbackCopy(url, showToast);
-            });
+          navigator.clipboard.writeText(url)
+            .then(function () { showToast("Copied!"); })
+            .catch(function () { fallbackCopy(url, showToast); });
         } else {
           fallbackCopy(url, showToast);
         }
@@ -2559,8 +2427,7 @@
         try {
           var ta = document.createElement("textarea");
           ta.value = url;
-          ta.style.cssText =
-            "position:fixed;top:-9999px;left:-9999px;opacity:0;";
+          ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0;";
           document.body.appendChild(ta);
           ta.focus();
           ta.select();
@@ -2589,15 +2456,10 @@
       }
 
       function updateVisibility() {
-        var scrollTop =
-          window.pageYOffset || document.documentElement.scrollTop;
-        var scrollHeight = Math.max(
-          document.body.scrollHeight,
-          document.documentElement.scrollHeight,
-        );
-        var clientHeight =
-          window.innerHeight || document.documentElement.clientHeight;
-        var needsScroll = scrollHeight - clientHeight > 80;
+        var scrollTop    = window.pageYOffset || document.documentElement.scrollTop;
+        var scrollHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+        var clientHeight = window.innerHeight || document.documentElement.clientHeight;
+        var needsScroll  = scrollHeight - clientHeight > 80;
         setVisible(needsScroll && scrollTop > 120);
       }
 
@@ -2605,16 +2467,13 @@
         window.scrollTo({ top: 0, behavior: "smooth" });
       });
 
-      window.addEventListener("scroll", updateVisibility, { passive: true });
-      window.addEventListener("resize", updateVisibility);
+      window.addEventListener("scroll",  updateVisibility, { passive: true });
+      window.addEventListener("resize",  updateVisibility);
       updateVisibility();
     }
 
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", function () {
-        init();
-        wireJumpToTop();
-      });
+      document.addEventListener("DOMContentLoaded", function () { init(); wireJumpToTop(); });
     } else {
       init();
       wireJumpToTop();
