@@ -1,4 +1,18 @@
 <style>
+  /* ============================================================
+   CustomerOverview v3 — LEAF Programmer Page
+   All styles scoped to #customerOverview.
+
+   v3 changes (on top of v2):
+     - Removed: print button, record ID display, last-updated display
+     - POC rendered as mailto: link (opens email client to POC address)
+       TODO: set CONFIG.indicators.pocEmail once you know the indicator ID
+     - Per-phase file + image attachments fetched via
+       ajaxIndex.php?a=getprintindicator and rendered below phase text
+     - Image thumbnails open in a lightbox overlay (keyboard + focus trap)
+     - File attachments render as styled download links
+   ============================================================ */
+
   #customerOverview *,
   #customerOverview *::before,
   #customerOverview *::after {
@@ -1366,7 +1380,7 @@
      CONFIG
      ============================================================ */
     var CONFIG = {
-      debug: false,
+      debug: true /* ← temp: diagnosing fetchPhaseOptions response format */,
 
       categoryID: "55445",
 
@@ -2401,29 +2415,44 @@
           return r.json();
         })
         .then(function (data) {
-          if (CONFIG.debug)
-            dbg("Phase options raw: " + JSON.stringify(data).slice(0, 300));
+          if (CONFIG.debug) {
+            dbg(
+              "fetchPhaseOptions raw keys: " +
+                Object.keys(data || {}).join(", "),
+            );
+            dbg("fetchPhaseOptions full response: " + JSON.stringify(data));
+          }
 
           /*
-           * LEAF may return options as:
-           *   data.options  — newline-delimited string  "Discovery\nPlanning\n…"
-           *   data.selectList — array of { text, value } objects
-           *   data.format_options — newline-delimited string (older builds)
+           * Try every key LEAF may use across versions:
+           *   options          — most common, newline-delimited string
+           *   format_options   — older builds
+           *   selectList       — some builds return an array of {text,value}
+           *   listValues       — alternate key seen in some installs
            */
           var raw =
-            data && (data.options || data.format_options || data.selectList);
-          if (!raw) return [];
+            data &&
+            (data.options ||
+              data.format_options ||
+              data.selectList ||
+              data.listValues);
+
+          if (!raw) {
+            if (CONFIG.debug)
+              dbg(
+                "fetchPhaseOptions: no recognised options key found — labels will use fallback",
+              );
+            return [];
+          }
 
           var list;
           if (Array.isArray(raw)) {
-            /* selectList format: [{ text: "Discovery", value: "Discovery" }, …] */
             list = raw.map(function (o) {
               return (
                 typeof o === "object" ? o.text || o.value || "" : String(o)
               ).trim();
             });
           } else {
-            /* newline-delimited string */
             list = String(raw)
               .split(/\r?\n/)
               .map(function (s) {
@@ -2433,7 +2462,7 @@
 
           list = list.filter(Boolean);
           if (CONFIG.debug)
-            dbg("Phase options parsed: " + JSON.stringify(list));
+            dbg("fetchPhaseOptions parsed labels: " + JSON.stringify(list));
           return list;
         })
         .catch(function (err) {
@@ -2455,9 +2484,24 @@
      ============================================================ */
     function applyPhaseLabels(options) {
       if (!options || !options.length) return;
+
+      /* Update phase labels */
       CONFIG.phases.forEach(function (phase, i) {
         if (options[i]) phase.label = options[i];
       });
+
+      /*
+       * Rebuild phaseValueMap from the live labels so resolveActiveStep
+       * correctly identifies the active step even if phase names changed.
+       * Maps lowercased label → step number.
+       */
+      CONFIG.phaseValueMap = {};
+      CONFIG.phases.forEach(function (phase) {
+        CONFIG.phaseValueMap[phase.label.toLowerCase().trim()] = phase.step;
+      });
+
+      if (CONFIG.debug)
+        dbg("phaseValueMap rebuilt: " + JSON.stringify(CONFIG.phaseValueMap));
     }
 
     /* ============================================================
