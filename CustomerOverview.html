@@ -435,11 +435,11 @@
     padding-bottom: 4px;
   }
 
-  /* Grey base connector line */
+  /* Grey base connector line — top accounts for spacer(18) + gap(6) + half-circle(20) */
   #customerOverview .co-progress-track::before {
     content: "";
     position: absolute;
-    top: 20px;
+    top: 44px;
     left: 10%;
     right: 10%;
     height: 3px;
@@ -451,7 +451,7 @@
   #customerOverview .co-progress-track::after {
     content: "";
     position: absolute;
-    top: 20px;
+    top: 44px;
     left: 10%;
     height: 3px;
     width: calc(var(--co-progress-pct, 0%) * 0.8);
@@ -477,14 +477,12 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: #003f72;
-    background: #cce0f5;
-    border-radius: 10px;
-    padding: 2px 7px;
     white-space: nowrap;
     display: flex;
     align-items: center;
     gap: 3px;
     line-height: 1;
+    height: 18px;
   }
 
   #customerOverview .co-step-here-pin {
@@ -1043,14 +1041,13 @@
     }
     #customerOverview .co-progress-track::before,
     #customerOverview .co-progress-track::after {
-      top: 17px;
+      top: 41px;
     }
     #customerOverview .co-step-label {
       display: none;
     }
     #customerOverview .co-step-here {
       font-size: 0.6rem;
-      padding: 2px 5px;
     }
     #customerOverview .co-phase {
       padding: 14px 16px;
@@ -1404,8 +1401,8 @@
             id="co-share-btn"
             class="co-share-btn"
             type="button"
-            aria-label="Copy link to this project"
-            title="Copy link"
+            aria-label="Copy Link to Share the Page"
+            title="Copy Link to Share the Page"
           >
             <svg
               viewBox="0 0 24 24"
@@ -1528,7 +1525,7 @@
 <button
   id="co-jump-top"
   type="button"
-  aria-label="Back to top"
+  aria-label="Jump to Top of Page"
   aria-hidden="true"
   tabindex="-1"
 >
