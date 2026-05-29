@@ -360,16 +360,69 @@
     margin-bottom: 40px;
   }
 
+  /* Heading row — toggle button sits inline */
   #customerOverview .co-progress-heading {
     font-size: 1.25rem;
     font-weight: 700;
     color: #003f72;
-    margin-bottom: 28px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #customerOverview .co-progress-heading-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+    line-height: inherit;
+  }
+
+  #customerOverview .co-progress-heading-toggle:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  #customerOverview .co-progress-heading-chevron {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: #71767a;
+    transition: transform 0.2s ease;
+  }
+
+  #customerOverview
+    .co-progress-heading-toggle[aria-expanded="true"]
+    .co-progress-heading-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* Collapsible explainer */
+  #customerOverview .co-progress-explainer {
+    font-size: 0.875rem;
+    font-style: italic;
+    color: #71767a;
+    line-height: 1.55;
+    margin-bottom: 20px;
+    display: none;
+  }
+
+  #customerOverview .co-progress-explainer.co-explainer-open {
+    display: block;
   }
 
   #customerOverview .co-progress-nav {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    margin-top: 20px;
   }
 
   #customerOverview .co-progress-track {
@@ -415,6 +468,32 @@
     position: relative;
     z-index: 1;
     gap: 6px;
+  }
+
+  /* "We are here" label above active circle */
+  #customerOverview .co-step-here {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #003f72;
+    background: #cce0f5;
+    border-radius: 10px;
+    padding: 2px 7px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    line-height: 1;
+  }
+
+  #customerOverview .co-step-here-pin {
+    font-size: 0.7rem;
+  }
+
+  /* Spacer so non-active steps align vertically with the active one */
+  #customerOverview .co-step-here-spacer {
+    height: 18px;
   }
 
   #customerOverview .co-step-circle {
@@ -465,6 +544,25 @@
   #customerOverview .co-step--active .co-step-label {
     font-weight: 700;
     color: #003f72;
+  }
+
+  /* Pulse animation — only when user has no motion preference (WCAG 2.1 compliant) */
+  @keyframes co-pulse {
+    0% {
+      box-shadow: 0 0 0 4px #cce0f5;
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(0, 113, 187, 0.15);
+    }
+    100% {
+      box-shadow: 0 0 0 4px #cce0f5;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    #customerOverview .co-step--active .co-step-circle {
+      animation: co-pulse 2s ease-in-out infinite;
+    }
   }
 
   #customerOverview .co-step--upcoming .co-step-circle {
@@ -948,8 +1046,11 @@
       top: 17px;
     }
     #customerOverview .co-step-label {
-      font-size: 0.65rem;
-      max-width: 60px;
+      display: none;
+    }
+    #customerOverview .co-step-here {
+      font-size: 0.6rem;
+      padding: 2px 5px;
     }
     #customerOverview .co-phase {
       padding: 14px 16px;
@@ -1368,8 +1469,35 @@
 
     <section class="co-progress-section" aria-labelledby="co-progress-heading">
       <h2 id="co-progress-heading" class="co-progress-heading">
-        Project Phases
+        <button
+          id="co-progress-toggle"
+          class="co-progress-heading-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="co-progress-explainer"
+        >
+          Project Phases
+          <svg
+            class="co-progress-heading-chevron"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M3 5l5 5 5-5" />
+          </svg>
+        </button>
       </h2>
+      <p id="co-progress-explainer" class="co-progress-explainer" role="note">
+        Each phase represents a key milestone in your project journey. Your team
+        and the LEAF team work through these together. The progress bar reflects
+        where things stand today — click any phase circle to jump directly to
+        that section.
+      </p>
       <nav class="co-progress-nav" aria-label="Project phases">
         <ol id="co-progress-track" class="co-progress-track"></ol>
       </nav>
@@ -2032,6 +2160,14 @@
         li.className = "co-step co-step--" + state;
         if (state === "active") li.setAttribute("aria-current", "step");
 
+        /* "We are here" label above active step; spacer for alignment on others */
+        var hereHtml =
+          state === "active"
+            ? '<span class="co-step-here" aria-hidden="true">' +
+              '<span class="co-step-here-pin">📍</span>We are here' +
+              "</span>"
+            : '<span class="co-step-here-spacer" aria-hidden="true"></span>';
+
         var circleInner =
           state === "complete"
             ? '<span aria-hidden="true">&#10003;</span>'
@@ -2045,7 +2181,9 @@
           "aria-label",
           "Jump to " + phase.label + " — " + stateWord,
         );
+        btn.setAttribute("title", "Jump to " + phase.label);
         btn.innerHTML =
+          hereHtml +
           '<div class="co-step-circle" aria-hidden="true">' +
           circleInner +
           "</div>" +
@@ -2174,8 +2312,8 @@
           ? '<p class="co-phase-content"></p>'
           : '<p class="co-phase-content co-phase-placeholder" aria-label="' +
             esc(phase.label) +
-            ' phase: Details coming soon">' +
-            '<span aria-hidden="true">Details coming soon</span></p>';
+            ' phase: content not yet available">' +
+            '<span aria-hidden="true">Your LEAF POC will update this section as the project progresses.</span></p>';
 
         /* Task checklist block */
         var taskHtml = "";
@@ -2575,6 +2713,7 @@
 
       lightbox.init();
       wireShareButton();
+      wireProgressExplainer();
       showLoading();
 
       Promise.all([
@@ -2766,6 +2905,18 @@
               (CONFIG.debug ? "\n\nDebug: " + err.message : ""),
           );
         });
+    }
+
+    function wireProgressExplainer() {
+      var btn = byId("co-progress-toggle");
+      var explainer = byId("co-progress-explainer");
+      if (!btn || !explainer) return;
+
+      btn.addEventListener("click", function () {
+        var expanded = btn.getAttribute("aria-expanded") === "true";
+        btn.setAttribute("aria-expanded", String(!expanded));
+        explainer.classList.toggle("co-explainer-open", !expanded);
+      });
     }
 
     /* ============================================================
