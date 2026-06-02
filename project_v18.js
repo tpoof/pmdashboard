@@ -323,7 +323,7 @@
   }
 
   function getStatusFilterOptions() {
-    return getKanbanBaseColumns();
+    return STATUS_CONFIG.ALL_STATUSES.slice();
   }
 
   function normalizePrimaryStatus(status) {
