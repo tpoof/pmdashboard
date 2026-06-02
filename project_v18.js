@@ -117,6 +117,7 @@
       "Other",
       "Completed",
       "Cancelled",
+      "Unknown",
     ],
     LEGACY_KANBAN_COLUMNS: [
       "Not Started",
