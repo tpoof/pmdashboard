@@ -6621,8 +6621,13 @@
     if (filters && filters.recurringOnly && !task.isRecurring) return false;
     if (filters && !matchesFilterSet(task.projectKey, filters.projectKeys))
       return false;
-    if (filters && !matchesFilterSet(task.status, filters.statuses))
-      return false;
+    if (filters && filters.statuses && filters.statuses.size) {
+      // Normalize the raw status so values like "( Not Started )" match
+      // their display label. Filtering for "Unknown" catches any raw value
+      // that doesn't map to a known status string.
+      var normalizedStatus = normalizePrimaryStatus(task.status);
+      if (!filters.statuses.has(normalizedStatus)) return false;
+    }
     if (filters && !matchesFilterSet(task.assignedTo, filters.assignees))
       return false;
     if (filters && !matchesFilterSet(task.priority, filters.priorities))
@@ -8105,38 +8110,6 @@
   // ═══════════════════════════════════════════════════════════════════════════
   // END INLINE CELL EDITOR
   // ═══════════════════════════════════════════════════════════════════════════
-
-  // ── DEBUG: pmStatusDebug() ───────────────────────────────────────────────────
-  window.pmStatusDebug = function () {
-    console.group(
-      "%c[pmStatusDebug] Task status raw values",
-      "color:#1a4480;font-weight:bold",
-    );
-    var rows = (state.tasksAll || []).map(function (t) {
-      return {
-        recordID: t.recordID,
-        title: t.title,
-        status: t.status,
-        raw: JSON.stringify(t.status),
-        normalized: normalizePrimaryStatus(t.status),
-      };
-    });
-    console.table(rows);
-    // Show every unique raw status value in the loaded task set
-    var unique = Array.from(
-      new Set(
-        (state.tasksAll || []).map(function (t) {
-          return JSON.stringify(t.status);
-        }),
-      ),
-    ).sort();
-    console.log(
-      "All unique raw status values (" + unique.length + "):",
-      unique,
-    );
-    console.groupEnd();
-  };
-  // ── END DEBUG ────────────────────────────────────────────────────────────────
 
   function syncDateRangeBtnUI() {
     document.querySelectorAll(".pm-dateRangeBtn").forEach(function (btn) {
