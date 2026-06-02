@@ -8106,6 +8106,38 @@
   // END INLINE CELL EDITOR
   // ═══════════════════════════════════════════════════════════════════════════
 
+  // ── DEBUG: pmStatusDebug() ───────────────────────────────────────────────────
+  window.pmStatusDebug = function () {
+    console.group(
+      "%c[pmStatusDebug] Task status raw values",
+      "color:#1a4480;font-weight:bold",
+    );
+    var rows = (state.tasksAll || []).map(function (t) {
+      return {
+        recordID: t.recordID,
+        title: t.title,
+        status: t.status,
+        raw: JSON.stringify(t.status),
+        normalized: normalizePrimaryStatus(t.status),
+      };
+    });
+    console.table(rows);
+    // Show every unique raw status value in the loaded task set
+    var unique = Array.from(
+      new Set(
+        (state.tasksAll || []).map(function (t) {
+          return JSON.stringify(t.status);
+        }),
+      ),
+    ).sort();
+    console.log(
+      "All unique raw status values (" + unique.length + "):",
+      unique,
+    );
+    console.groupEnd();
+  };
+  // ── END DEBUG ────────────────────────────────────────────────────────────────
+
   function syncDateRangeBtnUI() {
     document.querySelectorAll(".pm-dateRangeBtn").forEach(function (btn) {
       var days = parseInt(btn.getAttribute("data-days"), 10);
