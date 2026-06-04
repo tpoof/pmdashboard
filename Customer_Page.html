@@ -2831,47 +2831,16 @@
         return { s1: s1, stepID: stepID };
       }
 
-      /* ---- LeafFormQuery path (with fallthrough on any error) ---- */
-      if (typeof LeafFormQuery !== "undefined") {
-        if (CONFIG.debug) dbg("LeafFormQuery available — attempting query");
-        try {
-          return new Promise(function (resolve, reject) {
-            var query = new LeafFormQuery();
-            query.addTerm("recordIDs", "=", String(recordID));
-            query.join("status");
-            query.getData(getDataIDs);
-            query.setRootURL(getAPIBase());
-            query.onProgress(function (n) {
-              if (loadingMsg)
-                loadingMsg.textContent =
-                  "Loading\u2026 (" + n + " records processed)";
-            });
-            /*
-             * LeafFormQuery delivers full results via onSuccess, not via the
-             * execute() Promise resolved value (which is undefined).
-             */
-            query.onSuccess(function (data) {
-              try {
-                resolve(processResponse(data));
-              } catch (e) {
-                reject(e);
-              }
-            });
-            query.execute();
-          });
-        } catch (e) {
-          if (CONFIG.debug)
-            dbg(
-              "LeafFormQuery threw: " +
-                e.message +
-                " — falling back to direct fetch",
-            );
-        }
-      } else {
-        if (CONFIG.debug) dbg("LeafFormQuery not defined — using direct fetch");
-      }
+      /*
+       * NOTE: LeafFormQuery is available in this environment but does not
+       * fire onSuccess for single-record lookups in this context.
+       * Using direct fetch as the reliable primary path.
+       * LeafFormQuery can be revisited for bulk/report queries.
+       */
 
-      /* ---- Direct fetch fallback ---- */
+      /* ---- Direct fetch ---- */
+      if (CONFIG.debug) dbg("Using direct fetch");
+
       var q = JSON.stringify({
         terms: [
           {
