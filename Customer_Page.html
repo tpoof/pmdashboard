@@ -942,14 +942,14 @@
   }
 
   /* ============================================================
-   v3: Lightbox overlay
+   Lightbox overlay
    ============================================================ */
   #co-lightbox {
     display: none;
     position: fixed;
     inset: 0;
     z-index: 9999;
-    background: rgba(0, 0, 0, 0.88);
+    background: rgba(0, 0, 0, 0.9);
     align-items: center;
     justify-content: center;
   }
@@ -960,38 +960,61 @@
 
   #co-lightbox-inner {
     position: relative;
-    max-width: 92vw;
-    max-height: 92vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    max-width: 94vw;
+    gap: 12px;
   }
 
-  #co-lightbox-img {
-    display: block;
-    max-width: 90vw;
-    max-height: 88vh;
-    border-radius: 4px;
-    box-shadow: 0 8px 48px rgba(0, 0, 0, 0.6);
-    object-fit: contain;
+  /* Toolbar: counter | full-size | close */
+  #co-lightbox-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  #co-lightbox .co-lightbox-counter {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-right: auto;
+    white-space: nowrap;
+  }
+
+  #co-lightbox .co-lightbox-fullsize {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    white-space: nowrap;
+  }
+
+  #co-lightbox .co-lightbox-fullsize:hover {
+    color: #ffffff;
+  }
+  #co-lightbox .co-lightbox-fullsize:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 3px;
+    border-radius: 2px;
   }
 
   #co-lightbox-close {
-    position: absolute;
-    top: -40px;
-    right: 0;
     background: none;
-    border: 2px solid rgba(255, 255, 255, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.5);
     border-radius: 50%;
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     color: #ffffff;
-    font-size: 1.25rem;
-    line-height: 1;
+    flex-shrink: 0;
     transition: background 0.15s;
   }
 
@@ -999,19 +1022,67 @@
     background: rgba(255, 255, 255, 0.2);
   }
   #co-lightbox-close:focus-visible {
-    outline: 3px solid #ffffff;
+    outline: 2px solid #ffffff;
     outline-offset: 3px;
   }
 
+  /* Stage: prev | image | next */
+  #co-lightbox-stage {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  #co-lightbox-img {
+    display: block;
+    max-width: 80vw;
+    max-height: 78vh;
+    border-radius: 4px;
+    box-shadow: 0 8px 48px rgba(0, 0, 0, 0.6);
+    object-fit: contain;
+  }
+
+  #co-lightbox .co-lightbox-nav {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #ffffff;
+    transition:
+      background 0.15s,
+      border-color 0.15s;
+  }
+
+  #co-lightbox .co-lightbox-nav svg {
+    width: 20px;
+    height: 20px;
+  }
+  #co-lightbox .co-lightbox-nav:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: #ffffff;
+  }
+  #co-lightbox .co-lightbox-nav:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 3px;
+  }
+  #co-lightbox .co-lightbox-nav[hidden] {
+    display: none;
+  }
+
   #co-lightbox-caption {
-    position: absolute;
-    bottom: -32px;
-    left: 0;
-    right: 0;
-    text-align: center;
-    color: rgba(255, 255, 255, 0.8);
     font-size: 0.875rem;
-    pointer-events: none;
+    color: rgba(255, 255, 255, 0.75);
+    text-align: center;
+    max-width: 80vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* ============================================================
@@ -1173,6 +1244,13 @@
     color: #71767a;
   }
 
+  #customerOverview .co-task-legend {
+    font-size: 0.75rem;
+    color: #71767a;
+    margin-top: 8px;
+    font-style: italic;
+  }
+
   @media (max-width: 640px) {
     #customerOverview .co-task-container {
       flex-direction: column;
@@ -1297,7 +1375,7 @@
      CustomerOverview v3 — LEAF Programmer page markup
      ============================================================ -->
 
-<!-- v3: Lightbox overlay (singleton, outside scoped wrapper) -->
+<!-- Lightbox overlay (singleton, outside scoped wrapper) -->
 <div
   id="co-lightbox"
   role="dialog"
@@ -1305,28 +1383,102 @@
   aria-label="Image preview"
 >
   <div id="co-lightbox-inner">
-    <button
-      id="co-lightbox-close"
-      type="button"
-      aria-label="Close image preview"
-    >
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-        aria-hidden="true"
-        focusable="false"
+    <div id="co-lightbox-toolbar">
+      <span
+        id="co-lightbox-counter"
+        class="co-lightbox-counter"
+        aria-live="polite"
+        aria-atomic="true"
+      ></span>
+      <a
+        id="co-lightbox-fullsize"
+        class="co-lightbox-fullsize"
+        href="#"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Open full size image in new tab"
       >
-        <path
-          d="M3 3l10 10M13 3L3 13"
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M10 2h4v4M9 7l5-5M6 14H2v-4M7 9l-5 5"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        Full size
+      </a>
+      <button
+        id="co-lightbox-close"
+        type="button"
+        aria-label="Close image preview"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M3 3l10 10M13 3L3 13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+    </div>
+    <div id="co-lightbox-stage">
+      <button
+        id="co-lightbox-prev"
+        type="button"
+        class="co-lightbox-nav"
+        aria-label="Previous image"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
           stroke="currentColor"
-          stroke-width="2"
+          stroke-width="2.5"
           stroke-linecap="round"
-        />
-      </svg>
-    </button>
-    <img id="co-lightbox-img" src="" alt="" />
+          stroke-linejoin="round"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      </button>
+      <img id="co-lightbox-img" src="" alt="" />
+      <button
+        id="co-lightbox-next"
+        type="button"
+        class="co-lightbox-nav"
+        aria-label="Next image"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+      </button>
+    </div>
     <span id="co-lightbox-caption"></span>
   </div>
 </div>
@@ -1561,7 +1713,7 @@
      CONFIG
      ============================================================ */
     var CONFIG = {
-      debug: false,
+      debug: true /* ← temp ON: verifying join('status') stepID field name */,
 
       categoryID: "55445",
 
@@ -1572,15 +1724,19 @@
          * Indicators 67 and 74 are orgchart_employee fields.
          * LEAF stores the empUID as the raw value and populates
          * s1["id{N}_orgchart"] with { empUID, userName, … }.
-         * We call /platform/orgchart/api/employee/{empUID} to resolve
-         * the full name and email for the mailto: link.
          */
-        poc: 67, // Customer POC
-        servicePoc: 74, // Service POC
-        objective: 86, // Project Objective
-        leafURL: 87, // LEAF URL
+        poc: 67, // LEAF POC
+        servicePoc: 74, // Customer POC
+        objective: 86, // Project Scope
+        leafURL: 87, // Customer LEAF Site
 
+        /*
+         * Indicator 61 is used ONLY for fetchPhaseOptions (phase label names).
+         * Its selected value is no longer read — active phase is determined
+         * by the workflow stepID via workflowStepToPhase below.
+         */
         currentPhase: 61,
+
         phase1: 62,
         phase2: 63,
         phase3: 64,
@@ -1647,19 +1803,14 @@
         },
       ],
 
-      phaseValueMap: {
-        discovery: 1,
-        planning: 2,
-        execution: 3,
-        launch: 4,
-        monitoring: 5,
-      },
-
       /*
-       * Italicized blurbs rendered beneath the project type label.
-       * Keys are lowercased, trimmed versions of the raw LEAF dropdown value.
-       * Unrecognised types render no blurb (silently omitted).
+       * Maps LEAF workflow step IDs to phase numbers (1–5).
+       * Steps outside this range are never shown to customers:
+       *   < 19  → project not yet started (all phases neutral/grey)
+       *   > 23  → post-phase internal steps, clamp to phase 5
        */
+      workflowStepToPhase: { 19: 1, 20: 2, 21: 3, 22: 4, 23: 5 },
+
       PROJECT_TYPE_BLURBS: {
         "national project":
           "A National Project is a structured, full-service engagement where the LEAF team guides your agency through every phase - from discovery to launch - with dedicated support along the way.",
@@ -1853,25 +2004,37 @@
       return "upcoming";
     }
 
-    function resolveActiveStep(raw) {
-      if (!raw) return 1;
-      var norm = String(raw).toLowerCase().trim();
-      if (Object.prototype.hasOwnProperty.call(CONFIG.phaseValueMap, norm)) {
-        return CONFIG.phaseValueMap[norm];
-      }
-      var keys = Object.keys(CONFIG.phaseValueMap);
-      for (var i = 0; i < keys.length; i++) {
-        if (norm.indexOf(keys[i]) !== -1 || keys[i].indexOf(norm) !== -1) {
-          return CONFIG.phaseValueMap[keys[i]];
-        }
-      }
-      if (CONFIG.debug) {
-        console.warn(
-          "[CustomerOverview] Unrecognized phase value:",
-          JSON.stringify(raw),
+    /*
+     * resolveActiveStep
+     * Maps a LEAF workflow stepID to a display phase number (1–5), or null
+     * if the record is outside the customer-visible phase range (< step 19).
+     *
+     * stepID may be a number, numeric string, or an array (parallel steps).
+     * When an array, we pick the first value in the 19–23 range.
+     *
+     * Returns:
+     *   null  → step < 19 or not set  (render all phases neutral/grey)
+     *   1–5   → active phase to highlight
+     *   5     → step > 23  (clamp to last visible phase)
+     */
+    function resolveActiveStep(stepID) {
+      /* Handle array (parallel workflow steps) — find first in-range value */
+      var id = Array.isArray(stepID)
+        ? stepID.find(function (s) {
+            return CONFIG.workflowStepToPhase[parseInt(s, 10)];
+          }) || stepID[0]
+        : stepID;
+
+      var n = parseInt(id, 10);
+
+      if (CONFIG.debug)
+        dbg(
+          "resolveActiveStep: raw=" + JSON.stringify(stepID) + " parsed=" + n,
         );
-      }
-      return 1;
+
+      if (!n || n < 19) return null; /* not yet started — show neutral */
+      if (n > 23) return 5; /* post-phase internal steps — clamp to 5 */
+      return CONFIG.workflowStepToPhase[n] || null;
     }
 
     /* ============================================================
@@ -1926,62 +2089,143 @@
     }
 
     /* ============================================================
-     Lightbox
+     Lightbox — with prev/next navigation, counter, open full size
      ============================================================ */
     var lightbox = {
       el: null,
       imgEl: null,
       captionEl: null,
+      counterEl: null,
+      fullsizeEl: null,
       closeBtn: null,
+      prevBtn: null,
+      nextBtn: null,
       prevFocus: null,
+      images: [] /* current phase image array: [{src, caption}] */,
+      currentIdx: 0,
 
       init: function () {
         this.el = byId("co-lightbox");
         this.imgEl = byId("co-lightbox-img");
         this.captionEl = byId("co-lightbox-caption");
+        this.counterEl = byId("co-lightbox-counter");
+        this.fullsizeEl = byId("co-lightbox-fullsize");
         this.closeBtn = byId("co-lightbox-close");
+        this.prevBtn = byId("co-lightbox-prev");
+        this.nextBtn = byId("co-lightbox-next");
         if (!this.el) return;
 
         var self = this;
 
-        /* Close on backdrop click */
         this.el.addEventListener("click", function (e) {
           if (e.target === self.el) self.close();
         });
 
-        /* Close button */
         this.closeBtn.addEventListener("click", function () {
           self.close();
         });
+        this.prevBtn.addEventListener("click", function () {
+          self.navigate(-1);
+        });
+        this.nextBtn.addEventListener("click", function () {
+          self.navigate(1);
+        });
 
-        /* Keyboard: Escape closes, Tab stays trapped inside */
         this.el.addEventListener("keydown", function (e) {
           if (e.key === "Escape") {
             self.close();
             return;
           }
+          if (e.key === "ArrowLeft") {
+            self.navigate(-1);
+            return;
+          }
+          if (e.key === "ArrowRight") {
+            self.navigate(1);
+            return;
+          }
           if (e.key === "Tab") {
-            /* Only focusable element inside is the close button */
-            e.preventDefault();
-            self.closeBtn.focus();
+            self._trapFocus(e);
           }
         });
       },
 
-      open: function (src, caption) {
+      _trapFocus: function (e) {
+        var focusable = [
+          this.prevBtn,
+          this.nextBtn,
+          this.fullsizeEl,
+          this.closeBtn,
+        ].filter(function (el) {
+          return el && !el.hidden;
+        });
+        if (!focusable.length) return;
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      },
+
+      open: function (images, startIdx) {
         if (!this.el) return;
         this.prevFocus = document.activeElement;
-        this.imgEl.setAttribute("src", src);
-        this.imgEl.setAttribute("alt", caption || "");
-        this.captionEl.textContent = caption || "";
+        this.images = images || [];
+        this.currentIdx = startIdx || 0;
+        this._render();
         this.el.classList.add("co-lightbox--open");
         this.closeBtn.focus();
+      },
+
+      navigate: function (dir) {
+        var next = this.currentIdx + dir;
+        if (next < 0 || next >= this.images.length) return;
+        this.currentIdx = next;
+        this._render();
+      },
+
+      _render: function () {
+        var item = this.images[this.currentIdx];
+        if (!item) return;
+
+        this.imgEl.setAttribute("src", item.src);
+        this.imgEl.setAttribute("alt", item.caption || "");
+        this.captionEl.textContent = item.caption || "";
+
+        /* Counter */
+        if (this.images.length > 1) {
+          this.counterEl.textContent =
+            this.currentIdx + 1 + " of " + this.images.length;
+        } else {
+          this.counterEl.textContent = "";
+        }
+
+        /* Full size link */
+        if (this.fullsizeEl) {
+          this.fullsizeEl.href = item.src;
+          this.fullsizeEl.setAttribute(
+            "aria-label",
+            "Open full size: " + (item.caption || "image") + " (new tab)",
+          );
+        }
+
+        /* Show/hide nav arrows */
+        var multi = this.images.length > 1;
+        if (this.prevBtn) this.prevBtn.hidden = !multi || this.currentIdx === 0;
+        if (this.nextBtn)
+          this.nextBtn.hidden =
+            !multi || this.currentIdx === this.images.length - 1;
       },
 
       close: function () {
         if (!this.el) return;
         this.el.classList.remove("co-lightbox--open");
         this.imgEl.setAttribute("src", "");
+        this.images = [];
         if (this.prevFocus && typeof this.prevFocus.focus === "function") {
           this.prevFocus.focus();
         }
@@ -2029,7 +2273,6 @@
     }
 
     function buildAttachmentSection(attachEl, images, files) {
-      /* Nothing at all */
       if (images.length === 0 && files.length === 0) {
         attachEl.style.display = "none";
         return;
@@ -2037,53 +2280,48 @@
 
       var html = '<p class="co-attachments-label">Attachments</p>';
 
-      /* Image grid */
+      /* Build ordered image array for lightbox navigation */
+      var imageData = images.map(function (img, i) {
+        var src = img.getAttribute("src") || "";
+        var altRaw = img.getAttribute("alt") || "";
+        var caption =
+          altRaw.replace(/^image upload:\s*/i, "").trim() || "Image " + (i + 1);
+        return { src: src, caption: caption };
+      });
+
       if (images.length > 0) {
         html +=
           '<div class="co-img-grid" role="list" aria-label="Image attachments">';
-        images.forEach(function (img, i) {
-          var src = img.getAttribute("src") || "";
-          var altRaw = img.getAttribute("alt") || "";
-          var caption =
-            altRaw.replace(/^image upload:\s*/i, "").trim() ||
-            "Image " + (i + 1);
-          var safeCaption = esc(caption);
-
+        imageData.forEach(function (item, i) {
           html += '<figure class="co-img-figure" role="listitem">';
           html +=
             '<button type="button" class="co-img-thumb-btn"' +
-            ' data-src="' +
-            esc(src) +
+            ' data-idx="' +
+            i +
             '"' +
-            ' data-caption="' +
-            safeCaption +
-            '"' +
-            ' aria-label="View full size: ' +
-            safeCaption +
+            ' aria-label="View image: ' +
+            esc(item.caption) +
             '">';
           html +=
             '<img src="' +
-            esc(src) +
+            esc(item.src) +
             '"' +
             ' alt="' +
-            safeCaption +
+            esc(item.caption) +
             '"' +
-            ' class="co-img-thumb"' +
-            ' loading="lazy"' +
-            "/>";
+            ' class="co-img-thumb" loading="lazy"/>';
           html += "</button>";
           html +=
             '<span class="co-img-caption" aria-hidden="true" title="' +
-            safeCaption +
+            esc(item.caption) +
             '">' +
-            caption +
+            esc(item.caption) +
             "</span>";
           html += "</figure>";
         });
         html += "</div>";
       }
 
-      /* File pills */
       if (files.length > 0) {
         html +=
           '<div class="co-attachment-pills" aria-label="File attachments">';
@@ -2111,14 +2349,12 @@
       attachEl.innerHTML = html;
       attachEl.style.display = "";
 
-      /* Wire lightbox buttons */
+      /* Wire lightbox thumbnail buttons — pass full image array + clicked index */
       var btns = attachEl.querySelectorAll(".co-img-thumb-btn");
       Array.prototype.slice.call(btns).forEach(function (btn) {
         btn.addEventListener("click", function () {
-          lightbox.open(
-            btn.getAttribute("data-src"),
-            btn.getAttribute("data-caption"),
-          );
+          var idx = parseInt(btn.getAttribute("data-idx"), 10) || 0;
+          lightbox.open(imageData, idx);
         });
       });
     }
@@ -2164,12 +2400,15 @@
       var track = byId("co-progress-track");
       track.innerHTML = "";
 
+      /* null activeStep = project not yet in phase range — no fill, no marker */
       var total = CONFIG.phases.length;
-      var fraction = total > 1 ? (activeStep - 1) / (total - 1) : 0;
+      var fraction =
+        activeStep !== null && total > 1 ? (activeStep - 1) / (total - 1) : 0;
       track.style.setProperty("--co-progress-pct", fraction * 100 + "%");
 
       CONFIG.phases.forEach(function (phase) {
-        var state = stepState(phase.step, activeStep);
+        var state =
+          activeStep === null ? "upcoming" : stepState(phase.step, activeStep);
         var stateWord = {
           complete: "Completed",
           active: "Current phase",
@@ -2180,7 +2419,7 @@
         li.className = "co-step co-step--" + state;
         if (state === "active") li.setAttribute("aria-current", "step");
 
-        /* "We are here" label above active step; spacer for alignment on others */
+        /* "We are here" label — only shown when there IS an active phase */
         var hereHtml =
           state === "active"
             ? '<span class="co-step-here" aria-hidden="true">' +
@@ -2193,13 +2432,12 @@
             ? '<span aria-hidden="true">&#10003;</span>'
             : '<span aria-hidden="true">' + phase.step + "</span>";
 
-        /* Wrap in a button so the whole step is keyboard-accessible */
         var btn = document.createElement("button");
         btn.type = "button";
         btn.className = "co-step-btn";
         btn.setAttribute(
           "aria-label",
-          "Jump to " + phase.label + " — " + stateWord,
+          "Jump to " + phase.label + " \u2014 " + stateWord,
         );
         btn.setAttribute("title", "Jump to " + phase.label);
         btn.innerHTML =
@@ -2211,21 +2449,15 @@
           esc(phase.label) +
           "</span>";
 
-        /* Click: expand the phase card if collapsed, then scroll to it */
         (function (step) {
           btn.addEventListener("click", function () {
             var target = document.getElementById("co-phase-step-" + step);
             if (!target) return;
-
-            /* If it's a completed collapsed phase, expand it first */
             if (target.classList.contains("co-phase--collapsed")) {
               var hdr = target.querySelector(".co-phase-header");
               if (hdr) togglePhase(target, hdr);
             }
-
             target.scrollIntoView({ behavior: "smooth", block: "start" });
-
-            /* Move focus to the phase heading for keyboard users */
             var heading = target.querySelector(".co-phase-title");
             if (heading) {
               heading.setAttribute("tabindex", "-1");
@@ -2260,9 +2492,12 @@
         return raw
           .split(/\r?\n/)
           .map(function (line) {
-            return stripBR(line)
+            var clean = stripBR(line)
               .replace(/^[\-\u2022\*]\s*/, "")
               .trim();
+            var checked = /^\[x\]/i.test(clean);
+            var text = clean.replace(/^\[x\]\s*/i, "").trim();
+            return text ? { text: text, checked: checked } : null;
           })
           .filter(Boolean);
       }
@@ -2283,12 +2518,17 @@
           html += '<p class="co-task-empty">No tasks listed</p>';
         } else {
           tasks.forEach(function (task) {
+            var checkedAttr = task.checked ? " checked" : "";
             html += '<div class="co-task-row" role="listitem">';
             html +=
-              '<input type="checkbox" disabled aria-hidden="true" tabindex="-1">';
-            html += '<span class="co-task-text">' + esc(task) + "</span>";
+              '<input type="checkbox" disabled' +
+              checkedAttr +
+              ' aria-hidden="true" tabindex="-1">';
+            html += '<span class="co-task-text">' + esc(task.text) + "</span>";
             html += "</div>";
           });
+          html +=
+            '<p class="co-task-legend">Completed tasks are marked by your LEAF POC.</p>';
         }
         html += "</div></div>";
         return html;
@@ -2304,7 +2544,6 @@
           taskContents && taskContents[phase.orgTasksKey],
         );
         var hasTasks = leafTasks.length > 0 || orgTasks.length > 0;
-
         var article = document.createElement("article");
         article.className = "co-phase co-phase--" + state;
         article.id = "co-phase-step-" + phase.step;
@@ -2520,33 +2759,95 @@
 
     /* ============================================================
      fetchProjectData
+     Uses LeafFormQuery (globally available on LEAF pages) when
+     present, with a direct fetch fallback.
+     join('status') adds stepID to the record — used by
+     resolveActiveStep instead of reading indicator 61's value.
      ============================================================ */
     function fetchProjectData(recordID) {
       var inds = CONFIG.indicators;
-      var getData = [
-        String(inds.projectName),
-        String(inds.projectType),
-        String(inds.objective),
-        String(inds.leafURL),
-        String(inds.poc),
-        String(inds.servicePoc),
-        String(inds.currentPhase),
-        String(inds.phase1),
-        String(inds.phase2),
-        String(inds.phase3),
-        String(inds.phase4),
-        String(inds.phase5),
-        String(inds.leafTasks1),
-        String(inds.orgTasks1),
-        String(inds.leafTasks2),
-        String(inds.orgTasks2),
-        String(inds.leafTasks3),
-        String(inds.orgTasks3),
-        String(inds.leafTasks4),
-        String(inds.orgTasks4),
-        String(inds.leafTasks5),
-        String(inds.orgTasks5),
+
+      /* Indicator IDs to fetch — currentPhase (61) intentionally excluded;
+         it is only used for phase label names via fetchPhaseOptions. */
+      var getDataIDs = [
+        inds.projectName,
+        inds.projectType,
+        inds.objective,
+        inds.leafURL,
+        inds.poc,
+        inds.servicePoc,
+        inds.phase1,
+        inds.phase2,
+        inds.phase3,
+        inds.phase4,
+        inds.phase5,
+        inds.leafTasks1,
+        inds.orgTasks1,
+        inds.leafTasks2,
+        inds.orgTasks2,
+        inds.leafTasks3,
+        inds.orgTasks3,
+        inds.leafTasks4,
+        inds.orgTasks4,
+        inds.leafTasks5,
+        inds.orgTasks5,
       ];
+
+      var loadingMsg =
+        byId("co-loading") && byId("co-loading").querySelector("p");
+
+      function processResponse(data) {
+        if (CONFIG.debug) {
+          dbg(
+            "fetchProjectData response keys: " +
+              Object.keys(data || {}).join(", "),
+          );
+          dbg("Full response: " + JSON.stringify(data).slice(0, 600));
+        }
+        var rec = data && data[String(recordID)];
+        if (!rec) {
+          if (CONFIG.debug) dbg("ERROR: No record found for ID " + recordID);
+          throw new Error("No record found for ID " + recordID);
+        }
+        var s1 = rec.s1 || rec;
+        /* stepID from join('status') lives at the record root, not inside s1 */
+        var stepID =
+          rec.stepID !== undefined ? rec.stepID : rec.step_id || null;
+        if (CONFIG.debug) {
+          dbg("s1 keys: " + Object.keys(s1).join(", "));
+          dbg("stepID from status join: " + JSON.stringify(stepID));
+          dbg("record root keys: " + Object.keys(rec).join(", "));
+        }
+        return { s1: s1, stepID: stepID };
+      }
+
+      /* ---- LeafFormQuery path ---- */
+      if (typeof LeafFormQuery !== "undefined") {
+        return new Promise(function (resolve, reject) {
+          var query = new LeafFormQuery();
+          query.addTerm("recordIDs", "=", String(recordID));
+          query.join("status");
+          query.getData(getDataIDs);
+          query.setRootURL(getAPIBase());
+          query.onProgress(function (n) {
+            if (loadingMsg)
+              loadingMsg.textContent =
+                "Loading\u2026 (" + n + " records processed)";
+          });
+          query.onSuccess(function (data) {
+            try {
+              resolve(processResponse(data));
+            } catch (e) {
+              reject(e);
+            }
+          });
+          query.execute().catch(reject);
+        });
+      }
+
+      /* ---- Direct fetch fallback ---- */
+      if (CONFIG.debug)
+        dbg("LeafFormQuery not available — using direct fetch fallback");
 
       var q = JSON.stringify({
         terms: [
@@ -2557,9 +2858,9 @@
             gate: "AND",
           },
         ],
-        joins: [],
+        joins: ["status"],
         sort: {},
-        getData: getData,
+        getData: getDataIDs.map(String),
       });
 
       return fetch(
@@ -2579,26 +2880,7 @@
           if (!r.ok) throw new Error("Query failed HTTP " + r.status);
           return r.json();
         })
-        .then(function (data) {
-          if (CONFIG.debug) {
-            dbg("API response keys: " + Object.keys(data || {}).join(", "));
-            dbg("Full response: " + JSON.stringify(data).slice(0, 500));
-          }
-          var rec = data && data[String(recordID)];
-          if (!rec) {
-            if (CONFIG.debug)
-              dbg(
-                "ERROR: No record found for ID " +
-                  recordID +
-                  ". Keys in response: " +
-                  Object.keys(data || {}).join(", "),
-              );
-            throw new Error("No record found for ID " + recordID);
-          }
-          var s1 = rec.s1 || rec;
-          if (CONFIG.debug) dbg("s1 keys: " + Object.keys(s1).join(", "));
-          return { s1: s1 };
-        });
+        .then(processResponse);
     }
 
     /* ============================================================
@@ -2694,24 +2976,18 @@
      ============================================================ */
     function applyPhaseLabels(options) {
       if (!options || !options.length) return;
-
-      /* Update phase labels */
       CONFIG.phases.forEach(function (phase, i) {
         if (options[i]) phase.label = options[i];
       });
-
-      /*
-       * Rebuild phaseValueMap from the live labels so resolveActiveStep
-       * correctly identifies the active step even if phase names changed.
-       * Maps lowercased label → step number.
-       */
-      CONFIG.phaseValueMap = {};
-      CONFIG.phases.forEach(function (phase) {
-        CONFIG.phaseValueMap[phase.label.toLowerCase().trim()] = phase.step;
-      });
-
       if (CONFIG.debug)
-        dbg("phaseValueMap rebuilt: " + JSON.stringify(CONFIG.phaseValueMap));
+        dbg(
+          "Phase labels applied: " +
+            CONFIG.phases
+              .map(function (p) {
+                return p.label;
+              })
+              .join(", "),
+        );
     }
 
     /* ============================================================
@@ -2760,7 +3036,6 @@
 
           var projectName = getField(s1, inds.projectName);
           var projectType = getField(s1, inds.projectType);
-          var currentPhase = getField(s1, inds.currentPhase);
           var phaseContents = {
             phase1: getField(s1, inds.phase1),
             phase2: getField(s1, inds.phase2),
@@ -2781,7 +3056,7 @@
             orgTasks5: getField(s1, inds.orgTasks5),
           };
 
-          var activeStep = resolveActiveStep(currentPhase);
+          var activeStep = resolveActiveStep(result.stepID);
 
           /* ---- Header: name + type + blurb ---- */
           byId("co-project-name").textContent =
