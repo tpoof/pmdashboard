@@ -2977,6 +2977,78 @@
     }
 
     /* ============================================================
+     fetchWorkflowStep
+     Fetches the current workflow stepID for a record via a
+     lightweight query with no x-filterData so status join fields
+     are not stripped from the response.
+     Always resolves — returns null on any failure.
+     ============================================================ */
+    function fetchWorkflowStep(recordID) {
+      var q = JSON.stringify({
+        terms: [
+          {
+            id: "recordIDs",
+            operator: "=",
+            match: String(recordID),
+            gate: "AND",
+          },
+        ],
+        joins: ["status"],
+        sort: {},
+        getData: [],
+      });
+
+      return fetch(
+        getAPIBase() + "/api/form/query?q=" + encodeURIComponent(q),
+        {
+          credentials: "include",
+          headers: {
+            Accept: "application/json",
+            "x-requested-with": "XMLHttpRequest",
+          },
+        },
+      )
+        .then(function (r) {
+          return r.json();
+        })
+        .then(function (data) {
+          var rec = data && data[String(recordID)];
+          if (!rec) return null;
+
+          if (CONFIG.debug) {
+            dbg(
+              "fetchWorkflowStep record root keys: " +
+                Object.keys(rec).join(", "),
+            );
+            dbg(
+              "fetchWorkflowStep full rec: " +
+                JSON.stringify(rec).slice(0, 300),
+            );
+          }
+
+          /* Try every field name LEAF may use for the current step */
+          var stepID =
+            rec.stepID !== undefined
+              ? rec.stepID
+              : rec.step_id !== undefined
+                ? rec.step_id
+                : rec.currentStep !== undefined
+                  ? rec.currentStep
+                  : rec.workflowStepID !== undefined
+                    ? rec.workflowStepID
+                    : null;
+
+          if (CONFIG.debug)
+            dbg("fetchWorkflowStep stepID: " + JSON.stringify(stepID));
+          return stepID;
+        })
+        .catch(function (err) {
+          if (CONFIG.debug) dbg("fetchWorkflowStep failed: " + err.message);
+          return null;
+        });
+    }
+
+    /* ============================================================
      applyPhaseLabels
      Overwrites CONFIG.phases[i].label with fetched option names.
      If fewer options come back than phases, remaining phases keep
@@ -3031,10 +3103,15 @@
       Promise.all([
         fetchProjectData(recordID),
         fetchPhaseOptions(CONFIG.indicators.currentPhase),
+        fetchWorkflowStep(recordID),
       ])
         .then(function (results) {
           var result = results[0];
           var options = results[1];
+          var stepID = results[2];
+
+          if (CONFIG.debug)
+            dbg("stepID from fetchWorkflowStep: " + JSON.stringify(stepID));
 
           /* Apply dynamic phase labels before any rendering happens */
           applyPhaseLabels(options);
@@ -3064,7 +3141,7 @@
             orgTasks5: getField(s1, inds.orgTasks5),
           };
 
-          var activeStep = resolveActiveStep(result.stepID);
+          var activeStep = resolveActiveStep(stepID);
 
           /* ---- Header: name + type + blurb ---- */
           byId("co-project-name").textContent =
