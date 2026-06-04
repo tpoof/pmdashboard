@@ -2800,11 +2800,16 @@
 
       function processResponse(data) {
         if (CONFIG.debug) {
+          dbg("processResponse data type: " + typeof data);
           dbg(
             "fetchProjectData response keys: " +
               Object.keys(data || {}).join(", "),
           );
-          dbg("Full response: " + JSON.stringify(data).slice(0, 600));
+          var serialized =
+            data !== undefined
+              ? JSON.stringify(data).slice(0, 600)
+              : "(undefined)";
+          dbg("Full response: " + serialized);
         }
         var rec = data && data[String(recordID)];
         if (!rec) {
@@ -2830,21 +2835,34 @@
       if (typeof LeafFormQuery !== "undefined") {
         if (CONFIG.debug) dbg("LeafFormQuery available — attempting query");
         try {
-          var query = new LeafFormQuery();
-          query.addTerm("recordIDs", "=", String(recordID));
-          query.join("status");
-          query.getData(getDataIDs);
-          query.setRootURL(getAPIBase());
-          query.onProgress(function (n) {
-            if (loadingMsg)
-              loadingMsg.textContent =
-                "Loading\u2026 (" + n + " records processed)";
+          return new Promise(function (resolve, reject) {
+            var query = new LeafFormQuery();
+            query.addTerm("recordIDs", "=", String(recordID));
+            query.join("status");
+            query.getData(getDataIDs);
+            query.setRootURL(getAPIBase());
+            query.onProgress(function (n) {
+              if (loadingMsg)
+                loadingMsg.textContent =
+                  "Loading\u2026 (" + n + " records processed)";
+            });
+            /*
+             * LeafFormQuery delivers full results via onSuccess, not via the
+             * execute() Promise resolved value (which is undefined).
+             */
+            query.onSuccess(function (data) {
+              try {
+                resolve(processResponse(data));
+              } catch (e) {
+                reject(e);
+              }
+            });
+            query.execute();
           });
-          return query.execute().then(processResponse);
         } catch (e) {
           if (CONFIG.debug)
             dbg(
-              "LeafFormQuery threw synchronously: " +
+              "LeafFormQuery threw: " +
                 e.message +
                 " — falling back to direct fetch",
             );
