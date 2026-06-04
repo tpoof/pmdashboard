@@ -2765,10 +2765,10 @@
      resolveActiveStep instead of reading indicator 61's value.
      ============================================================ */
     function fetchProjectData(recordID) {
+      if (CONFIG.debug) dbg("fetchProjectData called — recordID: " + recordID);
+
       var inds = CONFIG.indicators;
 
-      /* Indicator IDs to fetch — currentPhase (61) intentionally excluded;
-         it is only used for phase label names via fetchPhaseOptions. */
       var getDataIDs = [
         inds.projectName,
         inds.projectType,
@@ -2793,6 +2793,8 @@
         inds.orgTasks5,
       ];
 
+      if (CONFIG.debug) dbg("getDataIDs built: " + JSON.stringify(getDataIDs));
+
       var loadingMsg =
         byId("co-loading") && byId("co-loading").querySelector("p");
 
@@ -2810,37 +2812,48 @@
           throw new Error("No record found for ID " + recordID);
         }
         var s1 = rec.s1 || rec;
-        /* stepID from join('status') lives at the record root, not inside s1 */
         var stepID =
-          rec.stepID !== undefined ? rec.stepID : rec.step_id || null;
+          rec.stepID !== undefined
+            ? rec.stepID
+            : rec.step_id !== undefined
+              ? rec.step_id
+              : null;
         if (CONFIG.debug) {
+          dbg("record root keys: " + Object.keys(rec).join(", "));
           dbg("s1 keys: " + Object.keys(s1).join(", "));
           dbg("stepID from status join: " + JSON.stringify(stepID));
-          dbg("record root keys: " + Object.keys(rec).join(", "));
         }
         return { s1: s1, stepID: stepID };
       }
 
-      /* ---- LeafFormQuery path ---- */
+      /* ---- LeafFormQuery path (with fallthrough on any error) ---- */
       if (typeof LeafFormQuery !== "undefined") {
-        if (CONFIG.debug) dbg("Using LeafFormQuery");
-        var query = new LeafFormQuery();
-        query.addTerm("recordIDs", "=", String(recordID));
-        query.join("status");
-        query.getData(getDataIDs);
-        query.setRootURL(getAPIBase());
-        query.onProgress(function (n) {
-          if (loadingMsg)
-            loadingMsg.textContent =
-              "Loading\u2026 (" + n + " records processed)";
-        });
-        return query.execute().then(processResponse);
+        if (CONFIG.debug) dbg("LeafFormQuery available — attempting query");
+        try {
+          var query = new LeafFormQuery();
+          query.addTerm("recordIDs", "=", String(recordID));
+          query.join("status");
+          query.getData(getDataIDs);
+          query.setRootURL(getAPIBase());
+          query.onProgress(function (n) {
+            if (loadingMsg)
+              loadingMsg.textContent =
+                "Loading\u2026 (" + n + " records processed)";
+          });
+          return query.execute().then(processResponse);
+        } catch (e) {
+          if (CONFIG.debug)
+            dbg(
+              "LeafFormQuery threw synchronously: " +
+                e.message +
+                " — falling back to direct fetch",
+            );
+        }
+      } else {
+        if (CONFIG.debug) dbg("LeafFormQuery not defined — using direct fetch");
       }
 
       /* ---- Direct fetch fallback ---- */
-      if (CONFIG.debug)
-        dbg("LeafFormQuery not available — using direct fetch fallback");
-
       var q = JSON.stringify({
         terms: [
           {
