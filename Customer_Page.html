@@ -2823,26 +2823,18 @@
 
       /* ---- LeafFormQuery path ---- */
       if (typeof LeafFormQuery !== "undefined") {
-        return new Promise(function (resolve, reject) {
-          var query = new LeafFormQuery();
-          query.addTerm("recordIDs", "=", String(recordID));
-          query.join("status");
-          query.getData(getDataIDs);
-          query.setRootURL(getAPIBase());
-          query.onProgress(function (n) {
-            if (loadingMsg)
-              loadingMsg.textContent =
-                "Loading\u2026 (" + n + " records processed)";
-          });
-          query.onSuccess(function (data) {
-            try {
-              resolve(processResponse(data));
-            } catch (e) {
-              reject(e);
-            }
-          });
-          query.execute().catch(reject);
+        if (CONFIG.debug) dbg("Using LeafFormQuery");
+        var query = new LeafFormQuery();
+        query.addTerm("recordIDs", "=", String(recordID));
+        query.join("status");
+        query.getData(getDataIDs);
+        query.setRootURL(getAPIBase());
+        query.onProgress(function (n) {
+          if (loadingMsg)
+            loadingMsg.textContent =
+              "Loading\u2026 (" + n + " records processed)";
         });
+        return query.execute().then(processResponse);
       }
 
       /* ---- Direct fetch fallback ---- */
