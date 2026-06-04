@@ -2807,7 +2807,7 @@
           );
           var serialized =
             data !== undefined
-              ? JSON.stringify(data).slice(0, 600)
+              ? JSON.stringify(data).slice(0, 800)
               : "(undefined)";
           dbg("Full response: " + serialized);
         }
@@ -2817,16 +2817,32 @@
           throw new Error("No record found for ID " + recordID);
         }
         var s1 = rec.s1 || rec;
+
+        /* Try every field name the status join may use across LEAF versions */
         var stepID =
           rec.stepID !== undefined
             ? rec.stepID
             : rec.step_id !== undefined
               ? rec.step_id
-              : null;
+              : rec.currentStep !== undefined
+                ? rec.currentStep
+                : rec.workflowStepID !== undefined
+                  ? rec.workflowStepID
+                  : null;
+
         if (CONFIG.debug) {
           dbg("record root keys: " + Object.keys(rec).join(", "));
           dbg("s1 keys: " + Object.keys(s1).join(", "));
-          dbg("stepID from status join: " + JSON.stringify(stepID));
+          dbg("stepID resolved to: " + JSON.stringify(stepID));
+          dbg(
+            "full rec root (no s1): " +
+              JSON.stringify(
+                Object.keys(rec).reduce(function (o, k) {
+                  if (k !== "s1") o[k] = rec[k];
+                  return o;
+                }, {}),
+              ),
+          );
         }
         return { s1: s1, stepID: stepID };
       }
