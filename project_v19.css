@@ -3406,3 +3406,141 @@ canvas.pm-chartClickable {
 /* ═══════════════════════════════════════════════════════════════════════════
    END OVERDUE ALERT BANNER
    ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROJECTS TABLE — FIT-TO-CONTENT COLUMNS + DESCRIPTION DRAWER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Fit-to-content: width:1% + nowrap tells the browser
+   "make this column as narrow as its content allows" */
+#pmProjectsTableWrap .pm-table td.pm-colFitContent,
+#pmProjectsTableWrap .pm-table th.pm-colFitContent {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* Project Key — already has pm-colKey but enforce nowrap + fit */
+#pmProjectsTableWrap .pm-table td.pm-colKey,
+#pmProjectsTableWrap .pm-table th.pm-colKey {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* Owner — narrow */
+#pmProjectsTableWrap .pm-table td.pm-colOwner,
+#pmProjectsTableWrap .pm-table th.pm-colOwner {
+  width: 1%;
+  white-space: nowrap;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Description — fixed narrow width, single line truncated */
+#pmProjectsTableWrap .pm-table td.pm-colDesc,
+#pmProjectsTableWrap .pm-table th.pm-colDesc {
+  width: 200px;
+  min-width: 160px;
+  max-width: 200px;
+}
+
+/* Description cell inner layout: truncated text + chevron */
+.pm-descCellInner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pm-descTruncated {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.pm-descEmpty {
+  color: var(--clr-text-muted, #9ca3af);
+}
+
+/* Chevron toggle button */
+.pm-projDescToggle {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 1px;
+  color: var(--clr-text-muted, #6b7280);
+  display: inline-flex;
+  align-items: center;
+  border-radius: 3px;
+  line-height: 1;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+
+.pm-projDescToggle:hover {
+  color: var(--clr-primary, #2563eb);
+  background: var(--clr-row-hover, #f0f4ff);
+}
+
+.pm-projDescToggle:focus-visible {
+  outline: 2px solid var(--clr-primary, #2563eb);
+  outline-offset: 1px;
+}
+
+.pm-projDescChevron {
+  font-size: 16px;
+  transition: transform 0.2s ease;
+}
+
+.pm-projDescChevron--open {
+  transform: rotate(180deg);
+}
+
+/* Sub-row: the drawer row */
+.pm-projDescSubRow td.pm-projDescSubRowCell {
+  padding: 0;
+  border-top: none;
+  background: var(--clr-surface-alt, #f8fafc);
+}
+
+.pm-projDescFull {
+  padding: 10px 16px 12px 24px;
+  border-left: 3px solid var(--clr-primary, #2563eb);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pm-projDescLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--clr-text-muted, #6b7280);
+}
+
+.pm-projDescText {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--clr-text, #1f2937);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Project Name — bounded wrapping */
+#pmProjectsTableWrap .pm-table td.pm-colName {
+  max-width: 160px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   END PROJECTS TABLE COLUMN SIZING
+   ═══════════════════════════════════════════════════════════════════════════ */

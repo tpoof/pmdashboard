@@ -1,7 +1,5 @@
 (function () {
-  console.log(
-    "[PM Dashboard v19] Script loaded and executing — if you see this, the JS file is active",
-  );
+  console.log("[PM Dashboard v19] Script loaded and executing — if you see this, the JS file is active");
   var env = document.getElementById("pmEnv");
   var CSRFToken = "";
   var CURRENT_USER_ID = "";
@@ -1038,16 +1036,9 @@
     var now = new Date();
     var rows = tasks
       .map(function (t) {
-        var taskTitle = t.title ? "  \u2014  " + safeAttr(t.title.trim()) : "";
+        var taskTitle = t.title ? ("  \u2014  " + safeAttr(t.title.trim())) : "";
         var taskIdCell = t.href
-          ? '<td><a href="' +
-            safeAttr(t.href) +
-            '" class="pm-recordLink pm-taskIdBadge" data-title="Task ' +
-            safe(t.recordID) +
-            taskTitle +
-            '">' +
-            safe(t.recordID) +
-            "</a></td>"
+          ? "<td><a href=\"" + safeAttr(t.href) + "\" class=\"pm-recordLink pm-taskIdBadge\" data-title=\"Task " + safe(t.recordID) + taskTitle + "\">" + safe(t.recordID) + "</a></td>"
           : `<td><span class="pm-taskIdBadge">${safe(t.recordID)}</span></td>`;
         var overdueClass = isOverdueTask(t, now) ? " pm-overdueRed" : "";
         var mrid = safeAttr(String(t.recordID || ""));
@@ -1158,25 +1149,12 @@
     console.log("projectKey:", projectKey);
     console.log("tasks found:", tasks.length);
     console.log("contentHtml length:", contentHtml.length);
-    console.log(
-      "inlineContainer innerHTML first 300 chars:",
-      inlineContainer.innerHTML.substring(0, 300),
-    );
+    console.log("inlineContainer innerHTML first 300 chars:", inlineContainer.innerHTML.substring(0, 300));
     console.log("pkTable found:", !!pkTable);
-    console.log(
-      "addTaskBtn found:",
-      !!document.getElementById("pmPkAddTaskBtn"),
-    );
+    console.log("addTaskBtn found:", !!document.getElementById("pmPkAddTaskBtn"));
     // Sample first task link
-    var firstLink = inlineContainer.querySelector(
-      "a.pm-recordLink, a.pm-taskIdBadge",
-    );
-    console.log(
-      "First clickable link in modal:",
-      firstLink
-        ? firstLink.outerHTML.substring(0, 150)
-        : "NONE — links may be missing",
-    );
+    var firstLink = inlineContainer.querySelector("a.pm-recordLink, a.pm-taskIdBadge");
+    console.log("First clickable link in modal:", firstLink ? firstLink.outerHTML.substring(0, 150) : "NONE — links may be missing");
     console.groupEnd();
     if (pkTable) wireInlineTableSort(pkTable);
 
@@ -2051,7 +2029,7 @@
       assignedTo: extractFromS1(row, TASK_IND.assignedTo),
       assignedToUserName: (function () {
         var og = row.s1 && row.s1["id" + TASK_IND.assignedTo + "_orgchart"];
-        return og && og.userName ? String(og.userName).trim() : "";
+        return (og && og.userName) ? String(og.userName).trim() : "";
       })(),
       start: extractFromS1(row, TASK_IND.startDate),
       due: extractFromS1(row, TASK_IND.dueDate),
@@ -2102,7 +2080,7 @@
       customerOverviewUrl: extractFromS1(row, PROJECT_IND.customerOverviewUrl),
       ownerUserName: (function () {
         var og = row.s1 && row.s1["id" + PROJECT_IND.owner + "_orgchart"];
-        return og && og.userName ? String(og.userName).trim() : "";
+        return (og && og.userName) ? String(og.userName).trim() : "";
       })(),
       okrKey: extractFromS1(row, OKR_IND.okrKey),
       okrObjective: extractFromS1(row, OKR_IND.objective),
@@ -2421,17 +2399,31 @@
           ? "pm-completeMid"
           : "";
     var okrKeyText = String(p.okrAssociation || "").trim();
-    var krText = String(p.keyResultSelection || "").trim();
-    var okrLink = okrKeyText
-      ? okrRecordLink(okrKeyText, okrKeyText)
-      : "<span class='pm-okrFallback'>None</span>";
-    var krDisplay = krText
-      ? safe(krText)
-      : "<span class='pm-okrFallback'>No Key Result</span>";
-    var okrCombined = `${okrLink} <span class="pm-okrSep" aria-hidden="true">|</span> ${krDisplay}`;
-
+    var descText = String(p.description || "").trim();
     var rid = safeAttr(String(p.recordID || ""));
-    return `<tr>
+    var rowId = `pm-projRow-${safe(p.recordID || projectKeyText)}`;
+    var subRowId = `pm-projDescRow-${safe(p.recordID || projectKeyText)}`;
+    var hasDesc = descText.length > 0;
+
+    // Description cell: truncated text + chevron toggle
+    var descCell = hasDesc
+      ? `<td class="pm-colDesc pm-editableCell" data-ind="${PROJECT_IND.description}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">
+          <div class="pm-descCellInner">
+            <span class="pm-descTruncated">${safe(descText)}</span>
+            <button type="button"
+              class="pm-projDescToggle"
+              data-subrow="${subRowId}"
+              aria-expanded="false"
+              aria-controls="${subRowId}"
+              aria-label="Expand full description"
+              title="Expand description">
+              <span class="material-icons pm-projDescChevron" aria-hidden="true">expand_more</span>
+            </button>
+          </div>
+        </td>`
+      : `<td class="pm-colDesc pm-editableCell" data-ind="${PROJECT_IND.description}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit"><span class="pm-descEmpty">—</span></td>`;
+
+    return `<tr id="${rowId}" class="pm-projectRow">
       <td class="pm-colKey">${pkLink}</td>
       <td class="pm-colName pm-editableCell" data-ind="${PROJECT_IND.projectName}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">
         <div class="pm-projectNameCell">
@@ -2439,15 +2431,57 @@
           <span class="pm-wrapCol pm-colNameText">${safe(projectNameText)}</span>
         </div>
       </td>
-      <td class="pm-colDesc pm-editableCell" data-ind="${PROJECT_IND.description}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit"><div class="pm-wrapColLong">${safe(p.description)}</div></td>
+      ${descCell}
       <td class="pm-colOwner">${safe(p.owner)}</td>
-      <td>${okrKeyText ? okrRecordLink(okrKeyText, okrKeyText) : "<span class='pm-okrFallback'>None</span>"}</td>
-      <td>${safe(p.projectStartDate)}</td>
-      <td class="pm-editableCell" data-ind="${PROJECT_IND.projectEndDate}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">${safe(p.projectEndDate)}</td>
-      <td class="pm-editableCell" data-ind="${PROJECT_IND.projectStatus}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">${safe(p.projectStatus)}</td>
+      <td class="pm-colFitContent">${okrKeyText ? okrRecordLink(okrKeyText, okrKeyText) : "<span class='pm-okrFallback'>None</span>"}</td>
+      <td class="pm-colFitContent">${safe(p.projectStartDate)}</td>
+      <td class="pm-colFitContent pm-editableCell" data-ind="${PROJECT_IND.projectEndDate}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">${safe(p.projectEndDate)}</td>
+      <td class="pm-colFitContent pm-editableCell" data-ind="${PROJECT_IND.projectStatus}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">${safe(p.projectStatus)}</td>
       <td class="pm-colCompletion"><span class="pm-compPctWrap"><span class="pm-compPctBar" style="--pct-width:${compPct}%;width:${Math.min(compPct, 100)}%" aria-hidden="true"></span><span class="${compClass} pm-compPctLabel">${compPct}%</span></span></td>
-      <td>${p.ticketNumber ? supportTicketChip(p.ticketNumber) : ""}</td>
+      <td class="pm-colFitContent">${p.ticketNumber ? supportTicketChip(p.ticketNumber) : ""}</td>
     </tr>`;
+  }
+  }
+
+  function toggleProjectDescriptionRow(btn) {
+    var subRowId = btn.getAttribute("data-subrow");
+    if (!subRowId) return;
+
+    var isExpanded = btn.getAttribute("aria-expanded") === "true";
+    var parentRow = btn.closest("tr.pm-projectRow");
+    if (!parentRow) return;
+
+    if (isExpanded) {
+      // Collapse — remove sub-row
+      var existing = document.getElementById(subRowId);
+      if (existing) existing.remove();
+      btn.setAttribute("aria-expanded", "false");
+      btn.setAttribute("aria-label", "Expand full description");
+      btn.querySelector(".pm-projDescChevron").classList.remove("pm-projDescChevron--open");
+    } else {
+      // Expand — find full description from state
+      var recordId = btn.closest("td") && btn.closest("td").getAttribute("data-record-id");
+      var project = (state.projectsAll || []).find(function(p) {
+        return String(p.recordID || "") === String(recordId || "");
+      });
+      var descText = project ? String(project.description || "").trim() : "";
+
+      var colspan = parentRow.querySelectorAll("td").length;
+      var subRow = document.createElement("tr");
+      subRow.id = subRowId;
+      subRow.className = "pm-projDescSubRow";
+      subRow.innerHTML = `<td colspan="${colspan}" class="pm-projDescSubRowCell">
+        <div class="pm-projDescFull">
+          <span class="pm-projDescLabel">Description</span>
+          <p class="pm-projDescText">${safe(descText)}</p>
+        </div>
+      </td>`;
+
+      parentRow.insertAdjacentElement("afterend", subRow);
+      btn.setAttribute("aria-expanded", "true");
+      btn.setAttribute("aria-label", "Collapse description");
+      btn.querySelector(".pm-projDescChevron").classList.add("pm-projDescChevron--open");
+    }
   }
 
   function renderProjectsTable(projects) {
@@ -3167,14 +3201,8 @@
                             ? `<ul class='pm-krTaskList'>${projectTasks
                                 .map(function (t) {
                                   var title = String(t.title || "").trim();
-                                  var taskLabel =
-                                    title ||
-                                    (t.recordID
-                                      ? `Task ${t.recordID}`
-                                      : "Task");
-                                  var projectLabel = getProjectLabelFromKey(
-                                    t.projectKey,
-                                  );
+                                  var taskLabel = title || (t.recordID ? `Task ${t.recordID}` : "Task");
+                                  var projectLabel = getProjectLabelFromKey(t.projectKey);
                                   var statusLabel = renderOkrStatusTag(t);
                                   var taskHref = t.recordID
                                     ? `index.php?a=printview&recordID=${encodeURIComponent(t.recordID)}`
@@ -3204,9 +3232,7 @@
                     ? `<ul class='pm-krOtherList'>${kr.otherTasks
                         .map(function (t) {
                           var title = String(t.title || "").trim();
-                          var taskLabel =
-                            title ||
-                            (t.recordID ? `Task ${t.recordID}` : "Task");
+                          var taskLabel = title || (t.recordID ? `Task ${t.recordID}` : "Task");
                           var statusLabel = renderOkrStatusTag(t);
                           var taskHref = t.recordID
                             ? `index.php?a=printview&recordID=${encodeURIComponent(t.recordID)}`
@@ -3291,10 +3317,9 @@
         })
         .join("");
 
-      var showMoreBtn =
-        okrEntriesFiltered.length > visibleCount
-          ? `<div class='pm-okrShowMore'><button type='button' class='pm-okrShowMoreBtn' data-visible='${visibleCount}' data-step='${stepCount}' data-total='${okrEntriesFiltered.length}' aria-expanded='false'>Show more Objectives</button></div>`
-          : "";
+      var showMoreBtn = okrEntriesFiltered.length > visibleCount
+        ? `<div class='pm-okrShowMore'><button type='button' class='pm-okrShowMoreBtn' data-visible='${visibleCount}' data-step='${stepCount}' data-total='${okrEntriesFiltered.length}' aria-expanded='false'>Show more Objectives</button></div>`
+        : "";
 
       var quickOverallPercent = okrEntriesFiltered.length
         ? Math.round(quickPercentSum / okrEntriesFiltered.length)
@@ -4085,10 +4110,9 @@
           .join("");
 
         var countText = `Showing ${visible} of ${total}`;
-        var moreBtn =
-          total > visible
-            ? `<button type="button" class="pm-ghostBtn pm-kanban-moreBtn" data-status="${safeAttr(col)}" data-step="${KANBAN_RENDER_STEP}">Load more</button>`
-            : "";
+        var moreBtn = total > visible
+          ? `<button type="button" class="pm-ghostBtn pm-kanban-moreBtn" data-status="${safeAttr(col)}" data-step="${KANBAN_RENDER_STEP}">Load more</button>`
+          : "";
 
         return `<div class="pm-kanban-col">
           <div class="pm-kanban-col-header"><span>${safe(colObj.title || col)}</span><span class="pm-kanban-total">${total}</span></div>
@@ -4575,12 +4599,12 @@
   // Never calls new Date(string), which is ambiguous and browser-dependent.
   // Only accepts exactly "MM/DD/YYYY" — no fallbacks, no guessing.
   function strictMmDdYyyy(s) {
-    var v = String(s || "").trim();
+    var v = String(s || '').trim();
     if (!v) return null;
-    var parts = v.split("/");
+    var parts = v.split('/');
     if (parts.length !== 3) return null;
-    var mm = parseInt(parts[0], 10);
-    var dd = parseInt(parts[1], 10);
+    var mm   = parseInt(parts[0], 10);
+    var dd   = parseInt(parts[1], 10);
     var yyyy = parseInt(parts[2], 10);
     if (isNaN(mm) || isNaN(dd) || isNaN(yyyy)) return null;
     if (mm < 1 || mm > 12) return null;
@@ -4950,75 +4974,43 @@
   };
 
   var INLINE_INDICATOR_STATIC_MAP = {
-    9: { format: "text", options: [] },
+    9:  { format: "text",     options: [] },
     10: { format: "dropdown", options: STATUS_CONFIG.ALL_STATUSES },
-    12: { format: "date", options: [] },
-    13: { format: "date", options: [] },
+    12: { format: "date",     options: [] },
+    13: { format: "date",     options: [] },
     14: { format: "dropdown", options: ["High", "Medium", "Low"] },
     16: { format: "dropdown", options: [] },
-    47: { format: "date", options: [] },
-    3: { format: "text", options: [] },
-    4: { format: "textarea", options: [] },
-    6: { format: "dropdown", options: [] },
+    47: { format: "date",     options: [] },
+    3:  { format: "text",     options: [] },
+    4:  { format: "textarea", options: [] },
+    6:  { format: "dropdown", options: [] },
     32: { format: "dropdown", options: [] },
     38: { format: "dropdown", options: [] },
-    70: { format: "date", options: [] },
-    73: { format: "text", options: [] },
+    70: { format: "date",     options: [] },
+    73: { format: "text",     options: [] },
   };
 
   function getDynamicOptions(indicatorId) {
     var id = String(indicatorId);
     if (id === String(TASK_IND.category)) {
-      return Array.from(
-        new Set(
-          (state.tasksAll || [])
-            .map(function (t) {
-              return String(t.category || "").trim();
-            })
-            .filter(Boolean),
-        ),
-      ).sort(function (a, b) {
-        return a.localeCompare(b);
-      });
+      return Array.from(new Set((state.tasksAll || []).map(function(t) {
+        return String(t.category || "").trim();
+      }).filter(Boolean))).sort(function(a, b) { return a.localeCompare(b); });
     }
     if (id === String(PROJECT_IND.projectStatus)) {
-      return Array.from(
-        new Set(
-          (state.projectsAll || [])
-            .map(function (p) {
-              return String(p.projectStatus || "").trim();
-            })
-            .filter(Boolean),
-        ),
-      ).sort(function (a, b) {
-        return a.localeCompare(b);
-      });
+      return Array.from(new Set((state.projectsAll || []).map(function(p) {
+        return String(p.projectStatus || "").trim();
+      }).filter(Boolean))).sort(function(a, b) { return a.localeCompare(b); });
     }
     if (id === String(PROJECT_IND.projectType)) {
-      return Array.from(
-        new Set(
-          (state.projectsAll || [])
-            .map(function (p) {
-              return String(p.projectType || "").trim();
-            })
-            .filter(Boolean),
-        ),
-      ).sort(function (a, b) {
-        return a.localeCompare(b);
-      });
+      return Array.from(new Set((state.projectsAll || []).map(function(p) {
+        return String(p.projectType || "").trim();
+      }).filter(Boolean))).sort(function(a, b) { return a.localeCompare(b); });
     }
     if (id === String(PROJECT_IND.projectFiscalYear)) {
-      return Array.from(
-        new Set(
-          (state.projectsAll || [])
-            .map(function (p) {
-              return String(p.projectFiscalYear || "").trim();
-            })
-            .filter(Boolean),
-        ),
-      ).sort(function (a, b) {
-        return a.localeCompare(b, undefined, { numeric: true });
-      });
+      return Array.from(new Set((state.projectsAll || []).map(function(p) {
+        return String(p.projectFiscalYear || "").trim();
+      }).filter(Boolean))).sort(function(a, b) { return a.localeCompare(b, undefined, { numeric: true }); });
     }
     return null;
   }
@@ -5040,9 +5032,7 @@
   var _activeEditorInput = null;
   var _activeOriginalValue = "";
 
-  function isInlineEditorOpen() {
-    return !!_activeEditorCell;
-  }
+  function isInlineEditorOpen() { return !!_activeEditorCell; }
 
   function openInlineEditor(cell) {
     var indicatorId = cell.getAttribute("data-ind");
@@ -5051,11 +5041,9 @@
     if (!indicatorId || !recordId || !formType) return;
     var blocklist = INLINE_EDIT_BLOCKLIST[formType];
     if (blocklist && blocklist.has(String(indicatorId))) return;
-    if (_activeEditorCell && _activeEditorCell !== cell)
-      closeInlineEditor(true);
+    if (_activeEditorCell && _activeEditorCell !== cell) closeInlineEditor(true);
     _activeEditorCell = cell;
-    _activeOriginalValue =
-      cell.getAttribute("data-current-value") || cell.textContent.trim();
+    _activeOriginalValue = cell.getAttribute("data-current-value") || cell.textContent.trim();
     var editorEl = document.getElementById("pmInlineEditor");
     var skeleton = document.getElementById("pmInlineEditorSkeleton");
     var bodyEl = document.getElementById("pmInlineEditorBody");
@@ -5067,86 +5055,63 @@
     hideInlineEditorError();
     positionEditorOverCell(editorEl, cell);
     editorEl.hidden = false;
-    fetchIndicatorMeta(formType)
-      .then(function (meta) {
-        var indMeta = meta[String(indicatorId)];
-        if (!indMeta) {
-          closeInlineEditor(true);
-          if (skeleton) skeleton.hidden = true;
-          return;
-        }
-        var dynOpts = getDynamicOptions(indicatorId);
-        var options =
-          dynOpts && dynOpts.length > 0 ? dynOpts : indMeta.options || [];
-        var editorType = resolveEditorType(indMeta.format);
-        if (skeleton) skeleton.hidden = true;
-        if (!editorType) {
-          closeInlineEditor(true);
-          return;
-        }
-        var input;
-        if (editorType === "dropdown") {
-          input = document.createElement("select");
-          input.className = "pm-inlineEditor-select";
-          var blankOpt = document.createElement("option");
-          blankOpt.value = "";
-          blankOpt.textContent = "— select —";
-          input.appendChild(blankOpt);
-          options.forEach(function (opt) {
-            var o = document.createElement("option");
-            o.value = opt;
-            o.textContent = opt;
-            if (opt === _activeOriginalValue) o.selected = true;
-            input.appendChild(o);
-          });
-          if (hintEl) hintEl.textContent = "↵ save  ·  Esc cancel";
-        } else if (editorType === "date") {
-          input = document.createElement("input");
-          input.type = "date";
-          input.className = "pm-inlineEditor-input";
-          var iso = mmddyyyyToISO(_activeOriginalValue);
-          if (iso) input.value = iso;
-          if (hintEl) hintEl.textContent = "↵ save  ·  Esc cancel";
-        } else if (editorType === "textarea") {
-          input = document.createElement("textarea");
-          input.className = "pm-inlineEditor-textarea";
-          input.rows = 4;
-          input.value = _activeOriginalValue;
-          if (hintEl) hintEl.textContent = "Shift+↵ save  ·  Esc cancel";
-        } else {
-          input = document.createElement("input");
-          input.type = "text";
-          input.className = "pm-inlineEditor-input";
-          input.value = _activeOriginalValue;
-          if (hintEl) hintEl.textContent = "↵ save  ·  Esc cancel";
-        }
-        _activeEditorInput = input;
-        bodyEl.appendChild(input);
-        input.addEventListener("keydown", function (e) {
-          if (e.key === "Enter" && editorType !== "textarea") {
-            e.preventDefault();
-            commitInlineEdit();
-          } else if (e.key === "Escape") {
-            e.preventDefault();
-            closeInlineEditor(true);
-          }
+    fetchIndicatorMeta(formType).then(function(meta) {
+      var indMeta = meta[String(indicatorId)];
+      if (!indMeta) { closeInlineEditor(true); if (skeleton) skeleton.hidden = true; return; }
+      var dynOpts = getDynamicOptions(indicatorId);
+      var options = (dynOpts && dynOpts.length > 0) ? dynOpts : (indMeta.options || []);
+      var editorType = resolveEditorType(indMeta.format);
+      if (skeleton) skeleton.hidden = true;
+      if (!editorType) { closeInlineEditor(true); return; }
+      var input;
+      if (editorType === "dropdown") {
+        input = document.createElement("select");
+        input.className = "pm-inlineEditor-select";
+        var blankOpt = document.createElement("option");
+        blankOpt.value = ""; blankOpt.textContent = "— select —";
+        input.appendChild(blankOpt);
+        options.forEach(function(opt) {
+          var o = document.createElement("option");
+          o.value = opt; o.textContent = opt;
+          if (opt === _activeOriginalValue) o.selected = true;
+          input.appendChild(o);
         });
-        if (editorType === "textarea") {
-          input.addEventListener("keydown", function (e) {
-            if (e.key === "Enter" && e.shiftKey) {
-              e.preventDefault();
-              commitInlineEdit();
-            }
-          });
-        }
-        input.focus();
-        if (input.select) input.select();
-      })
-      .catch(function (err) {
-        console.warn("openInlineEditor:", err);
-        if (skeleton) skeleton.hidden = true;
-        closeInlineEditor(true);
+        if (hintEl) hintEl.textContent = "↵ save  ·  Esc cancel";
+      } else if (editorType === "date") {
+        input = document.createElement("input");
+        input.type = "date"; input.className = "pm-inlineEditor-input";
+        var iso = mmddyyyyToISO(_activeOriginalValue);
+        if (iso) input.value = iso;
+        if (hintEl) hintEl.textContent = "↵ save  ·  Esc cancel";
+      } else if (editorType === "textarea") {
+        input = document.createElement("textarea");
+        input.className = "pm-inlineEditor-textarea"; input.rows = 4;
+        input.value = _activeOriginalValue;
+        if (hintEl) hintEl.textContent = "Shift+↵ save  ·  Esc cancel";
+      } else {
+        input = document.createElement("input");
+        input.type = "text"; input.className = "pm-inlineEditor-input";
+        input.value = _activeOriginalValue;
+        if (hintEl) hintEl.textContent = "↵ save  ·  Esc cancel";
+      }
+      _activeEditorInput = input;
+      bodyEl.appendChild(input);
+      input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter" && editorType !== "textarea") { e.preventDefault(); commitInlineEdit(); }
+        else if (e.key === "Escape") { e.preventDefault(); closeInlineEditor(true); }
       });
+      if (editorType === "textarea") {
+        input.addEventListener("keydown", function(e) {
+          if (e.key === "Enter" && e.shiftKey) { e.preventDefault(); commitInlineEdit(); }
+        });
+      }
+      input.focus();
+      if (input.select) input.select();
+    }).catch(function(err) {
+      console.warn("openInlineEditor:", err);
+      if (skeleton) skeleton.hidden = true;
+      closeInlineEditor(true);
+    });
   }
 
   function commitInlineEdit() {
@@ -5158,70 +5123,47 @@
     var formType = cell.getAttribute("data-form-type");
     var origValue = _activeOriginalValue;
     var rawValue = input.value;
-    var writeValue =
-      input.type === "date" && rawValue ? isoToMMDDYYYY(rawValue) : rawValue;
-    var isStatusEdit =
-      formType === "task" && parseInt(indicatorId, 10) === TASK_IND.status;
-    var completionDateValue = isStatusEdit
-      ? isCompletedStatus(writeValue)
-        ? todayMMDDYYYY()
-        : ""
-      : null;
+    var writeValue = (input.type === "date" && rawValue) ? isoToMMDDYYYY(rawValue) : rawValue;
+    var isStatusEdit = formType === "task" && parseInt(indicatorId, 10) === TASK_IND.status;
+    var completionDateValue = isStatusEdit ? (isCompletedStatus(writeValue) ? todayMMDDYYYY() : "") : null;
     updateCellDisplay(cell, indicatorId, formType, writeValue);
     closeInlineEditor(false);
-    ensureCSRFToken(recordId)
-      .then(function (token) {
-        var tokenField = state.csrfField || getCSRFFieldName();
-        var bodyObj = { recordID: recordId, series: 1 };
-        bodyObj[indicatorId] = writeValue;
-        if (completionDateValue !== null)
-          bodyObj[TASK_IND.actualCompletionDate] = completionDateValue;
-        bodyObj[tokenField] = token;
-        return fetch(FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordId), {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "x-requested-with": "XMLHttpRequest",
-            "x-csrf-token": token,
-            "x-xsrf-token": token,
-          },
-          body: encodeFormBody(bodyObj),
-        });
-      })
-      .then(function (r) {
-        if (!r.ok) throw new Error("Save failed (HTTP " + r.status + ")");
-        updateStateAfterEdit(recordId, indicatorId, formType, writeValue);
-      })
-      .catch(function (err) {
-        console.warn("commitInlineEdit: write failed", err);
-        updateCellDisplay(cell, indicatorId, formType, origValue);
-        showInlineEditorError(cell, "Could not save. Please try again.");
+    ensureCSRFToken(recordId).then(function(token) {
+      var tokenField = state.csrfField || getCSRFFieldName();
+      var bodyObj = { recordID: recordId, series: 1 };
+      bodyObj[indicatorId] = writeValue;
+      if (completionDateValue !== null) bodyObj[TASK_IND.actualCompletionDate] = completionDateValue;
+      bodyObj[tokenField] = token;
+      return fetch(FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordId), {
+        method: "POST", credentials: "include",
+        headers: {
+          "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "x-requested-with": "XMLHttpRequest",
+          "x-csrf-token": token, "x-xsrf-token": token,
+        },
+        body: encodeFormBody(bodyObj),
       });
+    }).then(function(r) {
+      if (!r.ok) throw new Error("Save failed (HTTP " + r.status + ")");
+      updateStateAfterEdit(recordId, indicatorId, formType, writeValue);
+    }).catch(function(err) {
+      console.warn("commitInlineEdit: write failed", err);
+      updateCellDisplay(cell, indicatorId, formType, origValue);
+      showInlineEditorError(cell, "Could not save. Please try again.");
+    });
   }
 
   function updateCellDisplay(cell, indicatorId, formType, value) {
     cell.setAttribute("data-current-value", value || "");
     var indNum = parseInt(indicatorId, 10);
     if (formType === "task" && indNum === TASK_IND.status) {
-      var rec =
-        state.tasksById &&
-        state.tasksById.get(String(cell.getAttribute("data-record-id")));
-      if (rec)
-        cell.innerHTML = renderStatusCell(
-          Object.assign({}, rec, { status: value }),
-        );
+      var rec = state.tasksById && state.tasksById.get(String(cell.getAttribute("data-record-id")));
+      if (rec) cell.innerHTML = renderStatusCell(Object.assign({}, rec, { status: value }));
       else cell.textContent = value;
       return;
     }
-    if (formType === "task" && indNum === TASK_IND.priority) {
-      cell.innerHTML = getPriorityPill(value);
-      return;
-    }
-    if (formType === "project" && indNum === PROJECT_IND.projectStatus) {
-      cell.textContent = value;
-      return;
-    }
+    if (formType === "task" && indNum === TASK_IND.priority) { cell.innerHTML = getPriorityPill(value); return; }
+    if (formType === "project" && indNum === PROJECT_IND.projectStatus) { cell.textContent = value; return; }
     cell.textContent = value;
   }
 
@@ -5232,27 +5174,22 @@
         if (String(state.tasksAll[i].recordID) !== String(recordId)) continue;
         var t = state.tasksAll[i];
         if (indNum === TASK_IND.title) t.title = value;
-        else if (indNum === TASK_IND.status) {
-          t.status = value;
-          t.actualCompletion = isCompletedStatus(value) ? todayMMDDYYYY() : "";
-        } else if (indNum === TASK_IND.priority) t.priority = value;
+        else if (indNum === TASK_IND.status) { t.status = value; t.actualCompletion = isCompletedStatus(value) ? todayMMDDYYYY() : ""; }
+        else if (indNum === TASK_IND.priority) t.priority = value;
         else if (indNum === TASK_IND.category) t.category = value;
         else if (indNum === TASK_IND.startDate) t.start = value;
         else if (indNum === TASK_IND.dueDate) t.due = value;
-        else if (indNum === TASK_IND.actualCompletionDate)
-          t.actualCompletion = value;
+        else if (indNum === TASK_IND.actualCompletionDate) t.actualCompletion = value;
         if (state.tasksById) state.tasksById.set(String(recordId), t);
         break;
       }
     } else if (formType === "project") {
       for (var j = 0; j < (state.projectsAll || []).length; j++) {
-        if (String(state.projectsAll[j].recordID) !== String(recordId))
-          continue;
+        if (String(state.projectsAll[j].recordID) !== String(recordId)) continue;
         var p = state.projectsAll[j];
         if (indNum === PROJECT_IND.projectName) p.projectName = value;
         else if (indNum === PROJECT_IND.description) p.description = value;
-        else if (indNum === PROJECT_IND.projectFiscalYear)
-          p.projectFiscalYear = value;
+        else if (indNum === PROJECT_IND.projectFiscalYear) p.projectFiscalYear = value;
         else if (indNum === PROJECT_IND.projectStatus) p.projectStatus = value;
         break;
       }
@@ -5266,9 +5203,7 @@
     if (editorEl) editorEl.hidden = true;
     if (bodyEl) bodyEl.innerHTML = "";
     if (skeleton) skeleton.hidden = false;
-    _activeEditorCell = null;
-    _activeEditorInput = null;
-    _activeOriginalValue = "";
+    _activeEditorCell = null; _activeEditorInput = null; _activeOriginalValue = "";
     void discard;
   }
 
@@ -5280,17 +5215,12 @@
     positionEditorOverCell(errEl, cell);
     errEl.hidden = false;
     clearTimeout(errEl._hideTimer);
-    errEl._hideTimer = setTimeout(function () {
-      errEl.hidden = true;
-    }, 4000);
+    errEl._hideTimer = setTimeout(function() { errEl.hidden = true; }, 4000);
   }
 
   function hideInlineEditorError() {
     var errEl = document.getElementById("pmInlineEditorError");
-    if (errEl) {
-      clearTimeout(errEl._hideTimer);
-      errEl.hidden = true;
-    }
+    if (errEl) { clearTimeout(errEl._hideTimer); errEl.hidden = true; }
   }
 
   function positionEditorOverCell(overlayEl, cell) {
@@ -5298,8 +5228,8 @@
     var scrollTop = window.scrollY || document.documentElement.scrollTop;
     var scrollLeft = window.scrollX || document.documentElement.scrollLeft;
     overlayEl.style.position = "absolute";
-    overlayEl.style.top = rect.top + scrollTop - 2 + "px";
-    overlayEl.style.left = rect.left + scrollLeft - 2 + "px";
+    overlayEl.style.top = (rect.top + scrollTop - 2) + "px";
+    overlayEl.style.left = (rect.left + scrollLeft - 2) + "px";
     overlayEl.style.minWidth = Math.max(rect.width, 160) + "px";
   }
 
@@ -5318,7 +5248,7 @@
   }
 
   function wireInlineCellEditor() {
-    document.addEventListener("click", function (e) {
+    document.addEventListener("click", function(e) {
       var editorEl = document.getElementById("pmInlineEditor");
       var errEl = document.getElementById("pmInlineEditorError");
       if (editorEl && !editorEl.hidden && editorEl.contains(e.target)) return;
@@ -5326,23 +5256,14 @@
       var el = e.target;
       var cell = null;
       while (el && el !== document.body) {
-        if (
-          el.tagName === "TD" &&
-          el.hasAttribute("data-ind") &&
-          el.hasAttribute("data-record-id")
-        ) {
-          cell = el;
-          break;
+        if (el.tagName === "TD" && el.hasAttribute("data-ind") && el.hasAttribute("data-record-id")) {
+          cell = el; break;
         }
         el = el.parentElement;
       }
-      if (cell) {
-        e.stopPropagation();
-        openInlineEditor(cell);
-        return;
-      }
+      if (cell) { e.stopPropagation(); openInlineEditor(cell); return; }
     });
-    document.addEventListener("keydown", function (e) {
+    document.addEventListener("keydown", function(e) {
       if (e.key === "Escape" && isInlineEditorOpen()) closeInlineEditor(true);
     });
   }
@@ -5354,6 +5275,15 @@
     var projectsContainer = document.getElementById("pmProjectsTable");
     if (projectsContainer) {
       projectsContainer.addEventListener("click", function (e) {
+        // Description row toggle
+        var toggleBtn = e.target.closest(".pm-projDescToggle");
+        if (toggleBtn) {
+          e.stopPropagation();
+          toggleProjectDescriptionRow(toggleBtn);
+          return;
+        }
+
+        // Sort
         var th = e.target.closest(".pm-sortable");
         if (!th) return;
         var key = th.getAttribute("data-sort");
@@ -6295,10 +6225,8 @@
 
       // Must fall within the window: cutoff <= date <= today
       // Excludes future dates and dates older than the selected range
-      var startedInRange =
-        startDate && startDate >= cutoff && startDate <= today;
-      var completedInRange =
-        completed && completed >= cutoff && completed <= today;
+      var startedInRange   = startDate && startDate >= cutoff && startDate <= today;
+      var completedInRange = completed && completed >= cutoff && completed <= today;
 
       if (!startedInRange && !completedInRange) return false;
     }
@@ -6959,27 +6887,20 @@
     if (CURRENT_USER_ID) {
       var uid = CURRENT_USER_ID.trim().toLowerCase();
       if (uid) {
-        var taskUserName = String(task.assignedToUserName || "")
-          .trim()
-          .toLowerCase();
+        var taskUserName = String(task.assignedToUserName || "").trim().toLowerCase();
         if (taskUserName && taskUserName === uid) return true;
-        var assignedLower = String(task.assignedTo || "")
-          .trim()
-          .toLowerCase();
+        var assignedLower = String(task.assignedTo || "").trim().toLowerCase();
         if (assignedLower && assignedLower === uid) return true;
       }
     }
     if (CURRENT_USER_NAME) {
       var displayName = CURRENT_USER_NAME.trim().toLowerCase();
       if (displayName) {
-        var assignedDisplay = String(task.assignedTo || "")
-          .trim()
-          .toLowerCase();
+        var assignedDisplay = String(task.assignedTo || "").trim().toLowerCase();
         if (assignedDisplay && assignedDisplay === displayName) return true;
         if (displayName.indexOf(",") !== -1) {
           var parts = displayName.split(",");
-          var reversed =
-            (parts[1] || "").trim() + " " + (parts[0] || "").trim();
+          var reversed = (parts[1] || "").trim() + " " + (parts[0] || "").trim();
           if (assignedDisplay === reversed) return true;
         }
       }
@@ -6992,27 +6913,20 @@
     if (CURRENT_USER_ID) {
       var uid = CURRENT_USER_ID.trim().toLowerCase();
       if (uid) {
-        var projUserName = String(project.ownerUserName || "")
-          .trim()
-          .toLowerCase();
+        var projUserName = String(project.ownerUserName || "").trim().toLowerCase();
         if (projUserName && projUserName === uid) return true;
-        var ownerLower = String(project.owner || "")
-          .trim()
-          .toLowerCase();
+        var ownerLower = String(project.owner || "").trim().toLowerCase();
         if (ownerLower && ownerLower === uid) return true;
       }
     }
     if (CURRENT_USER_NAME) {
       var displayName = CURRENT_USER_NAME.trim().toLowerCase();
       if (displayName) {
-        var ownerDisplay = String(project.owner || "")
-          .trim()
-          .toLowerCase();
+        var ownerDisplay = String(project.owner || "").trim().toLowerCase();
         if (ownerDisplay && ownerDisplay === displayName) return true;
         if (displayName.indexOf(",") !== -1) {
           var parts = displayName.split(",");
-          var reversed =
-            (parts[1] || "").trim() + " " + (parts[0] || "").trim();
+          var reversed = (parts[1] || "").trim() + " " + (parts[0] || "").trim();
           if (ownerDisplay === reversed) return true;
         }
       }
@@ -7023,105 +6937,71 @@
   function renderOverdueAlert() {
     var alertEl = document.getElementById("pmOverdueAlert");
     if (!alertEl) return;
-    if (sessionStorage.getItem(OVERDUE_ALERT_DISMISSED_KEY)) {
-      alertEl.hidden = true;
-      return;
-    }
-    if (!CURRENT_USER_ID && !CURRENT_USER_NAME) {
-      alertEl.hidden = true;
-      return;
-    }
-    if (
-      (!state.tasksAll || !state.tasksAll.length) &&
-      (!state.projectsAll || !state.projectsAll.length)
-    ) {
-      alertEl.hidden = true;
-      return;
+    if (sessionStorage.getItem(OVERDUE_ALERT_DISMISSED_KEY)) { alertEl.hidden = true; return; }
+    if (!CURRENT_USER_ID && !CURRENT_USER_NAME) { alertEl.hidden = true; return; }
+    if ((!state.tasksAll || !state.tasksAll.length) && (!state.projectsAll || !state.projectsAll.length)) {
+      alertEl.hidden = true; return;
     }
     var now = new Date();
-    var overdueTasks = (state.tasksAll || [])
-      .filter(function (t) {
-        if (!currentUserMatchesTask(t)) return false;
-        if (isCompletedStatus(t.status)) return false;
-        if (isArchivedStatus(t.status)) return false;
-        return isOverdueTask(t, now);
-      })
-      .slice()
-      .sort(function (a, b) {
-        var da = mmddyyyyToDate(a.due) || new Date(8640000000000000);
-        var db = mmddyyyyToDate(b.due) || new Date(8640000000000000);
-        return da - db;
-      });
-    var overdueProjects = (state.projectsAll || [])
-      .filter(function (p) {
-        if (!currentUserMatchesProject(p)) return false;
-        if (isCompletedStatus(p.projectStatus)) return false;
-        if (isArchivedStatus(p.projectStatus)) return false;
-        var endDate = mmddyyyyToDate(p.projectEndDate);
-        return !!(endDate && endDate.getTime() < now.getTime());
-      })
-      .slice()
-      .sort(function (a, b) {
-        var da = mmddyyyyToDate(a.projectEndDate) || new Date(8640000000000000);
-        var db = mmddyyyyToDate(b.projectEndDate) || new Date(8640000000000000);
-        return da - db;
-      });
+    var overdueTasks = (state.tasksAll || []).filter(function(t) {
+      if (!currentUserMatchesTask(t)) return false;
+      if (isCompletedStatus(t.status)) return false;
+      if (isArchivedStatus(t.status)) return false;
+      return isOverdueTask(t, now);
+    }).slice().sort(function(a, b) {
+      var da = mmddyyyyToDate(a.due) || new Date(8640000000000000);
+      var db = mmddyyyyToDate(b.due) || new Date(8640000000000000);
+      return da - db;
+    });
+    var overdueProjects = (state.projectsAll || []).filter(function(p) {
+      if (!currentUserMatchesProject(p)) return false;
+      if (isCompletedStatus(p.projectStatus)) return false;
+      if (isArchivedStatus(p.projectStatus)) return false;
+      var endDate = mmddyyyyToDate(p.projectEndDate);
+      return !!(endDate && endDate.getTime() < now.getTime());
+    }).slice().sort(function(a, b) {
+      var da = mmddyyyyToDate(a.projectEndDate) || new Date(8640000000000000);
+      var db = mmddyyyyToDate(b.projectEndDate) || new Date(8640000000000000);
+      return da - db;
+    });
     var totalTasks = overdueTasks.length;
     var totalProjects = overdueProjects.length;
     var totalAll = totalTasks + totalProjects;
-    if (!totalAll) {
-      alertEl.hidden = true;
-      return;
-    }
+    if (!totalAll) { alertEl.hidden = true; return; }
     var headingEl = document.getElementById("pmOverdueAlertHeading");
     if (headingEl) {
       var parts = [];
-      if (totalTasks > 0)
-        parts.push(`${totalTasks} overdue task${totalTasks === 1 ? "" : "s"}`);
-      if (totalProjects > 0)
-        parts.push(
-          `${totalProjects} overdue project${totalProjects === 1 ? "" : "s"}`,
-        );
+      if (totalTasks > 0) parts.push(`${totalTasks} overdue task${totalTasks === 1 ? "" : "s"}`);
+      if (totalProjects > 0) parts.push(`${totalProjects} overdue project${totalProjects === 1 ? "" : "s"}`);
       headingEl.textContent = `You have ${parts.join(" and ")}.`;
     }
     var allItems = [];
-    overdueTasks.forEach(function (t) {
-      allItems.push({ type: "task", record: t });
-    });
-    overdueProjects.forEach(function (p) {
-      allItems.push({ type: "project", record: p });
-    });
+    overdueTasks.forEach(function(t) { allItems.push({ type: "task", record: t }); });
+    overdueProjects.forEach(function(p) { allItems.push({ type: "project", record: p }); });
     var CAP = 5;
     var shown = allItems.slice(0, CAP);
     var remaining = allItems.length - shown.length;
     var listEl = document.getElementById("pmOverdueAlertList");
     if (listEl) {
-      listEl.innerHTML = shown
-        .map(function (item) {
-          if (item.type === "task") {
-            var t = item.record;
-            var title = String(t.title || "(No title)");
-            var badge = `<span class="pm-overdueAlert-badge pm-overdueAlert-badge--task">Task</span>`;
-            if (t.href)
-              return `<li>${badge}<a href="${safe(t.href)}" class="pm-recordLink pm-overdueAlert-link" data-title="${safeAttr(`Task ${t.recordID} — ${title}`)}" target="_blank" rel="noopener noreferrer">${safe(title)}</a></li>`;
-            return `<li>${badge}${safe(title)}</li>`;
-          } else {
-            var p = item.record;
-            var name = String(p.projectName || p.projectKey || "(No name)");
-            var badge = `<span class="pm-overdueAlert-badge pm-overdueAlert-badge--project">Project</span>`;
-            if (p.href)
-              return `<li>${badge}<a href="${safe(p.href)}" class="pm-recordLink pm-overdueAlert-link" data-title="${safeAttr(`Project ${p.projectKey || p.recordID} — ${name}`)}" target="_blank" rel="noopener noreferrer">${safe(name)}</a></li>`;
-            return `<li>${badge}${safe(name)}</li>`;
-          }
-        })
-        .join("");
+      listEl.innerHTML = shown.map(function(item) {
+        if (item.type === "task") {
+          var t = item.record;
+          var title = String(t.title || "(No title)");
+          var badge = `<span class="pm-overdueAlert-badge pm-overdueAlert-badge--task">Task</span>`;
+          if (t.href) return `<li>${badge}<a href="${safe(t.href)}" class="pm-recordLink pm-overdueAlert-link" data-title="${safeAttr(`Task ${t.recordID} — ${title}`)}" target="_blank" rel="noopener noreferrer">${safe(title)}</a></li>`;
+          return `<li>${badge}${safe(title)}</li>`;
+        } else {
+          var p = item.record;
+          var name = String(p.projectName || p.projectKey || "(No name)");
+          var badge = `<span class="pm-overdueAlert-badge pm-overdueAlert-badge--project">Project</span>`;
+          if (p.href) return `<li>${badge}<a href="${safe(p.href)}" class="pm-recordLink pm-overdueAlert-link" data-title="${safeAttr(`Project ${p.projectKey || p.recordID} — ${name}`)}" target="_blank" rel="noopener noreferrer">${safe(name)}</a></li>`;
+          return `<li>${badge}${safe(name)}</li>`;
+        }
+      }).join("");
     }
     var moreEl = document.getElementById("pmOverdueAlertMore");
     if (moreEl) {
-      moreEl.textContent =
-        remaining > 0
-          ? `and ${remaining} more overdue item${remaining === 1 ? "" : "s"}.`
-          : "";
+      moreEl.textContent = remaining > 0 ? `and ${remaining} more overdue item${remaining === 1 ? "" : "s"}.` : "";
       moreEl.hidden = remaining === 0;
     }
     alertEl.hidden = false;
@@ -7388,10 +7268,7 @@
       console.log("data-title:", a.getAttribute("data-title"));
       console.log("data-projectkey:", a.getAttribute("data-projectkey"));
       console.log("classes:", a.className);
-      console.log(
-        "Inside pmModalInlineContent:",
-        !!a.closest("#pmModalInlineContent"),
-      );
+      console.log("Inside pmModalInlineContent:", !!a.closest("#pmModalInlineContent"));
       console.log("Inside pmTasksTable:", !!a.closest("#pmTasksTable"));
       console.log("Inside pmProjectsTable:", !!a.closest("#pmProjectsTable"));
       console.groupEnd();
@@ -8493,43 +8370,23 @@
     var projectImportCounts = new Array(12).fill(0);
     var _debugProjectsWithTickets = [];
     var _debugProjectsWithoutTickets = [];
-    (projectsForGeneralCharts || []).forEach(function (p) {
+    (projectsForGeneralCharts || []).forEach(function(p) {
       if (!String(p.ticketNumber || "").trim()) {
-        _debugProjectsWithoutTickets.push({
-          key: p.projectKey,
-          ticketNumber: p.ticketNumber,
-        });
+        _debugProjectsWithoutTickets.push({ key: p.projectKey, ticketNumber: p.ticketNumber });
         return;
       }
-      _debugProjectsWithTickets.push({
-        key: p.projectKey,
-        ticketNumber: p.ticketNumber,
-      });
+      _debugProjectsWithTickets.push({ key: p.projectKey, ticketNumber: p.ticketNumber });
       var date = getProjectGeneralDate(p);
       if (!date || !inSelectedYear(date)) return;
       if (!inSelectedQuarter(date)) return;
       projectImportCounts[date.getMonth()] += 1;
     });
     console.group("[PM Dashboard] Bug 1 — Project Import Chart Debug");
-    console.log(
-      "Total projectsForGeneralCharts:",
-      (projectsForGeneralCharts || []).length,
-    );
-    console.log(
-      "Projects WITH ticketNumber (should appear in chart):",
-      _debugProjectsWithTickets.length,
-      _debugProjectsWithTickets,
-    );
-    console.log(
-      "Projects WITHOUT ticketNumber (should be excluded):",
-      _debugProjectsWithoutTickets.length,
-      _debugProjectsWithoutTickets.slice(0, 5),
-    );
+    console.log("Total projectsForGeneralCharts:", (projectsForGeneralCharts || []).length);
+    console.log("Projects WITH ticketNumber (should appear in chart):", _debugProjectsWithTickets.length, _debugProjectsWithTickets);
+    console.log("Projects WITHOUT ticketNumber (should be excluded):", _debugProjectsWithoutTickets.length, _debugProjectsWithoutTickets.slice(0, 5));
     console.log("projectImportCounts array:", projectImportCounts);
-    console.log(
-      "Sample raw project (first in state.projectsAll):",
-      state.projectsAll && state.projectsAll[0],
-    );
+    console.log("Sample raw project (first in state.projectsAll):", state.projectsAll && state.projectsAll[0]);
     console.groupEnd();
 
     var projectTypeData = buildProjectTypeChartData(projectsForGeneralCharts);
@@ -9144,23 +9001,11 @@
   }
 
   function drilldownTicketsImported(label, cache) {
-    var monthIndex = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ].indexOf(label);
+    var monthIndex = ["Jan","Feb","Mar","Apr","May","Jun",
+      "Jul","Aug","Sep","Oct","Nov","Dec"].indexOf(label);
 
     // Ticket-linked tasks
-    var ticketTasks = (state.tasksAll || []).filter(function (t) {
+    var ticketTasks = (state.tasksAll || []).filter(function(t) {
       if (!String(t.supportTicket || "").trim()) return false;
       var date = getTicketImportedDate(t);
       if (!date) return false;
@@ -9168,7 +9013,7 @@
     });
 
     // Projects imported in this month — only those with a ticket # (indicator 68)
-    var importedProjects = (state.projectsAll || []).filter(function (p) {
+    var importedProjects = (state.projectsAll || []).filter(function(p) {
       if (!String(p.ticketNumber || "").trim()) return false;
       var date = getProjectGeneralDate(p);
       if (!date) return false;
@@ -9176,11 +9021,11 @@
     });
 
     // Build combined rows — tickets first, then projects
-    var ticketRows = ticketTasks.map(function (t) {
+    var ticketRows = ticketTasks.map(function(t) {
       return `<tr>${drilldownTaskIdCell(t)}<td>${safe(t.title || "(No title)")}</td><td>${safe(t.supportTicket)}</td><td>${safe(t.projectKey)}</td><td>${safe(t.assignedTo)}</td><td>Ticket</td></tr>`;
     });
 
-    var projectRows = importedProjects.map(function (p) {
+    var projectRows = importedProjects.map(function(p) {
       var pkHref = getProjectRecordHrefFromKey(p.projectKey);
       var pkCell = pkHref
         ? `<a href="${safe(pkHref)}" class="pm-recordLink pm-pkProjectLink" data-title="Project ${safeAttr(p.projectKey)}" data-projectkey="${safeAttr(p.projectKey)}">${safe(p.projectKey)}</a>`
@@ -9191,16 +9036,9 @@
     renderDrilldownTable(
       "pmDrilldownTicketsImported",
       label,
-      [
-        "ID / Key",
-        "Name",
-        "Ticket #",
-        "Project Key",
-        "Assigned / Owner",
-        "Type",
-      ],
+      ["ID / Key", "Name", "Ticket #", "Project Key", "Assigned / Owner", "Type"],
       ticketRows.concat(projectRows),
-      ["string", "string", "string", "string", "string", "string"],
+      ["string", "string", "string", "string", "string", "string"]
     );
   }
 
@@ -9254,15 +9092,15 @@
     var toggleHtml = showToggle
       ? `<button type="button" class="pm-ghostBtn pm-tableToggle" data-analytics-toggle="${toggleKey}" aria-expanded="${showAll ? "true" : "false"}" aria-controls="${tableId}">${showAll ? "Show less" : "Show all"}</button>`
       : "";
-    var metaHtml =
-      total > 0
-        ? `<div class="pm-tableMeta"><span class="pm-tableRange">${rangeText}</span>${toggleHtml}</div>`
-        : "";
+    var metaHtml = total > 0
+      ? `<div class="pm-tableMeta"><span class="pm-tableRange">${rangeText}</span>${toggleHtml}</div>`
+      : "";
     var bodyHtml =
       visibleRows.join("") ||
       `<tr><td colspan='${colCount}'>${emptyLabel}</td></tr>`;
 
-    container.innerHTML = `<table class="pm-table" id="${tableId}">${headerHtml}<tbody>${bodyHtml}</tbody></table>${metaHtml}`;
+    container.innerHTML =
+      `<table class="pm-table" id="${tableId}">${headerHtml}<tbody>${bodyHtml}</tbody></table>${metaHtml}`;
   }
 
   function renderAnalyticsTablesFromState() {
@@ -9320,10 +9158,9 @@
         var h = cache.health[pk];
         var compPct = h.total ? Math.round((h.completed / h.total) * 100) : 0;
         var compClass = compPct === 100 ? "pm-completeGreen" : "";
-        var overdueCell =
-          h.overdue > 0
-            ? `<td class='pm-overdueRed'>${h.overdue}</td>`
-            : `<td>${h.overdue}</td>`;
+        var overdueCell = h.overdue > 0
+          ? `<td class='pm-overdueRed'>${h.overdue}</td>`
+          : `<td>${h.overdue}</td>`;
         return `<tr><td>${safe(pk)}</td><td>${h.total}</td><td>${h.completed}</td><td class='${compClass}'>${compPct}%</td>${overdueCell}</tr>`;
       });
 
@@ -9493,39 +9330,22 @@
     );
 
     var ticketLabels = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
+      "Jan","Feb","Mar","Apr","May","Jun",
+      "Jul","Aug","Sep","Oct","Nov","Dec",
     ];
 
-    var projectImportCounts =
-      cache.projectImportCounts || new Array(12).fill(0);
+    var projectImportCounts = cache.projectImportCounts || new Array(12).fill(0);
 
     setChartSummary(
       "pmChartTicketsImportedDesc",
-      "Tickets & Projects imported by month (" +
-        filterLabel +
-        "): " +
-        "Tickets — " +
-        summarizeLabelData(ticketLabels, cache.ticketCounts) +
-        "; Projects — " +
-        summarizeLabelData(ticketLabels, projectImportCounts),
+      "Tickets & Projects imported by month (" + filterLabel + "): " +
+      "Tickets — " + summarizeLabelData(ticketLabels, cache.ticketCounts) +
+      "; Projects — " + summarizeLabelData(ticketLabels, projectImportCounts)
     );
 
     // Destroy existing chart instance before replacing with multi-dataset
     if (state.charts && state.charts["ticketsImported"]) {
-      try {
-        state.charts["ticketsImported"].destroy();
-      } catch (e) {}
+      try { state.charts["ticketsImported"].destroy(); } catch(e) {}
       delete state.charts["ticketsImported"];
     }
 
@@ -9534,9 +9354,7 @@
       var ticketsCtx = ticketsCanvas.getContext("2d");
       var isDarkMode = document.body.classList.contains("pm-dark");
       var tickColor = isDarkMode ? "#e2e8f0" : "#1f2933";
-      var gridColor = isDarkMode
-        ? "rgba(255,255,255,0.08)"
-        : "rgba(0,0,0,0.08)";
+      var gridColor = isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
 
       var multiChart = new Chart(ticketsCtx, {
         type: "bar",
@@ -9559,33 +9377,18 @@
             },
           ],
         },
-        options: (function () {
+        options: (function() {
           if (isChartV2()) {
             return {
               responsive: true,
               maintainAspectRatio: true,
-              legend: {
-                display: true,
-                position: "top",
-                labels: { fontColor: tickColor, boxWidth: 14, padding: 12 },
-              },
+              legend: { display: true, position: "top",
+                labels: { fontColor: tickColor, boxWidth: 14, padding: 12 } },
               scales: {
-                xAxes: [
-                  {
-                    ticks: { fontColor: tickColor },
-                    gridLines: { color: gridColor },
-                  },
-                ],
-                yAxes: [
-                  {
-                    ticks: {
-                      fontColor: tickColor,
-                      beginAtZero: true,
-                      precision: 0,
-                    },
-                    gridLines: { color: gridColor },
-                  },
-                ],
+                xAxes: [{ ticks: { fontColor: tickColor },
+                  gridLines: { color: gridColor } }],
+                yAxes: [{ ticks: { fontColor: tickColor, beginAtZero: true,
+                  precision: 0 }, gridLines: { color: gridColor } }],
               },
             };
           }
@@ -9593,19 +9396,13 @@
             responsive: true,
             maintainAspectRatio: true,
             plugins: {
-              legend: {
-                display: true,
-                position: "top",
-                labels: { color: tickColor, boxWidth: 14, padding: 12 },
-              },
+              legend: { display: true, position: "top",
+                labels: { color: tickColor, boxWidth: 14, padding: 12 } },
             },
             scales: {
               x: { ticks: { color: tickColor }, grid: { color: gridColor } },
-              y: {
-                beginAtZero: true,
-                ticks: { color: tickColor, precision: 0 },
-                grid: { color: gridColor },
-              },
+              y: { beginAtZero: true, ticks: { color: tickColor, precision: 0 },
+                grid: { color: gridColor } },
             },
           };
         })(),
