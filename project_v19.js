@@ -2489,6 +2489,7 @@
         return String(p.recordID || "") === String(recordId || "");
       });
       var descText = project ? String(project.description || "").trim() : "";
+      var nameText = project ? String(project.projectName || "").trim() : "";
 
       var colspan = parentRow.querySelectorAll("td").length;
       var subRow = document.createElement("tr");
@@ -2496,8 +2497,8 @@
       subRow.className = "pm-projDescSubRow";
       subRow.innerHTML = `<td colspan="${colspan}" class="pm-projDescSubRowCell">
         <div class="pm-projDescFull">
-          <span class="pm-projDescLabel">Description</span>
-          <p class="pm-projDescText">${safe(descText)}</p>
+          ${nameText ? `<div class="pm-projDescSection"><span class="pm-projDescLabel">Project Name</span><p class="pm-projDescText">${safe(nameText)}</p></div>` : ""}
+          ${descText ? `<div class="pm-projDescSection"><span class="pm-projDescLabel">Description</span><p class="pm-projDescText">${safe(descText)}</p></div>` : ""}
         </div>
       </td>`;
 
@@ -2535,16 +2536,16 @@
     el.innerHTML = `
       <table class="pm-table">
         <colgroup>
-          <col style="width:1%;white-space:nowrap">
-          <col style="max-width:160px">
-          <col style="width:180px;max-width:200px">
-          <col style="width:1%;white-space:nowrap">
-          <col style="width:1%;white-space:nowrap">
-          <col style="width:1%;white-space:nowrap">
-          <col style="width:1%;white-space:nowrap">
-          <col style="width:1%;white-space:nowrap">
-          <col>
-          <col style="width:1%;white-space:nowrap">
+          <col style="width:1%"><!-- Key -->
+          <col style="width:1%"><!-- Name -->
+          <col style="width:180px;max-width:200px"><!-- Description -->
+          <col style="width:1%"><!-- Owner -->
+          <col style="width:1%"><!-- OKR -->
+          <col style="width:1%"><!-- Start -->
+          <col style="width:1%"><!-- Est. Completion -->
+          <col style="width:1%"><!-- Status -->
+          <col style="width:120px;min-width:110px"><!-- % Complete -->
+          <col style="width:1%"><!-- Ticket -->
         </colgroup>
         <thead><tr>
           <th scope="col" class="pm-sortable pm-colKey" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>

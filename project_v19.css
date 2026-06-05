@@ -3421,32 +3421,69 @@ canvas.pm-chartClickable {
   width: 1% !important;
 }
 
-/* 2. Project Name (2): single-line truncate, fixed cap */
-#pmProjectsTableWrap .pm-table th:nth-child(2),
-#pmProjectsTableWrap .pm-table td:nth-child(2) {
-  width: 140px !important;
-  max-width: 140px !important;
-  min-width: 0 !important;
+/* 2. Project Key (1): fit to "Project Key" header text */
+#pmProjectsTableWrap .pm-table th:nth-child(1),
+#pmProjectsTableWrap .pm-table td:nth-child(1) {
+  width: 90px !important;
+  min-width: 90px !important;
+  max-width: 90px !important;
 }
 
-/* 3. Description (3): wider to show truncated preview */
+/* 3. Project Name (2): truncate at fixed width */
+#pmProjectsTableWrap .pm-table th:nth-child(2),
+#pmProjectsTableWrap .pm-table td:nth-child(2) {
+  width: 130px !important;
+  min-width: 130px !important;
+  max-width: 130px !important;
+}
+
+/* 4. Description (3): wider to show truncated preview */
 #pmProjectsTableWrap .pm-table th:nth-child(3),
 #pmProjectsTableWrap .pm-table td:nth-child(3) {
   width: 200px !important;
+  min-width: 200px !important;
   max-width: 200px !important;
-  min-width: 0 !important;
 }
 
-/* 4. % Complete (9): needs room for the progress bar */
+/* 5. Owner (4): fit to content */
+#pmProjectsTableWrap .pm-table th:nth-child(4),
+#pmProjectsTableWrap .pm-table td:nth-child(4) {
+  width: 1% !important;
+  min-width: 0 !important;
+  max-width: 130px !important;
+}
+
+/* 6. OKR (5), Start (6), Est. Completion (7), Status (8): all fit to content */
+#pmProjectsTableWrap .pm-table th:nth-child(5),
+#pmProjectsTableWrap .pm-table td:nth-child(5),
+#pmProjectsTableWrap .pm-table th:nth-child(6),
+#pmProjectsTableWrap .pm-table td:nth-child(6),
+#pmProjectsTableWrap .pm-table th:nth-child(7),
+#pmProjectsTableWrap .pm-table td:nth-child(7),
+#pmProjectsTableWrap .pm-table th:nth-child(8),
+#pmProjectsTableWrap .pm-table td:nth-child(8) {
+  width: 1% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+/* 7. % Complete (9): needs room for the progress bar */
 #pmProjectsTableWrap .pm-table th:nth-child(9),
 #pmProjectsTableWrap .pm-table td:nth-child(9) {
   width: 120px !important;
-  max-width: 140px !important;
   min-width: 110px !important;
+  max-width: 140px !important;
   overflow: visible !important;
 }
 
-/* 5. Kill inner wrappers that impose their own widths */
+/* 8. Ticket (10): fit to content */
+#pmProjectsTableWrap .pm-table th:nth-child(10),
+#pmProjectsTableWrap .pm-table td:nth-child(10) {
+  width: 1% !important;
+  min-width: 0 !important;
+}
+
+/* 9. Kill inner wrappers that impose their own widths */
 #pmProjectsTableWrap .pm-wrapCol,
 #pmProjectsTableWrap .pm-wrapColLong {
   width: auto !important;
@@ -3457,7 +3494,7 @@ canvas.pm-chartClickable {
   text-overflow: ellipsis !important;
 }
 
-/* 6. Sub-rows span all columns — undo compression */
+/* 10. Sub-rows span all columns — undo compression */
 #pmProjectsTableWrap .pm-projDescSubRow td {
   width: auto !important;
   max-width: none !important;
@@ -3536,8 +3573,16 @@ canvas.pm-chartClickable {
   border-left: 3px solid var(--clr-primary, #2563eb);
   margin: 0;
   display: flex;
+  flex-direction: row;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.pm-projDescSection {
+  display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .pm-projDescLabel {
