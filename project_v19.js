@@ -1032,8 +1032,16 @@
     var now = new Date();
     var rows = tasks
       .map(function (t) {
+        var taskTitle = t.title ? "  \u2014  " + safeAttr(t.title.trim()) : "";
         var taskIdCell = t.href
-          ? `<td><a href="${safeAttr(t.href)}" class="pm-recordLink pm-taskIdBadge" data-title="Task ${safe(t.recordID)}${t.title ? "  \u2014  " + safeAttr(t.title.trim()) : ""}">${safe(t.recordID)}</a></td>`
+          ? '<td><a href="' +
+            safeAttr(t.href) +
+            '" class="pm-recordLink pm-taskIdBadge" data-title="Task ' +
+            safe(t.recordID) +
+            taskTitle +
+            '">' +
+            safe(t.recordID) +
+            "</a></td>"
           : `<td><span class="pm-taskIdBadge">${safe(t.recordID)}</span></td>`;
         var overdueClass = isOverdueTask(t, now) ? " pm-overdueRed" : "";
         return `<tr>${taskIdCell}<td>${safe(t.title || "(No title)")}</td><td>${renderStatusCell(t)}</td><td>${getPriorityPill(t.priority)}</td><td>${safe(t.start)}</td><td class="${overdueClass}">${safe(t.due)}</td><td>${safe(t.assignedTo)}</td></tr>`;
@@ -1919,6 +1927,7 @@
     var chipClass = `pm-ticketChip${origin.label ? ` pm-ticketChip--${origin.key}` : " pm-ticketChip--unknown"}`;
     var aria = `Ticket ${id}, ${tooltip}`;
     return `<span class="${chipClass}"><a href="${safe(href)}" class="pm-recordLink pm-ticketLink" data-title="${safeAttr(tooltip)}" aria-label="${safeAttr(aria)}" title="${safeAttr(tooltip)}">${safe(label)}</a></span>`;
+  }
 
   function backfillSupportTicketLabels(tasks) {
     if (!tasks || !tasks.length) return;
@@ -3083,7 +3092,7 @@
                               ? `index.php?a=printview&recordID=${encodeURIComponent(p.recordID)}`
                               : "");
                           var link = href
-                            ? `<a href="${safe(href)}" class="pm-recordLink" data-title="${safe(`Project ${p.projectKey || "`)}">${safe(label)}</a>`
+                            ? `<a href="${safe(href)}" class="pm-recordLink" data-title="${safe("Project " + (p.projectKey || ""))}">${safe(label)}</a>`
                             : safe(label);
                           var projectTasks = [];
                           if (pkNorm && kr.tasksByProjectKey) {
@@ -3100,8 +3109,14 @@
                             ? `<ul class='pm-krTaskList'>${projectTasks
                                 .map(function (t) {
                                   var title = String(t.title || "").trim();
-                                  var taskLabel = title || (t.recordID ? `Task ${t.recordID}` : "Task");
-                                  var projectLabel = getProjectLabelFromKey(t.projectKey);
+                                  var taskLabel =
+                                    title ||
+                                    (t.recordID
+                                      ? `Task ${t.recordID}`
+                                      : "Task");
+                                  var projectLabel = getProjectLabelFromKey(
+                                    t.projectKey,
+                                  );
                                   var statusLabel = renderOkrStatusTag(t);
                                   var taskHref = t.recordID
                                     ? `index.php?a=printview&recordID=${encodeURIComponent(t.recordID)}`
@@ -3131,7 +3146,9 @@
                     ? `<ul class='pm-krOtherList'>${kr.otherTasks
                         .map(function (t) {
                           var title = String(t.title || "").trim();
-                          var taskLabel = title || (t.recordID ? `Task ${t.recordID}` : "Task");
+                          var taskLabel =
+                            title ||
+                            (t.recordID ? `Task ${t.recordID}` : "Task");
                           var statusLabel = renderOkrStatusTag(t);
                           var taskHref = t.recordID
                             ? `index.php?a=printview&recordID=${encodeURIComponent(t.recordID)}`
@@ -3216,9 +3233,10 @@
         })
         .join("");
 
-      var showMoreBtn = okrEntriesFiltered.length > visibleCount
-        ? `<div class='pm-okrShowMore'><button type='button' class='pm-okrShowMoreBtn' data-visible='${visibleCount}' data-step='${stepCount}' data-total='${okrEntriesFiltered.length}' aria-expanded='false'>Show more Objectives</button></div>`
-        : "";
+      var showMoreBtn =
+        okrEntriesFiltered.length > visibleCount
+          ? `<div class='pm-okrShowMore'><button type='button' class='pm-okrShowMoreBtn' data-visible='${visibleCount}' data-step='${stepCount}' data-total='${okrEntriesFiltered.length}' aria-expanded='false'>Show more Objectives</button></div>`
+          : "";
 
       var quickOverallPercent = okrEntriesFiltered.length
         ? Math.round(quickPercentSum / okrEntriesFiltered.length)
@@ -3763,6 +3781,7 @@
         ${ticketLink ? `<div><strong>Ticket:</strong> ${ticketLink}</div>` : ""}
       </div>
     </div>`;
+  }
 
   function getKanbanCacheEntry(sig, tasks, filters) {
     var cached = state.cache.kanban.get(sig);
@@ -4008,9 +4027,10 @@
           .join("");
 
         var countText = `Showing ${visible} of ${total}`;
-        var moreBtn = total > visible
-          ? `<button type="button" class="pm-ghostBtn pm-kanban-moreBtn" data-status="${safeAttr(col)}" data-step="${KANBAN_RENDER_STEP}">Load more</button>`
-          : "";
+        var moreBtn =
+          total > visible
+            ? `<button type="button" class="pm-ghostBtn pm-kanban-moreBtn" data-status="${safeAttr(col)}" data-step="${KANBAN_RENDER_STEP}">Load more</button>`
+            : "";
 
         return `<div class="pm-kanban-col">
           <div class="pm-kanban-col-header"><span>${safe(colObj.title || col)}</span><span class="pm-kanban-total">${total}</span></div>
@@ -4369,9 +4389,7 @@
     statuses.forEach(function (col) {
       if (!col || col === "Unknown") return;
       var body = board.querySelector(
-        '.pm-kanban-col-body[data-status="' +
-          String(col).replace(/"/g, '\\"') +
-          '"]',
+        `.pm-kanban-col-body[data-status="${String(col).replace(/"/g, '\\"')}"]`,
       );
       var colEl = body ? body.closest(".pm-kanban-col") : null;
       if (!body || !colEl) return;
@@ -4398,13 +4416,11 @@
       if (!statusChanged) {
         // Card stayed in same column — find and update just that card's DOM
         var existingCard = body.querySelector(
-          '.pm-card[data-taskid="' +
-            String(newTask.recordID).replace(/"/g, '\\"') +
-            '"]',
+          `.pm-card[data-taskid="${String(newTask.recordID).replace(/"/g, '\\"')}"]`,
         );
         if (existingCard) {
           var tpl = document.createElement("template");
-          tpl.innerHTML = renderKanbanCard(newTask, col);
+          tpl.innerHTML = renderKanbanCard(newTask, col).trim();
           var newCardEl = tpl.content.firstElementChild;
           if (newCardEl) {
             body.replaceChild(newCardEl, existingCard);
@@ -4501,12 +4517,12 @@
   // Never calls new Date(string), which is ambiguous and browser-dependent.
   // Only accepts exactly "MM/DD/YYYY" — no fallbacks, no guessing.
   function strictMmDdYyyy(s) {
-    var v = String(s || '').trim();
+    var v = String(s || "").trim();
     if (!v) return null;
-    var parts = v.split('/');
+    var parts = v.split("/");
     if (parts.length !== 3) return null;
-    var mm   = parseInt(parts[0], 10);
-    var dd   = parseInt(parts[1], 10);
+    var mm = parseInt(parts[0], 10);
+    var dd = parseInt(parts[1], 10);
     var yyyy = parseInt(parts[2], 10);
     if (isNaN(mm) || isNaN(dd) || isNaN(yyyy)) return null;
     if (mm < 1 || mm > 12) return null;
@@ -5801,8 +5817,10 @@
 
       // Must fall within the window: cutoff <= date <= today
       // Excludes future dates and dates older than the selected range
-      var startedInRange   = startDate && startDate >= cutoff && startDate <= today;
-      var completedInRange = completed && completed >= cutoff && completed <= today;
+      var startedInRange =
+        startDate && startDate >= cutoff && startDate <= today;
+      var completedInRange =
+        completed && completed >= cutoff && completed <= today;
 
       if (!startedInRange && !completedInRange) return false;
     }
@@ -6547,9 +6565,10 @@
 
     var moreEl = document.getElementById("pmOverdueAlertMore");
     if (moreEl) {
-      moreEl.textContent = remaining > 0
-        ? `and ${remaining} more overdue task${remaining === 1 ? "" : "s"}.`
-        : "";
+      moreEl.textContent =
+        remaining > 0
+          ? `and ${remaining} more overdue task${remaining === 1 ? "" : "s"}.`
+          : "";
       moreEl.hidden = remaining === 0;
     }
 
@@ -7902,9 +7921,10 @@
       ticketCounts[date.getMonth()] += 1;
     });
 
-    // Projects imported by month — uses createdAt via getProjectGeneralDate
+    // Projects imported by month — only projects with a ticket # (indicator 68)
     var projectImportCounts = new Array(12).fill(0);
-    (projectsForGeneralCharts || []).forEach(function(p) {
+    (projectsForGeneralCharts || []).forEach(function (p) {
+      if (!String(p.ticketNumber || "").trim()) return;
       var date = getProjectGeneralDate(p);
       if (!date || !inSelectedYear(date)) return;
       if (!inSelectedQuarter(date)) return;
@@ -8523,30 +8543,43 @@
   }
 
   function drilldownTicketsImported(label, cache) {
-    var monthIndex = ["Jan","Feb","Mar","Apr","May","Jun",
-      "Jul","Aug","Sep","Oct","Nov","Dec"].indexOf(label);
+    var monthIndex = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ].indexOf(label);
 
     // Ticket-linked tasks
-    var ticketTasks = (state.tasksAll || []).filter(function(t) {
+    var ticketTasks = (state.tasksAll || []).filter(function (t) {
       if (!String(t.supportTicket || "").trim()) return false;
       var date = getTicketImportedDate(t);
       if (!date) return false;
       return date.getMonth() === monthIndex;
     });
 
-    // Projects imported in this month
-    var importedProjects = (state.projectsAll || []).filter(function(p) {
+    // Projects imported in this month — only those with a ticket # (indicator 68)
+    var importedProjects = (state.projectsAll || []).filter(function (p) {
+      if (!String(p.ticketNumber || "").trim()) return false;
       var date = getProjectGeneralDate(p);
       if (!date) return false;
       return date.getMonth() === monthIndex;
     });
 
     // Build combined rows — tickets first, then projects
-    var ticketRows = ticketTasks.map(function(t) {
+    var ticketRows = ticketTasks.map(function (t) {
       return `<tr>${drilldownTaskIdCell(t)}<td>${safe(t.title || "(No title)")}</td><td>${safe(t.supportTicket)}</td><td>${safe(t.projectKey)}</td><td>${safe(t.assignedTo)}</td><td>Ticket</td></tr>`;
     });
 
-    var projectRows = importedProjects.map(function(p) {
+    var projectRows = importedProjects.map(function (p) {
       var pkHref = getProjectRecordHrefFromKey(p.projectKey);
       var pkCell = pkHref
         ? `<a href="${safe(pkHref)}" class="pm-recordLink pm-pkProjectLink" data-title="Project ${safeAttr(p.projectKey)}" data-projectkey="${safeAttr(p.projectKey)}">${safe(p.projectKey)}</a>`
@@ -8557,9 +8590,16 @@
     renderDrilldownTable(
       "pmDrilldownTicketsImported",
       label,
-      ["ID / Key", "Name", "Ticket #", "Project Key", "Assigned / Owner", "Type"],
+      [
+        "ID / Key",
+        "Name",
+        "Ticket #",
+        "Project Key",
+        "Assigned / Owner",
+        "Type",
+      ],
       ticketRows.concat(projectRows),
-      ["string", "string", "string", "string", "string", "string"]
+      ["string", "string", "string", "string", "string", "string"],
     );
   }
 
@@ -8613,15 +8653,15 @@
     var toggleHtml = showToggle
       ? `<button type="button" class="pm-ghostBtn pm-tableToggle" data-analytics-toggle="${toggleKey}" aria-expanded="${showAll ? "true" : "false"}" aria-controls="${tableId}">${showAll ? "Show less" : "Show all"}</button>`
       : "";
-    var metaHtml = total > 0
-      ? `<div class="pm-tableMeta"><span class="pm-tableRange">${rangeText}</span>${toggleHtml}</div>`
-      : "";
+    var metaHtml =
+      total > 0
+        ? `<div class="pm-tableMeta"><span class="pm-tableRange">${rangeText}</span>${toggleHtml}</div>`
+        : "";
     var bodyHtml =
       visibleRows.join("") ||
       `<tr><td colspan='${colCount}'>${emptyLabel}</td></tr>`;
 
-    container.innerHTML =
-      `<table class="pm-table" id="${tableId}">${headerHtml}<tbody>${bodyHtml}</tbody></table>${metaHtml}`;
+    container.innerHTML = `<table class="pm-table" id="${tableId}">${headerHtml}<tbody>${bodyHtml}</tbody></table>${metaHtml}`;
   }
 
   function renderAnalyticsTablesFromState() {
@@ -8679,9 +8719,10 @@
         var h = cache.health[pk];
         var compPct = h.total ? Math.round((h.completed / h.total) * 100) : 0;
         var compClass = compPct === 100 ? "pm-completeGreen" : "";
-        var overdueCell = h.overdue > 0
-          ? `<td class='pm-overdueRed'>${h.overdue}</td>`
-          : `<td>${h.overdue}</td>`;
+        var overdueCell =
+          h.overdue > 0
+            ? `<td class='pm-overdueRed'>${h.overdue}</td>`
+            : `<td>${h.overdue}</td>`;
         return `<tr><td>${safe(pk)}</td><td>${h.total}</td><td>${h.completed}</td><td class='${compClass}'>${compPct}%</td>${overdueCell}</tr>`;
       });
 
@@ -8851,22 +8892,39 @@
     );
 
     var ticketLabels = [
-      "Jan","Feb","Mar","Apr","May","Jun",
-      "Jul","Aug","Sep","Oct","Nov","Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
     ];
 
-    var projectImportCounts = cache.projectImportCounts || new Array(12).fill(0);
+    var projectImportCounts =
+      cache.projectImportCounts || new Array(12).fill(0);
 
     setChartSummary(
       "pmChartTicketsImportedDesc",
-      "Tickets & Projects imported by month (" + filterLabel + "): " +
-      "Tickets — " + summarizeLabelData(ticketLabels, cache.ticketCounts) +
-      "; Projects — " + summarizeLabelData(ticketLabels, projectImportCounts)
+      "Tickets & Projects imported by month (" +
+        filterLabel +
+        "): " +
+        "Tickets — " +
+        summarizeLabelData(ticketLabels, cache.ticketCounts) +
+        "; Projects — " +
+        summarizeLabelData(ticketLabels, projectImportCounts),
     );
 
     // Destroy existing chart instance before replacing with multi-dataset
     if (state.charts && state.charts["ticketsImported"]) {
-      try { state.charts["ticketsImported"].destroy(); } catch(e) {}
+      try {
+        state.charts["ticketsImported"].destroy();
+      } catch (e) {}
       delete state.charts["ticketsImported"];
     }
 
@@ -8875,7 +8933,9 @@
       var ticketsCtx = ticketsCanvas.getContext("2d");
       var isDarkMode = document.body.classList.contains("pm-dark");
       var tickColor = isDarkMode ? "#e2e8f0" : "#1f2933";
-      var gridColor = isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
+      var gridColor = isDarkMode
+        ? "rgba(255,255,255,0.08)"
+        : "rgba(0,0,0,0.08)";
 
       var multiChart = new Chart(ticketsCtx, {
         type: "bar",
@@ -8898,18 +8958,33 @@
             },
           ],
         },
-        options: (function() {
+        options: (function () {
           if (isChartV2()) {
             return {
               responsive: true,
               maintainAspectRatio: true,
-              legend: { display: true, position: "top",
-                labels: { fontColor: tickColor, boxWidth: 14, padding: 12 } },
+              legend: {
+                display: true,
+                position: "top",
+                labels: { fontColor: tickColor, boxWidth: 14, padding: 12 },
+              },
               scales: {
-                xAxes: [{ ticks: { fontColor: tickColor },
-                  gridLines: { color: gridColor } }],
-                yAxes: [{ ticks: { fontColor: tickColor, beginAtZero: true,
-                  precision: 0 }, gridLines: { color: gridColor } }],
+                xAxes: [
+                  {
+                    ticks: { fontColor: tickColor },
+                    gridLines: { color: gridColor },
+                  },
+                ],
+                yAxes: [
+                  {
+                    ticks: {
+                      fontColor: tickColor,
+                      beginAtZero: true,
+                      precision: 0,
+                    },
+                    gridLines: { color: gridColor },
+                  },
+                ],
               },
             };
           }
@@ -8917,13 +8992,19 @@
             responsive: true,
             maintainAspectRatio: true,
             plugins: {
-              legend: { display: true, position: "top",
-                labels: { color: tickColor, boxWidth: 14, padding: 12 } },
+              legend: {
+                display: true,
+                position: "top",
+                labels: { color: tickColor, boxWidth: 14, padding: 12 },
+              },
             },
             scales: {
               x: { ticks: { color: tickColor }, grid: { color: gridColor } },
-              y: { beginAtZero: true, ticks: { color: tickColor, precision: 0 },
-                grid: { color: gridColor } },
+              y: {
+                beginAtZero: true,
+                ticks: { color: tickColor, precision: 0 },
+                grid: { color: gridColor },
+              },
             },
           };
         })(),
