@@ -3124,3 +3124,163 @@ canvas.pm-chartClickable {
 .pm-transferChoice:hover .pm-transferChoiceDesc {
   color: var(--accent-strong);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INLINE CELL EDITOR
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.pm-editPencil {
+  font-size: 0.8rem;
+  vertical-align: middle;
+  color: var(--clr-text-muted, #6b7280);
+  margin-left: 4px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.pm-editableCell {
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.1s;
+}
+
+.pm-editableCell:hover {
+  background-color: var(--clr-row-hover, #f0f4ff);
+  outline: 1px dashed var(--clr-primary, #2563eb);
+  outline-offset: -2px;
+}
+
+.pm-editableCell:focus {
+  outline: 2px solid var(--clr-primary, #2563eb);
+  outline-offset: -2px;
+}
+
+.pm-inlineEditor {
+  position: absolute;
+  z-index: 9000;
+  background: #ffffff;
+  border: 1.5px solid var(--clr-primary, #2563eb);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  padding: 6px;
+  min-width: 160px;
+  box-sizing: border-box;
+}
+
+.pm-inlineEditor-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pm-inlineEditor-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.pm-inlineEditor-skeletonBar {
+  display: block;
+  height: 28px;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: pm-shimmer 1.2s infinite;
+  border-radius: 4px;
+}
+
+.pm-inlineEditor-skeletonBar--short {
+  width: 60%;
+}
+
+@keyframes pm-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.pm-inlineEditor-select,
+.pm-inlineEditor-input,
+.pm-inlineEditor-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--clr-text, #1f2937);
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.pm-inlineEditor-select:focus,
+.pm-inlineEditor-input:focus,
+.pm-inlineEditor-textarea:focus {
+  border-color: var(--clr-primary, #2563eb);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+}
+
+.pm-inlineEditor-textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.pm-inlineEditor-hint {
+  font-size: 0.7rem;
+  color: var(--clr-text-muted, #6b7280);
+  margin: 0;
+  padding: 0 2px;
+  white-space: nowrap;
+}
+
+.pm-inlineEditorError {
+  position: absolute;
+  z-index: 9100;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff1f0;
+  border: 1.5px solid #ff4d4f;
+  border-radius: 5px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  color: #a8071a;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+  white-space: nowrap;
+  max-width: 320px;
+  box-sizing: border-box;
+}
+
+.pm-inlineEditorError-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  color: #ff4d4f;
+}
+
+.pm-projectNameCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pm-customerOverviewGlobe {
+  color: var(--clr-primary, #2563eb);
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.pm-customerOverviewGlobe:hover {
+  opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   END INLINE CELL EDITOR
+   ═══════════════════════════════════════════════════════════════════════════ */

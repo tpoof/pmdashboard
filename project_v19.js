@@ -1047,7 +1047,16 @@
             "</a></td>"
           : `<td><span class="pm-taskIdBadge">${safe(t.recordID)}</span></td>`;
         var overdueClass = isOverdueTask(t, now) ? " pm-overdueRed" : "";
-        return `<tr>${taskIdCell}<td>${safe(t.title || "(No title)")}</td><td>${renderStatusCell(t)}</td><td>${getPriorityPill(t.priority)}</td><td>${safe(t.start)}</td><td class="${overdueClass}">${safe(t.due)}</td><td>${safe(t.assignedTo)}</td></tr>`;
+        var mrid = safeAttr(String(t.recordID || ""));
+        return `<tr>
+          ${taskIdCell}
+          <td class="pm-editableCell" data-ind="${TASK_IND.title}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Click to edit">${safe(t.title || "(No title)")}</td>
+          <td class="pm-editableCell" data-ind="${TASK_IND.status}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Click to edit">${renderStatusCell(t)}</td>
+          <td class="pm-editableCell" data-ind="${TASK_IND.priority}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Click to edit">${getPriorityPill(t.priority)}</td>
+          <td class="pm-editableCell" data-ind="${TASK_IND.startDate}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Click to edit">${safe(t.start)}</td>
+          <td class="pm-editableCell${overdueClass}" data-ind="${TASK_IND.dueDate}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Click to edit">${safe(t.due)}</td>
+          <td>${safe(t.assignedTo)}</td>
+        </tr>`;
       })
       .join("");
 
@@ -1070,11 +1079,11 @@
         <table class="pm-table" style="width:100%;border-collapse:collapse;">
           <thead><tr>
             <th scope="col" class="pm-sortable" data-type="number"><button type="button" class="pm-sortBtn">Task ID</button></th>
-            <th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Task Name</button></th>
-            <th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>
-            <th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Priority</button></th>
-            <th scope="col" class="pm-sortable" data-type="date"><button type="button" class="pm-sortBtn">Start</button></th>
-            <th scope="col" class="pm-sortable" data-type="date"><button type="button" class="pm-sortBtn">Due</button></th>
+            <th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Task Name <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
+            <th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Status <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
+            <th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Priority <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
+            <th scope="col" class="pm-sortable" data-type="date"><button type="button" class="pm-sortBtn">Start <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
+            <th scope="col" class="pm-sortable" data-type="date"><button type="button" class="pm-sortBtn">Due <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
             <th scope="col" class="pm-sortable" data-type="string"><button type="button" class="pm-sortBtn">Assigned To</button></th>
           </tr></thead>
           <tbody>${rows}</tbody>
@@ -2407,14 +2416,20 @@
       : "<span class='pm-okrFallback'>No Key Result</span>";
     var okrCombined = `${okrLink} <span class="pm-okrSep" aria-hidden="true">|</span> ${krDisplay}`;
 
+    var rid = safeAttr(String(p.recordID || ""));
     return `<tr>
       <td class="pm-colKey">${pkLink}</td>
-      <td class="pm-colName"><div class="pm-wrapCol pm-colNameText" tabindex="0" title="${safeAttr(projectNameText)}" aria-label="${safeAttr(projectNameText || "Project name")}">${safe(projectNameText)}</div></td>
-      <td class="pm-colDesc"><div class="pm-wrapColLong">${safe(p.description)}</div></td>
+      <td class="pm-colName pm-editableCell" data-ind="${PROJECT_IND.projectName}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">
+        <div class="pm-projectNameCell">
+          ${p.customerOverviewUrl ? `<a href="${safeAttr(p.customerOverviewUrl)}" class="pm-customerOverviewGlobe" target="_blank" rel="noopener noreferrer" title="Open customer overview" aria-label="Open customer overview for ${safeAttr(projectNameText)}"><span class="material-icons" aria-hidden="true">language</span></a>` : ""}
+          <span class="pm-wrapCol pm-colNameText">${safe(projectNameText)}</span>
+        </div>
+      </td>
+      <td class="pm-colDesc pm-editableCell" data-ind="${PROJECT_IND.description}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit"><div class="pm-wrapColLong">${safe(p.description)}</div></td>
       <td>${safe(p.owner)}</td>
-      <td>${safe(p.projectFiscalYear)}</td>
+      <td class="pm-editableCell" data-ind="${PROJECT_IND.projectFiscalYear}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">${safe(p.projectFiscalYear)}</td>
       <td>${okrCombined}</td>
-      <td>${safe(p.projectStatus)}</td>
+      <td class="pm-editableCell" data-ind="${PROJECT_IND.projectStatus}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">${safe(p.projectStatus)}</td>
       <td class="pm-colCompletion"><span class="pm-compPctWrap"><span class="pm-compPctBar" style="--pct-width:${compPct}%;width:${Math.min(compPct, 100)}%" aria-hidden="true"></span><span class="${compClass} pm-compPctLabel">${compPct}%</span></span></td>
       <td>${p.ticketNumber ? supportTicketChip(p.ticketNumber) : ""}</td>
     </tr>`;
@@ -2446,12 +2461,12 @@
       <table class="pm-table">
         <thead><tr>
           <th scope="col" class="pm-sortable pm-colKey" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>
-          <th scope="col" class="pm-sortable pm-colName" data-sort="projectName" data-type="string"><button type="button" class="pm-sortBtn">Project Name</button></th>
-          <th scope="col" class="pm-sortable pm-colDesc" data-sort="description" data-type="string"><button type="button" class="pm-sortBtn">Description</button></th>
+          <th scope="col" class="pm-sortable pm-colName" data-sort="projectName" data-type="string"><button type="button" class="pm-sortBtn">Project Name <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
+          <th scope="col" class="pm-sortable pm-colDesc" data-sort="description" data-type="string"><button type="button" class="pm-sortBtn">Description <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable" data-sort="owner" data-type="string"><button type="button" class="pm-sortBtn">Owner</button></th>
-          <th scope="col" class="pm-sortable" data-sort="projectFiscalYear" data-type="string"><button type="button" class="pm-sortBtn">FY</button></th>
+          <th scope="col" class="pm-sortable" data-sort="projectFiscalYear" data-type="string"><button type="button" class="pm-sortBtn">FY <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable" data-sort="okrAssociation" data-type="string"><button type="button" class="pm-sortBtn">OKR | Key Result</button></th>
-          <th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>
+          <th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable pm-colCompletion" data-sort="completionPct" data-type="number"><button type="button" class="pm-sortBtn">% Complete</button></th>
           <th scope="col" class="pm-sortable" data-sort="ticketNumber" data-type="string"><button type="button" class="pm-sortBtn">Ticket #</button></th>
         </tr></thead>
@@ -3310,20 +3325,20 @@
     return `<tr>
       <td>${pkLink}</td>
       <td>${taskLink}</td>
-      <td title="${titleAttr}">
+      <td class="pm-editableCell" data-ind="${TASK_IND.title}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Click to edit">
         <div style="display:inline-flex;align-items:center;gap:4px;max-width:100%;overflow:hidden;">
           ${t.isRecurring ? '<span class="material-icons pm-recurringIcon" style="flex-shrink:0;font-size:15px;" title="Recurring Task" aria-label="Recurring Task">change_circle</span>' : ""}
           <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${safe(titleText)}</span>
         </div>
       </td>
-      <td>${renderStatusCell(t)}</td>
+      <td class="pm-editableCell" data-ind="${TASK_IND.status}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Click to edit">${renderStatusCell(t)}</td>
       <td>${renderDepsList(t.depIds)}</td>
-      <td>${getPriorityPill(t.priority)}</td>
-      <td>${safe(t.category)}</td>
+      <td class="pm-editableCell" data-ind="${TASK_IND.priority}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Click to edit">${getPriorityPill(t.priority)}</td>
+      <td class="pm-editableCell" data-ind="${TASK_IND.category}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Click to edit">${safe(t.category)}</td>
       <td>${safe(t.assignedTo)}</td>
-      <td>${safe(t.start)}</td>
-      <td class="${overdueClass}">${safe(t.due)}</td>
-      <td>${formatDateCell(t.actualCompletion)}</td>
+      <td class="pm-editableCell" data-ind="${TASK_IND.startDate}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Click to edit">${safe(t.start)}</td>
+      <td class="pm-editableCell ${overdueClass}" data-ind="${TASK_IND.dueDate}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Click to edit">${safe(t.due)}</td>
+      <td class="pm-editableCell" data-ind="${TASK_IND.actualCompletionDate}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Click to edit">${formatDateCell(t.actualCompletion)}</td>
       <td>${supportTicketChip(t.supportTicket)}</td>
     </tr>`;
   }
@@ -3343,15 +3358,15 @@
         <thead><tr>
           <th scope="col" class="pm-sortable" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>
           <th scope="col" class="pm-sortable" data-sort="recordID" data-type="number"><button type="button" class="pm-sortBtn">Task ID</button></th>
-          <th scope="col" class="pm-sortable pm-wrapCol" data-sort="title" data-type="string"><button type="button" class="pm-sortBtn">Title</button></th>
-          <th scope="col" class="pm-sortable" data-sort="status" data-type="string"><button type="button" class="pm-sortBtn">Status</button></th>
+          <th scope="col" class="pm-sortable pm-wrapCol" data-sort="title" data-type="string"><button type="button" class="pm-sortBtn">Title <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
+          <th scope="col" class="pm-sortable" data-sort="status" data-type="string"><button type="button" class="pm-sortBtn">Status <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable" data-sort="dependencies" data-type="string"><button type="button" class="pm-sortBtn">Dependencies</button></th>
-          <th scope="col" class="pm-sortable" data-sort="priority" data-type="string"><button type="button" class="pm-sortBtn">Priority</button></th>
-          <th scope="col" class="pm-sortable" data-sort="category" data-type="string"><button type="button" class="pm-sortBtn">Category</button></th>
+          <th scope="col" class="pm-sortable" data-sort="priority" data-type="string"><button type="button" class="pm-sortBtn">Priority <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
+          <th scope="col" class="pm-sortable" data-sort="category" data-type="string"><button type="button" class="pm-sortBtn">Category <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable" data-sort="assignedTo" data-type="string"><button type="button" class="pm-sortBtn">Assigned To</button></th>
-          <th scope="col" class="pm-sortable" data-sort="start" data-type="date"><button type="button" class="pm-sortBtn">Start</button></th>
-          <th scope="col" class="pm-sortable" data-sort="due" data-type="date"><button type="button" class="pm-sortBtn">Due</button></th>
-          <th scope="col" class="pm-sortable" data-sort="actualCompletion" data-type="date"><button type="button" class="pm-sortBtn">Completed</button></th>
+          <th scope="col" class="pm-sortable" data-sort="start" data-type="date"><button type="button" class="pm-sortBtn">Start <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
+          <th scope="col" class="pm-sortable" data-sort="due" data-type="date"><button type="button" class="pm-sortBtn">Due <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
+          <th scope="col" class="pm-sortable" data-sort="actualCompletion" data-type="date"><button type="button" class="pm-sortBtn">Completed <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable" data-sort="supportTicket" data-type="string"><button type="button" class="pm-sortBtn">Ticket</button></th>
         </tr></thead>
         <tbody>${rowsHtml || '<tr><td colspan="12" style="text-align:center;padding:16px;color:#888;">No tasks found.</td></tr>'}</tbody>
@@ -4898,6 +4913,426 @@
 
     setView("objectives");
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // INLINE CELL EDITOR
+  // ═══════════════════════════════════════════════════════════════════════════
+  var INLINE_EDIT_BLOCKLIST = {
+    task: new Set([
+      String(TASK_IND.projectKey),
+      String(TASK_IND.assignedTo),
+      String(TASK_IND.dependencies),
+      String(TASK_IND.supportTicket),
+    ]),
+    project: new Set([
+      String(PROJECT_IND.projectKey),
+      String(PROJECT_IND.owner),
+      String(PROJECT_IND.okrAssociation),
+      String(PROJECT_IND.keyResultSelection),
+      String(PROJECT_IND.ticketNumber),
+    ]),
+  };
+
+  var INLINE_INDICATOR_STATIC_MAP = {
+    9: { format: "text", options: [] },
+    10: { format: "dropdown", options: STATUS_CONFIG.ALL_STATUSES },
+    12: { format: "date", options: [] },
+    13: { format: "date", options: [] },
+    14: { format: "dropdown", options: ["High", "Medium", "Low"] },
+    16: { format: "dropdown", options: [] },
+    47: { format: "date", options: [] },
+    3: { format: "text", options: [] },
+    4: { format: "textarea", options: [] },
+    6: { format: "dropdown", options: [] },
+    32: { format: "dropdown", options: [] },
+    38: { format: "dropdown", options: [] },
+    70: { format: "date", options: [] },
+    73: { format: "text", options: [] },
+  };
+
+  function getDynamicOptions(indicatorId) {
+    var id = String(indicatorId);
+    if (id === String(TASK_IND.category)) {
+      return Array.from(
+        new Set(
+          (state.tasksAll || [])
+            .map(function (t) {
+              return String(t.category || "").trim();
+            })
+            .filter(Boolean),
+        ),
+      ).sort(function (a, b) {
+        return a.localeCompare(b);
+      });
+    }
+    if (id === String(PROJECT_IND.projectStatus)) {
+      return Array.from(
+        new Set(
+          (state.projectsAll || [])
+            .map(function (p) {
+              return String(p.projectStatus || "").trim();
+            })
+            .filter(Boolean),
+        ),
+      ).sort(function (a, b) {
+        return a.localeCompare(b);
+      });
+    }
+    if (id === String(PROJECT_IND.projectType)) {
+      return Array.from(
+        new Set(
+          (state.projectsAll || [])
+            .map(function (p) {
+              return String(p.projectType || "").trim();
+            })
+            .filter(Boolean),
+        ),
+      ).sort(function (a, b) {
+        return a.localeCompare(b);
+      });
+    }
+    if (id === String(PROJECT_IND.projectFiscalYear)) {
+      return Array.from(
+        new Set(
+          (state.projectsAll || [])
+            .map(function (p) {
+              return String(p.projectFiscalYear || "").trim();
+            })
+            .filter(Boolean),
+        ),
+      ).sort(function (a, b) {
+        return a.localeCompare(b, undefined, { numeric: true });
+      });
+    }
+    return null;
+  }
+
+  function fetchIndicatorMeta() {
+    return Promise.resolve(INLINE_INDICATOR_STATIC_MAP);
+  }
+
+  function resolveEditorType(fmt) {
+    if (!fmt) return null;
+    if (fmt === "dropdown" || fmt === "radio") return "dropdown";
+    if (fmt === "date") return "date";
+    if (fmt === "textarea") return "textarea";
+    if (fmt === "text") return "text";
+    return null;
+  }
+
+  var _activeEditorCell = null;
+  var _activeEditorInput = null;
+  var _activeOriginalValue = "";
+
+  function isInlineEditorOpen() {
+    return !!_activeEditorCell;
+  }
+
+  function openInlineEditor(cell) {
+    var indicatorId = cell.getAttribute("data-ind");
+    var recordId = cell.getAttribute("data-record-id");
+    var formType = cell.getAttribute("data-form-type");
+    if (!indicatorId || !recordId || !formType) return;
+    var blocklist = INLINE_EDIT_BLOCKLIST[formType];
+    if (blocklist && blocklist.has(String(indicatorId))) return;
+    if (_activeEditorCell && _activeEditorCell !== cell)
+      closeInlineEditor(true);
+    _activeEditorCell = cell;
+    _activeOriginalValue =
+      cell.getAttribute("data-current-value") || cell.textContent.trim();
+    var editorEl = document.getElementById("pmInlineEditor");
+    var skeleton = document.getElementById("pmInlineEditorSkeleton");
+    var bodyEl = document.getElementById("pmInlineEditorBody");
+    var hintEl = document.getElementById("pmInlineEditorHint");
+    if (!editorEl || !bodyEl) return;
+    bodyEl.innerHTML = "";
+    if (skeleton) skeleton.hidden = false;
+    if (hintEl) hintEl.textContent = "";
+    hideInlineEditorError();
+    positionEditorOverCell(editorEl, cell);
+    editorEl.hidden = false;
+    fetchIndicatorMeta(formType)
+      .then(function (meta) {
+        var indMeta = meta[String(indicatorId)];
+        if (!indMeta) {
+          closeInlineEditor(true);
+          if (skeleton) skeleton.hidden = true;
+          return;
+        }
+        var dynOpts = getDynamicOptions(indicatorId);
+        var options =
+          dynOpts && dynOpts.length > 0 ? dynOpts : indMeta.options || [];
+        var editorType = resolveEditorType(indMeta.format);
+        if (skeleton) skeleton.hidden = true;
+        if (!editorType) {
+          closeInlineEditor(true);
+          return;
+        }
+        var input;
+        if (editorType === "dropdown") {
+          input = document.createElement("select");
+          input.className = "pm-inlineEditor-select";
+          var blankOpt = document.createElement("option");
+          blankOpt.value = "";
+          blankOpt.textContent = "— select —";
+          input.appendChild(blankOpt);
+          options.forEach(function (opt) {
+            var o = document.createElement("option");
+            o.value = opt;
+            o.textContent = opt;
+            if (opt === _activeOriginalValue) o.selected = true;
+            input.appendChild(o);
+          });
+          if (hintEl) hintEl.textContent = "↵ save  ·  Esc cancel";
+        } else if (editorType === "date") {
+          input = document.createElement("input");
+          input.type = "date";
+          input.className = "pm-inlineEditor-input";
+          var iso = mmddyyyyToISO(_activeOriginalValue);
+          if (iso) input.value = iso;
+          if (hintEl) hintEl.textContent = "↵ save  ·  Esc cancel";
+        } else if (editorType === "textarea") {
+          input = document.createElement("textarea");
+          input.className = "pm-inlineEditor-textarea";
+          input.rows = 4;
+          input.value = _activeOriginalValue;
+          if (hintEl) hintEl.textContent = "Shift+↵ save  ·  Esc cancel";
+        } else {
+          input = document.createElement("input");
+          input.type = "text";
+          input.className = "pm-inlineEditor-input";
+          input.value = _activeOriginalValue;
+          if (hintEl) hintEl.textContent = "↵ save  ·  Esc cancel";
+        }
+        _activeEditorInput = input;
+        bodyEl.appendChild(input);
+        input.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" && editorType !== "textarea") {
+            e.preventDefault();
+            commitInlineEdit();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            closeInlineEditor(true);
+          }
+        });
+        if (editorType === "textarea") {
+          input.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" && e.shiftKey) {
+              e.preventDefault();
+              commitInlineEdit();
+            }
+          });
+        }
+        input.focus();
+        if (input.select) input.select();
+      })
+      .catch(function (err) {
+        console.warn("openInlineEditor:", err);
+        if (skeleton) skeleton.hidden = true;
+        closeInlineEditor(true);
+      });
+  }
+
+  function commitInlineEdit() {
+    if (!_activeEditorCell || !_activeEditorInput) return;
+    var cell = _activeEditorCell;
+    var input = _activeEditorInput;
+    var indicatorId = cell.getAttribute("data-ind");
+    var recordId = cell.getAttribute("data-record-id");
+    var formType = cell.getAttribute("data-form-type");
+    var origValue = _activeOriginalValue;
+    var rawValue = input.value;
+    var writeValue =
+      input.type === "date" && rawValue ? isoToMMDDYYYY(rawValue) : rawValue;
+    var isStatusEdit =
+      formType === "task" && parseInt(indicatorId, 10) === TASK_IND.status;
+    var completionDateValue = isStatusEdit
+      ? isCompletedStatus(writeValue)
+        ? todayMMDDYYYY()
+        : ""
+      : null;
+    updateCellDisplay(cell, indicatorId, formType, writeValue);
+    closeInlineEditor(false);
+    ensureCSRFToken(recordId)
+      .then(function (token) {
+        var tokenField = state.csrfField || getCSRFFieldName();
+        var bodyObj = { recordID: recordId, series: 1 };
+        bodyObj[indicatorId] = writeValue;
+        if (completionDateValue !== null)
+          bodyObj[TASK_IND.actualCompletionDate] = completionDateValue;
+        bodyObj[tokenField] = token;
+        return fetch(FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(recordId), {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "x-requested-with": "XMLHttpRequest",
+            "x-csrf-token": token,
+            "x-xsrf-token": token,
+          },
+          body: encodeFormBody(bodyObj),
+        });
+      })
+      .then(function (r) {
+        if (!r.ok) throw new Error("Save failed (HTTP " + r.status + ")");
+        updateStateAfterEdit(recordId, indicatorId, formType, writeValue);
+      })
+      .catch(function (err) {
+        console.warn("commitInlineEdit: write failed", err);
+        updateCellDisplay(cell, indicatorId, formType, origValue);
+        showInlineEditorError(cell, "Could not save. Please try again.");
+      });
+  }
+
+  function updateCellDisplay(cell, indicatorId, formType, value) {
+    cell.setAttribute("data-current-value", value || "");
+    var indNum = parseInt(indicatorId, 10);
+    if (formType === "task" && indNum === TASK_IND.status) {
+      var rec =
+        state.tasksById &&
+        state.tasksById.get(String(cell.getAttribute("data-record-id")));
+      if (rec)
+        cell.innerHTML = renderStatusCell(
+          Object.assign({}, rec, { status: value }),
+        );
+      else cell.textContent = value;
+      return;
+    }
+    if (formType === "task" && indNum === TASK_IND.priority) {
+      cell.innerHTML = getPriorityPill(value);
+      return;
+    }
+    if (formType === "project" && indNum === PROJECT_IND.projectStatus) {
+      cell.textContent = value;
+      return;
+    }
+    cell.textContent = value;
+  }
+
+  function updateStateAfterEdit(recordId, indicatorId, formType, value) {
+    var indNum = parseInt(indicatorId, 10);
+    if (formType === "task") {
+      for (var i = 0; i < (state.tasksAll || []).length; i++) {
+        if (String(state.tasksAll[i].recordID) !== String(recordId)) continue;
+        var t = state.tasksAll[i];
+        if (indNum === TASK_IND.title) t.title = value;
+        else if (indNum === TASK_IND.status) {
+          t.status = value;
+          t.actualCompletion = isCompletedStatus(value) ? todayMMDDYYYY() : "";
+        } else if (indNum === TASK_IND.priority) t.priority = value;
+        else if (indNum === TASK_IND.category) t.category = value;
+        else if (indNum === TASK_IND.startDate) t.start = value;
+        else if (indNum === TASK_IND.dueDate) t.due = value;
+        else if (indNum === TASK_IND.actualCompletionDate)
+          t.actualCompletion = value;
+        if (state.tasksById) state.tasksById.set(String(recordId), t);
+        break;
+      }
+    } else if (formType === "project") {
+      for (var j = 0; j < (state.projectsAll || []).length; j++) {
+        if (String(state.projectsAll[j].recordID) !== String(recordId))
+          continue;
+        var p = state.projectsAll[j];
+        if (indNum === PROJECT_IND.projectName) p.projectName = value;
+        else if (indNum === PROJECT_IND.description) p.description = value;
+        else if (indNum === PROJECT_IND.projectFiscalYear)
+          p.projectFiscalYear = value;
+        else if (indNum === PROJECT_IND.projectStatus) p.projectStatus = value;
+        break;
+      }
+    }
+  }
+
+  function closeInlineEditor(discard) {
+    var editorEl = document.getElementById("pmInlineEditor");
+    var bodyEl = document.getElementById("pmInlineEditorBody");
+    var skeleton = document.getElementById("pmInlineEditorSkeleton");
+    if (editorEl) editorEl.hidden = true;
+    if (bodyEl) bodyEl.innerHTML = "";
+    if (skeleton) skeleton.hidden = false;
+    _activeEditorCell = null;
+    _activeEditorInput = null;
+    _activeOriginalValue = "";
+    void discard;
+  }
+
+  function showInlineEditorError(cell, message) {
+    var errEl = document.getElementById("pmInlineEditorError");
+    var msgEl = document.getElementById("pmInlineEditorErrorMsg");
+    if (!errEl) return;
+    if (msgEl) msgEl.textContent = message || "Save failed.";
+    positionEditorOverCell(errEl, cell);
+    errEl.hidden = false;
+    clearTimeout(errEl._hideTimer);
+    errEl._hideTimer = setTimeout(function () {
+      errEl.hidden = true;
+    }, 4000);
+  }
+
+  function hideInlineEditorError() {
+    var errEl = document.getElementById("pmInlineEditorError");
+    if (errEl) {
+      clearTimeout(errEl._hideTimer);
+      errEl.hidden = true;
+    }
+  }
+
+  function positionEditorOverCell(overlayEl, cell) {
+    var rect = cell.getBoundingClientRect();
+    var scrollTop = window.scrollY || document.documentElement.scrollTop;
+    var scrollLeft = window.scrollX || document.documentElement.scrollLeft;
+    overlayEl.style.position = "absolute";
+    overlayEl.style.top = rect.top + scrollTop - 2 + "px";
+    overlayEl.style.left = rect.left + scrollLeft - 2 + "px";
+    overlayEl.style.minWidth = Math.max(rect.width, 160) + "px";
+  }
+
+  function mmddyyyyToISO(val) {
+    if (!val) return "";
+    var m = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!m) return "";
+    return `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
+  }
+
+  function isoToMMDDYYYY(val) {
+    if (!val) return "";
+    var m = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return val;
+    return `${m[2]}/${m[3]}/${m[1]}`;
+  }
+
+  function wireInlineCellEditor() {
+    document.addEventListener("click", function (e) {
+      var editorEl = document.getElementById("pmInlineEditor");
+      var errEl = document.getElementById("pmInlineEditorError");
+      if (editorEl && !editorEl.hidden && editorEl.contains(e.target)) return;
+      if (errEl && !errEl.hidden && errEl.contains(e.target)) return;
+      var el = e.target;
+      var cell = null;
+      while (el && el !== document.body) {
+        if (
+          el.tagName === "TD" &&
+          el.hasAttribute("data-ind") &&
+          el.hasAttribute("data-record-id")
+        ) {
+          cell = el;
+          break;
+        }
+        el = el.parentElement;
+      }
+      if (cell) {
+        e.stopPropagation();
+        openInlineEditor(cell);
+        return;
+      }
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && isInlineEditorOpen()) closeInlineEditor(true);
+    });
+  }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // END INLINE CELL EDITOR
+  // ═══════════════════════════════════════════════════════════════════════════
 
   function wireSortingDelegation() {
     var projectsContainer = document.getElementById("pmProjectsTable");
@@ -9725,6 +10160,7 @@
       wireModalControls();
       wireDismissOverdueAlert();
       wireOtherStatusModal();
+      wireInlineCellEditor();
       wireAddButtons();
       fetchAndRenderInboxCount();
       wireRecurringFieldHider();
