@@ -1053,11 +1053,11 @@
         var mrid = safeAttr(String(t.recordID || ""));
         return `<tr>
           ${taskIdCell}
-          <td class="pm-editableCell" data-ind="${TASK_IND.title}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Click to edit">${safe(t.title || "(No title)")}</td>
-          <td class="pm-editableCell" data-ind="${TASK_IND.status}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Click to edit">${renderStatusCell(t)}</td>
-          <td class="pm-editableCell" data-ind="${TASK_IND.priority}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Click to edit">${getPriorityPill(t.priority)}</td>
-          <td class="pm-editableCell" data-ind="${TASK_IND.startDate}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Click to edit">${safe(t.start)}</td>
-          <td class="pm-editableCell${overdueClass}" data-ind="${TASK_IND.dueDate}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Click to edit">${safe(t.due)}</td>
+          <td class="pm-editableCell" data-ind="${TASK_IND.title}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Double-click to edit">${safe(t.title || "(No title)")}</td>
+          <td class="pm-editableCell" data-ind="${TASK_IND.status}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Double-click to edit">${renderStatusCell(t)}</td>
+          <td class="pm-editableCell" data-ind="${TASK_IND.priority}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Double-click to edit">${getPriorityPill(t.priority)}</td>
+          <td class="pm-editableCell" data-ind="${TASK_IND.startDate}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Double-click to edit">${safe(t.start)}</td>
+          <td class="pm-editableCell${overdueClass}" data-ind="${TASK_IND.dueDate}" data-record-id="${mrid}" data-form-type="task" tabindex="0" title="Double-click to edit">${safe(t.due)}</td>
           <td>${safe(t.assignedTo)}</td>
         </tr>`;
       })
@@ -2429,7 +2429,7 @@
 
     // Description cell: truncated text + chevron toggle
     var descCell = hasDesc
-      ? `<td class="pm-colDesc pm-editableCell" data-ind="${PROJECT_IND.description}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">
+      ? `<td class="pm-colDesc pm-editableCell" data-ind="${PROJECT_IND.description}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Double-click to edit">
           <div class="pm-descCellInner">
             <span class="pm-descTruncated">${safe(descText)}</span>
             <button type="button"
@@ -2443,11 +2443,11 @@
             </button>
           </div>
         </td>`
-      : `<td class="pm-colDesc pm-editableCell" data-ind="${PROJECT_IND.description}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit"><span class="pm-descEmpty">—</span></td>`;
+      : `<td class="pm-colDesc pm-editableCell" data-ind="${PROJECT_IND.description}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Double-click to edit"><span class="pm-descEmpty">—</span></td>`;
 
     return `<tr id="${rowId}" class="pm-projectRow">
       <td class="pm-colKey">${pkLink}</td>
-      <td class="pm-colName pm-editableCell" data-ind="${PROJECT_IND.projectName}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">
+      <td class="pm-colName pm-editableCell" data-ind="${PROJECT_IND.projectName}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Double-click to edit">
         <div class="pm-descCellInner">
           ${p.customerOverviewUrl ? `<a href="${safeAttr(p.customerOverviewUrl)}" class="pm-customerOverviewGlobe" target="_blank" rel="noopener noreferrer" title="Open customer overview" aria-label="Open customer overview for ${safeAttr(projectNameText)}"><span class="material-icons" aria-hidden="true">language</span></a>` : ""}
           <span class="pm-descTruncated">${safe(projectNameText)}</span>
@@ -2465,9 +2465,9 @@
       ${descCell}
       <td class="pm-colOwner">${safe(p.owner)}</td>
       <td class="pm-colFitContent">${okrKeyText ? okrRecordLink(okrKeyText, okrKeyText) : "<span class='pm-okrFallback'>None</span>"}</td>
-      <td class="pm-colFitContent">${safe(p.projectStartDate)}</td>
-      <td class="pm-colFitContent pm-editableCell" data-ind="${PROJECT_IND.projectEndDate}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">${safe(p.projectEndDate)}</td>
-      <td class="pm-colFitContent pm-editableCell" data-ind="${PROJECT_IND.projectStatus}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">${safe(p.projectStatus)}</td>
+      <td class="pm-colFitContent pm-editableCell" data-ind="${PROJECT_IND.projectStartDate}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Double-click to edit">${safe(p.projectStartDate)}</td>
+      <td class="pm-colFitContent pm-editableCell" data-ind="${PROJECT_IND.projectEndDate}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Double-click to edit">${safe(p.projectEndDate)}</td>
+      <td class="pm-colFitContent pm-editableCell" data-ind="${PROJECT_IND.projectStatus}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Double-click to edit">${safe(p.projectStatus)}</td>
       <td class="pm-colCompletion"><span class="pm-compPctWrap"><span class="pm-compPctBar" style="--pct-width:${compPct}%;width:${Math.min(compPct, 100)}%" aria-hidden="true"></span><span class="${compClass} pm-compPctLabel">${compPct}%</span></span></td>
       <td class="pm-colFitContent">${p.ticketNumber ? supportTicketChip(p.ticketNumber) : ""}</td>
     </tr>`;
@@ -2569,7 +2569,7 @@
           <th scope="col" class="pm-sortable pm-colDesc" data-sort="description" data-type="string"><button type="button" class="pm-sortBtn">Description <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable pm-colOwner" data-sort="owner" data-type="string"><button type="button" class="pm-sortBtn">Owner</button></th>
           <th scope="col" class="pm-sortable" data-sort="okrAssociation" data-type="string"><button type="button" class="pm-sortBtn">OKR</button></th>
-          <th scope="col" class="pm-sortable" data-sort="projectStartDate" data-type="date"><button type="button" class="pm-sortBtn">Start</button></th>
+          <th scope="col" class="pm-sortable" data-sort="projectStartDate" data-type="date"><button type="button" class="pm-sortBtn">Start <span class="pm-editPencil material-icons" aria-label="Editable" title="Double-click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable" data-sort="projectEndDate" data-type="date"><button type="button" class="pm-sortBtn">Est. Complete <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable pm-colCompletion" data-sort="completionPct" data-type="number"><button type="button" class="pm-sortBtn">% Complete</button></th>
@@ -3430,20 +3430,20 @@
     return `<tr>
       <td>${pkLink}</td>
       <td>${taskLink}</td>
-      <td class="pm-editableCell" data-ind="${TASK_IND.title}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Click to edit">
+      <td class="pm-editableCell" data-ind="${TASK_IND.title}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Double-click to edit">
         <div style="display:inline-flex;align-items:center;gap:4px;max-width:100%;overflow:hidden;">
           ${t.isRecurring ? '<span class="material-icons pm-recurringIcon" style="flex-shrink:0;font-size:15px;" title="Recurring Task" aria-label="Recurring Task">change_circle</span>' : ""}
           <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${safe(titleText)}</span>
         </div>
       </td>
-      <td class="pm-editableCell" data-ind="${TASK_IND.status}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Click to edit">${renderStatusCell(t)}</td>
+      <td class="pm-editableCell" data-ind="${TASK_IND.status}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Double-click to edit">${renderStatusCell(t)}</td>
       <td>${renderDepsList(t.depIds)}</td>
-      <td class="pm-editableCell" data-ind="${TASK_IND.priority}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Click to edit">${getPriorityPill(t.priority)}</td>
-      <td class="pm-editableCell" data-ind="${TASK_IND.category}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Click to edit">${safe(t.category)}</td>
+      <td class="pm-editableCell" data-ind="${TASK_IND.priority}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Double-click to edit">${getPriorityPill(t.priority)}</td>
+      <td class="pm-editableCell" data-ind="${TASK_IND.category}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Double-click to edit">${safe(t.category)}</td>
       <td>${safe(t.assignedTo)}</td>
-      <td class="pm-editableCell" data-ind="${TASK_IND.startDate}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Click to edit">${safe(t.start)}</td>
-      <td class="pm-editableCell ${overdueClass}" data-ind="${TASK_IND.dueDate}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Click to edit">${safe(t.due)}</td>
-      <td class="pm-editableCell" data-ind="${TASK_IND.actualCompletionDate}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Click to edit">${formatDateCell(t.actualCompletion)}</td>
+      <td class="pm-editableCell" data-ind="${TASK_IND.startDate}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Double-click to edit">${safe(t.start)}</td>
+      <td class="pm-editableCell ${overdueClass}" data-ind="${TASK_IND.dueDate}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Double-click to edit">${safe(t.due)}</td>
+      <td class="pm-editableCell" data-ind="${TASK_IND.actualCompletionDate}" data-record-id="${safe(t.recordID)}" data-form-type="task" tabindex="0" title="Double-click to edit">${formatDateCell(t.actualCompletion)}</td>
       <td>${supportTicketChip(t.supportTicket)}</td>
     </tr>`;
   }
@@ -5051,6 +5051,7 @@
     6: { format: "dropdown", options: [] },
     32: { format: "dropdown", options: [] },
     38: { format: "dropdown", options: [] },
+    69: { format: "date", options: [] },
     70: { format: "date", options: [] },
     73: { format: "text", options: [] },
   };
@@ -5343,6 +5344,10 @@
         else if (indNum === PROJECT_IND.projectFiscalYear)
           p.projectFiscalYear = value;
         else if (indNum === PROJECT_IND.projectStatus) p.projectStatus = value;
+        else if (indNum === PROJECT_IND.projectStartDate)
+          p.projectStartDate = value;
+        else if (indNum === PROJECT_IND.projectEndDate)
+          p.projectEndDate = value;
         break;
       }
     }
@@ -5407,7 +5412,7 @@
   }
 
   function wireInlineCellEditor() {
-    document.addEventListener("click", function (e) {
+    document.addEventListener("dblclick", function (e) {
       var editorEl = document.getElementById("pmInlineEditor");
       var errEl = document.getElementById("pmInlineEditorError");
       if (editorEl && !editorEl.hidden && editorEl.contains(e.target)) return;
