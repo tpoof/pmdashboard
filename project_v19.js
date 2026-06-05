@@ -58,6 +58,9 @@
     projectType: 32,
     keyResultSelection: 37,
     ticketNumber: 68,
+    projectStartDate: 69,
+    projectEndDate: 70,
+    customerOverviewUrl: 73,
   };
 
   // OKR indicator IDs (Project form)
@@ -2046,6 +2049,10 @@
       status: extractFromS1(row, TASK_IND.status),
       otherSubType: extractFromS1(row, TASK_IND.otherSubType),
       assignedTo: extractFromS1(row, TASK_IND.assignedTo),
+      assignedToUserName: (function () {
+        var og = row.s1 && row.s1["id" + TASK_IND.assignedTo + "_orgchart"];
+        return og && og.userName ? String(og.userName).trim() : "";
+      })(),
       start: extractFromS1(row, TASK_IND.startDate),
       due: extractFromS1(row, TASK_IND.dueDate),
       priority: extractFromS1(row, TASK_IND.priority),
@@ -2090,6 +2097,13 @@
       projectType: extractFromS1(row, PROJECT_IND.projectType),
       keyResultSelection: extractFromS1(row, PROJECT_IND.keyResultSelection),
       ticketNumber: extractFromS1(row, PROJECT_IND.ticketNumber),
+      projectStartDate: extractFromS1(row, PROJECT_IND.projectStartDate),
+      projectEndDate: extractFromS1(row, PROJECT_IND.projectEndDate),
+      customerOverviewUrl: extractFromS1(row, PROJECT_IND.customerOverviewUrl),
+      ownerUserName: (function () {
+        var og = row.s1 && row.s1["id" + PROJECT_IND.owner + "_orgchart"];
+        return og && og.userName ? String(og.userName).trim() : "";
+      })(),
       okrKey: extractFromS1(row, OKR_IND.okrKey),
       okrObjective: extractFromS1(row, OKR_IND.objective),
       okrStartDate: extractFromS1(row, OKR_IND.startDate),
@@ -2426,9 +2440,10 @@
         </div>
       </td>
       <td class="pm-colDesc pm-editableCell" data-ind="${PROJECT_IND.description}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit"><div class="pm-wrapColLong">${safe(p.description)}</div></td>
-      <td>${safe(p.owner)}</td>
-      <td class="pm-editableCell" data-ind="${PROJECT_IND.projectFiscalYear}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">${safe(p.projectFiscalYear)}</td>
-      <td>${okrCombined}</td>
+      <td class="pm-colOwner">${safe(p.owner)}</td>
+      <td>${okrKeyText ? okrRecordLink(okrKeyText, okrKeyText) : "<span class='pm-okrFallback'>None</span>"}</td>
+      <td>${safe(p.projectStartDate)}</td>
+      <td class="pm-editableCell" data-ind="${PROJECT_IND.projectEndDate}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">${safe(p.projectEndDate)}</td>
       <td class="pm-editableCell" data-ind="${PROJECT_IND.projectStatus}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">${safe(p.projectStatus)}</td>
       <td class="pm-colCompletion"><span class="pm-compPctWrap"><span class="pm-compPctBar" style="--pct-width:${compPct}%;width:${Math.min(compPct, 100)}%" aria-hidden="true"></span><span class="${compClass} pm-compPctLabel">${compPct}%</span></span></td>
       <td>${p.ticketNumber ? supportTicketChip(p.ticketNumber) : ""}</td>
@@ -2463,9 +2478,10 @@
           <th scope="col" class="pm-sortable pm-colKey" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>
           <th scope="col" class="pm-sortable pm-colName" data-sort="projectName" data-type="string"><button type="button" class="pm-sortBtn">Project Name <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable pm-colDesc" data-sort="description" data-type="string"><button type="button" class="pm-sortBtn">Description <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
-          <th scope="col" class="pm-sortable" data-sort="owner" data-type="string"><button type="button" class="pm-sortBtn">Owner</button></th>
-          <th scope="col" class="pm-sortable" data-sort="projectFiscalYear" data-type="string"><button type="button" class="pm-sortBtn">FY <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
-          <th scope="col" class="pm-sortable" data-sort="okrAssociation" data-type="string"><button type="button" class="pm-sortBtn">OKR | Key Result</button></th>
+          <th scope="col" class="pm-sortable pm-colOwner" data-sort="owner" data-type="string"><button type="button" class="pm-sortBtn">Owner</button></th>
+          <th scope="col" class="pm-sortable" data-sort="okrAssociation" data-type="string"><button type="button" class="pm-sortBtn">OKR</button></th>
+          <th scope="col" class="pm-sortable" data-sort="projectStartDate" data-type="date"><button type="button" class="pm-sortBtn">Start</button></th>
+          <th scope="col" class="pm-sortable" data-sort="projectEndDate" data-type="date"><button type="button" class="pm-sortBtn">Est. Completion <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable pm-colCompletion" data-sort="completionPct" data-type="number"><button type="button" class="pm-sortBtn">% Complete</button></th>
           <th scope="col" class="pm-sortable" data-sort="ticketNumber" data-type="string"><button type="button" class="pm-sortBtn">Ticket #</button></th>
@@ -6940,20 +6956,65 @@
 
   function currentUserMatchesTask(task) {
     if (!CURRENT_USER_ID && !CURRENT_USER_NAME) return false;
-    var assigned = String(task.assignedTo || "")
-      .trim()
-      .toLowerCase();
-    if (!assigned) return false;
-    if (CURRENT_USER_ID && assigned === CURRENT_USER_ID.trim().toLowerCase())
-      return true;
+    if (CURRENT_USER_ID) {
+      var uid = CURRENT_USER_ID.trim().toLowerCase();
+      if (uid) {
+        var taskUserName = String(task.assignedToUserName || "")
+          .trim()
+          .toLowerCase();
+        if (taskUserName && taskUserName === uid) return true;
+        var assignedLower = String(task.assignedTo || "")
+          .trim()
+          .toLowerCase();
+        if (assignedLower && assignedLower === uid) return true;
+      }
+    }
     if (CURRENT_USER_NAME) {
-      var name = CURRENT_USER_NAME.trim().toLowerCase();
-      if (assigned === name) return true;
-      // Handle "Last, First" → "First Last" reversal
-      if (name.indexOf(",") !== -1) {
-        var parts = name.split(",");
-        var reversed = (parts[1] || "").trim() + " " + (parts[0] || "").trim();
-        if (assigned === reversed.toLowerCase()) return true;
+      var displayName = CURRENT_USER_NAME.trim().toLowerCase();
+      if (displayName) {
+        var assignedDisplay = String(task.assignedTo || "")
+          .trim()
+          .toLowerCase();
+        if (assignedDisplay && assignedDisplay === displayName) return true;
+        if (displayName.indexOf(",") !== -1) {
+          var parts = displayName.split(",");
+          var reversed =
+            (parts[1] || "").trim() + " " + (parts[0] || "").trim();
+          if (assignedDisplay === reversed) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function currentUserMatchesProject(project) {
+    if (!CURRENT_USER_ID && !CURRENT_USER_NAME) return false;
+    if (CURRENT_USER_ID) {
+      var uid = CURRENT_USER_ID.trim().toLowerCase();
+      if (uid) {
+        var projUserName = String(project.ownerUserName || "")
+          .trim()
+          .toLowerCase();
+        if (projUserName && projUserName === uid) return true;
+        var ownerLower = String(project.owner || "")
+          .trim()
+          .toLowerCase();
+        if (ownerLower && ownerLower === uid) return true;
+      }
+    }
+    if (CURRENT_USER_NAME) {
+      var displayName = CURRENT_USER_NAME.trim().toLowerCase();
+      if (displayName) {
+        var ownerDisplay = String(project.owner || "")
+          .trim()
+          .toLowerCase();
+        if (ownerDisplay && ownerDisplay === displayName) return true;
+        if (displayName.indexOf(",") !== -1) {
+          var parts = displayName.split(",");
+          var reversed =
+            (parts[1] || "").trim() + " " + (parts[0] || "").trim();
+          if (ownerDisplay === reversed) return true;
+        }
       }
     }
     return false;
@@ -6962,78 +7023,107 @@
   function renderOverdueAlert() {
     var alertEl = document.getElementById("pmOverdueAlert");
     if (!alertEl) return;
-
-    // Stay hidden if user dismissed this session
     if (sessionStorage.getItem(OVERDUE_ALERT_DISMISSED_KEY)) {
       alertEl.hidden = true;
       return;
     }
-
-    // Need tasks loaded before we can evaluate
-    if (!state.tasksAll || !state.tasksAll.length) {
-      alertEl.hidden = true;
-      return;
-    }
-
-    // If both user identity fields are empty, Smarty vars didn't resolve — bail silently
     if (!CURRENT_USER_ID && !CURRENT_USER_NAME) {
       alertEl.hidden = true;
       return;
     }
-
-    var now = new Date();
-    var overdueMine = state.tasksAll.filter(function (t) {
-      if (!currentUserMatchesTask(t)) return false;
-      if (isCompletedStatus(t.status)) return false;
-      if (isArchivedStatus(t.status)) return false;
-      return isOverdueTask(t, now);
-    });
-
-    if (!overdueMine.length) {
+    if (
+      (!state.tasksAll || !state.tasksAll.length) &&
+      (!state.projectsAll || !state.projectsAll.length)
+    ) {
       alertEl.hidden = true;
       return;
     }
-
-    // Sort by due date ascending (most overdue first)
-    overdueMine = overdueMine.slice().sort(function (a, b) {
-      var da = mmddyyyyToDate(a.due) || new Date(8640000000000000);
-      var db = mmddyyyyToDate(b.due) || new Date(8640000000000000);
-      return da - db;
-    });
-
-    var total = overdueMine.length;
-    var shown = overdueMine.slice(0, 5);
-    var remaining = total - shown.length;
-
+    var now = new Date();
+    var overdueTasks = (state.tasksAll || [])
+      .filter(function (t) {
+        if (!currentUserMatchesTask(t)) return false;
+        if (isCompletedStatus(t.status)) return false;
+        if (isArchivedStatus(t.status)) return false;
+        return isOverdueTask(t, now);
+      })
+      .slice()
+      .sort(function (a, b) {
+        var da = mmddyyyyToDate(a.due) || new Date(8640000000000000);
+        var db = mmddyyyyToDate(b.due) || new Date(8640000000000000);
+        return da - db;
+      });
+    var overdueProjects = (state.projectsAll || [])
+      .filter(function (p) {
+        if (!currentUserMatchesProject(p)) return false;
+        if (isCompletedStatus(p.projectStatus)) return false;
+        if (isArchivedStatus(p.projectStatus)) return false;
+        var endDate = mmddyyyyToDate(p.projectEndDate);
+        return !!(endDate && endDate.getTime() < now.getTime());
+      })
+      .slice()
+      .sort(function (a, b) {
+        var da = mmddyyyyToDate(a.projectEndDate) || new Date(8640000000000000);
+        var db = mmddyyyyToDate(b.projectEndDate) || new Date(8640000000000000);
+        return da - db;
+      });
+    var totalTasks = overdueTasks.length;
+    var totalProjects = overdueProjects.length;
+    var totalAll = totalTasks + totalProjects;
+    if (!totalAll) {
+      alertEl.hidden = true;
+      return;
+    }
     var headingEl = document.getElementById("pmOverdueAlertHeading");
     if (headingEl) {
-      headingEl.textContent = `You have ${total} overdue task${total === 1 ? "" : "s"}.`;
+      var parts = [];
+      if (totalTasks > 0)
+        parts.push(`${totalTasks} overdue task${totalTasks === 1 ? "" : "s"}`);
+      if (totalProjects > 0)
+        parts.push(
+          `${totalProjects} overdue project${totalProjects === 1 ? "" : "s"}`,
+        );
+      headingEl.textContent = `You have ${parts.join(" and ")}.`;
     }
-
+    var allItems = [];
+    overdueTasks.forEach(function (t) {
+      allItems.push({ type: "task", record: t });
+    });
+    overdueProjects.forEach(function (p) {
+      allItems.push({ type: "project", record: p });
+    });
+    var CAP = 5;
+    var shown = allItems.slice(0, CAP);
+    var remaining = allItems.length - shown.length;
     var listEl = document.getElementById("pmOverdueAlertList");
     if (listEl) {
       listEl.innerHTML = shown
-        .map(function (t) {
-          var title = String(t.title || "(No title)");
-          var safeTitle = safe(title);
-          var safeAttrTitle = safeAttr(`Task ${t.recordID} — ${title}`);
-          if (t.href) {
-            return `<li><a href="${safe(t.href)}" class="pm-recordLink pm-overdueAlert-link" data-title="${safeAttrTitle}">${safeTitle}</a></li>`;
+        .map(function (item) {
+          if (item.type === "task") {
+            var t = item.record;
+            var title = String(t.title || "(No title)");
+            var badge = `<span class="pm-overdueAlert-badge pm-overdueAlert-badge--task">Task</span>`;
+            if (t.href)
+              return `<li>${badge}<a href="${safe(t.href)}" class="pm-recordLink pm-overdueAlert-link" data-title="${safeAttr(`Task ${t.recordID} — ${title}`)}" target="_blank" rel="noopener noreferrer">${safe(title)}</a></li>`;
+            return `<li>${badge}${safe(title)}</li>`;
+          } else {
+            var p = item.record;
+            var name = String(p.projectName || p.projectKey || "(No name)");
+            var badge = `<span class="pm-overdueAlert-badge pm-overdueAlert-badge--project">Project</span>`;
+            if (p.href)
+              return `<li>${badge}<a href="${safe(p.href)}" class="pm-recordLink pm-overdueAlert-link" data-title="${safeAttr(`Project ${p.projectKey || p.recordID} — ${name}`)}" target="_blank" rel="noopener noreferrer">${safe(name)}</a></li>`;
+            return `<li>${badge}${safe(name)}</li>`;
           }
-          return `<li>${safeTitle}</li>`;
         })
         .join("");
     }
-
     var moreEl = document.getElementById("pmOverdueAlertMore");
     if (moreEl) {
       moreEl.textContent =
         remaining > 0
-          ? `and ${remaining} more overdue task${remaining === 1 ? "" : "s"}.`
+          ? `and ${remaining} more overdue item${remaining === 1 ? "" : "s"}.`
           : "";
       moreEl.hidden = remaining === 0;
     }
-
     alertEl.hidden = false;
   }
 
@@ -9946,6 +10036,9 @@
         PROJECT_IND.projectType,
         PROJECT_IND.keyResultSelection,
         PROJECT_IND.ticketNumber,
+        PROJECT_IND.projectStartDate,
+        PROJECT_IND.projectEndDate,
+        PROJECT_IND.customerOverviewUrl,
         OKR_IND.okrKey,
         OKR_IND.objective,
         OKR_IND.startDate,
@@ -9955,7 +10048,6 @@
       projectsQuery.setExtraParams("&x-filterData=recordID,date");
 
       var tasksQuery = new LeafFormQuery();
-      tasksQuery.addTerm("categoryID", "=", "form_9b302");
       tasksQuery.addTerm("deleted", "=", "0");
       tasksQuery.getData([
         TASK_IND.projectKey,
@@ -10221,6 +10313,9 @@
         PROJECT_IND.projectType,
         PROJECT_IND.keyResultSelection,
         PROJECT_IND.ticketNumber,
+        PROJECT_IND.projectStartDate,
+        PROJECT_IND.projectEndDate,
+        PROJECT_IND.customerOverviewUrl,
         OKR_IND.okrKey,
         OKR_IND.objective,
         OKR_IND.startDate,

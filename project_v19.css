@@ -3284,3 +3284,125 @@ canvas.pm-chartClickable {
 /* ═══════════════════════════════════════════════════════════════════════════
    END INLINE CELL EDITOR
    ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Owner column — narrower */
+.pm-colOwner {
+  width: 100px;
+  min-width: 80px;
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   OVERDUE ALERT BANNER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.pm-overdueAlert {
+  box-sizing: border-box;
+  width: 100%;
+  background-color: #fff1d2;
+  border-left: 4px solid #ffbe2e;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: #1b1b1b;
+}
+
+.pm-overdueAlert-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.pm-overdueAlert-icon {
+  font-size: 1.4rem;
+  color: #936f38;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.pm-overdueAlert-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.pm-overdueAlert-heading {
+  margin: 0 0 6px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1b1b1b;
+}
+
+.pm-overdueAlert-list {
+  margin: 0 0 4px;
+  padding-left: 20px;
+  list-style: disc;
+}
+.pm-overdueAlert-list li {
+  margin-bottom: 3px;
+  line-height: 1.4;
+}
+
+.pm-overdueAlert-link {
+  color: #1a4480;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 600;
+}
+.pm-overdueAlert-link:hover {
+  color: #162e51;
+}
+
+.pm-overdueAlert-more {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  color: #3d3d3d;
+}
+
+.pm-overdueAlert-dismiss {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
+  color: #1b1b1b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  line-height: 1;
+}
+.pm-overdueAlert-dismiss:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+.pm-overdueAlert-dismiss:focus-visible {
+  outline: 3px solid #162e51;
+  outline-offset: 2px;
+}
+.pm-overdueAlert-dismiss .material-icons {
+  font-size: 1.1rem;
+}
+
+.pm-overdueAlert-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-right: 6px;
+  vertical-align: middle;
+  flex-shrink: 0;
+  background-color: transparent;
+  color: #1b1b1b;
+  border: 1.5px solid #1b1b1b;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   END OVERDUE ALERT BANNER
+   ═══════════════════════════════════════════════════════════════════════════ */
