@@ -2534,6 +2534,18 @@
 
     el.innerHTML = `
       <table class="pm-table">
+        <colgroup>
+          <col style="width:1%;white-space:nowrap">
+          <col style="max-width:160px">
+          <col style="width:180px;max-width:200px">
+          <col style="width:1%;white-space:nowrap">
+          <col style="width:1%;white-space:nowrap">
+          <col style="width:1%;white-space:nowrap">
+          <col style="width:1%;white-space:nowrap">
+          <col style="width:1%;white-space:nowrap">
+          <col>
+          <col style="width:1%;white-space:nowrap">
+        </colgroup>
         <thead><tr>
           <th scope="col" class="pm-sortable pm-colKey" data-sort="projectKey" data-type="string"><button type="button" class="pm-sortBtn">Project Key</button></th>
           <th scope="col" class="pm-sortable pm-colName" data-sort="projectName" data-type="string"><button type="button" class="pm-sortBtn">Project Name <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>

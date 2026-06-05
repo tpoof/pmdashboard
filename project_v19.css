@@ -3411,37 +3411,61 @@ canvas.pm-chartClickable {
    PROJECTS TABLE — FIT-TO-CONTENT COLUMNS + DESCRIPTION DRAWER
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Fit-to-content: width:1% + nowrap tells the browser
-   "make this column as narrow as its content allows" */
-#pmProjectsTableWrap .pm-table td.pm-colFitContent,
-#pmProjectsTableWrap .pm-table th.pm-colFitContent {
+/* ── Projects table column sizing ──────────────────────────────────────────
+   Column order: Key(1) | Name(2) | Desc(3) | Owner(4) | OKR(5) |
+                 Start(6) | Est.Completion(7) | Status(8) | %Complete(9) | Ticket(10)
+
+   width:1% on th = "fit to content" — browsers use the header row for
+   column sizing, so setting it on th is what actually takes effect.
+   The matching td rule prevents content from overflowing.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Fit-to-content columns: Key, Owner, OKR, Start, Est.Completion, Status, Ticket */
+#pmProjectsTableWrap .pm-table th:nth-child(1),
+#pmProjectsTableWrap .pm-table td:nth-child(1),
+#pmProjectsTableWrap .pm-table th:nth-child(4),
+#pmProjectsTableWrap .pm-table td:nth-child(4),
+#pmProjectsTableWrap .pm-table th:nth-child(5),
+#pmProjectsTableWrap .pm-table td:nth-child(5),
+#pmProjectsTableWrap .pm-table th:nth-child(6),
+#pmProjectsTableWrap .pm-table td:nth-child(6),
+#pmProjectsTableWrap .pm-table th:nth-child(7),
+#pmProjectsTableWrap .pm-table td:nth-child(7),
+#pmProjectsTableWrap .pm-table th:nth-child(8),
+#pmProjectsTableWrap .pm-table td:nth-child(8),
+#pmProjectsTableWrap .pm-table th:nth-child(10),
+#pmProjectsTableWrap .pm-table td:nth-child(10) {
   width: 1%;
   white-space: nowrap;
 }
 
-/* Project Key — already has pm-colKey but enforce nowrap + fit */
-#pmProjectsTableWrap .pm-table td.pm-colKey,
-#pmProjectsTableWrap .pm-table th.pm-colKey {
-  width: 1%;
-  white-space: nowrap;
+/* Description column (3): fixed narrow, truncated in cell via flexbox */
+#pmProjectsTableWrap .pm-table th:nth-child(3),
+#pmProjectsTableWrap .pm-table td:nth-child(3) {
+  width: 180px;
+  min-width: 140px;
+  max-width: 200px;
 }
 
-/* Owner — narrow */
-#pmProjectsTableWrap .pm-table td.pm-colOwner,
-#pmProjectsTableWrap .pm-table th.pm-colOwner {
-  width: 1%;
-  white-space: nowrap;
+/* Project Name column (2): bounded wrapping */
+#pmProjectsTableWrap .pm-table th:nth-child(2),
+#pmProjectsTableWrap .pm-table td:nth-child(2) {
+  max-width: 160px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Owner (4): extra guard on overflow */
+#pmProjectsTableWrap .pm-table td:nth-child(4) {
   max-width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Description — fixed narrow width, single line truncated */
-#pmProjectsTableWrap .pm-table td.pm-colDesc,
-#pmProjectsTableWrap .pm-table th.pm-colDesc {
-  width: 200px;
-  min-width: 160px;
-  max-width: 200px;
+/* Sub-rows span all 10 columns — nth-child sizing doesn't apply to them */
+#pmProjectsTableWrap .pm-projDescSubRow td {
+  width: auto !important;
+  white-space: normal !important;
 }
 
 /* Description cell inner layout: truncated text + chevron */
@@ -3531,13 +3555,6 @@ canvas.pm-chartClickable {
   line-height: 1.6;
   color: var(--clr-text, #1f2937);
   white-space: pre-wrap;
-  word-break: break-word;
-}
-
-/* Project Name — bounded wrapping */
-#pmProjectsTableWrap .pm-table td.pm-colName {
-  max-width: 160px;
-  white-space: normal;
   word-break: break-word;
 }
 
