@@ -3467,12 +3467,12 @@ canvas.pm-chartClickable {
   max-width: none !important;
 }
 
-/* 7. % Complete (9): needs room for the progress bar */
+/* 7. % Complete (9): fit to content like Owner */
 #pmProjectsTableWrap .pm-table th:nth-child(9),
 #pmProjectsTableWrap .pm-table td:nth-child(9) {
-  width: 120px !important;
-  min-width: 110px !important;
-  max-width: 140px !important;
+  width: 1% !important;
+  min-width: 0 !important;
+  max-width: none !important;
   overflow: visible !important;
 }
 

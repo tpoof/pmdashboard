@@ -153,8 +153,8 @@
     projects: {
       storageKey: "pm_projects_pagination_v18",
       containerId: "pmProjectsTablePagination",
-      defaultPageSize: 25,
-      pageSizes: [25, 50, 100],
+      defaultPageSize: 50,
+      pageSizes: [50, 100, 200],
     },
   };
 
@@ -2448,9 +2448,18 @@
     return `<tr id="${rowId}" class="pm-projectRow">
       <td class="pm-colKey">${pkLink}</td>
       <td class="pm-colName pm-editableCell" data-ind="${PROJECT_IND.projectName}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Click to edit">
-        <div class="pm-projectNameCell">
+        <div class="pm-descCellInner">
           ${p.customerOverviewUrl ? `<a href="${safeAttr(p.customerOverviewUrl)}" class="pm-customerOverviewGlobe" target="_blank" rel="noopener noreferrer" title="Open customer overview" aria-label="Open customer overview for ${safeAttr(projectNameText)}"><span class="material-icons" aria-hidden="true">language</span></a>` : ""}
-          <span class="pm-wrapCol pm-colNameText">${safe(projectNameText)}</span>
+          <span class="pm-descTruncated">${safe(projectNameText)}</span>
+          <button type="button"
+            class="pm-projDescToggle"
+            data-subrow="${subRowId}"
+            aria-expanded="false"
+            aria-controls="${subRowId}"
+            aria-label="Expand project details"
+            title="Expand details">
+            <span class="material-icons pm-projDescChevron" aria-hidden="true">expand_more</span>
+          </button>
         </div>
       </td>
       ${descCell}
@@ -2472,17 +2481,22 @@
     var parentRow = btn.closest("tr.pm-projectRow");
     if (!parentRow) return;
 
+    // All toggle buttons in this row that share the same subrow (Name + Desc columns)
+    var allToggles = parentRow.querySelectorAll(
+      `.pm-projDescToggle[data-subrow="${subRowId}"]`,
+    );
+
     if (isExpanded) {
-      // Collapse — remove sub-row
       var existing = document.getElementById(subRowId);
       if (existing) existing.remove();
-      btn.setAttribute("aria-expanded", "false");
-      btn.setAttribute("aria-label", "Expand full description");
-      btn
-        .querySelector(".pm-projDescChevron")
-        .classList.remove("pm-projDescChevron--open");
+      allToggles.forEach(function (t) {
+        t.setAttribute("aria-expanded", "false");
+        t.setAttribute("aria-label", "Expand project details");
+        t.querySelector(".pm-projDescChevron").classList.remove(
+          "pm-projDescChevron--open",
+        );
+      });
     } else {
-      // Expand — find full description from state
       var recordId =
         btn.closest("td") && btn.closest("td").getAttribute("data-record-id");
       var project = (state.projectsAll || []).find(function (p) {
@@ -2503,11 +2517,13 @@
       </td>`;
 
       parentRow.insertAdjacentElement("afterend", subRow);
-      btn.setAttribute("aria-expanded", "true");
-      btn.setAttribute("aria-label", "Collapse description");
-      btn
-        .querySelector(".pm-projDescChevron")
-        .classList.add("pm-projDescChevron--open");
+      allToggles.forEach(function (t) {
+        t.setAttribute("aria-expanded", "true");
+        t.setAttribute("aria-label", "Collapse project details");
+        t.querySelector(".pm-projDescChevron").classList.add(
+          "pm-projDescChevron--open",
+        );
+      });
     }
   }
 
@@ -2554,7 +2570,7 @@
           <th scope="col" class="pm-sortable pm-colOwner" data-sort="owner" data-type="string"><button type="button" class="pm-sortBtn">Owner</button></th>
           <th scope="col" class="pm-sortable" data-sort="okrAssociation" data-type="string"><button type="button" class="pm-sortBtn">OKR</button></th>
           <th scope="col" class="pm-sortable" data-sort="projectStartDate" data-type="date"><button type="button" class="pm-sortBtn">Start</button></th>
-          <th scope="col" class="pm-sortable" data-sort="projectEndDate" data-type="date"><button type="button" class="pm-sortBtn">Est. Completion <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
+          <th scope="col" class="pm-sortable" data-sort="projectEndDate" data-type="date"><button type="button" class="pm-sortBtn">Est. Complete <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable" data-sort="projectStatus" data-type="string"><button type="button" class="pm-sortBtn">Status <span class="pm-editPencil material-icons" aria-label="Editable" title="Click a cell to edit">edit</span></button></th>
           <th scope="col" class="pm-sortable pm-colCompletion" data-sort="completionPct" data-type="number"><button type="button" class="pm-sortBtn">% Complete</button></th>
           <th scope="col" class="pm-sortable" data-sort="ticketNumber" data-type="string"><button type="button" class="pm-sortBtn">Ticket #</button></th>
