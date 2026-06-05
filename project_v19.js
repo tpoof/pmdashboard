@@ -1,4 +1,7 @@
 (function () {
+  console.log(
+    "[PM Dashboard v19] Script loaded and executing — if you see this, the JS file is active",
+  );
   var env = document.getElementById("pmEnv");
   var CSRFToken = "";
   var CURRENT_USER_ID = "";
