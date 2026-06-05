@@ -1139,6 +1139,30 @@
     inlineContainer.style.display = "";
 
     var pkTable = inlineContainer.querySelector("table.pm-table");
+    console.group("[PM Dashboard] Bug 2 — openProjectTasksModal render");
+    console.log("projectKey:", projectKey);
+    console.log("tasks found:", tasks.length);
+    console.log("contentHtml length:", contentHtml.length);
+    console.log(
+      "inlineContainer innerHTML first 300 chars:",
+      inlineContainer.innerHTML.substring(0, 300),
+    );
+    console.log("pkTable found:", !!pkTable);
+    console.log(
+      "addTaskBtn found:",
+      !!document.getElementById("pmPkAddTaskBtn"),
+    );
+    // Sample first task link
+    var firstLink = inlineContainer.querySelector(
+      "a.pm-recordLink, a.pm-taskIdBadge",
+    );
+    console.log(
+      "First clickable link in modal:",
+      firstLink
+        ? firstLink.outerHTML.substring(0, 150)
+        : "NONE — links may be missing",
+    );
+    console.groupEnd();
     if (pkTable) wireInlineTableSort(pkTable);
 
     var addTaskBtn = document.getElementById("pmPkAddTaskBtn");
@@ -6828,6 +6852,22 @@
     document.addEventListener("click", function (e) {
       var a = e.target.closest("a.pm-recordLink");
       if (!a) return;
+
+      // DEBUG: log every pm-recordLink click to diagnose inline editing
+      console.group("[PM Dashboard] Bug 2 — pm-recordLink clicked");
+      console.log("Element:", a);
+      console.log("href:", a.getAttribute("href"));
+      console.log("data-title:", a.getAttribute("data-title"));
+      console.log("data-projectkey:", a.getAttribute("data-projectkey"));
+      console.log("classes:", a.className);
+      console.log(
+        "Inside pmModalInlineContent:",
+        !!a.closest("#pmModalInlineContent"),
+      );
+      console.log("Inside pmTasksTable:", !!a.closest("#pmTasksTable"));
+      console.log("Inside pmProjectsTable:", !!a.closest("#pmProjectsTable"));
+      console.groupEnd();
+
       e.preventDefault();
 
       // Only intercept project-key links when clicked from within the tasks table
@@ -7923,13 +7963,46 @@
 
     // Projects imported by month — only projects with a ticket # (indicator 68)
     var projectImportCounts = new Array(12).fill(0);
+    var _debugProjectsWithTickets = [];
+    var _debugProjectsWithoutTickets = [];
     (projectsForGeneralCharts || []).forEach(function (p) {
-      if (!String(p.ticketNumber || "").trim()) return;
+      if (!String(p.ticketNumber || "").trim()) {
+        _debugProjectsWithoutTickets.push({
+          key: p.projectKey,
+          ticketNumber: p.ticketNumber,
+        });
+        return;
+      }
+      _debugProjectsWithTickets.push({
+        key: p.projectKey,
+        ticketNumber: p.ticketNumber,
+      });
       var date = getProjectGeneralDate(p);
       if (!date || !inSelectedYear(date)) return;
       if (!inSelectedQuarter(date)) return;
       projectImportCounts[date.getMonth()] += 1;
     });
+    console.group("[PM Dashboard] Bug 1 — Project Import Chart Debug");
+    console.log(
+      "Total projectsForGeneralCharts:",
+      (projectsForGeneralCharts || []).length,
+    );
+    console.log(
+      "Projects WITH ticketNumber (should appear in chart):",
+      _debugProjectsWithTickets.length,
+      _debugProjectsWithTickets,
+    );
+    console.log(
+      "Projects WITHOUT ticketNumber (should be excluded):",
+      _debugProjectsWithoutTickets.length,
+      _debugProjectsWithoutTickets.slice(0, 5),
+    );
+    console.log("projectImportCounts array:", projectImportCounts);
+    console.log(
+      "Sample raw project (first in state.projectsAll):",
+      state.projectsAll && state.projectsAll[0],
+    );
+    console.groupEnd();
 
     var projectTypeData = buildProjectTypeChartData(projectsForGeneralCharts);
 
