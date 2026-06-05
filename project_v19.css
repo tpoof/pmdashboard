@@ -1237,8 +1237,8 @@ body {
 }
 
 .pm-colDesc {
-  width: 520px;
-  min-width: 320px;
+  width: 200px;
+  min-width: 140px;
   white-space: normal;
 }
 
@@ -1253,8 +1253,7 @@ body {
   overflow-wrap: break-word;
   word-break: normal;
   hyphens: auto;
-  max-width: 320px;
-  width: 320px;
+  max-width: 200px;
 }
 
 .pm-wrapColLong {
@@ -1263,8 +1262,7 @@ body {
   overflow-wrap: break-word;
   word-break: normal;
   hyphens: auto;
-  max-width: 420px;
-  width: 420px;
+  max-width: 300px;
 }
 
 .pm-table thead th {
@@ -3409,63 +3407,64 @@ canvas.pm-chartClickable {
 
 /* ═══════════════════════════════════════════════════════════════════════════
    PROJECTS TABLE — FIT-TO-CONTENT COLUMNS + DESCRIPTION DRAWER
+   ═══════════════════════════════════════════════════════════════════════════
+   Old global rules (.pm-colDesc: 520px, .pm-wrapCol: 320px, .pm-colName:
+   180px) fight fit-to-content. Use !important scoped to #pmProjectsTableWrap.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Projects table column sizing ──────────────────────────────────────────
-   Column order: Key(1) | Name(2) | Desc(3) | Owner(4) | OKR(5) |
-                 Start(6) | Est.Completion(7) | Status(8) | %Complete(9) | Ticket(10)
-
-   width:1% on th = "fit to content" — browsers use the header row for
-   column sizing, so setting it on th is what actually takes effect.
-   The matching td rule prevents content from overflowing.
-   ────────────────────────────────────────────────────────────────────────── */
-
-/* Fit-to-content columns: Key, Owner, OKR, Start, Est.Completion, Status, Ticket */
-#pmProjectsTableWrap .pm-table th:nth-child(1),
-#pmProjectsTableWrap .pm-table td:nth-child(1),
-#pmProjectsTableWrap .pm-table th:nth-child(4),
-#pmProjectsTableWrap .pm-table td:nth-child(4),
-#pmProjectsTableWrap .pm-table th:nth-child(5),
-#pmProjectsTableWrap .pm-table td:nth-child(5),
-#pmProjectsTableWrap .pm-table th:nth-child(6),
-#pmProjectsTableWrap .pm-table td:nth-child(6),
-#pmProjectsTableWrap .pm-table th:nth-child(7),
-#pmProjectsTableWrap .pm-table td:nth-child(7),
-#pmProjectsTableWrap .pm-table th:nth-child(8),
-#pmProjectsTableWrap .pm-table td:nth-child(8),
-#pmProjectsTableWrap .pm-table th:nth-child(10),
-#pmProjectsTableWrap .pm-table td:nth-child(10) {
-  width: 1%;
-  white-space: nowrap;
+/* 1. Reset ALL cells: compress to content, no wrapping */
+#pmProjectsTableWrap .pm-table th,
+#pmProjectsTableWrap .pm-table td {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  width: 1% !important;
 }
 
-/* Description column (3): fixed narrow, truncated in cell via flexbox */
-#pmProjectsTableWrap .pm-table th:nth-child(3),
-#pmProjectsTableWrap .pm-table td:nth-child(3) {
-  width: 180px;
-  min-width: 140px;
-  max-width: 200px;
-}
-
-/* Project Name column (2): bounded wrapping */
+/* 2. Project Name (2): single-line truncate, fixed cap */
 #pmProjectsTableWrap .pm-table th:nth-child(2),
 #pmProjectsTableWrap .pm-table td:nth-child(2) {
-  max-width: 160px;
-  white-space: normal;
-  word-break: break-word;
+  width: 140px !important;
+  max-width: 140px !important;
+  min-width: 0 !important;
 }
 
-/* Owner (4): extra guard on overflow */
-#pmProjectsTableWrap .pm-table td:nth-child(4) {
-  max-width: 130px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* 3. Description (3): wider to show truncated preview */
+#pmProjectsTableWrap .pm-table th:nth-child(3),
+#pmProjectsTableWrap .pm-table td:nth-child(3) {
+  width: 200px !important;
+  max-width: 200px !important;
+  min-width: 0 !important;
 }
 
-/* Sub-rows span all 10 columns — nth-child sizing doesn't apply to them */
+/* 4. % Complete (9): needs room for the progress bar */
+#pmProjectsTableWrap .pm-table th:nth-child(9),
+#pmProjectsTableWrap .pm-table td:nth-child(9) {
+  width: 120px !important;
+  max-width: 140px !important;
+  min-width: 110px !important;
+  overflow: visible !important;
+}
+
+/* 5. Kill inner wrappers that impose their own widths */
+#pmProjectsTableWrap .pm-wrapCol,
+#pmProjectsTableWrap .pm-wrapColLong {
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* 6. Sub-rows span all columns — undo compression */
 #pmProjectsTableWrap .pm-projDescSubRow td {
   width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
   white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 /* Description cell inner layout: truncated text + chevron */
