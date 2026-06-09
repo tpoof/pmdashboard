@@ -900,6 +900,11 @@
       : url;
     frame.src = iframeUrl;
 
+    // Track whether this modal was opened for a *new* task (no recordID in the
+    // opening URL, but the form URL references the task form).
+    var isNewTaskModal =
+      !_rMatch && String(url || "").indexOf("form_9b302") !== -1;
+
     // Suppress the LEAF header on every load
     if (frame._headerSuppressionHandler) {
       frame.removeEventListener("load", frame._headerSuppressionHandler);
@@ -908,6 +913,81 @@
       suppressIframeHeader(frame);
     };
     frame.addEventListener("load", frame._headerSuppressionHandler);
+
+    // Detect submission: when the iframe navigates to printview with a recordID
+    // after a new-task form, write "Not Started" to indicator 10.
+    if (frame._newTaskStatusHandler) {
+      frame.removeEventListener("load", frame._newTaskStatusHandler);
+      frame._newTaskStatusHandler = null;
+    }
+    if (isNewTaskModal) {
+      frame._newTaskStatusHandler = async function () {
+        try {
+          var frameUrl = "";
+          try {
+            frameUrl =
+              (frame.contentWindow && frame.contentWindow.location.href) || "";
+          } catch (e) {
+            return; // cross-origin — can't read URL
+          }
+          // Only act on printview navigations with a recordID
+          var newIdMatch = frameUrl.match(/[?&]recordID=(\d+)/i);
+          if (!newIdMatch) return;
+          if (
+            frameUrl.indexOf("printview") === -1 &&
+            frameUrl.indexOf("a=print") === -1
+          )
+            return;
+
+          var newRecordID = newIdMatch[1];
+          console.log(
+            `[PM Dashboard] New task detected: recordID=${newRecordID} — writing Not Started`,
+          );
+
+          // Remove handler so it only fires once per modal open
+          frame.removeEventListener("load", frame._newTaskStatusHandler);
+          frame._newTaskStatusHandler = null;
+
+          var token = await ensureCSRFToken(newRecordID);
+          var tokenField = state.csrfField || getCSRFFieldName();
+          var bodyObj = { recordID: newRecordID, series: 1 };
+          bodyObj[TASK_IND.status] = "Not Started";
+          bodyObj[tokenField] = token;
+
+          var resp = await fetch(
+            FORM_POST_ENDPOINT_PREFIX + encodeURIComponent(newRecordID),
+            {
+              method: "POST",
+              credentials: "include",
+              headers: {
+                "content-type":
+                  "application/x-www-form-urlencoded; charset=UTF-8",
+                "x-requested-with": "XMLHttpRequest",
+                "x-csrf-token": token,
+                "x-xsrf-token": token,
+              },
+              body: encodeFormBody(bodyObj),
+            },
+          );
+
+          if (resp.ok) {
+            console.log(
+              `[PM Dashboard] Not Started written successfully for task ${newRecordID}`,
+            );
+          } else {
+            console.warn(
+              `[PM Dashboard] Not Started write failed for task ${newRecordID}: HTTP ${resp.status}`,
+            );
+          }
+        } catch (e) {
+          console.warn(
+            "[PM Dashboard] Error writing Not Started for new task:",
+            e,
+          );
+        }
+      };
+      frame.addEventListener("load", frame._newTaskStatusHandler);
+    }
 
     frame.setAttribute(
       "title",
@@ -947,6 +1027,10 @@
     frame.src = "about:blank";
     frame.setAttribute("title", "LEAF content");
     if (openTabBtn) openTabBtn.setAttribute("data-url", "");
+    if (frame._newTaskStatusHandler) {
+      frame.removeEventListener("load", frame._newTaskStatusHandler);
+      frame._newTaskStatusHandler = null;
+    }
     // Restore iframe and clean up inline content container
     if (frame) frame.style.display = "";
     var inlineContainer = document.getElementById("pmModalInlineContent");
@@ -2449,7 +2533,7 @@
       <td class="pm-colKey">${pkLink}</td>
       <td class="pm-colName pm-editableCell" data-ind="${PROJECT_IND.projectName}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Double-click to edit">
         <div class="pm-descCellInner">
-          ${p.customerOverviewUrl ? `<a href="${safeAttr(p.customerOverviewUrl)}" class="pm-customerOverviewGlobe" target="_blank" rel="noopener noreferrer" title="Open customer overview" aria-label="Open customer overview for ${safeAttr(projectNameText)}"><span class="material-icons" aria-hidden="true">language</span></a>` : ""}
+          ${p.customerOverviewUrl ? `<a href="${safeAttr(p.customerOverviewUrl)}" class="pm-customerOverviewGlobe" target="_blank" rel="noopener noreferrer" title="Open customer hub" aria-label="Open customer hub for ${safeAttr(projectNameText)}"><span class="material-icons" aria-hidden="true">language</span></a>` : ""}
           <span class="pm-descTruncated">${safe(projectNameText)}</span>
           <button type="button"
             class="pm-projDescToggle"
