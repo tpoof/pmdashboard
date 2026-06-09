@@ -272,6 +272,11 @@ body {
   row-gap: 12px;
 }
 
+/* Projects filter row — same two-row layout */
+#pmTab-projects .pm-filterRow {
+  row-gap: 12px;
+}
+
 #pmOkrsFilterRow {
   margin-bottom: 10px;
 }
