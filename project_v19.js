@@ -10395,7 +10395,7 @@
         TASK_IND.actualCompletionDate,
         TASK_IND.recurringCopied,
       ]);
-      tasksQuery.setExtraParams("&x-filterData=recordID,date");
+      tasksQuery.setExtraParams("&x-filterData=recordID,date,categoryID");
 
       var keyResultsQuery = new LeafFormQuery();
       keyResultsQuery.addTerm("deleted", "=", "0");
@@ -10422,7 +10422,7 @@
       });
       var taskRows = taskRowsAll.filter(function (r) {
         // Hard guard: only include records from the task form (form_9b302)
-        if (r.categoryID && r.categoryID !== "form_9b302") return false;
+        if (r.categoryID !== "form_9b302") return false;
         return hasAnyS1Value(
           r,
           [8, 9, 10, 44, 11, 12, 13, 14, 16, 17, 18, 30, 39, 47],
@@ -10682,7 +10682,7 @@
         TASK_IND.actualCompletionDate,
         TASK_IND.recurringCopied,
       ]);
-      tasksQuery.setExtraParams("&x-filterData=recordID,date");
+      tasksQuery.setExtraParams("&x-filterData=recordID,date,categoryID");
       tasksQuery.onProgress(function (count) {
         progressCounts.tasks = count;
         updateLoadingProgress();
@@ -10719,7 +10719,7 @@
         );
       });
       var taskRows = taskRowsAll.filter(function (r) {
-        if (r.categoryID && r.categoryID !== "form_9b302") return false;
+        if (r.categoryID !== "form_9b302") return false;
         return hasAnyS1Value(
           r,
           [8, 9, 10, 44, 11, 12, 13, 14, 16, 17, 18, 30, 39, 47],
