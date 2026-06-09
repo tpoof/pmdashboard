@@ -5543,28 +5543,25 @@
   // WORKFLOW STEP ALERT ICONS (lazy-fetched per table render)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  var STEP_ID_RESOLVED = 0; // assumed — debug log will confirm
+  // stepID >= 1 means record is actively in workflow (submitted, not resolved)
+  // stepID = 0 is ambiguous (unsubmitted draft OR resolved) — don't flag it
+  var STEP_ID_ACTIVE_THRESHOLD = 1;
   var _stepIDFetchPending = new Set(); // record IDs currently in-flight
 
   // Returns icon HTML or "" if no mismatch. Uses cached stepID.
   function getWorkflowAlertHtml(recordId, statusValue) {
     var cached = state.stepIDCache[String(recordId)];
-    if (cached === undefined) return ""; // not yet fetched — inject later
+    if (cached === undefined) return ""; // not yet fetched
     var stepId = cached.stepID;
-    var isComplete = isCompletedStatus(statusValue);
+    if (stepId === null || stepId === undefined) return "";
+    var isTerminal =
+      isCompletedStatus(statusValue) || isArchivedStatus(statusValue);
 
-    if (isComplete && stepId !== STEP_ID_RESOLVED) {
-      // Red: marked complete but workflow still open
+    if (isTerminal && stepId >= STEP_ID_ACTIVE_THRESHOLD) {
+      // Red: marked complete/cancelled but workflow still actively open
       return `<span class="pm-workflowAlert pm-workflowAlert--red material-icons"
-        title="Workflow is still open in LEAF — record should be resolved"
+        title="Workflow still open — marked ${safe(statusValue)} but record is still active in LEAF"
         aria-label="Warning: workflow still open"
-        role="img">warning</span>`;
-    }
-    if (!isComplete && stepId === STEP_ID_RESOLVED) {
-      // Gold: workflow closed but not marked complete
-      return `<span class="pm-workflowAlert pm-workflowAlert--gold material-icons"
-        title="Workflow is closed in LEAF — status should be updated to Completed"
-        aria-label="Warning: workflow closed but status not complete"
         role="img">warning</span>`;
     }
     return "";
@@ -5605,8 +5602,6 @@
 
   // Batch-fetch stepIDs for all uncached record IDs visible in a container,
   // then inject icons. First call also logs a debug table.
-  var _stepIDDebugLogged = false;
-  // Set to true once you've confirmed the STEP_ID_RESOLVED value and removed the debug log
   async function fetchAndInjectWorkflowIcons(containerEl) {
     if (!containerEl) return;
     var statusIndicators = [
@@ -5645,15 +5640,6 @@
       query.setExtraParams("&x-filterData=recordID,stepID");
 
       var result = await query.execute();
-
-      // Also log the raw result once to see the actual response shape
-      if (!_stepIDDebugLogged) {
-        console.log(
-          "[PM Dashboard] stepID raw result sample:",
-          result ? Object.values(result).slice(0, 3) : "empty",
-        );
-      }
-
       var rows = result ? Object.values(result) : [];
 
       rows.forEach(function (row) {
@@ -5672,38 +5658,6 @@
         }
         _stepIDFetchPending.delete(id);
       });
-
-      // Debug log — fires once to surface actual stepID values
-      if (!_stepIDDebugLogged) {
-        _stepIDDebugLogged = true;
-        console.group(
-          "[PM Dashboard] stepID debug — confirm STEP_ID_RESOLVED value",
-        );
-        console.log("recordID → stepID → dashboard status:");
-        rows.forEach(function (row) {
-          var rid = String(row.recordID || row.recordId || "").trim();
-          var stepId = state.stepIDCache[rid]
-            ? state.stepIDCache[rid].stepID
-            : "?";
-          // Find the status for this record
-          var task = state.tasksById && state.tasksById.get(rid);
-          var proj =
-            !task &&
-            (state.projectsAll || []).find(function (p) {
-              return String(p.recordID) === rid;
-            });
-          var status = task ? task.status : proj ? proj.projectStatus : "?";
-          console.log(
-            `  recordID=${rid}  stepID=${stepId}  status="${status}"`,
-          );
-        });
-        console.log(
-          "Once confirmed, update STEP_ID_RESOLVED constant (currently:",
-          STEP_ID_RESOLVED,
-          ")",
-        );
-        console.groupEnd();
-      }
     } catch (err) {
       console.warn("[PM Dashboard] stepID batch fetch failed:", err);
       uncachedIds.forEach(function (id) {
