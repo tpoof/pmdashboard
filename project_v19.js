@@ -5606,6 +5606,7 @@
   // Batch-fetch stepIDs for all uncached record IDs visible in a container,
   // then inject icons. First call also logs a debug table.
   var _stepIDDebugLogged = false;
+  // Set to true once you've confirmed the STEP_ID_RESOLVED value and removed the debug log
   async function fetchAndInjectWorkflowIcons(containerEl) {
     if (!containerEl) return;
     var statusIndicators = [
@@ -5637,14 +5638,22 @@
 
     try {
       var query = new LeafFormQuery();
-      // Fetch all IDs in one batch
-      uncachedIds.forEach(function (id) {
-        query.addTerm("recordIDs", "=", id, "OR");
-      });
+      // Use a single recordIDs term with comma-separated IDs for a batch lookup
+      query.addTerm("recordIDs", "=", uncachedIds.join(","));
       query.join("status");
-      query.setExtraParams("&x-filterData=recordID");
+      // Must include stepID in filterData — join('status') puts it at the record root
+      query.setExtraParams("&x-filterData=recordID,stepID");
 
       var result = await query.execute();
+
+      // Also log the raw result once to see the actual response shape
+      if (!_stepIDDebugLogged) {
+        console.log(
+          "[PM Dashboard] stepID raw result sample:",
+          result ? Object.values(result).slice(0, 3) : "empty",
+        );
+      }
+
       var rows = result ? Object.values(result) : [];
 
       rows.forEach(function (row) {
