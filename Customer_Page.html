@@ -1,4 +1,10 @@
 <style>
+  /* ============================================================
+   CustomerOverview — LEAF Programmer Page
+   All styles scoped to #customerOverview to avoid conflicts
+   with LEAF's own stylesheet.
+   ============================================================ */
+
   #customerOverview *,
   #customerOverview *::before,
   #customerOverview *::after {
@@ -49,6 +55,7 @@
     outline-offset: 2px;
   }
 
+  /* ---- Visually hidden utility (screen-reader only) ---- */
   #customerOverview .co-sr-only {
     position: absolute;
     width: 1px;
@@ -62,7 +69,7 @@
   }
 
   /* ============================================================
-   Loading / error states
+   Loading state
    ============================================================ */
   #customerOverview .co-loading {
     display: flex;
@@ -90,6 +97,9 @@
     }
   }
 
+  /* ============================================================
+   Error state
+   ============================================================ */
   #customerOverview .co-error {
     background: #fff3f3;
     border: 1px solid #b51d1d;
@@ -103,24 +113,6 @@
   }
 
   /* ============================================================
-   Fade-in
-   ============================================================ */
-  @keyframes co-fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  #customerOverview .co-content-visible {
-    animation: co-fade-in 0.3s ease both;
-  }
-
-  /* ============================================================
    Page header
    ============================================================ */
   #customerOverview .co-header {
@@ -129,137 +121,24 @@
     border-bottom: 2px solid #dfe1e2;
   }
 
-  /* v3: Welcome banner — sits above the project name */
-  #customerOverview .co-welcome-banner {
-    background: linear-gradient(135deg, #003f72 0%, #0071bb 100%);
-    border-radius: 8px;
-    padding: 20px 24px;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-  }
-
-  #customerOverview .co-welcome-icon {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    align-self: center;
-  }
-
-  #customerOverview .co-welcome-icon svg {
-    width: 48px;
-    height: 48px;
-    color: #ffffff;
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
-  }
-
-  #customerOverview .co-welcome-text {
-    flex: 1;
-    min-width: 0;
-  }
-
-  #customerOverview .co-welcome-headline {
-    font-size: 1rem;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.85);
-    line-height: 1.3;
-    margin-bottom: 4px;
-    text-transform: none;
-    letter-spacing: 0;
-  }
-
-  /* Project title — large, bold, white, inside the banner */
-  #customerOverview .co-welcome-project-title {
+  #customerOverview .co-project-name {
     font-size: 2rem;
     font-weight: 700;
-    color: #ffffff;
-    line-height: 1.15;
-    margin-bottom: 10px;
+    color: #003f72;
+    margin-bottom: 6px;
+    line-height: 1.2;
   }
 
-  #customerOverview .co-welcome-sub {
-    font-size: 0.9375rem;
-    color: rgba(255, 255, 255, 0.8);
-    line-height: 1.5;
-  }
-
-  /* Share button */
-  #customerOverview .co-share-wrap {
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    align-self: stretch;
-  }
-
-  #customerOverview .co-share-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition:
-      background 0.15s,
-      border-color 0.15s;
-    flex-shrink: 0;
-  }
-
-  #customerOverview .co-share-btn svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  #customerOverview .co-share-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.9);
-  }
-
-  #customerOverview .co-share-btn:focus-visible {
-    outline: 3px solid #ffffff;
-    outline-offset: 3px;
-  }
-
-  #customerOverview .co-share-toast {
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
-    text-align: center;
-    white-space: nowrap;
-    min-height: 1em;
-    letter-spacing: 0.02em;
-  }
-
-  /* Header metadata table */
-  #customerOverview .co-meta-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 4px;
-    margin-bottom: 4px;
-  }
-
-  #customerOverview .co-meta-table td {
-    padding: 5px 0;
-    vertical-align: top;
+  #customerOverview .co-project-type {
     font-size: 1rem;
     color: #3d4551;
-    line-height: 1.5;
+    margin-bottom: 6px;
   }
 
-  #customerOverview .co-meta-table td:first-child {
-    width: 180px;
-    min-width: 140px;
-    padding-right: 16px;
-    white-space: nowrap;
-    flex-shrink: 0;
+  #customerOverview .co-project-poc {
+    font-size: 1rem;
+    color: #3d4551;
+    margin-bottom: 12px;
   }
 
   #customerOverview .co-project-label {
@@ -268,161 +147,23 @@
     letter-spacing: 0.04em;
   }
 
-  /* Project type row — value is a toggle button for the blurb */
-  #customerOverview .co-type-toggle {
-    background: none;
-    border: none;
-    padding: 0;
-    font: inherit;
-    color: #3d4551;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    text-align: left;
-    line-height: 1.5;
-  }
-
-  #customerOverview .co-type-toggle:hover {
-    color: #0071bb;
-  }
-
-  #customerOverview .co-type-toggle:focus-visible {
-    outline: 3px solid #0071bb;
-    outline-offset: 3px;
-    border-radius: 2px;
-  }
-
-  #customerOverview .co-type-chevron {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-    color: #71767a;
-    transition: transform 0.2s ease;
-  }
-
-  #customerOverview .co-type-toggle[aria-expanded="true"] .co-type-chevron {
-    transform: rotate(180deg);
-  }
-
-  /* Collapsible blurb row */
-  #customerOverview .co-blurb-row {
-    display: none;
-  }
-  #customerOverview .co-blurb-row.co-blurb-open {
-    display: table-row;
-  }
-
-  #customerOverview .co-blurb-cell {
-    padding-top: 2px !important;
-    padding-bottom: 8px !important;
-  }
-
-  #customerOverview .co-project-type-blurb {
-    font-size: 0.875rem;
-    font-style: italic;
-    color: #71767a;
-    line-height: 1.55;
-  }
-
-  /* POC mailto link */
-  #customerOverview .co-poc-link {
-    color: #0071bb;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  #customerOverview .co-poc-link:hover {
-    color: #003f72;
-  }
-
-  #customerOverview .co-poc-link:focus-visible {
-    outline: 3px solid #0071bb;
-    outline-offset: 3px;
-    border-radius: 2px;
-  }
-
-  /* LEAF URL link */
-  #customerOverview .co-leaf-url-link {
-    color: #0071bb;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  #customerOverview .co-leaf-url-link:hover {
-    color: #003f72;
-  }
-
   /* ============================================================
-   Progress bar
+   Progress bar section
    ============================================================ */
   #customerOverview .co-progress-section {
     margin-bottom: 40px;
   }
 
-  /* Heading row — toggle button sits inline */
   #customerOverview .co-progress-heading {
     font-size: 1.25rem;
     font-weight: 700;
     color: #003f72;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  #customerOverview .co-progress-heading-toggle {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    font-size: inherit;
-    font-weight: inherit;
-    color: inherit;
-    line-height: inherit;
-  }
-
-  #customerOverview .co-progress-heading-toggle:focus-visible {
-    outline: 3px solid #0071bb;
-    outline-offset: 3px;
-    border-radius: 2px;
-  }
-
-  #customerOverview .co-progress-heading-chevron {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    color: #71767a;
-    transition: transform 0.2s ease;
-  }
-
-  #customerOverview
-    .co-progress-heading-toggle[aria-expanded="true"]
-    .co-progress-heading-chevron {
-    transform: rotate(180deg);
-  }
-
-  /* Collapsible explainer */
-  #customerOverview .co-progress-explainer {
-    font-size: 0.875rem;
-    font-style: italic;
-    color: #71767a;
-    line-height: 1.55;
-    margin-bottom: 20px;
-    display: none;
-  }
-
-  #customerOverview .co-progress-explainer.co-explainer-open {
-    display: block;
+    margin-bottom: 28px;
   }
 
   #customerOverview .co-progress-nav {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    margin-top: 20px;
   }
 
   #customerOverview .co-progress-track {
@@ -435,11 +176,11 @@
     padding-bottom: 4px;
   }
 
-  /* Grey base connector line — top accounts for spacer(18) + gap(6) + half-circle(20) */
+  /* Horizontal connector line */
   #customerOverview .co-progress-track::before {
     content: "";
     position: absolute;
-    top: 44px;
+    top: 20px;
     left: 10%;
     right: 10%;
     height: 3px;
@@ -447,19 +188,7 @@
     z-index: 0;
   }
 
-  /* Green completed-segment overlay */
-  #customerOverview .co-progress-track::after {
-    content: "";
-    position: absolute;
-    top: 44px;
-    left: 10%;
-    height: 3px;
-    width: calc(var(--co-progress-pct, 0%) * 0.8);
-    background: #1a7a4a;
-    z-index: 0;
-    transition: width 0.4s ease;
-  }
-
+  /* ---- Individual step ---- */
   #customerOverview .co-step {
     display: flex;
     flex-direction: column;
@@ -468,30 +197,6 @@
     position: relative;
     z-index: 1;
     gap: 6px;
-  }
-
-  /* "We are here" label above active circle */
-  #customerOverview .co-step-here {
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #003f72;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    line-height: 1;
-    height: 18px;
-  }
-
-  #customerOverview .co-step-here-pin {
-    font-size: 0.7rem;
-  }
-
-  /* Spacer so non-active steps align vertically with the active one */
-  #customerOverview .co-step-here-spacer {
-    height: 18px;
   }
 
   #customerOverview .co-step-circle {
@@ -518,85 +223,49 @@
     line-height: 1.3;
   }
 
+  /* ---- Complete step ---- */
   #customerOverview .co-step--complete .co-step-circle {
     background: #1a7a4a;
     border-color: #1a7a4a;
     color: #ffffff !important;
   }
-  #customerOverview .co-step--complete .co-step-circle span {
+
+  #customerOverview .co-step--complete .co-step-circle span,
+  #customerOverview .co-step--complete .co-step-circle * {
     color: #ffffff !important;
   }
+
   #customerOverview .co-step--complete .co-step-label {
     color: #1b1b1b;
   }
 
+  /* ---- Active step ---- */
   #customerOverview .co-step--active .co-step-circle {
     background: #003f72 !important;
     border-color: #003f72 !important;
     color: #ffffff !important;
     box-shadow: 0 0 0 4px #cce0f5;
   }
-  #customerOverview .co-step--active .co-step-circle span {
+
+  #customerOverview .co-step--active .co-step-circle span,
+  #customerOverview .co-step--active .co-step-circle * {
     color: #ffffff !important;
   }
+
   #customerOverview .co-step--active .co-step-label {
     font-weight: 700;
     color: #003f72;
   }
 
-  /* Pulse animation — only when user has no motion preference (WCAG 2.1 compliant) */
-  @keyframes co-pulse {
-    0% {
-      box-shadow: 0 0 0 4px #cce0f5;
-    }
-    50% {
-      box-shadow: 0 0 0 8px rgba(0, 113, 187, 0.15);
-    }
-    100% {
-      box-shadow: 0 0 0 4px #cce0f5;
-    }
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    #customerOverview .co-step--active .co-step-circle {
-      animation: co-pulse 2s ease-in-out infinite;
-    }
-  }
-
+  /* ---- Upcoming step ---- */
   #customerOverview .co-step--upcoming .co-step-circle {
     background: #f0f0f0;
     border-color: #a9aeb1;
     color: #3d4551;
   }
+
   #customerOverview .co-step--upcoming .co-step-label {
     color: #71767a;
-  }
-
-  /* Clickable step button */
-  #customerOverview .co-step-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    width: 100%;
-  }
-
-  #customerOverview .co-step-btn:focus-visible .co-step-circle {
-    outline: 3px solid #0071bb;
-    outline-offset: 3px;
-  }
-
-  #customerOverview .co-step-btn:hover .co-step-circle {
-    filter: brightness(1.12);
-  }
-
-  #customerOverview .co-step--upcoming .co-step-btn:hover .co-step-circle {
-    border-color: #71767a;
-    background: #e6e6e6;
   }
 
   /* ============================================================
@@ -618,35 +287,6 @@
     border: 0;
   }
 
-  #customerOverview .co-phases-toolbar {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 12px;
-  }
-
-  #customerOverview .co-toggle-completed-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: none;
-    border: none;
-    padding: 4px 0;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #0071bb;
-    cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-  #customerOverview .co-toggle-completed-btn:hover {
-    color: #003f72;
-  }
-  #customerOverview .co-toggle-completed-btn:focus-visible {
-    outline: 3px solid #0071bb;
-    outline-offset: 3px;
-    border-radius: 2px;
-  }
-
   #customerOverview .co-phases {
     display: flex;
     flex-direction: column;
@@ -664,18 +304,14 @@
     border-color: #d6d7d9;
     background: #fafafa;
   }
-  #customerOverview .co-phase--complete.co-phase--collapsed .co-phase-body {
-    display: none;
-  }
-  #customerOverview .co-phase--complete.co-phase--collapsed .co-phase-header {
-    margin-bottom: 0;
-  }
+
   #customerOverview .co-phase--active {
     border-left: 5px solid #0071bb;
     background: #f0f7ff;
     border-color: #b5d0eb;
     padding-left: 20px;
   }
+
   #customerOverview .co-phase--upcoming {
     background: #fafafa;
     border-color: #e6e6e6;
@@ -686,11 +322,6 @@
     align-items: center;
     gap: 12px;
     margin-bottom: 14px;
-  }
-
-  #customerOverview .co-phase--complete .co-phase-header {
-    cursor: pointer;
-    user-select: none;
   }
 
   #customerOverview .co-phase-number {
@@ -709,21 +340,29 @@
     background: #1a7a4a;
     color: #ffffff !important;
   }
-  #customerOverview .co-phase--complete .co-phase-number span {
+
+  #customerOverview .co-phase--complete .co-phase-number span,
+  #customerOverview .co-phase--complete .co-phase-number * {
     color: #ffffff !important;
   }
+
   #customerOverview .co-phase--active .co-phase-number {
     background: #003f72;
     color: #ffffff !important;
   }
-  #customerOverview .co-phase--active .co-phase-number span {
+
+  #customerOverview .co-phase--active .co-phase-number span,
+  #customerOverview .co-phase--active .co-phase-number * {
     color: #ffffff !important;
   }
+
   #customerOverview .co-phase--upcoming .co-phase-number {
     background: #71767a;
     color: #ffffff !important;
   }
-  #customerOverview .co-phase--upcoming .co-phase-number span {
+
+  #customerOverview .co-phase--upcoming .co-phase-number span,
+  #customerOverview .co-phase--upcoming .co-phase-number * {
     color: #ffffff !important;
   }
 
@@ -733,6 +372,7 @@
     color: #1b1b1b;
     flex: 1;
   }
+
   #customerOverview .co-phase--upcoming .co-phase-title {
     color: #3d4551;
   }
@@ -746,37 +386,17 @@
     border-radius: 20px;
     flex-shrink: 0;
   }
+
   #customerOverview .co-phase--complete .co-phase-badge {
     background: #e5f5ed;
     color: #1a7a4a;
     border: 1px solid #1a7a4a;
   }
+
   #customerOverview .co-phase--active .co-phase-badge {
     background: #ddeeff;
     color: #003f72;
     border: 1px solid #0071bb;
-  }
-
-  #customerOverview .co-phase-chevron {
-    flex-shrink: 0;
-    width: 18px;
-    height: 18px;
-    color: #71767a;
-    transition: transform 0.2s ease;
-    display: none;
-  }
-  #customerOverview .co-phase--complete .co-phase-chevron {
-    display: block;
-  }
-  #customerOverview .co-phase--complete.co-phase--collapsed .co-phase-chevron {
-    transform: rotate(-90deg);
-  }
-
-  /* v3: phase body wraps both text content and attachments */
-  #customerOverview .co-phase-body {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
   }
 
   #customerOverview .co-phase-content {
@@ -786,9 +406,11 @@
     white-space: pre-wrap;
     word-break: break-word;
   }
+
   #customerOverview .co-phase--complete .co-phase-content {
     color: #3d4551;
   }
+
   #customerOverview .co-phase--upcoming .co-phase-content {
     color: #3d4551;
   }
@@ -797,292 +419,6 @@
     font-style: italic;
     color: #71767a;
     font-size: 0.9375rem;
-  }
-
-  #customerOverview .co-phase-empty {
-    font-size: 0.9rem;
-    font-style: italic;
-    color: #71767a;
-    line-height: 1.55;
-    padding-top: 12px;
-    border-top: 1px solid #dfe1e2;
-    margin-top: 4px;
-  }
-
-  /* ============================================================
-   v3: Attachment area
-   ============================================================ */
-  #customerOverview .co-attachments {
-    border-top: 1px solid #dfe1e2;
-    padding-top: 14px;
-  }
-
-  #customerOverview .co-attachments-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #71767a;
-    margin-bottom: 10px;
-  }
-
-  /* Loading shimmer for attachments */
-  #customerOverview .co-attach-loading {
-    font-size: 0.875rem;
-    color: #71767a;
-    font-style: italic;
-  }
-
-  /* Image grid */
-  #customerOverview .co-img-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
-  #customerOverview .co-img-thumb-btn {
-    display: block;
-    padding: 0;
-    background: none;
-    border: 2px solid #dfe1e2;
-    border-radius: 6px;
-    cursor: pointer;
-    line-height: 0;
-    transition:
-      border-color 0.15s,
-      box-shadow 0.15s;
-  }
-
-  #customerOverview .co-img-thumb-btn:hover,
-  #customerOverview .co-img-thumb-btn:focus {
-    border-color: #0071bb;
-  }
-
-  #customerOverview .co-img-thumb-btn:focus-visible {
-    outline: 3px solid #0071bb;
-    outline-offset: 3px;
-  }
-
-  #customerOverview .co-img-thumb {
-    width: 120px;
-    height: 90px;
-    object-fit: cover;
-    border-radius: 4px;
-    display: block;
-  }
-
-  #customerOverview .co-img-caption {
-    font-size: 0.7rem;
-    color: #71767a;
-    text-align: center;
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    margin-top: 4px;
-  }
-
-  #customerOverview .co-img-figure {
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  /* File list */
-  #customerOverview .co-file-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  #customerOverview .co-file-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  #customerOverview .co-file-icon {
-    flex-shrink: 0;
-    width: 28px;
-    height: 28px;
-    background: #ddeeff;
-    border: 1px solid #b5d0eb;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  #customerOverview .co-file-icon svg {
-    width: 14px;
-    height: 14px;
-    color: #003f72;
-  }
-
-  #customerOverview .co-file-link {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #0071bb;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  #customerOverview .co-file-link:hover {
-    color: #003f72;
-  }
-  #customerOverview .co-file-link:focus-visible {
-    outline: 3px solid #0071bb;
-    outline-offset: 3px;
-    border-radius: 2px;
-  }
-
-  /* ============================================================
-   Lightbox overlay
-   ============================================================ */
-  #co-lightbox {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: rgba(0, 0, 0, 0.9);
-    align-items: center;
-    justify-content: center;
-  }
-
-  #co-lightbox.co-lightbox--open {
-    display: flex;
-  }
-
-  #co-lightbox-inner {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    max-width: 94vw;
-    gap: 12px;
-  }
-
-  /* Toolbar: counter | full-size | close */
-  #co-lightbox-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    width: 100%;
-    justify-content: flex-end;
-  }
-
-  #co-lightbox .co-lightbox-counter {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.7);
-    margin-right: auto;
-    white-space: nowrap;
-  }
-
-  #co-lightbox .co-lightbox-fullsize {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.85);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    white-space: nowrap;
-  }
-
-  #co-lightbox .co-lightbox-fullsize:hover {
-    color: #ffffff;
-  }
-  #co-lightbox .co-lightbox-fullsize:focus-visible {
-    outline: 2px solid #ffffff;
-    outline-offset: 3px;
-    border-radius: 2px;
-  }
-
-  #co-lightbox-close {
-    background: none;
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    border-radius: 50%;
-    width: 34px;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: #ffffff;
-    flex-shrink: 0;
-    transition: background 0.15s;
-  }
-
-  #co-lightbox-close:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-  #co-lightbox-close:focus-visible {
-    outline: 2px solid #ffffff;
-    outline-offset: 3px;
-  }
-
-  /* Stage: prev | image | next */
-  #co-lightbox-stage {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  #co-lightbox-img {
-    display: block;
-    max-width: 80vw;
-    max-height: 78vh;
-    border-radius: 4px;
-    box-shadow: 0 8px 48px rgba(0, 0, 0, 0.6);
-    object-fit: contain;
-  }
-
-  #co-lightbox .co-lightbox-nav {
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: #ffffff;
-    transition:
-      background 0.15s,
-      border-color 0.15s;
-  }
-
-  #co-lightbox .co-lightbox-nav svg {
-    width: 20px;
-    height: 20px;
-  }
-  #co-lightbox .co-lightbox-nav:hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: #ffffff;
-  }
-  #co-lightbox .co-lightbox-nav:focus-visible {
-    outline: 2px solid #ffffff;
-    outline-offset: 3px;
-  }
-  #co-lightbox .co-lightbox-nav[hidden] {
-    display: none;
-  }
-
-  #co-lightbox-caption {
-    font-size: 0.875rem;
-    color: rgba(255, 255, 255, 0.75);
-    text-align: center;
-    max-width: 80vw;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   /* ============================================================
@@ -1101,388 +437,47 @@
     #customerOverview {
       padding: 16px;
     }
-    #customerOverview .co-welcome-project-title {
+
+    #customerOverview .co-project-name {
       font-size: 1.5rem;
     }
-    #customerOverview .co-welcome-banner {
-      padding: 16px;
-      gap: 12px;
-    }
-    #customerOverview .co-welcome-headline {
-      font-size: 1rem;
-    }
-    #customerOverview .co-welcome-icon svg {
-      width: 36px;
-      height: 36px;
-    }
+
     #customerOverview .co-step-circle {
       width: 34px;
       height: 34px;
       font-size: 0.875rem;
     }
-    #customerOverview .co-progress-track::before,
-    #customerOverview .co-progress-track::after {
-      top: 41px;
+
+    #customerOverview .co-progress-track::before {
+      top: 17px;
     }
+
     #customerOverview .co-step-label {
-      display: none;
+      font-size: 0.65rem;
+      max-width: 60px;
     }
-    #customerOverview .co-step-here {
-      font-size: 0.6rem;
-    }
+
     #customerOverview .co-phase {
       padding: 14px 16px;
     }
+
     #customerOverview .co-phase--active {
       padding-left: 14px;
     }
+
     #customerOverview .co-phase-title {
       font-size: 1rem;
     }
+
     #customerOverview .co-phase-badge {
       display: none;
-    }
-    #customerOverview .co-img-thumb {
-      width: 90px;
-      height: 68px;
-    }
-    #customerOverview .co-img-thumb-btn {
-      border-width: 1px;
-    }
-    #customerOverview .co-img-caption {
-      max-width: 90px;
-    }
-  }
-
-  /* ============================================================
-   Print styles
-   ============================================================ */
-  @media print {
-    #customerOverview .co-phases-toolbar,
-    #customerOverview .co-phase-chevron {
-      display: none !important;
-    }
-    #customerOverview .co-phase--collapsed .co-phase-body {
-      display: flex !important;
-    }
-    #customerOverview .co-phase--collapsed .co-phase-header {
-      margin-bottom: 14px !important;
-    }
-    #co-lightbox {
-      display: none !important;
-    }
-    #customerOverview .co-img-thumb-btn {
-      border: 1px solid #ccc;
-    }
-    #customerOverview .co-welcome-banner {
-      background: none !important;
-      border: 1px solid #dfe1e2;
-      padding: 14px 16px;
-    }
-    #customerOverview .co-welcome-headline {
-      color: #3d4551 !important;
-    }
-    #customerOverview .co-welcome-project-title {
-      color: #003f72 !important;
-    }
-    #customerOverview .co-welcome-sub {
-      color: #3d4551 !important;
-    }
-    #customerOverview .co-welcome-icon {
-      display: none;
-    }
-  }
-
-  /* ============================================================
-   Task checklists
-   ============================================================ */
-  #customerOverview .co-task-container {
-    display: flex;
-    gap: 24px;
-    margin-top: 16px;
-    border-top: 1px solid #dfe1e2;
-    padding-top: 14px;
-  }
-
-  #customerOverview .co-task-column {
-    flex: 1;
-    min-width: 0;
-  }
-
-  #customerOverview .co-task-heading {
-    font-size: 0.8125rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #3d4551;
-    margin-bottom: 8px;
-  }
-
-  #customerOverview .co-task-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-
-  #customerOverview .co-task-row input[type="checkbox"] {
-    flex-shrink: 0;
-    margin-top: 3px;
-    cursor: default;
-    accent-color: #003f72;
-  }
-
-  #customerOverview .co-task-text {
-    font-size: 0.9375rem;
-    color: #1b1b1b;
-    line-height: 1.5;
-  }
-
-  #customerOverview .co-task-empty {
-    font-size: 0.875rem;
-    font-style: italic;
-    color: #71767a;
-  }
-
-  #customerOverview .co-task-legend {
-    font-size: 0.75rem;
-    color: #71767a;
-    margin-top: 8px;
-    font-style: italic;
-  }
-
-  @media (max-width: 640px) {
-    #customerOverview .co-task-container {
-      flex-direction: column;
-      gap: 16px;
-    }
-  }
-
-  /* ============================================================
-   Attachment pills
-   ============================================================ */
-  #customerOverview .co-attachment-pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  #customerOverview .co-attachment-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #f0f0f0;
-    border: 1px solid #d6d7d9;
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: #1b1b1b;
-    text-decoration: none;
-    transition:
-      background 0.15s,
-      border-color 0.15s;
-    max-width: 240px;
-  }
-
-  #customerOverview .co-attachment-pill:hover {
-    background: #e6e6e6;
-    border-color: #a9aeb1;
-  }
-
-  #customerOverview .co-attachment-pill:focus-visible {
-    outline: 3px solid #0071bb;
-    outline-offset: 3px;
-    border-radius: 20px;
-  }
-
-  #customerOverview .co-attachment-pill span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 200px;
-  }
-
-  /* ============================================================
-   Jump-to-top button
-   ============================================================ */
-  #co-jump-top {
-    position: fixed;
-    bottom: 32px;
-    right: 32px;
-    z-index: 1200;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    border: none;
-    background: #003f72;
-    color: #ffffff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(8px);
-    transition:
-      opacity 0.2s ease,
-      transform 0.2s ease,
-      background 0.15s;
-  }
-
-  #co-jump-top.is-visible {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateY(0);
-  }
-
-  #co-jump-top:hover {
-    background: #0071bb;
-  }
-  #co-jump-top:focus-visible {
-    outline: 3px solid #0071bb;
-    outline-offset: 3px;
-    background: #0071bb;
-  }
-
-  #co-jump-top svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  @media (max-width: 640px) {
-    #co-jump-top {
-      bottom: 20px;
-      right: 16px;
-      width: 40px;
-      height: 40px;
-    }
-    #co-jump-top svg {
-      width: 18px;
-      height: 18px;
-    }
-  }
-
-  @media print {
-    #co-jump-top {
-      display: none !important;
     }
   }
 </style>
 
 <!-- ============================================================
-     CustomerOverview v3 — LEAF Programmer page markup
+     CustomerOverview — LEAF Programmer page markup
      ============================================================ -->
-
-<!-- Lightbox overlay (singleton, outside scoped wrapper) -->
-<div
-  id="co-lightbox"
-  role="dialog"
-  aria-modal="true"
-  aria-label="Image preview"
->
-  <div id="co-lightbox-inner">
-    <div id="co-lightbox-toolbar">
-      <span
-        id="co-lightbox-counter"
-        class="co-lightbox-counter"
-        aria-live="polite"
-        aria-atomic="true"
-      ></span>
-      <a
-        id="co-lightbox-fullsize"
-        class="co-lightbox-fullsize"
-        href="#"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Open full size image in new tab"
-      >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path
-            d="M10 2h4v4M9 7l5-5M6 14H2v-4M7 9l-5 5"
-            stroke="currentColor"
-            stroke-width="1.75"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-        Full size
-      </a>
-      <button
-        id="co-lightbox-close"
-        type="button"
-        aria-label="Close image preview"
-      >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path
-            d="M3 3l10 10M13 3L3 13"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-        </svg>
-      </button>
-    </div>
-    <div id="co-lightbox-stage">
-      <button
-        id="co-lightbox-prev"
-        type="button"
-        class="co-lightbox-nav"
-        aria-label="Previous image"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
-      </button>
-      <img id="co-lightbox-img" src="" alt="" />
-      <button
-        id="co-lightbox-next"
-        type="button"
-        class="co-lightbox-nav"
-        aria-label="Next image"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path d="M9 18l6-6-6-6" />
-        </svg>
-      </button>
-    </div>
-    <span id="co-lightbox-caption"></span>
-  </div>
-</div>
-
 <div id="customerOverview" lang="en">
   <a class="co-skip-link" href="#co-phase-details">Skip to phase details</a>
 
@@ -1492,6 +487,7 @@
     aria-live="polite"
     aria-atomic="true"
   ></div>
+
   <div
     id="co-live-assertive"
     class="co-sr-only"
@@ -1506,157 +502,22 @@
     aria-label="Loading project data"
   >
     <div class="co-spinner" aria-hidden="true"></div>
-    <p>Loading project data&hellip;</p>
+    <p id="co-loading-message">Loading project data…</p>
   </div>
-
-  <!-- debug panel — only shown when CONFIG.debug = true -->
-  <div
-    id="co-debug-panel"
-    style="
-      display: none;
-      background: #1b1b1b;
-      color: #a8ff78;
-      font-family: monospace;
-      font-size: 0.8rem;
-      padding: 16px;
-      border-radius: 6px;
-      margin-bottom: 16px;
-      white-space: pre-wrap;
-      word-break: break-all;
-      line-height: 1.6;
-    "
-  ></div>
 
   <div id="co-error" class="co-error" role="alert" style="display: none"></div>
 
   <div id="co-content" style="display: none">
     <header class="co-header">
-      <!-- v3: Welcome banner — project title lives here -->
-      <div class="co-welcome-banner" aria-label="Welcome message">
-        <div class="co-welcome-icon" aria-hidden="true">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.75"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <polygon
-              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-            />
-          </svg>
-        </div>
-        <div class="co-welcome-text">
-          <p class="co-welcome-headline">Welcome to your LEAF Project Hub,</p>
-          <h1 id="co-project-name" class="co-welcome-project-title"></h1>
-          <p class="co-welcome-sub">
-            This is your central view of progress, milestones, and the team
-            behind your project.
-          </p>
-        </div>
-        <!-- Share button -->
-        <div class="co-share-wrap">
-          <button
-            id="co-share-btn"
-            class="co-share-btn"
-            type="button"
-            aria-label="Copy Link to Share the Page"
-            title="Copy Link to Share the Page"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-              focusable="false"
-            >
-              <circle cx="18" cy="5" r="3" />
-              <circle cx="6" cy="12" r="3" />
-              <circle cx="18" cy="19" r="3" />
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-            </svg>
-          </button>
-          <span
-            id="co-share-toast"
-            class="co-share-toast"
-            aria-live="polite"
-            aria-atomic="true"
-          ></span>
-        </div>
-      </div>
-
-      <table class="co-meta-table" role="presentation">
-        <tbody>
-          <tr id="co-row-type" style="display: none">
-            <td><strong class="co-project-label">Project Type</strong></td>
-            <td id="co-project-type"></td>
-          </tr>
-          <tr id="co-blurb-row" class="co-blurb-row">
-            <td></td>
-            <td class="co-blurb-cell">
-              <p id="co-project-type-blurb" class="co-project-type-blurb"></p>
-            </td>
-          </tr>
-          <tr id="co-row-objective" style="display: none">
-            <td><strong class="co-project-label">Scope</strong></td>
-            <td id="co-project-objective"></td>
-          </tr>
-          <tr id="co-row-poc" style="display: none">
-            <td><strong class="co-project-label">LEAF POC</strong></td>
-            <td id="co-project-poc"></td>
-          </tr>
-          <tr id="co-row-service-poc" style="display: none">
-            <td><strong class="co-project-label">Customer POC</strong></td>
-            <td id="co-service-poc"></td>
-          </tr>
-          <tr id="co-row-leaf-url" style="display: none">
-            <td>
-              <strong class="co-project-label">Customer LEAF Site</strong>
-            </td>
-            <td id="co-leaf-url"></td>
-          </tr>
-        </tbody>
-      </table>
+      <h1 id="co-project-name" class="co-project-name"></h1>
+      <p id="co-project-type" class="co-project-type"></p>
+      <p id="co-project-poc" class="co-project-poc"></p>
     </header>
 
     <section class="co-progress-section" aria-labelledby="co-progress-heading">
       <h2 id="co-progress-heading" class="co-progress-heading">
-        <button
-          id="co-progress-toggle"
-          class="co-progress-heading-toggle"
-          type="button"
-          aria-expanded="false"
-          aria-controls="co-progress-explainer"
-        >
-          Project Phases
-          <svg
-            class="co-progress-heading-chevron"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path d="M3 5l5 5 5-5" />
-          </svg>
-        </button>
+        Project Phases
       </h2>
-      <p id="co-progress-explainer" class="co-progress-explainer" role="note">
-        Each phase represents a key milestone in your project journey. Your team
-        and the LEAF team work through these together. The progress bar reflects
-        where things stand today — click any phase circle to jump directly to
-        that section.
-      </p>
       <nav class="co-progress-nav" aria-label="Project phases">
         <ol id="co-progress-track" class="co-progress-track"></ol>
       </nav>
@@ -1664,46 +525,10 @@
 
     <section class="co-phases-section" aria-labelledby="co-phases-heading">
       <h2 id="co-phases-heading" class="co-phases-heading">Phase Details</h2>
-      <div
-        id="co-phases-toolbar"
-        class="co-phases-toolbar"
-        style="display: none"
-      >
-        <button
-          id="co-toggle-completed-btn"
-          class="co-toggle-completed-btn"
-          type="button"
-          aria-expanded="false"
-        >
-          <span id="co-toggle-completed-label">Show completed phases</span>
-        </button>
-      </div>
       <div id="co-phase-details" class="co-phases"></div>
     </section>
   </div>
 </div>
-
-<!-- Jump-to-top — outside scoped wrapper so fixed positioning is viewport-relative -->
-<button
-  id="co-jump-top"
-  type="button"
-  aria-label="Jump to Top of Page"
-  aria-hidden="true"
-  tabindex="-1"
->
-  <svg
-    viewBox="0 0 20 20"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2.5"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-    focusable="false"
-  >
-    <path d="M10 15V5M5 9l5-5 5 5" />
-  </svg>
-</button>
 
 <script>
   (function () {
@@ -1712,119 +537,50 @@
     /* ============================================================
      CONFIG
      ============================================================ */
-    var CONFIG = {
+    const CONFIG = {
       debug: false,
 
       categoryID: "55445",
 
       indicators: {
-        projectName: 59,
-        projectType: 60,
-        /*
-         * Indicators 67 and 74 are orgchart_employee fields.
-         * LEAF stores the empUID as the raw value and populates
-         * s1["id{N}_orgchart"] with { empUID, userName, … }.
-         */
+        projectName: 59, // Project Name
+        projectType: 60, // Project Type
         poc: 67, // LEAF POC
-        servicePoc: 74, // Customer POC
-        objective: 86, // Project Scope
-        leafURL: 87, // Customer LEAF Site
-
-        /*
-         * Indicator 61 is used ONLY for fetchPhaseOptions (phase label names).
-         * Its selected value is no longer read — active phase is determined
-         * by the workflow stepID via workflowStepToPhase below.
-         */
-        currentPhase: 61,
-
-        phase1: 62,
-        phase2: 63,
-        phase3: 64,
-        phase4: 65,
-        phase5: 66,
-
-        leafTasks1: 88, // Phase 1: LEAF Team Tasks
-        orgTasks1: 89, // Phase 1: Customer Org Tasks
-        leafTasks2: 90, // Phase 2: LEAF Team Tasks
-        orgTasks2: 91, // Phase 2: Customer Org Tasks
-        leafTasks3: 92, // Phase 3: LEAF Team Tasks
-        orgTasks3: 93, // Phase 3: Customer Org Tasks
-        leafTasks4: 94, // Phase 4: LEAF Team Tasks
-        orgTasks4: 95, // Phase 4: Customer Org Tasks
-        leafTasks5: 96, // Phase 5: LEAF Team Tasks
-        orgTasks5: 97, // Phase 5: Customer Org Tasks
+        currentPhase: 61, // Current Phase (dropdown)
+        phase1: 62, // Phase 1: Discovery
+        phase2: 63, // Phase 2: Planning
+        phase3: 64, // Phase 3: Execution
+        phase4: 65, // Phase 4: Launch
+        phase5: 66, // Phase 5: Monitoring
       },
 
       phases: [
-        {
-          step: 1,
-          label: "Discovery",
-          key: "phase1",
-          fileInd: 76,
-          imageInd: 77,
-          leafTasksKey: "leafTasks1",
-          orgTasksKey: "orgTasks1",
-        },
-        {
-          step: 2,
-          label: "Planning",
-          key: "phase2",
-          fileInd: 78,
-          imageInd: 79,
-          leafTasksKey: "leafTasks2",
-          orgTasksKey: "orgTasks2",
-        },
-        {
-          step: 3,
-          label: "Execution",
-          key: "phase3",
-          fileInd: 80,
-          imageInd: 81,
-          leafTasksKey: "leafTasks3",
-          orgTasksKey: "orgTasks3",
-        },
-        {
-          step: 4,
-          label: "Launch",
-          key: "phase4",
-          fileInd: 82,
-          imageInd: 83,
-          leafTasksKey: "leafTasks4",
-          orgTasksKey: "orgTasks4",
-        },
-        {
-          step: 5,
-          label: "Monitoring",
-          key: "phase5",
-          fileInd: 84,
-          imageInd: 85,
-          leafTasksKey: "leafTasks5",
-          orgTasksKey: "orgTasks5",
-        },
+        { step: 1, label: "Discovery", key: "phase1" },
+        { step: 2, label: "Planning", key: "phase2" },
+        { step: 3, label: "Execution", key: "phase3" },
+        { step: 4, label: "Launch", key: "phase4" },
+        { step: 5, label: "Monitoring", key: "phase5" },
       ],
 
       /*
-       * Maps LEAF workflow step IDs to phase numbers (1–5).
-       * Steps outside this range are never shown to customers:
-       *   < 19  → project not yet started (all phases neutral/grey)
-       *   > 23  → post-phase internal steps, clamp to phase 5
+       * Map the raw dropdown value stored by LEAF for IND_CURRENT_PHASE
+       * to a step number 1–5.
+       * TODO: verify these match the exact values LEAF stores for that field.
+       * Enable CONFIG.debug = true and check the console dump to confirm.
        */
-      workflowStepToPhase: { 19: 1, 20: 2, 21: 3, 22: 4, 23: 5 },
-
-      PROJECT_TYPE_BLURBS: {
-        "national project":
-          "A National Project is a structured, full-service engagement where the LEAF team guides your agency through every phase - from discovery to launch - with dedicated support along the way.",
-        "managed services":
-          "With Managed Services, the LEAF team remains a dedicated resource for your organization - available to help with questions, changes, and ongoing needs as your environment evolves.",
+      phaseValueMap: {
+        discovery: 1,
+        planning: 2,
+        execution: 3,
+        launch: 4,
+        monitoring: 5,
       },
     };
 
     /* ============================================================
      DOM helpers
      ============================================================ */
-    function byId(id) {
-      return document.getElementById(id);
-    }
+    const byId = (id) => document.getElementById(id);
 
     function esc(str) {
       if (str == null) return "";
@@ -1837,14 +593,17 @@
     }
 
     function announce(message, assertive) {
-      var node = byId(assertive ? "co-live-assertive" : "co-live-polite");
+      const node = byId(assertive ? "co-live-assertive" : "co-live-polite");
       if (!node) return;
       node.textContent = "";
-      setTimeout(function () {
+      setTimeout(() => {
         node.textContent = message;
       }, 60);
     }
 
+    /* ============================================================
+     Decode HTML entities that LEAF may encode (e.g. &amp; → &)
+     ============================================================ */
     function decodeEntities(str) {
       if (!str || typeof str !== "string") return str;
       return str
@@ -1859,114 +618,32 @@
     }
 
     /* ============================================================
-     getRecordIDFromURL
-     Tries multiple sources in order — LEAF programmer pages may
-     surface the record ID in different places depending on context:
-       1. ?a= on the current window (standard programmer page URL)
-       2. ?a= on the parent frame URL (when embedded in an iframe)
-       3. ?recordID= on either window
-     Logs each attempt when debug is on so the source is visible.
+     URL helper — reads the record ID from the URL hash.
+     Share links take the form: /projects/report.php?a=projecthub#590
+     LEAF uses ?a= to load this template; the hash carries the record ID.
+     Returns a numeric string (e.g. "590") or empty string if missing/invalid.
      ============================================================ */
-    function getRecordIDFromURL() {
-      function fromSearch(search, label) {
-        try {
-          var params = new URLSearchParams(search);
-          var v = params.get("a") || params.get("recordID") || "";
-          if (CONFIG.debug && v)
-            console.log("[CustomerOverview] recordID from " + label + ":", v);
-          return v;
-        } catch (e) {
-          var match = search.match(/[?&](?:a|recordID)=([^&]+)/);
-          var v2 = match ? decodeURIComponent(match[1]) : "";
-          if (CONFIG.debug && v2)
-            console.log(
-              "[CustomerOverview] recordID (regex) from " + label + ":",
-              v2,
-            );
-          return v2;
-        }
-      }
-
-      /* 1. Current window */
-      var id = fromSearch(window.location.search, "window.location");
-      if (id) return id;
-
-      /* 2. Parent frame (if embedded in iframe) */
-      try {
-        if (window.parent && window.parent !== window) {
-          id = fromSearch(window.parent.location.search, "parent.location");
-          if (id) return id;
-        }
-      } catch (e) {
-        /* Cross-origin parent — silently skip */
-        if (CONFIG.debug)
-          console.log(
-            "[CustomerOverview] parent.location inaccessible (cross-origin)",
-          );
-      }
-
-      if (CONFIG.debug) {
-        console.warn(
-          "[CustomerOverview] Could not find recordID in any URL source.",
-        );
-        console.log(
-          "[CustomerOverview] window.location.href:",
-          window.location.href,
-        );
-        try {
-          console.log(
-            "[CustomerOverview] parent.location.href:",
-            window.parent.location.href,
-          );
-        } catch (e) {}
-      }
-
-      return "";
+    function getRecordIDFromHash() {
+      const hash = window.location.hash.replace("#", "").trim();
+      return /^\d+$/.test(hash) ? hash : "";
     }
 
     /* ============================================================
-     getAPIBase
-     Returns the base URL for LEAF API calls, e.g.
-       "https://yoursite.gov/platform/projects"
-     Derived from the current page href so it works regardless of
-     iframe nesting depth or server path configuration.
+     State helpers
      ============================================================ */
-    function getAPIBase() {
-      /* Try current window first; fall back to parent if cross-origin access fails */
-      var href = "";
-      try {
-        href = window.location.href;
-      } catch (e) {}
-
-      /* Strip everything after the last "/" before any query string */
-      var base = href.replace(/\/[^\/]*(\?.*)?$/, "");
-
-      if (CONFIG.debug) console.log("[CustomerOverview] API base:", base);
-      return base;
-    }
-
     function showEl(id) {
-      var el = byId(id);
+      const el = byId(id);
       if (el) el.style.display = "";
     }
+
     function hideEl(id) {
-      var el = byId(id);
+      const el = byId(id);
       if (el) el.style.display = "none";
     }
 
-    /* ============================================================
-     dbg — write a line to the on-page debug panel (debug mode only)
-     ============================================================ */
-    function dbg(msg) {
-      if (!CONFIG.debug) return;
-      console.log("[CustomerOverview] " + msg);
-      var panel = byId("co-debug-panel");
-      if (!panel) return;
-      panel.style.display = "block";
-      panel.textContent += msg + "\n";
-    }
-
-    function showLoading() {
+    function showLoading(message = "Loading project data…") {
+      const msgEl = byId("co-loading-message");
+      if (msgEl) msgEl.textContent = message;
       showEl("co-loading");
       hideEl("co-error");
       hideEl("co-content");
@@ -1975,7 +652,7 @@
     function showError(message) {
       hideEl("co-loading");
       hideEl("co-content");
-      var errEl = byId("co-error");
+      const errEl = byId("co-error");
       errEl.textContent = message;
       showEl("co-error");
       announce(message, true);
@@ -1984,1429 +661,319 @@
     function showContent() {
       hideEl("co-loading");
       hideEl("co-error");
-      var contentEl = byId("co-content");
-      contentEl.style.display = "";
-      contentEl.classList.add("co-content-visible");
+      showEl("co-content");
       announce("Project data loaded.", false);
     }
 
+    /* ============================================================
+     Extract a field value from s1 using LEAF's keying convention.
+     LEAF stores values in s1 as: s1['id' + indicatorID] = 'raw string'
+     ============================================================ */
     function getField(s1, indicatorID) {
       if (!s1) return "";
-      var key = "id" + String(indicatorID);
-      var v = s1[key];
+      const key = `id${indicatorID}`;
+      const v = s1[key];
       if (v == null) return "";
       return decodeEntities(String(v).trim());
     }
 
+    /* ============================================================
+     Phase / step helpers
+     ============================================================ */
     function stepState(stepNumber, activeStep) {
       if (stepNumber < activeStep) return "complete";
       if (stepNumber === activeStep) return "active";
       return "upcoming";
     }
 
-    /*
-     * resolveActiveStep
-     * Maps a LEAF workflow stepID to a display phase number (1–5), or null
-     * if the record is outside the customer-visible phase range (< step 19).
-     *
-     * stepID may be a number, numeric string, or an array (parallel steps).
-     * When an array, we pick the first value in the 19–23 range.
-     *
-     * Returns:
-     *   null  → step < 19 or not set  (render all phases neutral/grey)
-     *   1–5   → active phase to highlight
-     *   5     → step > 23  (clamp to last visible phase)
-     */
-    function resolveActiveStep(stepID) {
-      /* Handle array (parallel workflow steps) — find first in-range value */
-      var id = Array.isArray(stepID)
-        ? stepID.find(function (s) {
-            return CONFIG.workflowStepToPhase[parseInt(s, 10)];
-          }) || stepID[0]
-        : stepID;
+    function resolveActiveStep(raw) {
+      if (!raw) return 1;
+      const norm = String(raw).toLowerCase().trim();
 
-      var n = parseInt(id, 10);
+      if (Object.prototype.hasOwnProperty.call(CONFIG.phaseValueMap, norm)) {
+        return CONFIG.phaseValueMap[norm];
+      }
 
-      if (CONFIG.debug)
-        dbg(
-          "resolveActiveStep: raw=" + JSON.stringify(stepID) + " parsed=" + n,
+      // Partial match — handles values like "Phase 2 - Planning"
+      const keys = Object.keys(CONFIG.phaseValueMap);
+      for (const key of keys) {
+        if (norm.includes(key) || key.includes(norm)) {
+          return CONFIG.phaseValueMap[key];
+        }
+      }
+
+      if (CONFIG.debug) {
+        console.warn(
+          "[CustomerOverview] Unrecognized phase value:",
+          JSON.stringify(raw),
         );
-
-      if (!n || n < 19) return null; /* not yet started — show neutral */
-      if (n > 23) return 5; /* post-phase internal steps — clamp to 5 */
-      return CONFIG.workflowStepToPhase[n] || null;
-    }
-
-    /* ============================================================
-     fetchOrgchartEmployee
-     Resolves an empUID to { displayName, email } via the orgchart API.
-     Always resolves — never rejects — so callers can fall back safely.
-     ============================================================ */
-    function fetchOrgchartEmployee(empUID) {
-      if (!empUID) return Promise.resolve({ displayName: "", email: "" });
-
-      return fetch(
-        "/platform/orgchart/api/employee/" + encodeURIComponent(empUID),
-        {
-          credentials: "include",
-          headers: { "x-requested-with": "XMLHttpRequest" },
-        },
-      )
-        .then(function (r) {
-          if (!r.ok) throw new Error("Orgchart API HTTP " + r.status);
-          return r.json();
-        })
-        .then(function (data) {
-          var emp = data && data.employee;
-          if (!emp) return { displayName: "", email: "" };
-
-          /* Build display name: "First [Middle] Last" */
-          var parts = [emp.firstName, emp.middleName, emp.lastName]
-            .map(function (p) {
-              return (p || "").trim();
-            })
-            .filter(Boolean);
-          var displayName = parts.join(" ");
-
-          /* email field may be "email" or "Email" depending on orgchart version */
-          var email = (emp.email || emp.Email || "").trim();
-
-          if (CONFIG.debug) {
-            console.log("[CustomerOverview] orgchart employee:", {
-              empUID: empUID,
-              displayName: displayName,
-              email: email,
-            });
-          }
-
-          return { displayName: displayName, email: email };
-        })
-        .catch(function (err) {
-          if (CONFIG.debug)
-            console.warn("[CustomerOverview] orgchart lookup failed:", err);
-          return { displayName: "", email: "" };
-        });
-    }
-
-    /* ============================================================
-     Lightbox — with prev/next navigation, counter, open full size
-     ============================================================ */
-    var lightbox = {
-      el: null,
-      imgEl: null,
-      captionEl: null,
-      counterEl: null,
-      fullsizeEl: null,
-      closeBtn: null,
-      prevBtn: null,
-      nextBtn: null,
-      prevFocus: null,
-      images: [] /* current phase image array: [{src, caption}] */,
-      currentIdx: 0,
-
-      init: function () {
-        this.el = byId("co-lightbox");
-        this.imgEl = byId("co-lightbox-img");
-        this.captionEl = byId("co-lightbox-caption");
-        this.counterEl = byId("co-lightbox-counter");
-        this.fullsizeEl = byId("co-lightbox-fullsize");
-        this.closeBtn = byId("co-lightbox-close");
-        this.prevBtn = byId("co-lightbox-prev");
-        this.nextBtn = byId("co-lightbox-next");
-        if (!this.el) return;
-
-        var self = this;
-
-        this.el.addEventListener("click", function (e) {
-          if (e.target === self.el) self.close();
-        });
-
-        this.closeBtn.addEventListener("click", function () {
-          self.close();
-        });
-        this.prevBtn.addEventListener("click", function () {
-          self.navigate(-1);
-        });
-        this.nextBtn.addEventListener("click", function () {
-          self.navigate(1);
-        });
-
-        this.el.addEventListener("keydown", function (e) {
-          if (e.key === "Escape") {
-            self.close();
-            return;
-          }
-          if (e.key === "ArrowLeft") {
-            self.navigate(-1);
-            return;
-          }
-          if (e.key === "ArrowRight") {
-            self.navigate(1);
-            return;
-          }
-          if (e.key === "Tab") {
-            self._trapFocus(e);
-          }
-        });
-      },
-
-      _trapFocus: function (e) {
-        var focusable = [
-          this.prevBtn,
-          this.nextBtn,
-          this.fullsizeEl,
-          this.closeBtn,
-        ].filter(function (el) {
-          return el && !el.hidden;
-        });
-        if (!focusable.length) return;
-        var first = focusable[0];
-        var last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      },
-
-      open: function (images, startIdx) {
-        if (!this.el) return;
-        this.prevFocus = document.activeElement;
-        this.images = images || [];
-        this.currentIdx = startIdx || 0;
-        this._render();
-        this.el.classList.add("co-lightbox--open");
-        this.closeBtn.focus();
-      },
-
-      navigate: function (dir) {
-        var next = this.currentIdx + dir;
-        if (next < 0 || next >= this.images.length) return;
-        this.currentIdx = next;
-        this._render();
-      },
-
-      _render: function () {
-        var item = this.images[this.currentIdx];
-        if (!item) return;
-
-        this.imgEl.setAttribute("src", item.src);
-        this.imgEl.setAttribute("alt", item.caption || "");
-        this.captionEl.textContent = item.caption || "";
-
-        /* Counter */
-        if (this.images.length > 1) {
-          this.counterEl.textContent =
-            this.currentIdx + 1 + " of " + this.images.length;
-        } else {
-          this.counterEl.textContent = "";
-        }
-
-        /* Full size link */
-        if (this.fullsizeEl) {
-          this.fullsizeEl.href = item.src;
-          this.fullsizeEl.setAttribute(
-            "aria-label",
-            "Open full size: " + (item.caption || "image") + " (new tab)",
-          );
-        }
-
-        /* Show/hide nav arrows */
-        var multi = this.images.length > 1;
-        if (this.prevBtn) this.prevBtn.hidden = !multi || this.currentIdx === 0;
-        if (this.nextBtn)
-          this.nextBtn.hidden =
-            !multi || this.currentIdx === this.images.length - 1;
-      },
-
-      close: function () {
-        if (!this.el) return;
-        this.el.classList.remove("co-lightbox--open");
-        this.imgEl.setAttribute("src", "");
-        this.images = [];
-        if (this.prevFocus && typeof this.prevFocus.focus === "function") {
-          this.prevFocus.focus();
-        }
-      },
-    };
-
-    /* ============================================================
-     Attachment renderer
-     Calls ajaxIndex.php?a=getprintindicator for both file and image
-     indicators of a phase, then builds the attachment section.
-     ============================================================ */
-    function fetchIndicatorHTML(recordID, indicatorID) {
-      return fetch(
-        getAPIBase() +
-          "/ajaxIndex.php?a=getprintindicator" +
-          "&recordID=" +
-          encodeURIComponent(recordID) +
-          "&indicatorID=" +
-          encodeURIComponent(indicatorID) +
-          "&series=1",
-        {
-          credentials: "include",
-          headers: { "x-requested-with": "XMLHttpRequest" },
-        },
-      )
-        .then(function (r) {
-          return r.text();
-        })
-        .catch(function () {
-          return "";
-        });
-    }
-
-    function parseAttachmentsFromHTML(html) {
-      var tmp = document.createElement("div");
-      tmp.innerHTML = html;
-      return {
-        images: Array.prototype.slice.call(
-          tmp.querySelectorAll('img[src*="image.php"]'),
-        ),
-        files: Array.prototype.slice.call(
-          tmp.querySelectorAll('a[href*="file.php"]'),
-        ),
-      };
-    }
-
-    function buildAttachmentSection(attachEl, images, files) {
-      if (images.length === 0 && files.length === 0) {
-        attachEl.style.display = "none";
-        return;
+        console.warn("[CustomerOverview] Expected one of:", keys);
       }
-
-      var html = '<p class="co-attachments-label">Attachments</p>';
-
-      /* Build ordered image array for lightbox navigation */
-      var imageData = images.map(function (img, i) {
-        var src = img.getAttribute("src") || "";
-        var altRaw = img.getAttribute("alt") || "";
-        var caption =
-          altRaw.replace(/^image upload:\s*/i, "").trim() || "Image " + (i + 1);
-        return { src: src, caption: caption };
-      });
-
-      if (images.length > 0) {
-        html +=
-          '<div class="co-img-grid" role="list" aria-label="Image attachments">';
-        imageData.forEach(function (item, i) {
-          html += '<figure class="co-img-figure" role="listitem">';
-          html +=
-            '<button type="button" class="co-img-thumb-btn"' +
-            ' data-idx="' +
-            i +
-            '"' +
-            ' aria-label="View image: ' +
-            esc(item.caption) +
-            '">';
-          html +=
-            '<img src="' +
-            esc(item.src) +
-            '"' +
-            ' alt="' +
-            esc(item.caption) +
-            '"' +
-            ' class="co-img-thumb" loading="lazy"/>';
-          html += "</button>";
-          html +=
-            '<span class="co-img-caption" aria-hidden="true" title="' +
-            esc(item.caption) +
-            '">' +
-            esc(item.caption) +
-            "</span>";
-          html += "</figure>";
-        });
-        html += "</div>";
-      }
-
-      if (files.length > 0) {
-        html +=
-          '<div class="co-attachment-pills" aria-label="File attachments">';
-        files.forEach(function (a) {
-          var href = a.getAttribute("href") || "#";
-          var filename = (a.textContent || "").trim() || "Download file";
-          html +=
-            '<a href="' +
-            esc(href) +
-            '" target="_blank" rel="noopener noreferrer"' +
-            ' class="co-attachment-pill"' +
-            ' title="' +
-            esc(filename) +
-            '"' +
-            ' aria-label="Download ' +
-            esc(filename) +
-            ' (opens in new tab)">';
-          html += '<span aria-hidden="true">\uD83D\uDCCE</span>';
-          html += "<span>" + esc(filename) + "</span>";
-          html += "</a>";
-        });
-        html += "</div>";
-      }
-
-      attachEl.innerHTML = html;
-      attachEl.style.display = "";
-
-      /* Wire lightbox thumbnail buttons — pass full image array + clicked index */
-      var btns = attachEl.querySelectorAll(".co-img-thumb-btn");
-      Array.prototype.slice.call(btns).forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          var idx = parseInt(btn.getAttribute("data-idx"), 10) || 0;
-          lightbox.open(imageData, idx);
-        });
-      });
-    }
-
-    function loadPhaseAttachments(recordID, phase, attachEl) {
-      Promise.all([
-        fetchIndicatorHTML(recordID, phase.fileInd),
-        fetchIndicatorHTML(recordID, phase.imageInd),
-      ])
-        .then(function (results) {
-          var fileData = parseAttachmentsFromHTML(results[0]);
-          var imageData = parseAttachmentsFromHTML(results[1]);
-
-          var combined = {
-            images: imageData.images,
-            files: fileData.files,
-          };
-
-          var hasAttachments =
-            combined.images.length > 0 || combined.files.length > 0;
-
-          /* If attachments exist, hide the empty state placeholder */
-          if (hasAttachments) {
-            var emptyEl =
-              attachEl.closest(".co-phase-body") &&
-              attachEl
-                .closest(".co-phase-body")
-                .querySelector("[data-phase-empty]");
-            if (emptyEl) emptyEl.style.display = "none";
-          }
-
-          buildAttachmentSection(attachEl, combined.images, combined.files);
-        })
-        .catch(function () {
-          attachEl.style.display = "none";
-        });
+      return 1;
     }
 
     /* ============================================================
-     renderProgressBar
+     Progress bar renderer
      ============================================================ */
     function renderProgressBar(activeStep) {
-      var track = byId("co-progress-track");
+      const track = byId("co-progress-track");
       track.innerHTML = "";
 
-      /* null activeStep = project not yet in phase range — no fill, no marker */
-      var total = CONFIG.phases.length;
-      var fraction =
-        activeStep !== null && total > 1 ? (activeStep - 1) / (total - 1) : 0;
-      track.style.setProperty("--co-progress-pct", fraction * 100 + "%");
-
-      CONFIG.phases.forEach(function (phase) {
-        var state =
-          activeStep === null ? "upcoming" : stepState(phase.step, activeStep);
-        var stateWord = {
+      for (const phase of CONFIG.phases) {
+        const state = stepState(phase.step, activeStep);
+        const stateWord = {
           complete: "Completed",
           active: "Current phase",
           upcoming: "Upcoming",
         }[state];
 
-        var li = document.createElement("li");
-        li.className = "co-step co-step--" + state;
+        const li = document.createElement("li");
+        li.className = `co-step co-step--${state}`;
+        li.setAttribute("aria-label", `${phase.label} — ${stateWord}`);
         if (state === "active") li.setAttribute("aria-current", "step");
 
-        /* "We are here" label — only shown when there IS an active phase */
-        var hereHtml =
-          state === "active"
-            ? '<span class="co-step-here" aria-hidden="true">' +
-              '<span class="co-step-here-pin">📍</span>We are here' +
-              "</span>"
-            : '<span class="co-step-here-spacer" aria-hidden="true"></span>';
-
-        var circleInner =
+        const circleInner =
           state === "complete"
-            ? '<span aria-hidden="true">&#10003;</span>'
-            : '<span aria-hidden="true">' + phase.step + "</span>";
+            ? `<span aria-hidden="true">&#10003;</span>`
+            : `<span aria-hidden="true">${phase.step}</span>`;
 
-        var btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "co-step-btn";
-        btn.setAttribute(
-          "aria-label",
-          "Jump to " + phase.label + " \u2014 " + stateWord,
-        );
-        btn.setAttribute("title", "Jump to " + phase.label);
-        btn.innerHTML =
-          hereHtml +
-          '<div class="co-step-circle" aria-hidden="true">' +
-          circleInner +
-          "</div>" +
-          '<span class="co-step-label" aria-hidden="true">' +
-          esc(phase.label) +
-          "</span>";
+        li.innerHTML = `
+          <div class="co-step-circle" aria-hidden="true">${circleInner}</div>
+          <span class="co-step-label" aria-hidden="true">${esc(phase.label)}</span>
+        `;
 
-        (function (step) {
-          btn.addEventListener("click", function () {
-            var target = document.getElementById("co-phase-step-" + step);
-            if (!target) return;
-            if (target.classList.contains("co-phase--collapsed")) {
-              var hdr = target.querySelector(".co-phase-header");
-              if (hdr) togglePhase(target, hdr);
-            }
-            target.scrollIntoView({ behavior: "smooth", block: "start" });
-            var heading = target.querySelector(".co-phase-title");
-            if (heading) {
-              heading.setAttribute("tabindex", "-1");
-              heading.focus({ preventScroll: true });
-            }
-          });
-        })(phase.step);
-
-        li.appendChild(btn);
         track.appendChild(li);
-      });
+      }
     }
 
     /* ============================================================
-     renderPhaseDetails
+     Phase cards renderer
      ============================================================ */
-    function renderPhaseDetails(recordID, activeStep, contents, taskContents) {
-      var container = byId("co-phase-details");
+    function renderPhaseDetails(activeStep, contents) {
+      const container = byId("co-phase-details");
       container.innerHTML = "";
 
-      var completedWithContentCount = 0;
+      for (const phase of CONFIG.phases) {
+        const state = stepState(phase.step, activeStep);
+        const content = contents[phase.key] || "";
 
-      /* ---- Helper: strip LEAF's appended <br /> tags from a string ---- */
-      function stripBR(str) {
-        if (!str) return str;
-        return str.replace(/<br\s*\/?>/gi, "").trim();
-      }
+        const article = document.createElement("article");
+        article.className = `co-phase co-phase--${state}`;
 
-      /* ---- Helper: parse newline-delimited task list ---- */
-      function parseTasks(raw) {
-        if (!raw) return [];
-        return raw
-          .split(/\r?\n/)
-          .map(function (line) {
-            var clean = stripBR(line)
-              .replace(/^[\-\u2022\*]\s*/, "")
-              .trim();
-            var checked = /^\[x\]/i.test(clean);
-            var text = clean.replace(/^\[x\]\s*/i, "").trim();
-            return text ? { text: text, checked: checked } : null;
-          })
-          .filter(Boolean);
-      }
-
-      /* ---- Helper: build one task column ---- */
-      function buildTaskColumn(heading, tasks) {
-        var headingId =
-          "co-task-heading-" + Math.random().toString(36).slice(2);
-        var html = '<div class="co-task-column">';
-        html +=
-          '<p class="co-task-heading" id="' +
-          headingId +
-          '">' +
-          esc(heading) +
-          "</p>";
-        html += '<div role="list" aria-labelledby="' + headingId + '">';
-        if (tasks.length === 0) {
-          html += '<p class="co-task-empty">No tasks listed</p>';
-        } else {
-          tasks.forEach(function (task) {
-            var checkedAttr = task.checked ? " checked" : "";
-            html += '<div class="co-task-row" role="listitem">';
-            html +=
-              '<input type="checkbox" disabled' +
-              checkedAttr +
-              ' aria-hidden="true" tabindex="-1">';
-            html += '<span class="co-task-text">' + esc(task.text) + "</span>";
-            html += "</div>";
-          });
-          html +=
-            '<p class="co-task-legend">Completed tasks are marked by your LEAF POC.</p>';
-        }
-        html += "</div></div>";
-        return html;
-      }
-
-      CONFIG.phases.forEach(function (phase) {
-        var state = stepState(phase.step, activeStep);
-        var content = contents[phase.key] || "";
-        var leafTasks = parseTasks(
-          taskContents && taskContents[phase.leafTasksKey],
-        );
-        var orgTasks = parseTasks(
-          taskContents && taskContents[phase.orgTasksKey],
-        );
-        var hasTasks = leafTasks.length > 0 || orgTasks.length > 0;
-        var article = document.createElement("article");
-        article.className = "co-phase co-phase--" + state;
-        article.id = "co-phase-step-" + phase.step;
-
-        var numberInner =
+        const numberInner =
           state === "complete"
-            ? '<span aria-hidden="true">&#10003;</span>'
-            : '<span aria-hidden="true">' + phase.step + "</span>";
+            ? `<span aria-hidden="true">&#10003;</span>`
+            : `<span aria-hidden="true">${phase.step}</span>`;
 
-        var badgeHtml = "";
-        if (state === "complete") {
-          badgeHtml =
-            '<span class="co-phase-badge" aria-hidden="true">Complete</span>';
-        } else if (state === "active") {
-          badgeHtml =
-            '<span class="co-phase-badge" aria-hidden="true">In Progress</span>';
-        }
+        // Only show badge on completed phases
+        const badgeHtml =
+          state === "complete"
+            ? `<span class="co-phase-badge" aria-hidden="true">Complete</span>`
+            : "";
 
-        var chevronHtml =
-          '<svg class="co-phase-chevron" viewBox="0 0 18 18" fill="none" aria-hidden="true" focusable="false">' +
-          '<path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>' +
-          "</svg>";
+        const contentHtml = content.trim()
+          ? `<p class="co-phase-content"></p>`
+          : `<p class="co-phase-content co-phase-placeholder"
+               aria-label="${esc(phase.label)} phase: Details coming soon">
+               <span aria-hidden="true">Details coming soon</span>
+             </p>`;
 
-        var contentHtml = content.trim()
-          ? '<p class="co-phase-content"></p>'
-          : '<p class="co-phase-content co-phase-placeholder" aria-label="' +
-            esc(phase.label) +
-            ' phase: content not yet available">' +
-            '<span aria-hidden="true">Your LEAF POC will update this section as the project progresses.</span></p>';
+        article.innerHTML = `
+          <div class="co-phase-header">
+            <div class="co-phase-number" aria-hidden="true">${numberInner}</div>
+            <h3 class="co-phase-title">Phase ${phase.step} — ${esc(phase.label)}</h3>
+            ${badgeHtml}
+          </div>
+          ${contentHtml}
+        `;
 
-        /* Task checklist block */
-        var taskHtml = "";
-        if (hasTasks) {
-          taskHtml =
-            '<div class="co-task-container">' +
-            buildTaskColumn("LEAF Team Tasks", leafTasks) +
-            buildTaskColumn("Customer Tasks", orgTasks) +
-            "</div>";
-        }
-
-        /* Empty state — shown when no tasks; hidden if attachments load */
-        var emptyHtml = !hasTasks
-          ? '<p class="co-phase-empty" data-phase-empty="true">' +
-            "Your LEAF POC will update this section as the project progresses." +
-            "</p>"
-          : "";
-
-        article.innerHTML =
-          '<div class="co-phase-header">' +
-          '<div class="co-phase-number" aria-hidden="true">' +
-          numberInner +
-          "</div>" +
-          '<h3 class="co-phase-title">Phase ' +
-          phase.step +
-          " \u2014 " +
-          esc(phase.label) +
-          "</h3>" +
-          badgeHtml +
-          chevronHtml +
-          "</div>" +
-          '<div class="co-phase-body">' +
-          contentHtml +
-          taskHtml +
-          emptyHtml +
-          '<div class="co-attachments" style="display:none">' +
-          '<p class="co-attach-loading">Loading attachments\u2026</p>' +
-          "</div>" +
-          "</div>";
-
+        // Set phase text via textContent AFTER building innerHTML so LEAF's
+        // pre-encoded entities (&#039; &amp; etc.) are never double-encoded.
+        // decodeEntities() unwraps whatever LEAF stored; textContent then sets
+        // it as a plain string so the browser renders the literal characters.
         if (content.trim()) {
-          var contentEl = article.querySelector(".co-phase-content");
-          if (contentEl) {
-            /* Strip LEAF's appended <br /> tags then set as plain text */
-            var cleanContent = decodeEntities(content)
-              .replace(/<br\s*\/?>/gi, "")
-              .trim();
-            contentEl.textContent = cleanContent;
-          }
-        }
-
-        /* Start completed phases collapsed when they have content */
-        if (state === "complete" && content.trim()) {
-          article.classList.add("co-phase--collapsed");
-          completedWithContentCount++;
-        }
-
-        /* Wire toggle on completed phase headers */
-        if (state === "complete") {
-          var header = article.querySelector(".co-phase-header");
-          if (header) {
-            header.setAttribute("role", "button");
-            header.setAttribute("tabindex", "0");
-            header.setAttribute(
-              "aria-expanded",
-              article.classList.contains("co-phase--collapsed")
-                ? "false"
-                : "true",
-            );
-            header.setAttribute(
-              "aria-label",
-              "Phase " +
-                phase.step +
-                " \u2014 " +
-                phase.label +
-                ": click to expand",
-            );
-
-            (function (art, hdr) {
-              hdr.addEventListener("click", function () {
-                togglePhase(art, hdr);
-              });
-              hdr.addEventListener("keydown", function (e) {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  togglePhase(art, hdr);
-                }
-              });
-            })(article, header);
-          }
+          const contentEl = article.querySelector(".co-phase-content");
+          if (contentEl) contentEl.textContent = decodeEntities(content);
         }
 
         container.appendChild(article);
-
-        /* Kick off attachment loading for this phase */
-        var attachEl = article.querySelector(".co-attachments");
-        loadPhaseAttachments(recordID, phase, attachEl);
-      });
-
-      if (completedWithContentCount > 0) {
-        showEl("co-phases-toolbar");
-        syncToggleAllLabel();
-        wireToggleAllButton(container);
-      }
-    }
-
-    /* ============================================================
-     Collapse / expand helpers
-     ============================================================ */
-    function togglePhase(article, header) {
-      var isCollapsed = article.classList.contains("co-phase--collapsed");
-      var titleEl = article.querySelector(".co-phase-title");
-      var label = titleEl ? titleEl.textContent : "Phase";
-
-      if (isCollapsed) {
-        article.classList.remove("co-phase--collapsed");
-        header.setAttribute("aria-expanded", "true");
-        header.setAttribute("aria-label", label + ": click to collapse");
-      } else {
-        article.classList.add("co-phase--collapsed");
-        header.setAttribute("aria-expanded", "false");
-        header.setAttribute("aria-label", label + ": click to expand");
-      }
-
-      syncToggleAllLabel();
-    }
-
-    function wireToggleAllButton(container) {
-      var btn = byId("co-toggle-completed-btn");
-      if (!btn) return;
-
-      btn.addEventListener("click", function () {
-        var completedPhases = container.querySelectorAll(".co-phase--complete");
-        var anyExpanded = false;
-        completedPhases.forEach(function (p) {
-          if (!p.classList.contains("co-phase--collapsed")) anyExpanded = true;
-        });
-
-        completedPhases.forEach(function (p) {
-          var hdr = p.querySelector(".co-phase-header");
-          var titleEl = p.querySelector(".co-phase-title");
-          var lbl = titleEl ? titleEl.textContent : "Phase";
-
-          if (anyExpanded) {
-            p.classList.add("co-phase--collapsed");
-            if (hdr) {
-              hdr.setAttribute("aria-expanded", "false");
-              hdr.setAttribute("aria-label", lbl + ": click to expand");
-            }
-          } else {
-            p.classList.remove("co-phase--collapsed");
-            if (hdr) {
-              hdr.setAttribute("aria-expanded", "true");
-              hdr.setAttribute("aria-label", lbl + ": click to collapse");
-            }
-          }
-        });
-
-        syncToggleAllLabel();
-      });
-    }
-
-    function syncToggleAllLabel() {
-      var btn = byId("co-toggle-completed-btn");
-      var labelEl = byId("co-toggle-completed-label");
-      if (!btn || !labelEl) return;
-
-      var container = byId("co-phase-details");
-      if (!container) return;
-
-      var anyExpanded = false;
-      container.querySelectorAll(".co-phase--complete").forEach(function (p) {
-        if (!p.classList.contains("co-phase--collapsed")) anyExpanded = true;
-      });
-
-      if (anyExpanded) {
-        labelEl.textContent = "Hide completed phases";
-        btn.setAttribute("aria-expanded", "true");
-      } else {
-        labelEl.textContent = "Show completed phases";
-        btn.setAttribute("aria-expanded", "false");
       }
     }
 
     /* ============================================================
      fetchProjectData
-     Uses LeafFormQuery (globally available on LEAF pages) when
-     present, with a direct fetch fallback.
-     join('status') adds stepID to the record — used by
-     resolveActiveStep instead of reading indicator 61's value.
+     Uses LeafFormQuery (globally available on LEAF sites) to query
+     all indicator values for a single record.
+     Resolves to the raw s1 object: { id59: 'value', id60: 'value', … }
+
+     Note: onProgress fires if LeafFormQuery batches the request. For a
+     single-record lookup this may not fire — the await on execute() is
+     what we depend on, onProgress is best-effort UI feedback only.
      ============================================================ */
-    function fetchProjectData(recordID) {
-      if (CONFIG.debug) dbg("fetchProjectData called — recordID: " + recordID);
+    async function fetchProjectData(recordID) {
+      const inds = CONFIG.indicators;
 
-      var inds = CONFIG.indicators;
-
-      var getDataIDs = [
+      const query = new LeafFormQuery();
+      query.addTerm("recordIDs", "=", String(recordID));
+      query.getData([
         inds.projectName,
         inds.projectType,
-        inds.objective,
-        inds.leafURL,
         inds.poc,
-        inds.servicePoc,
+        inds.currentPhase,
         inds.phase1,
         inds.phase2,
         inds.phase3,
         inds.phase4,
         inds.phase5,
-        inds.leafTasks1,
-        inds.orgTasks1,
-        inds.leafTasks2,
-        inds.orgTasks2,
-        inds.leafTasks3,
-        inds.orgTasks3,
-        inds.leafTasks4,
-        inds.orgTasks4,
-        inds.leafTasks5,
-        inds.orgTasks5,
-      ];
+      ]);
+      query.setExtraParams("&x-filterData=recordID");
 
-      if (CONFIG.debug) dbg("getDataIDs built: " + JSON.stringify(getDataIDs));
-
-      var loadingMsg =
-        byId("co-loading") && byId("co-loading").querySelector("p");
-
-      function processResponse(data) {
-        if (CONFIG.debug) {
-          dbg("processResponse data type: " + typeof data);
-          dbg(
-            "fetchProjectData response keys: " +
-              Object.keys(data || {}).join(", "),
-          );
-          var serialized =
-            data !== undefined
-              ? JSON.stringify(data).slice(0, 800)
-              : "(undefined)";
-          dbg("Full response: " + serialized);
-        }
-        var rec = data && data[String(recordID)];
-        if (!rec) {
-          if (CONFIG.debug) dbg("ERROR: No record found for ID " + recordID);
-          throw new Error("No record found for ID " + recordID);
-        }
-        var s1 = rec.s1 || rec;
-
-        /* Try every field name the status join may use across LEAF versions */
-        var stepID =
-          rec.stepID !== undefined
-            ? rec.stepID
-            : rec.step_id !== undefined
-              ? rec.step_id
-              : rec.currentStep !== undefined
-                ? rec.currentStep
-                : rec.workflowStepID !== undefined
-                  ? rec.workflowStepID
-                  : null;
-
-        if (CONFIG.debug) {
-          dbg("record root keys: " + Object.keys(rec).join(", "));
-          dbg("s1 keys: " + Object.keys(s1).join(", "));
-          dbg("stepID resolved to: " + JSON.stringify(stepID));
-          dbg(
-            "full rec root (no s1): " +
-              JSON.stringify(
-                Object.keys(rec).reduce(function (o, k) {
-                  if (k !== "s1") o[k] = rec[k];
-                  return o;
-                }, {}),
-              ),
-          );
-        }
-        return { s1: s1, stepID: stepID };
-      }
-
-      /*
-       * NOTE: LeafFormQuery is available in this environment but does not
-       * fire onSuccess for single-record lookups in this context.
-       * Using direct fetch as the reliable primary path.
-       * LeafFormQuery can be revisited for bulk/report queries.
-       */
-
-      /* ---- Direct fetch ---- */
-      if (CONFIG.debug) dbg("Using direct fetch");
-
-      var q = JSON.stringify({
-        terms: [
-          {
-            id: "recordIDs",
-            operator: "=",
-            match: String(recordID),
-            gate: "AND",
-          },
-        ],
-        joins: ["status"],
-        sort: {},
-        getData: getDataIDs.map(String),
+      // Best-effort progress feedback — may not fire on single-record queries
+      query.onProgress((progress) => {
+        const msgEl = byId("co-loading-message");
+        if (msgEl)
+          msgEl.textContent = `Loading project data… (${progress}+ records scanned)`;
       });
 
-      return fetch(
-        getAPIBase() +
-          "/api/form/query?q=" +
-          encodeURIComponent(q) +
-          "&x-filterData=recordID",
-        {
-          credentials: "include",
-          headers: {
-            Accept: "application/json",
-            "x-requested-with": "XMLHttpRequest",
-          },
-        },
-      )
-        .then(function (r) {
-          if (!r.ok) throw new Error("Query failed HTTP " + r.status);
-          return r.json();
-        })
-        .then(processResponse);
-    }
-
-    /* ============================================================
-     fetchPhaseOptions
-     Fetches the ordered dropdown options for the currentPhase
-     indicator (ID 61) from the LEAF form editor API.
-     These become the phase labels — top-to-bottom = step 1…N.
-     Always resolves (never rejects) so a failure just keeps the
-     hardcoded fallback labels in CONFIG.phases.
-     ============================================================ */
-    function fetchPhaseOptions(indicatorID) {
-      return fetch(
-        getAPIBase() +
-          "/api/formEditor/indicator/" +
-          encodeURIComponent(indicatorID),
-        {
-          credentials: "include",
-          headers: {
-            Accept: "application/json",
-            "x-requested-with": "XMLHttpRequest",
-          },
-        },
-      )
-        .then(function (r) {
-          if (!r.ok) throw new Error("formEditor API HTTP " + r.status);
-          return r.json();
-        })
-        .then(function (data) {
-          if (CONFIG.debug) {
-            dbg(
-              "fetchPhaseOptions raw keys: " +
-                Object.keys(data || {}).join(", "),
-            );
-            dbg("fetchPhaseOptions full response: " + JSON.stringify(data));
-          }
-
-          /*
-           * LEAF wraps the indicator under its own ID as the key:
-           *   { "61": { options: [...], format: "dropdown", … } }
-           */
-          var indicator = data && data[String(CONFIG.indicators.currentPhase)];
-          var raw =
-            indicator &&
-            (indicator.options ||
-              indicator.format_options ||
-              indicator.selectList ||
-              indicator.listValues);
-
-          if (!raw) {
-            if (CONFIG.debug)
-              dbg(
-                "fetchPhaseOptions: no recognised options key found — labels will use fallback",
-              );
-            return [];
-          }
-
-          var list;
-          if (Array.isArray(raw)) {
-            list = raw.map(function (o) {
-              return (
-                typeof o === "object" ? o.text || o.value || "" : String(o)
-              ).trim();
-            });
-          } else {
-            list = String(raw)
-              .split(/\r?\n/)
-              .map(function (s) {
-                return s.trim();
-              });
-          }
-
-          list = list.filter(Boolean);
-          if (CONFIG.debug)
-            dbg("fetchPhaseOptions parsed labels: " + JSON.stringify(list));
-          return list;
-        })
-        .catch(function (err) {
-          if (CONFIG.debug)
-            dbg(
-              "fetchPhaseOptions failed: " +
-                err.message +
-                " — using fallback labels",
-            );
-          return [];
-        });
-    }
-
-    /* ============================================================
-     fetchWorkflowStep
-     Fetches the current workflow stepID for a record via a
-     lightweight query with no x-filterData so status join fields
-     are not stripped from the response.
-     Always resolves — returns null on any failure.
-     ============================================================ */
-    function fetchWorkflowStep(recordID) {
-      var q = JSON.stringify({
-        terms: [
-          {
-            id: "recordIDs",
-            operator: "=",
-            match: String(recordID),
-            gate: "AND",
-          },
-        ],
-        joins: ["status"],
-        sort: {},
-        getData: [],
-      });
-
-      return fetch(
-        getAPIBase() + "/api/form/query?q=" + encodeURIComponent(q),
-        {
-          credentials: "include",
-          headers: {
-            Accept: "application/json",
-            "x-requested-with": "XMLHttpRequest",
-          },
-        },
-      )
-        .then(function (r) {
-          return r.json();
-        })
-        .then(function (data) {
-          var rec = data && data[String(recordID)];
-          if (!rec) return null;
-
-          if (CONFIG.debug) {
-            dbg(
-              "fetchWorkflowStep record root keys: " +
-                Object.keys(rec).join(", "),
-            );
-            dbg(
-              "fetchWorkflowStep full rec: " +
-                JSON.stringify(rec).slice(0, 300),
-            );
-          }
-
-          /* Try every field name LEAF may use for the current step */
-          var stepID =
-            rec.stepID !== undefined
-              ? rec.stepID
-              : rec.step_id !== undefined
-                ? rec.step_id
-                : rec.currentStep !== undefined
-                  ? rec.currentStep
-                  : rec.workflowStepID !== undefined
-                    ? rec.workflowStepID
-                    : null;
-
-          if (CONFIG.debug)
-            dbg("fetchWorkflowStep stepID: " + JSON.stringify(stepID));
-          return stepID;
-        })
-        .catch(function (err) {
-          if (CONFIG.debug) dbg("fetchWorkflowStep failed: " + err.message);
-          return null;
-        });
-    }
-
-    /* ============================================================
-     applyPhaseLabels
-     Overwrites CONFIG.phases[i].label with fetched option names.
-     If fewer options come back than phases, remaining phases keep
-     their hardcoded fallback label.
-     ============================================================ */
-    function applyPhaseLabels(options) {
-      if (!options || !options.length) return;
-      CONFIG.phases.forEach(function (phase, i) {
-        if (options[i]) phase.label = options[i];
-      });
-      if (CONFIG.debug)
-        dbg(
-          "Phase labels applied: " +
-            CONFIG.phases
-              .map(function (p) {
-                return p.label;
-              })
-              .join(", "),
-        );
-    }
-
-    /* ============================================================
-     Main
-     ============================================================ */
-    function init() {
-      var recordID = getRecordIDFromURL();
+      const data = await query.execute();
 
       if (CONFIG.debug) {
-        dbg("=== CustomerOverview v3 Debug ===");
-        dbg("window.location.href: " + window.location.href);
-        try {
-          dbg("parent.location.href: " + window.parent.location.href);
-        } catch (e) {
-          dbg("parent.location.href: (cross-origin)");
-        }
-        dbg("recordID resolved to: " + (recordID || "(empty)"));
-        dbg("API base: " + getAPIBase());
+        console.log(
+          "[CustomerOverview] Full API response:",
+          JSON.stringify(data),
+        );
+      }
+
+      const rec = data && data[String(recordID)];
+      if (!rec) throw new Error(`No record found for ID ${recordID}`);
+
+      // LEAF returns indicator data under rec.s1, keyed as 'id' + indicatorID
+      const s1 = rec.s1 || rec;
+
+      if (CONFIG.debug) {
+        console.log("[CustomerOverview] s1 keys:", Object.keys(s1));
+        console.log(
+          `[CustomerOverview] projectName  (id${inds.projectName}):`,
+          s1[`id${inds.projectName}`],
+        );
+        console.log(
+          `[CustomerOverview] projectType  (id${inds.projectType}):`,
+          s1[`id${inds.projectType}`],
+        );
+        console.log(
+          `[CustomerOverview] poc          (id${inds.poc}):`,
+          s1[`id${inds.poc}`],
+        );
+        console.log(
+          `[CustomerOverview] currentPhase (id${inds.currentPhase}):`,
+          s1[`id${inds.currentPhase}`],
+        );
+        console.log(
+          `[CustomerOverview] phase1       (id${inds.phase1}):`,
+          s1[`id${inds.phase1}`],
+        );
+        console.log(
+          `[CustomerOverview] phase2       (id${inds.phase2}):`,
+          s1[`id${inds.phase2}`],
+        );
+        console.log(
+          `[CustomerOverview] phase3       (id${inds.phase3}):`,
+          s1[`id${inds.phase3}`],
+        );
+        console.log(
+          `[CustomerOverview] phase4       (id${inds.phase4}):`,
+          s1[`id${inds.phase4}`],
+        );
+        console.log(
+          `[CustomerOverview] phase5       (id${inds.phase5}):`,
+          s1[`id${inds.phase5}`],
+        );
+      }
+
+      return s1;
+    }
+
+    /* ============================================================
+     Main — full re-render on every call (initial load + hashchange)
+     ============================================================ */
+    async function init() {
+      const recordID = getRecordIDFromHash();
+
+      if (CONFIG.debug) {
+        console.log("--- CustomerOverview Debug ---");
+        console.log("recordID from hash:", recordID);
       }
 
       if (!recordID) {
         showError(
-          "No project specified. Please check the link — it should include a record ID (e.g., ?a=1234).",
+          "No project ID specified in the URL — please contact your LEAF POC to get your project URL.",
         );
         return;
       }
 
-      lightbox.init();
-      wireShareButton();
-      wireProgressExplainer();
       showLoading();
 
-      Promise.all([
-        fetchProjectData(recordID),
-        fetchPhaseOptions(CONFIG.indicators.currentPhase),
-        fetchWorkflowStep(recordID),
-      ])
-        .then(function (results) {
-          var result = results[0];
-          var options = results[1];
-          var stepID = results[2];
+      try {
+        const s1 = await fetchProjectData(recordID);
+        const inds = CONFIG.indicators;
 
-          if (CONFIG.debug)
-            dbg("stepID from fetchWorkflowStep: " + JSON.stringify(stepID));
+        const projectName = getField(s1, inds.projectName);
+        const projectType = getField(s1, inds.projectType);
+        const poc = getField(s1, inds.poc);
+        const currentPhase = getField(s1, inds.currentPhase);
 
-          /* Apply dynamic phase labels before any rendering happens */
-          applyPhaseLabels(options);
+        const phaseContents = {
+          phase1: getField(s1, inds.phase1),
+          phase2: getField(s1, inds.phase2),
+          phase3: getField(s1, inds.phase3),
+          phase4: getField(s1, inds.phase4),
+          phase5: getField(s1, inds.phase5),
+        };
 
-          var s1 = result.s1;
-          var inds = CONFIG.indicators;
+        const activeStep = resolveActiveStep(currentPhase);
 
-          var projectName = getField(s1, inds.projectName);
-          var projectType = getField(s1, inds.projectType);
-          var phaseContents = {
-            phase1: getField(s1, inds.phase1),
-            phase2: getField(s1, inds.phase2),
-            phase3: getField(s1, inds.phase3),
-            phase4: getField(s1, inds.phase4),
-            phase5: getField(s1, inds.phase5),
-          };
-          var taskContents = {
-            leafTasks1: getField(s1, inds.leafTasks1),
-            orgTasks1: getField(s1, inds.orgTasks1),
-            leafTasks2: getField(s1, inds.leafTasks2),
-            orgTasks2: getField(s1, inds.orgTasks2),
-            leafTasks3: getField(s1, inds.leafTasks3),
-            orgTasks3: getField(s1, inds.orgTasks3),
-            leafTasks4: getField(s1, inds.leafTasks4),
-            orgTasks4: getField(s1, inds.orgTasks4),
-            leafTasks5: getField(s1, inds.leafTasks5),
-            orgTasks5: getField(s1, inds.orgTasks5),
-          };
+        /* ---- Populate header ---- */
+        byId("co-project-name").textContent = projectName || "Project Details";
 
-          var activeStep = resolveActiveStep(stepID);
-
-          /* ---- Header: name + type + blurb ---- */
-          byId("co-project-name").textContent =
-            projectName || "Project Details";
-
-          /* ---- Project type row + collapsible blurb ---- */
-          var typeEl = byId("co-project-type");
-          var blurbEl = byId("co-project-type-blurb");
-          var blurbKey = projectType ? projectType.toLowerCase().trim() : "";
-          var blurbText = CONFIG.PROJECT_TYPE_BLURBS[blurbKey] || "";
-
-          if (projectType && typeEl) {
-            if (blurbText && blurbEl) {
-              /* Render project type as a toggle button */
-              typeEl.innerHTML =
-                '<button type="button" class="co-type-toggle" aria-expanded="false"' +
-                ' aria-controls="co-blurb-row"' +
-                ' aria-label="' +
-                esc(projectType) +
-                ' — click to expand description">' +
-                esc(projectType) +
-                '<svg class="co-type-chevron" viewBox="0 0 14 14" fill="none"' +
-                '     stroke="currentColor" stroke-width="2" stroke-linecap="round"' +
-                '     stroke-linejoin="round" aria-hidden="true" focusable="false">' +
-                '<path d="M2 4l5 5 5-5"/></svg>' +
-                "</button>";
-
-              blurbEl.textContent = blurbText;
-
-              /* Wire toggle */
-              var toggleBtn = typeEl.querySelector(".co-type-toggle");
-              var blurbRow = byId("co-blurb-row");
-              if (toggleBtn && blurbRow) {
-                toggleBtn.addEventListener("click", function () {
-                  var expanded =
-                    toggleBtn.getAttribute("aria-expanded") === "true";
-                  toggleBtn.setAttribute("aria-expanded", String(!expanded));
-                  toggleBtn.setAttribute(
-                    "aria-label",
-                    esc(projectType) +
-                      " — click to " +
-                      (!expanded ? "collapse" : "expand") +
-                      " description",
-                  );
-                  blurbRow.classList.toggle("co-blurb-open", !expanded);
-                });
-              }
-            } else {
-              /* No blurb for this type — plain text, no toggle */
-              typeEl.textContent = projectType;
-            }
-            byId("co-row-type").style.display = "";
-          }
-
-          /* ---- Scope ---- */
-          var objective = getField(s1, inds.objective);
-          var objectiveEl = byId("co-project-objective");
-          if (objective && objectiveEl) {
-            objectiveEl.textContent = objective;
-            byId("co-row-objective").style.display = "";
-          }
-
-          /* ---- LEAF URL ---- */
-          var leafURL = getField(s1, inds.leafURL);
-          var leafURLEl = byId("co-leaf-url");
-          if (leafURL && leafURLEl) {
-            leafURLEl.innerHTML =
-              '<a href="' +
-              esc(leafURL) +
-              '" target="_blank" rel="noopener noreferrer"' +
-              ' class="co-leaf-url-link">' +
-              esc(leafURL) +
-              "</a>";
-            byId("co-row-leaf-url").style.display = "";
-          }
-
-          /* ---- Helper: render a POC row from _orgchart metadata ---- */
-          function renderPocEl(el, indID, label, rowID) {
-            var rawVal = s1["id" + String(indID)];
-            var orgMeta = s1["id" + String(indID) + "_orgchart"];
-
-            if (CONFIG.debug) {
-              dbg(label + " raw (id" + indID + "): " + JSON.stringify(rawVal));
-              dbg(label + " orgchart meta: " + JSON.stringify(orgMeta));
-            }
-
-            var displayName = "";
-            var email = "";
-
-            if (orgMeta) {
-              var parts = [orgMeta.firstName, orgMeta.lastName]
-                .map(function (p) {
-                  return (p || "").trim();
-                })
-                .filter(Boolean);
-              displayName = parts.join(" ");
-              email = (orgMeta.email || "").trim();
-            }
-
-            if (!displayName)
-              displayName = decodeEntities(String(rawVal || "").trim());
-            if (!displayName) return;
-
-            if (email) {
-              el.innerHTML =
-                '<a class="co-poc-link"' +
-                ' href="mailto:' +
-                esc(email) +
-                '"' +
-                ' aria-label="Email ' +
-                esc(displayName) +
-                " at " +
-                esc(email) +
-                '">' +
-                esc(displayName) +
-                "</a>";
-            } else {
-              el.textContent = displayName;
-            }
-
-            var row = byId(rowID);
-            if (row) row.style.display = "";
-          }
-
-          /* ---- Render progress bar + phase cards + reveal page ---- */
-          renderProgressBar(activeStep);
-          renderPhaseDetails(recordID, activeStep, phaseContents, taskContents);
-          showContent();
-
-          /* ---- LEAF POC (indicator 67) ---- */
-          var pocEl = byId("co-project-poc");
-          if (pocEl) renderPocEl(pocEl, inds.poc, "LEAF POC", "co-row-poc");
-
-          /* ---- Customer POC (indicator 74) ---- */
-          var servicePocEl = byId("co-service-poc");
-          if (servicePocEl)
-            renderPocEl(
-              servicePocEl,
-              inds.servicePoc,
-              "Customer POC",
-              "co-row-service-poc",
-            );
-        })
-        .catch(function (err) {
-          console.error("[CustomerOverview] Error loading project data:", err);
-          if (CONFIG.debug) dbg("FETCH ERROR: " + err.message);
-          showError(
-            "Unable to load project data. Please try again later or contact support." +
-              (CONFIG.debug ? "\n\nDebug: " + err.message : ""),
-          );
-        });
-    }
-
-    function wireProgressExplainer() {
-      var btn = byId("co-progress-toggle");
-      var explainer = byId("co-progress-explainer");
-      if (!btn || !explainer) return;
-
-      btn.addEventListener("click", function () {
-        var expanded = btn.getAttribute("aria-expanded") === "true";
-        btn.setAttribute("aria-expanded", String(!expanded));
-        explainer.classList.toggle("co-explainer-open", !expanded);
-      });
-    }
-
-    /* ============================================================
-     wireShareButton
-     Copies the current page URL to the clipboard on click and
-     shows a brief "Copied!" confirmation toast beneath the button.
-     ============================================================ */
-    function wireShareButton() {
-      var btn = document.getElementById("co-share-btn");
-      var toast = document.getElementById("co-share-toast");
-      if (!btn || !toast) return;
-
-      var toastTimer = null;
-
-      btn.addEventListener("click", function () {
-        var url = window.location.href;
-
-        function showToast(msg) {
-          toast.textContent = msg;
-          if (toastTimer) clearTimeout(toastTimer);
-          toastTimer = setTimeout(function () {
-            toast.textContent = "";
-          }, 2500);
-        }
-
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard
-            .writeText(url)
-            .then(function () {
-              showToast("Copied!");
-            })
-            .catch(function () {
-              fallbackCopy(url, showToast);
-            });
+        const typeEl = byId("co-project-type");
+        if (projectType) {
+          typeEl.innerHTML = `<strong class="co-project-label">Type:</strong> ${esc(projectType)}`;
+          typeEl.style.display = "";
         } else {
-          fallbackCopy(url, showToast);
+          typeEl.style.display = "none";
         }
-      });
 
-      function fallbackCopy(url, showToast) {
-        try {
-          var ta = document.createElement("textarea");
-          ta.value = url;
-          ta.style.cssText =
-            "position:fixed;top:-9999px;left:-9999px;opacity:0;";
-          document.body.appendChild(ta);
-          ta.focus();
-          ta.select();
-          var ok = document.execCommand("copy");
-          document.body.removeChild(ta);
-          showToast(ok ? "Copied!" : "Copy failed");
-        } catch (e) {
-          showToast("Copy failed");
+        const pocEl = byId("co-project-poc");
+        if (poc) {
+          pocEl.innerHTML = `<strong class="co-project-label">LEAF POC:</strong> ${esc(poc)}`;
+          pocEl.style.display = "";
+        } else {
+          pocEl.style.display = "none";
         }
+
+        /* ---- Render progress bar and phase cards ---- */
+        renderProgressBar(activeStep);
+        renderPhaseDetails(activeStep, phaseContents);
+
+        showContent();
+      } catch (err) {
+        console.error("[CustomerOverview] Error loading project data:", err);
+        showError(
+          "Unable to load project data. Please try again later or contact support.",
+        );
       }
     }
 
     /* ============================================================
-     wireJumpToTop
-     Mirrors the dashboard pattern — shows the button only when the
-     page is scrollable AND the user has scrolled down > 120px.
+     Bootstrap — run on DOM ready, re-run on hash change
      ============================================================ */
-    function wireJumpToTop() {
-      var btn = document.getElementById("co-jump-top");
-      if (!btn) return;
-
-      function setVisible(visible) {
-        btn.classList.toggle("is-visible", visible);
-        btn.setAttribute("aria-hidden", String(!visible));
-        btn.tabIndex = visible ? 0 : -1;
-      }
-
-      function updateVisibility() {
-        var scrollTop =
-          window.pageYOffset || document.documentElement.scrollTop;
-        var scrollHeight = Math.max(
-          document.body.scrollHeight,
-          document.documentElement.scrollHeight,
-        );
-        var clientHeight =
-          window.innerHeight || document.documentElement.clientHeight;
-        var needsScroll = scrollHeight - clientHeight > 80;
-        setVisible(needsScroll && scrollTop > 120);
-      }
-
-      btn.addEventListener("click", function () {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      });
-
-      window.addEventListener("scroll", updateVisibility, { passive: true });
-      window.addEventListener("resize", updateVisibility);
-      updateVisibility();
-    }
-
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", function () {
-        init();
-        wireJumpToTop();
-      });
+      document.addEventListener("DOMContentLoaded", init);
     } else {
       init();
-      wireJumpToTop();
     }
+
+    // Re-render whenever the hash changes (e.g. navigating from #590 to #591)
+    window.addEventListener("hashchange", init);
   })();
 </script>
