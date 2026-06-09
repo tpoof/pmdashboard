@@ -1,19 +1,13 @@
 <style>
-  /* ============================================================
-   CustomerOverview — LEAF Programmer Page
-   All styles scoped to #customerOverview to avoid conflicts
-   with LEAF's own stylesheet.
-   ============================================================ */
-
-  #customerOverview *,
-  #customerOverview *::before,
-  #customerOverview *::after {
+  #hub *,
+  #hub *::before,
+  #hub *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
   }
 
-  #customerOverview {
+  #hub {
     font-family:
       -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     max-width: 900px;
@@ -24,8 +18,7 @@
     position: relative;
   }
 
-  /* ---- Skip link ---- */
-  #customerOverview .co-skip-link {
+  #hub .hub-skip-link {
     position: absolute;
     left: -9999px;
     top: 0;
@@ -43,7 +36,7 @@
     white-space: nowrap;
   }
 
-  #customerOverview .co-skip-link:focus {
+  #hub .hub-skip-link:focus {
     position: absolute;
     left: 0;
     top: 0;
@@ -55,8 +48,7 @@
     outline-offset: 2px;
   }
 
-  /* ---- Visually hidden utility (screen-reader only) ---- */
-  #customerOverview .co-sr-only {
+  #hub .hub-sr-only {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -68,10 +60,7 @@
     border: 0;
   }
 
-  /* ============================================================
-   Loading state
-   ============================================================ */
-  #customerOverview .co-loading {
+  #hub .hub-loading {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -82,25 +71,22 @@
     font-size: 1rem;
   }
 
-  #customerOverview .co-spinner {
+  #hub .hub-spinner {
     width: 44px;
     height: 44px;
     border: 4px solid #d6d7d9;
     border-top-color: #0071bb;
     border-radius: 50%;
-    animation: co-spin 0.75s linear infinite;
+    animation: hub-spin 0.75s linear infinite;
   }
 
-  @keyframes co-spin {
+  @keyframes hub-spin {
     to {
       transform: rotate(360deg);
     }
   }
 
-  /* ============================================================
-   Error state
-   ============================================================ */
-  #customerOverview .co-error {
+  #hub .hub-error {
     background: #fff3f3;
     border: 1px solid #b51d1d;
     border-left: 5px solid #b51d1d;
@@ -112,16 +98,13 @@
     line-height: 1.5;
   }
 
-  /* ============================================================
-   Page header
-   ============================================================ */
-  #customerOverview .co-header {
+  #hub .hub-header {
     margin-bottom: 36px;
     padding-bottom: 24px;
     border-bottom: 2px solid #dfe1e2;
   }
 
-  #customerOverview .co-project-name {
+  #hub .hub-project-name {
     font-size: 2rem;
     font-weight: 700;
     color: #003f72;
@@ -129,44 +112,41 @@
     line-height: 1.2;
   }
 
-  #customerOverview .co-project-type {
+  #hub .hub-project-type {
     font-size: 1rem;
     color: #3d4551;
     margin-bottom: 6px;
   }
 
-  #customerOverview .co-project-poc {
+  #hub .hub-project-poc {
     font-size: 1rem;
     color: #3d4551;
     margin-bottom: 12px;
   }
 
-  #customerOverview .co-project-label {
+  #hub .hub-project-label {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
 
-  /* ============================================================
-   Progress bar section
-   ============================================================ */
-  #customerOverview .co-progress-section {
+  #hub .hub-progress-section {
     margin-bottom: 40px;
   }
 
-  #customerOverview .co-progress-heading {
+  #hub .hub-progress-heading {
     font-size: 1.25rem;
     font-weight: 700;
     color: #003f72;
     margin-bottom: 28px;
   }
 
-  #customerOverview .co-progress-nav {
+  #hub .hub-progress-nav {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  #customerOverview .co-progress-track {
+  #hub .hub-progress-track {
     position: relative;
     display: flex;
     align-items: flex-start;
@@ -176,8 +156,7 @@
     padding-bottom: 4px;
   }
 
-  /* Horizontal connector line */
-  #customerOverview .co-progress-track::before {
+  #hub .hub-progress-track::before {
     content: "";
     position: absolute;
     top: 20px;
@@ -188,8 +167,7 @@
     z-index: 0;
   }
 
-  /* ---- Individual step ---- */
-  #customerOverview .co-step {
+  #hub .hub-step {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -199,7 +177,7 @@
     gap: 6px;
   }
 
-  #customerOverview .co-step-circle {
+  #hub .hub-step-circle {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -214,7 +192,7 @@
     flex-shrink: 0;
   }
 
-  #customerOverview .co-step-label {
+  #hub .hub-step-label {
     font-size: 0.75rem;
     font-weight: 500;
     color: #3d4551;
@@ -223,59 +201,53 @@
     line-height: 1.3;
   }
 
-  /* ---- Complete step ---- */
-  #customerOverview .co-step--complete .co-step-circle {
+  #hub .hub-step--complete .hub-step-circle {
     background: #1a7a4a;
     border-color: #1a7a4a;
     color: #ffffff !important;
   }
 
-  #customerOverview .co-step--complete .co-step-circle span,
-  #customerOverview .co-step--complete .co-step-circle * {
+  #hub .hub-step--complete .hub-step-circle span,
+  #hub .hub-step--complete .hub-step-circle * {
     color: #ffffff !important;
   }
 
-  #customerOverview .co-step--complete .co-step-label {
+  #hub .hub-step--complete .hub-step-label {
     color: #1b1b1b;
   }
 
-  /* ---- Active step ---- */
-  #customerOverview .co-step--active .co-step-circle {
+  #hub .hub-step--active .hub-step-circle {
     background: #003f72 !important;
     border-color: #003f72 !important;
     color: #ffffff !important;
     box-shadow: 0 0 0 4px #cce0f5;
   }
 
-  #customerOverview .co-step--active .co-step-circle span,
-  #customerOverview .co-step--active .co-step-circle * {
+  #hub .hub-step--active .hub-step-circle span,
+  #hub .hub-step--active .hub-step-circle * {
     color: #ffffff !important;
   }
 
-  #customerOverview .co-step--active .co-step-label {
+  #hub .hub-step--active .hub-step-label {
     font-weight: 700;
     color: #003f72;
   }
 
-  /* ---- Upcoming step ---- */
-  #customerOverview .co-step--upcoming .co-step-circle {
+  #hub .hub-step--upcoming .hub-step-circle {
     background: #f0f0f0;
     border-color: #a9aeb1;
     color: #3d4551;
   }
 
-  #customerOverview .co-step--upcoming .co-step-label {
+  #hub .hub-step--upcoming .hub-step-label {
     color: #71767a;
   }
 
-  /* ============================================================
-   Phase detail cards
-   ============================================================ */
-  #customerOverview .co-phases-section {
+  #hub .hub-phases-section {
     margin-top: 8px;
   }
 
-  #customerOverview .co-phases-heading {
+  #hub .hub-phases-heading {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -287,44 +259,44 @@
     border: 0;
   }
 
-  #customerOverview .co-phases {
+  #hub .hub-phases {
     display: flex;
     flex-direction: column;
     gap: 16px;
   }
 
-  #customerOverview .co-phase {
+  #hub .hub-phase {
     background: #ffffff;
     border: 1px solid #dfe1e2;
     border-radius: 6px;
     padding: 20px 24px;
   }
 
-  #customerOverview .co-phase--complete {
+  #hub .hub-phase--complete {
     border-color: #d6d7d9;
     background: #fafafa;
   }
 
-  #customerOverview .co-phase--active {
+  #hub .hub-phase--active {
     border-left: 5px solid #0071bb;
     background: #f0f7ff;
     border-color: #b5d0eb;
     padding-left: 20px;
   }
 
-  #customerOverview .co-phase--upcoming {
+  #hub .hub-phase--upcoming {
     background: #fafafa;
     border-color: #e6e6e6;
   }
 
-  #customerOverview .co-phase-header {
+  #hub .hub-phase-header {
     display: flex;
     align-items: center;
     gap: 12px;
     margin-bottom: 14px;
   }
 
-  #customerOverview .co-phase-number {
+  #hub .hub-phase-number {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -336,48 +308,48 @@
     flex-shrink: 0;
   }
 
-  #customerOverview .co-phase--complete .co-phase-number {
+  #hub .hub-phase--complete .hub-phase-number {
     background: #1a7a4a;
     color: #ffffff !important;
   }
 
-  #customerOverview .co-phase--complete .co-phase-number span,
-  #customerOverview .co-phase--complete .co-phase-number * {
+  #hub .hub-phase--complete .hub-phase-number span,
+  #hub .hub-phase--complete .hub-phase-number * {
     color: #ffffff !important;
   }
 
-  #customerOverview .co-phase--active .co-phase-number {
+  #hub .hub-phase--active .hub-phase-number {
     background: #003f72;
     color: #ffffff !important;
   }
 
-  #customerOverview .co-phase--active .co-phase-number span,
-  #customerOverview .co-phase--active .co-phase-number * {
+  #hub .hub-phase--active .hub-phase-number span,
+  #hub .hub-phase--active .hub-phase-number * {
     color: #ffffff !important;
   }
 
-  #customerOverview .co-phase--upcoming .co-phase-number {
+  #hub .hub-phase--upcoming .hub-phase-number {
     background: #71767a;
     color: #ffffff !important;
   }
 
-  #customerOverview .co-phase--upcoming .co-phase-number span,
-  #customerOverview .co-phase--upcoming .co-phase-number * {
+  #hub .hub-phase--upcoming .hub-phase-number span,
+  #hub .hub-phase--upcoming .hub-phase-number * {
     color: #ffffff !important;
   }
 
-  #customerOverview .co-phase-title {
+  #hub .hub-phase-title {
     font-size: 1.075rem;
     font-weight: 600;
     color: #1b1b1b;
     flex: 1;
   }
 
-  #customerOverview .co-phase--upcoming .co-phase-title {
+  #hub .hub-phase--upcoming .hub-phase-title {
     color: #3d4551;
   }
 
-  #customerOverview .co-phase-badge {
+  #hub .hub-phase-badge {
     font-size: 0.725rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -387,19 +359,19 @@
     flex-shrink: 0;
   }
 
-  #customerOverview .co-phase--complete .co-phase-badge {
+  #hub .hub-phase--complete .hub-phase-badge {
     background: #e5f5ed;
     color: #1a7a4a;
     border: 1px solid #1a7a4a;
   }
 
-  #customerOverview .co-phase--active .co-phase-badge {
+  #hub .hub-phase--active .hub-phase-badge {
     background: #ddeeff;
     color: #003f72;
     border: 1px solid #0071bb;
   }
 
-  #customerOverview .co-phase-content {
+  #hub .hub-phase-content {
     font-size: 0.9375rem;
     color: #1b1b1b;
     line-height: 1.65;
@@ -407,125 +379,123 @@
     word-break: break-word;
   }
 
-  #customerOverview .co-phase--complete .co-phase-content {
+  #hub .hub-phase--complete .hub-phase-content {
     color: #3d4551;
   }
 
-  #customerOverview .co-phase--upcoming .co-phase-content {
+  #hub .hub-phase--upcoming .hub-phase-content {
     color: #3d4551;
   }
 
-  #customerOverview .co-phase-placeholder {
+  #hub .hub-phase-placeholder {
     font-style: italic;
     color: #71767a;
     font-size: 0.9375rem;
   }
 
-  /* ============================================================
-   Focus styles
-   ============================================================ */
-  #customerOverview a:focus-visible {
+  #hub a:focus-visible {
     outline: 3px solid #0071bb;
     outline-offset: 3px;
     border-radius: 2px;
   }
 
-  /* ============================================================
-   Responsive
-   ============================================================ */
   @media (max-width: 640px) {
-    #customerOverview {
+    #hub {
       padding: 16px;
     }
 
-    #customerOverview .co-project-name {
+    #hub .hub-project-name {
       font-size: 1.5rem;
     }
 
-    #customerOverview .co-step-circle {
+    #hub .hub-step-circle {
       width: 34px;
       height: 34px;
       font-size: 0.875rem;
     }
 
-    #customerOverview .co-progress-track::before {
+    #hub .hub-progress-track::before {
       top: 17px;
     }
 
-    #customerOverview .co-step-label {
+    #hub .hub-step-label {
       font-size: 0.65rem;
       max-width: 60px;
     }
 
-    #customerOverview .co-phase {
+    #hub .hub-phase {
       padding: 14px 16px;
     }
 
-    #customerOverview .co-phase--active {
+    #hub .hub-phase--active {
       padding-left: 14px;
     }
 
-    #customerOverview .co-phase-title {
+    #hub .hub-phase-title {
       font-size: 1rem;
     }
 
-    #customerOverview .co-phase-badge {
+    #hub .hub-phase-badge {
       display: none;
     }
   }
 </style>
 
-<!-- ============================================================
-     CustomerOverview — LEAF Programmer page markup
-     ============================================================ -->
-<div id="customerOverview" lang="en">
-  <a class="co-skip-link" href="#co-phase-details">Skip to phase details</a>
+<div id="hub" lang="en">
+  <a class="hub-skip-link" href="#hub-phase-details">Skip to phase details</a>
 
   <div
-    id="co-live-polite"
-    class="co-sr-only"
+    id="hub-live-polite"
+    class="hub-sr-only"
     aria-live="polite"
     aria-atomic="true"
   ></div>
-
   <div
-    id="co-live-assertive"
-    class="co-sr-only"
+    id="hub-live-assertive"
+    class="hub-sr-only"
     aria-live="assertive"
     aria-atomic="true"
   ></div>
 
   <div
-    id="co-loading"
-    class="co-loading"
+    id="hub-loading"
+    class="hub-loading"
     role="status"
     aria-label="Loading project data"
   >
-    <div class="co-spinner" aria-hidden="true"></div>
-    <p id="co-loading-message">Loading project data…</p>
+    <div class="hub-spinner" aria-hidden="true"></div>
+    <p id="hub-loading-message">Loading project data…</p>
   </div>
 
-  <div id="co-error" class="co-error" role="alert" style="display: none"></div>
+  <div
+    id="hub-error"
+    class="hub-error"
+    role="alert"
+    style="display: none"
+  ></div>
 
-  <div id="co-content" style="display: none">
-    <header class="co-header">
-      <h1 id="co-project-name" class="co-project-name"></h1>
-      <p id="co-project-type" class="co-project-type"></p>
-      <p id="co-project-poc" class="co-project-poc"></p>
+  <div id="hub-content" style="display: none">
+    <header class="hub-header">
+      <h1 id="hub-project-name" class="hub-project-name"></h1>
+      <p id="hub-project-type" class="hub-project-type"></p>
+      <p id="hub-project-poc" class="hub-project-poc"></p>
     </header>
 
-    <section class="co-progress-section" aria-labelledby="co-progress-heading">
-      <h2 id="co-progress-heading" class="co-progress-heading">
+    <section
+      class="hub-progress-section"
+      aria-labelledby="hub-progress-heading"
+    >
+      <h2 id="hub-progress-heading" class="hub-progress-heading">
         Project Phases
       </h2>
-      <nav class="co-progress-nav" aria-label="Project phases">
-        <ol id="co-progress-track" class="co-progress-track"></ol>
+      <nav class="hub-progress-nav" aria-label="Project phases">
+        <ol id="hub-progress-track" class="hub-progress-track"></ol>
       </nav>
     </section>
 
-    <section class="co-phases-section" aria-labelledby="co-phases-heading">
-      <h2 id="co-phases-heading" class="co-phases-heading">Phase Details</h2>
-      <div id="co-phase-details" class="co-phases"></div>
+    <section class="hub-phases-section" aria-labelledby="hub-phases-heading">
+      <h2 id="hub-phases-heading" class="hub-phases-heading">Phase Details</h2>
+      <div id="hub-phase-details" class="hub-phases"></div>
     </section>
   </div>
 </div>
@@ -534,9 +504,6 @@
   (function () {
     "use strict";
 
-    /* ============================================================
-     CONFIG
-     ============================================================ */
     const CONFIG = {
       debug: false,
 
@@ -562,12 +529,8 @@
         { step: 5, label: "Monitoring", key: "phase5" },
       ],
 
-      /*
-       * Map the raw dropdown value stored by LEAF for IND_CURRENT_PHASE
-       * to a step number 1–5.
-       * TODO: verify these match the exact values LEAF stores for that field.
-       * Enable CONFIG.debug = true and check the console dump to confirm.
-       */
+      // Maps raw LEAF dropdown values for currentPhase to step numbers 1–5.
+      // Set debug: true and check the console to verify these match your field values.
       phaseValueMap: {
         discovery: 1,
         planning: 2,
@@ -577,9 +540,6 @@
       },
     };
 
-    /* ============================================================
-     DOM helpers
-     ============================================================ */
     const byId = (id) => document.getElementById(id);
 
     function esc(str) {
@@ -593,7 +553,7 @@
     }
 
     function announce(message, assertive) {
-      const node = byId(assertive ? "co-live-assertive" : "co-live-polite");
+      const node = byId(assertive ? "hub-live-assertive" : "hub-live-polite");
       if (!node) return;
       node.textContent = "";
       setTimeout(() => {
@@ -601,9 +561,6 @@
       }, 60);
     }
 
-    /* ============================================================
-     Decode HTML entities that LEAF may encode (e.g. &amp; → &)
-     ============================================================ */
     function decodeEntities(str) {
       if (!str || typeof str !== "string") return str;
       return str
@@ -617,20 +574,13 @@
         .replace(/&apos;/g, "'");
     }
 
-    /* ============================================================
-     URL helper — reads the record ID from the URL hash.
-     Share links take the form: /projects/report.php?a=projecthub#590
-     LEAF uses ?a= to load this template; the hash carries the record ID.
-     Returns a numeric string (e.g. "590") or empty string if missing/invalid.
-     ============================================================ */
+    // Reads the record ID from the URL hash: /projects/report.php?a=hub#590
+    // LEAF uses ?a= to load this template; the hash carries the record ID.
     function getRecordIDFromHash() {
       const hash = window.location.hash.replace("#", "").trim();
       return /^\d+$/.test(hash) ? hash : "";
     }
 
-    /* ============================================================
-     State helpers
-     ============================================================ */
     function showEl(id) {
       const el = byId(id);
       if (el) el.style.display = "";
@@ -642,33 +592,30 @@
     }
 
     function showLoading(message = "Loading project data…") {
-      const msgEl = byId("co-loading-message");
+      const msgEl = byId("hub-loading-message");
       if (msgEl) msgEl.textContent = message;
-      showEl("co-loading");
-      hideEl("co-error");
-      hideEl("co-content");
+      showEl("hub-loading");
+      hideEl("hub-error");
+      hideEl("hub-content");
     }
 
     function showError(message) {
-      hideEl("co-loading");
-      hideEl("co-content");
-      const errEl = byId("co-error");
+      hideEl("hub-loading");
+      hideEl("hub-content");
+      const errEl = byId("hub-error");
       errEl.textContent = message;
-      showEl("co-error");
+      showEl("hub-error");
       announce(message, true);
     }
 
     function showContent() {
-      hideEl("co-loading");
-      hideEl("co-error");
-      showEl("co-content");
+      hideEl("hub-loading");
+      hideEl("hub-error");
+      showEl("hub-content");
       announce("Project data loaded.", false);
     }
 
-    /* ============================================================
-     Extract a field value from s1 using LEAF's keying convention.
-     LEAF stores values in s1 as: s1['id' + indicatorID] = 'raw string'
-     ============================================================ */
+    // LEAF stores s1 values keyed as 'id' + indicatorID
     function getField(s1, indicatorID) {
       if (!s1) return "";
       const key = `id${indicatorID}`;
@@ -677,9 +624,6 @@
       return decodeEntities(String(v).trim());
     }
 
-    /* ============================================================
-     Phase / step helpers
-     ============================================================ */
     function stepState(stepNumber, activeStep) {
       if (stepNumber < activeStep) return "complete";
       if (stepNumber === activeStep) return "active";
@@ -703,20 +647,14 @@
       }
 
       if (CONFIG.debug) {
-        console.warn(
-          "[CustomerOverview] Unrecognized phase value:",
-          JSON.stringify(raw),
-        );
-        console.warn("[CustomerOverview] Expected one of:", keys);
+        console.warn("[Hub] Unrecognized phase value:", JSON.stringify(raw));
+        console.warn("[Hub] Expected one of:", keys);
       }
       return 1;
     }
 
-    /* ============================================================
-     Progress bar renderer
-     ============================================================ */
     function renderProgressBar(activeStep) {
-      const track = byId("co-progress-track");
+      const track = byId("hub-progress-track");
       track.innerHTML = "";
 
       for (const phase of CONFIG.phases) {
@@ -728,7 +666,7 @@
         }[state];
 
         const li = document.createElement("li");
-        li.className = `co-step co-step--${state}`;
+        li.className = `hub-step hub-step--${state}`;
         li.setAttribute("aria-label", `${phase.label} — ${stateWord}`);
         if (state === "active") li.setAttribute("aria-current", "step");
 
@@ -738,19 +676,16 @@
             : `<span aria-hidden="true">${phase.step}</span>`;
 
         li.innerHTML = `
-          <div class="co-step-circle" aria-hidden="true">${circleInner}</div>
-          <span class="co-step-label" aria-hidden="true">${esc(phase.label)}</span>
+          <div class="hub-step-circle" aria-hidden="true">${circleInner}</div>
+          <span class="hub-step-label" aria-hidden="true">${esc(phase.label)}</span>
         `;
 
         track.appendChild(li);
       }
     }
 
-    /* ============================================================
-     Phase cards renderer
-     ============================================================ */
     function renderPhaseDetails(activeStep, contents) {
-      const container = byId("co-phase-details");
+      const container = byId("hub-phase-details");
       container.innerHTML = "";
 
       for (const phase of CONFIG.phases) {
@@ -758,41 +693,38 @@
         const content = contents[phase.key] || "";
 
         const article = document.createElement("article");
-        article.className = `co-phase co-phase--${state}`;
+        article.className = `hub-phase hub-phase--${state}`;
 
         const numberInner =
           state === "complete"
             ? `<span aria-hidden="true">&#10003;</span>`
             : `<span aria-hidden="true">${phase.step}</span>`;
 
-        // Only show badge on completed phases
         const badgeHtml =
           state === "complete"
-            ? `<span class="co-phase-badge" aria-hidden="true">Complete</span>`
+            ? `<span class="hub-phase-badge" aria-hidden="true">Complete</span>`
             : "";
 
         const contentHtml = content.trim()
-          ? `<p class="co-phase-content"></p>`
-          : `<p class="co-phase-content co-phase-placeholder"
+          ? `<p class="hub-phase-content"></p>`
+          : `<p class="hub-phase-content hub-phase-placeholder"
                aria-label="${esc(phase.label)} phase: Details coming soon">
                <span aria-hidden="true">Details coming soon</span>
              </p>`;
 
         article.innerHTML = `
-          <div class="co-phase-header">
-            <div class="co-phase-number" aria-hidden="true">${numberInner}</div>
-            <h3 class="co-phase-title">Phase ${phase.step} — ${esc(phase.label)}</h3>
+          <div class="hub-phase-header">
+            <div class="hub-phase-number" aria-hidden="true">${numberInner}</div>
+            <h3 class="hub-phase-title">Phase ${phase.step} — ${esc(phase.label)}</h3>
             ${badgeHtml}
           </div>
           ${contentHtml}
         `;
 
-        // Set phase text via textContent AFTER building innerHTML so LEAF's
-        // pre-encoded entities (&#039; &amp; etc.) are never double-encoded.
-        // decodeEntities() unwraps whatever LEAF stored; textContent then sets
-        // it as a plain string so the browser renders the literal characters.
+        // Set phase text via textContent AFTER building innerHTML to prevent
+        // LEAF's pre-encoded entities (&#039; &amp; etc.) from double-encoding.
         if (content.trim()) {
-          const contentEl = article.querySelector(".co-phase-content");
+          const contentEl = article.querySelector(".hub-phase-content");
           if (contentEl) contentEl.textContent = decodeEntities(content);
         }
 
@@ -800,20 +732,13 @@
       }
     }
 
-    /* ============================================================
-     fetchProjectData
-     Uses LeafFormQuery (globally available on LEAF sites) to query
-     all indicator values for a single record.
-     Resolves to the raw s1 object: { id59: 'value', id60: 'value', … }
-
-     Note: onProgress fires if LeafFormQuery batches the request. For a
-     single-record lookup this may not fire — the await on execute() is
-     what we depend on, onProgress is best-effort UI feedback only.
-     ============================================================ */
+    // Uses LeafFormQuery (globally available on LEAF sites) to fetch all
+    // indicator values for a single record. Resolves to the raw s1 object.
+    // onProgress is best-effort UI feedback — may not fire on single-record queries.
     async function fetchProjectData(recordID) {
       const inds = CONFIG.indicators;
-
       const query = new LeafFormQuery();
+
       query.addTerm("recordIDs", "=", String(recordID));
       query.getData([
         inds.projectName,
@@ -827,10 +752,8 @@
         inds.phase5,
       ]);
       query.setExtraParams("&x-filterData=recordID");
-
-      // Best-effort progress feedback — may not fire on single-record queries
       query.onProgress((progress) => {
-        const msgEl = byId("co-loading-message");
+        const msgEl = byId("hub-loading-message");
         if (msgEl)
           msgEl.textContent = `Loading project data… (${progress}+ records scanned)`;
       });
@@ -838,70 +761,58 @@
       const data = await query.execute();
 
       if (CONFIG.debug) {
+        console.log("[Hub] Full API response:", JSON.stringify(data));
+        const s1debug = data?.[String(recordID)]?.s1 || {};
+        console.log("[Hub] s1 keys:", Object.keys(s1debug));
         console.log(
-          "[CustomerOverview] Full API response:",
-          JSON.stringify(data),
+          `[Hub] projectName  (id${inds.projectName}):`,
+          s1debug[`id${inds.projectName}`],
+        );
+        console.log(
+          `[Hub] projectType  (id${inds.projectType}):`,
+          s1debug[`id${inds.projectType}`],
+        );
+        console.log(
+          `[Hub] poc          (id${inds.poc}):`,
+          s1debug[`id${inds.poc}`],
+        );
+        console.log(
+          `[Hub] currentPhase (id${inds.currentPhase}):`,
+          s1debug[`id${inds.currentPhase}`],
+        );
+        console.log(
+          `[Hub] phase1       (id${inds.phase1}):`,
+          s1debug[`id${inds.phase1}`],
+        );
+        console.log(
+          `[Hub] phase2       (id${inds.phase2}):`,
+          s1debug[`id${inds.phase2}`],
+        );
+        console.log(
+          `[Hub] phase3       (id${inds.phase3}):`,
+          s1debug[`id${inds.phase3}`],
+        );
+        console.log(
+          `[Hub] phase4       (id${inds.phase4}):`,
+          s1debug[`id${inds.phase4}`],
+        );
+        console.log(
+          `[Hub] phase5       (id${inds.phase5}):`,
+          s1debug[`id${inds.phase5}`],
         );
       }
 
       const rec = data && data[String(recordID)];
       if (!rec) throw new Error(`No record found for ID ${recordID}`);
 
-      // LEAF returns indicator data under rec.s1, keyed as 'id' + indicatorID
-      const s1 = rec.s1 || rec;
-
-      if (CONFIG.debug) {
-        console.log("[CustomerOverview] s1 keys:", Object.keys(s1));
-        console.log(
-          `[CustomerOverview] projectName  (id${inds.projectName}):`,
-          s1[`id${inds.projectName}`],
-        );
-        console.log(
-          `[CustomerOverview] projectType  (id${inds.projectType}):`,
-          s1[`id${inds.projectType}`],
-        );
-        console.log(
-          `[CustomerOverview] poc          (id${inds.poc}):`,
-          s1[`id${inds.poc}`],
-        );
-        console.log(
-          `[CustomerOverview] currentPhase (id${inds.currentPhase}):`,
-          s1[`id${inds.currentPhase}`],
-        );
-        console.log(
-          `[CustomerOverview] phase1       (id${inds.phase1}):`,
-          s1[`id${inds.phase1}`],
-        );
-        console.log(
-          `[CustomerOverview] phase2       (id${inds.phase2}):`,
-          s1[`id${inds.phase2}`],
-        );
-        console.log(
-          `[CustomerOverview] phase3       (id${inds.phase3}):`,
-          s1[`id${inds.phase3}`],
-        );
-        console.log(
-          `[CustomerOverview] phase4       (id${inds.phase4}):`,
-          s1[`id${inds.phase4}`],
-        );
-        console.log(
-          `[CustomerOverview] phase5       (id${inds.phase5}):`,
-          s1[`id${inds.phase5}`],
-        );
-      }
-
-      return s1;
+      return rec.s1 || rec;
     }
 
-    /* ============================================================
-     Main — full re-render on every call (initial load + hashchange)
-     ============================================================ */
     async function init() {
       const recordID = getRecordIDFromHash();
 
       if (CONFIG.debug) {
-        console.log("--- CustomerOverview Debug ---");
-        console.log("recordID from hash:", recordID);
+        console.log("[Hub] recordID from hash:", recordID);
       }
 
       if (!recordID) {
@@ -932,48 +843,42 @@
 
         const activeStep = resolveActiveStep(currentPhase);
 
-        /* ---- Populate header ---- */
-        byId("co-project-name").textContent = projectName || "Project Details";
+        byId("hub-project-name").textContent = projectName || "Project Details";
 
-        const typeEl = byId("co-project-type");
+        const typeEl = byId("hub-project-type");
         if (projectType) {
-          typeEl.innerHTML = `<strong class="co-project-label">Type:</strong> ${esc(projectType)}`;
+          typeEl.innerHTML = `<strong class="hub-project-label">Type:</strong> ${esc(projectType)}`;
           typeEl.style.display = "";
         } else {
           typeEl.style.display = "none";
         }
 
-        const pocEl = byId("co-project-poc");
+        const pocEl = byId("hub-project-poc");
         if (poc) {
-          pocEl.innerHTML = `<strong class="co-project-label">LEAF POC:</strong> ${esc(poc)}`;
+          pocEl.innerHTML = `<strong class="hub-project-label">LEAF POC:</strong> ${esc(poc)}`;
           pocEl.style.display = "";
         } else {
           pocEl.style.display = "none";
         }
 
-        /* ---- Render progress bar and phase cards ---- */
         renderProgressBar(activeStep);
         renderPhaseDetails(activeStep, phaseContents);
 
         showContent();
       } catch (err) {
-        console.error("[CustomerOverview] Error loading project data:", err);
+        console.error("[Hub] Error loading project data:", err);
         showError(
           "Unable to load project data. Please try again later or contact support.",
         );
       }
     }
 
-    /* ============================================================
-     Bootstrap — run on DOM ready, re-run on hash change
-     ============================================================ */
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", init);
     } else {
       init();
     }
 
-    // Re-render whenever the hash changes (e.g. navigating from #590 to #591)
     window.addEventListener("hashchange", init);
   })();
 </script>
