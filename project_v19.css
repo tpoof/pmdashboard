@@ -3605,3 +3605,29 @@ canvas.pm-chartClickable {
 /* ═══════════════════════════════════════════════════════════════════════════
    END PROJECTS TABLE COLUMN SIZING
    ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WORKFLOW ALERT ICONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.pm-workflowAlert {
+  font-size: 14px !important;
+  vertical-align: middle;
+  margin-right: 4px;
+  flex-shrink: 0;
+  cursor: help;
+  position: relative;
+  top: -1px;
+}
+
+.pm-workflowAlert--red {
+  color: #d32f2f !important;
+}
+
+.pm-workflowAlert--gold {
+  color: #e65100 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   END WORKFLOW ALERT ICONS
+   ═══════════════════════════════════════════════════════════════════════════ */
