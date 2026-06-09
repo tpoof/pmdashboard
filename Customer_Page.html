@@ -98,36 +98,239 @@
     line-height: 1.5;
   }
 
+  @keyframes hub-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  #hub .hub-content-visible {
+    animation: hub-fade-in 0.3s ease both;
+  }
+
   #hub .hub-header {
     margin-bottom: 36px;
     padding-bottom: 24px;
     border-bottom: 2px solid #dfe1e2;
   }
 
-  #hub .hub-project-name {
+  #hub .hub-welcome-banner {
+    background: linear-gradient(135deg, #003f72 0%, #0071bb 100%);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  #hub .hub-welcome-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+  }
+
+  #hub .hub-welcome-icon svg {
+    width: 48px;
+    height: 48px;
+    color: #ffffff;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
+  }
+
+  #hub .hub-welcome-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  #hub .hub-welcome-headline {
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  #hub .hub-welcome-project-title {
     font-size: 2rem;
     font-weight: 700;
-    color: #003f72;
-    margin-bottom: 6px;
-    line-height: 1.2;
+    color: #ffffff;
+    line-height: 1.15;
+    margin-bottom: 10px;
   }
 
-  #hub .hub-project-type {
-    font-size: 1rem;
-    color: #3d4551;
-    margin-bottom: 6px;
+  #hub .hub-welcome-sub {
+    font-size: 0.9375rem;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.5;
   }
 
-  #hub .hub-project-poc {
+  #hub .hub-share-wrap {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    align-self: stretch;
+  }
+
+  #hub .hub-share-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      background 0.15s,
+      border-color 0.15s;
+    flex-shrink: 0;
+  }
+
+  #hub .hub-share-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  #hub .hub-share-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.9);
+  }
+
+  #hub .hub-share-btn:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 3px;
+  }
+
+  #hub .hub-share-toast {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    white-space: nowrap;
+    min-height: 1em;
+    letter-spacing: 0.02em;
+  }
+
+  #hub .hub-meta-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+
+  #hub .hub-meta-table td {
+    padding: 5px 0;
+    vertical-align: top;
     font-size: 1rem;
     color: #3d4551;
-    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  #hub .hub-meta-table td:first-child {
+    width: 180px;
+    min-width: 140px;
+    padding-right: 16px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   #hub .hub-project-label {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+  }
+
+  #hub .hub-type-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: #3d4551;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-align: left;
+    line-height: 1.5;
+  }
+
+  #hub .hub-type-toggle:hover {
+    color: #0071bb;
+  }
+
+  #hub .hub-type-toggle:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  #hub .hub-type-chevron {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: #71767a;
+    transition: transform 0.2s ease;
+  }
+
+  #hub .hub-type-toggle[aria-expanded="true"] .hub-type-chevron {
+    transform: rotate(180deg);
+  }
+
+  #hub .hub-blurb-row {
+    display: none;
+  }
+  #hub .hub-blurb-row.hub-blurb-open {
+    display: table-row;
+  }
+
+  #hub .hub-blurb-cell {
+    padding-top: 2px !important;
+    padding-bottom: 8px !important;
+  }
+
+  #hub .hub-project-type-blurb {
+    font-size: 0.875rem;
+    font-style: italic;
+    color: #71767a;
+    line-height: 1.55;
+  }
+
+  #hub .hub-poc-link {
+    color: #0071bb;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  #hub .hub-poc-link:hover {
+    color: #003f72;
+  }
+
+  #hub .hub-poc-link:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  #hub .hub-leaf-url-link {
+    color: #0071bb;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  #hub .hub-leaf-url-link:hover {
+    color: #003f72;
   }
 
   #hub .hub-progress-section {
@@ -138,12 +341,63 @@
     font-size: 1.25rem;
     font-weight: 700;
     color: #003f72;
-    margin-bottom: 28px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #hub .hub-progress-heading-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+    line-height: inherit;
+  }
+
+  #hub .hub-progress-heading-toggle:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  #hub .hub-progress-heading-chevron {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: #71767a;
+    transition: transform 0.2s ease;
+  }
+
+  #hub
+    .hub-progress-heading-toggle[aria-expanded="true"]
+    .hub-progress-heading-chevron {
+    transform: rotate(180deg);
+  }
+
+  #hub .hub-progress-explainer {
+    font-size: 0.875rem;
+    font-style: italic;
+    color: #71767a;
+    line-height: 1.55;
+    margin-bottom: 20px;
+    display: none;
+  }
+
+  #hub .hub-progress-explainer.hub-explainer-open {
+    display: block;
   }
 
   #hub .hub-progress-nav {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    margin-top: 20px;
   }
 
   #hub .hub-progress-track {
@@ -159,12 +413,24 @@
   #hub .hub-progress-track::before {
     content: "";
     position: absolute;
-    top: 20px;
+    top: 44px;
     left: 10%;
     right: 10%;
     height: 3px;
     background: #a9aeb1;
     z-index: 0;
+  }
+
+  #hub .hub-progress-track::after {
+    content: "";
+    position: absolute;
+    top: 44px;
+    left: 10%;
+    height: 3px;
+    width: calc(var(--hub-progress-pct, 0%) * 0.8);
+    background: #1a7a4a;
+    z-index: 0;
+    transition: width 0.4s ease;
   }
 
   #hub .hub-step {
@@ -175,6 +441,28 @@
     position: relative;
     z-index: 1;
     gap: 6px;
+  }
+
+  #hub .hub-step-here {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #003f72;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    line-height: 1;
+    height: 18px;
+  }
+
+  #hub .hub-step-here-pin {
+    font-size: 0.7rem;
+  }
+
+  #hub .hub-step-here-spacer {
+    height: 18px;
   }
 
   #hub .hub-step-circle {
@@ -207,11 +495,9 @@
     color: #ffffff !important;
   }
 
-  #hub .hub-step--complete .hub-step-circle span,
-  #hub .hub-step--complete .hub-step-circle * {
+  #hub .hub-step--complete .hub-step-circle span {
     color: #ffffff !important;
   }
-
   #hub .hub-step--complete .hub-step-label {
     color: #1b1b1b;
   }
@@ -223,14 +509,31 @@
     box-shadow: 0 0 0 4px #cce0f5;
   }
 
-  #hub .hub-step--active .hub-step-circle span,
-  #hub .hub-step--active .hub-step-circle * {
+  #hub .hub-step--active .hub-step-circle span {
     color: #ffffff !important;
   }
 
   #hub .hub-step--active .hub-step-label {
     font-weight: 700;
     color: #003f72;
+  }
+
+  @keyframes hub-pulse {
+    0% {
+      box-shadow: 0 0 0 4px #cce0f5;
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(0, 113, 187, 0.15);
+    }
+    100% {
+      box-shadow: 0 0 0 4px #cce0f5;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    #hub .hub-step--active .hub-step-circle {
+      animation: hub-pulse 2s ease-in-out infinite;
+    }
   }
 
   #hub .hub-step--upcoming .hub-step-circle {
@@ -241,6 +544,32 @@
 
   #hub .hub-step--upcoming .hub-step-label {
     color: #71767a;
+  }
+
+  #hub .hub-step-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  #hub .hub-step-btn:focus-visible .hub-step-circle {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+  }
+
+  #hub .hub-step-btn:hover .hub-step-circle {
+    filter: brightness(1.12);
+  }
+
+  #hub .hub-step--upcoming .hub-step-btn:hover .hub-step-circle {
+    border-color: #71767a;
+    background: #e6e6e6;
   }
 
   #hub .hub-phases-section {
@@ -259,6 +588,37 @@
     border: 0;
   }
 
+  #hub .hub-phases-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+  }
+
+  #hub .hub-toggle-completed-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    padding: 4px 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #0071bb;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  #hub .hub-toggle-completed-btn:hover {
+    color: #003f72;
+  }
+
+  #hub .hub-toggle-completed-btn:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
   #hub .hub-phases {
     display: flex;
     flex-direction: column;
@@ -275,6 +635,13 @@
   #hub .hub-phase--complete {
     border-color: #d6d7d9;
     background: #fafafa;
+  }
+
+  #hub .hub-phase--complete.hub-phase--collapsed .hub-phase-body {
+    display: none;
+  }
+  #hub .hub-phase--complete.hub-phase--collapsed .hub-phase-header {
+    margin-bottom: 0;
   }
 
   #hub .hub-phase--active {
@@ -296,6 +663,11 @@
     margin-bottom: 14px;
   }
 
+  #hub .hub-phase--complete .hub-phase-header {
+    cursor: pointer;
+    user-select: none;
+  }
+
   #hub .hub-phase-number {
     display: inline-flex;
     align-items: center;
@@ -312,29 +684,21 @@
     background: #1a7a4a;
     color: #ffffff !important;
   }
-
-  #hub .hub-phase--complete .hub-phase-number span,
-  #hub .hub-phase--complete .hub-phase-number * {
+  #hub .hub-phase--complete .hub-phase-number span {
     color: #ffffff !important;
   }
-
   #hub .hub-phase--active .hub-phase-number {
     background: #003f72;
     color: #ffffff !important;
   }
-
-  #hub .hub-phase--active .hub-phase-number span,
-  #hub .hub-phase--active .hub-phase-number * {
+  #hub .hub-phase--active .hub-phase-number span {
     color: #ffffff !important;
   }
-
   #hub .hub-phase--upcoming .hub-phase-number {
     background: #71767a;
     color: #ffffff !important;
   }
-
-  #hub .hub-phase--upcoming .hub-phase-number span,
-  #hub .hub-phase--upcoming .hub-phase-number * {
+  #hub .hub-phase--upcoming .hub-phase-number span {
     color: #ffffff !important;
   }
 
@@ -371,6 +735,28 @@
     border: 1px solid #0071bb;
   }
 
+  #hub .hub-phase-chevron {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: #71767a;
+    transition: transform 0.2s ease;
+    display: none;
+  }
+
+  #hub .hub-phase--complete .hub-phase-chevron {
+    display: block;
+  }
+  #hub .hub-phase--complete.hub-phase--collapsed .hub-phase-chevron {
+    transform: rotate(-90deg);
+  }
+
+  #hub .hub-phase-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
   #hub .hub-phase-content {
     font-size: 0.9375rem;
     color: #1b1b1b;
@@ -382,7 +768,6 @@
   #hub .hub-phase--complete .hub-phase-content {
     color: #3d4551;
   }
-
   #hub .hub-phase--upcoming .hub-phase-content {
     color: #3d4551;
   }
@@ -393,53 +778,656 @@
     font-size: 0.9375rem;
   }
 
+  #hub .hub-phase-empty {
+    font-size: 0.9rem;
+    font-style: italic;
+    color: #71767a;
+    line-height: 1.55;
+    padding-top: 12px;
+    border-top: 1px solid #dfe1e2;
+    margin-top: 4px;
+  }
+
+  #hub .hub-attachments {
+    border-top: 1px solid #dfe1e2;
+    padding-top: 14px;
+  }
+
+  #hub .hub-attachments-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #71767a;
+    margin-bottom: 10px;
+  }
+
+  #hub .hub-attach-loading {
+    font-size: 0.875rem;
+    color: #71767a;
+    font-style: italic;
+  }
+
+  #hub .hub-img-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  #hub .hub-img-thumb-btn {
+    display: block;
+    padding: 0;
+    background: none;
+    border: 2px solid #dfe1e2;
+    border-radius: 6px;
+    cursor: pointer;
+    line-height: 0;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+  }
+
+  #hub .hub-img-thumb-btn:hover,
+  #hub .hub-img-thumb-btn:focus {
+    border-color: #0071bb;
+  }
+
+  #hub .hub-img-thumb-btn:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+  }
+
+  #hub .hub-img-thumb {
+    width: 120px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 4px;
+    display: block;
+  }
+
+  #hub .hub-img-caption {
+    font-size: 0.7rem;
+    color: #71767a;
+    text-align: center;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 4px;
+  }
+
+  #hub .hub-img-figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #hub .hub-file-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  #hub .hub-file-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #hub .hub-file-icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    background: #ddeeff;
+    border: 1px solid #b5d0eb;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #hub .hub-file-icon svg {
+    width: 14px;
+    height: 14px;
+    color: #003f72;
+  }
+
+  #hub .hub-file-link {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #0071bb;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  #hub .hub-file-link:hover {
+    color: #003f72;
+  }
+
+  #hub .hub-file-link:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  #hub .hub-attachment-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #hub .hub-attachment-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0f0f0;
+    border: 1px solid #d6d7d9;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #1b1b1b;
+    text-decoration: none;
+    transition:
+      background 0.15s,
+      border-color 0.15s;
+    max-width: 240px;
+  }
+
+  #hub .hub-attachment-pill:hover {
+    background: #e6e6e6;
+    border-color: #a9aeb1;
+  }
+
+  #hub .hub-attachment-pill:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+    border-radius: 20px;
+  }
+
+  #hub .hub-attachment-pill span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+  }
+
+  #hub .hub-task-container {
+    display: flex;
+    gap: 24px;
+    margin-top: 16px;
+    border-top: 1px solid #dfe1e2;
+    padding-top: 14px;
+  }
+
+  #hub .hub-task-column {
+    flex: 1;
+    min-width: 0;
+  }
+
+  #hub .hub-task-heading {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #3d4551;
+    margin-bottom: 8px;
+  }
+
+  #hub .hub-task-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  #hub .hub-task-row input[type="checkbox"] {
+    flex-shrink: 0;
+    margin-top: 3px;
+    cursor: default;
+    accent-color: #003f72;
+  }
+
+  #hub .hub-task-text {
+    font-size: 0.9375rem;
+    color: #1b1b1b;
+    line-height: 1.5;
+  }
+
+  #hub .hub-task-empty {
+    font-size: 0.875rem;
+    font-style: italic;
+    color: #71767a;
+  }
+
+  #hub .hub-task-legend {
+    font-size: 0.75rem;
+    color: #71767a;
+    margin-top: 8px;
+    font-style: italic;
+  }
+
   #hub a:focus-visible {
     outline: 3px solid #0071bb;
     outline-offset: 3px;
     border-radius: 2px;
   }
 
+  /* Lightbox */
+  #hub-lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.9);
+    align-items: center;
+    justify-content: center;
+  }
+
+  #hub-lightbox.hub-lightbox--open {
+    display: flex;
+  }
+
+  #hub-lightbox-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 94vw;
+    gap: 12px;
+  }
+
+  #hub-lightbox-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  #hub-lightbox .hub-lightbox-counter {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-right: auto;
+    white-space: nowrap;
+  }
+
+  #hub-lightbox .hub-lightbox-fullsize {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    white-space: nowrap;
+  }
+
+  #hub-lightbox .hub-lightbox-fullsize:hover {
+    color: #ffffff;
+  }
+
+  #hub-lightbox .hub-lightbox-fullsize:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  #hub-lightbox-close {
+    background: none;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #ffffff;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  #hub-lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  #hub-lightbox-close:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 3px;
+  }
+
+  #hub-lightbox-stage {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  #hub-lightbox-img {
+    display: block;
+    max-width: 80vw;
+    max-height: 78vh;
+    border-radius: 4px;
+    box-shadow: 0 8px 48px rgba(0, 0, 0, 0.6);
+    object-fit: contain;
+  }
+
+  #hub-lightbox .hub-lightbox-nav {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #ffffff;
+    transition:
+      background 0.15s,
+      border-color 0.15s;
+  }
+
+  #hub-lightbox .hub-lightbox-nav svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  #hub-lightbox .hub-lightbox-nav:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: #ffffff;
+  }
+
+  #hub-lightbox .hub-lightbox-nav:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 3px;
+  }
+
+  #hub-lightbox .hub-lightbox-nav[hidden] {
+    display: none;
+  }
+
+  #hub-lightbox-caption {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.75);
+    text-align: center;
+    max-width: 80vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Jump-to-top */
+  #hub-jump-top {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 1200;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: #003f72;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
+    transition:
+      opacity 0.2s ease,
+      transform 0.2s ease,
+      background 0.15s;
+  }
+
+  #hub-jump-top.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  #hub-jump-top:hover {
+    background: #0071bb;
+  }
+
+  #hub-jump-top:focus-visible {
+    outline: 3px solid #0071bb;
+    outline-offset: 3px;
+    background: #0071bb;
+  }
+
+  #hub-jump-top svg {
+    width: 20px;
+    height: 20px;
+  }
+
   @media (max-width: 640px) {
     #hub {
       padding: 16px;
     }
-
-    #hub .hub-project-name {
+    #hub .hub-welcome-project-title {
       font-size: 1.5rem;
     }
-
+    #hub .hub-welcome-banner {
+      padding: 16px;
+      gap: 12px;
+    }
+    #hub .hub-welcome-headline {
+      font-size: 1rem;
+    }
+    #hub .hub-welcome-icon svg {
+      width: 36px;
+      height: 36px;
+    }
     #hub .hub-step-circle {
       width: 34px;
       height: 34px;
       font-size: 0.875rem;
     }
-
-    #hub .hub-progress-track::before {
-      top: 17px;
+    #hub .hub-progress-track::before,
+    #hub .hub-progress-track::after {
+      top: 41px;
     }
-
     #hub .hub-step-label {
-      font-size: 0.65rem;
-      max-width: 60px;
+      display: none;
     }
-
+    #hub .hub-step-here {
+      font-size: 0.6rem;
+    }
     #hub .hub-phase {
       padding: 14px 16px;
     }
-
     #hub .hub-phase--active {
       padding-left: 14px;
     }
-
     #hub .hub-phase-title {
       font-size: 1rem;
     }
-
     #hub .hub-phase-badge {
       display: none;
     }
+    #hub .hub-img-thumb {
+      width: 90px;
+      height: 68px;
+    }
+    #hub .hub-img-thumb-btn {
+      border-width: 1px;
+    }
+    #hub .hub-img-caption {
+      max-width: 90px;
+    }
+    #hub .hub-task-container {
+      flex-direction: column;
+      gap: 16px;
+    }
+    #hub-jump-top {
+      bottom: 20px;
+      right: 16px;
+      width: 40px;
+      height: 40px;
+    }
+    #hub-jump-top svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  @media print {
+    #hub .hub-phases-toolbar,
+    #hub .hub-phase-chevron {
+      display: none !important;
+    }
+    #hub .hub-phase--collapsed .hub-phase-body {
+      display: flex !important;
+    }
+    #hub .hub-phase--collapsed .hub-phase-header {
+      margin-bottom: 14px !important;
+    }
+    #hub-lightbox {
+      display: none !important;
+    }
+    #hub .hub-img-thumb-btn {
+      border: 1px solid #ccc;
+    }
+    #hub .hub-welcome-banner {
+      background: none !important;
+      border: 1px solid #dfe1e2;
+      padding: 14px 16px;
+    }
+    #hub .hub-welcome-headline {
+      color: #3d4551 !important;
+    }
+    #hub .hub-welcome-project-title {
+      color: #003f72 !important;
+    }
+    #hub .hub-welcome-sub {
+      color: #3d4551 !important;
+    }
+    #hub .hub-welcome-icon {
+      display: none;
+    }
+    #hub-jump-top {
+      display: none !important;
+    }
   }
 </style>
+
+<!-- Lightbox overlay (singleton, outside scoped wrapper) -->
+<div
+  id="hub-lightbox"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Image preview"
+>
+  <div id="hub-lightbox-inner">
+    <div id="hub-lightbox-toolbar">
+      <span
+        id="hub-lightbox-counter"
+        class="hub-lightbox-counter"
+        aria-live="polite"
+        aria-atomic="true"
+      ></span>
+      <a
+        id="hub-lightbox-fullsize"
+        class="hub-lightbox-fullsize"
+        href="#"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Open full size image in new tab"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M10 2h4v4M9 7l5-5M6 14H2v-4M7 9l-5 5"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        Full size
+      </a>
+      <button
+        id="hub-lightbox-close"
+        type="button"
+        aria-label="Close image preview"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M3 3l10 10M13 3L3 13"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+    </div>
+    <div id="hub-lightbox-stage">
+      <button
+        id="hub-lightbox-prev"
+        type="button"
+        class="hub-lightbox-nav"
+        aria-label="Previous image"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      </button>
+      <img id="hub-lightbox-img" src="" alt="" />
+      <button
+        id="hub-lightbox-next"
+        type="button"
+        class="hub-lightbox-nav"
+        aria-label="Next image"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+      </button>
+    </div>
+    <span id="hub-lightbox-caption"></span>
+  </div>
+</div>
 
 <div id="hub" lang="en">
   <a class="hub-skip-link" href="#hub-phase-details">Skip to phase details</a>
@@ -464,8 +1452,25 @@
     aria-label="Loading project data"
   >
     <div class="hub-spinner" aria-hidden="true"></div>
-    <p id="hub-loading-message">Loading project data…</p>
+    <p>Loading project data&hellip;</p>
   </div>
+
+  <div
+    id="hub-debug-panel"
+    style="
+      display: none;
+      background: #1b1b1b;
+      color: #a8ff78;
+      font-family: monospace;
+      font-size: 0.8rem;
+      padding: 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.6;
+    "
+  ></div>
 
   <div
     id="hub-error"
@@ -476,9 +1481,97 @@
 
   <div id="hub-content" style="display: none">
     <header class="hub-header">
-      <h1 id="hub-project-name" class="hub-project-name"></h1>
-      <p id="hub-project-type" class="hub-project-type"></p>
-      <p id="hub-project-poc" class="hub-project-poc"></p>
+      <div class="hub-welcome-banner" aria-label="Welcome message">
+        <div class="hub-welcome-icon" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <polygon
+              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+            />
+          </svg>
+        </div>
+        <div class="hub-welcome-text">
+          <p class="hub-welcome-headline">Welcome to your LEAF Project Hub,</p>
+          <h1 id="hub-project-name" class="hub-welcome-project-title"></h1>
+          <p class="hub-welcome-sub">
+            This is your central view of progress, milestones, and the team
+            behind your project.
+          </p>
+        </div>
+        <div class="hub-share-wrap">
+          <button
+            id="hub-share-btn"
+            class="hub-share-btn"
+            type="button"
+            aria-label="Copy Link to Share the Page"
+            title="Copy Link to Share the Page"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+          </button>
+          <span
+            id="hub-share-toast"
+            class="hub-share-toast"
+            aria-live="polite"
+            aria-atomic="true"
+          ></span>
+        </div>
+      </div>
+
+      <table class="hub-meta-table" role="presentation">
+        <tbody>
+          <tr id="hub-row-type" style="display: none">
+            <td><strong class="hub-project-label">Project Type</strong></td>
+            <td id="hub-project-type"></td>
+          </tr>
+          <tr id="hub-blurb-row" class="hub-blurb-row">
+            <td></td>
+            <td class="hub-blurb-cell">
+              <p id="hub-project-type-blurb" class="hub-project-type-blurb"></p>
+            </td>
+          </tr>
+          <tr id="hub-row-objective" style="display: none">
+            <td><strong class="hub-project-label">Scope</strong></td>
+            <td id="hub-project-objective"></td>
+          </tr>
+          <tr id="hub-row-poc" style="display: none">
+            <td><strong class="hub-project-label">LEAF POC</strong></td>
+            <td id="hub-project-poc"></td>
+          </tr>
+          <tr id="hub-row-service-poc" style="display: none">
+            <td><strong class="hub-project-label">Customer POC</strong></td>
+            <td id="hub-service-poc"></td>
+          </tr>
+          <tr id="hub-row-leaf-url" style="display: none">
+            <td>
+              <strong class="hub-project-label">Customer LEAF Site</strong>
+            </td>
+            <td id="hub-leaf-url"></td>
+          </tr>
+        </tbody>
+      </table>
     </header>
 
     <section
@@ -486,8 +1579,35 @@
       aria-labelledby="hub-progress-heading"
     >
       <h2 id="hub-progress-heading" class="hub-progress-heading">
-        Project Phases
+        <button
+          id="hub-progress-toggle"
+          class="hub-progress-heading-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="hub-progress-explainer"
+        >
+          Project Phases
+          <svg
+            class="hub-progress-heading-chevron"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M3 5l5 5 5-5" />
+          </svg>
+        </button>
       </h2>
+      <p id="hub-progress-explainer" class="hub-progress-explainer" role="note">
+        Each phase represents a key milestone in your project journey. Your team
+        and the LEAF team work through these together. The progress bar reflects
+        where things stand today — click any phase circle to jump directly to
+        that section.
+      </p>
       <nav class="hub-progress-nav" aria-label="Project phases">
         <ol id="hub-progress-track" class="hub-progress-track"></ol>
       </nav>
@@ -495,10 +1615,45 @@
 
     <section class="hub-phases-section" aria-labelledby="hub-phases-heading">
       <h2 id="hub-phases-heading" class="hub-phases-heading">Phase Details</h2>
+      <div
+        id="hub-phases-toolbar"
+        class="hub-phases-toolbar"
+        style="display: none"
+      >
+        <button
+          id="hub-toggle-completed-btn"
+          class="hub-toggle-completed-btn"
+          type="button"
+          aria-expanded="false"
+        >
+          <span id="hub-toggle-completed-label">Show completed phases</span>
+        </button>
+      </div>
       <div id="hub-phase-details" class="hub-phases"></div>
     </section>
   </div>
 </div>
+
+<button
+  id="hub-jump-top"
+  type="button"
+  aria-label="Jump to Top of Page"
+  aria-hidden="true"
+  tabindex="-1"
+>
+  <svg
+    viewBox="0 0 20 20"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M10 15V5M5 9l5-5 5 5" />
+  </svg>
+</button>
 
 <script>
   (function () {
@@ -510,33 +1665,88 @@
       categoryID: "55445",
 
       indicators: {
-        projectName: 59, // Project Name
-        projectType: 60, // Project Type
-        poc: 67, // LEAF POC
-        currentPhase: 61, // Current Phase (dropdown)
-        phase1: 62, // Phase 1: Discovery
-        phase2: 63, // Phase 2: Planning
-        phase3: 64, // Phase 3: Execution
-        phase4: 65, // Phase 4: Launch
-        phase5: 66, // Phase 5: Monitoring
+        projectName: 59,
+        projectType: 60,
+        poc: 67, // LEAF POC (orgchart_employee)
+        servicePoc: 74, // Customer POC (orgchart_employee)
+        objective: 86, // Project Scope
+        leafURL: 87, // Customer LEAF Site
+        currentPhase: 61, // used only for fetchPhaseOptions (label names)
+        phase1: 62,
+        phase2: 63,
+        phase3: 64,
+        phase4: 65,
+        phase5: 66,
+        leafTasks1: 88,
+        orgTasks1: 89,
+        leafTasks2: 90,
+        orgTasks2: 91,
+        leafTasks3: 92,
+        orgTasks3: 93,
+        leafTasks4: 94,
+        orgTasks4: 95,
+        leafTasks5: 96,
+        orgTasks5: 97,
       },
 
       phases: [
-        { step: 1, label: "Discovery", key: "phase1" },
-        { step: 2, label: "Planning", key: "phase2" },
-        { step: 3, label: "Execution", key: "phase3" },
-        { step: 4, label: "Launch", key: "phase4" },
-        { step: 5, label: "Monitoring", key: "phase5" },
+        {
+          step: 1,
+          label: "Discovery",
+          key: "phase1",
+          fileInd: 76,
+          imageInd: 77,
+          leafTasksKey: "leafTasks1",
+          orgTasksKey: "orgTasks1",
+        },
+        {
+          step: 2,
+          label: "Planning",
+          key: "phase2",
+          fileInd: 78,
+          imageInd: 79,
+          leafTasksKey: "leafTasks2",
+          orgTasksKey: "orgTasks2",
+        },
+        {
+          step: 3,
+          label: "Execution",
+          key: "phase3",
+          fileInd: 80,
+          imageInd: 81,
+          leafTasksKey: "leafTasks3",
+          orgTasksKey: "orgTasks3",
+        },
+        {
+          step: 4,
+          label: "Launch",
+          key: "phase4",
+          fileInd: 82,
+          imageInd: 83,
+          leafTasksKey: "leafTasks4",
+          orgTasksKey: "orgTasks4",
+        },
+        {
+          step: 5,
+          label: "Monitoring",
+          key: "phase5",
+          fileInd: 84,
+          imageInd: 85,
+          leafTasksKey: "leafTasks5",
+          orgTasksKey: "orgTasks5",
+        },
       ],
 
-      // Maps raw LEAF dropdown values for currentPhase to step numbers 1–5.
-      // Set debug: true and check the console to verify these match your field values.
-      phaseValueMap: {
-        discovery: 1,
-        planning: 2,
-        execution: 3,
-        launch: 4,
-        monitoring: 5,
+      // Maps LEAF workflow step IDs to phase numbers 1–5.
+      // Steps < 19 = not yet started (all phases neutral).
+      // Steps > 23 = post-phase internal steps, clamped to phase 5.
+      workflowStepToPhase: { 19: 1, 20: 2, 21: 3, 22: 4, 23: 5 },
+
+      PROJECT_TYPE_BLURBS: {
+        "national project":
+          "A National Project is a structured, full-service engagement where the LEAF team guides your agency through every phase — from discovery to launch — with dedicated support along the way.",
+        "managed services":
+          "With Managed Services, the LEAF team remains a dedicated resource for your organization — available to help with questions, changes, and ongoing needs as your environment evolves.",
       },
     };
 
@@ -581,19 +1791,30 @@
       return /^\d+$/.test(hash) ? hash : "";
     }
 
-    function showEl(id) {
+    function getAPIBase() {
+      const href = window.location.href;
+      return href.replace(/\/[^\/]*(\?.*)?$/, "");
+    }
+
+    const showEl = (id) => {
       const el = byId(id);
       if (el) el.style.display = "";
-    }
-
-    function hideEl(id) {
+    };
+    const hideEl = (id) => {
       const el = byId(id);
       if (el) el.style.display = "none";
+    };
+
+    function dbg(msg) {
+      if (!CONFIG.debug) return;
+      console.log(`[Hub] ${msg}`);
+      const panel = byId("hub-debug-panel");
+      if (!panel) return;
+      panel.style.display = "block";
+      panel.textContent += `${msg}\n`;
     }
 
-    function showLoading(message = "Loading project data…") {
-      const msgEl = byId("hub-loading-message");
-      if (msgEl) msgEl.textContent = message;
+    function showLoading() {
       showEl("hub-loading");
       hideEl("hub-error");
       hideEl("hub-content");
@@ -611,7 +1832,9 @@
     function showContent() {
       hideEl("hub-loading");
       hideEl("hub-error");
-      showEl("hub-content");
+      const contentEl = byId("hub-content");
+      contentEl.style.display = "";
+      contentEl.classList.add("hub-content-visible");
       announce("Project data loaded.", false);
     }
 
@@ -630,35 +1853,265 @@
       return "upcoming";
     }
 
-    function resolveActiveStep(raw) {
-      if (!raw) return 1;
-      const norm = String(raw).toLowerCase().trim();
+    // Maps a LEAF workflow stepID to a display phase number (1–5), or null
+    // if the record is outside the customer-visible phase range (< step 19).
+    function resolveActiveStep(stepID) {
+      const id = Array.isArray(stepID)
+        ? stepID.find((s) => CONFIG.workflowStepToPhase[parseInt(s, 10)]) ||
+          stepID[0]
+        : stepID;
 
-      if (Object.prototype.hasOwnProperty.call(CONFIG.phaseValueMap, norm)) {
-        return CONFIG.phaseValueMap[norm];
-      }
+      const n = parseInt(id, 10);
+      dbg(`resolveActiveStep: raw=${JSON.stringify(stepID)} parsed=${n}`);
 
-      // Partial match — handles values like "Phase 2 - Planning"
-      const keys = Object.keys(CONFIG.phaseValueMap);
-      for (const key of keys) {
-        if (norm.includes(key) || key.includes(norm)) {
-          return CONFIG.phaseValueMap[key];
-        }
-      }
-
-      if (CONFIG.debug) {
-        console.warn("[Hub] Unrecognized phase value:", JSON.stringify(raw));
-        console.warn("[Hub] Expected one of:", keys);
-      }
-      return 1;
+      if (!n || n < 19) return null;
+      if (n > 23) return 5;
+      return CONFIG.workflowStepToPhase[n] || null;
     }
 
+    /* ============================================================
+     Lightbox
+     ============================================================ */
+    const lightbox = {
+      el: null,
+      imgEl: null,
+      captionEl: null,
+      counterEl: null,
+      fullsizeEl: null,
+      closeBtn: null,
+      prevBtn: null,
+      nextBtn: null,
+      prevFocus: null,
+      images: [],
+      currentIdx: 0,
+
+      init() {
+        this.el = byId("hub-lightbox");
+        this.imgEl = byId("hub-lightbox-img");
+        this.captionEl = byId("hub-lightbox-caption");
+        this.counterEl = byId("hub-lightbox-counter");
+        this.fullsizeEl = byId("hub-lightbox-fullsize");
+        this.closeBtn = byId("hub-lightbox-close");
+        this.prevBtn = byId("hub-lightbox-prev");
+        this.nextBtn = byId("hub-lightbox-next");
+        if (!this.el) return;
+
+        this.el.addEventListener("click", (e) => {
+          if (e.target === this.el) this.close();
+        });
+        this.closeBtn.addEventListener("click", () => this.close());
+        this.prevBtn.addEventListener("click", () => this.navigate(-1));
+        this.nextBtn.addEventListener("click", () => this.navigate(1));
+        this.el.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            this.close();
+            return;
+          }
+          if (e.key === "ArrowLeft") {
+            this.navigate(-1);
+            return;
+          }
+          if (e.key === "ArrowRight") {
+            this.navigate(1);
+            return;
+          }
+          if (e.key === "Tab") {
+            this._trapFocus(e);
+          }
+        });
+      },
+
+      _trapFocus(e) {
+        const focusable = [
+          this.prevBtn,
+          this.nextBtn,
+          this.fullsizeEl,
+          this.closeBtn,
+        ].filter((el) => el && !el.hidden);
+        if (!focusable.length) return;
+        const [first, last] = [focusable[0], focusable[focusable.length - 1]];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      },
+
+      open(images, startIdx) {
+        if (!this.el) return;
+        this.prevFocus = document.activeElement;
+        this.images = images || [];
+        this.currentIdx = startIdx || 0;
+        this._render();
+        this.el.classList.add("hub-lightbox--open");
+        this.closeBtn.focus();
+      },
+
+      navigate(dir) {
+        const next = this.currentIdx + dir;
+        if (next < 0 || next >= this.images.length) return;
+        this.currentIdx = next;
+        this._render();
+      },
+
+      _render() {
+        const item = this.images[this.currentIdx];
+        if (!item) return;
+        this.imgEl.setAttribute("src", item.src);
+        this.imgEl.setAttribute("alt", item.caption || "");
+        this.captionEl.textContent = item.caption || "";
+        this.counterEl.textContent =
+          this.images.length > 1
+            ? `${this.currentIdx + 1} of ${this.images.length}`
+            : "";
+        if (this.fullsizeEl) {
+          this.fullsizeEl.href = item.src;
+          this.fullsizeEl.setAttribute(
+            "aria-label",
+            `Open full size: ${item.caption || "image"} (new tab)`,
+          );
+        }
+        const multi = this.images.length > 1;
+        if (this.prevBtn) this.prevBtn.hidden = !multi || this.currentIdx === 0;
+        if (this.nextBtn)
+          this.nextBtn.hidden =
+            !multi || this.currentIdx === this.images.length - 1;
+      },
+
+      close() {
+        if (!this.el) return;
+        this.el.classList.remove("hub-lightbox--open");
+        this.imgEl.setAttribute("src", "");
+        this.images = [];
+        if (this.prevFocus && typeof this.prevFocus.focus === "function")
+          this.prevFocus.focus();
+      },
+    };
+
+    /* ============================================================
+     Attachment loading
+     ============================================================ */
+    function fetchIndicatorHTML(recordID, indicatorID) {
+      return fetch(
+        `${getAPIBase()}/ajaxIndex.php?a=getprintindicator&recordID=${encodeURIComponent(recordID)}&indicatorID=${encodeURIComponent(indicatorID)}&series=1`,
+        {
+          credentials: "include",
+          headers: { "x-requested-with": "XMLHttpRequest" },
+        },
+      )
+        .then((r) => r.text())
+        .catch(() => "");
+    }
+
+    function parseAttachmentsFromHTML(html) {
+      const tmp = document.createElement("div");
+      tmp.innerHTML = html;
+      return {
+        images: [...tmp.querySelectorAll('img[src*="image.php"]')],
+        files: [...tmp.querySelectorAll('a[href*="file.php"]')],
+      };
+    }
+
+    function buildAttachmentSection(attachEl, images, files) {
+      if (images.length === 0 && files.length === 0) {
+        attachEl.style.display = "none";
+        return;
+      }
+
+      const imageData = images.map((img, i) => {
+        const src = img.getAttribute("src") || "";
+        const altRaw = img.getAttribute("alt") || "";
+        const caption =
+          altRaw.replace(/^image upload:\s*/i, "").trim() || `Image ${i + 1}`;
+        return { src, caption };
+      });
+
+      let html = `<p class="hub-attachments-label">Attachments</p>`;
+
+      if (images.length > 0) {
+        html += `<div class="hub-img-grid" role="list" aria-label="Image attachments">`;
+        imageData.forEach((item, i) => {
+          html += `
+            <figure class="hub-img-figure" role="listitem">
+              <button type="button" class="hub-img-thumb-btn" data-idx="${i}" aria-label="View image: ${esc(item.caption)}">
+                <img src="${esc(item.src)}" alt="${esc(item.caption)}" class="hub-img-thumb" loading="lazy"/>
+              </button>
+              <span class="hub-img-caption" aria-hidden="true" title="${esc(item.caption)}">${esc(item.caption)}</span>
+            </figure>`;
+        });
+        html += `</div>`;
+      }
+
+      if (files.length > 0) {
+        html += `<div class="hub-attachment-pills" aria-label="File attachments">`;
+        files.forEach((a) => {
+          const href = a.getAttribute("href") || "#";
+          const filename = (a.textContent || "").trim() || "Download file";
+          html += `
+            <a href="${esc(href)}" target="_blank" rel="noopener noreferrer"
+               class="hub-attachment-pill" title="${esc(filename)}"
+               aria-label="Download ${esc(filename)} (opens in new tab)">
+              <span aria-hidden="true">📎</span>
+              <span>${esc(filename)}</span>
+            </a>`;
+        });
+        html += `</div>`;
+      }
+
+      attachEl.innerHTML = html;
+      attachEl.style.display = "";
+
+      attachEl.querySelectorAll(".hub-img-thumb-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          lightbox.open(
+            imageData,
+            parseInt(btn.getAttribute("data-idx"), 10) || 0,
+          );
+        });
+      });
+    }
+
+    function loadPhaseAttachments(recordID, phase, attachEl) {
+      Promise.all([
+        fetchIndicatorHTML(recordID, phase.fileInd),
+        fetchIndicatorHTML(recordID, phase.imageInd),
+      ])
+        .then(([fileHTML, imageHTML]) => {
+          const fileData = parseAttachmentsFromHTML(fileHTML);
+          const imageData = parseAttachmentsFromHTML(imageHTML);
+          const combined = { images: imageData.images, files: fileData.files };
+
+          if (combined.images.length > 0 || combined.files.length > 0) {
+            const emptyEl = attachEl
+              .closest(".hub-phase-body")
+              ?.querySelector("[data-phase-empty]");
+            if (emptyEl) emptyEl.style.display = "none";
+          }
+
+          buildAttachmentSection(attachEl, combined.images, combined.files);
+        })
+        .catch(() => {
+          attachEl.style.display = "none";
+        });
+    }
+
+    /* ============================================================
+     Progress bar renderer
+     ============================================================ */
     function renderProgressBar(activeStep) {
       const track = byId("hub-progress-track");
       track.innerHTML = "";
 
+      const total = CONFIG.phases.length;
+      const fraction =
+        activeStep !== null && total > 1 ? (activeStep - 1) / (total - 1) : 0;
+      track.style.setProperty("--hub-progress-pct", `${fraction * 100}%`);
+
       for (const phase of CONFIG.phases) {
-        const state = stepState(phase.step, activeStep);
+        const state =
+          activeStep === null ? "upcoming" : stepState(phase.step, activeStep);
         const stateWord = {
           complete: "Completed",
           active: "Current phase",
@@ -667,33 +2120,109 @@
 
         const li = document.createElement("li");
         li.className = `hub-step hub-step--${state}`;
-        li.setAttribute("aria-label", `${phase.label} — ${stateWord}`);
         if (state === "active") li.setAttribute("aria-current", "step");
+
+        const hereHtml =
+          state === "active"
+            ? `<span class="hub-step-here" aria-hidden="true"><span class="hub-step-here-pin">📍</span>We are here</span>`
+            : `<span class="hub-step-here-spacer" aria-hidden="true"></span>`;
 
         const circleInner =
           state === "complete"
             ? `<span aria-hidden="true">&#10003;</span>`
             : `<span aria-hidden="true">${phase.step}</span>`;
 
-        li.innerHTML = `
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "hub-step-btn";
+        btn.setAttribute("aria-label", `Jump to ${phase.label} — ${stateWord}`);
+        btn.setAttribute("title", `Jump to ${phase.label}`);
+        btn.innerHTML = `
+          ${hereHtml}
           <div class="hub-step-circle" aria-hidden="true">${circleInner}</div>
           <span class="hub-step-label" aria-hidden="true">${esc(phase.label)}</span>
         `;
 
+        btn.addEventListener("click", () => {
+          const target = document.getElementById(
+            `hub-phase-step-${phase.step}`,
+          );
+          if (!target) return;
+          if (target.classList.contains("hub-phase--collapsed")) {
+            const hdr = target.querySelector(".hub-phase-header");
+            if (hdr) togglePhase(target, hdr);
+          }
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+          const heading = target.querySelector(".hub-phase-title");
+          if (heading) {
+            heading.setAttribute("tabindex", "-1");
+            heading.focus({ preventScroll: true });
+          }
+        });
+
+        li.appendChild(btn);
         track.appendChild(li);
       }
     }
 
-    function renderPhaseDetails(activeStep, contents) {
+    /* ============================================================
+     Phase cards renderer
+     ============================================================ */
+    function renderPhaseDetails(recordID, activeStep, contents, taskContents) {
       const container = byId("hub-phase-details");
       container.innerHTML = "";
+      let completedWithContentCount = 0;
+
+      function stripBR(str) {
+        return str ? str.replace(/<br\s*\/?>/gi, "").trim() : str;
+      }
+
+      function parseTasks(raw) {
+        if (!raw) return [];
+        return raw
+          .split(/\r?\n/)
+          .map((line) => {
+            const clean = stripBR(line)
+              .replace(/^[\-\u2022\*]\s*/, "")
+              .trim();
+            const checked = /^\[x\]/i.test(clean);
+            const text = clean.replace(/^\[x\]\s*/i, "").trim();
+            return text ? { text, checked } : null;
+          })
+          .filter(Boolean);
+      }
+
+      function buildTaskColumn(heading, tasks) {
+        const headingId = `hub-task-heading-${Math.random().toString(36).slice(2)}`;
+        let html = `<div class="hub-task-column">`;
+        html += `<p class="hub-task-heading" id="${headingId}">${esc(heading)}</p>`;
+        html += `<div role="list" aria-labelledby="${headingId}">`;
+        if (tasks.length === 0) {
+          html += `<p class="hub-task-empty">No tasks listed</p>`;
+        } else {
+          tasks.forEach(({ text, checked }) => {
+            html += `
+              <div class="hub-task-row" role="listitem">
+                <input type="checkbox" disabled${checked ? " checked" : ""} aria-hidden="true" tabindex="-1">
+                <span class="hub-task-text">${esc(text)}</span>
+              </div>`;
+          });
+          html += `<p class="hub-task-legend">Completed tasks are marked by your LEAF POC.</p>`;
+        }
+        html += `</div></div>`;
+        return html;
+      }
 
       for (const phase of CONFIG.phases) {
         const state = stepState(phase.step, activeStep);
         const content = contents[phase.key] || "";
+        const leafTasks = parseTasks(taskContents?.[phase.leafTasksKey]);
+        const orgTasks = parseTasks(taskContents?.[phase.orgTasksKey]);
+        const hasTasks = leafTasks.length > 0 || orgTasks.length > 0;
 
         const article = document.createElement("article");
         article.className = `hub-phase hub-phase--${state}`;
+        article.id = `hub-phase-step-${phase.step}`;
 
         const numberInner =
           state === "complete"
@@ -703,116 +2232,380 @@
         const badgeHtml =
           state === "complete"
             ? `<span class="hub-phase-badge" aria-hidden="true">Complete</span>`
-            : "";
+            : state === "active"
+              ? `<span class="hub-phase-badge" aria-hidden="true">In Progress</span>`
+              : "";
+
+        const chevronHtml = `
+          <svg class="hub-phase-chevron" viewBox="0 0 18 18" fill="none" aria-hidden="true" focusable="false">
+            <path d="M4.5 6.75L9 11.25L13.5 6.75" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>`;
 
         const contentHtml = content.trim()
           ? `<p class="hub-phase-content"></p>`
           : `<p class="hub-phase-content hub-phase-placeholder"
-               aria-label="${esc(phase.label)} phase: Details coming soon">
-               <span aria-hidden="true">Details coming soon</span>
+               aria-label="${esc(phase.label)} phase: content not yet available">
+               <span aria-hidden="true">Your LEAF POC will update this section as the project progresses.</span>
              </p>`;
+
+        const taskHtml = hasTasks
+          ? `<div class="hub-task-container">${buildTaskColumn("LEAF Team Tasks", leafTasks)}${buildTaskColumn("Customer Tasks", orgTasks)}</div>`
+          : "";
+
+        const emptyHtml = !hasTasks
+          ? `<p class="hub-phase-empty" data-phase-empty="true">Your LEAF POC will update this section as the project progresses.</p>`
+          : "";
 
         article.innerHTML = `
           <div class="hub-phase-header">
             <div class="hub-phase-number" aria-hidden="true">${numberInner}</div>
             <h3 class="hub-phase-title">Phase ${phase.step} — ${esc(phase.label)}</h3>
             ${badgeHtml}
+            ${chevronHtml}
           </div>
-          ${contentHtml}
-        `;
+          <div class="hub-phase-body">
+            ${contentHtml}
+            ${taskHtml}
+            ${emptyHtml}
+            <div class="hub-attachments" style="display:none">
+              <p class="hub-attach-loading">Loading attachments…</p>
+            </div>
+          </div>`;
 
         // Set phase text via textContent AFTER building innerHTML to prevent
         // LEAF's pre-encoded entities (&#039; &amp; etc.) from double-encoding.
         if (content.trim()) {
           const contentEl = article.querySelector(".hub-phase-content");
-          if (contentEl) contentEl.textContent = decodeEntities(content);
+          if (contentEl) {
+            contentEl.textContent = decodeEntities(content)
+              .replace(/<br\s*\/?>/gi, "")
+              .trim();
+          }
+        }
+
+        if (state === "complete" && content.trim()) {
+          article.classList.add("hub-phase--collapsed");
+          completedWithContentCount++;
+        }
+
+        if (state === "complete") {
+          const header = article.querySelector(".hub-phase-header");
+          if (header) {
+            header.setAttribute("role", "button");
+            header.setAttribute("tabindex", "0");
+            header.setAttribute(
+              "aria-expanded",
+              article.classList.contains("hub-phase--collapsed")
+                ? "false"
+                : "true",
+            );
+            header.setAttribute(
+              "aria-label",
+              `Phase ${phase.step} — ${phase.label}: click to expand`,
+            );
+
+            header.addEventListener("click", () =>
+              togglePhase(article, header),
+            );
+            header.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                togglePhase(article, header);
+              }
+            });
+          }
         }
 
         container.appendChild(article);
+
+        loadPhaseAttachments(
+          recordID,
+          phase,
+          article.querySelector(".hub-attachments"),
+        );
+      }
+
+      if (completedWithContentCount > 0) {
+        showEl("hub-phases-toolbar");
+        syncToggleAllLabel();
+        wireToggleAllButton(container);
       }
     }
 
-    // Uses LeafFormQuery (globally available on LEAF sites) to fetch all
-    // indicator values for a single record. Resolves to the raw s1 object.
-    // onProgress is best-effort UI feedback — may not fire on single-record queries.
-    async function fetchProjectData(recordID) {
-      const inds = CONFIG.indicators;
-      const query = new LeafFormQuery();
+    /* ============================================================
+     Collapse / expand helpers
+     ============================================================ */
+    function togglePhase(article, header) {
+      const isCollapsed = article.classList.contains("hub-phase--collapsed");
+      const label =
+        article.querySelector(".hub-phase-title")?.textContent || "Phase";
 
-      query.addTerm("recordIDs", "=", String(recordID));
-      query.getData([
+      if (isCollapsed) {
+        article.classList.remove("hub-phase--collapsed");
+        header.setAttribute("aria-expanded", "true");
+        header.setAttribute("aria-label", `${label}: click to collapse`);
+      } else {
+        article.classList.add("hub-phase--collapsed");
+        header.setAttribute("aria-expanded", "false");
+        header.setAttribute("aria-label", `${label}: click to expand`);
+      }
+      syncToggleAllLabel();
+    }
+
+    function wireToggleAllButton(container) {
+      const btn = byId("hub-toggle-completed-btn");
+      if (!btn) return;
+
+      btn.addEventListener("click", () => {
+        const completed = [
+          ...container.querySelectorAll(".hub-phase--complete"),
+        ];
+        const anyExpanded = completed.some(
+          (p) => !p.classList.contains("hub-phase--collapsed"),
+        );
+
+        completed.forEach((p) => {
+          const hdr = p.querySelector(".hub-phase-header");
+          const label =
+            p.querySelector(".hub-phase-title")?.textContent || "Phase";
+          if (anyExpanded) {
+            p.classList.add("hub-phase--collapsed");
+            if (hdr) {
+              hdr.setAttribute("aria-expanded", "false");
+              hdr.setAttribute("aria-label", `${label}: click to expand`);
+            }
+          } else {
+            p.classList.remove("hub-phase--collapsed");
+            if (hdr) {
+              hdr.setAttribute("aria-expanded", "true");
+              hdr.setAttribute("aria-label", `${label}: click to collapse`);
+            }
+          }
+        });
+        syncToggleAllLabel();
+      });
+    }
+
+    function syncToggleAllLabel() {
+      const btn = byId("hub-toggle-completed-btn");
+      const labelEl = byId("hub-toggle-completed-label");
+      const container = byId("hub-phase-details");
+      if (!btn || !labelEl || !container) return;
+
+      const anyExpanded = [
+        ...container.querySelectorAll(".hub-phase--complete"),
+      ].some((p) => !p.classList.contains("hub-phase--collapsed"));
+
+      labelEl.textContent = anyExpanded
+        ? "Hide completed phases"
+        : "Show completed phases";
+      btn.setAttribute("aria-expanded", String(anyExpanded));
+    }
+
+    /* ============================================================
+     Data fetching
+     Note: LeafFormQuery's onSuccess does not fire reliably for
+     single-record lookups on programmer pages. Direct fetch is
+     used as the primary path throughout.
+     ============================================================ */
+    async function fetchProjectData(recordID) {
+      dbg(`fetchProjectData — recordID: ${recordID}`);
+
+      const inds = CONFIG.indicators;
+      const getDataIDs = [
         inds.projectName,
         inds.projectType,
+        inds.objective,
+        inds.leafURL,
         inds.poc,
-        inds.currentPhase,
+        inds.servicePoc,
         inds.phase1,
         inds.phase2,
         inds.phase3,
         inds.phase4,
         inds.phase5,
-      ]);
-      query.setExtraParams("&x-filterData=recordID");
-      query.onProgress((progress) => {
-        const msgEl = byId("hub-loading-message");
-        if (msgEl)
-          msgEl.textContent = `Loading project data… (${progress}+ records scanned)`;
+        inds.leafTasks1,
+        inds.orgTasks1,
+        inds.leafTasks2,
+        inds.orgTasks2,
+        inds.leafTasks3,
+        inds.orgTasks3,
+        inds.leafTasks4,
+        inds.orgTasks4,
+        inds.leafTasks5,
+        inds.orgTasks5,
+      ];
+
+      const q = JSON.stringify({
+        terms: [
+          {
+            id: "recordIDs",
+            operator: "=",
+            match: String(recordID),
+            gate: "AND",
+          },
+        ],
+        joins: ["status"],
+        sort: {},
+        getData: getDataIDs.map(String),
       });
 
-      const data = await query.execute();
+      const r = await fetch(
+        `${getAPIBase()}/api/form/query?q=${encodeURIComponent(q)}&x-filterData=recordID`,
+        {
+          credentials: "include",
+          headers: {
+            Accept: "application/json",
+            "x-requested-with": "XMLHttpRequest",
+          },
+        },
+      );
+
+      if (!r.ok) throw new Error(`Query failed HTTP ${r.status}`);
+      const data = await r.json();
 
       if (CONFIG.debug) {
-        console.log("[Hub] Full API response:", JSON.stringify(data));
-        const s1debug = data?.[String(recordID)]?.s1 || {};
-        console.log("[Hub] s1 keys:", Object.keys(s1debug));
-        console.log(
-          `[Hub] projectName  (id${inds.projectName}):`,
-          s1debug[`id${inds.projectName}`],
-        );
-        console.log(
-          `[Hub] projectType  (id${inds.projectType}):`,
-          s1debug[`id${inds.projectType}`],
-        );
-        console.log(
-          `[Hub] poc          (id${inds.poc}):`,
-          s1debug[`id${inds.poc}`],
-        );
-        console.log(
-          `[Hub] currentPhase (id${inds.currentPhase}):`,
-          s1debug[`id${inds.currentPhase}`],
-        );
-        console.log(
-          `[Hub] phase1       (id${inds.phase1}):`,
-          s1debug[`id${inds.phase1}`],
-        );
-        console.log(
-          `[Hub] phase2       (id${inds.phase2}):`,
-          s1debug[`id${inds.phase2}`],
-        );
-        console.log(
-          `[Hub] phase3       (id${inds.phase3}):`,
-          s1debug[`id${inds.phase3}`],
-        );
-        console.log(
-          `[Hub] phase4       (id${inds.phase4}):`,
-          s1debug[`id${inds.phase4}`],
-        );
-        console.log(
-          `[Hub] phase5       (id${inds.phase5}):`,
-          s1debug[`id${inds.phase5}`],
-        );
+        dbg(`response keys: ${Object.keys(data || {}).join(", ")}`);
+        dbg(`full response: ${JSON.stringify(data).slice(0, 800)}`);
       }
 
-      const rec = data && data[String(recordID)];
+      const rec = data?.[String(recordID)];
       if (!rec) throw new Error(`No record found for ID ${recordID}`);
 
-      return rec.s1 || rec;
+      const s1 = rec.s1 || rec;
+
+      const stepID =
+        rec.stepID !== undefined
+          ? rec.stepID
+          : rec.step_id !== undefined
+            ? rec.step_id
+            : rec.currentStep !== undefined
+              ? rec.currentStep
+              : rec.workflowStepID !== undefined
+                ? rec.workflowStepID
+                : null;
+
+      if (CONFIG.debug) {
+        dbg(`record root keys: ${Object.keys(rec).join(", ")}`);
+        dbg(`s1 keys: ${Object.keys(s1).join(", ")}`);
+        dbg(`stepID resolved to: ${JSON.stringify(stepID)}`);
+      }
+
+      return { s1, stepID };
     }
 
+    async function fetchPhaseOptions(indicatorID) {
+      try {
+        const r = await fetch(
+          `${getAPIBase()}/api/formEditor/indicator/${encodeURIComponent(indicatorID)}`,
+          {
+            credentials: "include",
+            headers: {
+              Accept: "application/json",
+              "x-requested-with": "XMLHttpRequest",
+            },
+          },
+        );
+        if (!r.ok) throw new Error(`formEditor API HTTP ${r.status}`);
+        const data = await r.json();
+
+        const indicator = data?.[String(CONFIG.indicators.currentPhase)];
+        const raw =
+          indicator &&
+          (indicator.options ||
+            indicator.format_options ||
+            indicator.selectList ||
+            indicator.listValues);
+        if (!raw) return [];
+
+        const list = Array.isArray(raw)
+          ? raw.map((o) =>
+              (typeof o === "object"
+                ? o.text || o.value || ""
+                : String(o)
+              ).trim(),
+            )
+          : String(raw)
+              .split(/\r?\n/)
+              .map((s) => s.trim());
+
+        return list.filter(Boolean);
+      } catch (err) {
+        dbg(`fetchPhaseOptions failed: ${err.message} — using fallback labels`);
+        return [];
+      }
+    }
+
+    async function fetchWorkflowStep(recordID) {
+      try {
+        const q = JSON.stringify({
+          terms: [
+            {
+              id: "recordIDs",
+              operator: "=",
+              match: String(recordID),
+              gate: "AND",
+            },
+          ],
+          joins: ["status"],
+          sort: {},
+          getData: [],
+        });
+
+        const r = await fetch(
+          `${getAPIBase()}/api/form/query?q=${encodeURIComponent(q)}`,
+          {
+            credentials: "include",
+            headers: {
+              Accept: "application/json",
+              "x-requested-with": "XMLHttpRequest",
+            },
+          },
+        );
+        const data = await r.json();
+        const rec = data?.[String(recordID)];
+        if (!rec) return null;
+
+        const stepID =
+          rec.stepID !== undefined
+            ? rec.stepID
+            : rec.step_id !== undefined
+              ? rec.step_id
+              : rec.currentStep !== undefined
+                ? rec.currentStep
+                : rec.workflowStepID !== undefined
+                  ? rec.workflowStepID
+                  : null;
+
+        dbg(`fetchWorkflowStep stepID: ${JSON.stringify(stepID)}`);
+        return stepID;
+      } catch (err) {
+        dbg(`fetchWorkflowStep failed: ${err.message}`);
+        return null;
+      }
+    }
+
+    function applyPhaseLabels(options) {
+      if (!options?.length) return;
+      CONFIG.phases.forEach((phase, i) => {
+        if (options[i]) phase.label = options[i];
+      });
+      dbg(
+        `Phase labels applied: ${CONFIG.phases.map((p) => p.label).join(", ")}`,
+      );
+    }
+
+    /* ============================================================
+     Main — full re-render on every call (initial load + hashchange)
+     ============================================================ */
     async function init() {
       const recordID = getRecordIDFromHash();
 
       if (CONFIG.debug) {
-        console.log("[Hub] recordID from hash:", recordID);
+        dbg("=== Hub Debug ===");
+        dbg(`window.location.href: ${window.location.href}`);
+        dbg(`recordID from hash: ${recordID || "(empty)"}`);
+        dbg(`API base: ${getAPIBase()}`);
       }
 
       if (!recordID) {
@@ -822,16 +2615,32 @@
         return;
       }
 
+      // Reset debug panel between hash navigations
+      const panel = byId("hub-debug-panel");
+      if (panel) panel.textContent = "";
+
+      lightbox.init();
+      wireShareButton();
+      wireProgressExplainer();
       showLoading();
 
       try {
-        const s1 = await fetchProjectData(recordID);
+        const [result, options, stepID] = await Promise.all([
+          fetchProjectData(recordID),
+          fetchPhaseOptions(CONFIG.indicators.currentPhase),
+          fetchWorkflowStep(recordID),
+        ]);
+
+        dbg(`stepID from fetchWorkflowStep: ${JSON.stringify(stepID)}`);
+
+        applyPhaseLabels(options);
+
+        const { s1 } = result;
         const inds = CONFIG.indicators;
+        const activeStep = resolveActiveStep(stepID);
 
         const projectName = getField(s1, inds.projectName);
         const projectType = getField(s1, inds.projectType);
-        const poc = getField(s1, inds.poc);
-        const currentPhase = getField(s1, inds.currentPhase);
 
         const phaseContents = {
           phase1: getField(s1, inds.phase1),
@@ -841,44 +2650,226 @@
           phase5: getField(s1, inds.phase5),
         };
 
-        const activeStep = resolveActiveStep(currentPhase);
+        const taskContents = {
+          leafTasks1: getField(s1, inds.leafTasks1),
+          orgTasks1: getField(s1, inds.orgTasks1),
+          leafTasks2: getField(s1, inds.leafTasks2),
+          orgTasks2: getField(s1, inds.orgTasks2),
+          leafTasks3: getField(s1, inds.leafTasks3),
+          orgTasks3: getField(s1, inds.orgTasks3),
+          leafTasks4: getField(s1, inds.leafTasks4),
+          orgTasks4: getField(s1, inds.orgTasks4),
+          leafTasks5: getField(s1, inds.leafTasks5),
+          orgTasks5: getField(s1, inds.orgTasks5),
+        };
 
         byId("hub-project-name").textContent = projectName || "Project Details";
 
+        // Project type + optional collapsible blurb
         const typeEl = byId("hub-project-type");
-        if (projectType) {
-          typeEl.innerHTML = `<strong class="hub-project-label">Type:</strong> ${esc(projectType)}`;
-          typeEl.style.display = "";
-        } else {
-          typeEl.style.display = "none";
+        const blurbEl = byId("hub-project-type-blurb");
+        const blurbKey = projectType ? projectType.toLowerCase().trim() : "";
+        const blurbText = CONFIG.PROJECT_TYPE_BLURBS[blurbKey] || "";
+
+        if (projectType && typeEl) {
+          if (blurbText && blurbEl) {
+            typeEl.innerHTML = `
+              <button type="button" class="hub-type-toggle" aria-expanded="false"
+                aria-controls="hub-blurb-row"
+                aria-label="${esc(projectType)} — click to expand description">
+                ${esc(projectType)}
+                <svg class="hub-type-chevron" viewBox="0 0 14 14" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <path d="M2 4l5 5 5-5"/>
+                </svg>
+              </button>`;
+            blurbEl.textContent = blurbText;
+
+            const toggleBtn = typeEl.querySelector(".hub-type-toggle");
+            const blurbRow = byId("hub-blurb-row");
+            if (toggleBtn && blurbRow) {
+              toggleBtn.addEventListener("click", () => {
+                const expanded =
+                  toggleBtn.getAttribute("aria-expanded") === "true";
+                toggleBtn.setAttribute("aria-expanded", String(!expanded));
+                toggleBtn.setAttribute(
+                  "aria-label",
+                  `${esc(projectType)} — click to ${!expanded ? "collapse" : "expand"} description`,
+                );
+                blurbRow.classList.toggle("hub-blurb-open", !expanded);
+              });
+            }
+          } else {
+            typeEl.textContent = projectType;
+          }
+          byId("hub-row-type").style.display = "";
         }
 
-        const pocEl = byId("hub-project-poc");
-        if (poc) {
-          pocEl.innerHTML = `<strong class="hub-project-label">LEAF POC:</strong> ${esc(poc)}`;
-          pocEl.style.display = "";
-        } else {
-          pocEl.style.display = "none";
+        // Scope
+        const objective = getField(s1, inds.objective);
+        const objectiveEl = byId("hub-project-objective");
+        if (objective && objectiveEl) {
+          objectiveEl.textContent = objective;
+          byId("hub-row-objective").style.display = "";
+        }
+
+        // LEAF URL
+        const leafURL = getField(s1, inds.leafURL);
+        const leafURLEl = byId("hub-leaf-url");
+        if (leafURL && leafURLEl) {
+          leafURLEl.innerHTML = `<a href="${esc(leafURL)}" target="_blank" rel="noopener noreferrer" class="hub-leaf-url-link">${esc(leafURL)}</a>`;
+          byId("hub-row-leaf-url").style.display = "";
+        }
+
+        // POC renderer — reads orgchart metadata from s1 sibling keys
+        function renderPocEl(el, indID, rowID) {
+          const rawVal = s1[`id${indID}`];
+          const orgMeta = s1[`id${indID}_orgchart`];
+
+          let displayName = "";
+          let email = "";
+
+          if (orgMeta) {
+            displayName = [orgMeta.firstName, orgMeta.lastName]
+              .map((p) => (p || "").trim())
+              .filter(Boolean)
+              .join(" ");
+            email = (orgMeta.email || "").trim();
+          }
+
+          if (!displayName)
+            displayName = decodeEntities(String(rawVal || "").trim());
+          if (!displayName) return;
+
+          el.innerHTML = email
+            ? `<a class="hub-poc-link" href="mailto:${esc(email)}" aria-label="Email ${esc(displayName)} at ${esc(email)}">${esc(displayName)}</a>`
+            : esc(displayName);
+
+          const row = byId(rowID);
+          if (row) row.style.display = "";
         }
 
         renderProgressBar(activeStep);
-        renderPhaseDetails(activeStep, phaseContents);
-
+        renderPhaseDetails(recordID, activeStep, phaseContents, taskContents);
         showContent();
+
+        renderPocEl(byId("hub-project-poc"), inds.poc, "hub-row-poc");
+        renderPocEl(
+          byId("hub-service-poc"),
+          inds.servicePoc,
+          "hub-row-service-poc",
+        );
       } catch (err) {
         console.error("[Hub] Error loading project data:", err);
+        dbg(`FETCH ERROR: ${err.message}`);
         showError(
-          "Unable to load project data. Please try again later or contact support.",
+          `Unable to load project data. Please try again later or contact support.${CONFIG.debug ? `\n\nDebug: ${err.message}` : ""}`,
         );
       }
     }
 
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", init);
-    } else {
-      init();
+    function wireProgressExplainer() {
+      const btn = byId("hub-progress-toggle");
+      const explainer = byId("hub-progress-explainer");
+      if (!btn || !explainer) return;
+
+      btn.addEventListener("click", () => {
+        const expanded = btn.getAttribute("aria-expanded") === "true";
+        btn.setAttribute("aria-expanded", String(!expanded));
+        explainer.classList.toggle("hub-explainer-open", !expanded);
+      });
     }
 
+    function wireShareButton() {
+      const btn = byId("hub-share-btn");
+      const toast = byId("hub-share-toast");
+      if (!btn || !toast) return;
+
+      let toastTimer = null;
+
+      function showToast(msg) {
+        toast.textContent = msg;
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          toast.textContent = "";
+        }, 2500);
+      }
+
+      function fallbackCopy(url) {
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = url;
+          ta.style.cssText =
+            "position:fixed;top:-9999px;left:-9999px;opacity:0;";
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          const ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+          showToast(ok ? "Copied!" : "Copy failed");
+        } catch (e) {
+          showToast("Copy failed");
+        }
+      }
+
+      btn.addEventListener("click", () => {
+        const url = window.location.href;
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard
+            .writeText(url)
+            .then(() => showToast("Copied!"))
+            .catch(() => fallbackCopy(url));
+        } else {
+          fallbackCopy(url);
+        }
+      });
+    }
+
+    function wireJumpToTop() {
+      const btn = byId("hub-jump-top");
+      if (!btn) return;
+
+      function setVisible(visible) {
+        btn.classList.toggle("is-visible", visible);
+        btn.setAttribute("aria-hidden", String(!visible));
+        btn.tabIndex = visible ? 0 : -1;
+      }
+
+      function updateVisibility() {
+        const scrollTop =
+          window.pageYOffset || document.documentElement.scrollTop;
+        const scrollHeight = Math.max(
+          document.body.scrollHeight,
+          document.documentElement.scrollHeight,
+        );
+        const clientHeight =
+          window.innerHeight || document.documentElement.clientHeight;
+        setVisible(scrollHeight - clientHeight > 80 && scrollTop > 120);
+      }
+
+      btn.addEventListener("click", () =>
+        window.scrollTo({ top: 0, behavior: "smooth" }),
+      );
+      window.addEventListener("scroll", updateVisibility, { passive: true });
+      window.addEventListener("resize", updateVisibility);
+      updateVisibility();
+    }
+
+    /* ============================================================
+     Bootstrap
+     ============================================================ */
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => {
+        init();
+        wireJumpToTop();
+      });
+    } else {
+      init();
+      wireJumpToTop();
+    }
+
+    // Re-render whenever the hash changes (e.g. navigating from #590 to #591)
     window.addEventListener("hashchange", init);
   })();
 </script>
