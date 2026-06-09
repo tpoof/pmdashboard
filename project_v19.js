@@ -2484,6 +2484,11 @@
           ? "pm-completeMid"
           : "";
     var okrKeyText = String(p.okrAssociation || "").trim();
+    var okrNormKey = normalizeOkrKey(okrKeyText);
+    var okrTitle =
+      state.okrKeyToTitle[okrNormKey] ||
+      state.okrKeyToTitle[normalizeOkrKey(p.okrKey)] ||
+      "";
     var descText = String(p.description || "").trim();
     var rid = safeAttr(String(p.recordID || ""));
     var rowId = `pm-projRow-${safe(p.recordID || projectKeyText)}`;
@@ -2527,7 +2532,7 @@
       </td>
       ${descCell}
       <td class="pm-colOwner">${safe(p.owner)}</td>
-      <td class="pm-colFitContent">${okrKeyText ? okrRecordLink(okrKeyText, okrKeyText, state.okrKeyToTitle[normalizeOkrKey(okrKeyText)] || "") : "<span class='pm-okrFallback'>None</span>"}</td>
+      <td class="pm-colFitContent">${okrKeyText ? okrRecordLink(okrKeyText, okrKeyText, okrTitle) : "<span class='pm-okrFallback'>None</span>"}</td>
       <td class="pm-colFitContent pm-editableCell" data-ind="${PROJECT_IND.projectStartDate}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Double-click to edit">${safe(p.projectStartDate)}</td>
       <td class="pm-colFitContent pm-editableCell" data-ind="${PROJECT_IND.projectEndDate}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Double-click to edit">${safe(p.projectEndDate)}</td>
       <td class="pm-colFitContent pm-editableCell" data-ind="${PROJECT_IND.projectStatus}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Double-click to edit">${safe(p.projectStatus)}</td>
@@ -10443,9 +10448,14 @@
           state.projectKeyToRecordID[pk] = rid;
         if (pk && p.projectName && !state.projectKeyToTitle[pk])
           state.projectKeyToTitle[pk] = p.projectName;
+        // Populate OKR key→title from both the project link field and the OKR's own key field
         var ok = normalizeOkrKey(p.okrAssociation);
-        if (ok && p.okrObjective && !state.okrKeyToTitle[ok])
-          state.okrKeyToTitle[ok] = String(p.okrObjective).trim();
+        var okFromKey = normalizeOkrKey(p.okrKey);
+        var okrTitle = String(p.okrObjective || "").trim();
+        if (ok && okrTitle && !state.okrKeyToTitle[ok])
+          state.okrKeyToTitle[ok] = okrTitle;
+        if (okFromKey && okrTitle && !state.okrKeyToTitle[okFromKey])
+          state.okrKeyToTitle[okFromKey] = okrTitle;
       });
 
       // Update tasks state
@@ -10769,9 +10779,14 @@
           state.projectKeyToRecordID[pk] = rid;
         if (pk && p.projectName && !state.projectKeyToTitle[pk])
           state.projectKeyToTitle[pk] = p.projectName;
+        // Populate OKR key→title from both the project link field and the OKR's own key field
         var ok = normalizeOkrKey(p.okrAssociation);
-        if (ok && p.okrObjective && !state.okrKeyToTitle[ok])
-          state.okrKeyToTitle[ok] = String(p.okrObjective).trim();
+        var okFromKey = normalizeOkrKey(p.okrKey);
+        var okrTitle = String(p.okrObjective || "").trim();
+        if (ok && okrTitle && !state.okrKeyToTitle[ok])
+          state.okrKeyToTitle[ok] = okrTitle;
+        if (okFromKey && okrTitle && !state.okrKeyToTitle[okFromKey])
+          state.okrKeyToTitle[okFromKey] = okrTitle;
       });
 
       populateProjectKeyDropdown(state.projectsAll);
