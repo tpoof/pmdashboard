@@ -2527,7 +2527,7 @@
       </td>
       ${descCell}
       <td class="pm-colOwner">${safe(p.owner)}</td>
-      <td class="pm-colFitContent">${okrKeyText ? okrRecordLink(okrKeyText, okrKeyText, state.okrKeyToTitle[okrKeyText] || "") : "<span class='pm-okrFallback'>None</span>"}</td>
+      <td class="pm-colFitContent">${okrKeyText ? okrRecordLink(okrKeyText, okrKeyText, state.okrKeyToTitle[normalizeOkrKey(okrKeyText)] || "") : "<span class='pm-okrFallback'>None</span>"}</td>
       <td class="pm-colFitContent pm-editableCell" data-ind="${PROJECT_IND.projectStartDate}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Double-click to edit">${safe(p.projectStartDate)}</td>
       <td class="pm-colFitContent pm-editableCell" data-ind="${PROJECT_IND.projectEndDate}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Double-click to edit">${safe(p.projectEndDate)}</td>
       <td class="pm-colFitContent pm-editableCell" data-ind="${PROJECT_IND.projectStatus}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Double-click to edit">${safe(p.projectStatus)}</td>
@@ -10443,7 +10443,7 @@
           state.projectKeyToRecordID[pk] = rid;
         if (pk && p.projectName && !state.projectKeyToTitle[pk])
           state.projectKeyToTitle[pk] = p.projectName;
-        var ok = String(p.okrAssociation || "").trim();
+        var ok = normalizeOkrKey(p.okrAssociation);
         if (ok && p.okrObjective && !state.okrKeyToTitle[ok])
           state.okrKeyToTitle[ok] = String(p.okrObjective).trim();
       });
@@ -10769,7 +10769,7 @@
           state.projectKeyToRecordID[pk] = rid;
         if (pk && p.projectName && !state.projectKeyToTitle[pk])
           state.projectKeyToTitle[pk] = p.projectName;
-        var ok = String(p.okrAssociation || "").trim();
+        var ok = normalizeOkrKey(p.okrAssociation);
         if (ok && p.okrObjective && !state.okrKeyToTitle[ok])
           state.okrKeyToTitle[ok] = String(p.okrObjective).trim();
       });
