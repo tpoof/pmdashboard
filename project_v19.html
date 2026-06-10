@@ -1428,12 +1428,21 @@
       try {
         // Get CSRF if not already fetched
         if (!csrfToken) csrfToken = await fetchCSRF();
+        console.log(
+          "[PM Access Request] CSRF token:",
+          csrfToken ? "obtained" : "EMPTY",
+        );
 
         // POST new record to form_42704
         var formData = new FormData();
         formData.append("numform_" + FORM_CATEGORY, "1");
         formData.append(INDICATOR_104, resolvedValue);
         if (csrfToken) formData.append("CSRFToken", csrfToken);
+        console.log("[PM Access Request] Posting new record with:", {
+          category: FORM_CATEGORY,
+          indicator104: resolvedValue,
+          hasCSRF: !!csrfToken,
+        });
 
         var createResp = await fetch(BASE + "/api/form/new", {
           method: "POST",
@@ -1442,10 +1451,16 @@
           body: formData,
         });
 
+        console.log(
+          "[PM Access Request] Create response status:",
+          createResp.status,
+        );
         if (!createResp.ok)
           throw new Error("Create failed: HTTP " + createResp.status);
 
         var createText = await createResp.text();
+        console.log("[PM Access Request] Create response body:", createText);
+
         var newRecordID;
         try {
           newRecordID = JSON.parse(createText);
@@ -1455,6 +1470,7 @@
         newRecordID = String(newRecordID || "")
           .trim()
           .replace(/^"|"$/g, "");
+        console.log("[PM Access Request] Parsed recordID:", newRecordID);
 
         if (
           !newRecordID ||
@@ -1466,11 +1482,21 @@
 
         // Refresh CSRF for submit step
         csrfToken = await fetchCSRF();
+        console.log(
+          "[PM Access Request] CSRF refresh:",
+          csrfToken ? "obtained" : "EMPTY",
+        );
 
         // Submit to workflow step 24
         var submitData = new FormData();
         submitData.append("stepID", SUBMIT_STEP);
         if (csrfToken) submitData.append("CSRFToken", csrfToken);
+        console.log(
+          "[PM Access Request] Submitting recordID",
+          newRecordID,
+          "to stepID",
+          SUBMIT_STEP,
+        );
 
         var submitResp = await fetch(
           BASE + "/api/form/" + encodeURIComponent(newRecordID) + "/submit",
@@ -1482,8 +1508,17 @@
           },
         );
 
+        console.log(
+          "[PM Access Request] Submit response status:",
+          submitResp.status,
+        );
+        var submitText = await submitResp.text();
+        console.log("[PM Access Request] Submit response body:", submitText);
+
         if (!submitResp.ok)
-          throw new Error("Submit failed: HTTP " + submitResp.status);
+          throw new Error(
+            "Submit failed: HTTP " + submitResp.status + " — " + submitText,
+          );
 
         // Show success
         formEl.hidden = true;
