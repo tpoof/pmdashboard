@@ -1216,13 +1216,14 @@
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s;
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    box-sizing: border-box;
   }
-  #pmAccessRequest .pm-ar-submit:hover:not(:disabled) {
+  #pmAccessRequest .pm-ar-submit:hover {
     background: #162e51;
-  }
-  #pmAccessRequest .pm-ar-submit:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
+    color: #fff;
   }
   #pmAccessRequest .pm-ar-error {
     font-size: 0.88rem;
@@ -1276,28 +1277,15 @@
         <span class="pm-ar-spinner" id="pmArSpinner" aria-hidden="true"></span>
         <span id="pmArUserName">Resolving your account…</span>
       </div>
-      <button type="button" class="pm-ar-submit" id="pmArSubmitBtn" disabled>
-        Request Access
-      </button>
-      <p class="pm-ar-error" id="pmArError" role="alert" aria-live="polite"></p>
+      <a id="pmArSubmitBtn" class="pm-ar-submit" href="#" role="button"
+        >Request Access</a
+      >
     </div>
 
-    <!-- Success state (hidden until submission) -->
-    <div id="pmArSuccess" class="pm-ar-success" hidden>
-      <span class="pm-ar-success-icon material-icons" aria-hidden="true"
-        >check_circle</span
-      >
-      <h2>Request Submitted</h2>
-      <p>
-        Your access request has been submitted successfully.<br /><br />
-        Please revisit in one business day if access is approved, or contact
-        your LEAF POC for an update.
-      </p>
-    </div>
+    <!-- Success state - not used in Option B but kept for reference -->
   </div>
 </div>
 
-<!-- Hidden span carries the current user's Smarty vars into JS -->
 <span
   id="pmArEnv"
   data-userid="<!--{$userID|unescape|escape:'html'}-->"
@@ -1308,48 +1296,37 @@
 <script>
   (function () {
     var BASE = "/platform/projects";
-    var FORM_CATEGORY = "form_42704";
-    var INDICATOR_104 = "104";
-    var SUBMIT_STEP = "24";
-
     var env = document.getElementById("pmArEnv");
     var rawUserId = (env && env.getAttribute("data-userid")) || "";
     var displayName = (env && env.getAttribute("data-username")) || "";
-
     var nameEl = document.getElementById("pmArUserName");
     var spinnerEl = document.getElementById("pmArSpinner");
     var submitBtn = document.getElementById("pmArSubmitBtn");
-    var errorEl = document.getElementById("pmArError");
-    var formEl = document.getElementById("pmArForm");
-    var successEl = document.getElementById("pmArSuccess");
+    var resolvedValue = rawUserId || displayName || "";
 
-    var resolvedValue = ""; // what we'll POST to indicator 104
-    var csrfToken = "";
-
-    // ── Step 1: Show display name immediately from Smarty ──────────────────
     if (displayName) {
       nameEl.textContent = displayName;
-      resolvedValue = displayName;
-      spinnerEl.style.display = "none";
-      submitBtn.disabled = false;
     } else if (rawUserId) {
       nameEl.textContent = rawUserId;
-      resolvedValue = rawUserId;
-      spinnerEl.style.display = "none";
-      submitBtn.disabled = false;
     } else {
-      // No Smarty vars — hide spinner, let user proceed anyway
       nameEl.textContent = "Current user";
-      resolvedValue = "unknown";
-      spinnerEl.style.display = "none";
-      submitBtn.disabled = false;
     }
 
-    // ── Step 2: Resolve orgchart record for empUID (best-effort, non-blocking) ─
-    function resolveOrgchart() {
-      var searchTerm = rawUserId || displayName;
-      if (!searchTerm) return; // nothing to search, keep display name
+    spinnerEl.style.display = "none";
 
+    // Build the LEAF native form URL with indicator 104 pre-filled
+    function buildFormUrl() {
+      var url = BASE + "/report.php?a=LEAF_Start_Request&id=form_42704";
+      var fill = encodeURIComponent(resolvedValue || "");
+      if (fill) url += "&104=" + fill;
+      return url;
+    }
+
+    submitBtn.href = buildFormUrl();
+
+    // Best-effort orgchart upgrade — silently improves the pre-fill value
+    var searchTerm = rawUserId || displayName;
+    if (searchTerm) {
       fetch(
         BASE +
           "/api/orgchart?search=" +
@@ -1375,165 +1352,19 @@
                   String(rawUserId).toLowerCase()
               );
             }) || records[0];
-
-          if (match) {
-            var empUID = match.empUID ? String(match.empUID) : "";
-            var userName = match.userName ? String(match.userName) : "";
-            var parts = [match.firstName, match.lastName].filter(Boolean);
-            var fullName = match.name || (parts.length ? parts.join(" ") : "");
-            if (fullName && fullName.trim())
-              nameEl.textContent = fullName.trim();
-            // Upgrade resolvedValue if we got something better
-            var better = userName || empUID;
-            if (better) resolvedValue = better;
+          if (!match) return;
+          var parts = [match.firstName, match.lastName].filter(Boolean);
+          var fullName = match.name || (parts.length ? parts.join(" ") : "");
+          if (fullName) nameEl.textContent = fullName.trim();
+          var better =
+            match.userName || (match.empUID ? String(match.empUID) : "");
+          if (better) {
+            resolvedValue = better;
+            submitBtn.href = buildFormUrl();
           }
         })
-        .catch(function () {
-          // Silently ignore — button is already enabled with display name fallback
-        });
+        .catch(function () {});
     }
-
-    // ── Step 3: Fetch CSRF token ───────────────────────────────────────────
-    function fetchCSRF() {
-      return fetch(BASE + "/api/form/new?csrfProbe=1", {
-        credentials: "include",
-        headers: { "x-requested-with": "XMLHttpRequest" },
-      })
-        .then(function (r) {
-          return r.text();
-        })
-        .then(function (text) {
-          try {
-            var data = JSON.parse(text);
-            return data.CSRFToken || data.csrfToken || data.token || "";
-          } catch (e) {
-            // Try extracting from HTML if not JSON
-            var match = text.match(
-              /name=["']?CSRFToken["']?\s+value=["']([^"']+)["']/i,
-            );
-            return match ? match[1] : "";
-          }
-        })
-        .catch(function () {
-          return "";
-        });
-    }
-
-    // ── Step 4: Submit ─────────────────────────────────────────────────────
-    submitBtn.addEventListener("click", async function () {
-      errorEl.textContent = "";
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Submitting…";
-
-      try {
-        // Get CSRF if not already fetched
-        if (!csrfToken) csrfToken = await fetchCSRF();
-        console.log(
-          "[PM Access Request] CSRF token:",
-          csrfToken ? "obtained" : "EMPTY",
-        );
-
-        // POST new record to form_42704
-        var formData = new FormData();
-        formData.append("numform_" + FORM_CATEGORY, "1");
-        formData.append(INDICATOR_104, resolvedValue);
-        if (csrfToken) formData.append("CSRFToken", csrfToken);
-        console.log("[PM Access Request] Posting new record with:", {
-          category: FORM_CATEGORY,
-          indicator104: resolvedValue,
-          hasCSRF: !!csrfToken,
-        });
-
-        var createResp = await fetch(BASE + "/api/form/new", {
-          method: "POST",
-          credentials: "include",
-          headers: { "x-requested-with": "XMLHttpRequest" },
-          body: formData,
-        });
-
-        console.log(
-          "[PM Access Request] Create response status:",
-          createResp.status,
-        );
-        if (!createResp.ok)
-          throw new Error("Create failed: HTTP " + createResp.status);
-
-        var createText = await createResp.text();
-        console.log("[PM Access Request] Create response body:", createText);
-
-        var newRecordID;
-        try {
-          newRecordID = JSON.parse(createText);
-        } catch (e) {
-          newRecordID = createText;
-        }
-        newRecordID = String(newRecordID || "")
-          .trim()
-          .replace(/^"|"$/g, "");
-        console.log("[PM Access Request] Parsed recordID:", newRecordID);
-
-        if (
-          !newRecordID ||
-          newRecordID === "Invalid Token." ||
-          isNaN(Number(newRecordID))
-        ) {
-          throw new Error("Unexpected record ID returned: " + newRecordID);
-        }
-
-        // Refresh CSRF for submit step
-        csrfToken = await fetchCSRF();
-        console.log(
-          "[PM Access Request] CSRF refresh:",
-          csrfToken ? "obtained" : "EMPTY",
-        );
-
-        // Submit to workflow step 24
-        var submitData = new FormData();
-        submitData.append("stepID", SUBMIT_STEP);
-        if (csrfToken) submitData.append("CSRFToken", csrfToken);
-        console.log(
-          "[PM Access Request] Submitting recordID",
-          newRecordID,
-          "to stepID",
-          SUBMIT_STEP,
-        );
-
-        var submitResp = await fetch(
-          BASE + "/api/form/" + encodeURIComponent(newRecordID) + "/submit",
-          {
-            method: "POST",
-            credentials: "include",
-            headers: { "x-requested-with": "XMLHttpRequest" },
-            body: submitData,
-          },
-        );
-
-        console.log(
-          "[PM Access Request] Submit response status:",
-          submitResp.status,
-        );
-        var submitText = await submitResp.text();
-        console.log("[PM Access Request] Submit response body:", submitText);
-
-        if (!submitResp.ok)
-          throw new Error(
-            "Submit failed: HTTP " + submitResp.status + " — " + submitText,
-          );
-
-        // Show success
-        formEl.hidden = true;
-        successEl.hidden = false;
-      } catch (err) {
-        console.error("[PM Access Request]", err);
-        errorEl.textContent =
-          "Something went wrong. Please try again or contact your LEAF POC.";
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Request Access";
-      }
-    });
-
-    // Kick off orgchart resolution on load
-    resolveOrgchart();
   })();
 </script>
 <!--{/if}-->
