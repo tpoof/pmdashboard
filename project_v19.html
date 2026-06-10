@@ -1329,16 +1329,26 @@
     // ── Step 1: Show display name immediately from Smarty ──────────────────
     if (displayName) {
       nameEl.textContent = displayName;
-      resolvedValue = displayName; // default fallback
+      resolvedValue = displayName;
+      spinnerEl.style.display = "none";
+      submitBtn.disabled = false;
+    } else if (rawUserId) {
+      nameEl.textContent = rawUserId;
+      resolvedValue = rawUserId;
+      spinnerEl.style.display = "none";
+      submitBtn.disabled = false;
+    } else {
+      // No Smarty vars — hide spinner, let user proceed anyway
+      nameEl.textContent = "Current user";
+      resolvedValue = "unknown";
+      spinnerEl.style.display = "none";
+      submitBtn.disabled = false;
     }
 
-    // ── Step 2: Resolve orgchart record for empUID ─────────────────────────
+    // ── Step 2: Resolve orgchart record for empUID (best-effort, non-blocking) ─
     function resolveOrgchart() {
       var searchTerm = rawUserId || displayName;
-      if (!searchTerm) {
-        finalise(displayName);
-        return;
-      }
+      if (!searchTerm) return; // nothing to search, keep display name
 
       fetch(
         BASE +
@@ -1354,12 +1364,8 @@
           return r.ok ? r.json() : null;
         })
         .then(function (data) {
-          var records = Array.isArray(data)
-            ? data
-            : data
-              ? Object.values(data)
-              : [];
-          // Find the best match: prefer empUID match, then userName match
+          if (!data) return;
+          var records = Array.isArray(data) ? data : Object.values(data);
           var match =
             records.find(function (rec) {
               return (
@@ -1373,27 +1379,18 @@
           if (match) {
             var empUID = match.empUID ? String(match.empUID) : "";
             var userName = match.userName ? String(match.userName) : "";
-            var fullName =
-              match.name ||
-              match.firstName + " " + match.lastName ||
-              displayName;
-            // Display full name from orgchart if available
+            var parts = [match.firstName, match.lastName].filter(Boolean);
+            var fullName = match.name || (parts.length ? parts.join(" ") : "");
             if (fullName && fullName.trim())
               nameEl.textContent = fullName.trim();
-            // Prefer userName for indicator 104, fall back to empUID, then displayName
-            resolvedValue = userName || empUID || displayName;
+            // Upgrade resolvedValue if we got something better
+            var better = userName || empUID;
+            if (better) resolvedValue = better;
           }
-          finalise(resolvedValue);
         })
         .catch(function () {
-          finalise(displayName); // fail gracefully
+          // Silently ignore — button is already enabled with display name fallback
         });
-    }
-
-    function finalise(value) {
-      resolvedValue = value || displayName;
-      spinnerEl.style.display = "none";
-      submitBtn.disabled = !resolvedValue;
     }
 
     // ── Step 3: Fetch CSRF token ───────────────────────────────────────────
