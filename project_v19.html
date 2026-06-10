@@ -1120,4 +1120,388 @@
 <script src="./files/chart.js"></script>
 <script src="./files/project_v19.js"></script>
 <!--{else}-->
+<style>
+  #pmAccessRequest {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f6f9;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  #pmAccessRequest .pm-ar-card {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    padding: 40px 48px;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+  }
+  #pmAccessRequest .pm-ar-icon {
+    font-size: 48px;
+    color: #6b7280;
+    margin-bottom: 12px;
+    display: block;
+  }
+  #pmAccessRequest h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 10px;
+  }
+  #pmAccessRequest .pm-ar-desc {
+    font-size: 0.95rem;
+    color: #4b5563;
+    line-height: 1.6;
+    margin: 0 0 28px;
+  }
+  #pmAccessRequest .pm-ar-divider {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 0 0 24px;
+  }
+  #pmAccessRequest .pm-ar-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    margin-bottom: 6px;
+    text-align: left;
+  }
+  #pmAccessRequest .pm-ar-userfield {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-size: 0.95rem;
+    color: #374151;
+    background: #f9fafb;
+    margin-bottom: 20px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+  }
+  #pmAccessRequest .pm-ar-userfield .pm-ar-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #d1d5db;
+    border-top-color: #6b7280;
+    border-radius: 50%;
+    animation: pm-ar-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pm-ar-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  #pmAccessRequest .pm-ar-submit {
+    width: 100%;
+    padding: 11px 20px;
+    background: #1a4480;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  #pmAccessRequest .pm-ar-submit:hover:not(:disabled) {
+    background: #162e51;
+  }
+  #pmAccessRequest .pm-ar-submit:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+  }
+  #pmAccessRequest .pm-ar-error {
+    font-size: 0.88rem;
+    color: #dc2626;
+    margin: 10px 0 0;
+    min-height: 20px;
+  }
+  #pmAccessRequest .pm-ar-success {
+    text-align: center;
+  }
+  #pmAccessRequest .pm-ar-success-icon {
+    font-size: 52px;
+    color: #16a34a;
+    display: block;
+    margin-bottom: 12px;
+  }
+  #pmAccessRequest .pm-ar-success h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 10px;
+  }
+  #pmAccessRequest .pm-ar-success p {
+    font-size: 0.95rem;
+    color: #4b5563;
+    line-height: 1.6;
+    margin: 0;
+  }
+</style>
+
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/icon?family=Material+Icons"
+/>
+
+<div id="pmAccessRequest">
+  <div class="pm-ar-card">
+    <!-- Form state -->
+    <div id="pmArForm">
+      <span class="pm-ar-icon material-icons" aria-hidden="true">lock</span>
+      <h1>Access Required</h1>
+      <p class="pm-ar-desc">
+        This dashboard is limited to those who need to know. If this applies to
+        you, submit a request below and your access will be reviewed.
+      </p>
+      <hr class="pm-ar-divider" />
+      <label class="pm-ar-label" for="pmArUserDisplay"
+        >Requesting access as</label
+      >
+      <div class="pm-ar-userfield" id="pmArUserDisplay" aria-live="polite">
+        <span class="pm-ar-spinner" id="pmArSpinner" aria-hidden="true"></span>
+        <span id="pmArUserName">Resolving your account…</span>
+      </div>
+      <button type="button" class="pm-ar-submit" id="pmArSubmitBtn" disabled>
+        Request Access
+      </button>
+      <p class="pm-ar-error" id="pmArError" role="alert" aria-live="polite"></p>
+    </div>
+
+    <!-- Success state (hidden until submission) -->
+    <div id="pmArSuccess" class="pm-ar-success" hidden>
+      <span class="pm-ar-success-icon material-icons" aria-hidden="true"
+        >check_circle</span
+      >
+      <h2>Request Submitted</h2>
+      <p>
+        Your access request has been submitted successfully.<br /><br />
+        Please revisit in one business day if access is approved, or contact
+        your LEAF POC for an update.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden span carries the current user's Smarty vars into JS -->
+<span
+  id="pmArEnv"
+  data-userid="<!--{$userID|unescape|escape:'html'}-->"
+  data-username="<!--{$name|unescape|escape:'html'}-->"
+  style="display: none"
+></span>
+
+<script>
+  (function () {
+    var BASE = "/platform/projects";
+    var FORM_CATEGORY = "form_42704";
+    var INDICATOR_104 = "104";
+    var SUBMIT_STEP = "24";
+
+    var env = document.getElementById("pmArEnv");
+    var rawUserId = (env && env.getAttribute("data-userid")) || "";
+    var displayName = (env && env.getAttribute("data-username")) || "";
+
+    var nameEl = document.getElementById("pmArUserName");
+    var spinnerEl = document.getElementById("pmArSpinner");
+    var submitBtn = document.getElementById("pmArSubmitBtn");
+    var errorEl = document.getElementById("pmArError");
+    var formEl = document.getElementById("pmArForm");
+    var successEl = document.getElementById("pmArSuccess");
+
+    var resolvedValue = ""; // what we'll POST to indicator 104
+    var csrfToken = "";
+
+    // ── Step 1: Show display name immediately from Smarty ──────────────────
+    if (displayName) {
+      nameEl.textContent = displayName;
+      resolvedValue = displayName; // default fallback
+    }
+
+    // ── Step 2: Resolve orgchart record for empUID ─────────────────────────
+    function resolveOrgchart() {
+      var searchTerm = rawUserId || displayName;
+      if (!searchTerm) {
+        finalise(displayName);
+        return;
+      }
+
+      fetch(
+        BASE +
+          "/api/orgchart?search=" +
+          encodeURIComponent(searchTerm) +
+          "&limit=5",
+        {
+          credentials: "include",
+          headers: { "x-requested-with": "XMLHttpRequest" },
+        },
+      )
+        .then(function (r) {
+          return r.ok ? r.json() : null;
+        })
+        .then(function (data) {
+          var records = Array.isArray(data)
+            ? data
+            : data
+              ? Object.values(data)
+              : [];
+          // Find the best match: prefer empUID match, then userName match
+          var match =
+            records.find(function (rec) {
+              return (
+                String(rec.empUID || "").toLowerCase() ===
+                  String(rawUserId).toLowerCase() ||
+                String(rec.userName || "").toLowerCase() ===
+                  String(rawUserId).toLowerCase()
+              );
+            }) || records[0];
+
+          if (match) {
+            var empUID = match.empUID ? String(match.empUID) : "";
+            var userName = match.userName ? String(match.userName) : "";
+            var fullName =
+              match.name ||
+              match.firstName + " " + match.lastName ||
+              displayName;
+            // Display full name from orgchart if available
+            if (fullName && fullName.trim())
+              nameEl.textContent = fullName.trim();
+            // Prefer userName for indicator 104, fall back to empUID, then displayName
+            resolvedValue = userName || empUID || displayName;
+          }
+          finalise(resolvedValue);
+        })
+        .catch(function () {
+          finalise(displayName); // fail gracefully
+        });
+    }
+
+    function finalise(value) {
+      resolvedValue = value || displayName;
+      spinnerEl.style.display = "none";
+      submitBtn.disabled = !resolvedValue;
+    }
+
+    // ── Step 3: Fetch CSRF token ───────────────────────────────────────────
+    function fetchCSRF() {
+      return fetch(BASE + "/api/form/new?csrfProbe=1", {
+        credentials: "include",
+        headers: { "x-requested-with": "XMLHttpRequest" },
+      })
+        .then(function (r) {
+          return r.text();
+        })
+        .then(function (text) {
+          try {
+            var data = JSON.parse(text);
+            return data.CSRFToken || data.csrfToken || data.token || "";
+          } catch (e) {
+            // Try extracting from HTML if not JSON
+            var match = text.match(
+              /name=["']?CSRFToken["']?\s+value=["']([^"']+)["']/i,
+            );
+            return match ? match[1] : "";
+          }
+        })
+        .catch(function () {
+          return "";
+        });
+    }
+
+    // ── Step 4: Submit ─────────────────────────────────────────────────────
+    submitBtn.addEventListener("click", async function () {
+      errorEl.textContent = "";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Submitting…";
+
+      try {
+        // Get CSRF if not already fetched
+        if (!csrfToken) csrfToken = await fetchCSRF();
+
+        // POST new record to form_42704
+        var formData = new FormData();
+        formData.append("numform_" + FORM_CATEGORY, "1");
+        formData.append(INDICATOR_104, resolvedValue);
+        if (csrfToken) formData.append("CSRFToken", csrfToken);
+
+        var createResp = await fetch(BASE + "/api/form/new", {
+          method: "POST",
+          credentials: "include",
+          headers: { "x-requested-with": "XMLHttpRequest" },
+          body: formData,
+        });
+
+        if (!createResp.ok)
+          throw new Error("Create failed: HTTP " + createResp.status);
+
+        var createText = await createResp.text();
+        var newRecordID;
+        try {
+          newRecordID = JSON.parse(createText);
+        } catch (e) {
+          newRecordID = createText;
+        }
+        newRecordID = String(newRecordID || "")
+          .trim()
+          .replace(/^"|"$/g, "");
+
+        if (
+          !newRecordID ||
+          newRecordID === "Invalid Token." ||
+          isNaN(Number(newRecordID))
+        ) {
+          throw new Error("Unexpected record ID returned: " + newRecordID);
+        }
+
+        // Refresh CSRF for submit step
+        csrfToken = await fetchCSRF();
+
+        // Submit to workflow step 24
+        var submitData = new FormData();
+        submitData.append("stepID", SUBMIT_STEP);
+        if (csrfToken) submitData.append("CSRFToken", csrfToken);
+
+        var submitResp = await fetch(
+          BASE + "/api/form/" + encodeURIComponent(newRecordID) + "/submit",
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "x-requested-with": "XMLHttpRequest" },
+            body: submitData,
+          },
+        );
+
+        if (!submitResp.ok)
+          throw new Error("Submit failed: HTTP " + submitResp.status);
+
+        // Show success
+        formEl.hidden = true;
+        successEl.hidden = false;
+      } catch (err) {
+        console.error("[PM Access Request]", err);
+        errorEl.textContent =
+          "Something went wrong. Please try again or contact your LEAF POC.";
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Request Access";
+      }
+    });
+
+    // Kick off orgchart resolution on load
+    resolveOrgchart();
+  })();
+</script>
 <!--{/if}-->
