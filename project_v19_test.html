@@ -1341,11 +1341,13 @@
 <script>
   (function () {
     var BASE = "/platform/projects";
-    var FORM_URL =
-      BASE + "/report.php?a=LEAF_Start_Request&id=form_42704&iframe=1";
+    var ORGCHART = "/platform/orgchart";
+    var FORM_CAT = "form_42704";
+    var STEP_ID = "24";
 
     var env = document.getElementById("pmArEnv");
     var userId = (env && env.getAttribute("data-userid")) || "";
+    var csrfToken = (env && env.getAttribute("data-csrf")) || "";
 
     var openBtn = document.getElementById("pmArOpenBtn");
     var closeBtn = document.getElementById("pmArCloseBtn");
@@ -1354,9 +1356,14 @@
     var defaultEl = document.getElementById("pmArDefault");
     var successEl = document.getElementById("pmArSuccess");
 
-    // Pre-fill indicator 104 with the user's ID via URL param
+    // Build form URL — try URL param pre-fill first (LEAF may resolve it natively)
+    // Format: &104=userName which LEAF_Start_Request may auto-populate for orgchart fields
     var formUrl =
-      FORM_URL + (userId ? "&104=" + encodeURIComponent(userId) : "");
+      BASE +
+      "/report.php?a=LEAF_Start_Request&id=" +
+      FORM_CAT +
+      "&iframe=1" +
+      (userId ? "&104=" + encodeURIComponent(userId) : "");
 
     function openModal() {
       frame.src = formUrl;
@@ -1374,37 +1381,138 @@
 
     openBtn.addEventListener("click", openModal);
     closeBtn.addEventListener("click", closeModal);
-
-    // Close on backdrop click
     modal.addEventListener("click", function (e) {
       if (e.target === modal) closeModal();
     });
-
-    // Close on Escape
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && modal.classList.contains("is-open"))
         closeModal();
     });
 
-    // Detect submission: iframe navigates away from LEAF_Start_Request to printview
+    // After the LEAF form iframe loads, try to inject the value via postMessage
+    // LEAF forms listen for postMessage prefill events
     frame.addEventListener("load", function () {
+      var frameUrl = "";
       try {
-        var url = frame.contentWindow && frame.contentWindow.location.href;
-        if (!url || url === "about:blank") return;
-        // If the iframe lands on printview, the form was submitted successfully
-        if (url.indexOf("printview") !== -1 || url.indexOf("a=view") !== -1) {
+        frameUrl =
+          (frame.contentWindow && frame.contentWindow.location.href) || "";
+      } catch (e) {
+        // Cross-origin after submit — treat as success
+        closeModal();
+        defaultEl.hidden = true;
+        successEl.hidden = false;
+        return;
+      }
+
+      if (!frameUrl || frameUrl === "about:blank") return;
+
+      // Detect submission — iframe navigated to printview
+      if (
+        frameUrl.indexOf("printview") !== -1 ||
+        frameUrl.indexOf("a=view") !== -1
+      ) {
+        // Extract recordID from URL
+        var ridMatch = frameUrl.match(/[?&]recordID=(\d+)/i);
+        var newRecordID = ridMatch ? ridMatch[1] : null;
+        console.log(
+          "[PM Access Request] Form submitted, recordID:",
+          newRecordID,
+        );
+
+        if (newRecordID) {
+          // Advance to step 24
+          advanceToStep(newRecordID);
+        } else {
+          // No recordID found — still show success
           closeModal();
           defaultEl.hidden = true;
           successEl.hidden = false;
         }
+        return;
+      }
+
+      // Form is still on the start request page — try postMessage prefill
+      // Try multiple formats since we don't know which LEAF expects for indicator 104
+      if (userId && frame.contentWindow) {
+        // Format 1: LEAF native prefill event
+        frame.contentWindow.postMessage(
+          {
+            type: "leafPrefill",
+            indicatorID: "104",
+            value: userId,
+          },
+          "*",
+        );
+
+        // Format 2: orgchart field import sequence
+        // Try to import the user into orgchart so LEAF can resolve them
+        importOrgchartUser(userId);
+      }
+    });
+
+    // Try to import user into orgchart — makes URL param pre-fill work for orgchart fields
+    function importOrgchartUser(username) {
+      fetch(
+        ORGCHART + "/api/employee/import/_" + encodeURIComponent(username),
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "x-requested-with": "XMLHttpRequest",
+            "x-csrf-token": csrfToken,
+          },
+          body: "CSRFToken=" + encodeURIComponent(csrfToken),
+        },
+      )
+        .then(function (r) {
+          console.log(
+            "[PM Access Request] Orgchart import:",
+            r.status,
+            r.ok ? "OK" : "FAILED",
+          );
+        })
+        .catch(function (e) {
+          console.log("[PM Access Request] Orgchart import error:", e.message);
+        });
+    }
+
+    // Advance the new record to workflow step 24
+    async function advanceToStep(recordID) {
+      try {
+        var fd = new FormData();
+        fd.append("stepID", STEP_ID);
+        fd.append("CSRFToken", csrfToken);
+
+        var resp = await fetch(
+          BASE + "/api/form/" + encodeURIComponent(recordID) + "/submit",
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "x-requested-with": "XMLHttpRequest" },
+            body: fd,
+          },
+        );
+
+        console.log(
+          "[PM Access Request] Step " + STEP_ID + " advance:",
+          resp.status,
+          resp.ok ? "OK" : "FAILED",
+        );
+        var text = await resp.text();
+        console.log(
+          "[PM Access Request] Step advance response:",
+          text.substring(0, 100),
+        );
       } catch (e) {
-        // Cross-origin load — can't read URL, but this means
-        // the form submitted and navigated away successfully
+        console.log("[PM Access Request] Step advance error:", e.message);
+      } finally {
+        // Show success regardless of step advance result
         closeModal();
         defaultEl.hidden = true;
         successEl.hidden = false;
       }
-    });
+    }
   })();
 </script>
 <!--{/if}-->
