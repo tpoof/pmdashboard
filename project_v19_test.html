@@ -1329,6 +1329,54 @@
     var modal = document.getElementById("pmArModal");
     var frame = document.getElementById("pmArFrame");
 
+    function suppressHeader() {
+      try {
+        var doc =
+          frame.contentDocument ||
+          (frame.contentWindow && frame.contentWindow.document);
+        if (!doc) return;
+
+        // DEBUG: log all IDs and classes on body children to find the header element
+        var bodyChildren = doc.body ? doc.body.children : [];
+        console.group("[PM Access Request] iframe DOM — find header element");
+        for (var i = 0; i < Math.min(bodyChildren.length, 10); i++) {
+          var el = bodyChildren[i];
+          console.log(
+            i,
+            el.tagName,
+            "id:",
+            el.id || "(none)",
+            "class:",
+            el.className || "(none)",
+          );
+        }
+        // Also log any element with 'header' in id or class
+        var all = doc.querySelectorAll(
+          "[id*='header'],[id*='Header'],[id*='nav'],[id*='Nav'],[class*='header'],[class*='Header']",
+        );
+        console.log("Elements with header/nav in id/class:");
+        all.forEach(function (el) {
+          console.log(" ", el.tagName, "id:", el.id, "class:", el.className);
+        });
+        console.groupEnd();
+
+        if (doc.getElementById("pm-ar-header-suppress")) return;
+        var style = doc.createElement("style");
+        style.id = "pm-ar-header-suppress";
+        style.textContent = [
+          "#header, #siteHeader, .siteHeader, #leafHeader, .leaf-header,",
+          "#topNav, .topNav, #mainNav, .site-header, #site-header,",
+          "header.main, nav.main-nav, #headerWrap, .headerWrap,",
+          "#globalHeader, .globalHeader { display: none !important; }",
+        ].join("\n");
+        doc.head.appendChild(style);
+        var headerEl = doc.getElementById("header");
+        if (headerEl) headerEl.style.display = "none";
+      } catch (e) {
+        console.log("[PM Access Request] suppressHeader error:", e.message);
+      }
+    }
+
     function openModal() {
       frame.src = FORM_URL;
       modal.classList.add("is-open");
@@ -1342,6 +1390,8 @@
       frame.src = "about:blank";
       openBtn.focus();
     }
+
+    frame.addEventListener("load", suppressHeader);
 
     openBtn.addEventListener("click", openModal);
     closeBtn.addEventListener("click", closeModal);
