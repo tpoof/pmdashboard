@@ -1111,13 +1111,13 @@
 <style>
   /* ── Access Request Landing ─────────────────────────────────────────── */
   #pmAccessRequest {
-    min-height: 100vh;
+    min-height: 0;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    background: #f4f6f9;
+    background: transparent;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    padding: 16px;
+    padding: 40px 16px;
     box-sizing: border-box;
   }
   #pmAccessRequest .pm-ar-card {
@@ -1280,6 +1280,7 @@
       class="pm-ar-modal-frame"
       title="Access Request Form"
       src="about:blank"
+      sandbox="allow-forms allow-scripts allow-same-origin allow-popups"
     ></iframe>
   </div>
 </div>
