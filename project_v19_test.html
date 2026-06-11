@@ -1332,22 +1332,10 @@
   </div>
 </div>
 
-<span
-  id="pmArEnv"
-  data-userid="<!--{$userID|unescape|escape:'html'}-->"
-  style="display: none"
-></span>
-
 <script>
   (function () {
-    var BASE = "/platform/projects";
-    var ORGCHART = "/platform/orgchart";
-    var FORM_CAT = "form_42704";
-    var STEP_ID = "24";
-
-    var env = document.getElementById("pmArEnv");
-    var userId = (env && env.getAttribute("data-userid")) || "";
-    var csrfToken = (env && env.getAttribute("data-csrf")) || "";
+    var FORM_URL =
+      "https://leaf.va.gov/platform/projects/report.php?a=LEAF_Start_Request&id=form_42704&title=Access+Request&iframe=1";
 
     var openBtn = document.getElementById("pmArOpenBtn");
     var closeBtn = document.getElementById("pmArCloseBtn");
@@ -1356,17 +1344,8 @@
     var defaultEl = document.getElementById("pmArDefault");
     var successEl = document.getElementById("pmArSuccess");
 
-    // Build form URL — try URL param pre-fill first (LEAF may resolve it natively)
-    // Format: &104=userName which LEAF_Start_Request may auto-populate for orgchart fields
-    var formUrl =
-      BASE +
-      "/report.php?a=LEAF_Start_Request&id=" +
-      FORM_CAT +
-      "&iframe=1" +
-      (userId ? "&104=" + encodeURIComponent(userId) : "");
-
     function openModal() {
-      frame.src = formUrl;
+      frame.src = FORM_URL;
       modal.classList.add("is-open");
       document.body.style.overflow = "hidden";
       closeBtn.focus();
@@ -1389,130 +1368,29 @@
         closeModal();
     });
 
-    // After the LEAF form iframe loads, try to inject the value via postMessage
-    // LEAF forms listen for postMessage prefill events
+    // Detect submission: iframe navigates to printview or view after submit
     frame.addEventListener("load", function () {
       var frameUrl = "";
       try {
         frameUrl =
           (frame.contentWindow && frame.contentWindow.location.href) || "";
       } catch (e) {
-        // Cross-origin after submit — treat as success
+        // Cross-origin after submit — show success
         closeModal();
         defaultEl.hidden = true;
         successEl.hidden = false;
         return;
       }
-
       if (!frameUrl || frameUrl === "about:blank") return;
-
-      // Detect submission — iframe navigated to printview
       if (
         frameUrl.indexOf("printview") !== -1 ||
         frameUrl.indexOf("a=view") !== -1
       ) {
-        // Extract recordID from URL
-        var ridMatch = frameUrl.match(/[?&]recordID=(\d+)/i);
-        var newRecordID = ridMatch ? ridMatch[1] : null;
-        console.log(
-          "[PM Access Request] Form submitted, recordID:",
-          newRecordID,
-        );
-
-        if (newRecordID) {
-          // Advance to step 24
-          advanceToStep(newRecordID);
-        } else {
-          // No recordID found — still show success
-          closeModal();
-          defaultEl.hidden = true;
-          successEl.hidden = false;
-        }
-        return;
-      }
-
-      // Form is still on the start request page — try postMessage prefill
-      // Try multiple formats since we don't know which LEAF expects for indicator 104
-      if (userId && frame.contentWindow) {
-        // Format 1: LEAF native prefill event
-        frame.contentWindow.postMessage(
-          {
-            type: "leafPrefill",
-            indicatorID: "104",
-            value: userId,
-          },
-          "*",
-        );
-
-        // Format 2: orgchart field import sequence
-        // Try to import the user into orgchart so LEAF can resolve them
-        importOrgchartUser(userId);
-      }
-    });
-
-    // Try to import user into orgchart — makes URL param pre-fill work for orgchart fields
-    function importOrgchartUser(username) {
-      fetch(
-        ORGCHART + "/api/employee/import/_" + encodeURIComponent(username),
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "x-requested-with": "XMLHttpRequest",
-            "x-csrf-token": csrfToken,
-          },
-          body: "CSRFToken=" + encodeURIComponent(csrfToken),
-        },
-      )
-        .then(function (r) {
-          console.log(
-            "[PM Access Request] Orgchart import:",
-            r.status,
-            r.ok ? "OK" : "FAILED",
-          );
-        })
-        .catch(function (e) {
-          console.log("[PM Access Request] Orgchart import error:", e.message);
-        });
-    }
-
-    // Advance the new record to workflow step 24
-    async function advanceToStep(recordID) {
-      try {
-        var fd = new FormData();
-        fd.append("stepID", STEP_ID);
-        fd.append("CSRFToken", csrfToken);
-
-        var resp = await fetch(
-          BASE + "/api/form/" + encodeURIComponent(recordID) + "/submit",
-          {
-            method: "POST",
-            credentials: "include",
-            headers: { "x-requested-with": "XMLHttpRequest" },
-            body: fd,
-          },
-        );
-
-        console.log(
-          "[PM Access Request] Step " + STEP_ID + " advance:",
-          resp.status,
-          resp.ok ? "OK" : "FAILED",
-        );
-        var text = await resp.text();
-        console.log(
-          "[PM Access Request] Step advance response:",
-          text.substring(0, 100),
-        );
-      } catch (e) {
-        console.log("[PM Access Request] Step advance error:", e.message);
-      } finally {
-        // Show success regardless of step advance result
         closeModal();
         defaultEl.hidden = true;
         successEl.hidden = false;
       }
-    }
+    });
   })();
 </script>
 <!--{/if}-->
