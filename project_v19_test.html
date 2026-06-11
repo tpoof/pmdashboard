@@ -1121,6 +1121,7 @@
 <script src="./files/project_v19.js"></script>
 <!--{else}-->
 <style>
+  /* ── Access Request Landing ─────────────────────────────────────────── */
   #pmAccessRequest {
     min-height: 100vh;
     display: flex;
@@ -1160,52 +1161,7 @@
     line-height: 1.6;
     margin: 0 0 28px;
   }
-  #pmAccessRequest .pm-ar-divider {
-    border: none;
-    border-top: 1px solid #e5e7eb;
-    margin: 0 0 24px;
-  }
-  #pmAccessRequest .pm-ar-label {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #6b7280;
-    margin-bottom: 6px;
-    text-align: left;
-  }
-  #pmAccessRequest .pm-ar-userfield {
-    width: 100%;
-    box-sizing: border-box;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    padding: 9px 12px;
-    font-size: 0.95rem;
-    color: #374151;
-    background: #f9fafb;
-    margin-bottom: 20px;
-    text-align: left;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 42px;
-  }
-  #pmAccessRequest .pm-ar-userfield .pm-ar-spinner {
-    width: 14px;
-    height: 14px;
-    border: 2px solid #d1d5db;
-    border-top-color: #6b7280;
-    border-radius: 50%;
-    animation: pm-ar-spin 0.7s linear infinite;
-    flex-shrink: 0;
-  }
-  @keyframes pm-ar-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-  #pmAccessRequest .pm-ar-submit {
+  #pmAccessRequest .pm-ar-btn {
     width: 100%;
     padding: 11px 20px;
     background: #1a4480;
@@ -1218,19 +1174,11 @@
     transition: background 0.15s;
     box-sizing: border-box;
   }
-  #pmAccessRequest .pm-ar-submit:hover:not(:disabled) {
+  #pmAccessRequest .pm-ar-btn:hover {
     background: #162e51;
   }
-  #pmAccessRequest .pm-ar-submit:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
-  }
-  #pmAccessRequest .pm-ar-error {
-    font-size: 0.88rem;
-    color: #dc2626;
-    margin: 10px 0 0;
-    min-height: 20px;
-  }
+
+  /* ── Success state ───────────────────────────────────────────────────── */
   #pmAccessRequest .pm-ar-success {
     text-align: center;
   }
@@ -1252,6 +1200,70 @@
     line-height: 1.6;
     margin: 0;
   }
+
+  /* ── Modal overlay ───────────────────────────────────────────────────── */
+  #pmArModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.55);
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  #pmArModal.is-open {
+    display: flex;
+  }
+  #pmArModal .pm-ar-modal-box {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    width: 100%;
+    max-width: 760px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #pmArModal .pm-ar-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+  }
+  #pmArModal .pm-ar-modal-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+  }
+  #pmArModal .pm-ar-modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 4px;
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+  #pmArModal .pm-ar-modal-close:hover {
+    color: #111827;
+    background: #f3f4f6;
+  }
+  #pmArModal .pm-ar-modal-frame {
+    width: 100%;
+    flex: 1;
+    border: none;
+    min-height: 500px;
+  }
 </style>
 
 <link
@@ -1259,31 +1271,23 @@
   href="https://fonts.googleapis.com/icon?family=Material+Icons"
 />
 
+<!-- Landing card -->
 <div id="pmAccessRequest">
   <div class="pm-ar-card">
-    <!-- Form state -->
-    <div id="pmArForm">
+    <!-- Default state -->
+    <div id="pmArDefault">
       <span class="pm-ar-icon material-icons" aria-hidden="true">lock</span>
       <h1>Access Required</h1>
       <p class="pm-ar-desc">
-        This dashboard is limited to those who need to know. If this applies to
-        you, submit a request below and your access will be reviewed.
+        This dashboard is limited to those who need to know.<br />
+        If this applies to you, click below to submit an access request.
       </p>
-      <hr class="pm-ar-divider" />
-      <label class="pm-ar-label" for="pmArUserDisplay"
-        >Requesting access as</label
-      >
-      <div class="pm-ar-userfield" id="pmArUserDisplay" aria-live="polite">
-        <span class="pm-ar-spinner" id="pmArSpinner" aria-hidden="true"></span>
-        <span id="pmArUserName">Resolving your account…</span>
-      </div>
-      <button id="pmArSubmitBtn" class="pm-ar-submit" type="button">
+      <button type="button" class="pm-ar-btn" id="pmArOpenBtn">
         Request Access
       </button>
-      <p class="pm-ar-error" id="pmArError" role="alert" aria-live="polite"></p>
     </div>
 
-    <!-- Success state -->
+    <!-- Success state (shown after modal submission detected) -->
     <div id="pmArSuccess" class="pm-ar-success" hidden>
       <span class="pm-ar-success-icon material-icons" aria-hidden="true"
         >check_circle</span
@@ -1298,167 +1302,107 @@
   </div>
 </div>
 
+<!-- Modal with LEAF form iframe -->
+<div
+  id="pmArModal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="pmArModalTitle"
+>
+  <div class="pm-ar-modal-box">
+    <div class="pm-ar-modal-header">
+      <h2 class="pm-ar-modal-title" id="pmArModalTitle">
+        Request Dashboard Access
+      </h2>
+      <button
+        type="button"
+        class="pm-ar-modal-close"
+        id="pmArCloseBtn"
+        aria-label="Close"
+      >
+        <span class="material-icons" aria-hidden="true">close</span>
+      </button>
+    </div>
+    <iframe
+      id="pmArFrame"
+      class="pm-ar-modal-frame"
+      title="Access Request Form"
+      src="about:blank"
+    ></iframe>
+  </div>
+</div>
+
 <span
   id="pmArEnv"
   data-userid="<!--{$userID|unescape|escape:'html'}-->"
-  data-username="<!--{$name|unescape|escape:'html'}-->"
-  data-csrf="{$CSRFToken}"
   style="display: none"
 ></span>
 
 <script>
   (function () {
     var BASE = "/platform/projects";
-    var FORM_CATEGORY = "form_42704";
-    var INDICATOR_104 = "104";
-    var SUBMIT_STEP = "24";
+    var FORM_URL =
+      BASE + "/report.php?a=LEAF_Start_Request&id=form_42704&iframe=1";
 
     var env = document.getElementById("pmArEnv");
-    var rawUserId = (env && env.getAttribute("data-userid")) || "";
-    var displayName = (env && env.getAttribute("data-username")) || "";
-    var csrfToken = (env && env.getAttribute("data-csrf")) || "";
-    var nameEl = document.getElementById("pmArUserName");
-    var spinnerEl = document.getElementById("pmArSpinner");
-    var submitBtn = document.getElementById("pmArSubmitBtn");
-    var errorEl = document.getElementById("pmArError");
-    var formEl = document.getElementById("pmArForm");
+    var userId = (env && env.getAttribute("data-userid")) || "";
+
+    var openBtn = document.getElementById("pmArOpenBtn");
+    var closeBtn = document.getElementById("pmArCloseBtn");
+    var modal = document.getElementById("pmArModal");
+    var frame = document.getElementById("pmArFrame");
+    var defaultEl = document.getElementById("pmArDefault");
     var successEl = document.getElementById("pmArSuccess");
 
-    // resolvedValue starts as userID — best available identifier for indicator 104
-    var resolvedValue = rawUserId || displayName || "";
+    // Pre-fill indicator 104 with the user's ID via URL param
+    var formUrl =
+      FORM_URL + (userId ? "&104=" + encodeURIComponent(userId) : "");
 
-    // Show name immediately
-    nameEl.textContent = displayName || rawUserId || "Current user";
-    spinnerEl.style.display = "none";
-
-    // Convert submit button from <a> to <button> behaviour
-    submitBtn.removeAttribute("href");
-    submitBtn.setAttribute("type", "button");
-
-    // Best-effort orgchart upgrade — non-blocking, silently improves resolvedValue
-    var searchTerm = rawUserId || displayName;
-    if (searchTerm) {
-      fetch(
-        BASE +
-          "/api/orgchart?search=" +
-          encodeURIComponent(searchTerm) +
-          "&limit=5",
-        {
-          credentials: "include",
-          headers: { "x-requested-with": "XMLHttpRequest" },
-        },
-      )
-        .then(function (r) {
-          return r.ok ? r.json() : null;
-        })
-        .then(function (data) {
-          if (!data) return;
-          var records = Array.isArray(data) ? data : Object.values(data);
-          var match =
-            records.find(function (rec) {
-              return (
-                String(rec.empUID || "").toLowerCase() ===
-                  rawUserId.toLowerCase() ||
-                String(rec.userName || "").toLowerCase() ===
-                  rawUserId.toLowerCase()
-              );
-            }) || records[0];
-          if (!match) return;
-          var parts = [match.firstName, match.lastName].filter(Boolean);
-          var fullName = match.name || (parts.length ? parts.join(" ") : "");
-          if (fullName && fullName.trim()) nameEl.textContent = fullName.trim();
-          var better =
-            match.userName || (match.empUID ? String(match.empUID) : "");
-          if (better) resolvedValue = better;
-        })
-        .catch(function () {}); // silent — rawUserId fallback is fine
+    function openModal() {
+      frame.src = formUrl;
+      modal.classList.add("is-open");
+      document.body.style.overflow = "hidden";
+      closeBtn.focus();
     }
 
-    // ── Submit handler ─────────────────────────────────────────────────────
-    submitBtn.addEventListener("click", async function () {
-      errorEl.textContent = "";
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Submitting…";
+    function closeModal() {
+      modal.classList.remove("is-open");
+      document.body.style.overflow = "";
+      frame.src = "about:blank";
+      openBtn.focus();
+    }
 
+    openBtn.addEventListener("click", openModal);
+    closeBtn.addEventListener("click", closeModal);
+
+    // Close on backdrop click
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal) closeModal();
+    });
+
+    // Close on Escape
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && modal.classList.contains("is-open"))
+        closeModal();
+    });
+
+    // Detect submission: iframe navigates away from LEAF_Start_Request to printview
+    frame.addEventListener("load", function () {
       try {
-        // Step 1: Create the record
-        var fd = new FormData();
-        fd.append("numform_" + FORM_CATEGORY, "1");
-        fd.append(INDICATOR_104, resolvedValue);
-        fd.append("CSRFToken", csrfToken);
-
-        var createResp = await fetch(BASE + "/api/form/new", {
-          method: "POST",
-          credentials: "include",
-          headers: { "x-requested-with": "XMLHttpRequest" },
-          body: fd,
-        });
-
-        var createText = await createResp.text();
-        console.log(
-          "[PM Access Request] Create:",
-          createResp.status,
-          createText.substring(0, 100),
-        );
-
-        if (!createResp.ok)
-          throw new Error("Create failed: HTTP " + createResp.status);
-
-        var newRecordID;
-        try {
-          newRecordID = JSON.parse(createText);
-        } catch (e) {
-          newRecordID = createText;
+        var url = frame.contentWindow && frame.contentWindow.location.href;
+        if (!url || url === "about:blank") return;
+        // If the iframe lands on printview, the form was submitted successfully
+        if (url.indexOf("printview") !== -1 || url.indexOf("a=view") !== -1) {
+          closeModal();
+          defaultEl.hidden = true;
+          successEl.hidden = false;
         }
-        newRecordID = String(newRecordID || "")
-          .trim()
-          .replace(/^"|"$/g, "");
-
-        if (!newRecordID || isNaN(Number(newRecordID))) {
-          throw new Error("Unexpected record ID: " + newRecordID);
-        }
-
-        console.log("[PM Access Request] Created recordID:", newRecordID);
-
-        // Step 2: Advance to step 24
-        var sd = new FormData();
-        sd.append("stepID", SUBMIT_STEP);
-        sd.append("CSRFToken", csrfToken);
-
-        var submitResp = await fetch(
-          BASE + "/api/form/" + encodeURIComponent(newRecordID) + "/submit",
-          {
-            method: "POST",
-            credentials: "include",
-            headers: { "x-requested-with": "XMLHttpRequest" },
-            body: sd,
-          },
-        );
-
-        var submitText = await submitResp.text();
-        console.log(
-          "[PM Access Request] Submit:",
-          submitResp.status,
-          submitText.substring(0, 100),
-        );
-
-        if (!submitResp.ok)
-          throw new Error(
-            "Submit to step " +
-              SUBMIT_STEP +
-              " failed: HTTP " +
-              submitResp.status,
-          );
-
-        // Success
-        formEl.hidden = true;
+      } catch (e) {
+        // Cross-origin load — can't read URL, but this means
+        // the form submitted and navigated away successfully
+        closeModal();
+        defaultEl.hidden = true;
         successEl.hidden = false;
-      } catch (err) {
-        console.error("[PM Access Request] Error:", err.message);
-        errorEl.textContent =
-          "Something went wrong. Please try again or contact your LEAF POC.";
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Request Access";
       }
     });
   })();
