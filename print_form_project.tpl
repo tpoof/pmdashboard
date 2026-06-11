@@ -1117,7 +1117,7 @@
     justify-content: center;
     background: #f4f6f9;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    padding: 24px;
+    padding: 16px;
     box-sizing: border-box;
   }
   #pmAccessRequest .pm-ar-card {
@@ -1125,28 +1125,28 @@
     border: 1px solid #d1d5db;
     border-radius: 10px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    padding: 40px 48px;
-    max-width: 480px;
+    padding: 24px 32px;
+    max-width: 440px;
     width: 100%;
     text-align: center;
   }
   #pmAccessRequest .pm-ar-icon {
-    font-size: 48px;
+    font-size: 40px;
     color: #6b7280;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     display: block;
   }
   #pmAccessRequest h1 {
-    font-size: 1.4rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #111827;
-    margin: 0 0 10px;
+    margin: 0 0 8px;
   }
   #pmAccessRequest .pm-ar-desc {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: #4b5563;
-    line-height: 1.6;
-    margin: 0 0 28px;
+    line-height: 1.5;
+    margin: 0 0 20px;
   }
   #pmAccessRequest .pm-ar-btn {
     width: 100%;
