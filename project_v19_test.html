@@ -1334,47 +1334,33 @@
         var doc =
           frame.contentDocument ||
           (frame.contentWindow && frame.contentWindow.document);
-        if (!doc) return;
-
-        // DEBUG: log all IDs and classes on body children to find the header element
-        var bodyChildren = doc.body ? doc.body.children : [];
-        console.group("[PM Access Request] iframe DOM — find header element");
-        for (var i = 0; i < Math.min(bodyChildren.length, 10); i++) {
-          var el = bodyChildren[i];
-          console.log(
-            i,
-            el.tagName,
-            "id:",
-            el.id || "(none)",
-            "class:",
-            el.className || "(none)",
-          );
-        }
-        // Also log any element with 'header' in id or class
-        var all = doc.querySelectorAll(
-          "[id*='header'],[id*='Header'],[id*='nav'],[id*='Nav'],[class*='header'],[class*='Header']",
-        );
-        console.log("Elements with header/nav in id/class:");
-        all.forEach(function (el) {
-          console.log(" ", el.tagName, "id:", el.id, "class:", el.className);
-        });
-        console.groupEnd();
-
+        if (!doc || !doc.head) return;
         if (doc.getElementById("pm-ar-header-suppress")) return;
+
         var style = doc.createElement("style");
         style.id = "pm-ar-header-suppress";
+        // From main.tpl: header is <header id="header">, footer is <footer id="footer">
+        // Also hide the nav-skip-link and menu
         style.textContent = [
-          "#header, #siteHeader, .siteHeader, #leafHeader, .leaf-header,",
-          "#topNav, .topNav, #mainNav, .site-header, #site-header,",
-          "header.main, nav.main-nav, #headerWrap, .headerWrap,",
-          "#globalHeader, .globalHeader { display: none !important; }",
+          "header#header,",
+          "#header,",
+          "#footer,",
+          "#nav-skip-link,",
+          "footer { display: none !important; }",
+          "body, main#body, #content, #bodyarea {",
+          "  margin-top: 0 !important;",
+          "  padding-top: 0 !important;",
+          "}",
         ].join("\n");
         doc.head.appendChild(style);
-        var headerEl = doc.getElementById("header");
-        if (headerEl) headerEl.style.display = "none";
-      } catch (e) {
-        console.log("[PM Access Request] suppressHeader error:", e.message);
-      }
+
+        // Also directly hide via JS in case CSS specificity loses
+        var ids = ["header", "footer", "nav-skip-link"];
+        ids.forEach(function (id) {
+          var el = doc.getElementById(id);
+          if (el) el.style.setProperty("display", "none", "important");
+        });
+      } catch (e) {}
     }
 
     function openModal() {
