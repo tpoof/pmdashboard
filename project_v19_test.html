@@ -1344,7 +1344,10 @@
     var defaultEl = document.getElementById("pmArDefault");
     var successEl = document.getElementById("pmArSuccess");
 
+    var frameLoaded = false; // true after initial form load — subsequent loads = submission
+
     function openModal() {
+      frameLoaded = false;
       frame.src = FORM_URL;
       modal.classList.add("is-open");
       document.body.style.overflow = "hidden";
@@ -1352,6 +1355,7 @@
     }
 
     function closeModal() {
+      frameLoaded = false;
       modal.classList.remove("is-open");
       document.body.style.overflow = "";
       frame.src = "about:blank";
@@ -1368,20 +1372,33 @@
         closeModal();
     });
 
-    // Detect submission: iframe navigates to printview or view after submit
     frame.addEventListener("load", function () {
       var frameUrl = "";
       try {
         frameUrl =
           (frame.contentWindow && frame.contentWindow.location.href) || "";
       } catch (e) {
-        // Cross-origin after submit — show success
-        closeModal();
-        defaultEl.hidden = true;
-        successEl.hidden = false;
+        // Cross-origin — only treat as success if the form was already loaded once
+        if (frameLoaded) {
+          closeModal();
+          defaultEl.hidden = true;
+          successEl.hidden = false;
+        }
         return;
       }
-      if (!frameUrl || frameUrl === "about:blank") return;
+
+      if (!frameUrl || frameUrl === "about:blank") {
+        frameLoaded = false;
+        return;
+      }
+
+      // First load — the form itself — mark as loaded and wait
+      if (!frameLoaded) {
+        frameLoaded = true;
+        return;
+      }
+
+      // Subsequent load after the form was already showing = submission navigation
       if (
         frameUrl.indexOf("printview") !== -1 ||
         frameUrl.indexOf("a=view") !== -1
