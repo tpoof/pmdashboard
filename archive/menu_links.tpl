@@ -59,9 +59,9 @@
 
 <ul id="headerMenu_links_list">
     <li>
-        <a href="{$orgchartPath}" target="_blank" rel="noopener noreferrer" class="leafDashBtn leafDashBtn--primary" role="button">
-            <span class="leafDashBtn__title">LEAF Nexus</span>
-            <span class="leafDashBtn__desc">Org. Charts and Employee Information for your facility</span>
+        <a href="report.php?a=help" class="leafDashBtn leafDashBtn--primary" role="button">
+            <span class="leafDashBtn__title">Dashboard Help &amp; Instructions</span>
+            <span class="leafDashBtn__desc">How to use the Project Dashboard — features, workflows, and tips</span>
         </a>
     </li>
     <li>
