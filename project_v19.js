@@ -10433,6 +10433,8 @@
           [8, 9, 10, 44, 11, 12, 13, 14, 16, 17, 18, 30, 39, 47],
         );
       });
+      state.projectsAll = projectRows.map(normalizeProject);
+
       state.projectsVersion = (state.projectsVersion || 0) + 1;
       state.cache.projects = new Map();
       state.renderState.projectsSig = "";
