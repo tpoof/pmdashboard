@@ -10381,6 +10381,7 @@
       projectsQuery.setExtraParams("&x-filterData=recordID,date");
 
       var tasksQuery = new LeafFormQuery();
+      tasksQuery.addTerm("categoryID", "=", "form_9b302");
       tasksQuery.addTerm("deleted", "=", "0");
       tasksQuery.getData([
         TASK_IND.projectKey,
