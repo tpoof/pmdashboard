@@ -1,0 +1,552 @@
+/* =========================================================================
+   LEAF Project Dashboard — Help & Reference page styles
+   All selectors are scoped under `help-` to avoid collisions with the
+   dashboard's `pm-*` design system. Colors, spacing, and radii are pulled
+   from the dashboard's pm-* CSS variables (with fallbacks so this page
+   still looks right when opened standalone).
+   ========================================================================= */
+
+.help-body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Arial,
+    sans-serif;
+  background: var(--bg, #f4f6f9);
+  color: var(--text, #1f2933);
+}
+
+.help-srOnly {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Visible-on-focus skip link for keyboard users — lets them jump past
+   the sidebar straight to the main content. */
+.help-skipLink {
+  position: absolute;
+  top: -40px;
+  left: var(--space-3, 12px);
+  z-index: 2000;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm, 10px);
+  background: var(--accent-strong, #1d4ed8);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+  transition: top 0.1s ease;
+}
+
+.help-skipLink:focus {
+  top: var(--space-3, 12px);
+  outline: 2px solid var(--focus, #0b5cab);
+  outline-offset: 2px;
+}
+
+/* Respect reduced-motion preferences for jump-link and back-to-top
+   scrolling. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ── Layout shell ───────────────────────────────────────────────────── */
+
+.help-shell {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: var(--space-5, 24px);
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-5, 24px);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .help-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Sidebar ────────────────────────────────────────────────────────── */
+
+.help-sidebar {
+  position: sticky;
+  top: var(--space-5, 24px);
+  align-self: start;
+  max-height: calc(100vh - var(--space-6, 32px) * 2);
+  overflow-y: auto;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #dbe1e8);
+  border-radius: var(--radius-lg, 16px);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(16, 24, 40, 0.08));
+}
+
+@media (max-width: 900px) {
+  .help-sidebar {
+    position: static;
+    max-height: none;
+  }
+}
+
+.help-sidebarInner {
+  padding: var(--space-5, 24px);
+}
+
+.help-brand {
+  margin-bottom: var(--space-4, 16px);
+}
+
+.help-brandTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--text, #1f2933);
+}
+
+.help-brandSub {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted, #3f4a57);
+}
+
+.help-searchWrap {
+  margin-bottom: var(--space-4, 16px);
+}
+
+.help-searchInput {
+  width: 100%;
+  height: 38px;
+  box-sizing: border-box;
+  border: 1px solid var(--border, #dbe1e8);
+  border-radius: var(--radius-sm, 10px);
+  padding: 8px 12px;
+  font-size: 13px;
+  background: var(--surface, #ffffff);
+  color: var(--text, #1f2933);
+  outline: none;
+}
+
+.help-searchInput:focus-visible {
+  outline: 2px solid var(--focus, #0b5cab);
+  outline-offset: 2px;
+}
+
+.help-navList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.help-navItem.is-hidden {
+  display: none;
+}
+
+.help-navLink {
+  display: block;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm, 10px);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text, #1f2933);
+  text-decoration: none;
+}
+
+.help-navLink:hover {
+  background: var(--accent-soft, #e7efff);
+  color: var(--accent-strong, #1d4ed8);
+}
+
+.help-navLink.is-active {
+  background: var(--accent-soft, #e7efff);
+  color: var(--accent-strong, #1d4ed8);
+}
+
+.help-navLink:focus-visible,
+.help-navSubLink:focus-visible {
+  outline: 2px solid var(--focus, #0b5cab);
+  outline-offset: 2px;
+}
+
+.help-navSubList {
+  list-style: none;
+  margin: 4px 0 8px;
+  padding: 0 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.help-navSubLink {
+  display: block;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm, 10px);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted, #3f4a57);
+  text-decoration: none;
+}
+
+.help-navSubLink:hover {
+  background: var(--accent-soft, #e7efff);
+  color: var(--accent-strong, #1d4ed8);
+}
+
+.help-navSubLink.is-active {
+  background: var(--accent-soft, #e7efff);
+  color: var(--accent-strong, #1d4ed8);
+}
+
+.help-navEmpty {
+  margin: var(--space-2, 8px) 4px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted, #3f4a57);
+}
+
+/* ── Main content ───────────────────────────────────────────────────── */
+
+.help-main {
+  min-width: 0;
+}
+
+.help-pageHeader {
+  margin-bottom: var(--space-5, 24px);
+}
+
+.help-pageTitle {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text, #1f2933);
+}
+
+.help-pageSub {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted, #3f4a57);
+}
+
+.help-section {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #dbe1e8);
+  border-radius: var(--radius-lg, 16px);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(16, 24, 40, 0.08));
+  padding: var(--space-5, 24px);
+  margin-bottom: var(--space-5, 24px);
+  scroll-margin-top: var(--space-4, 16px);
+}
+
+.help-sectionTitle {
+  margin: 0 0 var(--space-3, 12px);
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--text, #1f2933);
+  scroll-margin-top: var(--space-4, 16px);
+}
+
+.help-subTitle {
+  margin: var(--space-5, 24px) 0 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text, #1f2933);
+  scroll-margin-top: var(--space-4, 16px);
+}
+
+.help-section h3.help-subTitle:first-of-type {
+  margin-top: var(--space-4, 16px);
+}
+
+.help-section p {
+  margin: 0 0 var(--space-3, 12px);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text, #1f2933);
+}
+
+.help-section p:last-child {
+  margin-bottom: 0;
+}
+
+.help-inlineLink {
+  color: var(--accent-strong, #1d4ed8);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.help-inlineLink:focus-visible {
+  outline: 2px solid var(--focus, #0b5cab);
+  outline-offset: 2px;
+}
+
+/* Sections and sub-headings are programmatically focused after a jump
+   link click, so keyboard/AT users land in the right place. Give them
+   a subtle focus ring without the heavy default outline. */
+.help-section:focus-visible,
+.help-subTitle:focus-visible {
+  outline: 2px solid var(--focus, #0b5cab);
+  outline-offset: 4px;
+}
+
+/* ── Callout boxes ──────────────────────────────────────────────────── */
+
+.help-callout {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border: 1px solid var(--border, #dbe1e8);
+  border-radius: var(--radius-md, 12px);
+  background: var(--surface-alt, #f8fafc);
+  padding: var(--space-4, 16px);
+  margin: var(--space-4, 16px) 0;
+}
+
+.help-callout p {
+  margin: 0 0 6px;
+}
+
+.help-callout p:last-child {
+  margin-bottom: 0;
+}
+
+.help-calloutIcon {
+  font-size: 20px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.help-calloutBody {
+  min-width: 0;
+}
+
+.help-calloutTitle {
+  font-weight: 900;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted, #3f4a57);
+}
+
+/* Tip — lightbulb */
+.help-callout--tip {
+  border-color: #aacdec;
+  background: var(--accent-soft, #e7efff);
+}
+
+.help-callout--tip .help-calloutTitle {
+  color: var(--accent-strong, #1d4ed8);
+}
+
+.help-callout--tip .help-calloutIcon {
+  color: var(--accent-strong, #1d4ed8);
+}
+
+/* Watch out — warning */
+.help-callout--warn {
+  border-color: #e6c74c;
+  background: #fff8e1;
+}
+
+.help-callout--warn .help-calloutTitle {
+  color: #8a6500;
+}
+
+.help-callout--warn .help-calloutIcon {
+  color: #8a6500;
+}
+
+/* Prominent warning — extra emphasis */
+.help-callout--prominent {
+  border-width: 2px;
+  border-color: #b00020;
+  background: #fdecec;
+}
+
+.help-callout--prominent .help-calloutTitle {
+  color: #b00020;
+  font-size: 13px;
+}
+
+.help-callout--prominent .help-calloutIcon {
+  color: #b00020;
+}
+
+/* You'll see this when… — visibility */
+.help-callout--seen {
+  border-color: var(--border, #dbe1e8);
+  background: var(--surface-alt, #f8fafc);
+}
+
+.help-callout--seen .help-calloutTitle {
+  color: var(--muted, #3f4a57);
+}
+
+.help-callout--seen .help-calloutIcon {
+  color: var(--muted, #3f4a57);
+}
+
+/* ── Inline icon references ────────────────────────────────────────── */
+/* These reuse the same Google Material Icons font as the dashboard's
+   `material-icons` glyphs (edit, language, change_circle, etc.). */
+
+.help-icon {
+  display: inline-block;
+  font-size: 18px;
+  line-height: 1;
+  vertical-align: middle;
+  color: var(--muted, #3f4a57);
+}
+
+/* Red workflow-alert icon — mirrors the dashboard's
+   .pm-workflowAlert--red (material-icons "warning" in #d32f2f). */
+.help-iconWarning {
+  display: inline-block;
+  font-size: 16px;
+  line-height: 1;
+  vertical-align: middle;
+  margin-right: 2px;
+  color: #d32f2f;
+}
+
+.help-tipIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ── Keyboard keys ──────────────────────────────────────────────────── */
+
+.help-kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--border, #dbe1e8);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface-alt, #f8fafc);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text, #1f2933);
+}
+
+/* ── Ticket chips (source color reference) ─────────────────────────── */
+
+.help-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: var(--radius-sm, 10px);
+  font-weight: 700;
+  font-size: 12px;
+  border: 1px solid currentColor;
+}
+
+.help-chip--support {
+  color: var(--accent-strong, #1d4ed8);
+}
+
+.help-chip--ux {
+  /* Darkened from --ticket-ux (#b26a00) to meet 4.5:1 text contrast on
+     a white background while keeping the same amber hue. */
+  color: #8a5200;
+}
+
+/* ── Tips & gotchas list ────────────────────────────────────────────── */
+
+.help-tipList {
+  list-style: none;
+  margin: var(--space-3, 12px) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+}
+
+.help-tipItem {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border: 1px solid var(--border, #dbe1e8);
+  border-radius: var(--radius-md, 12px);
+  background: var(--surface-alt, #f8fafc);
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+}
+
+.help-tipTitle {
+  margin: 0 0 4px;
+  font-weight: 900;
+  font-size: 13px;
+  color: var(--text, #1f2933);
+}
+
+.help-tipItem p {
+  margin: 0 0 4px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.help-tipItem p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Back to top ────────────────────────────────────────────────────── */
+
+.help-jumpTop {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid var(--border, #dbe1e8);
+  background: var(--surface, #ffffff);
+  color: var(--text, #1f2933);
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md, 0 6px 16px rgba(15, 23, 42, 0.12));
+  z-index: 1200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.help-jumpTop.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.help-jumpTop:hover {
+  background: var(--surface-alt, #f8fafc);
+}
+
+.help-jumpTop:focus-visible {
+  outline: 2px solid var(--focus, #0b5cab);
+  outline-offset: 2px;
+}
+
+.help-jumpTop .material-icons {
+  font-size: 22px;
+}

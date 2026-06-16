@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
+    <link rel="stylesheet" href="./files/help.css" />
+  </head>
+  <body class="help-body">
+    <a href="#helpMain" class="help-skipLink">Skip to main content</a>
+
+    <div class="help-shell">
+      <!-- ============ SIDEBAR ============ -->
+      <nav class="help-sidebar" aria-label="Help topics">
+        <div class="help-sidebarInner">
+          <div class="help-brand">
+            <p class="help-brandTitle">Project Dashboard Help</p>
+            <p class="help-brandSub">Last Updated: 6/12/26</p>
+          </div>
+
+          <div class="help-searchWrap">
+            <label for="helpSearchInput" class="help-srOnly"
+              >Search help topics</label
+            >
+            <input
+              type="search"
+              id="helpSearchInput"
+              class="help-searchInput"
+              placeholder="Search topics…"
+              autocomplete="off"
+            />
+          </div>
+
+          <ul class="help-navList" id="helpNavList">
+            <li
+              class="help-navItem"
+              data-keywords="getting started access login replay tour walkthrough"
+            >
+              <a href="#getting-started" class="help-navLink"
+                >1. Getting Started</a
+              >
+            </li>
+            <li
+              class="help-navItem"
+              data-keywords="add menu project task recurring task objective key result"
+            >
+              <a href="#add-menu" class="help-navLink">2. The Add Menu</a>
+            </li>
+            <li
+              class="help-navItem"
+              data-keywords="filters activity multi-select status assigned to category priority date range persist"
+            >
+              <a href="#filters-activity" class="help-navLink"
+                >3. Filters &amp; Activity</a
+              >
+            </li>
+            <li
+              class="help-navItem"
+              data-keywords="views tasks tab table kanban drag gantt timeline"
+            >
+              <a href="#views-tasks" class="help-navLink"
+                >4. Views — Tasks Tab</a
+              >
+            </li>
+            <li
+              class="help-navItem"
+              data-keywords="inline editing pencil editor save cancel enter esc shift dropdown red warning workflow"
+            >
+              <a href="#inline-editing" class="help-navLink"
+                >5. Inline Editing</a
+              >
+            </li>
+            <li
+              class="help-navItem"
+              data-keywords="inside a project national managed services phases hub globe percent complete notes attachments"
+            >
+              <a href="#inside-project" class="help-navLink"
+                >6. Inside a Project</a
+              >
+              <ul class="help-navSubList">
+                <li>
+                  <a href="#project-national" class="help-navSubLink"
+                    >A. National / Managed Services</a
+                  >
+                </li>
+                <li>
+                  <a href="#project-other" class="help-navSubLink"
+                    >B. All Other Projects</a
+                  >
+                </li>
+                <li>
+                  <a href="#project-modal" class="help-navSubLink"
+                    >C. Project View Modal</a
+                  >
+                </li>
+                <li>
+                  <a href="#project-percent" class="help-navSubLink"
+                    >D. % Complete Column</a
+                  >
+                </li>
+                <li>
+                  <a href="#project-notes" class="help-navSubLink"
+                    >E. Notes &amp; Attachments</a
+                  >
+                </li>
+              </ul>
+            </li>
+            <li
+              class="help-navItem"
+              data-keywords="analytics tab charts year quarter filter ticket transfers chart"
+            >
+              <a href="#analytics" class="help-navLink">7. Analytics Tab</a>
+            </li>
+            <li
+              class="help-navItem"
+              data-keywords="okrs objectives key results gotcha"
+            >
+              <a href="#okrs" class="help-navLink">8. OKRs</a>
+            </li>
+            <li
+              class="help-navItem"
+              data-keywords="transfers ux support ideas ticket chip color site original ticket"
+            >
+              <a href="#transfers" class="help-navLink">9. Transfers</a>
+            </li>
+            <li
+              class="help-navItem"
+              data-keywords="tips gotchas recurring inline editing dropdown limitation filters persist red warning"
+            >
+              <a href="#tips-gotchas" class="help-navLink"
+                >10. Tips &amp; Gotchas</a
+              >
+            </li>
+          </ul>
+
+          <p class="help-navEmpty" id="helpNavEmpty" hidden>
+            No topics match your search.
+          </p>
+        </div>
+      </nav>
+
+      <!-- ============ MAIN CONTENT ============ -->
+      <main class="help-main" id="helpMain" tabindex="-1">
+        <header class="help-pageHeader">
+          <h1 class="help-pageTitle">
+            LEAF Project Dashboard — Help &amp; Reference
+          </h1>
+          <p class="help-pageSub">
+            A quick reference for everything you'll see and use on the Project
+            Dashboard.
+          </p>
+        </header>
+
+        <!-- ===================== 1. GETTING STARTED ===================== -->
+        <section class="help-section" id="getting-started" tabindex="-1">
+          <h2 class="help-sectionTitle">1. Getting Started</h2>
+
+          <p>
+            The <strong>Project Dashboard</strong> is the internal project
+            management hub for tracking Projects, Tasks, Objectives &amp; Key
+            Results (OKRs), and overall team activity. It brings together table,
+            Kanban, and Gantt views alongside an Analytics tab for at-a-glance
+            reporting.
+          </p>
+
+          <p>
+            You'll access it the same way as any other LEAF programmer page —
+            through your team's Launchpad link or a direct dashboard URL
+            provided by your LEAF point of contact.
+          </p>
+
+          <h3 class="help-subTitle">Replaying the tour</h3>
+          <p>
+            Look for the circular <strong>Help</strong> button (a "?" icon) near
+            the top of the page. Clicking it any time relaunches the same
+            step-by-step walkthrough — handy if you want a refresher or you're
+            showing a teammate around.
+          </p>
+
+          <div class="help-callout help-callout--seen">
+            <span class="material-icons help-calloutIcon" aria-hidden="true"
+              >visibility</span
+            >
+            <div class="help-calloutBody">
+              <p class="help-calloutTitle">You'll see this when…</p>
+              <p>
+                …a dimmed overlay appears with a highlighted spotlight box and a
+                small tooltip card — use <strong>Next</strong> /
+                <strong>Back</strong> to move between steps, or
+                <strong>Skip</strong> / <kbd class="help-kbd">Esc</kbd> to exit.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== 2. THE ADD MENU ===================== -->
+        <section class="help-section" id="add-menu" tabindex="-1">
+          <h2 class="help-sectionTitle">2. The Add Menu</h2>
+
+          <p>
+            The <strong>+ Add</strong> button opens a dropdown menu for creating
+            new records without leaving the dashboard. Each option opens the
+            matching LEAF form so you can fill in details and submit.
+          </p>
+
+          <h3 class="help-subTitle">+ Project</h3>
+          <p>
+            Starts a new Project record. Use this for any new body of work that
+            will have its own tasks, timeline, and (optionally) a Customer
+            Project Hub.
+          </p>
+
+          <h3 class="help-subTitle">+ Task</h3>
+          <p>
+            Starts a new Task record. Tasks can be linked to a Project, assigned
+            to a teammate, and tracked through the Table, Kanban, or Gantt
+            views.
+          </p>
+
+          <h3 class="help-subTitle">+ Recurring Task</h3>
+          <p>
+            Sets up a task that repeats on its own. You configure it once, and
+            the next copy is auto-generated whenever the current one is marked
+            complete — no manual re-entry needed.
+          </p>
+
+          <div class="help-callout help-callout--tip">
+            <span class="material-icons help-calloutIcon" aria-hidden="true"
+              >lightbulb</span
+            >
+            <div class="help-calloutBody">
+              <p class="help-calloutTitle">Tip</p>
+              <p>
+                Recurring tasks display a small
+                <span class="material-icons help-icon" aria-hidden="true"
+                  >change_circle</span
+                >
+                icon next to the title so you can spot them at a glance in the
+                table and on Kanban cards.
+              </p>
+            </div>
+          </div>
+
+          <h3 class="help-subTitle">+ Objective</h3>
+          <p>
+            Starts a new Objective record — the higher-level goal that Key
+            Results and the Projects/Tasks tied to them roll up into.
+          </p>
+
+          <h3 class="help-subTitle">+ Key Result</h3>
+          <p>
+            Starts a new Key Result record under an Objective. Key Results are
+            the measurable outcomes that Projects and Tasks count against (see
+            <a href="#okrs" class="help-inlineLink">OKRs</a> below).
+          </p>
+        </section>
+
+        <!-- ===================== 3. FILTERS & ACTIVITY ===================== -->
+        <section class="help-section" id="filters-activity" tabindex="-1">
+          <h2 class="help-sectionTitle">3. Filters &amp; Activity</h2>
+
+          <p>
+            The filter row above each table lets you narrow down what's shown
+            using <strong>multi-select</strong> dropdowns. Click a filter to
+            open its checklist, select one or more values, and the table updates
+            immediately.
+          </p>
+
+          <h3 class="help-subTitle">Available filters</h3>
+          <p>
+            You can filter by <strong>Project</strong>, <strong>Status</strong>,
+            <strong>Assigned To</strong>, <strong>Category</strong>, and
+            <strong>Priority</strong>. Each one supports multiple selections at
+            once, so you can, for example, view only High and Medium priority
+            tasks assigned to two specific people.
+          </p>
+
+          <h3 class="help-subTitle">Activity date range</h3>
+          <p>
+            The <strong>Last 7 / 14 / 30 days</strong> buttons scope
+            activity-based views to a recent window. Use these when you want a
+            quick pulse on what's changed recently rather than the full history.
+          </p>
+
+          <h3 class="help-subTitle">Clearing filters</h3>
+          <p>
+            A <strong>Clear</strong> button resets all active filters back to
+            their defaults in one click, returning the table to its unfiltered
+            state.
+          </p>
+
+          <div class="help-callout help-callout--warn">
+            <span class="material-icons help-calloutIcon" aria-hidden="true"
+              >warning</span
+            >
+            <div class="help-calloutBody">
+              <p class="help-calloutTitle">Watch out</p>
+              <p>
+                Filter selections <strong>persist across sessions</strong> —
+                they're remembered the next time you open the dashboard. If a
+                view looks emptier or different than expected, check the filter
+                row first and hit <strong>Clear</strong>.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== 4. VIEWS — TASKS TAB ===================== -->
+        <section class="help-section" id="views-tasks" tabindex="-1">
+          <h2 class="help-sectionTitle">4. Views — Tasks Tab</h2>
+
+          <p>
+            The Tasks tab offers three ways to look at the same underlying data:
+            <strong>Table</strong>, <strong>Kanban</strong>, and
+            <strong>Gantt</strong>. Switch between them using the view toggle
+            near the top of the tab — your filters carry over automatically.
+          </p>
+
+          <h3 class="help-subTitle">Table view</h3>
+          <p>
+            A sortable, scrollable table of every task matching your current
+            filters. Click a column header to sort by that column; click again
+            to reverse the order.
+          </p>
+
+          <h3 class="help-subTitle">Kanban</h3>
+          <p>
+            Tasks appear as cards grouped into status columns.
+            <strong>Drag a card</strong> to a different column to update its
+            status — the change saves automatically.
+          </p>
+
+          <div class="help-callout help-callout--seen">
+            <span class="material-icons help-calloutIcon" aria-hidden="true"
+              >visibility</span
+            >
+            <div class="help-calloutBody">
+              <p class="help-calloutTitle">You'll see this when…</p>
+              <p>
+                …you can't use a mouse: focus a card and use
+                <kbd class="help-kbd">Shift</kbd> + arrow keys to move it
+                between columns instead of dragging.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            When a card moves into a completed status, its
+            <strong>completion date is stamped automatically</strong> — there's
+            nothing extra to fill in.
+          </p>
+
+          <h3 class="help-subTitle">Gantt</h3>
+          <p>
+            Each row shows a task's name and dates, with a horizontal bar
+            representing its timeline. Bar color reflects
+            <strong>priority</strong> — red for High, yellow for Medium, blue
+            for Low, and gray when no priority is set.
+          </p>
+        </section>
+
+        <!-- ===================== 5. INLINE EDITING ===================== -->
+        <section class="help-section" id="inline-editing" tabindex="-1">
+          <h2 class="help-sectionTitle">5. Inline Editing</h2>
+
+          <p>
+            Many table columns can be edited right from the dashboard — no need
+            to open the full LEAF record. Look for the
+            <span class="material-icons help-icon" aria-hidden="true"
+              >edit</span
+            >
+            <strong>pencil icon</strong> in a column header: only those columns
+            are editable. Columns without the pencil are intentionally locked
+            due to the nature of the content.
+          </p>
+
+          <p>
+            Click any cell in an editable column to open its inline editor in
+            place.
+          </p>
+
+          <div class="help-callout help-callout--warn help-callout--prominent">
+            <span class="material-icons help-calloutIcon" aria-hidden="true"
+              >warning</span
+            >
+            <div class="help-calloutBody">
+              <p class="help-calloutTitle">
+                Save &amp; Cancel keys — read this first
+              </p>
+              <p>
+                <kbd class="help-kbd">Enter</kbd> saves your change.
+                <kbd class="help-kbd">Esc</kbd> cancels and discards it. For
+                multi-line fields, use <kbd class="help-kbd">Shift</kbd> +
+                <kbd class="help-kbd">Enter</kbd> to add a new line — plain
+                <kbd class="help-kbd">Enter</kbd> in a multi-line field will
+                <strong>not</strong> save; it just adds a line break.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Inline changes write directly to the
+            <strong>LEAF record</strong> for that field — there's no separate
+            "draft" state. Once saved, the record is updated immediately.
+          </p>
+
+          <div class="help-callout help-callout--warn">
+            <span class="material-icons help-calloutIcon" aria-hidden="true"
+              >warning</span
+            >
+            <div class="help-calloutBody">
+              <p class="help-calloutTitle">Watch out — dropdown limitation</p>
+              <p>
+                If a dropdown option has
+                <strong>never been selected before</strong> (for example, a new
+                fiscal year like "FY30"), it won't appear in the inline
+                dropdown's choices yet.
+              </p>
+              <p>
+                <strong>Workaround:</strong> open the LEAF record directly and
+                select the new option there once. After that, it'll appear in
+                the inline dropdown going forward.
+              </p>
+            </div>
+          </div>
+
+          <h3 class="help-subTitle">Red workflow warning icon</h3>
+          <div class="help-callout help-callout--seen">
+            <span class="material-icons help-calloutIcon" aria-hidden="true"
+              >visibility</span
+            >
+            <div class="help-calloutBody">
+              <p class="help-calloutTitle">You'll see this when…</p>
+              <p>
+                <span class="material-icons help-iconWarning" aria-hidden="true"
+                  >warning</span
+                >
+                …a red warning icon appears in the
+                <strong>Status</strong> column when a record's status is marked
+                <strong>Complete</strong> or <strong>Cancelled</strong>, but the
+                underlying LEAF workflow is still open. This needs to be
+                resolved in the workflow itself — updating the status here alone
+                won't close it out.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== 6. INSIDE A PROJECT ===================== -->
+        <section class="help-section" id="inside-project" tabindex="-1">
+          <h2 class="help-sectionTitle">6. Inside a Project</h2>
+          <p>
+            Every Project follows one of two workflows depending on its type.
+            Knowing which one applies tells you what steps to expect.
+          </p>
+
+          <h3 class="help-subTitle" id="project-national" tabindex="-1">
+            A. National / Managed Services Workflow
+          </h3>
+          <p>
+            Route: <strong>Project Phases 1–5</strong> →
+            <strong>Project Closure/Documentation</strong> →
+            <strong>PO Review</strong>.
+          </p>
+          <p>
+            The five phases progressively build out the
+            <strong>Customer Project Hub</strong> — a read-only, customer-facing
+            status page for the project.
+          </p>
+
+          <div class="help-callout help-callout--seen">
+            <span class="material-icons help-calloutIcon" aria-hidden="true"
+              >visibility</span
+            >
+            <div class="help-calloutBody">
+              <p class="help-calloutTitle">You'll see this when…</p>
+              <p>
+                <span class="material-icons help-icon" aria-hidden="true"
+                  >language</span
+                >
+                …a <strong>globe icon</strong> appears next to a project's name
+                in the Projects table — it means a Customer Project Hub has been
+                created for that project. Click it to open the Hub in a new tab.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            To fill out the content shown on the Hub page, use the
+            <strong>internal use forms</strong> attached to the Project record —
+            that's where Hub-facing details are entered.
+          </p>
+
+          <h3 class="help-subTitle" id="project-other" tabindex="-1">
+            B. All Other Projects Workflow
+          </h3>
+          <p>
+            Route: <strong>Start Project</strong> →
+            <strong>Project Closure/Documentation</strong> →
+            <strong>PO Review</strong>.
+          </p>
+          <p>
+            There's no phase progression for these projects — they move straight
+            from kickoff to closure without the five-phase Hub-building process.
+          </p>
+
+          <h3 class="help-subTitle" id="project-modal" tabindex="-1">
+            C. Project View Modal
+          </h3>
+          <p>
+            Click anywhere on a project's row in the Projects table to open its
+            <strong>view modal</strong>, which lists every task currently
+            assigned to that project.
+          </p>
+          <p>
+            The <strong>+ Task</strong> button inside the modal automatically
+            captures the project for you — there's no need to manually select it
+            in the new task's form.
+          </p>
+
+          <h3 class="help-subTitle" id="project-percent" tabindex="-1">
+            D. % Complete Column
+          </h3>
+          <p>
+            This column is <strong>auto-calculated</strong> from the completed
+            tasks assigned to the project — you don't set it manually.
+          </p>
+          <p>
+            When every assigned task is done, the column reaches
+            <strong>100%</strong> and the project's status automatically updates
+            to <strong>Completed</strong>.
+          </p>
+
+          <div class="help-callout help-callout--tip">
+            <span class="material-icons help-calloutIcon" aria-hidden="true"
+              >lightbulb</span
+            >
+            <div class="help-calloutBody">
+              <p class="help-calloutTitle">Best practice</p>
+              <p>
+                Add all known tasks to a project up front — even ones you
+                haven't started — so the % Complete figure reflects real
+                progress instead of an inflated percentage based on a partial
+                task list.
+              </p>
+            </div>
+          </div>
+
+          <h3 class="help-subTitle" id="project-notes" tabindex="-1">
+            E. Notes &amp; Attachments
+          </h3>
+          <p>
+            Both Project and Task LEAF forms include an
+            <strong>internal use form for Notes &amp; Attachments</strong>. Use
+            it to store files, context notes, and running updates tied to that
+            specific record — a good place for anything that doesn't belong in a
+            dashboard-facing field.
+          </p>
+        </section>
+
+        <!-- ===================== 7. ANALYTICS TAB ===================== -->
+        <section class="help-section" id="analytics" tabindex="-1">
+          <h2 class="help-sectionTitle">7. Analytics Tab</h2>
+
+          <p>
+            The Analytics tab turns your Projects, Tasks, and OKR data into
+            charts so you can spot trends, overdue items, and overall health
+            without digging through tables row by row.
+          </p>
+
+          <h3 class="help-subTitle">What the charts show</h3>
+          <p>
+            You'll find charts covering things like task status breakdowns,
+            project health at a glance, overdue tasks, and OKR progress. Click
+            into a chart where available to drill down into the underlying
+            records.
+          </p>
+
+          <h3 class="help-subTitle">Year / Quarter filters</h3>
+          <p>
+            Use the year and quarter controls above the charts to scope the data
+            to a specific period — useful for quarterly reviews or
+            year-over-year comparisons.
+          </p>
+
+          <h3 class="help-subTitle">Ticket Transfers chart</h3>
+          <p>
+            At the bottom of the Analytics tab, the
+            <strong>Ticket Transfers</strong> chart tracks the volume of tickets
+            imported from other team sites over time. This is the same activity
+            described in
+            <a href="#transfers" class="help-inlineLink">Transfers</a> below.
+          </p>
+        </section>
+
+        <!-- ===================== 8. OKRS ===================== -->
+        <section class="help-section" id="okrs" tabindex="-1">
+          <h2 class="help-sectionTitle">
+            8. OKRs (Objectives &amp; Key Results)
+          </h2>
+
+          <p>
+            <strong>Objectives</strong> are the high-level goals your team is
+            working toward. <strong>Key Results</strong> are the specific,
+            measurable outcomes that show whether an Objective is being met.
+            Projects and Tasks can be linked to a Key Result so their progress
+            rolls up into the OKR.
+          </p>
+
+          <div class="help-callout help-callout--warn help-callout--prominent">
+            <span class="material-icons help-calloutIcon" aria-hidden="true"
+              >warning</span
+            >
+            <div class="help-calloutBody">
+              <p class="help-calloutTitle">Common gotcha</p>
+              <p>
+                For a task or project to count toward an OKR,
+                <strong>both</strong> the <strong>Objective</strong> field
+                <strong>and</strong> the <strong>Key Result</strong> field must
+                be selected on its form. Selecting only the Objective is not
+                enough — without a Key Result selected, the work isn't counting
+                against anything, even though it may look linked at a glance.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== 9. TRANSFERS ===================== -->
+        <section class="help-section" id="transfers" tabindex="-1">
+          <h2 class="help-sectionTitle">
+            9. Transfers (UX / Support → Dashboard)
+          </h2>
+
+          <p>
+            Transfers bring tickets from the <strong>UX</strong> or
+            <strong>Support</strong> sites into this dashboard as a new
+            <strong>Task</strong> or <strong>Project</strong>, so cross-team
+            work can be tracked in one place.
+          </p>
+
+          <div class="help-callout help-callout--tip">
+            <span class="material-icons help-calloutIcon" aria-hidden="true"
+              >lightbulb</span
+            >
+            <div class="help-calloutBody">
+              <p class="help-calloutTitle">Note</p>
+              <p>
+                The Ideas tab isn't part of this yet — Ideas-site transfers
+                aren't live.
+              </p>
+            </div>
+          </div>
+
+          <h3 class="help-subTitle">Ticket column</h3>
+          <p>
+            If a number appears in the <strong>Ticket</strong> column, that
+            record was imported from another team site rather than created
+            directly in the dashboard.
+          </p>
+
+          <div class="help-callout help-callout--seen">
+            <span class="material-icons help-calloutIcon" aria-hidden="true"
+              >visibility</span
+            >
+            <div class="help-calloutBody">
+              <p class="help-calloutTitle">You'll see this when…</p>
+              <p>
+                …hovering over the ticket chip shows which site it came from.
+                Chips are color-coded by source:
+                <span class="help-chip help-chip--support">Support</span> chips
+                are blue, and
+                <span class="help-chip help-chip--ux">UX</span> chips are
+                amber/orange.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Click the ticket number itself to open the
+            <strong>original ticket</strong> on its source site for full detail.
+          </p>
+
+          <h3 class="help-subTitle">Tracking transfer volume</h3>
+          <p>
+            The total volume of transferred tickets over time is trackable in
+            the <a href="#analytics" class="help-inlineLink">Analytics tab</a>,
+            in the Ticket Transfers chart at the bottom of the page.
+          </p>
+        </section>
+
+        <!-- ===================== 10. TIPS & GOTCHAS ===================== -->
+        <section class="help-section" id="tips-gotchas" tabindex="-1">
+          <h2 class="help-sectionTitle">10. Tips &amp; Gotchas</h2>
+          <p>
+            A quick-reference recap of the things people most often ask about.
+          </p>
+
+          <ul class="help-tipList">
+            <li class="help-tipItem">
+              <span
+                class="material-icons help-iconWarning help-tipIcon"
+                aria-hidden="true"
+                >warning</span
+              >
+              <div>
+                <p class="help-tipTitle">Red workflow warning icon</p>
+                <p>
+                  Status says Complete or Cancelled, but the LEAF workflow is
+                  still open. Resolve it in the workflow — see
+                  <a href="#inline-editing" class="help-inlineLink"
+                    >Inline Editing</a
+                  >.
+                </p>
+              </div>
+            </li>
+            <li class="help-tipItem">
+              <span
+                class="material-icons help-icon help-tipIcon"
+                aria-hidden="true"
+                >change_circle</span
+              >
+              <div>
+                <p class="help-tipTitle">Recurring tasks</p>
+                <p>
+                  Don't manually re-create them. The system auto-generates the
+                  next copy as soon as the current one is marked complete — see
+                  <a href="#add-menu" class="help-inlineLink">The Add Menu</a>.
+                </p>
+              </div>
+            </li>
+            <li class="help-tipItem">
+              <span
+                class="material-icons help-icon help-tipIcon"
+                aria-hidden="true"
+                >keyboard</span
+              >
+              <div>
+                <p class="help-tipTitle">Inline editing save keys</p>
+                <p>
+                  <kbd class="help-kbd">Enter</kbd> saves,
+                  <kbd class="help-kbd">Esc</kbd> cancels, and
+                  <kbd class="help-kbd">Shift</kbd> +
+                  <kbd class="help-kbd">Enter</kbd> adds a new line in
+                  multi-line fields — see
+                  <a href="#inline-editing" class="help-inlineLink"
+                    >Inline Editing</a
+                  >.
+                </p>
+              </div>
+            </li>
+            <li class="help-tipItem">
+              <span
+                class="material-icons help-icon help-tipIcon"
+                aria-hidden="true"
+                >lock</span
+              >
+              <div>
+                <p class="help-tipTitle">Inline dropdown limitation</p>
+                <p>
+                  If an option isn't listed yet, select it directly in the LEAF
+                  record first — then it'll appear inline going forward.
+                </p>
+              </div>
+            </li>
+            <li class="help-tipItem">
+              <span
+                class="material-icons help-icon help-tipIcon"
+                aria-hidden="true"
+                >save</span
+              >
+              <div>
+                <p class="help-tipTitle">Filters persist across sessions</p>
+                <p>
+                  If your view looks unexpected when you return, check the
+                  filter row and clear it — see
+                  <a href="#filters-activity" class="help-inlineLink"
+                    >Filters &amp; Activity</a
+                  >.
+                </p>
+              </div>
+            </li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <button
+      type="button"
+      class="help-jumpTop"
+      id="helpJumpTop"
+      aria-label="Back to top"
+      hidden
+    >
+      <span class="material-icons" aria-hidden="true">arrow_upward</span>
+    </button>
+
+    <script src="./files/help.js"></script>
+  </body>
+</html>
