@@ -1,0 +1,183 @@
+/* ============================================================
+   LEAF Universal Nav  |  leaf-nav.css
+   ─────────────────────────────────────────────────────────────
+   Pair with leaf-nav.js, which injects the nav HTML.
+   On any page: <link rel="stylesheet" href="leaf-nav.css">
+                <script src="leaf-nav.js"></script>
+   ============================================================ */
+
+/* ── Nav palette ── */
+:root {
+  --nav-accent: #005ea2;
+  --nav-hl: #1a4480;
+  --nav-hover-bg: #eff6fb;
+  --nav-border: #aacdec;
+  --nav-panel-bg: #fff;
+  --nav-panel-bd: #d9e8f6;
+  --nav-muted: #3d4551;
+  --nav-text: #1b1b1b;
+  --nav-ico-bg: #eff6fb;
+  --nav-r: 5px;
+  --nav-r-lg: 8px;
+}
+
+/* ── Nav shell ── */
+.lp-nav {
+  position: sticky;
+  top: 0;
+  z-index: 300;
+  background: rgba(255, 255, 255, 0.97);
+  border-bottom: 1px solid transparent;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    border-color 0.25s,
+    box-shadow 0.25s;
+}
+.lp-nav.scrolled {
+  border-color: var(--nav-border);
+  box-shadow: 0 2px 16px rgba(0, 10, 60, 0.1);
+}
+.lp-nav-in {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+}
+.lp-nav-links {
+  display: flex;
+  list-style: none;
+  gap: 2px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Dropdown trigger ── */
+.dd-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 13px;
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--nav-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--nav-r);
+  transition:
+    color 0.15s,
+    background 0.15s;
+  white-space: nowrap;
+}
+.dd-trigger:hover,
+.dd-item.open .dd-trigger {
+  color: var(--nav-accent);
+  background: var(--nav-hover-bg);
+}
+.dd-trigger:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+.dd-chevron {
+  font-size: 0.65rem;
+  transition: transform 0.2s;
+  display: inline-block;
+  margin-left: 1px;
+}
+.dd-item.open .dd-chevron {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown item + panel ── */
+.dd-item {
+  position: relative;
+}
+.dd-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--nav-panel-bg);
+  border: 1px solid var(--nav-panel-bd);
+  border-radius: var(--nav-r-lg);
+  box-shadow: 0 8px 32px rgba(0, 10, 60, 0.14);
+  min-width: 260px;
+  padding: 8px;
+  z-index: 400;
+}
+.dd-panel[hidden] {
+  display: none;
+}
+.dd-list {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+}
+
+.dd-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--nav-r);
+  text-decoration: none;
+  color: var(--nav-text);
+  transition: background 0.15s;
+}
+.dd-link:hover {
+  background: #eff6fb;
+}
+.dd-link:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+
+.dd-link-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--nav-r);
+  flex-shrink: 0;
+  background: var(--nav-ico-bg);
+  color: var(--nav-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.dd-link-ico .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+.dd-link-text strong {
+  display: block;
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--nav-hl);
+  margin-bottom: 2px;
+}
+.dd-link-text span {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--nav-muted);
+  line-height: 1.4;
+}
+
+.dd-divider {
+  border: none;
+  border-top: 1px solid var(--nav-panel-bd);
+  margin: 6px 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .lp-nav-links {
+    display: none;
+  }
+}
