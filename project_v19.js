@@ -10354,9 +10354,25 @@
     state.stepIDCache = {};
     _stepIDFetchPending.clear();
     try {
-      // Silent refresh — no visible progress UI, but LeafFormQuery still
-      // handles chunked loading internally for large datasets.
+      // Silent refresh — LeafFormQuery handles chunked loading internally.
+      // stepID != "notSubmitted" excludes in-progress copies (ghost records)
+      // that were initiated via LEAF's copy utility but never completed.
+      var refreshCounts = { projects: 0, tasks: 0, keyResults: 0 };
+
+      function updateRefreshProgress() {
+        var total =
+          refreshCounts.projects +
+          refreshCounts.tasks +
+          refreshCounts.keyResults;
+        document.title = `Refreshing… (${total}+) | LEAF Project Dashboard`;
+      }
+
+      function clearRefreshProgress() {
+        document.title = "LEAF Project Dashboard";
+      }
+
       var projectsQuery = new LeafFormQuery();
+      projectsQuery.addTerm("stepID", "!=", "notSubmitted");
       projectsQuery.addTerm("deleted", "=", "0");
       projectsQuery.getData([
         PROJECT_IND.projectKey,
@@ -10379,9 +10395,14 @@
         OKR_IND.fiscalYear,
       ]);
       projectsQuery.setExtraParams("&x-filterData=recordID,date");
+      projectsQuery.onProgress(function (count) {
+        refreshCounts.projects = count;
+        updateRefreshProgress();
+      });
 
       var tasksQuery = new LeafFormQuery();
       tasksQuery.addTerm("categoryID", "=", "form_9b302");
+      tasksQuery.addTerm("stepID", "!=", "notSubmitted");
       tasksQuery.addTerm("deleted", "=", "0");
       tasksQuery.getData([
         TASK_IND.projectKey,
@@ -10402,17 +10423,27 @@
         TASK_IND.recurringCopied,
       ]);
       tasksQuery.setExtraParams("&x-filterData=recordID,date,categoryID");
+      tasksQuery.onProgress(function (count) {
+        refreshCounts.tasks = count;
+        updateRefreshProgress();
+      });
 
       var keyResultsQuery = new LeafFormQuery();
+      keyResultsQuery.addTerm("stepID", "!=", "notSubmitted");
       keyResultsQuery.addTerm("deleted", "=", "0");
       keyResultsQuery.getData([KEY_RESULT_IND.okrKey, KEY_RESULT_IND.name]);
       keyResultsQuery.setExtraParams("&x-filterData=recordID,date");
+      keyResultsQuery.onProgress(function (count) {
+        refreshCounts.keyResults = count;
+        updateRefreshProgress();
+      });
 
       var results = await Promise.all([
         projectsQuery.execute(),
         tasksQuery.execute(),
         keyResultsQuery.execute(),
       ]);
+      clearRefreshProgress();
 
       var projectRowsAll = coerceRows(results[0]) || [];
       var taskRowsAll = coerceRows(results[1]) || [];
@@ -10434,7 +10465,17 @@
           [8, 9, 10, 44, 11, 12, 13, 14, 16, 17, 18, 30, 39, 47],
         );
       });
-      state.projectsAll = projectRows.map(normalizeProject);
+
+      // Dedup by recordID — safety net against any duplicate rows in the API response
+      var seenProjectIDs = new Map();
+      var uniqueProjectRows = projectRows.filter(function (r) {
+        var rid = String(r.recordID || getRecordID(r) || "").trim();
+        if (!rid || seenProjectIDs.has(rid)) return false;
+        seenProjectIDs.set(rid, true);
+        return true;
+      });
+
+      state.projectsAll = uniqueProjectRows.map(normalizeProject);
 
       state.projectsVersion = (state.projectsVersion || 0) + 1;
       state.cache.projects = new Map();
@@ -10461,8 +10502,17 @@
           state.okrKeyToTitle[okFromKey] = okrTitle;
       });
 
-      // Update tasks state
-      state.tasksAll = taskRows.map(normalizeTask);
+      // Update tasks state — dedup by recordID (safety net against API returning
+      // the same record in multiple batch chunks)
+      var seenTaskIDs = new Map();
+      var uniqueTaskRows = taskRows.filter(function (r) {
+        var rid = String(r.recordID || getRecordID(r) || "").trim();
+        if (!rid || seenTaskIDs.has(rid)) return false;
+        seenTaskIDs.set(rid, true);
+        return true;
+      });
+
+      state.tasksAll = uniqueTaskRows.map(normalizeTask);
       state.tasksById = new Map();
       state.tasksAll.forEach(function (t) {
         state.tasksById.set(String(t.recordID), t);
@@ -10644,7 +10694,10 @@
       }
 
       // ── Projects query ─────────────────────────────────────────────────────
+      // stepID != "notSubmitted" excludes in-progress copies (ghost records)
+      // initiated via LEAF's copy utility but never completed to submission.
       var projectsQuery = new LeafFormQuery();
+      projectsQuery.addTerm("stepID", "!=", "notSubmitted");
       projectsQuery.addTerm("deleted", "=", "0");
       projectsQuery.getData([
         PROJECT_IND.projectKey,
@@ -10676,6 +10729,7 @@
       // Important: include ALL task fields
       var tasksQuery = new LeafFormQuery();
       tasksQuery.addTerm("categoryID", "=", "form_9b302");
+      tasksQuery.addTerm("stepID", "!=", "notSubmitted");
       tasksQuery.addTerm("deleted", "=", "0");
       tasksQuery.getData([
         TASK_IND.projectKey,
@@ -10703,6 +10757,7 @@
 
       // ── Key results query ──────────────────────────────────────────────────
       var keyResultsQuery = new LeafFormQuery();
+      keyResultsQuery.addTerm("stepID", "!=", "notSubmitted");
       keyResultsQuery.addTerm("deleted", "=", "0");
       keyResultsQuery.getData([KEY_RESULT_IND.okrKey, KEY_RESULT_IND.name]);
       keyResultsQuery.setExtraParams("&x-filterData=recordID,date");
@@ -10744,10 +10799,28 @@
         },
       );
 
-      state.projectsAll = projectRows.map(normalizeProject);
+      // Dedup by recordID — safety net against any duplicate rows in the API
+      // response (e.g. ghost records that slipped through, or pagination overlap).
+      var seenProjectIDs = new Map();
+      var uniqueProjectRows = projectRows.filter(function (r) {
+        var rid = String(r.recordID || getRecordID(r) || "").trim();
+        if (!rid || seenProjectIDs.has(rid)) return false;
+        seenProjectIDs.set(rid, true);
+        return true;
+      });
+
+      var seenTaskIDs = new Map();
+      var uniqueTaskRows = taskRows.filter(function (r) {
+        var rid = String(r.recordID || getRecordID(r) || "").trim();
+        if (!rid || seenTaskIDs.has(rid)) return false;
+        seenTaskIDs.set(rid, true);
+        return true;
+      });
+
+      state.projectsAll = uniqueProjectRows.map(normalizeProject);
 
       state.projectsVersion = (state.projectsVersion || 0) + 1;
-      state.tasksAll = taskRows.map(normalizeTask);
+      state.tasksAll = uniqueTaskRows.map(normalizeTask);
 
       state.tasksById = new Map();
       state.tasksAll.forEach(function (t) {
@@ -10762,7 +10835,7 @@
 
       // Warn once if indicator 48 (recurringCopied) doesn't appear in any task row,
       // which likely means it hasn't been created in LEAF Form Editor yet.
-      var ind48Key = "id" + TASK_IND.recurringCopied;
+      var ind48Key = `id${TASK_IND.recurringCopied}`;
       var ind48Exists = taskRowsAll.some(function (r) {
         return r.s1 && r.s1[ind48Key] !== undefined;
       });
