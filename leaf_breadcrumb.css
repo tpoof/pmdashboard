@@ -22,7 +22,7 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  padding: 10px 24px 10px 90px; /* 90px left matches .lp-nav-in */
+  padding: 10px 24px 10px 103px; /* 90px (.lp-nav-in) + 13px (.dd-trigger padding) = aligns with nav button text */
   background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);

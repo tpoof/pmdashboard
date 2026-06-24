@@ -39,85 +39,296 @@
     --ip-r: 5px;
     --ip-r-lg: 8px;
     --ip-max: 1200px;
+    /* Hero palette */
+    --ip-hero-deep: #2d5a27;
+    --ip-hero-mid: #4a8c3f;
+    --ip-hero-accent: #b8eb8a;
   }
 
   /* ══════════════════════════════════════════
-     WRAP + PAGE HEADER
+     WRAP
   ══════════════════════════════════════════ */
   .ip-wrap {
     max-width: var(--ip-max);
     margin: 0 auto;
     padding: 0;
   }
-  .ip-header {
-    background: #fff;
-    border-bottom: 1px solid var(--ip-blue-10);
-    padding: 20px 24px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
+
+  /* ══════════════════════════════════════════
+     HERO BANNER
+  ══════════════════════════════════════════ */
+  .ip-hero {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #2d5a27 0%, #3d7a32 45%, #5aaa47 100%);
+    padding: 52px 40px 60px;
+    text-align: center;
   }
-  .ip-header-text {
-    flex: 1;
-    min-width: 0;
+
+  .ip-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(
+        ellipse 200px 120px at 10% 20%,
+        rgba(255, 255, 255, 0.06) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 300px 200px at 85% 80%,
+        rgba(255, 255, 255, 0.05) 0%,
+        transparent 70%
+      ),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cpath d='M60 10 Q90 60 60 110 Q30 60 60 10Z' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3Cpath d='M60 10 L60 110' stroke='rgba(255,255,255,0.04)' stroke-width='0.5'/%3E%3C/svg%3E");
+    background-size:
+      auto,
+      auto,
+      120px 120px;
+    pointer-events: none;
   }
-  .ip-title {
+
+  .ip-leaf-deco {
+    position: absolute;
+    opacity: 0.12;
+    pointer-events: none;
+  }
+  .ip-leaf-deco svg {
+    display: block;
+  }
+  .ip-leaf-deco--tl {
+    top: -20px;
+    left: -30px;
+    transform: rotate(-25deg);
+  }
+  .ip-leaf-deco--tr {
+    top: 10px;
+    right: -20px;
+    transform: rotate(30deg) scaleX(-1);
+  }
+  .ip-leaf-deco--bl {
+    bottom: -10px;
+    left: 60px;
+    transform: rotate(15deg);
+  }
+  .ip-leaf-deco--br {
+    bottom: -20px;
+    right: 80px;
+    transform: rotate(-10deg) scaleX(-1);
+  }
+
+  .ip-hero-inner {
+    position: relative;
+    z-index: 2;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .ip-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 50px;
+    padding: 5px 16px 5px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 22px;
+    animation: ipFadeSlideDown 0.6s ease both;
+  }
+
+  .ip-hero-badge__dot {
+    width: 7px;
+    height: 7px;
+    background: #a8e67a;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #a8e67a;
+    animation: ipPulse 2s infinite;
+  }
+
+  @keyframes ipPulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.4);
+      opacity: 0.7;
+    }
+  }
+
+  .ip-hero-title {
     font-family: "Public Sans", sans-serif;
-    font-size: 1.5rem;
+    font-size: clamp(1.8rem, 4.5vw, 2.8rem);
     font-weight: 800;
-    color: var(--ip-navy);
+    color: #fff;
+    line-height: 1.15;
     letter-spacing: -0.02em;
-    margin: 0 0 4px;
-    display: flex;
+    margin: 0 0 8px;
+    animation: ipFadeSlideDown 0.6s 0.1s ease both;
+  }
+
+  .ip-hero-title__leaf {
+    color: var(--ip-hero-accent);
+  }
+
+  .ip-hero-tagline {
+    font-family: "Source Sans 3", sans-serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    color: rgba(255, 255, 255, 0.75);
+    margin: 0 0 18px;
+    animation: ipFadeSlideDown 0.6s 0.2s ease both;
+  }
+
+  .ip-hero-desc {
+    font-family: "Source Sans 3", sans-serif;
+    font-size: 0.97rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.7;
+    max-width: 520px;
+    margin: 0 auto 30px;
+    animation: ipFadeSlideDown 0.6s 0.3s ease both;
+  }
+
+  .ip-hero-cta {
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-  }
-  .ip-title .material-symbols-outlined {
-    color: var(--ip-blue);
-    font-size: 1.4rem;
-  }
-  .ip-subtitle {
-    color: var(--ip-muted);
+    background: #fff;
+    color: var(--ip-hero-deep);
+    font-family: "Public Sans", sans-serif;
     font-size: 0.95rem;
-    margin: 0;
-    max-width: 480px;
+    font-weight: 700;
+    padding: 12px 26px;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    animation: ipFadeSlideDown 0.6s 0.4s ease both;
+  }
+
+  .ip-hero-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  }
+
+  .ip-hero-cta__arrow {
+    transition: transform 0.2s;
+  }
+
+  .ip-hero-cta:hover .ip-hero-cta__arrow {
+    transform: translateX(3px);
+  }
+
+  @keyframes ipFadeSlideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   /* ══════════════════════════════════════════
      STATS STRIP
   ══════════════════════════════════════════ */
-  .ip-statsStrip {
-    background: var(--ip-blue-lt);
-    border-bottom: 1px solid var(--ip-blue-10);
-    padding: 14px 24px;
+  .ip-statsNew {
+    background: #fff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+    padding: 0 40px;
     display: flex;
-    gap: 0;
-    align-items: stretch;
+    justify-content: center;
+    box-shadow: 0 2px 12px rgba(45, 90, 39, 0.08);
   }
-  .ip-stat {
+
+  .ip-statNew {
     display: flex;
-    flex-direction: column;
-    padding-right: 32px;
-    border-right: 1px solid var(--ip-blue-20);
+    align-items: center;
+    gap: 13px;
+    padding: 20px 36px;
+    position: relative;
+    animation: ipFadeUp 0.5s ease both;
   }
-  .ip-stat + .ip-stat {
-    padding-left: 32px;
-    border-right: none;
+
+  .ip-statNew:nth-child(2) {
+    animation-delay: 0.1s;
   }
-  .ip-stat__val {
+  .ip-statNew:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+
+  .ip-statNew:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 25%;
+    height: 50%;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  @keyframes ipFadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .ip-statNew-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .ip-statNew-icon--ideas {
+    background: #e8f5e3;
+  }
+  .ip-statNew-icon--done {
+    background: #fff3e0;
+  }
+  .ip-statNew-icon--votes {
+    background: #e3f0fb;
+  }
+
+  .ip-statNew-text {
+    line-height: 1.25;
+  }
+
+  .ip-statNew-number {
     font-family: "Public Sans", sans-serif;
-    font-size: 1.5rem;
+    font-size: 1.45rem;
     font-weight: 800;
-    color: var(--ip-navy);
-    line-height: 1;
+    color: var(--ip-text);
+    font-variant-numeric: tabular-nums;
   }
-  .ip-stat__lbl {
-    font-size: 0.75rem;
+
+  .ip-statNew-label {
+    font-family: "Public Sans", sans-serif;
+    font-size: 0.78rem;
     color: var(--ip-muted);
-    margin-top: 3px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    font-weight: 400;
+    letter-spacing: 0.01em;
   }
 
   /* ══════════════════════════════════════════
@@ -974,20 +1185,6 @@
     .ip-sidebar {
       position: static;
     }
-    .ip-header {
-      flex-direction: column;
-    }
-    .ip-statsStrip {
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    .ip-stat {
-      border-right: none;
-      padding-right: 0;
-    }
-    .ip-stat + .ip-stat {
-      padding-left: 0;
-    }
   }
   @media (max-width: 640px) {
     .ip-tabsRow {
@@ -998,6 +1195,33 @@
       padding: 10px 14px;
     }
   }
+  @media (max-width: 600px) {
+    .ip-hero {
+      padding: 36px 24px 44px;
+    }
+    .ip-leaf-deco--tr,
+    .ip-leaf-deco--br {
+      display: none;
+    }
+    .ip-statsNew {
+      flex-direction: column;
+      align-items: center;
+      padding: 0 24px;
+    }
+    .ip-statNew {
+      width: 100%;
+      padding: 16px 12px;
+      justify-content: center;
+    }
+    .ip-statNew:not(:last-child)::after {
+      top: auto;
+      bottom: 0;
+      left: 10%;
+      right: 10%;
+      width: auto;
+      height: 1px;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     .ip-toast {
       transition: none;
@@ -1005,6 +1229,17 @@
     .ip-upvote,
     .ip-btn {
       transition: none;
+    }
+    .ip-hero-badge,
+    .ip-hero-title,
+    .ip-hero-tagline,
+    .ip-hero-desc,
+    .ip-hero-cta,
+    .ip-statNew {
+      animation: none;
+    }
+    .ip-hero-badge__dot {
+      animation: none;
     }
   }
 </style>
@@ -1034,45 +1269,122 @@
   <div id="lp-breadcrumb-host"></div>
   <script src="/platform/designs/files/leaf_breadcrumb.js"></script>
 
-  <div class="ip-wrap">
-    <!-- ── Page header ── -->
-    <div class="ip-header">
-      <div class="ip-header-text">
-        <h2 class="ip-title">
-          <span class="material-symbols-outlined" aria-hidden="true"
-            >lightbulb</span
-          >
-          LEAF Idea Portal
-        </h2>
-        <p class="ip-subtitle">
-          Share ideas to improve LEAF. Vote for ideas you support — the best
-          rise to the top and get built by the team.
-        </p>
+  <!-- ── Hero banner ── -->
+  <div class="ip-hero">
+    <!-- Leaf decorations -->
+    <div class="ip-leaf-deco ip-leaf-deco--tl" aria-hidden="true">
+      <svg width="200" height="180" viewBox="0 0 200 180">
+        <path d="M100 10 Q170 90 100 170 Q30 90 100 10Z" fill="white" />
+        <path
+          d="M100 10 L100 170"
+          stroke="rgba(0,0,0,0.3)"
+          stroke-width="1"
+          fill="none"
+        />
+        <path
+          d="M100 50 Q140 70 100 90"
+          stroke="rgba(0,0,0,0.2)"
+          stroke-width="0.8"
+          fill="none"
+        />
+        <path
+          d="M100 90 Q60 110 100 130"
+          stroke="rgba(0,0,0,0.2)"
+          stroke-width="0.8"
+          fill="none"
+        />
+      </svg>
+    </div>
+    <div class="ip-leaf-deco ip-leaf-deco--tr" aria-hidden="true">
+      <svg width="160" height="150" viewBox="0 0 160 150">
+        <path d="M80 5 Q145 75 80 145 Q15 75 80 5Z" fill="white" />
+        <path
+          d="M80 5 L80 145"
+          stroke="rgba(0,0,0,0.3)"
+          stroke-width="1"
+          fill="none"
+        />
+      </svg>
+    </div>
+    <div class="ip-leaf-deco ip-leaf-deco--bl" aria-hidden="true">
+      <svg width="130" height="120" viewBox="0 0 130 120">
+        <path d="M65 5 Q115 60 65 115 Q15 60 65 5Z" fill="white" />
+      </svg>
+    </div>
+    <div class="ip-leaf-deco ip-leaf-deco--br" aria-hidden="true">
+      <svg width="110" height="100" viewBox="0 0 110 100">
+        <path d="M55 4 Q100 50 55 96 Q10 50 55 4Z" fill="white" />
+      </svg>
+    </div>
+
+    <div class="ip-hero-inner">
+      <div class="ip-hero-badge">
+        <span class="ip-hero-badge__dot"></span>
+        Open for Ideas
       </div>
-      <button
-        class="ip-btn ip-btn--primary"
-        data-ip-open="addIdeaModal"
-        id="addIdeaButton"
-      >
-        <span class="material-symbols-outlined" aria-hidden="true"
-          >add_circle</span
+      <h1 class="ip-hero-title">
+        Welcome to the <span class="ip-hero-title__leaf">LEAF</span> Idea Portal
+      </h1>
+      <p class="ip-hero-tagline">Your ideas grow here.</p>
+      <p class="ip-hero-desc">
+        This is your space to share, shape, and spark change. Every idea you
+        submit is read, reviewed, and taken seriously — because the best
+        improvements come from the people doing the work every day.
+      </p>
+      <button class="ip-hero-cta" type="button" data-ip-open="addIdeaModal">
+        Share Your Idea
+        <svg
+          class="ip-hero-cta__arrow"
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          aria-hidden="true"
         >
-        Add Idea
+          <path
+            d="M3 8h10M9 4l4 4-4 4"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
       </button>
     </div>
+  </div>
 
-    <!-- ── Stats strip ── -->
-    <div class="ip-statsStrip" id="ipStatsStrip" aria-label="Portal statistics">
-      <div class="ip-stat">
-        <span class="ip-stat__val" id="statTotalIdeas">—</span>
-        <span class="ip-stat__lbl">Ideas submitted</span>
+  <!-- ── Stats strip ── -->
+  <div class="ip-statsNew" role="region" aria-label="Portal statistics">
+    <div class="ip-statNew">
+      <div class="ip-statNew-icon ip-statNew-icon--ideas" aria-hidden="true">
+        💡
       </div>
-      <div class="ip-stat">
-        <span class="ip-stat__val" id="statTotalVotes">—</span>
-        <span class="ip-stat__lbl">Community votes</span>
+      <div class="ip-statNew-text">
+        <div class="ip-statNew-number" id="statTotalIdeas">—</div>
+        <div class="ip-statNew-label">Ideas Submitted</div>
       </div>
     </div>
+    <div class="ip-statNew">
+      <div class="ip-statNew-icon ip-statNew-icon--done" aria-hidden="true">
+        ✅
+      </div>
+      <div class="ip-statNew-text">
+        <div class="ip-statNew-number" id="statImplemented">—</div>
+        <div class="ip-statNew-label">Ideas Implemented</div>
+      </div>
+    </div>
+    <div class="ip-statNew">
+      <div class="ip-statNew-icon ip-statNew-icon--votes" aria-hidden="true">
+        🗳️
+      </div>
+      <div class="ip-statNew-text">
+        <div class="ip-statNew-number" id="statTotalVotes">—</div>
+        <div class="ip-statNew-label">Community Votes</div>
+      </div>
+    </div>
+  </div>
 
+  <div class="ip-wrap">
     <!-- ── Main layout ── -->
     <div class="ip-mainLayout">
       <!-- Sidebar -->
@@ -1708,4 +2020,4 @@
     csrfToken: "<!--{$CSRFToken|unescape|escape:'quotes'}-->",
   };
 </script>
-<script src="./files/ideas.js"></script>
+<script src="./files/ideas_v2.js"></script>

@@ -108,7 +108,7 @@
           icon: "lightbulb",
           title: "Suggest an idea",
           desc: "Share feature requests with the LEAF team",
-          href: "?go=idea",
+          href: "/platform/ideas/",
           external: true,
         },
       ],
@@ -296,6 +296,48 @@
     var navToggle = document.getElementById("lpNavToggle");
     var mobilePanel = document.getElementById("lpMobilePanel");
     var lastFocusedTrigger = null;
+
+    /* ── Inline panel: intercept left-clicks on nav links ──
+       Modifier keys (Ctrl/Cmd/Shift/middle-click) fall through to
+       the browser so the user can still open real tabs normally. */
+    function openInlinePanel(url, title) {
+      var panel = document.getElementById("lpInlinePanel");
+      var frame = document.getElementById("lpInlineFrame");
+      var panelTitle = document.getElementById("lpInlinePanelTitle");
+      var loading = document.getElementById("lpInlineLoading");
+      if (!panel || !frame) return false;
+      panelTitle.textContent = title || "LEAF";
+      // Show spinner before setting src
+      if (loading) loading.removeAttribute("hidden");
+      frame.src = url;
+      panel.removeAttribute("hidden");
+      document.body.style.overflow = "hidden";
+      // Notify the page's panel script (fires spinner, syncs new-tab link)
+      var ev = new CustomEvent("lp:open", { detail: { url: url } });
+      panel.dispatchEvent(ev);
+      var closeBtn = document.getElementById("lpInlineClose");
+      if (closeBtn) closeBtn.focus();
+      return true;
+    }
+
+    document.addEventListener(
+      "click",
+      function (e) {
+        var link = e.target.closest(".dd-link, .acc-panel .dd-link");
+        if (!link) return;
+        // Let modifier-key clicks and middle-clicks pass through to the browser
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;
+        var href = link.getAttribute("href");
+        if (!href || href === "#") return;
+        e.preventDefault();
+        closeAllDropdowns(null);
+        var title = link.querySelector("strong")
+          ? link.querySelector("strong").textContent.trim()
+          : "";
+        openInlinePanel(href, title);
+      },
+      true,
+    );
 
     /* Scroll shadow */
     if (nav) {

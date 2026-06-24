@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   LEAF Idea Portal — ideas.js
+   LEAF Idea Portal — ideas_v2.js
    Blueprint Pro integration + LeafFormQuery refactor
    ════════════════════════════════════════════════════════════════ */
 
@@ -189,6 +189,7 @@ let userVotes = (function () {
 })();
 let votingInProgress = false;
 let ideaSubmitInProgress = false;
+let implementedCount = 0;
 let myIdeasCache = [];
 let lastFocusedElement = null;
 let lastRecordFocusedElement = null;
@@ -268,10 +269,12 @@ function hideToast() {
    Stats strip
 ───────────────────────────────────────────────────────────── */
 
-function renderStatsStrip(totalIdeas, totalVotes) {
+function renderStatsStrip(totalIdeas, implemented, totalVotes) {
   const ideasEl = document.getElementById("statTotalIdeas");
+  const implementedEl = document.getElementById("statImplemented");
   const votesEl = document.getElementById("statTotalVotes");
   if (ideasEl) ideasEl.textContent = totalIdeas.toLocaleString();
+  if (implementedEl) implementedEl.textContent = implemented.toLocaleString();
   if (votesEl) votesEl.textContent = totalVotes.toLocaleString();
 }
 
@@ -1169,12 +1172,12 @@ function IdeaVotes(ideanum) {
           localStorage.setItem("leafIdeaVotes", JSON.stringify(userVotes));
         } catch (e) {}
 
-        // Update stats strip total
+        // Update stats strip total votes
         const totalVotes = Object.values(voteCounts).reduce(
           (sum, n) => sum + n,
           0,
         );
-        renderStatsStrip(ideas.length, totalVotes);
+        renderStatsStrip(ideas.length, implementedCount, totalVotes);
 
         showToast("Thanks for voting!");
         // Update my activity
@@ -1335,11 +1338,14 @@ function loadIdeasAndVotes() {
       ideasRaw = ideasData;
       ideas = buildIdeasViewModelList(ideasRaw, true);
 
+      // Compute implemented count (ideas with "Completed" status)
+      implementedCount = ideas.filter((i) => i.status === "Completed").length;
+
       const totalVotes = Object.values(voteCounts).reduce(
         (sum, n) => sum + n,
         0,
       );
-      renderStatsStrip(ideas.length, totalVotes);
+      renderStatsStrip(ideas.length, implementedCount, totalVotes);
       buildCategorySidebar(ideas);
       renderRecentChips(ideas);
 
