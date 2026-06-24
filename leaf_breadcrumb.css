@@ -1,0 +1,51 @@
+/* ============================================================
+   LEAF Universal Breadcrumb  |  leaf_breadcrumb.css
+   ─────────────────────────────────────────────────────────────
+   Lives at /platform/designs/files/leaf_breadcrumb.css.
+   Pair with leaf_breadcrumb.js (load it AFTER leaf_nav.js).
+   Reuses leaf_nav.css's --nav-* color tokens so the breadcrumb
+   always matches the nav bar's palette — no separate colors to
+   keep in sync. Falls back to literal values if leaf_nav.css
+   isn't loaded for some reason.
+   ============================================================ */
+
+.lp-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: "Source Sans 3", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--nav-muted, #3d4551);
+  border-bottom: 1px solid var(--nav-panel-bd, #d9e8f6);
+}
+
+.lp-breadcrumb a {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--nav-accent, #005ea2);
+  text-decoration: underline;
+}
+.lp-breadcrumb a:hover {
+  color: var(--nav-hl, #1a4480);
+}
+.lp-breadcrumb a:focus-visible {
+  outline: 3px solid var(--nav-accent, #005ea2);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.lp-bc-sep {
+  color: var(--nav-muted, #3d4551);
+  font-weight: 600;
+  user-select: none;
+}
+
+.lp-bc-current {
+  color: var(--nav-muted, #3d4551);
+  font-weight: 600;
+}

@@ -18,17 +18,16 @@
     />
 
     <!-- Design system -->
-    <link rel="stylesheet" href=".files/launchpad-styles.css" />
+    <link rel="stylesheet" href="./files/launchpad.css" />
 
-    <!-- Universal nav -->
-    <link rel="stylesheet" href="/platform/designs/files/leaf-nav.css" />
-    <script src="/platform/designs/files/leaf-nav.js"></script>
+    <!-- Universal nav (single shared file — see /platform/designs/files/) -->
+    <script src="/platform/designs/files/leaf_nav.js"></script>
   </head>
   <body>
     <div class="lp" id="lp-root">
       <a class="lp-skip" href="#lp-main">Skip to main content</a>
 
-      <!-- Nav injected by leaf-nav.js -->
+      <!-- Nav injected by leaf_nav.js -->
       <div id="lp-nav-host"></div>
 
       <main id="lp-main" tabindex="-1">
@@ -68,20 +67,6 @@
                   Watch a demo
                 </button>
               </div>
-            </div>
-
-            <div
-              class="hero-visual"
-              aria-label="LEAF form editor interface"
-              role="img"
-            >
-              <img
-                src="./files/graphic-form-editor.png"
-                alt="LEAF platform form editor interface"
-                width="560"
-                height="350"
-                loading="eager"
-              />
             </div>
           </div>
         </section>
