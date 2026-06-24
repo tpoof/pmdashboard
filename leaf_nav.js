@@ -94,8 +94,7 @@
           icon: "menu_book",
           title: "Help library",
           desc: "Guides, tutorials, and documentation",
-          href: "/platform/help_library/",
-          external: true,
+          href: "https://leaf.va.gov/platform/help_library/report.php?a=stephanie_test1",
         },
         {
           icon: "group",
@@ -118,21 +117,17 @@
   /* ── Markup builders (shared by desktop dropdowns + mobile accordion) ── */
   function linkHTML(item) {
     if (item.divider) return '<hr class="dd-divider" aria-hidden="true">';
-    var target = item.external
-      ? ' target="_blank" rel="noopener noreferrer"'
-      : "";
-    /* Screen-reader-only "(opens in new tab)" announcement for external links */
-    var extNotice = item.external
-      ? '<span class="lp-sr-only"> (opens in new tab)</span>'
-      : "";
+    /* All nav links open in-panel on left-click (intercepted below).
+       Ctrl/Cmd/middle-click still opens a real new tab naturally via the href.
+       No target="_blank" needed — it would conflict with the intercept. */
     return `
       <li>
-        <a class="dd-link" href="${item.href}"${target}>
+        <a class="dd-link" href="${item.href}">
           <span class="dd-link-ico">
             <span class="material-symbols-outlined" aria-hidden="true">${item.icon}</span>
           </span>
           <span class="dd-link-text">
-            <strong>${item.title}${extNotice}</strong>
+            <strong>${item.title}</strong>
             <span>${item.desc}</span>
           </span>
         </a>
@@ -173,6 +168,49 @@
           </ul>
         </div>
       </li>`;
+  }
+
+  /* ── Panel HTML (self-injected alongside the nav) ── */
+  function buildPanelHTML() {
+    return `<div
+      id="lpInlinePanel"
+      class="lp-inline-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="lpInlinePanelTitle"
+      hidden>
+      <div class="lp-inline-bar">
+        <button
+          class="lp-inline-back"
+          id="lpInlineClose"
+          type="button"
+          aria-label="Close and return to Launchpad">
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+          Back to Launchpad
+        </button>
+        <span class="lp-inline-title" id="lpInlinePanelTitle" aria-live="polite"></span>
+        <a
+          class="lp-inline-newtab"
+          id="lpInlineNewTab"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open this page in a new tab">
+          <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+          Open in new tab
+        </a>
+      </div>
+      <div class="lp-inline-loading" id="lpInlineLoading" aria-hidden="true">
+        <span class="lp-inline-spinner"></span>
+      </div>
+      <iframe
+        id="lpInlineFrame"
+        src=""
+        class="lp-inline-frame"
+        title="Page content"
+        frameborder="0">
+      </iframe>
+    </div>`;
   }
 
   function buildNavHTML() {
@@ -277,7 +315,106 @@
     var host = ensureHost();
     host.outerHTML = buildNavHTML();
     ensureMainContentTarget();
+    ensurePanel();
     wire();
+  }
+
+  /* ── Self-mount: inline panel ──
+     Only injects if #lpInlinePanel isn't already on the page
+     (e.g. launchpadv3.html already has it baked in). */
+  function ensurePanel() {
+    if (document.getElementById("lpInlinePanel")) return;
+    var container = document.createElement("div");
+    container.innerHTML = buildPanelHTML();
+    document.body.appendChild(container.firstElementChild);
+    wirePanelClose();
+  }
+
+  /* ── Wire the panel's close button, Escape, focus trap,
+     spinner hide-on-load, and new-tab link sync ── */
+  function wirePanelClose() {
+    var panel = document.getElementById("lpInlinePanel");
+    var frame = document.getElementById("lpInlineFrame");
+    var loading = document.getElementById("lpInlineLoading");
+    var closeBtn = document.getElementById("lpInlineClose");
+    var newTabLink = document.getElementById("lpInlineNewTab");
+    if (!panel || !frame || !closeBtn) return;
+
+    function closePanel() {
+      console.log("[LP Panel] closePanel called");
+      frame.src = "";
+      panel.setAttribute("hidden", "");
+      document.body.style.overflow = "";
+      var trigger = document.querySelector(".dd-trigger");
+      if (trigger) trigger.focus();
+    }
+
+    /* Hide spinner once iframe content loads; inject CSS to suppress
+       the LEAF global header (#header) on all panel destinations */
+    frame.addEventListener("load", function () {
+      if (loading) loading.setAttribute("hidden", "");
+
+      /* Sync new-tab href to actual loaded URL */
+      if (newTabLink && frame.src && frame.src !== "about:blank") {
+        newTabLink.href = frame.src;
+      }
+
+      /* Inject a stylesheet into the iframe to hide the LEAF global header.
+         Same-origin pages (leaf.va.gov) will accept this; cross-origin pages
+         will throw a SecurityError which we catch and ignore silently. */
+      try {
+        var iDoc = frame.contentDocument || frame.contentWindow.document;
+        if (iDoc && !iDoc.getElementById("lp-iframe-overrides")) {
+          var style = iDoc.createElement("style");
+          style.id = "lp-iframe-overrides";
+          style.textContent = "#header { display: none !important; }";
+          (iDoc.head || iDoc.documentElement).appendChild(style);
+          console.log("[LP Panel] #header hidden in iframe ✓");
+        }
+      } catch (err) {
+        console.log(
+          "[LP Panel] Could not inject iframe styles (cross-origin or load timing):",
+          err.message,
+        );
+      }
+    });
+
+    /* Show spinner and sync new-tab href when a new URL is opened */
+    panel.addEventListener("lp:open", function (e) {
+      if (loading) loading.removeAttribute("hidden");
+      if (newTabLink && e.detail && e.detail.url) {
+        newTabLink.href = e.detail.url;
+      }
+    });
+
+    closeBtn.addEventListener("click", closePanel);
+
+    /* Escape closes the panel */
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !panel.hasAttribute("hidden")) {
+        closePanel();
+      }
+    });
+
+    /* Focus trap: cycle within the panel while it's open */
+    panel.addEventListener("keydown", function (e) {
+      if (e.key !== "Tab") return;
+      var focusable = Array.prototype.slice.call(
+        panel.querySelectorAll(
+          'button:not([disabled]), a[href]:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (!focusable.length) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
   }
 
   /* ── Focus trap helpers ──
@@ -417,9 +554,16 @@
       console.log("[LP Nav] preventDefault() called — navigation cancelled");
 
       closeAllDropdowns(null);
-      var title = link.querySelector("strong")
-        ? link.querySelector("strong").textContent.trim()
-        : "";
+      /* Extract title from <strong> but exclude any .lp-sr-only child text */
+      var titleEl = link.querySelector("strong");
+      var title = "";
+      if (titleEl) {
+        var clone = titleEl.cloneNode(true);
+        clone.querySelectorAll(".lp-sr-only").forEach(function (el) {
+          el.remove();
+        });
+        title = clone.textContent.trim();
+      }
       console.log("[LP Nav] Resolved title:", title);
       openInlinePanel(href, title);
     });
