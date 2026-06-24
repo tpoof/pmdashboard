@@ -177,7 +177,7 @@
       class="lp-inline-panel"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="lpInlinePanelTitle"
+      aria-label="LEAF page panel"
       hidden>
       <div class="lp-inline-bar">
         <button
@@ -188,17 +188,6 @@
           <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
           Back to Launchpad
         </button>
-        <span class="lp-inline-title" id="lpInlinePanelTitle" aria-live="polite"></span>
-        <a
-          class="lp-inline-newtab"
-          id="lpInlineNewTab"
-          href="#"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Open this page in a new tab">
-          <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
-          Open in new tab
-        </a>
       </div>
       <div class="lp-inline-loading" id="lpInlineLoading" aria-hidden="true">
         <span class="lp-inline-spinner"></span>
@@ -337,7 +326,6 @@
     var frame = document.getElementById("lpInlineFrame");
     var loading = document.getElementById("lpInlineLoading");
     var closeBtn = document.getElementById("lpInlineClose");
-    var newTabLink = document.getElementById("lpInlineNewTab");
     if (!panel || !frame || !closeBtn) return;
 
     function closePanel() {
@@ -349,41 +337,75 @@
       if (trigger) trigger.focus();
     }
 
-    /* Hide spinner once iframe content loads; inject CSS to suppress
-       the LEAF global header (#header) on all panel destinations */
-    frame.addEventListener("load", function () {
-      if (loading) loading.setAttribute("hidden", "");
+    /* ── iframe chrome suppression via MutationObserver ──
+        The load event fires too early on LEAF Programmer pages (the wrapper
+        loads first, then Programmer content is injected). A MutationObserver
+        watches the iframe document and hides LEAF chrome (#header, .lp-nav,
+        .lp-breadcrumb) the instant each element appears, regardless of how
+        many load cycles the page goes through. */
+    var iframeObserver = null;
 
-      /* Sync new-tab href to actual loaded URL */
-      if (newTabLink && frame.src && frame.src !== "about:blank") {
-        newTabLink.href = frame.src;
+    function suppressIframeChrome(iDoc) {
+      if (!iDoc) return;
+      /* Inject stylesheet once — guard against duplicates */
+      if (!iDoc.getElementById("lp-iframe-overrides")) {
+        var style = iDoc.createElement("style");
+        style.id = "lp-iframe-overrides";
+        style.textContent = [
+          "#header { display: none !important; }",
+          ".lp-nav { display: none !important; }",
+          ".lp-breadcrumb { display: none !important; }",
+        ].join(" ");
+        (iDoc.head || iDoc.documentElement).appendChild(style);
+        console.log(
+          "[LP Panel] iframe chrome suppressed (style injected) \u2713",
+        );
       }
+      /* Also imperatively hide already-rendered elements in case style
+          injection raced with rendering */
+      ["#header", ".lp-nav", ".lp-breadcrumb"].forEach(function (sel) {
+        var el = iDoc.querySelector(sel);
+        if (el) el.style.setProperty("display", "none", "important");
+      });
+    }
 
-      /* Inject a stylesheet into the iframe to hide the LEAF global header.
-         Same-origin pages (leaf.va.gov) will accept this; cross-origin pages
-         will throw a SecurityError which we catch and ignore silently. */
+    function startObservingIframe() {
+      if (iframeObserver) {
+        iframeObserver.disconnect();
+        iframeObserver = null;
+      }
       try {
         var iDoc = frame.contentDocument || frame.contentWindow.document;
-        if (iDoc && !iDoc.getElementById("lp-iframe-overrides")) {
-          var style = iDoc.createElement("style");
-          style.id = "lp-iframe-overrides";
-          style.textContent = "#header { display: none !important; }";
-          (iDoc.head || iDoc.documentElement).appendChild(style);
-          console.log("[LP Panel] #header hidden in iframe ✓");
-        }
+        if (!iDoc) return;
+        suppressIframeChrome(iDoc);
+        iframeObserver = new MutationObserver(function () {
+          suppressIframeChrome(iDoc);
+        });
+        iframeObserver.observe(iDoc.documentElement || iDoc.body, {
+          childList: true,
+          subtree: true,
+        });
+        console.log("[LP Panel] MutationObserver started on iframe \u2713");
       } catch (err) {
         console.log(
-          "[LP Panel] Could not inject iframe styles (cross-origin or load timing):",
+          "[LP Panel] Could not observe iframe (cross-origin?):",
           err.message,
         );
       }
+    }
+
+    /* Re-run on every load cycle so we catch the Programmer page injection */
+    frame.addEventListener("load", function () {
+      if (loading) loading.setAttribute("hidden", "");
+      startObservingIframe();
     });
 
-    /* Show spinner and sync new-tab href when a new URL is opened */
-    panel.addEventListener("lp:open", function (e) {
+    /* Show spinner when a new URL is opened; disconnect stale observer */
+    panel.addEventListener("lp:open", function () {
       if (loading) loading.removeAttribute("hidden");
-      if (newTabLink && e.detail && e.detail.url) {
-        newTabLink.href = e.detail.url;
+      if (iframeObserver) {
+        iframeObserver.disconnect();
+        iframeObserver = null;
       }
     });
 
@@ -477,29 +499,26 @@
        Placed here (after closeAllDropdowns is defined) so it can
        safely call it. Bubble phase (no capture flag) so preventDefault
        reliably cancels navigation across all browsers. */
-    function openInlinePanel(url, title) {
-      console.log("[LP Panel] openInlinePanel called:", url, title);
+    function openInlinePanel(url) {
+      console.log("[LP Panel] openInlinePanel called:", url);
 
       var panel = document.getElementById("lpInlinePanel");
       var frame = document.getElementById("lpInlineFrame");
-      var panelTitle = document.getElementById("lpInlinePanelTitle");
       var loading = document.getElementById("lpInlineLoading");
 
       console.log("[LP Panel] Elements found:", {
         panel: !!panel,
         frame: !!frame,
-        panelTitle: !!panelTitle,
         loading: !!loading,
       });
 
       if (!panel || !frame) {
         console.warn(
-          "[LP Panel] ABORT — #lpInlinePanel or #lpInlineFrame not found in DOM. Is the panel HTML in launchpadv3.html?",
+          "[LP Panel] ABORT — #lpInlinePanel or #lpInlineFrame not found in DOM.",
         );
         return false;
       }
 
-      panelTitle.textContent = title || "LEAF";
       if (loading) loading.removeAttribute("hidden");
       console.log("[LP Panel] Setting iframe src to:", url);
       frame.src = url;
@@ -554,18 +573,8 @@
       console.log("[LP Nav] preventDefault() called — navigation cancelled");
 
       closeAllDropdowns(null);
-      /* Extract title from <strong> but exclude any .lp-sr-only child text */
-      var titleEl = link.querySelector("strong");
-      var title = "";
-      if (titleEl) {
-        var clone = titleEl.cloneNode(true);
-        clone.querySelectorAll(".lp-sr-only").forEach(function (el) {
-          el.remove();
-        });
-        title = clone.textContent.trim();
-      }
-      console.log("[LP Nav] Resolved title:", title);
-      openInlinePanel(href, title);
+      console.log("[LP Nav] Opening panel for:", href);
+      openInlinePanel(href);
     });
 
     /* ── Mobile accordion ── */
