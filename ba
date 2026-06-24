@@ -1,0 +1,13 @@
+Minimum Competency Requirements — Business Analyst (HCD-Related Tasks)
+The Business Analyst must demonstrate the following competencies in order to perform HCD-related responsibilities within this SOP:
+
+1. Platform Literacy — LEAF
+The BA must have working knowledge of the LEAF platform, including its native capabilities for form creation, workflow configuration, and in-environment prototyping. This includes the ability to recognize when a development request can be resolved using LEAF's built-in tools without requiring HCD design intervention (wireframes, mockups, or design specifications). Stories that can be prototyped or configured directly within LEAF do not meet the threshold for HCD escalation.
+
+2. UI/UX Component Identification
+The BA must be able to evaluate each development story independently and determine whether it contains a user-facing component that meaningfully requires HCD review. This judgment must be based on the nature of the change — not applied as a default to all development stories. Blanket assignment of HCD subtasks to stories without substantive UI/UX impact constitutes a misclassification and represents an inefficient use of HCD review capacity.
+
+3. HCD Resource Scope Awareness
+The BA must understand that HCD Specialist involvement is reserved for changes with platform-wide impact — modifications that affect shared UI components, system-wide workflows, navigation standards, or the experience of the general user population broadly. Development stories scoped to specific projects, individual teams, or isolated configurations that do not alter the shared platform experience do not meet the threshold for HCD review escalation. Escalating stories outside this threshold — including those resolvable within LEAF's native prototyping capabilities — directly reduces HCD capacity available for changes that carry genuine platform-wide consequence. Accurate threshold judgment is a core BA responsibility under this SOP, not a discretionary call.
+
+Establishing this baseline ensures the role delivers its intended value and provides a documented standard against which performance can be evaluated.
