@@ -297,48 +297,6 @@
     var mobilePanel = document.getElementById("lpMobilePanel");
     var lastFocusedTrigger = null;
 
-    /* ── Inline panel: intercept left-clicks on nav links ──
-       Modifier keys (Ctrl/Cmd/Shift/middle-click) fall through to
-       the browser so the user can still open real tabs normally. */
-    function openInlinePanel(url, title) {
-      var panel = document.getElementById("lpInlinePanel");
-      var frame = document.getElementById("lpInlineFrame");
-      var panelTitle = document.getElementById("lpInlinePanelTitle");
-      var loading = document.getElementById("lpInlineLoading");
-      if (!panel || !frame) return false;
-      panelTitle.textContent = title || "LEAF";
-      // Show spinner before setting src
-      if (loading) loading.removeAttribute("hidden");
-      frame.src = url;
-      panel.removeAttribute("hidden");
-      document.body.style.overflow = "hidden";
-      // Notify the page's panel script (fires spinner, syncs new-tab link)
-      var ev = new CustomEvent("lp:open", { detail: { url: url } });
-      panel.dispatchEvent(ev);
-      var closeBtn = document.getElementById("lpInlineClose");
-      if (closeBtn) closeBtn.focus();
-      return true;
-    }
-
-    document.addEventListener(
-      "click",
-      function (e) {
-        var link = e.target.closest(".dd-link, .acc-panel .dd-link");
-        if (!link) return;
-        // Let modifier-key clicks and middle-clicks pass through to the browser
-        if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;
-        var href = link.getAttribute("href");
-        if (!href || href === "#") return;
-        e.preventDefault();
-        closeAllDropdowns(null);
-        var title = link.querySelector("strong")
-          ? link.querySelector("strong").textContent.trim()
-          : "";
-        openInlinePanel(href, title);
-      },
-      true,
-    );
-
     /* Scroll shadow */
     if (nav) {
       var onScroll = function () {
@@ -376,6 +334,94 @@
           lastFocusedTrigger = btn;
         }
       });
+    });
+
+    /* ── Inline panel: intercept left-clicks on nav links ──
+       Placed here (after closeAllDropdowns is defined) so it can
+       safely call it. Bubble phase (no capture flag) so preventDefault
+       reliably cancels navigation across all browsers. */
+    function openInlinePanel(url, title) {
+      console.log("[LP Panel] openInlinePanel called:", url, title);
+
+      var panel = document.getElementById("lpInlinePanel");
+      var frame = document.getElementById("lpInlineFrame");
+      var panelTitle = document.getElementById("lpInlinePanelTitle");
+      var loading = document.getElementById("lpInlineLoading");
+
+      console.log("[LP Panel] Elements found:", {
+        panel: !!panel,
+        frame: !!frame,
+        panelTitle: !!panelTitle,
+        loading: !!loading,
+      });
+
+      if (!panel || !frame) {
+        console.warn(
+          "[LP Panel] ABORT — #lpInlinePanel or #lpInlineFrame not found in DOM. Is the panel HTML in launchpadv3.html?",
+        );
+        return false;
+      }
+
+      panelTitle.textContent = title || "LEAF";
+      if (loading) loading.removeAttribute("hidden");
+      console.log("[LP Panel] Setting iframe src to:", url);
+      frame.src = url;
+      panel.removeAttribute("hidden");
+      document.body.style.overflow = "hidden";
+
+      var ev = new CustomEvent("lp:open", { detail: { url: url } });
+      panel.dispatchEvent(ev);
+      console.log("[LP Panel] lp:open event dispatched");
+
+      var closeBtn = document.getElementById("lpInlineClose");
+      if (closeBtn) closeBtn.focus();
+      console.log("[LP Panel] Panel opened successfully ✓");
+      return true;
+    }
+
+    document.addEventListener("click", function (e) {
+      var link = e.target.closest(".dd-link");
+      if (!link) return;
+
+      console.log("[LP Nav] dd-link clicked:", link);
+      console.log(
+        "[LP Nav] modifier keys — ctrl:",
+        e.ctrlKey,
+        "meta:",
+        e.metaKey,
+        "shift:",
+        e.shiftKey,
+        "button:",
+        e.button,
+      );
+
+      // Let modifier-key / middle-clicks pass through to browser (real new tab)
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
+        console.log(
+          "[LP Nav] Modifier key detected — letting browser handle (new tab)",
+        );
+        return;
+      }
+
+      var href = link.getAttribute("href");
+      console.log("[LP Nav] href:", href);
+
+      if (!href || href === "#") {
+        console.log(
+          "[LP Nav] href is empty or # — skipping panel, no navigation",
+        );
+        return;
+      }
+
+      e.preventDefault();
+      console.log("[LP Nav] preventDefault() called — navigation cancelled");
+
+      closeAllDropdowns(null);
+      var title = link.querySelector("strong")
+        ? link.querySelector("strong").textContent.trim()
+        : "";
+      console.log("[LP Nav] Resolved title:", title);
+      openInlinePanel(href, title);
     });
 
     /* ── Mobile accordion ── */
