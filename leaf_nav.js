@@ -21,6 +21,18 @@
    Nav content lives in one place (NAV_SECTIONS below) and is
    used to build both the desktop dropdowns and the mobile
    accordion, so links only ever need to be edited once.
+
+   ── Accessibility (WCAG 2.1 AA / Section 508) ───────────────
+   • Skip navigation link auto-injected at top of <body>
+     (targets #main-content; auto-added to first <main> if absent)
+   • Disclosure navigation pattern — aria-expanded only, no
+     aria-haspopup, so there's no role mismatch with the panel
+   • External links announce "(opens in new tab)" to screen readers
+   • Mobile toggle aria-label toggles "Open menu" / "Close menu"
+   • Mobile panel traps focus while open; Escape returns focus
+   • window.LEAF_NAV_CURRENT = "Section Label" marks active
+     section with aria-current="true" for screen readers
+   • prefers-reduced-motion: all animations suppressed in CSS
    ============================================================ */
 
 (function () {
@@ -109,6 +121,10 @@
     var target = item.external
       ? ' target="_blank" rel="noopener noreferrer"'
       : "";
+    /* Screen-reader-only "(opens in new tab)" announcement for external links */
+    var extNotice = item.external
+      ? '<span class="lp-sr-only"> (opens in new tab)</span>'
+      : "";
     return `
       <li>
         <a class="dd-link" href="${item.href}"${target}>
@@ -116,7 +132,7 @@
             <span class="material-symbols-outlined" aria-hidden="true">${item.icon}</span>
           </span>
           <span class="dd-link-text">
-            <strong>${item.title}</strong>
+            <strong>${item.title}${extNotice}</strong>
             <span>${item.desc}</span>
           </span>
         </a>
@@ -124,10 +140,18 @@
   }
 
   function desktopSectionHTML(section, i) {
+    /* Disclosure navigation pattern: aria-expanded only, no aria-haspopup.
+       This avoids a role mismatch (haspopup implies role="menu" which the
+       panel doesn't have). Tab key navigates into the open panel naturally. */
+    var isCurrent =
+      window.LEAF_NAV_CURRENT &&
+      window.LEAF_NAV_CURRENT.trim().toLowerCase() ===
+        section.label.trim().toLowerCase();
+    var currentAttr = isCurrent ? ' aria-current="true"' : "";
     return `
       <li class="dd-item" id="dd-item-${i}">
-        <button class="dd-trigger" aria-expanded="false" aria-haspopup="true" aria-controls="dd-${i}">
-          ${section.label} <span class="dd-chevron" aria-hidden="true">⌄</span>
+        <button class="dd-trigger" aria-expanded="false" aria-controls="dd-${i}"${currentAttr}>
+          ${section.label} <span class="dd-chevron" aria-hidden="true"><span class="material-symbols-outlined">arrow_drop_down</span></span>
         </button>
         <div class="dd-panel" id="dd-${i}" hidden>
           <ul class="dd-list">
@@ -141,7 +165,7 @@
     return `
       <li class="acc-item" id="acc-item-${i}">
         <button class="acc-trigger" aria-expanded="false" aria-controls="acc-${i}">
-          ${section.label} <span class="dd-chevron" aria-hidden="true">⌄</span>
+          ${section.label} <span class="dd-chevron" aria-hidden="true"><span class="material-symbols-outlined">arrow_drop_down</span></span>
         </button>
         <div class="acc-panel" id="acc-${i}" hidden>
           <ul class="dd-list">
@@ -161,7 +185,7 @@
       ${desktopItems}
     </ul>
 
-    <button class="lp-nav-toggle" id="lpNavToggle" type="button" aria-expanded="false" aria-controls="lpMobilePanel" aria-label="Menu">
+    <button class="lp-nav-toggle" id="lpNavToggle" type="button" aria-expanded="false" aria-controls="lpMobilePanel" aria-label="Open menu">
       <span class="lp-nav-toggle-icon" aria-hidden="true"><span></span><span></span><span></span></span>
     </button>
 
@@ -172,6 +196,36 @@
     </div>
   </div>
 </nav>`;
+  }
+
+  /* ── Skip navigation link ──
+     Injected as the very first child of <body> so it's the first
+     Tab stop on the page. Visually hidden until focused.
+     Targets #main-content. If no element with that ID exists on
+     the page, this script adds it to the first <main> element,
+     or to the first block-level element after the nav. */
+  function ensureSkipLink() {
+    if (document.getElementById("lp-skip-nav")) return;
+    var skip = document.createElement("a");
+    skip.id = "lp-skip-nav";
+    skip.className = "lp-skip-link";
+    skip.href = "#main-content";
+    skip.textContent = "Skip to main content";
+    document.body.insertBefore(skip, document.body.firstChild);
+  }
+
+  function ensureMainContentTarget() {
+    if (document.getElementById("main-content")) return;
+    var main = document.querySelector("main");
+    if (main) {
+      main.id = "main-content";
+      return;
+    }
+    /* Fall back: first sibling element after the nav */
+    var nav = document.getElementById("lpNav");
+    if (nav && nav.nextElementSibling) {
+      nav.nextElementSibling.id = "main-content";
+    }
   }
 
   /* ── Self-mount: stylesheet ──
@@ -197,7 +251,7 @@
     var cssHref = src.replace(/leaf[_-]nav\.js(\?.*)?$/i, function (match) {
       return match.replace(/\.js/i, ".css");
     });
-    if (cssHref === src) return; // src didn't match the expected pattern
+    if (cssHref === src) return;
     var link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = cssHref;
@@ -219,9 +273,21 @@
 
   /* ── Inject nav into placeholder ── */
   function inject() {
+    ensureSkipLink();
     var host = ensureHost();
     host.outerHTML = buildNavHTML();
+    ensureMainContentTarget();
     wire();
+  }
+
+  /* ── Focus trap helpers ──
+     Used by the mobile panel to keep keyboard focus inside while open. */
+  function getFocusableElements(container) {
+    return Array.prototype.slice.call(
+      container.querySelectorAll(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    );
   }
 
   /* ── Wire interactions ── */
@@ -243,7 +309,7 @@
       onScroll();
     }
 
-    /* ── Desktop dropdowns ── */
+    /* ── Desktop dropdowns (disclosure pattern) ── */
     function closeAllDropdowns(except) {
       document.querySelectorAll(".dd-item.open").forEach(function (item) {
         if (item === except) return;
@@ -270,7 +336,7 @@
       });
     });
 
-    /* ── Mobile accordion (each section toggles independently) ── */
+    /* ── Mobile accordion ── */
     function closeAllAccordions() {
       document.querySelectorAll(".acc-item.open").forEach(function (item) {
         item.classList.remove("open");
@@ -303,18 +369,25 @@
       if (!navToggle || !mobilePanel) return;
       navToggle.classList.add("open");
       navToggle.setAttribute("aria-expanded", "true");
+      navToggle.setAttribute("aria-label", "Close menu");
       mobilePanel.removeAttribute("hidden");
       document.body.style.overflow = "hidden";
+      /* Move focus to the first focusable element in the panel */
+      var focusable = getFocusableElements(mobilePanel);
+      if (focusable.length) focusable[0].focus();
     }
+
     function closeMobileMenu(returnFocus) {
       if (!navToggle || !mobilePanel) return;
       navToggle.classList.remove("open");
       navToggle.setAttribute("aria-expanded", "false");
+      navToggle.setAttribute("aria-label", "Open menu");
       mobilePanel.setAttribute("hidden", "");
       document.body.style.overflow = "";
       closeAllAccordions();
       if (returnFocus) navToggle.focus();
     }
+
     if (navToggle) {
       navToggle.addEventListener("click", function () {
         if (navToggle.classList.contains("open")) {
@@ -322,6 +395,38 @@
         } else {
           closeAllDropdowns(null);
           openMobileMenu();
+        }
+      });
+    }
+
+    /* ── Focus trap for mobile panel ──
+       While the panel is open, Tab and Shift+Tab cycle within it.
+       Any focus leaving the panel (e.g. via mouse click outside)
+       is handled by the outside-click listener below. */
+    if (mobilePanel) {
+      mobilePanel.addEventListener("keydown", function (e) {
+        if (e.key !== "Tab") return;
+        /* Only trap when the panel is actually visible */
+        if (mobilePanel.hasAttribute("hidden")) return;
+
+        var focusable = getFocusableElements(mobilePanel);
+        if (!focusable.length) return;
+
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          /* Shift+Tab from first element → wrap to last */
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          /* Tab from last element → wrap to first */
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
         }
       });
     }

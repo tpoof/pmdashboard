@@ -22,6 +22,53 @@
   --nav-r-lg: 8px;
 }
 
+/* ── Skip navigation link (WCAG 2.4.1) ──
+   Visually hidden until focused; first Tab stop on every page. */
+.lp-skip-link {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  text-decoration: none;
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--nav-hl);
+  border-radius: var(--nav-r);
+  z-index: 9999;
+}
+.lp-skip-link:focus {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  width: auto;
+  height: auto;
+  clip: auto;
+  white-space: normal;
+  padding: 10px 16px;
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+
+/* ── Screen-reader-only utility (WCAG 1.3.1, 2.4.4) ──
+   Used for "(opens in new tab)" text on external links. */
+.lp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ── Nav shell ── */
 .lp-nav {
   position: sticky;
@@ -40,9 +87,7 @@
   box-shadow: 0 2px 16px rgba(0, 10, 60, 0.1);
 }
 .lp-nav-in {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 24px 0 90px; /* left: 90px matches LEAF global header content offset */
   height: 52px;
   display: flex;
   align-items: center;
@@ -85,14 +130,23 @@
   outline: 3px solid var(--nav-accent);
   outline-offset: 2px;
 }
+/* Active section indicator */
+.dd-trigger[aria-current="true"] {
+  color: var(--nav-accent);
+  font-weight: 700;
+}
 .dd-chevron {
-  font-size: 0.65rem;
-  line-height: 1;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   margin-left: 1px;
   transition: transform 0.25s ease;
   transform-origin: center;
+}
+.dd-chevron .material-symbols-outlined {
+  font-size: 1.25rem; /* 20px — matches nav text scale */
+  line-height: 1;
+  display: flex;
 }
 .dd-item.open .dd-chevron {
   transform: rotate(180deg);
@@ -300,6 +354,9 @@
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
+  .lp-nav-in {
+    padding-left: 16px; /* tighter on mobile — hamburger layout, header alignment less relevant */
+  }
   .lp-nav-links {
     display: none;
   }
@@ -311,5 +368,21 @@
   .lp-nav-toggle,
   .lp-mobile-panel {
     display: none !important;
+  }
+}
+
+/* ── Reduced motion (Section 508 502.2.2 / WCAG 2.3.3) ──
+   Disable all transitions and animations for users who prefer
+   reduced motion at the OS level. */
+@media (prefers-reduced-motion: reduce) {
+  .lp-nav,
+  .dd-trigger,
+  .dd-chevron,
+  .dd-link,
+  .lp-nav-toggle-icon span,
+  .lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(1),
+  .lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(3) {
+    transition: none !important;
+    animation: none !important;
   }
 }

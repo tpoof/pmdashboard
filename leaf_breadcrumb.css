@@ -7,21 +7,30 @@
    always matches the nav bar's palette — no separate colors to
    keep in sync. Falls back to literal values if leaf_nav.css
    isn't loaded for some reason.
+
+   Placement mirrors the nav bar:
+   • sticky below the nav (top: 52px = nav height)
+   • full-width with the same 90px left offset as .lp-nav-in
+   • same background + blur as .lp-nav so it reads as one system
    ============================================================ */
 
 .lp-breadcrumb {
+  position: sticky;
+  top: 52px; /* sits flush below the 52px nav bar */
+  z-index: 299; /* one below .lp-nav's z-index: 300 */
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  padding: 12px 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-  font-family: "Source Sans 3", sans-serif;
+  padding: 10px 24px 10px 90px; /* 90px left matches .lp-nav-in */
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--nav-border, #aacdec);
+  font-family: "Public Sans", sans-serif;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--nav-muted, #3d4551);
-  border-bottom: 1px solid var(--nav-panel-bd, #d9e8f6);
 }
 
 .lp-breadcrumb a {
@@ -48,4 +57,20 @@
 .lp-bc-current {
   color: var(--nav-muted, #3d4551);
   font-weight: 600;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .lp-breadcrumb {
+    padding-left: 16px; /* matches .lp-nav-in mobile padding */
+  }
+}
+
+/* ── Reduced motion (WCAG 2.3.3 / Section 508 502.2.2) ── */
+@media (prefers-reduced-motion: reduce) {
+  .lp-breadcrumb {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: #fff;
+  }
 }
