@@ -2018,6 +2018,73 @@
   window.leafIdeaPortal = {
     userID: "<!--{$userID|unescape|escape:'quotes'}-->",
     csrfToken: "<!--{$CSRFToken|unescape|escape:'quotes'}-->",
+    debug: true,
   };
 </script>
+
+<!-- ── Stats Debug Panel ── (set debug:false or remove this block for production) -->
+<div
+  id="ipDebugPanel"
+  style="
+    position: fixed;
+    bottom: 24px;
+    right: 74px;
+    z-index: 9999;
+    font-family: &quot;Public Sans&quot;, monospace, sans-serif;
+    font-size: 11px;
+    line-height: 1.5;
+    width: 380px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.22);
+    border-radius: 8px;
+    overflow: hidden;
+  "
+>
+  <button
+    id="ipDbgToggle"
+    type="button"
+    style="
+      width: 100%;
+      background: #1a4480;
+      color: #fff;
+      border: none;
+      padding: 7px 12px;
+      text-align: left;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    "
+  >
+    <span>🔬 IDEA PORTAL DEBUG</span>
+    <span id="ipDbgToggleIcon">▼</span>
+  </button>
+  <div
+    id="ipDbgBody"
+    style="
+      background: #0d2345;
+      color: #e8f0fb;
+      padding: 10px 12px;
+      display: grid;
+      gap: 5px;
+    "
+  >
+    <div id="ipDbgDom" style="color: #facc15">⏳ DOM: initializing…</div>
+    <div id="ipDbgLeaf" style="color: #facc15">⏳ LeafFormQuery: checking…</div>
+    <div id="ipDbgUser" style="color: #94a3b8">👤 userID: —</div>
+    <div id="ipDbgInit" style="color: #94a3b8">🔧 init: waiting…</div>
+    <hr style="border-color: #1e3a5f; margin: 4px 0" />
+    <div id="ipDbgIdeas" style="color: #facc15">⏳ Ideas query: pending</div>
+    <div id="ipDbgVotes" style="color: #facc15">⏳ Votes query: pending</div>
+    <hr style="border-color: #1e3a5f; margin: 4px 0" />
+    <div id="ipDbgStats" style="color: #94a3b8">📊 Stats: —</div>
+    <div id="ipDbgErr" style="color: #f87171; display: none"></div>
+    <hr style="border-color: #1e3a5f; margin: 4px 0" />
+    <div id="ipDbgTable" style="color: #94a3b8">📋 Tables: —</div>
+  </div>
+</div>
+
 <script src="./files/ideas_v2.js"></script>

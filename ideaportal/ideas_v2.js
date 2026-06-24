@@ -266,6 +266,136 @@ function hideToast() {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Debug Panel
+───────────────────────────────────────────────────────────── */
+
+const PortalDebug = (function () {
+  function el(id) {
+    return document.getElementById(id);
+  }
+
+  function color(status) {
+    if (status === "success") return "#4ade80";
+    if (status === "error") return "#f87171";
+    if (status === "loading") return "#facc15";
+    return "#94a3b8";
+  }
+
+  function icon(status) {
+    if (status === "success") return "✅";
+    if (status === "error") return "❌";
+    if (status === "loading") return "⏳";
+    return "○";
+  }
+
+  const state = {
+    dom: "initializing",
+    leaf: "unknown",
+    ideas: { status: "pending", count: 0, error: null },
+    votes: { status: "pending", count: 0, error: null },
+    stats: { total: "—", implemented: "—", votes: "—" },
+    initFired: false,
+    tables: { results: 0, topResults: 0, myResults: 0 },
+  };
+
+  function render() {
+    const panel = el("ipDebugPanel");
+    if (!panel) return;
+
+    const domEl = el("ipDbgDom");
+    if (domEl) {
+      domEl.textContent = `🌐 DOM readyState: ${state.dom}`;
+      domEl.style.color =
+        state.dom === "complete" || state.dom === "interactive"
+          ? "#4ade80"
+          : "#facc15";
+    }
+
+    const leafEl = el("ipDbgLeaf");
+    if (leafEl) {
+      const ok = typeof LeafFormQuery !== "undefined";
+      leafEl.textContent = `📦 LeafFormQuery: ${ok ? "available ✅" : "NOT FOUND ❌"}`;
+      leafEl.style.color = ok ? "#4ade80" : "#f87171";
+    }
+
+    const userEl = el("ipDbgUser");
+    if (userEl) {
+      const uid = (window.leafIdeaPortal || {}).userID || "(none)";
+      const isReal = uid && !uid.includes("<!--");
+      userEl.textContent = `👤 userID: ${isReal ? uid.substring(0, 20) : "(Smarty not rendering — check CMS)"}`;
+      userEl.style.color = isReal ? "#4ade80" : "#f87171";
+    }
+
+    const initEl = el("ipDbgInit");
+    if (initEl) {
+      initEl.textContent = `🔧 init fired: ${state.initFired ? "yes ✅" : "NO — not yet (possible DOMContentLoaded miss)"}`;
+      initEl.style.color = state.initFired ? "#4ade80" : "#f87171";
+    }
+
+    const ideasEl = el("ipDbgIdeas");
+    if (ideasEl) {
+      const i = state.ideas;
+      ideasEl.textContent = `${icon(i.status)} Ideas query: ${i.status}${i.count ? ` — ${i.count} records` : ""}${i.error ? ` | ERR: ${i.error}` : ""}`;
+      ideasEl.style.color = color(i.status);
+    }
+
+    const votesEl = el("ipDbgVotes");
+    if (votesEl) {
+      const v = state.votes;
+      votesEl.textContent = `${icon(v.status)} Votes query: ${v.status}${v.count ? ` — ${v.count} records` : ""}${v.error ? ` | ERR: ${v.error}` : ""}`;
+      votesEl.style.color = color(v.status);
+    }
+
+    const statsEl = el("ipDbgStats");
+    if (statsEl) {
+      statsEl.textContent = `📊 Stats → total: ${state.stats.total} | implemented: ${state.stats.implemented} | votes: ${state.stats.votes}`;
+    }
+
+    const tableEl = el("ipDbgTable");
+    if (tableEl) {
+      const t = state.tables;
+      tableEl.textContent = `📋 Rows rendered → All: ${t.results} | Top10: ${t.topResults} | Mine: ${t.myResults}`;
+    }
+  }
+
+  function wireToggle() {
+    const btn = el("ipDbgToggle");
+    const body = el("ipDbgBody");
+    const icon = el("ipDbgToggleIcon");
+    if (!btn || !body) return;
+    btn.addEventListener("click", function () {
+      const hidden = body.style.display === "none";
+      body.style.display = hidden ? "grid" : "none";
+      if (icon) icon.textContent = hidden ? "▼" : "▲";
+    });
+  }
+
+  return {
+    init: function () {
+      wireToggle();
+      state.dom = document.readyState;
+      render();
+    },
+    set: function (key, value) {
+      const parts = key.split(".");
+      let obj = state;
+      for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
+      obj[parts[parts.length - 1]] = value;
+      render();
+    },
+    error: function (msg) {
+      const errEl = el("ipDbgErr");
+      if (errEl) {
+        errEl.style.display = "block";
+        errEl.textContent = `🚨 ${msg}`;
+      }
+      render();
+    },
+    render,
+  };
+})();
+
+/* ─────────────────────────────────────────────────────────────
    Stats strip
 ───────────────────────────────────────────────────────────── */
 
@@ -276,6 +406,9 @@ function renderStatsStrip(totalIdeas, implemented, totalVotes) {
   if (ideasEl) ideasEl.textContent = totalIdeas.toLocaleString();
   if (implementedEl) implementedEl.textContent = implemented.toLocaleString();
   if (votesEl) votesEl.textContent = totalVotes.toLocaleString();
+  PortalDebug.set("stats.total", totalIdeas);
+  PortalDebug.set("stats.implemented", implemented);
+  PortalDebug.set("stats.votes", totalVotes);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1020,11 +1153,9 @@ function renderAllIdeas() {
   state.pagination.all.page = pagination.page;
 
   const emptyMessage = state.search ? "No matching ideas." : "No data found";
-  renderRows(
-    ui.results,
-    pagination.pageItems.map(buildIdeaRow).join(""),
-    emptyMessage,
-  );
+  const rowsHtml = pagination.pageItems.map(buildIdeaRow).join("");
+  renderRows(ui.results, rowsHtml, emptyMessage);
+  PortalDebug.set("tables.results", pagination.pageItems.length);
   updatePaginationUI(
     "all",
     sorted.length,
@@ -1053,11 +1184,9 @@ function renderMyIdeas() {
   );
   state.pagination.my.page = pagination.page;
 
-  renderRows(
-    ui.myResults,
-    pagination.pageItems.map(buildIdeaRow).join(""),
-    "No ideas submitted",
-  );
+  const myRowsHtml = pagination.pageItems.map(buildIdeaRow).join("");
+  renderRows(ui.myResults, myRowsHtml, "No ideas submitted");
+  PortalDebug.set("tables.myResults", pagination.pageItems.length);
   updatePaginationUI(
     "my",
     sorted.length,
@@ -1077,7 +1206,9 @@ function renderTop10Ideas() {
   if (sortState.tblTopIdeas.key)
     top10 = sortIdeasList(top10, voteCounts, sortState.tblTopIdeas);
   applySortClasses("tblTopIdeas");
-  renderRows(ui.topResults, top10.map(buildIdeaRow).join(""), "No data found");
+  const topHtml = top10.map(buildIdeaRow).join("");
+  renderRows(ui.topResults, topHtml, "No data found");
+  PortalDebug.set("tables.topResults", top10.length);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1216,53 +1347,76 @@ function IdeaVotes(ideanum) {
 ───────────────────────────────────────────────────────────── */
 
 async function fetchIdeasData() {
-  const query = new LeafFormQuery();
-  query.addTerm("categoryID", "=", FORM_IDS.idea);
-  query.addTerm("deleted", "=", 0);
-  query.addTerm("stepID", "!=", "notSubmitted");
-  query.sort("created_date", "DESC");
-  query.getData(IDEA_GETDATA);
-  query.setExtraParams("&x-filterData=recordID,title,created_date,userID");
-  query.onProgress((count) =>
-    setStatus("all", `Loading ideas… (${count} records)`, "loading"),
-  );
-  return Object.values((await query.execute()) || {});
+  PortalDebug.set("ideas.status", "loading");
+  try {
+    const query = new LeafFormQuery();
+    query.addTerm("categoryID", "=", FORM_IDS.idea);
+    query.addTerm("deleted", "=", 0);
+    query.addTerm("stepID", "!=", "notSubmitted");
+    query.sort("created_date", "DESC");
+    query.getData(IDEA_GETDATA);
+    query.setExtraParams("&x-filterData=recordID,title,created_date,userID");
+    query.onProgress((count) => {
+      setStatus("all", `Loading ideas… (${count} records)`, "loading");
+      PortalDebug.set("ideas.count", count);
+    });
+    const result = Object.values((await query.execute()) || {});
+    PortalDebug.set("ideas.count", result.length);
+    PortalDebug.set("ideas.status", "success");
+    return result;
+  } catch (err) {
+    PortalDebug.set("ideas.status", "error");
+    PortalDebug.set("ideas.error", String(err));
+    PortalDebug.error(`Ideas query failed: ${err}`);
+    throw err;
+  }
 }
 
 async function fetchVotesData() {
-  const query = new LeafFormQuery();
-  query.addTerm("categoryID", "=", FORM_IDS.votes);
-  query.addTerm("deleted", "=", 0);
-  query.getData(VOTE_GETDATA);
-  query.setExtraParams("&x-filterData=recordID,title");
-  query.onProgress((count) =>
-    setStatus("all", `Loading votes… (${count} records)`, "loading"),
-  );
-
-  const voteData = (await query.execute()) || {};
-  voteCounts = {};
-  userVotes = {};
-
-  const votesList = Object.values(voteData);
-  votesList.forEach((vote) => {
-    const ideanum = vote.s1?.[VOTE_INDICATORS.idea];
-    const voter = vote.s1?.[VOTE_INDICATORS.user];
-    if (ideanum !== undefined && ideanum !== null && ideanum !== "") {
-      const key = String(ideanum);
-      voteCounts[key] = (voteCounts[key] || 0) + 1;
-      if (voter && voter === userID) userVotes[key] = true;
-    }
-  });
-
-  // Merge locally-cached votes (optimistic from past sessions)
+  PortalDebug.set("votes.status", "loading");
   try {
-    const saved = JSON.parse(localStorage.getItem("leafIdeaVotes") || "{}");
-    Object.keys(saved).forEach((k) => {
-      if (saved[k]) userVotes[k] = true;
+    const query = new LeafFormQuery();
+    query.addTerm("categoryID", "=", FORM_IDS.votes);
+    query.addTerm("deleted", "=", 0);
+    query.getData(VOTE_GETDATA);
+    query.setExtraParams("&x-filterData=recordID,title");
+    query.onProgress((count) => {
+      setStatus("all", `Loading votes… (${count} records)`, "loading");
+      PortalDebug.set("votes.count", count);
     });
-  } catch (e) {}
 
-  return votesList.length;
+    const voteData = (await query.execute()) || {};
+    voteCounts = {};
+    userVotes = {};
+
+    const votesList = Object.values(voteData);
+    votesList.forEach((vote) => {
+      const ideanum = vote.s1?.[VOTE_INDICATORS.idea];
+      const voter = vote.s1?.[VOTE_INDICATORS.user];
+      if (ideanum !== undefined && ideanum !== null && ideanum !== "") {
+        const key = String(ideanum);
+        voteCounts[key] = (voteCounts[key] || 0) + 1;
+        if (voter && voter === userID) userVotes[key] = true;
+      }
+    });
+
+    // Merge locally-cached votes (optimistic from past sessions)
+    try {
+      const saved = JSON.parse(localStorage.getItem("leafIdeaVotes") || "{}");
+      Object.keys(saved).forEach((k) => {
+        if (saved[k]) userVotes[k] = true;
+      });
+    } catch (e) {}
+
+    PortalDebug.set("votes.count", votesList.length);
+    PortalDebug.set("votes.status", "success");
+    return votesList.length;
+  } catch (err) {
+    PortalDebug.set("votes.status", "error");
+    PortalDebug.set("votes.error", String(err));
+    PortalDebug.error(`Votes query failed: ${err}`);
+    throw err;
+  }
 }
 
 async function fetchUserSubmissions() {
@@ -1777,10 +1931,14 @@ function bindMySearch() {
    Init
 ───────────────────────────────────────────────────────────── */
 
-document.addEventListener("DOMContentLoaded", function () {
+function initPortal() {
   if (window.$ || window.jQuery) {
     console.warn("IdeaPortal: jQuery is loaded but no longer required.");
   }
+
+  PortalDebug.set("initFired", true);
+  PortalDebug.set("dom", document.readyState);
+
   cacheElements();
   bindModalEvents();
   bindTabs();
@@ -1824,5 +1982,18 @@ document.addEventListener("DOMContentLoaded", function () {
     updateTable();
   } catch (err) {
     console.error("updateTable failed", err);
+    PortalDebug.error(`updateTable threw: ${err}`);
   }
-});
+}
+
+// Wire debug panel immediately (doesn't need DOM fully loaded)
+PortalDebug.init();
+
+/// Robust init: fire immediately if DOM is already ready (CMS fragment case),
+// otherwise wait for DOMContentLoaded.
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initPortal);
+} else {
+  // DOMContentLoaded already fired — call directly
+  initPortal();
+}
