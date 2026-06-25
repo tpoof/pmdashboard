@@ -1,1 +1,76 @@
-[...new Set(state.projectsAll.map((p) => p.projectFiscalYear))];
+(function () {
+  var candidates = [
+    "#content",
+    "#page-content",
+    "#main-content",
+    "#main",
+    "main",
+    ".content",
+    ".page-content",
+    ".programmer-content",
+    "#leafContent",
+    "#leaf-content",
+    "[data-page]",
+    '[role="main"]',
+  ];
+
+  console.log("=== Smarty wrapper candidates ===");
+  candidates.forEach(function (sel) {
+    var el = document.querySelector(sel);
+    if (el) {
+      console.log(
+        "%c FOUND " + sel,
+        "color: green; font-weight: bold",
+        "|",
+        el.tagName +
+          (el.id ? "#" + el.id : "") +
+          (el.className
+            ? "." + el.className.trim().split(/\s+/).join(".")
+            : ""),
+        "| children:",
+        el.children.length,
+        "| ~chars:",
+        el.innerHTML.length,
+      );
+    }
+  });
+
+  console.log("\n=== Body's direct children (top-level structure) ===");
+  Array.from(document.body.children).forEach(function (el) {
+    console.log(
+      el.tagName +
+        (el.id ? "#" + el.id : "") +
+        (el.className ? "." + el.className.trim().split(/\s+/).join(".") : ""),
+      "| ~chars:",
+      el.innerHTML.length,
+    );
+  });
+
+  console.log(
+    "\n=== Elements with substantial content (>500 chars, excluding #header/.lp-nav) ===",
+  );
+  Array.from(document.body.querySelectorAll("*"))
+    .filter(function (el) {
+      var skip = ["SCRIPT", "STYLE", "HEAD"];
+      if (skip.indexOf(el.tagName) > -1) return false;
+      if (
+        el.closest("#header") ||
+        el.closest(".lp-nav") ||
+        el.closest(".lp-breadcrumb")
+      )
+        return false;
+      return el.innerHTML.length > 500 && el.children.length > 0;
+    })
+    .slice(0, 8)
+    .forEach(function (el) {
+      console.log(
+        el.tagName +
+          (el.id ? "#" + el.id : "") +
+          (el.className
+            ? "." + el.className.trim().split(/\s+/).join(".")
+            : ""),
+        "| ~chars:",
+        el.innerHTML.length,
+      );
+    });
+})();
