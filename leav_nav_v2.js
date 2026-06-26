@@ -557,124 +557,70 @@
       "</div>";
   }
 
-  function mountContent(el, sourceDoc, route) {
-    var host = getSwapHost();
-    if (!host) {
-      console.error("[LP Router] mountContent: swap host not found in DOM");
-      return;
-    }
+  /* ─────────────────────────────────────────────────────────────
+     ELEMENT CACHE
+     Resolved once at router init. Using cached references means
+     show/hide never relies on getElementById — so ID reassignment
+     can never break visibility toggling. IDs never change after init.
+  ───────────────────────────────────────────────────────────── */
+  var _lpMain = null; /* launchpad home <main id="lp-main"> */
+  var _swapHost = null; /* swap container [data-lp-swap-host] */
 
-    /* Build the content wrapper */
-    var wrapper = document.createElement("div");
-    wrapper.className = "lp-swap-content";
-
-    /* Move children rather than cloning to preserve event listeners
-       attached during script execution in the parsed doc */
-    while (el.firstChild) {
-      wrapper.appendChild(el.firstChild);
-    }
-
-    host.innerHTML = "";
-    host.appendChild(wrapper);
-
-    /* Re-execute scripts found in the wrapper */
-    reExecuteScripts(wrapper);
-
-    /* Update document title */
-    var fetchedTitle = sourceDoc.title;
-    if (fetchedTitle) document.title = fetchedTitle;
-
-    /* Announce to screen readers */
-    announce(
-      (route && route.title ? route.title : fetchedTitle || "Page") + " loaded",
-    );
-
-    /* Move focus to swap host so screen readers read from here */
-    host.focus();
+  function initElementCache() {
+    _lpMain = document.getElementById("lp-main");
+    _swapHost =
+      document.querySelector("[data-lp-swap-host]") ||
+      document.getElementById("lpSwapHost");
   }
 
   /* ─────────────────────────────────────────────────────────────
-     LAUNCHPAD HOME: SHOW / HIDE
-     When showing a fetched view, the launchpad's own <main> hides.
-     When returning home (empty hash), it shows again.
-     The skip link target (#main-content) swaps accordingly.
+     SHOW / HIDE
+     Explicit inline display style beats any stylesheet rule,
+     including LEAF's own overrides. IDs never change — the skip
+     link always targets #lp-main (home) or #lpSwapHost (fetched).
   ───────────────────────────────────────────────────────────── */
-  /* ── Skip link target management ──
-     Both #lp-main and #lpSwapHost keep their IDs permanently.
-     We move id="main-content" by reassigning it on the currently
-     visible element — but we do it AFTER the hidden toggle so the
-     element is already visible when it receives the id.
-     Root cause of original bug: id was swapped before hidden was
-     removed, so getElementById("lpSwapHost") returned null when
-     mountContent tried to unhide it. */
   function showLaunchpadHome() {
-    var lpMain = document.getElementById("lp-main");
-    var swapHost = document.getElementById("lpSwapHost");
-
-    /* 1. Show home */
-    if (lpMain) lpMain.removeAttribute("hidden");
-
-    /* 2. Hide and clear swap host */
-    if (swapHost) {
-      swapHost.setAttribute("hidden", "");
-      swapHost.removeAttribute("id"); /* release main-content id if held */
-      swapHost.innerHTML = "";
+    if (_lpMain) _lpMain.style.display = "";
+    if (_swapHost) {
+      _swapHost.style.display = "none";
+      _swapHost.innerHTML = "";
     }
 
-    /* 3. Restore skip link target to home — AFTER visibility change */
-    if (lpMain) lpMain.id = "main-content";
+    /* Skip link → home */
+    var skip = document.getElementById("lp-skip-nav");
+    if (skip) skip.href = "#lp-main";
 
     document.title =
       "LEAF Launchpad — Your Platform for Digital Transformation";
     announce("Returned to Launchpad home");
-
     updateNavCurrent(null);
-    updateBreadcrumb(null, null);
   }
 
   function showSwapView() {
-    var lpMain = document.getElementById("lp-main");
-    var swapHost = document.getElementById("lpSwapHost");
+    if (_lpMain) _lpMain.style.display = "none";
+    if (_swapHost) _swapHost.style.display = "";
 
-    /* 1. Hide home, release its main-content id */
-    if (lpMain) {
-      lpMain.setAttribute("hidden", "");
-      lpMain.removeAttribute("id");
-    }
-
-    /* 2. Unhide swap host — id="lpSwapHost" stays intact */
-    if (swapHost) swapHost.removeAttribute("hidden");
-
-    /* 3. Assign skip link target to swap host — AFTER it's visible */
-    if (swapHost) swapHost.id = "main-content";
+    /* Skip link → fetched content */
+    var skip = document.getElementById("lp-skip-nav");
+    if (skip) skip.href = "#lpSwapHost";
   }
 
   /* ─────────────────────────────────────────────────────────────
-     BREADCRUMB UPDATE
-     Sets window.LEAF_BREADCRUMB if the breadcrumb system reads it,
-     and also directly manipulates .lp-breadcrumb DOM if present.
-     Breadcrumb trail: Home > [Section] > [Page]
+     BREADCRUMB
+     Rendered directly into the top of the swap host on every
+     view load — no dependency on leaf_breadcrumb.js timing.
+     Trail: LEAF Launchpad → [Section] → [Page Title]
   ───────────────────────────────────────────────────────────── */
-  function updateBreadcrumb(route, hash) {
-    var crumbs = [{ label: "LEAF Launchpad", href: "report.php?a=launchpad" }];
-
+  function buildBreadcrumbHTML(route) {
+    var crumbs = [
+      { label: "LEAF Launchpad", href: "report.php?a=launchpad_v2" },
+    ];
     if (route) {
-      if (route.section) {
-        crumbs.push({ label: route.section, href: null });
-      }
+      if (route.section) crumbs.push({ label: route.section, href: null });
       crumbs.push({ label: route.title, href: null, current: true });
     }
 
-    window.LEAF_BREADCRUMB = crumbs;
-
-    /* If the breadcrumb element is already in the DOM, update it directly */
-    var bc = document.querySelector(".lp-breadcrumb");
-    if (!bc) return;
-
-    var ol = bc.querySelector("ol, ul, nav");
-    if (!ol) return;
-
-    ol.innerHTML = crumbs
+    var items = crumbs
       .map(function (crumb, i) {
         var isLast = i === crumbs.length - 1;
         if (isLast) {
@@ -682,15 +628,65 @@
             '<li><span aria-current="page">' + crumb.label + "</span></li>"
           );
         }
+        var inner = crumb.href
+          ? '<a href="' + crumb.href + '">' + crumb.label + "</a>"
+          : "<span>" + crumb.label + "</span>";
         return (
           "<li>" +
-          (crumb.href
-            ? '<a href="' + crumb.href + '">' + crumb.label + "</a>"
-            : "<span>" + crumb.label + "</span>") +
-          "</li>"
+          inner +
+          '<span aria-hidden="true" class="lp-bc-sep">/</span></li>'
         );
       })
       .join("");
+
+    return (
+      '<nav class="lp-breadcrumb lp-swap-breadcrumb" aria-label="Breadcrumb">' +
+      "<ol>" +
+      items +
+      "</ol>" +
+      "</nav>"
+    );
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     MOUNT CONTENT
+  ───────────────────────────────────────────────────────────── */
+  function mountContent(el, sourceDoc, route) {
+    var host = _swapHost;
+    if (!host) {
+      console.error("[LP] mountContent: swap host not found");
+      return;
+    }
+
+    /* Breadcrumb bar above content */
+    var bc = document.createElement("div");
+    bc.innerHTML = buildBreadcrumbHTML(route);
+
+    /* Content wrapper */
+    var wrapper = document.createElement("div");
+    wrapper.className = "lp-swap-content";
+    while (el.firstChild) {
+      wrapper.appendChild(el.firstChild);
+    }
+
+    host.innerHTML = "";
+    host.appendChild(bc.firstElementChild);
+    host.appendChild(wrapper);
+
+    /* Re-execute scripts in the injected content */
+    reExecuteScripts(wrapper);
+
+    /* Update document title */
+    var fetchedTitle = sourceDoc.title;
+    if (fetchedTitle) document.title = fetchedTitle;
+
+    /* Announce view change to screen readers */
+    announce(
+      (route && route.title ? route.title : fetchedTitle || "Page") + " loaded",
+    );
+
+    /* Move focus to swap host */
+    host.focus();
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -761,9 +757,6 @@
 
         /* Mount into swap host */
         mountContent(contentEl, doc, route);
-
-        /* Update breadcrumb */
-        updateBreadcrumb(route, hash);
 
         /* Scroll swap host to top */
         var host = getSwapHost();
@@ -843,6 +836,9 @@
      Called only on the launchpad page.
   ───────────────────────────────────────────────────────────── */
   function wireRouter() {
+    /* Cache element references once — used by show/hide throughout */
+    initElementCache();
+
     /* hashchange drives back/forward navigation */
     window.addEventListener("hashchange", function () {
       router();
@@ -851,8 +847,7 @@
     /* Wire link intercept (replaces Option A panel opener) */
     wireLinkIntercept();
 
-    /* Run router on init to handle deep-linked URLs
-       (e.g. user bookmarked report.php?a=launchpad#find_site) */
+    /* Run router on init to handle deep-linked URLs */
     router();
   }
 
