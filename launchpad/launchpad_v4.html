@@ -18,7 +18,7 @@
     />
 
     <!-- Design system -->
-    <link rel="stylesheet" href="./files/launchpad_v2.css" />
+    <link rel="stylesheet" href="./files/launchpad.css" />
     <style>
       .nl-link .material-symbols-outlined {
         color: #fff !important;
@@ -29,7 +29,7 @@
     </style>
 
     <!-- Universal nav + Option B router (single shared file) -->
-    <script src="/platform/designs/files/leaf_nav_v2.js"></script>
+    <script src="/platform/designs/files/leaf_nav.js"></script>
   </head>
   <body>
     <div class="lp" id="lp-root">
@@ -46,7 +46,13 @@
            absent, but having it here prevents any FOUC.
            tabindex="-1" allows programmatic focus for a11y.
       ══════════════════════════════════════════ -->
-      <div id="lpSwapHost" tabindex="-1" aria-label="Page content" hidden></div>
+      <div
+        id="lpSwapHost"
+        data-lp-swap-host
+        tabindex="-1"
+        aria-label="Page content"
+        hidden
+      ></div>
 
       <!-- ══════════════════════════════════════════
            SCREEN READER LIVE REGION

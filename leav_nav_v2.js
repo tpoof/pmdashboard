@@ -288,7 +288,13 @@
   /* ─────────────────────────────────────────────────────────────
      SELF-MOUNT: STYLESHEET
   ───────────────────────────────────────────────────────────── */
+  /* Hardcoded path — CSS filename is always leaf_nav.css regardless
+     of what version filename this JS is deployed as (leaf_nav_v2.js,
+     leaf_nav_v3.js, etc.). Update this constant if the CSS ever moves. */
+  var LEAF_NAV_CSS_HREF = "/platform/designs/files/leaf_nav.css";
+
   function ensureStylesheet() {
+    /* Already linked by the page directly — leave it alone */
     if (
       document.querySelector(
         'link[href*="leaf_nav.css"], link[href*="leaf-nav.css"]',
@@ -296,22 +302,11 @@
     ) {
       return;
     }
-    var thisScript =
-      document.currentScript ||
-      (function () {
-        var scripts = document.getElementsByTagName("script");
-        return scripts[scripts.length - 1];
-      })();
-    var src = thisScript && thisScript.getAttribute("src");
-    if (!src) return;
-    var cssHref = src.replace(/leaf[_-]nav\.js(\?.*)?$/i, function (match) {
-      return match.replace(/\.js/i, ".css");
-    });
-    if (cssHref === src) return;
     var link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = cssHref;
+    link.href = LEAF_NAV_CSS_HREF;
     document.head.appendChild(link);
+    console.log("[LP Nav] Stylesheet injected:", LEAF_NAV_CSS_HREF);
   }
   ensureStylesheet();
 
@@ -333,9 +328,15 @@
      Only injected on the launchpad page. Hidden by default.
   ───────────────────────────────────────────────────────────── */
   function ensureSwapHost() {
-    if (document.getElementById("lpSwapHost")) return;
+    /* Mark existing element with stable attribute if present */
+    var existing = document.getElementById("lpSwapHost");
+    if (existing) {
+      existing.setAttribute("data-lp-swap-host", "");
+      return;
+    }
     var host = document.createElement("div");
     host.id = "lpSwapHost";
+    host.setAttribute("data-lp-swap-host", ""); /* stable lookup anchor */
     host.setAttribute("hidden", "");
     host.setAttribute("tabindex", "-1");
     host.setAttribute("aria-label", "Page content");
@@ -524,8 +525,18 @@
   /* ─────────────────────────────────────────────────────────────
      SWAP HOST: LOADING / ERROR / CONTENT STATES
   ───────────────────────────────────────────────────────────── */
+  /* Helper: find swap host by stable data attribute regardless of
+     what id it currently holds (it temporarily holds "main-content") */
+  function getSwapHost() {
+    /* Primary: stable data attribute — survives any id reassignment */
+    return (
+      document.querySelector("[data-lp-swap-host]") ||
+      document.getElementById("lpSwapHost")
+    );
+  }
+
   function showSwapLoading() {
-    var host = document.getElementById("lpSwapHost");
+    var host = getSwapHost();
     if (!host) return;
     host.innerHTML =
       '<div class="lp-swap-loading" aria-hidden="true">' +
@@ -535,7 +546,7 @@
   }
 
   function showSwapError(url) {
-    var host = document.getElementById("lpSwapHost");
+    var host = getSwapHost();
     if (!host) return;
     host.innerHTML =
       '<div class="lp-swap-error" role="alert">' +
@@ -551,8 +562,17 @@
   }
 
   function mountContent(el, sourceDoc, route) {
-    var host = document.getElementById("lpSwapHost");
-    if (!host) return;
+    var host = getSwapHost();
+    if (!host) {
+      console.error("[LP Router] mountContent: swap host not found in DOM");
+      return;
+    }
+    console.log(
+      "[LP Router] mountContent: host found —",
+      host.id,
+      "hidden?",
+      host.hasAttribute("hidden"),
+    );
 
     /* Build the content wrapper */
     var wrapper = document.createElement("div");
@@ -589,41 +609,65 @@
      When returning home (empty hash), it shows again.
      The skip link target (#main-content) swaps accordingly.
   ───────────────────────────────────────────────────────────── */
+  /* ── Skip link target management ──
+     Both #lp-main and #lpSwapHost keep their IDs permanently.
+     We move id="main-content" by reassigning it on the currently
+     visible element — but we do it AFTER the hidden toggle so the
+     element is already visible when it receives the id.
+     Root cause of original bug: id was swapped before hidden was
+     removed, so getElementById("lpSwapHost") returned null when
+     mountContent tried to unhide it. */
   function showLaunchpadHome() {
     var lpMain = document.getElementById("lp-main");
     var swapHost = document.getElementById("lpSwapHost");
 
-    if (lpMain) {
-      lpMain.removeAttribute("hidden");
-      lpMain.id = "main-content"; /* restore skip link target */
-    }
+    /* 1. Show home */
+    if (lpMain) lpMain.removeAttribute("hidden");
+
+    /* 2. Hide and clear swap host */
     if (swapHost) {
       swapHost.setAttribute("hidden", "");
+      swapHost.removeAttribute("id"); /* release main-content id if held */
       swapHost.innerHTML = "";
     }
+
+    /* 3. Restore skip link target to home — AFTER visibility change */
+    if (lpMain) lpMain.id = "main-content";
 
     document.title =
       "LEAF Launchpad — Your Platform for Digital Transformation";
     announce("Returned to Launchpad home");
 
-    /* Clear active state on all nav triggers */
     updateNavCurrent(null);
     updateBreadcrumb(null, null);
+
+    console.log(
+      "[LP Router] showLaunchpadHome complete — lp-main visible, swapHost hidden",
+    );
   }
 
   function showSwapView() {
     var lpMain = document.getElementById("lp-main");
     var swapHost = document.getElementById("lpSwapHost");
 
+    /* 1. Hide home, release its main-content id */
     if (lpMain) {
       lpMain.setAttribute("hidden", "");
-      /* Reassign #main-content to swap host for skip link */
       lpMain.removeAttribute("id");
     }
-    if (swapHost) {
-      swapHost.id = "main-content"; /* skip link now jumps here */
-      swapHost.removeAttribute("hidden");
-    }
+
+    /* 2. Unhide swap host — id="lpSwapHost" stays intact */
+    if (swapHost) swapHost.removeAttribute("hidden");
+
+    /* 3. Assign skip link target to swap host — AFTER it's visible */
+    if (swapHost) swapHost.id = "main-content";
+
+    console.log(
+      "[LP Router] showSwapView complete — lpSwapHost id now:",
+      swapHost ? swapHost.id : "MISSING",
+      "hidden?",
+      swapHost ? swapHost.hasAttribute("hidden") : "MISSING",
+    );
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -744,9 +788,7 @@
         updateBreadcrumb(route, hash);
 
         /* Scroll swap host to top */
-        var host =
-          document.getElementById("lpSwapHost") ||
-          document.getElementById("main-content");
+        var host = getSwapHost();
         if (host) host.scrollTop = 0;
         window.scrollTo(0, 0);
 
