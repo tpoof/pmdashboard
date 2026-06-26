@@ -18,6 +18,11 @@
     <link rel="stylesheet" href="/platform/designs/files/launchpad.css" />
 
     <style>
+      #header,
+      #footer {
+        display: none !important;
+      }
+
       /* ── Stat card entrance ── */
       @media (prefers-reduced-motion: no-preference) {
         .stat-card {
@@ -239,10 +244,10 @@
       <!-- NAV: host div is optional since leaf_nav.js self-mounts, but kept for explicit placement -->
       <div id="lp-nav-host"></div>
 
-      <!-- BREADCRUMB host: anchor point for the breadcrumb nav.
-           The data + script live at the bottom of <body> so the full
-           DOM is parsed before leaf_breadcrumb.js calls render(). -->
-      <div id="lp-breadcrumb-host"></div>
+      <!-- BREADCRUMB host intentionally omitted: the platform strips
+           unknown divs before the script runs. leaf_breadcrumb.js
+           creates its own host via ensureHost() and inserts it after
+           #lpNav automatically. -->
 
       <main id="lp-main" tabindex="-1">
         <!-- PAGE TITLE -->
@@ -756,23 +761,18 @@
           JSON.stringify(window.LEAF_BREADCRUMB),
         );
 
-        // 2. Is the host div in the DOM and does it have a parent?
-        var host = document.getElementById("lp-breadcrumb-host");
-        if (!host) {
+        // 2. Host div intentionally removed — leaf_breadcrumb.js self-mounts after #lpNav.
+        //    Confirm #lpNav exists so ensureHost() has a sibling to insert after.
+        var navEl = document.getElementById("lpNav");
+        if (!navEl) {
           console.error(
             DEBUG_PREFIX,
-            "FAIL — #lp-breadcrumb-host not found in DOM",
-          );
-        } else if (!host.parentNode) {
-          console.error(
-            DEBUG_PREFIX,
-            "FAIL — #lp-breadcrumb-host exists but has no parentNode (detached)",
+            "FAIL — #lpNav not found; ensureHost() will fall back to body prepend, breadcrumb may appear in wrong position",
           );
         } else {
           console.log(
             DEBUG_PREFIX,
-            "OK — #lp-breadcrumb-host found, parentNode =",
-            host.parentNode.tagName + "#" + host.parentNode.id,
+            "OK — #lpNav found; ensureHost() will insert breadcrumb after it",
           );
         }
 
