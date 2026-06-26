@@ -624,7 +624,7 @@
     /* Matches leaf_breadcrumb.js output exactly — flat children inside
        <nav class="lp-breadcrumb">, same .lp-bc-sep and .lp-bc-current
        spans, so leaf_breadcrumb.css styles it without any extra rules. */
-    var trail = [{ label: "Launchpad", href: "/platform/" }];
+    var trail = [{ label: "Launchpad", href: "/platform/designs" }];
     if (route) {
       if (route.section) trail.push({ label: route.section, href: null });
       trail.push({ label: route.title, href: null, current: true });
