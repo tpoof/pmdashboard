@@ -297,7 +297,7 @@
     /* Already linked by the page directly — leave it alone */
     if (
       document.querySelector(
-        'link[href*="leaf_nav.css"], link[href*="leaf-nav.css"]',
+        'link[href*="leaf_nav.css"], link[href*="leaf-nav.css"]'
       )
     ) {
       return;
@@ -306,7 +306,6 @@
     link.rel = "stylesheet";
     link.href = LEAF_NAV_CSS_HREF;
     document.head.appendChild(link);
-    console.log("[LP Nav] Stylesheet injected:", LEAF_NAV_CSS_HREF);
   }
   ensureStylesheet();
 
@@ -467,31 +466,34 @@
   ───────────────────────────────────────────────────────────── */
   var _seenExternalScripts = {};
 
+  /* Scripts that must never re-execute inside a fetched page context.
+     Shell-level scripts (nav, breadcrumb) manage the outer document —
+     re-running them injects duplicate elements and undoes router state. */
+  var SCRIPT_BLOCKLIST = [
+    "leaf_nav", "leaf_breadcrumb", "leaf-nav", "leaf-breadcrumb"
+  ];
+
+  function isBlocklistedScript(src) {
+    return SCRIPT_BLOCKLIST.some(function (term) {
+      return src.indexOf(term) > -1;
+    });
+  }
+
   function reExecuteScripts(container) {
     var scripts = Array.prototype.slice.call(
-      container.querySelectorAll("script"),
+      container.querySelectorAll("script")
     );
 
     scripts.forEach(function (oldScript) {
-      /* Skip scripts that would destroy the outer document */
-      if (
-        oldScript.textContent &&
-        oldScript.textContent.indexOf("document.write") > -1
-      ) {
-        console.warn("[LP Router] Skipped script containing document.write");
+      if (oldScript.textContent && oldScript.textContent.indexOf("document.write") > -1) {
+        console.warn("[LP] Skipped script containing document.write");
         return;
       }
 
       if (oldScript.src) {
-        /* External script — deduplicate by src across navigations */
         var src = oldScript.src;
-        if (_seenExternalScripts[src]) {
-          console.log(
-            "[LP Router] Skipping already-loaded external script:",
-            src,
-          );
-          return;
-        }
+        if (isBlocklistedScript(src)) return;
+        if (_seenExternalScripts[src]) return;
         _seenExternalScripts[src] = true;
 
         var newScript = document.createElement("script");
@@ -499,24 +501,12 @@
         newScript.async = false;
         if (oldScript.type) newScript.type = oldScript.type;
         document.head.appendChild(newScript);
-        console.log("[LP Router] Re-executed external script:", src);
       } else if (oldScript.textContent && oldScript.textContent.trim()) {
-        /* Inline script — execute via new Function to scope top-level vars */
         try {
-          /* Pass document and window explicitly so scripts that reference
-             them still work, while top-level var leakage is contained */
           var fn = new Function("document", "window", oldScript.textContent);
           fn(document, window);
-          console.log(
-            "[LP Router] Re-executed inline script (" +
-              oldScript.textContent.trim().length +
-              " chars)",
-          );
         } catch (err) {
-          console.warn(
-            "[LP Router] Inline script execution error:",
-            err.message,
-          );
+          console.warn("[LP] Inline script execution error:", err.message);
         }
       }
     });
@@ -529,10 +519,8 @@
      what id it currently holds (it temporarily holds "main-content") */
   function getSwapHost() {
     /* Primary: stable data attribute — survives any id reassignment */
-    return (
-      document.querySelector("[data-lp-swap-host]") ||
-      document.getElementById("lpSwapHost")
-    );
+    return document.querySelector("[data-lp-swap-host]") ||
+           document.getElementById("lpSwapHost");
   }
 
   function showSwapLoading() {
@@ -540,8 +528,8 @@
     if (!host) return;
     host.innerHTML =
       '<div class="lp-swap-loading" aria-hidden="true">' +
-      '<span class="lp-swap-spinner"></span>' +
-      "</div>";
+        '<span class="lp-swap-spinner"></span>' +
+      '</div>';
     host.removeAttribute("hidden");
   }
 
@@ -550,15 +538,13 @@
     if (!host) return;
     host.innerHTML =
       '<div class="lp-swap-error" role="alert">' +
-      '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true">error_outline</span>' +
-      '<p class="lp-swap-error-msg">This page couldn\'t be loaded.</p>' +
-      '<a class="lp-swap-error-link btn btn-sec" href="' +
-      url +
-      '" target="_blank" rel="noopener noreferrer">' +
-      '<span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>' +
-      "Open in a new tab" +
-      "</a>" +
-      "</div>";
+        '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true">error_outline</span>' +
+        '<p class="lp-swap-error-msg">This page couldn\'t be loaded.</p>' +
+        '<a class="lp-swap-error-link btn btn-sec" href="' + url + '" target="_blank" rel="noopener noreferrer">' +
+          '<span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>' +
+          'Open in a new tab' +
+        '</a>' +
+      '</div>';
   }
 
   function mountContent(el, sourceDoc, route) {
@@ -567,12 +553,6 @@
       console.error("[LP Router] mountContent: swap host not found in DOM");
       return;
     }
-    console.log(
-      "[LP Router] mountContent: host found —",
-      host.id,
-      "hidden?",
-      host.hasAttribute("hidden"),
-    );
 
     /* Build the content wrapper */
     var wrapper = document.createElement("div");
@@ -595,9 +575,7 @@
     if (fetchedTitle) document.title = fetchedTitle;
 
     /* Announce to screen readers */
-    announce(
-      (route && route.title ? route.title : fetchedTitle || "Page") + " loaded",
-    );
+    announce((route && route.title ? route.title : fetchedTitle || "Page") + " loaded");
 
     /* Move focus to swap host so screen readers read from here */
     host.focus();
@@ -634,16 +612,12 @@
     /* 3. Restore skip link target to home — AFTER visibility change */
     if (lpMain) lpMain.id = "main-content";
 
-    document.title =
-      "LEAF Launchpad — Your Platform for Digital Transformation";
+    document.title = "LEAF Launchpad — Your Platform for Digital Transformation";
     announce("Returned to Launchpad home");
 
     updateNavCurrent(null);
     updateBreadcrumb(null, null);
 
-    console.log(
-      "[LP Router] showLaunchpadHome complete — lp-main visible, swapHost hidden",
-    );
   }
 
   function showSwapView() {
@@ -662,12 +636,8 @@
     /* 3. Assign skip link target to swap host — AFTER it's visible */
     if (swapHost) swapHost.id = "main-content";
 
-    console.log(
-      "[LP Router] showSwapView complete — lpSwapHost id now:",
       swapHost ? swapHost.id : "MISSING",
-      "hidden?",
-      swapHost ? swapHost.hasAttribute("hidden") : "MISSING",
-    );
+      "hidden?", swapHost ? swapHost.hasAttribute("hidden") : "MISSING");
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -677,7 +647,9 @@
      Breadcrumb trail: Home > [Section] > [Page]
   ───────────────────────────────────────────────────────────── */
   function updateBreadcrumb(route, hash) {
-    var crumbs = [{ label: "LEAF Launchpad", href: "report.php?a=launchpad" }];
+    var crumbs = [
+      { label: "LEAF Launchpad", href: "report.php?a=launchpad" }
+    ];
 
     if (route) {
       if (route.section) {
@@ -695,23 +667,17 @@
     var ol = bc.querySelector("ol, ul, nav");
     if (!ol) return;
 
-    ol.innerHTML = crumbs
-      .map(function (crumb, i) {
-        var isLast = i === crumbs.length - 1;
-        if (isLast) {
-          return (
-            '<li><span aria-current="page">' + crumb.label + "</span></li>"
-          );
-        }
-        return (
-          "<li>" +
-          (crumb.href
-            ? '<a href="' + crumb.href + '">' + crumb.label + "</a>"
-            : "<span>" + crumb.label + "</span>") +
-          "</li>"
-        );
-      })
-      .join("");
+    ol.innerHTML = crumbs.map(function (crumb, i) {
+      var isLast = i === crumbs.length - 1;
+      if (isLast) {
+        return '<li><span aria-current="page">' + crumb.label + '</span></li>';
+      }
+      return '<li>' +
+        (crumb.href
+          ? '<a href="' + crumb.href + '">' + crumb.label + '</a>'
+          : '<span>' + crumb.label + '</span>') +
+        '</li>';
+    }).join("");
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -724,12 +690,7 @@
     });
     if (!sectionLabel) return;
     document.querySelectorAll(".dd-trigger").forEach(function (btn) {
-      if (
-        btn.textContent
-          .trim()
-          .toLowerCase()
-          .indexOf(sectionLabel.trim().toLowerCase()) === 0
-      ) {
+      if (btn.textContent.trim().toLowerCase().indexOf(sectionLabel.trim().toLowerCase()) === 0) {
         btn.setAttribute("aria-current", "true");
       }
     });
@@ -749,21 +710,18 @@
     }
 
     var url = route.href;
-    console.log("[LP Router] loadView:", hash, "→", url);
 
     showSwapView();
     showSwapLoading();
     updateNavCurrent(route.section);
 
     fetch(url, {
-      credentials: "same-origin" /* send session cookies so auth works */,
-      headers: { "X-Requested-With": "XMLHttpRequest" },
+      credentials: "same-origin", /* send session cookies so auth works */
+      headers: { "X-Requested-With": "XMLHttpRequest" }
     })
       .then(function (response) {
         if (!response.ok) {
-          throw new Error(
-            "HTTP " + response.status + " " + response.statusText,
-          );
+          throw new Error("HTTP " + response.status + " " + response.statusText);
         }
         return response.text();
       })
@@ -792,7 +750,6 @@
         if (host) host.scrollTop = 0;
         window.scrollTo(0, 0);
 
-        console.log("[LP Router] View loaded:", route.title);
       })
       .catch(function (err) {
         console.error("[LP Router] Fetch failed for", url, ":", err.message);
@@ -810,7 +767,6 @@
     var raw = window.location.hash; /* e.g. "#find_site" or "" */
     var key = raw.replace(/^#/, "").toLowerCase();
 
-    console.log("[LP Router] router() hash:", raw, "key:", key);
 
     if (!key || key === "home" || key === "launchpad") {
       showLaunchpadHome();
@@ -835,7 +791,6 @@
 
       /* Modifier-key / middle-click → real new tab, no intercept */
       if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
-        console.log("[LP Router] Modifier key — passing through to browser");
         return;
       }
 
@@ -889,8 +844,8 @@
   function getFocusableElements(container) {
     return Array.prototype.slice.call(
       container.querySelectorAll(
-        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      ),
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
     );
   }
 
@@ -915,7 +870,7 @@
       var onScroll = function () {
         nav.classList.toggle(
           "scrolled",
-          (window.pageYOffset || document.documentElement.scrollTop) > 4,
+          (window.pageYOffset || document.documentElement.scrollTop) > 4
         );
       };
       window.addEventListener("scroll", onScroll, { passive: true });
