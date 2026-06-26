@@ -297,7 +297,7 @@
     /* Already linked by the page directly — leave it alone */
     if (
       document.querySelector(
-        'link[href*="leaf_nav.css"], link[href*="leaf-nav.css"]'
+        'link[href*="leaf_nav.css"], link[href*="leaf-nav.css"]',
       )
     ) {
       return;
@@ -470,7 +470,10 @@
      Shell-level scripts (nav, breadcrumb) manage the outer document —
      re-running them injects duplicate elements and undoes router state. */
   var SCRIPT_BLOCKLIST = [
-    "leaf_nav", "leaf_breadcrumb", "leaf-nav", "leaf-breadcrumb"
+    "leaf_nav",
+    "leaf_breadcrumb",
+    "leaf-nav",
+    "leaf-breadcrumb",
   ];
 
   function isBlocklistedScript(src) {
@@ -481,11 +484,14 @@
 
   function reExecuteScripts(container) {
     var scripts = Array.prototype.slice.call(
-      container.querySelectorAll("script")
+      container.querySelectorAll("script"),
     );
 
     scripts.forEach(function (oldScript) {
-      if (oldScript.textContent && oldScript.textContent.indexOf("document.write") > -1) {
+      if (
+        oldScript.textContent &&
+        oldScript.textContent.indexOf("document.write") > -1
+      ) {
         console.warn("[LP] Skipped script containing document.write");
         return;
       }
@@ -519,8 +525,10 @@
      what id it currently holds (it temporarily holds "main-content") */
   function getSwapHost() {
     /* Primary: stable data attribute — survives any id reassignment */
-    return document.querySelector("[data-lp-swap-host]") ||
-           document.getElementById("lpSwapHost");
+    return (
+      document.querySelector("[data-lp-swap-host]") ||
+      document.getElementById("lpSwapHost")
+    );
   }
 
   function showSwapLoading() {
@@ -528,8 +536,8 @@
     if (!host) return;
     host.innerHTML =
       '<div class="lp-swap-loading" aria-hidden="true">' +
-        '<span class="lp-swap-spinner"></span>' +
-      '</div>';
+      '<span class="lp-swap-spinner"></span>' +
+      "</div>";
     host.removeAttribute("hidden");
   }
 
@@ -538,13 +546,15 @@
     if (!host) return;
     host.innerHTML =
       '<div class="lp-swap-error" role="alert">' +
-        '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true">error_outline</span>' +
-        '<p class="lp-swap-error-msg">This page couldn\'t be loaded.</p>' +
-        '<a class="lp-swap-error-link btn btn-sec" href="' + url + '" target="_blank" rel="noopener noreferrer">' +
-          '<span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>' +
-          'Open in a new tab' +
-        '</a>' +
-      '</div>';
+      '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true">error_outline</span>' +
+      '<p class="lp-swap-error-msg">This page couldn\'t be loaded.</p>' +
+      '<a class="lp-swap-error-link btn btn-sec" href="' +
+      url +
+      '" target="_blank" rel="noopener noreferrer">' +
+      '<span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>' +
+      "Open in a new tab" +
+      "</a>" +
+      "</div>";
   }
 
   function mountContent(el, sourceDoc, route) {
@@ -575,7 +585,9 @@
     if (fetchedTitle) document.title = fetchedTitle;
 
     /* Announce to screen readers */
-    announce((route && route.title ? route.title : fetchedTitle || "Page") + " loaded");
+    announce(
+      (route && route.title ? route.title : fetchedTitle || "Page") + " loaded",
+    );
 
     /* Move focus to swap host so screen readers read from here */
     host.focus();
@@ -612,12 +624,12 @@
     /* 3. Restore skip link target to home — AFTER visibility change */
     if (lpMain) lpMain.id = "main-content";
 
-    document.title = "LEAF Launchpad — Your Platform for Digital Transformation";
+    document.title =
+      "LEAF Launchpad — Your Platform for Digital Transformation";
     announce("Returned to Launchpad home");
 
     updateNavCurrent(null);
     updateBreadcrumb(null, null);
-
   }
 
   function showSwapView() {
@@ -635,9 +647,6 @@
 
     /* 3. Assign skip link target to swap host — AFTER it's visible */
     if (swapHost) swapHost.id = "main-content";
-
-      swapHost ? swapHost.id : "MISSING",
-      "hidden?", swapHost ? swapHost.hasAttribute("hidden") : "MISSING");
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -647,9 +656,7 @@
      Breadcrumb trail: Home > [Section] > [Page]
   ───────────────────────────────────────────────────────────── */
   function updateBreadcrumb(route, hash) {
-    var crumbs = [
-      { label: "LEAF Launchpad", href: "report.php?a=launchpad" }
-    ];
+    var crumbs = [{ label: "LEAF Launchpad", href: "report.php?a=launchpad" }];
 
     if (route) {
       if (route.section) {
@@ -667,17 +674,23 @@
     var ol = bc.querySelector("ol, ul, nav");
     if (!ol) return;
 
-    ol.innerHTML = crumbs.map(function (crumb, i) {
-      var isLast = i === crumbs.length - 1;
-      if (isLast) {
-        return '<li><span aria-current="page">' + crumb.label + '</span></li>';
-      }
-      return '<li>' +
-        (crumb.href
-          ? '<a href="' + crumb.href + '">' + crumb.label + '</a>'
-          : '<span>' + crumb.label + '</span>') +
-        '</li>';
-    }).join("");
+    ol.innerHTML = crumbs
+      .map(function (crumb, i) {
+        var isLast = i === crumbs.length - 1;
+        if (isLast) {
+          return (
+            '<li><span aria-current="page">' + crumb.label + "</span></li>"
+          );
+        }
+        return (
+          "<li>" +
+          (crumb.href
+            ? '<a href="' + crumb.href + '">' + crumb.label + "</a>"
+            : "<span>" + crumb.label + "</span>") +
+          "</li>"
+        );
+      })
+      .join("");
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -690,7 +703,12 @@
     });
     if (!sectionLabel) return;
     document.querySelectorAll(".dd-trigger").forEach(function (btn) {
-      if (btn.textContent.trim().toLowerCase().indexOf(sectionLabel.trim().toLowerCase()) === 0) {
+      if (
+        btn.textContent
+          .trim()
+          .toLowerCase()
+          .indexOf(sectionLabel.trim().toLowerCase()) === 0
+      ) {
         btn.setAttribute("aria-current", "true");
       }
     });
@@ -716,12 +734,14 @@
     updateNavCurrent(route.section);
 
     fetch(url, {
-      credentials: "same-origin", /* send session cookies so auth works */
-      headers: { "X-Requested-With": "XMLHttpRequest" }
+      credentials: "same-origin" /* send session cookies so auth works */,
+      headers: { "X-Requested-With": "XMLHttpRequest" },
     })
       .then(function (response) {
         if (!response.ok) {
-          throw new Error("HTTP " + response.status + " " + response.statusText);
+          throw new Error(
+            "HTTP " + response.status + " " + response.statusText,
+          );
         }
         return response.text();
       })
@@ -749,7 +769,6 @@
         var host = getSwapHost();
         if (host) host.scrollTop = 0;
         window.scrollTo(0, 0);
-
       })
       .catch(function (err) {
         console.error("[LP Router] Fetch failed for", url, ":", err.message);
@@ -766,7 +785,6 @@
   function router() {
     var raw = window.location.hash; /* e.g. "#find_site" or "" */
     var key = raw.replace(/^#/, "").toLowerCase();
-
 
     if (!key || key === "home" || key === "launchpad") {
       showLaunchpadHome();
@@ -844,8 +862,8 @@
   function getFocusableElements(container) {
     return Array.prototype.slice.call(
       container.querySelectorAll(
-        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      )
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
     );
   }
 
@@ -870,7 +888,7 @@
       var onScroll = function () {
         nav.classList.toggle(
           "scrolled",
-          (window.pageYOffset || document.documentElement.scrollTop) > 4
+          (window.pageYOffset || document.documentElement.scrollTop) > 4,
         );
       };
       window.addEventListener("scroll", onScroll, { passive: true });
