@@ -743,6 +743,84 @@
         { label: "Our Impact" },
       ];
     </script>
+
+    <!-- DEBUG: remove this block once breadcrumb is confirmed working -->
+    <script>
+      (function () {
+        var DEBUG_PREFIX = "[LEAF Breadcrumb Debug]";
+
+        // 1. Is the data set correctly?
+        console.log(
+          DEBUG_PREFIX,
+          "window.LEAF_BREADCRUMB =",
+          JSON.stringify(window.LEAF_BREADCRUMB),
+        );
+
+        // 2. Is the host div in the DOM and does it have a parent?
+        var host = document.getElementById("lp-breadcrumb-host");
+        if (!host) {
+          console.error(
+            DEBUG_PREFIX,
+            "FAIL — #lp-breadcrumb-host not found in DOM",
+          );
+        } else if (!host.parentNode) {
+          console.error(
+            DEBUG_PREFIX,
+            "FAIL — #lp-breadcrumb-host exists but has no parentNode (detached)",
+          );
+        } else {
+          console.log(
+            DEBUG_PREFIX,
+            "OK — #lp-breadcrumb-host found, parentNode =",
+            host.parentNode.tagName + "#" + host.parentNode.id,
+          );
+        }
+
+        // 3. Did the nav mount correctly?
+        var nav = document.getElementById("lpNav");
+        console.log(
+          DEBUG_PREFIX,
+          nav
+            ? "OK — #lpNav found"
+            : "WARN — #lpNav not found (leaf_nav.js may not have run yet)",
+        );
+
+        // 4. After leaf_breadcrumb.js runs, check what replaced the host
+        window.addEventListener("DOMContentLoaded", function () {
+          var bc = document.getElementById("lpBreadcrumb");
+          if (!bc) {
+            console.error(
+              DEBUG_PREFIX,
+              "FAIL — #lpBreadcrumb not found after DOMContentLoaded. outerHTML replacement may have failed.",
+            );
+            // Check if host div is still there (meaning render() never ran or failed silently)
+            var stillHost = document.getElementById("lp-breadcrumb-host");
+            console.log(
+              DEBUG_PREFIX,
+              stillHost
+                ? "WARN — #lp-breadcrumb-host still in DOM (render() did not replace it)"
+                : "INFO — #lp-breadcrumb-host is gone but #lpBreadcrumb is also missing (replacement may have landed detached)",
+            );
+          } else {
+            console.log(
+              DEBUG_PREFIX,
+              "OK — #lpBreadcrumb rendered. innerHTML =",
+              bc.innerHTML,
+            );
+          }
+        });
+
+        // 5. Check if leaf_breadcrumb.js loaded at all (fires immediately after it executes)
+        var bcScript = document.querySelector('script[src*="leaf_breadcrumb"]');
+        console.log(
+          DEBUG_PREFIX,
+          bcScript
+            ? "OK — leaf_breadcrumb.js script tag found in DOM"
+            : "FAIL — leaf_breadcrumb.js script tag not found",
+        );
+      })();
+    </script>
+
     <script src="/platform/designs/files/leaf_breadcrumb.js"></script>
   </body>
 </html>
