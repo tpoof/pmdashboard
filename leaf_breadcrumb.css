@@ -23,9 +23,12 @@
   gap: 8px;
   flex-wrap: wrap;
   padding: 10px 24px 10px 103px; /* 90px (.lp-nav-in) + 13px (.dd-trigger padding) = aligns with nav button text */
-  background: rgba(255, 255, 255, 0.97);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(
+    239,
+    246,
+    251,
+    0.97
+  ); /* --nav-hover-bg tint — distinguishes from nav without competing */
   border-bottom: 1px solid var(--nav-panel-bd, #d9e8f6);
   font-family: "Public Sans", sans-serif;
   font-size: 0.8125rem;
@@ -67,11 +70,5 @@
   }
 }
 
-/* ── Reduced motion (WCAG 2.3.3 / Section 508 502.2.2) ── */
-@media (prefers-reduced-motion: reduce) {
-  .lp-breadcrumb {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    background: #fff;
-  }
-}
+/* ── Reduced motion (WCAG 2.3.3 / Section 508 502.2.2) ──
+   No transitions or animations on this element — nothing to suppress. */

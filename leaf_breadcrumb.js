@@ -37,7 +37,7 @@
     resources: { label: "Resources", href: "/platform/?a=Resources" },
   };
 
-  var HOME_CRUMB = { label: "Launchpad", href: "/platform/" };
+  var HOME_CRUMB = { label: "Launchpad", href: "/launchpad" };
 
   function resolveCrumb(entry) {
     if (typeof entry === "string") {
