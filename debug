@@ -1,11 +1,4 @@
-console.log(
-  "lpSwapHost hidden?",
-  document.getElementById("lpSwapHost").hasAttribute("hidden"),
-);
-console.log(
-  "lpSwapHost innerHTML length:",
-  document.getElementById("lpSwapHost").innerHTML.length,
-);
+console.log("lp-main el:", document.getElementById("lp-main"));
 console.log(
   "lp-main hidden?",
   document.getElementById("lp-main")
@@ -13,9 +6,15 @@ console.log(
     : "NOT FOUND",
 );
 console.log(
-  "lp-main id now:",
+  "lp-main display:",
   document.getElementById("lp-main")
-    ? document.getElementById("lp-main").id
-    : "NOT FOUND — probably reassigned",
+    ? getComputedStyle(document.getElementById("lp-main")).display
+    : "NOT FOUND",
 );
-console.log("main-content el:", document.getElementById("main-content"));
+console.log("nav count:", document.querySelectorAll(".lp-nav").length);
+console.log(
+  "swap host hidden?",
+  document.querySelector("[data-lp-swap-host]")
+    ? document.querySelector("[data-lp-swap-host]").hasAttribute("hidden")
+    : "NOT FOUND",
+);
