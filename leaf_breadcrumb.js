@@ -37,7 +37,10 @@
     resources: { label: "Resources", href: "/platform/?a=Resources" },
   };
 
-  var HOME_CRUMB = { label: "Launchpad", href: "/launchpad" };
+  var HOME_CRUMB = {
+    label: "Launchpad",
+    href: "/designs",
+  }; /* TODO: change to /launchpad before deploying */
 
   function resolveCrumb(entry) {
     if (typeof entry === "string") {
