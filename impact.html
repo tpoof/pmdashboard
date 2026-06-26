@@ -18,11 +18,6 @@
     <link rel="stylesheet" href="/platform/designs/files/launchpad.css" />
 
     <style>
-      #header,
-      #footer {
-        display: none !important;
-      }
-
       /* ── Stat card entrance ── */
       @media (prefers-reduced-motion: no-preference) {
         .stat-card {
@@ -244,19 +239,10 @@
       <!-- NAV: host div is optional since leaf_nav.js self-mounts, but kept for explicit placement -->
       <div id="lp-nav-host"></div>
 
-      <!-- BREADCRUMB: data must be declared before the script runs.
-           All three elements must appear outside <main>, in this order:
-           1. Data declaration
-           2. Host div (optional — leaf_breadcrumb.js self-mounts if absent)
-           3. Script tag (leaf_breadcrumb.js self-injects its own CSS) -->
-      <script>
-        window.LEAF_BREADCRUMB = [
-          { label: "What is LEAF?", href: "/platform/?a=what-is-leaf" },
-          { label: "Our Impact" },
-        ];
-      </script>
+      <!-- BREADCRUMB host: anchor point for the breadcrumb nav.
+           The data + script live at the bottom of <body> so the full
+           DOM is parsed before leaf_breadcrumb.js calls render(). -->
       <div id="lp-breadcrumb-host"></div>
-      <script src="/platform/designs/files/leaf_breadcrumb.js"></script>
 
       <main id="lp-main" tabindex="-1">
         <!-- PAGE TITLE -->
@@ -747,5 +733,16 @@
         });
       })();
     </script>
+    <!-- BREADCRUMB: data declared here so window.LEAF_BREADCRUMB is set
+         before leaf_breadcrumb.js runs. Script at end of body guarantees
+         #lp-breadcrumb-host is fully parsed and in the live DOM when
+         render() fires, fixing the outerHTML detached-node issue. -->
+    <script>
+      window.LEAF_BREADCRUMB = [
+        { label: "What is LEAF?", href: "/platform/?a=what-is-leaf" },
+        { label: "Our Impact" },
+      ];
+    </script>
+    <script src="/platform/designs/files/leaf_breadcrumb.js"></script>
   </body>
 </html>
