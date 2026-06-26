@@ -39,8 +39,8 @@
 
   var HOME_CRUMB = {
     label: "Launchpad",
-    href: "/designs",
-  }; /* TODO: change to /launchpad before deploying */
+    href: "/platform/designs",
+  }; /* TODO: change to "/launchpad" before deploying to production */
 
   function resolveCrumb(entry) {
     if (typeof entry === "string") {
