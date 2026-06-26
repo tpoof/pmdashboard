@@ -292,20 +292,29 @@
      of what version filename this JS is deployed as (leaf_nav_v2.js,
      leaf_nav_v3.js, etc.). Update this constant if the CSS ever moves. */
   var LEAF_NAV_CSS_HREF = "/platform/designs/files/leaf_nav.css";
+  var LEAF_BREADCRUMB_CSS_HREF = "/platform/designs/files/leaf_breadcrumb.css";
 
   function ensureStylesheet() {
-    /* Already linked by the page directly — leave it alone */
+    /* Nav CSS — hardcoded so it loads correctly regardless of JS filename */
     if (
-      document.querySelector(
+      !document.querySelector(
         'link[href*="leaf_nav.css"], link[href*="leaf-nav.css"]',
       )
     ) {
-      return;
+      var navLink = document.createElement("link");
+      navLink.rel = "stylesheet";
+      navLink.href = LEAF_NAV_CSS_HREF;
+      document.head.appendChild(navLink);
     }
-    var link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = LEAF_NAV_CSS_HREF;
-    document.head.appendChild(link);
+    /* Breadcrumb CSS — needed on the launchpad so the router-injected
+       breadcrumb is styled without leaf_breadcrumb.js having to run.
+       Safe to load on all pages — it's a small file and causes no conflicts. */
+    if (!document.querySelector('link[href*="leaf_breadcrumb.css"]')) {
+      var bcLink = document.createElement("link");
+      bcLink.rel = "stylesheet";
+      bcLink.href = LEAF_BREADCRUMB_CSS_HREF;
+      document.head.appendChild(bcLink);
+    }
   }
   ensureStylesheet();
 
@@ -612,38 +621,33 @@
      Trail: LEAF Launchpad → [Section] → [Page Title]
   ───────────────────────────────────────────────────────────── */
   function buildBreadcrumbHTML(route) {
-    var crumbs = [
-      { label: "LEAF Launchpad", href: "report.php?a=launchpad_v2" },
-    ];
+    /* Matches leaf_breadcrumb.js output exactly — flat children inside
+       <nav class="lp-breadcrumb">, same .lp-bc-sep and .lp-bc-current
+       spans, so leaf_breadcrumb.css styles it without any extra rules. */
+    var trail = [{ label: "Launchpad", href: "/platform/" }];
     if (route) {
-      if (route.section) crumbs.push({ label: route.section, href: null });
-      crumbs.push({ label: route.title, href: null, current: true });
+      if (route.section) trail.push({ label: route.section, href: null });
+      trail.push({ label: route.title, href: null, current: true });
     }
 
-    var items = crumbs
+    var inner = trail
       .map(function (crumb, i) {
-        var isLast = i === crumbs.length - 1;
-        if (isLast) {
-          return (
-            '<li><span aria-current="page">' + crumb.label + "</span></li>"
-          );
-        }
-        var inner = crumb.href
-          ? '<a href="' + crumb.href + '">' + crumb.label + "</a>"
-          : "<span>" + crumb.label + "</span>";
-        return (
-          "<li>" +
-          inner +
-          '<span aria-hidden="true" class="lp-bc-sep">/</span></li>'
-        );
+        var isLast = i === trail.length - 1;
+        var sep =
+          i > 0 ? '<span class="lp-bc-sep" aria-hidden="true">/</span>' : "";
+        var node =
+          isLast || !crumb.href
+            ? '<span class="lp-bc-current" aria-current="page">' +
+              crumb.label +
+              "</span>"
+            : '<a href="' + crumb.href + '">' + crumb.label + "</a>";
+        return sep + node;
       })
       .join("");
 
     return (
-      '<nav class="lp-breadcrumb lp-swap-breadcrumb" aria-label="Breadcrumb">' +
-      "<ol>" +
-      items +
-      "</ol>" +
+      '<nav class="lp-breadcrumb" id="lpBreadcrumb" aria-label="Breadcrumb">' +
+      inner +
       "</nav>"
     );
   }
