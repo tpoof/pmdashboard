@@ -76,11 +76,10 @@
 
   var LEADERSHIP_GROUP_ID = "REPLACE_ME_LEADERSHIP_GROUP_ID";
   var LEAF_TEAM_GROUP_ID = "REPLACE_ME_LEAF_TEAM_GROUP_ID";
-  var LEAF_TEAM_LINK_NAME_INDICATOR_ID = "REPLACE_ME_LINK_NAME_INDICATOR_ID";
-  var LEAF_TEAM_LINK_URL_INDICATOR_ID = "REPLACE_ME_LINK_URL_INDICATOR_ID";
+  var LEAF_TEAM_LINK_NAME_INDICATOR_ID = 479;
+  var LEAF_TEAM_LINK_URL_INDICATOR_ID = 480;
 
-  /* Base URL for the LEAF form that stores LEAF Team quick-links.
-     The API path is appended automatically in fetchLeafTeamLinks(). */
+  /* Base URL for the LEAF form that stores LEAF Team quick-links. */
   var LEAF_TEAM_FORM_BASE = "/platform/service_requests_launchpad";
 
   /* ── Nav content (single source of truth for desktop + mobile) ──
@@ -761,7 +760,7 @@
     var apiUrl =
       LEAF_TEAM_FORM_BASE +
       "/api/form/query" +
-      "?q[0][id]=1&q[0][operator]==&q[0][operand]=1" +
+      "?q[0][id]=categoryID&q[0][operator]==&q[0][operand]=form_531cc" +
       "&indicators[]=" +
       LEAF_TEAM_LINK_NAME_INDICATOR_ID +
       "&indicators[]=" +
@@ -850,10 +849,8 @@
     var leafTeamResolved =
       LEAF_TEAM_GROUP_ID !== "REPLACE_ME_LEAF_TEAM_GROUP_ID" &&
       /^\d+$/.test(String(LEAF_TEAM_GROUP_ID));
-    var nameIndResolved =
-      LEAF_TEAM_LINK_NAME_INDICATOR_ID !== "REPLACE_ME_LINK_NAME_INDICATOR_ID";
-    var urlIndResolved =
-      LEAF_TEAM_LINK_URL_INDICATOR_ID !== "REPLACE_ME_LINK_URL_INDICATOR_ID";
+    var nameIndResolved = Number.isInteger(LEAF_TEAM_LINK_NAME_INDICATOR_ID);
+    var urlIndResolved = Number.isInteger(LEAF_TEAM_LINK_URL_INDICATOR_ID);
 
     /* Console output — always logged when param present, group check aside */
     console.group("[LEAF Nav Debug] Smarty/PHP wrapper diagnostics");
