@@ -6,6 +6,7 @@ $.ajax({
       terms: [
         { id: "categoryID", operator: "=", match: "form_57e89", gate: "AND" },
         { id: "deleted", operator: "=", match: 0, gate: "AND" },
+        { id: "data", operator: "=", match: "1" },
       ],
       joins: [],
       getData: ["2", "3"],
@@ -15,7 +16,9 @@ $.ajax({
   dataType: "json",
   cache: false,
   success: function (res) {
-    var first = Object.values(res)[0];
-    console.log("Sample vote s1:", JSON.stringify(first?.s1));
+    console.log(
+      "All id3 values for idea 1:",
+      Object.values(res).map((v) => v.s1?.id3),
+    );
   },
 });
