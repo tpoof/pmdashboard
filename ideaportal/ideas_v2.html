@@ -629,7 +629,7 @@
         font-size: 0.9rem;
       }
       .ip-table thead th {
-        padding: 10px 12px;
+        padding: 0;
         text-align: left;
         font-family: "Public Sans", sans-serif;
         font-size: 0.875rem;
@@ -641,10 +641,15 @@
         border-bottom: 2px solid var(--ip-blue-10);
         white-space: nowrap;
       }
+      /* Non-sortable headers (e.g. Actions) keep their own padding */
+      .ip-table thead th:not(.ip-sortable) {
+        padding: 10px 12px;
+      }
       .ip-sortable {
         cursor: pointer;
         user-select: none;
         transition: background 0.12s;
+        padding: 0 !important;
       }
       .ip-sortable:hover {
         background: #dce8f5;
@@ -663,18 +668,21 @@
         text-transform: uppercase;
         color: var(--ip-muted);
         cursor: pointer;
-        padding: 0;
-        display: inline-flex;
+        /* Fill the full th cell so any click in the header triggers sort */
+        width: 100%;
+        display: flex;
         align-items: center;
         gap: 4px;
+        padding: 10px 12px;
+        text-align: left;
       }
       .ip-sortable.is-asc .ip-sortBtn::after {
         content: " ↑";
-        color: var(--ip-blue);
+        color: #111;
       }
       .ip-sortable.is-desc .ip-sortBtn::after {
         content: " ↓";
-        color: var(--ip-blue);
+        color: #111;
       }
       .ip-table td {
         padding: 10px 12px;
@@ -694,6 +702,7 @@
         color: var(--ip-blue);
         font-size: 0.9rem;
         white-space: nowrap;
+        width: 1%;
       }
       .ip-recordLink {
         color: var(--ip-blue);
@@ -709,15 +718,19 @@
         white-space: nowrap;
       }
       .ip-votes {
-        text-align: center;
+        text-align: left;
         font-family: "Public Sans", sans-serif;
         font-weight: 700;
         color: var(--ip-navy);
+        white-space: nowrap;
+        width: 1%;
       }
       .ip-col-actions,
       .ip-actionsCell {
-        text-align: center;
+        text-align: left;
         white-space: nowrap;
+        min-width: 120px;
+        width: 1%;
       }
 
       /* ── Status badges ── */
