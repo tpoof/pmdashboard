@@ -1267,7 +1267,7 @@ async function resolveVoterEmail() {
   if (userID) {
     try {
       const res = await fetch(
-        `./api/orgchart/employee/search?q=userName:${encodeURIComponent(userID)}&noLimit=0&_=${Date.now()}`,
+        `/platform/orgchart/api/employee/search?q=userName:${encodeURIComponent(userID)}&noLimit=0&_=${Date.now()}`,
         { credentials: "same-origin" },
       );
       if (res.ok) {
@@ -1376,27 +1376,45 @@ async function IdeaVotes(recordID) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Data fetches — LeafFormQuery
+   Data fetches — direct REST (LeafFormQuery's stepID handling
+   without a status join silently returns 0 on this site)
 ───────────────────────────────────────────────────────────── */
+
+async function leafFetchQuery(queryObj, filterData) {
+  const q = JSON.stringify(queryObj);
+  const url = `./api/form/query/?q=${encodeURIComponent(q)}&x-filterData=${encodeURIComponent(filterData)}&_=${Date.now()}`;
+  const res = await fetch(url, {
+    method: "GET",
+    credentials: "same-origin",
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
 
 async function fetchIdeasData() {
   PortalDebug.set("ideas.status", "loading");
   try {
-    const query = new LeafFormQuery();
-    query.addTerm("categoryID", "=", FORM_IDS.idea);
-    query.addTerm("deleted", "=", 0);
-    // No stepID filter — LeafFormQuery's default public scope already excludes
-    // other users' drafts. Including stepID without a status join silently
-    // returns 0 results in some LEAF versions.
-    query.sort("created_date", "DESC");
-    query.getData(IDEA_GETDATA);
-    query.setExtraParams(`&x-filterData=${IDEA_FILTER_DATA}`);
-    query.onProgress((count) => {
-      setStatus("all", `Loading ideas… (${count} loaded)`, "loading");
-      PortalDebug.set("ideas.count", count);
-    });
-
-    const result = Object.values((await query.execute()) || {});
+    const data = await leafFetchQuery(
+      {
+        terms: [
+          {
+            id: "categoryID",
+            operator: "=",
+            match: FORM_IDS.idea,
+            gate: "AND",
+          },
+          { id: "deleted", operator: "=", match: 0, gate: "AND" },
+          { id: "stepID", operator: "!=", match: "notSubmitted", gate: "AND" },
+        ],
+        joins: [],
+        sort: { id: "created_date", direction: "desc" },
+        getData: IDEA_GETDATA,
+      },
+      IDEA_FILTER_DATA,
+    );
+    const result = Object.values(data || {});
     PortalDebug.set("ideas.count", result.length);
     PortalDebug.set("ideas.status", "success");
     return result;
@@ -1411,22 +1429,28 @@ async function fetchIdeasData() {
 async function fetchVotesData() {
   PortalDebug.set("votes.status", "loading");
   try {
-    const query = new LeafFormQuery();
-    query.addTerm("categoryID", "=", FORM_IDS.votes);
-    query.addTerm("deleted", "=", 0);
-    query.getData(VOTE_GETDATA);
-    // Only need recordID + s1 for vote tallying
-    query.setExtraParams(`&x-filterData=${VOTE_FILTER_DATA}`);
-    query.onProgress((count) => {
-      setStatus("all", `Loading votes… (${count} loaded)`, "loading");
-      PortalDebug.set("votes.count", count);
-    });
+    const voteData = await leafFetchQuery(
+      {
+        terms: [
+          {
+            id: "categoryID",
+            operator: "=",
+            match: FORM_IDS.votes,
+            gate: "AND",
+          },
+          { id: "deleted", operator: "=", match: 0, gate: "AND" },
+        ],
+        joins: [],
+        sort: {},
+        getData: VOTE_GETDATA,
+      },
+      VOTE_FILTER_DATA,
+    );
 
-    const voteData = (await query.execute()) || {};
     voteCounts = {};
     userVotes = {};
 
-    const votesList = Object.values(voteData);
+    const votesList = Object.values(voteData || {});
     votesList.forEach((vote) => {
       const ideanum = vote.s1?.[VOTE_INDICATORS.idea];
       const voter = vote.s1?.[VOTE_INDICATORS.user];
@@ -1434,7 +1458,7 @@ async function fetchVotesData() {
         const key = String(ideanum);
         voteCounts[key] = (voteCounts[key] || 0) + 1;
         // Match on resolvedVoterEmail first; fall back to userID for records
-        // submitted before the email migration or when email didn't resolve.
+        // stored before the email migration or when email didn't resolve.
         const voterIdentity = resolvedVoterEmail || userID;
         if (voter && voterIdentity && voter === voterIdentity) {
           userVotes[key] = true;
@@ -1474,24 +1498,36 @@ async function fetchUserSubmissions() {
   renderTableMessage(ui.myResults, "Loading…");
 
   try {
-    const query = new LeafFormQuery();
-    // Scope to idea form type + this user — includes drafts (no stepID filter)
-    query.addTerm("categoryID", "=", FORM_IDS.idea);
-    query.addTerm("userID", "=", userID);
-    query.addTerm("deleted", "=", 0);
-    query.sort("created_date", "DESC");
-    query.getData(IDEA_GETDATA);
-    query.setExtraParams(`&x-filterData=${IDEA_FILTER_DATA}`);
-    query.onProgress((count) =>
-      setStatus("my", `Loading… (${count} records)`, "loading"),
+    // No stepID filter — includes the user's own drafts intentionally.
+    // Filter out vote records (title starts with "Idea #") which share userID.
+    const data = await leafFetchQuery(
+      {
+        terms: [
+          {
+            id: "categoryID",
+            operator: "=",
+            match: FORM_IDS.idea,
+            gate: "AND",
+          },
+          { id: "userID", operator: "=", match: userID, gate: "AND" },
+          { id: "deleted", operator: "=", match: 0, gate: "AND" },
+        ],
+        joins: [],
+        sort: { id: "created_date", direction: "desc" },
+        getData: IDEA_GETDATA,
+      },
+      IDEA_FILTER_DATA,
     );
 
-    const data = (await query.execute()) || {};
-    const userIdeas = Object.values(data).map((idea) => {
-      // Prefer enriched data from the full ideas fetch if available
-      const key = String(idea.recordID);
-      return ideasById[key] || idea;
-    });
+    const userIdeas = Object.values(data || {})
+      .filter(
+        (idea) => idea?.recordID && !(idea.title || "").startsWith("Idea #"),
+      )
+      .map((idea) => {
+        // Prefer enriched data from the main ideas fetch when available
+        const key = String(idea.recordID);
+        return ideasById[key] || idea;
+      });
 
     myIdeasCache = buildIdeasViewModelList(userIdeas, false);
     renderMyIdeas();
