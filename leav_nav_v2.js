@@ -845,10 +845,11 @@
             return (
               '<li><a class="dd-link" href="' +
               url +
-              '" data-nav-external>' +
+              '" data-nav-external target="_blank" rel="noopener noreferrer">' +
               '<span class="dd-link-text"><strong>' +
               name +
               "</strong></span>" +
+              '<span class="lp-sr-only">(opens in new tab)</span>' +
               "</a></li>"
             );
           })
