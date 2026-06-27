@@ -1,8 +1,3 @@
-/* ════════════════════════════════════════════════════════════════
-   LEAF Idea Portal — ideas_v2.js
-   Blueprint Pro integration + LeafFormQuery refactor
-   ════════════════════════════════════════════════════════════════ */
-
 const PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 200;
 const RECORD_VIEW_URL =
@@ -50,13 +45,20 @@ const VOTE_INDICATORS = {
   user: `id${VOTE_FIELDS.user}`,
 };
 
+// Fields to retrieve for idea records
 const IDEA_GETDATA = [
   String(IDEA_FIELDS.category),
   String(IDEA_FIELDS.title),
   String(IDEA_FIELDS.status),
 ];
 
+// Fields to retrieve for vote records
 const VOTE_GETDATA = [String(VOTE_FIELDS.idea), String(VOTE_FIELDS.user)];
+
+// x-filterData values — keep s1 so indicator data is preserved,
+// drop unused top-level metadata for bandwidth savings
+const IDEA_FILTER_DATA = "recordID,title,created_date,userID,s1";
+const VOTE_FILTER_DATA = "recordID,s1";
 
 const CATEGORY_FALLBACK = [
   "Email Template",
@@ -79,14 +81,18 @@ const IMPACT_FALLBACK = [
   "Impact is one or more, but not all users",
 ];
 
+// Material Symbols Filled variation settings
+const ICON_FILL = `'opsz' 24, 'wght' 400, 'FILL' 1, 'GRAD' 0`;
+
 let ideas = [];
 let ideasRaw = [];
 let ideasById = {};
 let ideasVMById = {};
 let ideaOwnerMap = {};
 let voteCounts = {};
+
 const portalConfig = window.leafIdeaPortal || {};
-const debugEnabled = portalConfig && portalConfig.debug === true;
+const debugEnabled = portalConfig?.debug === true;
 
 /* ─────────────────────────────────────────────────────────────
    Utilities
@@ -100,11 +106,9 @@ function sanitizeLeafValue(value) {
 
 function logDebug(message, data) {
   if (!debugEnabled) return;
-  if (data !== undefined) {
-    console.log("IdeaPortal debug:", message, data);
-  } else {
-    console.log("IdeaPortal debug:", message);
-  }
+  data !== undefined
+    ? console.log("IdeaPortal debug:", message, data)
+    : console.log("IdeaPortal debug:", message);
 }
 
 function escapeHtml(value) {
@@ -116,61 +120,47 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-function truncateTitle(title, max) {
-  max = max || 100;
+function truncateTitle(title, max = 100) {
   if (!title) return "";
-  if (title.length <= max) return title;
-  return title.substring(0, max).trimEnd() + "…";
+  return title.length <= max ? title : `${title.substring(0, max).trimEnd()}…`;
 }
 
 function debounce(fn, delay) {
   let timer;
   return function (...args) {
-    window.clearTimeout(timer);
-    timer = window.setTimeout(() => fn.apply(this, args), delay);
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
   };
 }
 
 /* ─────────────────────────────────────────────────────────────
-   API helpers (POST only — reads now use LeafFormQuery)
+   API helpers (POST only — reads use LeafFormQuery)
 ───────────────────────────────────────────────────────────── */
 
-function apiPostJson(url, data) {
-  try {
-    const body = new URLSearchParams();
-    Object.entries(data || {}).forEach(([key, value]) => {
-      if (value === undefined || value === null) return;
-      body.append(String(key), String(value));
-    });
+async function apiPostJson(url, data) {
+  const body = new URLSearchParams();
+  Object.entries(data || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    body.append(String(key), String(value));
+  });
 
-    return fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-      },
-      body: body.toString(),
-      credentials: "same-origin",
-    })
-      .then(function (response) {
-        if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`);
-        }
-        return response.text();
-      })
-      .then(function (text) {
-        try {
-          return JSON.parse(text);
-        } catch (err) {
-          return text;
-        }
-      })
-      .catch(function (error) {
-        console.error("IdeaPortal API error", { url, error });
-        throw error;
-      });
-  } catch (error) {
-    console.error("IdeaPortal API error", { url, error });
-    return Promise.reject(error);
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    },
+    body: body.toString(),
+    credentials: "same-origin",
+  });
+
+  if (!response.ok)
+    throw new Error(`Request failed with status ${response.status}`);
+
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
   }
 }
 
@@ -180,19 +170,22 @@ function apiPostJson(url, data) {
 
 const userID = sanitizeLeafValue(portalConfig.userID);
 const csrfToken = sanitizeLeafValue(portalConfig.csrfToken);
-let userVotes = (function () {
+
+let userVotes = (() => {
   try {
     return JSON.parse(localStorage.getItem("leafIdeaVotes") || "{}");
-  } catch (e) {
+  } catch {
     return {};
   }
 })();
+
 let votingInProgress = false;
 let ideaSubmitInProgress = false;
 let implementedCount = 0;
 let myIdeasCache = [];
 let lastFocusedElement = null;
 let lastRecordFocusedElement = null;
+let resolvedVoterEmail = "";
 
 const state = {
   search: "",
@@ -245,50 +238,51 @@ function cacheElements() {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Toast (replaces showSuccessMessage + alert calls)
+   Toast
 ───────────────────────────────────────────────────────────── */
 
 let _toastTimer = null;
 
-function showToast(msg, isError) {
+function showToast(msg, isError = false) {
   const toast = document.getElementById("ipToast");
   if (!toast) return;
   toast.textContent = msg || "";
-  toast.classList.toggle("is-error", !!isError);
+  toast.classList.toggle("is-error", isError);
   toast.classList.add("is-visible");
   if (_toastTimer) clearTimeout(_toastTimer);
   _toastTimer = setTimeout(hideToast, 4000);
 }
 
 function hideToast() {
-  const toast = document.getElementById("ipToast");
-  if (toast) toast.classList.remove("is-visible");
+  document.getElementById("ipToast")?.classList.remove("is-visible");
 }
 
 /* ─────────────────────────────────────────────────────────────
    Debug Panel
 ───────────────────────────────────────────────────────────── */
 
-const PortalDebug = (function () {
-  function el(id) {
-    return document.getElementById(id);
-  }
+const PortalDebug = (() => {
+  const $ = (id) => document.getElementById(id);
 
-  function color(status) {
-    if (status === "success") return "#4ade80";
-    if (status === "error") return "#f87171";
-    if (status === "loading") return "#facc15";
-    return "#94a3b8";
-  }
+  const colorFor = (status) =>
+    status === "success"
+      ? "#4ade80"
+      : status === "error"
+        ? "#f87171"
+        : status === "loading"
+          ? "#facc15"
+          : "#94a3b8";
 
-  function icon(status) {
-    if (status === "success") return "✅";
-    if (status === "error") return "❌";
-    if (status === "loading") return "⏳";
-    return "○";
-  }
+  const iconFor = (status) =>
+    status === "success"
+      ? "✅"
+      : status === "error"
+        ? "❌"
+        : status === "loading"
+          ? "⏳"
+          : "○";
 
-  const state = {
+  const dbgState = {
     dom: "initializing",
     leaf: "unknown",
     ideas: { status: "pending", count: 0, error: null },
@@ -299,26 +293,25 @@ const PortalDebug = (function () {
   };
 
   function render() {
-    const panel = el("ipDebugPanel");
+    const panel = $("ipDebugPanel");
     if (!panel) return;
 
-    const domEl = el("ipDbgDom");
+    const domEl = $("ipDbgDom");
     if (domEl) {
-      domEl.textContent = `🌐 DOM readyState: ${state.dom}`;
-      domEl.style.color =
-        state.dom === "complete" || state.dom === "interactive"
-          ? "#4ade80"
-          : "#facc15";
+      domEl.textContent = `🌐 DOM readyState: ${dbgState.dom}`;
+      domEl.style.color = ["complete", "interactive"].includes(dbgState.dom)
+        ? "#4ade80"
+        : "#facc15";
     }
 
-    const leafEl = el("ipDbgLeaf");
+    const leafEl = $("ipDbgLeaf");
     if (leafEl) {
       const ok = typeof LeafFormQuery !== "undefined";
       leafEl.textContent = `📦 LeafFormQuery: ${ok ? "available ✅" : "NOT FOUND ❌"}`;
       leafEl.style.color = ok ? "#4ade80" : "#f87171";
     }
 
-    const userEl = el("ipDbgUser");
+    const userEl = $("ipDbgUser");
     if (userEl) {
       const uid = (window.leafIdeaPortal || {}).userID || "(none)";
       const isReal = uid && !uid.includes("<!--");
@@ -326,68 +319,94 @@ const PortalDebug = (function () {
       userEl.style.color = isReal ? "#4ade80" : "#f87171";
     }
 
-    const initEl = el("ipDbgInit");
+    const emailEl = $("ipDbgEmail");
+    if (emailEl) {
+      const candidates = (window.leafIdeaPortal || {}).emailCandidates || [];
+      const rendered = candidates.map((c, i) => {
+        const isReal = c && !c.includes("<!--") && c.includes("@");
+        return `[${i}] ${isReal ? c : "(not rendered)"}`;
+      });
+      const anyReal = rendered.some((r) => !r.includes("(not rendered)"));
+      emailEl.textContent = `📧 email candidates: ${rendered.join(" | ")}`;
+      emailEl.style.color = anyReal ? "#4ade80" : "#f87171";
+    }
+
+    const voterEmailEl = $("ipDbgVoterEmail");
+    if (voterEmailEl) {
+      const ve = resolvedVoterEmail;
+      const ok = ve && ve.includes("@");
+      voterEmailEl.textContent = `🗳️ resolvedVoterEmail: ${ok ? ve : ve ? `"${ve}" (no @ — check)` : "(pending)"}`;
+      voterEmailEl.style.color = ok ? "#4ade80" : ve ? "#f87171" : "#94a3b8";
+    }
+
+    const initEl = $("ipDbgInit");
     if (initEl) {
-      initEl.textContent = `🔧 init fired: ${state.initFired ? "yes ✅" : "NO — not yet (possible DOMContentLoaded miss)"}`;
-      initEl.style.color = state.initFired ? "#4ade80" : "#f87171";
+      initEl.textContent = `🔧 init fired: ${dbgState.initFired ? "yes ✅" : "NO"}`;
+      initEl.style.color = dbgState.initFired ? "#4ade80" : "#f87171";
     }
 
-    const ideasEl = el("ipDbgIdeas");
+    const ideasEl = $("ipDbgIdeas");
     if (ideasEl) {
-      const i = state.ideas;
-      ideasEl.textContent = `${icon(i.status)} Ideas query: ${i.status}${i.count ? ` — ${i.count} records` : ""}${i.error ? ` | ERR: ${i.error}` : ""}`;
-      ideasEl.style.color = color(i.status);
+      const i = dbgState.ideas;
+      const countStr =
+        i.status === "success" || i.count > 0 ? ` — ${i.count} records` : "";
+      ideasEl.textContent = `${iconFor(i.status)} Ideas query: ${i.status}${countStr}${i.error ? ` | ERR: ${i.error}` : ""}`;
+      ideasEl.style.color = colorFor(i.status);
     }
 
-    const votesEl = el("ipDbgVotes");
+    const votesEl = $("ipDbgVotes");
     if (votesEl) {
-      const v = state.votes;
-      votesEl.textContent = `${icon(v.status)} Votes query: ${v.status}${v.count ? ` — ${v.count} records` : ""}${v.error ? ` | ERR: ${v.error}` : ""}`;
-      votesEl.style.color = color(v.status);
+      const v = dbgState.votes;
+      const countStr =
+        v.status === "success" || v.count > 0 ? ` — ${v.count} records` : "";
+      votesEl.textContent = `${iconFor(v.status)} Votes query: ${v.status}${countStr}${v.error ? ` | ERR: ${v.error}` : ""}`;
+      votesEl.style.color = colorFor(v.status);
     }
 
-    const statsEl = el("ipDbgStats");
+    const statsEl = $("ipDbgStats");
     if (statsEl) {
-      statsEl.textContent = `📊 Stats → total: ${state.stats.total} | implemented: ${state.stats.implemented} | votes: ${state.stats.votes}`;
+      statsEl.textContent = `📊 Stats → total: ${dbgState.stats.total} | implemented: ${dbgState.stats.implemented} | votes: ${dbgState.stats.votes}`;
     }
 
-    const tableEl = el("ipDbgTable");
+    const tableEl = $("ipDbgTable");
     if (tableEl) {
-      const t = state.tables;
+      const t = dbgState.tables;
       tableEl.textContent = `📋 Rows rendered → All: ${t.results} | Top10: ${t.topResults} | Mine: ${t.myResults}`;
     }
   }
 
   function wireToggle() {
-    const btn = el("ipDbgToggle");
-    const body = el("ipDbgBody");
-    const icon = el("ipDbgToggleIcon");
+    const btn = $("ipDbgToggle");
+    const body = $("ipDbgBody");
+    const icon = $("ipDbgToggleIcon");
     if (!btn || !body) return;
-    btn.addEventListener("click", function () {
+    btn.addEventListener("click", () => {
       const hidden = body.style.display === "none";
       body.style.display = hidden ? "grid" : "none";
       if (icon) icon.textContent = hidden ? "▼" : "▲";
     });
   }
 
+  function set(key, value) {
+    const parts = key.split(".");
+    let obj = dbgState;
+    for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
+    obj[parts[parts.length - 1]] = value;
+    render();
+  }
+
   return {
-    init: function () {
+    init() {
       wireToggle();
-      state.dom = document.readyState;
+      dbgState.dom = document.readyState;
       render();
     },
-    set: function (key, value) {
-      const parts = key.split(".");
-      let obj = state;
-      for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
-      obj[parts[parts.length - 1]] = value;
-      render();
-    },
-    error: function (msg) {
-      const errEl = el("ipDbgErr");
-      if (errEl) {
-        errEl.style.display = "block";
-        errEl.textContent = `🚨 ${msg}`;
+    set,
+    error(msg) {
+      const el = $("ipDbgErr");
+      if (el) {
+        el.style.display = "block";
+        el.textContent = `🚨 ${msg}`;
       }
       render();
     },
@@ -400,12 +419,13 @@ const PortalDebug = (function () {
 ───────────────────────────────────────────────────────────── */
 
 function renderStatsStrip(totalIdeas, implemented, totalVotes) {
-  const ideasEl = document.getElementById("statTotalIdeas");
-  const implementedEl = document.getElementById("statImplemented");
-  const votesEl = document.getElementById("statTotalVotes");
-  if (ideasEl) ideasEl.textContent = totalIdeas.toLocaleString();
-  if (implementedEl) implementedEl.textContent = implemented.toLocaleString();
-  if (votesEl) votesEl.textContent = totalVotes.toLocaleString();
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val.toLocaleString();
+  };
+  set("statTotalIdeas", totalIdeas);
+  set("statImplemented", implemented);
+  set("statTotalVotes", totalVotes);
   PortalDebug.set("stats.total", totalIdeas);
   PortalDebug.set("stats.implemented", implemented);
   PortalDebug.set("stats.votes", totalVotes);
@@ -419,40 +439,36 @@ function buildCategorySidebar(ideaList) {
   const catList = document.getElementById("catList");
   if (!catList) return;
 
-  // Count ideas per category
   const counts = {};
-  let totalCount = 0;
+  let total = 0;
   (ideaList || []).forEach((idea) => {
     const cat = (idea.category || "").trim() || "Uncategorized";
     counts[cat] = (counts[cat] || 0) + 1;
-    totalCount++;
+    total++;
   });
 
-  // Build sorted category items
-  const sorted = Object.keys(counts).sort((a, b) => a.localeCompare(b));
-
-  // Update "All" count
   const allCountEl = document.getElementById("ip-cat-count-all");
-  if (allCountEl) allCountEl.textContent = totalCount;
+  if (allCountEl) allCountEl.textContent = total;
 
-  // Remove existing dynamic items (keep "All")
-  Array.from(catList.querySelectorAll("li[data-cat]")).forEach((li) => {
-    if (li.querySelector("[data-cat='all']")) return;
-    catList.removeChild(li);
+  // Remove previously injected items
+  catList.querySelectorAll("li[data-cat]").forEach((li) => {
+    if (!li.querySelector("[data-cat='all']")) catList.removeChild(li);
   });
 
-  sorted.forEach((cat) => {
-    const li = document.createElement("li");
-    li.setAttribute("data-cat", cat);
-    li.innerHTML = `<button class="ip-catItem" data-cat="${escapeHtml(cat)}" type="button">
-      <span>${escapeHtml(cat)}</span>
-      <span class="ip-catCount">${counts[cat]}</span>
-    </button>`;
-    catList.appendChild(li);
-  });
+  Object.keys(counts)
+    .sort((a, b) => a.localeCompare(b))
+    .forEach((cat) => {
+      const li = document.createElement("li");
+      li.setAttribute("data-cat", cat);
+      li.innerHTML = `
+      <button class="ip-catItem" data-cat="${escapeHtml(cat)}" type="button">
+        <span>${escapeHtml(cat)}</span>
+        <span class="ip-catCount">${counts[cat]}</span>
+      </button>`;
+      catList.appendChild(li);
+    });
 
-  // Wire click events
-  catList.addEventListener("click", function (e) {
+  catList.addEventListener("click", (e) => {
     const btn = e.target.closest(".ip-catItem");
     if (!btn) return;
     const cat = btn.getAttribute("data-cat") || "all";
@@ -475,14 +491,11 @@ function renderRecentChips(ideaList) {
   const chips = document.getElementById("ipRecentChips");
   if (!bar || !chips) return;
 
-  // Sort by created_date DESC, take top 5
   const recent = [...(ideaList || [])]
-    .filter((i) => i && i.created_date)
-    .sort((a, b) => {
-      const aDate = Number(a.created_date) || 0;
-      const bDate = Number(b.created_date) || 0;
-      return bDate - aDate;
-    })
+    .filter((i) => i?.created_date)
+    .sort(
+      (a, b) => (Number(b.created_date) || 0) - (Number(a.created_date) || 0),
+    )
     .slice(0, 5);
 
   if (!recent.length) {
@@ -496,7 +509,7 @@ function renderRecentChips(ideaList) {
         truncateTitle(idea.title || `Idea ${idea.recordID}`, 40),
       );
       const url = escapeHtml(
-        idea.recordLink || RECORD_VIEW_URL + idea.recordID,
+        idea.recordLink || `${RECORD_VIEW_URL}${idea.recordID}`,
       );
       const title = escapeHtml(idea.title || `Idea ${idea.recordID}`);
       return `<button class="ip-recentChip" type="button"
@@ -526,9 +539,7 @@ function updateMyActivity(myCount, votedCount) {
 ───────────────────────────────────────────────────────────── */
 
 function setPanelBusy(scope, isBusy) {
-  const panel = ui.panels[scope];
-  if (!panel) return;
-  panel.setAttribute("aria-busy", isBusy ? "true" : "false");
+  ui.panels[scope]?.setAttribute("aria-busy", isBusy ? "true" : "false");
 }
 
 function setStatus(scope, message, type) {
@@ -550,45 +561,6 @@ function setStatus(scope, message, type) {
    Modal helpers
 ───────────────────────────────────────────────────────────── */
 
-function openModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (!modal) return;
-  lastFocusedElement = document.activeElement;
-  modal.classList.add("is-open");
-  modal.setAttribute("aria-hidden", "false");
-  setBackgroundHidden(true);
-  bindFocusTrap(modal);
-  const firstInput = modal.querySelector("input, select, textarea");
-  const focusable = getFocusableElements(modal);
-  const target = firstInput || focusable[0];
-  if (target) target.focus();
-}
-
-function closeModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (!modal) return;
-  modal.classList.remove("is-open");
-  modal.setAttribute("aria-hidden", "true");
-  setBackgroundHidden(false);
-  if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
-    lastFocusedElement.focus();
-  }
-  lastFocusedElement = null;
-}
-
-function setBackgroundHidden(hidden) {
-  const main = document.querySelector(".ip-wrap");
-  if (main) {
-    if (hidden) main.setAttribute("aria-hidden", "true");
-    else main.removeAttribute("aria-hidden");
-  }
-  const jump = document.getElementById("ipJumpTopBtn");
-  if (jump) {
-    if (hidden) jump.setAttribute("aria-hidden", "true");
-    else jump.removeAttribute("aria-hidden");
-  }
-}
-
 function getFocusableElements(container) {
   return Array.from(
     container.querySelectorAll(
@@ -602,40 +574,76 @@ function getFocusableElements(container) {
 function bindFocusTrap(container) {
   if (container.dataset.focusTrap === "true") return;
   container.dataset.focusTrap = "true";
-  container.addEventListener("keydown", function (event) {
-    if (event.key !== "Tab") return;
+  container.addEventListener("keydown", (e) => {
+    if (e.key !== "Tab") return;
     const focusable = getFocusableElements(container);
     if (!focusable.length) {
-      event.preventDefault();
+      e.preventDefault();
       return;
     }
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
-    const active = document.activeElement;
-    if (event.shiftKey && active === first) {
-      event.preventDefault();
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
       last.focus();
-    } else if (!event.shiftKey && active === last) {
-      event.preventDefault();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
       first.focus();
     }
   });
 }
 
+function setBackgroundHidden(hidden) {
+  const main = document.querySelector(".ip-wrap");
+  if (main) {
+    hidden
+      ? main.setAttribute("aria-hidden", "true")
+      : main.removeAttribute("aria-hidden");
+  }
+  const jump = document.getElementById("ipJumpTopBtn");
+  if (jump) {
+    hidden
+      ? jump.setAttribute("aria-hidden", "true")
+      : jump.removeAttribute("aria-hidden");
+  }
+}
+
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  lastFocusedElement = document.activeElement;
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
+  setBackgroundHidden(true);
+  bindFocusTrap(modal);
+  const target =
+    modal.querySelector("input, select, textarea") ||
+    getFocusableElements(modal)[0];
+  target?.focus();
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  modal.classList.remove("is-open");
+  modal.setAttribute("aria-hidden", "true");
+  setBackgroundHidden(false);
+  lastFocusedElement?.focus();
+  lastFocusedElement = null;
+}
+
 function bindModalEvents() {
-  document.querySelectorAll("[data-ip-open]").forEach((button) => {
-    button.addEventListener("click", () => openModal(button.dataset.ipOpen));
+  document.querySelectorAll("[data-ip-open]").forEach((btn) => {
+    btn.addEventListener("click", () => openModal(btn.dataset.ipOpen));
   });
-
-  document.querySelectorAll("[data-ip-close]").forEach((button) => {
-    button.addEventListener("click", () => closeModal(button.dataset.ipClose));
+  document.querySelectorAll("[data-ip-close]").forEach((btn) => {
+    btn.addEventListener("click", () => closeModal(btn.dataset.ipClose));
   });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") return;
-    document.querySelectorAll(".ip-modal.is-open").forEach((modal) => {
-      closeModal(modal.id);
-    });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    document
+      .querySelectorAll(".ip-modal.is-open")
+      .forEach((m) => closeModal(m.id));
   });
 }
 
@@ -657,44 +665,32 @@ function bindTabs() {
       panel.classList.remove("is-active");
       panel.setAttribute("aria-hidden", "true");
     });
-
-    const activeTab =
-      target ||
-      tabs.find((tab) => tab.classList.contains("is-active")) ||
-      tabs[0];
-    if (!activeTab) return;
-    activeTab.classList.add("is-active");
-    activeTab.setAttribute("aria-selected", "true");
-    activeTab.setAttribute("tabindex", "0");
-
-    const panelId = activeTab.dataset.ipTab;
-    if (panelId) {
-      const panel = document.getElementById(`panel-${panelId}`);
-      if (panel) {
-        panel.classList.add("is-active");
-        panel.setAttribute("aria-hidden", "false");
-      }
+    const active = target || tabs[0];
+    if (!active) return;
+    active.classList.add("is-active");
+    active.setAttribute("aria-selected", "true");
+    active.setAttribute("tabindex", "0");
+    const panel = document.getElementById(`panel-${active.dataset.ipTab}`);
+    if (panel) {
+      panel.classList.add("is-active");
+      panel.setAttribute("aria-hidden", "false");
     }
   }
 
   tabs.forEach((tab) => {
-    tab.addEventListener("click", function () {
-      syncTabs(tab);
-    });
-
-    tab.addEventListener("keydown", function (e) {
+    tab.addEventListener("click", () => syncTabs(tab));
+    tab.addEventListener("keydown", (e) => {
       const idx = tabs.indexOf(tab);
-      let nextIdx = null;
-      if (e.key === "ArrowRight") nextIdx = (idx + 1) % tabs.length;
+      let next = null;
+      if (e.key === "ArrowRight") next = (idx + 1) % tabs.length;
       else if (e.key === "ArrowLeft")
-        nextIdx = (idx - 1 + tabs.length) % tabs.length;
-      else if (e.key === "Home") nextIdx = 0;
-      else if (e.key === "End") nextIdx = tabs.length - 1;
-
-      if (nextIdx !== null) {
+        next = (idx - 1 + tabs.length) % tabs.length;
+      else if (e.key === "Home") next = 0;
+      else if (e.key === "End") next = tabs.length - 1;
+      if (next !== null) {
         e.preventDefault();
-        tabs[nextIdx].focus();
-        syncTabs(tabs[nextIdx]);
+        tabs[next].focus();
+        syncTabs(tabs[next]);
       }
     });
   });
@@ -710,42 +706,35 @@ function openRecordModal(title, url) {
   const modal = document.getElementById("ipRecordModal");
   const frame = document.getElementById("ipRecordModalFrame");
   const titleEl = document.getElementById("ipRecordModalTitle");
-  const openTabBtn = document.getElementById("ipRecordModalOpenTabBtn");
+  const openBtn = document.getElementById("ipRecordModalOpenTabBtn");
   if (!modal || !frame || !titleEl) return;
   lastRecordFocusedElement = document.activeElement;
   titleEl.textContent = title || "Idea Details";
   frame.src = url;
-  if (openTabBtn) openTabBtn.setAttribute("data-url", url || "");
+  if (openBtn) openBtn.setAttribute("data-url", url || "");
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
   setBackgroundHidden(true);
   bindFocusTrap(modal);
-  const focusable = getFocusableElements(modal);
-  if (focusable[0]) focusable[0].focus();
+  getFocusableElements(modal)[0]?.focus();
 }
 
 function closeRecordModal() {
   const modal = document.getElementById("ipRecordModal");
   const frame = document.getElementById("ipRecordModalFrame");
-  const openTabBtn = document.getElementById("ipRecordModalOpenTabBtn");
+  const openBtn = document.getElementById("ipRecordModalOpenTabBtn");
   if (!modal || !frame) return;
   frame.src = "about:blank";
-  if (openTabBtn) openTabBtn.setAttribute("data-url", "");
+  if (openBtn) openBtn.setAttribute("data-url", "");
   modal.classList.remove("is-open");
   modal.setAttribute("aria-hidden", "true");
   setBackgroundHidden(false);
-  if (
-    lastRecordFocusedElement &&
-    typeof lastRecordFocusedElement.focus === "function"
-  ) {
-    lastRecordFocusedElement.focus();
-  }
+  lastRecordFocusedElement?.focus();
   lastRecordFocusedElement = null;
 }
 
 function bindRecordModal() {
-  document.addEventListener("click", function (e) {
-    // Table row links
+  document.addEventListener("click", (e) => {
     const link = e.target.closest("a.ip-recordLink");
     if (link) {
       e.preventDefault();
@@ -754,37 +743,31 @@ function bindRecordModal() {
       if (url) openRecordModal(title, url);
       return;
     }
-
-    // Recently-added chips
     const chip = e.target.closest(".ip-recentChip");
     if (chip) {
       const url = chip.getAttribute("data-chip-url");
       const title = chip.getAttribute("data-chip-title") || "Idea Details";
       if (url) openRecordModal(title, url);
-      return;
     }
   });
 
-  const closeBtn = document.getElementById("ipRecordModalCloseBtn");
-  const openTabBtn = document.getElementById("ipRecordModalOpenTabBtn");
-  const modal = document.getElementById("ipRecordModal");
+  document
+    .getElementById("ipRecordModalCloseBtn")
+    ?.addEventListener("click", closeRecordModal);
 
-  if (closeBtn) closeBtn.addEventListener("click", closeRecordModal);
-  if (openTabBtn) {
-    openTabBtn.addEventListener("click", function () {
-      const url = openTabBtn.getAttribute("data-url") || "";
+  document
+    .getElementById("ipRecordModalOpenTabBtn")
+    ?.addEventListener("click", function () {
+      const url = this.getAttribute("data-url") || "";
       if (url) window.open(url, "_blank", "noopener");
     });
-  }
 
-  if (modal) {
-    modal.addEventListener("click", function (e) {
-      if (e.target?.getAttribute?.("data-ip-record-close") === "1")
-        closeRecordModal();
-    });
-  }
+  document.getElementById("ipRecordModal")?.addEventListener("click", (e) => {
+    if (e.target?.getAttribute("data-ip-record-close") === "1")
+      closeRecordModal();
+  });
 
-  document.addEventListener("keydown", function (e) {
+  document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeRecordModal();
   });
 }
@@ -809,12 +792,14 @@ function wireJumpToTop() {
     btn.classList.toggle("is-visible", needsScroll && scrollTop > 120);
     const credit = document.getElementById("ipCreditBadge");
     if (credit) {
-      const nearBottom = scrollTop + clientHeight >= scrollHeight - 80;
-      credit.classList.toggle("is-visible", nearBottom);
+      credit.classList.toggle(
+        "is-visible",
+        scrollTop + clientHeight >= scrollHeight - 80,
+      );
     }
   }
 
-  btn.addEventListener("click", function () {
+  btn.addEventListener("click", () => {
     const prefersReduced = window.matchMedia?.(
       "(prefers-reduced-motion: reduce)",
     ).matches;
@@ -839,14 +824,11 @@ function getIdeaField(idea, s1Key, fallbackKey) {
 
 function normalizeStatusLabel(status) {
   if (!status) return "";
-  if (status.includes("(") && status.includes(")")) {
-    return status.replace("(", "").replace(")", "").trim();
-  }
-  return status;
+  return status.replace(/[()]/g, "").trim();
 }
 
 function buildIdeaViewModel(idea) {
-  if (!idea || !idea.recordID) return null;
+  if (!idea?.recordID) return null;
   const recordID = String(idea.recordID);
   const title = sanitizeLeafValue(
     getIdeaField(idea, IDEA_INDICATORS.title, "title"),
@@ -858,7 +840,6 @@ function buildIdeaViewModel(idea) {
   const status = normalizeStatusLabel(sanitizeLeafValue(statusRaw));
   const votes = voteCounts[recordID] || 0;
   const isVoted = userVotes[recordID] === true;
-  const createdDate = idea.created_date || "";
   return {
     recordID,
     title,
@@ -866,18 +847,19 @@ function buildIdeaViewModel(idea) {
     status,
     votes,
     isVoted,
-    created_date: createdDate,
-    recordLink: RECORD_VIEW_URL + recordID,
+    created_date: idea.created_date || "",
+    recordLink: `${RECORD_VIEW_URL}${recordID}`,
   };
 }
 
-function buildIdeasViewModelList(rawIdeas, updateMaps) {
+function buildIdeasViewModelList(rawIdeas, updateMaps = false) {
   const list = [];
   const vmMap = {};
   if (updateMaps) {
     ideasById = {};
     ideaOwnerMap = {};
   }
+
   (rawIdeas || []).forEach((idea) => {
     const vm = buildIdeaViewModel(idea);
     if (!vm) return;
@@ -888,6 +870,7 @@ function buildIdeasViewModelList(rawIdeas, updateMaps) {
       ideaOwnerMap[vm.recordID] = idea.userID || "";
     }
   });
+
   if (updateMaps) ideasVMById = vmMap;
   return list;
 }
@@ -896,8 +879,7 @@ function buildIdeasViewModelList(rawIdeas, updateMaps) {
    Sort
 ───────────────────────────────────────────────────────────── */
 
-function getIdeaSortValue(idea, key, votes) {
-  if (!idea) return "";
+function getIdeaSortValue(idea, key) {
   switch (key) {
     case "id":
       return Number(idea.recordID) || 0;
@@ -908,54 +890,50 @@ function getIdeaSortValue(idea, key, votes) {
     case "status":
       return String(normalizeStatusLabel(idea.status || ""));
     case "votes":
-      if (typeof idea.votes === "number") return idea.votes;
-      return (votes && votes[idea.recordID]) || 0;
+      return typeof idea.votes === "number"
+        ? idea.votes
+        : voteCounts[idea.recordID] || 0;
     default:
       return "";
   }
 }
 
-function sortIdeasList(list, votes, stateObj) {
+function sortIdeasList(list, stateObj) {
   if (!stateObj?.key) return list;
-  const direction = stateObj.dir === "desc" ? -1 : 1;
+  const dir = stateObj.dir === "desc" ? -1 : 1;
   return [...list.filter((i) => i?.recordID)].sort((a, b) => {
-    const aVal = getIdeaSortValue(a, stateObj.key, votes);
-    const bVal = getIdeaSortValue(b, stateObj.key, votes);
-    if (typeof aVal === "number" && typeof bVal === "number")
-      return (aVal - bVal) * direction;
+    const av = getIdeaSortValue(a, stateObj.key);
+    const bv = getIdeaSortValue(b, stateObj.key);
+    if (typeof av === "number" && typeof bv === "number")
+      return (av - bv) * dir;
     return (
-      String(aVal).localeCompare(String(bVal), undefined, {
+      String(av).localeCompare(String(bv), undefined, {
         numeric: true,
         sensitivity: "base",
-      }) * direction
+      }) * dir
     );
   });
 }
 
 function setSortState(tableId, key) {
-  const stateObj = sortState[tableId] || { key: "", dir: "asc" };
-  if (stateObj.key === key) {
-    stateObj.dir = stateObj.dir === "asc" ? "desc" : "asc";
-  } else {
-    stateObj.key = key;
-    stateObj.dir = "asc";
-  }
-  sortState[tableId] = stateObj;
+  const s = sortState[tableId] || { key: "", dir: "asc" };
+  s.dir = s.key === key ? (s.dir === "asc" ? "desc" : "asc") : "asc";
+  s.key = key;
+  sortState[tableId] = s;
 }
 
 function applySortClasses(tableId) {
   const table = document.getElementById(tableId);
   if (!table) return;
-  const stateObj = sortState[tableId];
+  const s = sortState[tableId];
   table.querySelectorAll(".ip-sortable").forEach((th) => {
     th.classList.remove("is-asc", "is-desc");
-    const btn = th.querySelector(".ip-sortBtn");
-    const key = btn?.getAttribute("data-sort");
-    if (stateObj && key === stateObj.key) {
-      th.classList.add(stateObj.dir === "asc" ? "is-asc" : "is-desc");
+    const key = th.querySelector(".ip-sortBtn")?.getAttribute("data-sort");
+    if (s && key === s.key) {
+      th.classList.add(s.dir === "asc" ? "is-asc" : "is-desc");
       th.setAttribute(
         "aria-sort",
-        stateObj.dir === "asc" ? "ascending" : "descending",
+        s.dir === "asc" ? "ascending" : "descending",
       );
     } else {
       th.setAttribute("aria-sort", "none");
@@ -964,24 +942,19 @@ function applySortClasses(tableId) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Row builder (template literals)
+   Row builder
 ───────────────────────────────────────────────────────────── */
 
 function getStatusBadgeClass(status) {
-  switch (status) {
-    case "New Submission":
-      return "ip-badge--new";
-    case "Under Review":
-      return "ip-badge--review";
-    case "In Progress":
-      return "ip-badge--progress";
-    case "Completed":
-      return "ip-badge--done";
-    case "Discarded":
-      return "ip-badge--discarded";
-    default:
-      return "";
-  }
+  const map = {
+    "New Submission": "ip-badge--new",
+    "Under Review": "ip-badge--review",
+    "In Progress": "ip-badge--progress",
+    Completed: "ip-badge--done",
+    Discarded: "ip-badge--discarded",
+    Draft: "ip-badge--draft",
+  };
+  return map[status] || "";
 }
 
 function buildIdeaRow(idea) {
@@ -991,43 +964,50 @@ function buildIdeaRow(idea) {
   const title = escapeHtml(titleRaw);
   const titleDisplay = escapeHtml(truncateTitle(titleRaw));
   const category = escapeHtml(idea.category || "");
-  const status = normalizeStatusLabel(idea.status || "");
-  const statusBadgeClass = getStatusBadgeClass(status);
-  const statusMarkup = status
-    ? `<span class="ip-badge ${statusBadgeClass}">${status}</span>`
-    : "";
+
+  // Show "Draft" when status is empty (not-submitted records)
+  const statusLabel = idea.status || "Draft";
+  const statusBadgeClass = getStatusBadgeClass(statusLabel);
+  const statusMarkup = `<span class="ip-badge ${statusBadgeClass}">${statusLabel}</span>`;
+
   const votes = idea.votes || 0;
   const isVoted = idea.isVoted === true;
-  const recordLink = idea.recordLink || RECORD_VIEW_URL + recordID;
+  const recordLink = idea.recordLink || `${RECORD_VIEW_URL}${recordID}`;
   const labelTitle = title || `Idea ${recordID}`;
   const voteLabel = isVoted
-    ? `You've already voted for ${labelTitle}`
+    ? `Already voted for ${labelTitle}`
     : `Vote for ${labelTitle}`;
-  const votedTip = isVoted
-    ? "You've already voted for this idea"
-    : "Vote for this idea";
 
-  return `<tr data-record-id="${recordID}">
-  <td><a class="ip-recordLink" data-title="${title}" aria-haspopup="dialog" href="${escapeHtml(recordLink)}">${recordID}</a></td>
-  <td title="${title}">${titleDisplay}</td>
-  <td>${category}</td>
-  <td>${statusMarkup}</td>
-  <td class="ip-votes">${votes}</td>
-  <td class="ip-actionsCell">
-    <button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}"
-      data-record-id="${recordID}"
-      ${isVoted ? "disabled" : ""}
-      aria-label="${voteLabel}"
-      aria-disabled="${isVoted}"
-      title="${votedTip}">
-      <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
-    </button>
-    <button class="ip-btn ip-btn--ghost ip-share"
-      data-record-link="${escapeHtml(recordLink)}"
-      aria-label="Copy link for ${labelTitle}"
-      title="Copy shareable link">Share</button>
-  </td>
-</tr>`;
+  return `
+    <tr data-record-id="${recordID}">
+      <td>
+        <a class="ip-recordLink"
+           data-title="${title}"
+           aria-haspopup="dialog"
+           href="${escapeHtml(recordLink)}">#${recordID}</a>
+      </td>
+      <td title="${title}">${titleDisplay}</td>
+      <td>${category}</td>
+      <td>${statusMarkup}</td>
+      <td class="ip-votes">${votes}</td>
+      <td class="ip-actionsCell">
+        <button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}"
+          data-record-id="${recordID}"
+          ${isVoted ? "disabled" : ""}
+          aria-label="${voteLabel}"
+          aria-disabled="${isVoted}"
+          title="${isVoted ? "Already voted" : "Vote for this idea"}">
+          <span class="material-symbols-outlined" style="font-variation-settings:${ICON_FILL}" aria-hidden="true">thumb_up</span>
+        </button>
+        <button class="ip-btn ip-btn--ghost ip-share"
+          data-record-link="${escapeHtml(recordLink)}"
+          aria-label="Copy link for ${labelTitle}"
+          title="Copy shareable link">
+          <span class="material-symbols-outlined" style="font-variation-settings:${ICON_FILL}" aria-hidden="true">share</span>
+          Share
+        </button>
+      </td>
+    </tr>`;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1035,7 +1015,6 @@ function buildIdeaRow(idea) {
 ───────────────────────────────────────────────────────────── */
 
 function getIdeaSearchText(idea) {
-  if (!idea) return "";
   return [
     idea.recordID ? String(idea.recordID) : "",
     idea.title || "",
@@ -1048,19 +1027,15 @@ function getIdeaSearchText(idea) {
 
 function filterIdeasList(list, query) {
   let filtered = list;
-
-  // Category pre-filter
   if (state.categoryFilter && state.categoryFilter !== "all") {
-    const cat = state.categoryFilter;
-    filtered = filtered.filter((idea) => (idea.category || "").trim() === cat);
+    filtered = filtered.filter(
+      (i) => (i.category || "").trim() === state.categoryFilter,
+    );
   }
-
-  // Text search
   if (query) {
     const q = query.toLowerCase();
-    filtered = filtered.filter((idea) => getIdeaSearchText(idea).includes(q));
+    filtered = filtered.filter((i) => getIdeaSearchText(i).includes(q));
   }
-
   return filtered;
 }
 
@@ -1085,13 +1060,12 @@ function renderRows(tbody, rowsHtml, emptyMessage) {
   tbody.innerHTML = rowsHtml || `<tr><td colspan="6">${emptyMessage}</td></tr>`;
 }
 
-function renderTableMessage(tbody, message, options) {
+function renderTableMessage(tbody, message, opts = {}) {
   if (!tbody) return;
-  const retry = options?.retry;
-  const buttonHtml = retry
-    ? ' <button type="button" class="ip-btn ip-btn--ghost ip-retry">Retry</button>'
+  const btn = opts.retry
+    ? ` <button type="button" class="ip-btn ip-btn--ghost ip-retry">Retry</button>`
     : "";
-  tbody.innerHTML = `<tr><td colspan="6">${escapeHtml(message || "")} ${buttonHtml}</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="6">${escapeHtml(message || "")}${btn}</td></tr>`;
 }
 
 function updatePaginationUI(
@@ -1109,6 +1083,7 @@ function updatePaginationUI(
     return;
   }
   container.hidden = false;
+
   const prevBtn = container.querySelector('[data-page-action="prev"]');
   const nextBtn = container.querySelector('[data-page-action="next"]');
   const toggleBtn = container.querySelector('[data-page-action="toggle"]');
@@ -1135,7 +1110,7 @@ function updatePaginationUI(
 
 function renderAllIdeas() {
   const filtered = filterIdeasList(ideas, state.search);
-  const sorted = sortIdeasList(filtered, voteCounts, sortState.tblIdeas);
+  const sorted = sortIdeasList(filtered, sortState.tblIdeas);
   applySortClasses("tblIdeas");
 
   const shouldPaginate = sorted.length >= PAGE_SIZE;
@@ -1152,9 +1127,11 @@ function renderAllIdeas() {
   );
   state.pagination.all.page = pagination.page;
 
-  const emptyMessage = state.search ? "No matching ideas." : "No data found";
-  const rowsHtml = pagination.pageItems.map(buildIdeaRow).join("");
-  renderRows(ui.results, rowsHtml, emptyMessage);
+  renderRows(
+    ui.results,
+    pagination.pageItems.map(buildIdeaRow).join(""),
+    state.search ? "No matching ideas." : "No data found",
+  );
   PortalDebug.set("tables.results", pagination.pageItems.length);
   updatePaginationUI(
     "all",
@@ -1167,7 +1144,7 @@ function renderAllIdeas() {
 }
 
 function renderMyIdeas() {
-  const sorted = sortIdeasList(myIdeasCache, voteCounts, sortState.tblMyIdeas);
+  const sorted = sortIdeasList(myIdeasCache, sortState.tblMyIdeas);
   applySortClasses("tblMyIdeas");
 
   const shouldPaginate = sorted.length >= PAGE_SIZE;
@@ -1184,8 +1161,11 @@ function renderMyIdeas() {
   );
   state.pagination.my.page = pagination.page;
 
-  const myRowsHtml = pagination.pageItems.map(buildIdeaRow).join("");
-  renderRows(ui.myResults, myRowsHtml, "No ideas submitted");
+  renderRows(
+    ui.myResults,
+    pagination.pageItems.map(buildIdeaRow).join(""),
+    "No ideas submitted",
+  );
   PortalDebug.set("tables.myResults", pagination.pageItems.length);
   updatePaginationUI(
     "my",
@@ -1199,15 +1179,14 @@ function renderMyIdeas() {
 
 function renderTop10Ideas() {
   if (!ui.topResults) return;
-  let sorted = ideas
+  let top10 = [...ideas]
     .filter((i) => i?.recordID)
-    .sort((a, b) => (b.votes || 0) - (a.votes || 0));
-  let top10 = sorted.slice(0, 10);
+    .sort((a, b) => (b.votes || 0) - (a.votes || 0))
+    .slice(0, 10);
   if (sortState.tblTopIdeas.key)
-    top10 = sortIdeasList(top10, voteCounts, sortState.tblTopIdeas);
+    top10 = sortIdeasList(top10, sortState.tblTopIdeas);
   applySortClasses("tblTopIdeas");
-  const topHtml = top10.map(buildIdeaRow).join("");
-  renderRows(ui.topResults, topHtml, "No data found");
+  renderRows(ui.topResults, top10.map(buildIdeaRow).join(""), "No data found");
   PortalDebug.set("tables.topResults", top10.length);
 }
 
@@ -1216,63 +1195,128 @@ function renderTop10Ideas() {
 ───────────────────────────────────────────────────────────── */
 
 function setVoteButtonsDisabled(isDisabled) {
-  document.querySelectorAll(".ip-upvote").forEach((button) => {
+  document.querySelectorAll(".ip-upvote").forEach((btn) => {
     if (isDisabled) {
-      button.dataset.loadingDisabled = "true";
-      button.disabled = true;
-      button.setAttribute("aria-disabled", "true");
-    } else if (button.dataset.loadingDisabled === "true") {
-      const voted = button.classList.contains("is-voted");
-      button.disabled = voted;
-      button.setAttribute("aria-disabled", voted ? "true" : "false");
-      delete button.dataset.loadingDisabled;
+      btn.dataset.loadingDisabled = "true";
+      btn.disabled = true;
+      btn.setAttribute("aria-disabled", "true");
+    } else if (btn.dataset.loadingDisabled === "true") {
+      const voted = btn.classList.contains("is-voted");
+      btn.disabled = voted;
+      btn.setAttribute("aria-disabled", voted ? "true" : "false");
+      delete btn.dataset.loadingDisabled;
     }
   });
 }
 
-function setVotedState(ideanum, isVoted) {
-  const key = String(ideanum);
+function setVotedState(recordID, isVoted) {
   document
-    .querySelectorAll(`.ip-upvote[data-record-id="${key}"]`)
-    .forEach((button) => {
-      button.disabled = isVoted;
-      button.classList.toggle("is-voted", isVoted);
-      button.setAttribute("aria-disabled", isVoted ? "true" : "false");
+    .querySelectorAll(`.ip-upvote[data-record-id="${recordID}"]`)
+    .forEach((btn) => {
+      btn.disabled = isVoted;
+      btn.classList.toggle("is-voted", isVoted);
+      btn.setAttribute("aria-disabled", isVoted ? "true" : "false");
     });
 }
 
-function updateVoteDom(ideanum) {
-  const key = String(ideanum);
-  const ideaVM = ideasVMById[key];
-  if (ideaVM) {
-    ideaVM.votes = voteCounts[key] || 0;
-    ideaVM.isVoted = true;
-  }
+function updateVoteDom(recordID) {
+  const key = String(recordID);
 
-  const myIdea = myIdeasCache.find((i) => String(i.recordID) === key);
-  if (myIdea) {
-    myIdea.votes = voteCounts[key] || 0;
-    myIdea.isVoted = true;
-  }
-
-  document.querySelectorAll(`tr[data-record-id="${key}"]`).forEach((row) => {
-    const voteCell = row.querySelector(".ip-votes");
-    if (voteCell) voteCell.textContent = voteCounts[key] || 0;
+  [
+    ideasVMById[key],
+    myIdeasCache.find((i) => String(i.recordID) === key),
+  ].forEach((item) => {
+    if (!item) return;
+    item.votes = voteCounts[key] || 0;
+    item.isVoted = true;
   });
+
+  document
+    .querySelectorAll(`tr[data-record-id="${key}"] .ip-votes`)
+    .forEach((cell) => {
+      cell.textContent = voteCounts[key] || 0;
+    });
   setVotedState(key, true);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Voter email resolution
+   Priority: Smarty-injected candidate → orgchart API → userID fallback
+───────────────────────────────────────────────────────────── */
+
+function isRealEmail(str) {
+  return typeof str === "string" && str.includes("@") && !str.includes("<!--");
+}
+
+async function resolveVoterEmail() {
+  // 1. Try Smarty-injected candidates first (zero cost if one rendered)
+  const candidates = (window.leafIdeaPortal || {}).emailCandidates || [];
+  for (let i = 0; i < candidates.length; i++) {
+    if (isRealEmail(candidates[i])) {
+      resolvedVoterEmail = candidates[i];
+      logDebug(
+        `[resolveVoterEmail] Smarty candidate [${i}] resolved:`,
+        resolvedVoterEmail,
+      );
+      PortalDebug.render();
+      return;
+    }
+  }
+
+  // 2. Orgchart API fallback — look up current user by userName
+  if (userID) {
+    try {
+      const res = await fetch(
+        `./api/orgchart/employee/search?q=userName:${encodeURIComponent(userID)}&noLimit=0&_=${Date.now()}`,
+        { credentials: "same-origin" },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const employees = Array.isArray(data)
+          ? data
+          : Object.values(data || {});
+        const match = employees.find(
+          (e) =>
+            e &&
+            (e.userName === userID || e.userName === userID.split("\\").pop()),
+        );
+        const email = match?.Email || match?.email || "";
+        if (isRealEmail(email)) {
+          resolvedVoterEmail = email;
+          logDebug(
+            "[resolveVoterEmail] orgchart API resolved:",
+            resolvedVoterEmail,
+          );
+          PortalDebug.render();
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("[resolveVoterEmail] orgchart API failed:", err);
+    }
+  }
+
+  // 3. Last resort — store userID so votes still record something identifiable
+  resolvedVoterEmail = userID || "";
+  console.warn(
+    "[resolveVoterEmail] Could not resolve email; falling back to userID:",
+    resolvedVoterEmail,
+  );
+  PortalDebug.render();
 }
 
 /* ─────────────────────────────────────────────────────────────
    Vote submit
 ───────────────────────────────────────────────────────────── */
 
-function IdeaVotes(ideanum) {
-  const key = String(ideanum);
+async function IdeaVotes(recordID) {
+  const key = String(recordID);
   if (votingInProgress) return;
   if (userVotes[key]) {
     showToast("You already voted on this idea.", true);
     return;
   }
+
   votingInProgress = true;
   userVotes[key] = true;
   setVotedState(key, true);
@@ -1282,64 +1326,53 @@ function IdeaVotes(ideanum) {
     title: `Idea #${key}`,
     priority: 0,
     CSRFToken: csrfToken,
+    [`numform_${FORM_KEYS.votes}`]: 1,
+    [VOTE_FIELDS.user]: resolvedVoterEmail || userID,
+    [VOTE_FIELDS.idea]: key,
   };
-  payload[`numform_${FORM_KEYS.votes}`] = 1;
-  payload[VOTE_FIELDS.user] = userID;
-  payload[VOTE_FIELDS.idea] = key;
 
   logDebug("[IdeaVotes] payload", payload);
 
-  apiPostJson("./api/?a=form/new", payload)
-    .then(function (response) {
-      logDebug("[IdeaVotes] raw response", response);
-      const recordID = parseFloat(response);
-      if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
-        voteCounts[key] = (voteCounts[key] || 0) + 1;
-        updateVoteDom(key);
-        renderTop10Ideas();
-        if (sortState.tblIdeas.key === "votes") renderAllIdeas();
-        if (sortState.tblMyIdeas.key === "votes") renderMyIdeas();
-        try {
-          localStorage.setItem("leafIdeaVotes", JSON.stringify(userVotes));
-        } catch (e) {}
+  try {
+    const response = await apiPostJson("./api/?a=form/new", payload);
+    logDebug("[IdeaVotes] response", response);
+    const newID = parseFloat(response);
 
-        // Update stats strip total votes
-        const totalVotes = Object.values(voteCounts).reduce(
-          (sum, n) => sum + n,
-          0,
-        );
-        renderStatsStrip(ideas.length, implementedCount, totalVotes);
+    if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
+      voteCounts[key] = (voteCounts[key] || 0) + 1;
+      updateVoteDom(key);
+      renderTop10Ideas();
+      if (sortState.tblIdeas.key === "votes") renderAllIdeas();
+      if (sortState.tblMyIdeas.key === "votes") renderMyIdeas();
 
-        showToast("Thanks for voting!");
-        // Update my activity
-        updateMyActivity(
-          myIdeasCache.length,
-          Object.values(userVotes).filter(Boolean).length,
-        );
-      } else {
-        console.error("[IdeaVotes] failed response:", response);
-        showToast("Error processing vote. See console for details.", true);
-        userVotes[key] = false;
-        const ideaVM = ideasVMById[key];
-        if (ideaVM) ideaVM.isVoted = false;
-        const myIdea = myIdeasCache.find((i) => String(i.recordID) === key);
-        if (myIdea) myIdea.isVoted = false;
-        setVotedState(key, false);
-      }
-    })
-    .catch(function () {
-      console.error("[IdeaVotes] request error");
-      showToast("Error processing vote. See console for details.", true);
-      userVotes[key] = false;
-      const ideaVM = ideasVMById[key];
-      if (ideaVM) ideaVM.isVoted = false;
-      const myIdea = myIdeasCache.find((i) => String(i.recordID) === key);
-      if (myIdea) myIdea.isVoted = false;
-      setVotedState(key, false);
-    })
-    .finally(function () {
-      votingInProgress = false;
+      try {
+        localStorage.setItem("leafIdeaVotes", JSON.stringify(userVotes));
+      } catch {}
+
+      const totalVotes = Object.values(voteCounts).reduce((s, n) => s + n, 0);
+      renderStatsStrip(ideas.length, implementedCount, totalVotes);
+      showToast("Thanks for voting!");
+      updateMyActivity(
+        myIdeasCache.length,
+        Object.values(userVotes).filter(Boolean).length,
+      );
+    } else {
+      throw new Error(`Unexpected response: ${response}`);
+    }
+  } catch (err) {
+    console.error("[IdeaVotes] error:", err);
+    showToast("Error processing vote. Please try again.", true);
+    userVotes[key] = false;
+    [
+      ideasVMById[key],
+      myIdeasCache.find((i) => String(i.recordID) === key),
+    ].forEach((item) => {
+      if (item) item.isVoted = false;
     });
+    setVotedState(key, false);
+  } finally {
+    votingInProgress = false;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1352,14 +1385,17 @@ async function fetchIdeasData() {
     const query = new LeafFormQuery();
     query.addTerm("categoryID", "=", FORM_IDS.idea);
     query.addTerm("deleted", "=", 0);
-    query.addTerm("stepID", "!=", "notSubmitted");
+    // No stepID filter — LeafFormQuery's default public scope already excludes
+    // other users' drafts. Including stepID without a status join silently
+    // returns 0 results in some LEAF versions.
     query.sort("created_date", "DESC");
     query.getData(IDEA_GETDATA);
-    query.setExtraParams("&x-filterData=recordID,title,created_date,userID");
+    query.setExtraParams(`&x-filterData=${IDEA_FILTER_DATA}`);
     query.onProgress((count) => {
-      setStatus("all", `Loading ideas… (${count} records)`, "loading");
+      setStatus("all", `Loading ideas… (${count} loaded)`, "loading");
       PortalDebug.set("ideas.count", count);
     });
+
     const result = Object.values((await query.execute()) || {});
     PortalDebug.set("ideas.count", result.length);
     PortalDebug.set("ideas.status", "success");
@@ -1379,9 +1415,10 @@ async function fetchVotesData() {
     query.addTerm("categoryID", "=", FORM_IDS.votes);
     query.addTerm("deleted", "=", 0);
     query.getData(VOTE_GETDATA);
-    query.setExtraParams("&x-filterData=recordID,title");
+    // Only need recordID + s1 for vote tallying
+    query.setExtraParams(`&x-filterData=${VOTE_FILTER_DATA}`);
     query.onProgress((count) => {
-      setStatus("all", `Loading votes… (${count} records)`, "loading");
+      setStatus("all", `Loading votes… (${count} loaded)`, "loading");
       PortalDebug.set("votes.count", count);
     });
 
@@ -1396,7 +1433,12 @@ async function fetchVotesData() {
       if (ideanum !== undefined && ideanum !== null && ideanum !== "") {
         const key = String(ideanum);
         voteCounts[key] = (voteCounts[key] || 0) + 1;
-        if (voter && voter === userID) userVotes[key] = true;
+        // Match on resolvedVoterEmail first; fall back to userID for records
+        // submitted before the email migration or when email didn't resolve.
+        const voterIdentity = resolvedVoterEmail || userID;
+        if (voter && voterIdentity && voter === voterIdentity) {
+          userVotes[key] = true;
+        }
       }
     });
 
@@ -1406,7 +1448,7 @@ async function fetchVotesData() {
       Object.keys(saved).forEach((k) => {
         if (saved[k]) userVotes[k] = true;
       });
-    } catch (e) {}
+    } catch {}
 
     PortalDebug.set("votes.count", votesList.length);
     PortalDebug.set("votes.status", "success");
@@ -1422,7 +1464,7 @@ async function fetchVotesData() {
 async function fetchUserSubmissions() {
   if (!userID) {
     myIdeasCache = [];
-    setStatus("my", "No user ID found", "error");
+    setStatus("my", "Sign in to view your ideas.", "error");
     renderMyIdeas();
     return;
   }
@@ -1433,27 +1475,23 @@ async function fetchUserSubmissions() {
 
   try {
     const query = new LeafFormQuery();
+    // Scope to idea form type + this user — includes drafts (no stepID filter)
+    query.addTerm("categoryID", "=", FORM_IDS.idea);
     query.addTerm("userID", "=", userID);
     query.addTerm("deleted", "=", 0);
+    query.sort("created_date", "DESC");
     query.getData(IDEA_GETDATA);
-    query.setExtraParams("&x-filterData=recordID,title,created_date,userID");
+    query.setExtraParams(`&x-filterData=${IDEA_FILTER_DATA}`);
     query.onProgress((count) =>
       setStatus("my", `Loading… (${count} records)`, "loading"),
     );
 
     const data = (await query.execute()) || {};
-    const userIdeas = Object.values(data)
-      .filter((idea) => {
-        if (!idea?.recordID) return false;
-        // Filter out vote records (title starts with "Idea #")
-        if ((idea.title || "").startsWith("Idea #")) return false;
-        return true;
-      })
-      .map((idea) => {
-        // Enrich with full data from ideasById if available
-        const key = String(idea.recordID);
-        return ideasById && ideasById[key] ? ideasById[key] : idea;
-      });
+    const userIdeas = Object.values(data).map((idea) => {
+      // Prefer enriched data from the full ideas fetch if available
+      const key = String(idea.recordID);
+      return ideasById[key] || idea;
+    });
 
     myIdeasCache = buildIdeasViewModelList(userIdeas, false);
     renderMyIdeas();
@@ -1464,10 +1502,10 @@ async function fetchUserSubmissions() {
     );
   } catch (err) {
     console.error("fetchUserSubmissions error:", err);
-    renderTableMessage(ui.myResults, "Error loading user ideas.", {
+    renderTableMessage(ui.myResults, "Error loading your ideas.", {
       retry: true,
     });
-    setStatus("my", "Error loading user ideas.", "error");
+    setStatus("my", "Error loading your ideas.", "error");
   } finally {
     setPanelBusy("my", false);
   }
@@ -1477,7 +1515,7 @@ async function fetchUserSubmissions() {
    Main load
 ───────────────────────────────────────────────────────────── */
 
-function loadIdeasAndVotes() {
+async function loadIdeasAndVotes() {
   setPanelBusy("all", true);
   setStatus("all", "Loading ideas…", "loading");
   renderTableMessage(ui.results, "Loading…");
@@ -1486,55 +1524,43 @@ function loadIdeasAndVotes() {
 
   const fetchStart = performance.now();
 
-  return Promise.all([fetchIdeasData(), fetchVotesData()])
-    .then(async ([ideasData, voteCount]) => {
-      const fetchEnd = performance.now();
-      ideasRaw = ideasData;
-      ideas = buildIdeasViewModelList(ideasRaw, true);
+  // Resolve voter email before fetching votes so the "did I vote" check
+  // in fetchVotesData() uses the correct identity.
+  await resolveVoterEmail();
 
-      // Compute implemented count (ideas with "Completed" status)
-      implementedCount = ideas.filter((i) => i.status === "Completed").length;
+  try {
+    const [ideasData] = await Promise.all([fetchIdeasData(), fetchVotesData()]);
 
-      const totalVotes = Object.values(voteCounts).reduce(
-        (sum, n) => sum + n,
-        0,
-      );
-      renderStatsStrip(ideas.length, implementedCount, totalVotes);
-      buildCategorySidebar(ideas);
-      renderRecentChips(ideas);
+    ideasRaw = ideasData;
+    ideas = buildIdeasViewModelList(ideasRaw, true);
 
-      const renderStart = performance.now();
-      renderAllIdeas();
-      renderTop10Ideas();
-      setStatus("all", "", "");
-      const renderEnd = performance.now();
+    implementedCount = ideas.filter((i) => i.status === "Completed").length;
+    const totalVotes = Object.values(voteCounts).reduce((s, n) => s + n, 0);
 
-      logDebug("Fetch duration (ms)", Math.round(fetchEnd - fetchStart));
-      logDebug("Render duration (ms)", Math.round(renderEnd - renderStart));
-      logDebug("Counts", { ideas: ideas.length, votes: voteCount });
+    renderStatsStrip(ideas.length, implementedCount, totalVotes);
+    buildCategorySidebar(ideas);
+    renderRecentChips(ideas);
 
-      await fetchUserSubmissions();
-    })
-    .catch(function (error) {
-      console.error("IdeaPortal load error", error);
-      renderTableMessage(ui.results, "Error loading ideas.", { retry: true });
-      renderTableMessage(ui.topResults, "Error loading ideas.", {
-        retry: true,
-      });
-      setStatus("all", "Error loading data.", "error");
-    })
-    .finally(function () {
-      setPanelBusy("all", false);
-      setVoteButtonsDisabled(false);
-    });
-}
+    renderAllIdeas();
+    renderTop10Ideas();
+    setStatus("all", "", "");
 
-function updateTable() {
-  return loadIdeasAndVotes();
+    logDebug("Fetch duration (ms)", Math.round(performance.now() - fetchStart));
+
+    await fetchUserSubmissions();
+  } catch (err) {
+    console.error("IdeaPortal load error", err);
+    renderTableMessage(ui.results, "Error loading ideas.", { retry: true });
+    renderTableMessage(ui.topResults, "Error loading ideas.", { retry: true });
+    setStatus("all", "Error loading data.", "error");
+  } finally {
+    setPanelBusy("all", false);
+    setVoteButtonsDisabled(false);
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Idea form helpers
+   Workflow advance (idea submission)
 ───────────────────────────────────────────────────────────── */
 
 async function advanceWorkflow(recordID) {
@@ -1554,9 +1580,8 @@ async function advanceWorkflow(recordID) {
 
     const firstStep = Array.isArray(stepData) ? stepData[0] : stepData;
     const depID = firstStep?.dependencyID;
-    const actions = firstStep?.dependencyActions;
     const actionType =
-      (Array.isArray(actions) && actions[0]?.actionType) || "submit";
+      firstStep?.dependencyActions?.[0]?.actionType || "submit";
 
     const applyRes = await fetch(`./api/formWorkflow/${recordID}/apply`, {
       method: "POST",
@@ -1568,34 +1593,32 @@ async function advanceWorkflow(recordID) {
         dependencyID: depID,
       }),
     });
-    const applyData = await applyRes.text();
-    logDebug("[Workflow] advance response:", applyData);
-    return applyData;
+    logDebug("[Workflow] advance response:", await applyRes.text());
   } catch (err) {
     console.warn("[Workflow] advance failed:", err);
   }
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Idea form
+───────────────────────────────────────────────────────────── */
+
 async function NewIdea(advanceOnSuccess) {
   const form = document.getElementById("ideaForm");
-  const submitButton = document.getElementById("submitButton");
-  const saveButton = document.getElementById("saveDraftButton");
+  const submitBtn = document.getElementById("submitButton");
+  const saveBtn = document.getElementById("saveDraftButton");
+  const fileInputEl = document.getElementById("fileInput");
 
-  const titleValue = document.getElementById("inpTitle")?.value.trim() || "";
-  const descriptionValue =
-    document.getElementById("inpDescription")?.value.trim() || "";
-  const benefitValue =
-    document.getElementById("inpBenefit")?.value.trim() || "";
-  const categoryValue =
-    document.getElementById("inpCategory")?.value.trim() || "";
-  const impactValue = document.getElementById("inpImpact")?.value.trim() || "";
-  const otherCategoryInput = document.getElementById("inpOtherCategory");
-  const otherCategoryValue = otherCategoryInput
-    ? otherCategoryInput.value.trim()
-    : "";
+  const val = (id) => document.getElementById(id)?.value.trim() || "";
+  const titleValue = val("inpTitle");
+  const descValue = val("inpDescription");
+  const benefitValue = val("inpBenefit");
+  const categoryValue = val("inpCategory");
+  const impactValue = val("inpImpact");
+  const otherCatValue = val("inpOtherCategory");
 
-  if (submitButton) submitButton.disabled = true;
-  if (saveButton) saveButton.disabled = true;
+  if (submitBtn) submitBtn.disabled = true;
+  if (saveBtn) saveBtn.disabled = true;
   ideaSubmitInProgress = true;
 
   try {
@@ -1604,64 +1627,59 @@ async function NewIdea(advanceOnSuccess) {
       title: titleValue || "Idea Submission",
       priority: 0,
       CSRFToken: csrfToken,
+      [`numform_${FORM_KEYS.idea}`]: 1,
+      [IDEA_FIELDS.title]: titleValue,
+      [IDEA_FIELDS.summary]: descValue,
+      [IDEA_FIELDS.benefit]: benefitValue,
+      [IDEA_FIELDS.category]: categoryValue,
+      [IDEA_FIELDS.impact]: impactValue,
     };
-    payload[`numform_${FORM_KEYS.idea}`] = 1;
-    payload[IDEA_FIELDS.title] = titleValue;
-    payload[IDEA_FIELDS.summary] = descriptionValue;
-    payload[IDEA_FIELDS.benefit] = benefitValue;
-    payload[IDEA_FIELDS.category] = categoryValue;
-    payload[IDEA_FIELDS.impact] = impactValue;
-    if (categoryValue === "Other" && otherCategoryValue) {
-      payload[IDEA_FIELDS.other_category] = otherCategoryValue;
+    if (categoryValue === "Other" && otherCatValue) {
+      payload[IDEA_FIELDS.other_category] = otherCatValue;
     }
 
     const response = await apiPostJson("./api/?a=form/new", payload);
-    const recordID = parseFloat(response);
+    const newID = parseFloat(response);
 
-    if (!isNaN(recordID) && isFinite(recordID) && recordID !== 0) {
+    if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
       // File upload — fire and forget
-      const fileInputEl = document.getElementById("fileInput");
-      const filesToUpload = fileInputEl?.files
-        ? Array.from(fileInputEl.files)
-        : [];
-      if (filesToUpload.length > 0) {
-        const formData = new FormData();
-        formData.append("CSRFToken", csrfToken);
-        filesToUpload.forEach((file) => formData.append("10", file));
-        fetch(`./api/?a=form/${recordID}`, {
+      const files = fileInputEl?.files ? Array.from(fileInputEl.files) : [];
+      if (files.length) {
+        const fd = new FormData();
+        fd.append("CSRFToken", csrfToken);
+        files.forEach((f) => fd.append("10", f));
+        fetch(`./api/?a=form/${newID}`, {
           method: "POST",
           credentials: "same-origin",
-          body: formData,
+          body: fd,
         }).catch((err) => console.warn("[IdeaUpload] file upload failed", err));
       }
 
-      if (form) {
-        form.reset();
-        form.classList.remove("was-validated");
-      }
+      form?.reset();
+      form?.classList.remove("was-validated");
       if (fileInputEl) fileInputEl.value = "";
       const fileList = document.getElementById("fileList");
       if (fileList) fileList.innerHTML = "";
       closeModal("addIdeaModal");
 
       if (advanceOnSuccess) {
-        await advanceWorkflow(recordID);
+        await advanceWorkflow(newID);
         showToast("Your idea has been submitted successfully.");
-        updateTable();
+        await loadIdeasAndVotes();
       } else {
         showToast("Idea saved. You can find it in My Ideas.");
+        await fetchUserSubmissions();
       }
-      fetchUserSubmissions();
     } else {
-      showToast("Error submitting idea. Please try again.", true);
+      throw new Error(`Unexpected response: ${response}`);
     }
   } catch (err) {
     console.warn("[NewIdea] error:", err);
     showToast("Error submitting idea. Please try again.", true);
   } finally {
     ideaSubmitInProgress = false;
-    if (submitButton) submitButton.disabled = false;
-    if (saveButton) saveButton.disabled = false;
+    if (submitBtn) submitBtn.disabled = false;
+    if (saveBtn) saveBtn.disabled = false;
   }
 }
 
@@ -1669,14 +1687,14 @@ async function NewIdea(advanceOnSuccess) {
    Form selects + validation
 ───────────────────────────────────────────────────────────── */
 
-function populateSelect(select, options, appendOther) {
+function populateSelect(select, options, appendOther = false) {
   if (!select) return;
   const placeholder = select.options[0];
   select.innerHTML = "";
   if (placeholder) select.appendChild(placeholder);
   options.forEach((opt) => {
-    const el = document.createElement("option");
     const label = typeof opt === "string" ? opt : opt.label || opt.name || opt;
+    const el = document.createElement("option");
     el.value = label;
     el.textContent = label;
     select.appendChild(el);
@@ -1689,64 +1707,56 @@ function populateSelect(select, options, appendOther) {
   }
 }
 
-function loadCategoryOptions() {
-  fetch(
-    "/platform/ideas/ajaxIndex.php?a=getindicator&indicatorID=8&series=1&recordID=0",
-    {
-      credentials: "same-origin",
-    },
-  )
-    .then((r) => r.text())
-    .then((html) => {
-      const doc = new DOMParser().parseFromString(html, "text/html");
-      const select = doc.querySelector("select#8");
-      if (!select || !select.options.length)
-        throw new Error("no options found");
-      populateSelect(
-        document.getElementById("inpCategory"),
-        Array.from(select.options)
-          .map((o) => o.value)
-          .filter(Boolean),
-        false,
-      );
-    })
-    .catch(() => {
-      populateSelect(
-        document.getElementById("inpCategory"),
-        CATEGORY_FALLBACK,
-        true,
-      );
-    });
+async function loadCategoryOptions() {
+  try {
+    const res = await fetch(
+      "/platform/ideas/ajaxIndex.php?a=getindicator&indicatorID=8&series=1&recordID=0",
+      { credentials: "same-origin" },
+    );
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const sel = doc.querySelector("select#8");
+    if (!sel || !sel.options.length) throw new Error("no options");
+    populateSelect(
+      document.getElementById("inpCategory"),
+      Array.from(sel.options)
+        .map((o) => o.value)
+        .filter(Boolean),
+      false,
+    );
+  } catch {
+    populateSelect(
+      document.getElementById("inpCategory"),
+      CATEGORY_FALLBACK,
+      true,
+    );
+  }
 }
 
-function loadImpactOptions() {
-  fetch(
-    "/platform/ideas/ajaxIndex.php?a=getindicator&indicatorID=9&series=1&recordID=0",
-    {
-      credentials: "same-origin",
-    },
-  )
-    .then((r) => r.text())
-    .then((html) => {
-      const doc = new DOMParser().parseFromString(html, "text/html");
-      const select = doc.querySelector("select#9");
-      if (!select || !select.options.length)
-        throw new Error("no options found");
-      populateSelect(
-        document.getElementById("inpImpact"),
-        Array.from(select.options)
-          .map((o) => o.value)
-          .filter(Boolean),
-        false,
-      );
-    })
-    .catch(() => {
-      populateSelect(
-        document.getElementById("inpImpact"),
-        IMPACT_FALLBACK,
-        false,
-      );
-    });
+async function loadImpactOptions() {
+  try {
+    const res = await fetch(
+      "/platform/ideas/ajaxIndex.php?a=getindicator&indicatorID=9&series=1&recordID=0",
+      { credentials: "same-origin" },
+    );
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const sel = doc.querySelector("select#9");
+    if (!sel || !sel.options.length) throw new Error("no options");
+    populateSelect(
+      document.getElementById("inpImpact"),
+      Array.from(sel.options)
+        .map((o) => o.value)
+        .filter(Boolean),
+      false,
+    );
+  } catch {
+    populateSelect(
+      document.getElementById("inpImpact"),
+      IMPACT_FALLBACK,
+      false,
+    );
+  }
 }
 
 function bindCategoryChange() {
@@ -1755,30 +1765,22 @@ function bindCategoryChange() {
   const otherInput = document.getElementById("inpOtherCategory");
   if (!categorySelect || !otherWrapper || !otherInput) return;
 
-  categorySelect.addEventListener("change", function () {
-    if (categorySelect.value === "Other") {
-      otherWrapper.style.display = "";
-      otherInput.required = true;
-    } else {
-      otherWrapper.style.display = "none";
+  categorySelect.addEventListener("change", () => {
+    const isOther = categorySelect.value === "Other";
+    otherWrapper.style.display = isOther ? "" : "none";
+    otherInput.required = isOther;
+    if (!isOther) {
       otherInput.value = "";
-      otherInput.required = false;
       otherInput.removeAttribute("aria-invalid");
     }
   });
 }
 
 function initValidation() {
-  "use strict";
   document.querySelectorAll(".needs-validation").forEach((form) => {
-    form.addEventListener("input", function (event) {
-      const target = event.target;
-      if (target?.classList.contains("ip-input")) {
-        if (target.checkValidity()) target.removeAttribute("aria-invalid");
-      }
-      if (target?.id === "inpOtherCategory" && target.value.trim()) {
-        target.removeAttribute("aria-invalid");
-      }
+    form.addEventListener("input", (e) => {
+      const target = e.target;
+      if (target?.checkValidity?.()) target.removeAttribute("aria-invalid");
     });
   });
 }
@@ -1789,18 +1791,15 @@ function initValidation() {
 
 function handleSortClick(sortBtn) {
   const key = sortBtn.getAttribute("data-sort");
-  const table = sortBtn.closest("table");
-  if (!table || !key) return;
-  const tableId = table.getAttribute("id");
+  const tableId = sortBtn.closest("table")?.getAttribute("id");
+  if (!tableId || !key) return;
   setSortState(tableId, key);
   applySortClasses(tableId);
-
   if (tableId === "tblIdeas") {
     state.pagination.all.page = 1;
     renderAllIdeas();
-  } else if (tableId === "tblTopIdeas") {
-    renderTop10Ideas();
-  } else if (tableId === "tblMyIdeas") {
+  } else if (tableId === "tblTopIdeas") renderTop10Ideas();
+  else if (tableId === "tblMyIdeas") {
     state.pagination.my.page = 1;
     renderMyIdeas();
   }
@@ -1823,7 +1822,7 @@ function bindDelegatedEvents() {
   const wrap = document.querySelector(".ip-wrap");
   if (!wrap) return;
 
-  wrap.addEventListener("click", function (e) {
+  wrap.addEventListener("click", (e) => {
     const sortBtn = e.target.closest(".ip-sortBtn");
     if (sortBtn) {
       handleSortClick(sortBtn);
@@ -1832,35 +1831,33 @@ function bindDelegatedEvents() {
 
     const retryBtn = e.target.closest(".ip-retry");
     if (retryBtn) {
-      updateTable();
+      loadIdeasAndVotes();
       return;
     }
 
     const upvoteBtn = e.target.closest(".ip-upvote");
-    if (upvoteBtn) {
-      if (upvoteBtn.disabled) return;
+    if (upvoteBtn && !upvoteBtn.disabled) {
       IdeaVotes(upvoteBtn.getAttribute("data-record-id"));
       return;
     }
 
     const shareBtn = e.target.closest(".ip-share");
     if (shareBtn) {
-      const recordLink = shareBtn.getAttribute("data-record-link");
-      if (!recordLink) return;
-      navigator.clipboard.writeText(recordLink).then(
-        () => showToast("Idea link copied to clipboard."),
-        (err) => {
-          console.error("Could not copy link:", err);
-        },
-      );
+      const link = shareBtn.getAttribute("data-record-link");
+      if (!link) return;
+      navigator.clipboard
+        .writeText(link)
+        .then(() => showToast("Idea link copied to clipboard."))
+        .catch((err) => console.error("Could not copy link:", err));
       return;
     }
 
     const pageBtn = e.target.closest(".ip-pageBtn, .ip-pageToggle");
     if (pageBtn) {
-      const scope = pageBtn.getAttribute("data-page-scope");
-      const action = pageBtn.getAttribute("data-page-action");
-      if (scope && action) handlePaginationAction(scope, action);
+      handlePaginationAction(
+        pageBtn.getAttribute("data-page-scope"),
+        pageBtn.getAttribute("data-page-action"),
+      );
     }
   });
 }
@@ -1874,47 +1871,37 @@ function applySearch(value) {
 function bindSearch() {
   if (!ui.searchInput) return;
   const handler = debounce(
-    (event) => applySearch(event.target.value),
+    (e) => applySearch(e.target.value),
     SEARCH_DEBOUNCE_MS,
   );
   ui.searchInput.addEventListener("input", handler);
-  ui.searchInput.addEventListener("keydown", function (event) {
-    if (event.key !== "Enter") return;
-    event.preventDefault();
-    applySearch(ui.searchInput.value);
+  ui.searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      applySearch(ui.searchInput.value);
+    }
   });
-  if (ui.searchBtn) {
-    ui.searchBtn.addEventListener("click", () =>
-      applySearch(ui.searchInput.value),
-    );
-  }
+  ui.searchBtn?.addEventListener("click", () =>
+    applySearch(ui.searchInput.value),
+  );
 }
 
 function bindFileInput() {
   const fileInput = document.getElementById("fileInput");
   const fileList = document.getElementById("fileList");
   if (!fileInput || !fileList) return;
-
-  fileInput.addEventListener("change", function () {
-    fileList.innerHTML = "";
-    Array.from(fileInput.files || []).forEach((file) => {
-      const li = document.createElement("li");
-      li.textContent = file.name;
-      fileList.appendChild(li);
-    });
+  fileInput.addEventListener("change", () => {
+    fileList.innerHTML = Array.from(fileInput.files || [])
+      .map((f) => `<li>${escapeHtml(f.name)}</li>`)
+      .join("");
   });
 }
-
-/* ─────────────────────────────────────────────────────────────
-   My Ideas search (panel-local)
-───────────────────────────────────────────────────────────── */
 
 function bindMySearch() {
   const input = document.getElementById("mySearchInput");
   const btn = document.getElementById("mySearchBtn");
   if (!input) return;
-
-  const handler = debounce(function () {
+  const handler = debounce(() => {
     const q = input.value.toLowerCase();
     document.querySelectorAll("#myResults tr").forEach((row) => {
       row.style.display = row.textContent.toLowerCase().includes(q)
@@ -1922,9 +1909,8 @@ function bindMySearch() {
         : "none";
     });
   }, SEARCH_DEBOUNCE_MS);
-
   input.addEventListener("input", handler);
-  if (btn) btn.addEventListener("click", handler);
+  btn?.addEventListener("click", handler);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1932,10 +1918,6 @@ function bindMySearch() {
 ───────────────────────────────────────────────────────────── */
 
 function initPortal() {
-  if (window.$ || window.jQuery) {
-    console.warn("IdeaPortal: jQuery is loaded but no longer required.");
-  }
-
   PortalDebug.set("initFired", true);
   PortalDebug.set("dom", document.readyState);
 
@@ -1950,16 +1932,18 @@ function initPortal() {
   bindCategoryChange();
   loadCategoryOptions();
   loadImpactOptions();
+  wireJumpToTop();
+  initValidation();
 
   document
     .getElementById("saveDraftButton")
-    ?.addEventListener("click", async function () {
+    ?.addEventListener("click", async () => {
       const form = document.getElementById("ideaForm");
       if (!form) return;
       const titleVal = document.getElementById("inpTitle")?.value.trim();
       if (!titleVal) {
-        document.getElementById("inpTitle")?.focus();
         form.classList.add("was-validated");
+        document.getElementById("inpTitle")?.focus();
         return;
       }
       await NewIdea(false);
@@ -1967,7 +1951,7 @@ function initPortal() {
 
   document
     .getElementById("submitButton")
-    ?.addEventListener("click", async function () {
+    ?.addEventListener("click", async () => {
       const form = document.getElementById("ideaForm");
       if (!form) return;
       form.classList.add("was-validated");
@@ -1975,25 +1959,18 @@ function initPortal() {
       await NewIdea(true);
     });
 
-  wireJumpToTop();
-  initValidation();
-
-  try {
-    updateTable();
-  } catch (err) {
-    console.error("updateTable failed", err);
-    PortalDebug.error(`updateTable threw: ${err}`);
-  }
+  loadIdeasAndVotes().catch((err) => {
+    console.error("loadIdeasAndVotes failed", err);
+    PortalDebug.error(`loadIdeasAndVotes threw: ${err}`);
+  });
 }
 
-// Wire debug panel immediately (doesn't need DOM fully loaded)
+// Wire debug panel immediately
 PortalDebug.init();
 
-/// Robust init: fire immediately if DOM is already ready (CMS fragment case),
-// otherwise wait for DOMContentLoaded.
+// Fire init as soon as DOM is available
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initPortal);
 } else {
-  // DOMContentLoaded already fired — call directly
   initPortal();
 }
