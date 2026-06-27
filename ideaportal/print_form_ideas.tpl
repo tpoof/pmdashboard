@@ -64,10 +64,6 @@
 .pv-layout-row #toolbar226 {
     flex: 0 0 220px;
     width: 220px;
-    position: sticky;
-    top: 0;
-    max-height: 100vh;
-    overflow-y: auto;
     align-self: flex-start;
 }
 @media (max-width: 700px) {
@@ -388,14 +384,15 @@
 
 /* ── View Votes sidebar button ──────────────────────── */
 .pv-votes-btn {
-    background: #ede9fe !important;
-    color: #4c1d95 !important;
-    border: 1px solid #c4b5fd !important;
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
     border-radius: 6px !important;
-    font-weight: 700 !important;
+    font-weight: 400 !important;
     margin-top: 6px;
     width: 100%;
-    text-align: left;
+    text-align: center;
+    justify-content: center;
     padding: 6px 8px !important;
     display: flex !important;
     align-items: center;
@@ -403,22 +400,22 @@
 }
 .pv-votes-btn:hover,
 .pv-votes-btn:focus {
-    background: #ddd6fe !important;
-    color: #3b0764 !important;
+    background: #e2e8f0 !important;
+    color: #1e293b !important;
 }
 .pv-votes-btn[aria-expanded="true"] {
-    background: #7c3aed !important;
-    color: #ffffff !important;
-    border-color: #7c3aed !important;
+    background: #e2e8f0 !important;
+    color: #1e293b !important;
+    border-color: #94a3b8 !important;
 }
 .pv-votes-btn[aria-expanded="true"] img {
-    filter: brightness(0) invert(1);
+    filter: none;
 }
 
 /* ── Votes panel (collapsed by default) ─────────────── */
 #pv-votes-panel {
     font-size: 14px;
-    border: 1px solid #c4b5fd;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
     background: #fff;
     overflow: hidden;
@@ -433,7 +430,7 @@
     font-size: 14px;
 }
 #pv-votes-panel thead tr {
-    background: #f5f3ff;
+    background: #f8fafc;
     position: sticky;
     top: 0;
 }
@@ -442,25 +439,25 @@
     text-align: left;
     font-size: 11px;
     font-weight: 700;
-    color: #6d28d9;
+    color: #64748b;
     text-transform: uppercase;
     letter-spacing: .06em;
 }
 #pv-votes-panel td {
     padding: 7px 10px;
-    border-top: 1px solid #ede9fe;
+    border-top: 1px solid #f1f5f9;
     color: #0f172a;
 }
 #pv-votes-panel .pv-votes-footer {
     padding: 7px 10px;
-    border-top: 1px solid #ede9fe;
-    background: #f5f3ff;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
     text-align: center;
 }
 #pv-votes-panel .pv-votes-showall {
     font-size: 13px;
     font-weight: 600;
-    color: #7c3aed;
+    color: #475569;
     background: none;
     border: none;
     cursor: pointer;
@@ -468,7 +465,7 @@
     padding: 0;
 }
 #pv-votes-panel .pv-votes-showall:hover {
-    color: #4c1d95;
+    color: #1e293b;
 }
 #pv-votes-panel .pv-votes-empty {
     padding: 12px 10px;
@@ -990,7 +987,7 @@ function pvOpenEdit(indicatorID) {
             aria-expanded="false"
             aria-controls="pv-votes-panel">
             <img src="dynicons/?img=award-ribbon.svg&amp;w=16" alt="" aria-hidden="true" style="vertical-align:middle;margin-right:5px;" />
-            <span id="btn-votes-label">View Votes</span>
+            <span id="btn-votes-label">Votes</span>
         </button>
         <div id="pv-votes-panel" hidden style="margin-top:6px;"></div>
         <!--{/if}-->
@@ -1558,7 +1555,7 @@ function doSubmit(recordID) {
                     if (String((vote.s1 && vote.s1['id2']) || '') === ideaKey) { count++; }
                 });
                 var lbl = document.getElementById('btn-votes-label');
-                if (lbl) { lbl.textContent = 'View Votes (' + count + ')'; }
+                if (lbl) { lbl.textContent = 'Votes (' + count + ')'; }
                 window._pvVoteCount = count;
             },
             error: function() { /* silently fail — button still works */ }
@@ -1641,7 +1638,7 @@ function doSubmit(recordID) {
         var showList = _pvShowAll ? _pvAllVoters : _pvAllVoters.slice(0, PV_VOTE_CAP);
         var rows     = showList.map(function(v, i) {
             return '<tr>'
-                + '<td style="width:32px;color:#6d28d9;font-weight:700">' + (i + 1) + '</td>'
+                + '<td style="width:32px;color:#94a3b8;">' + (i + 1) + '</td>'
                 + '<td>' + $('<div/>').text(v).html() + '</td>'
                 + '</tr>';
         }).join('');
