@@ -275,114 +275,125 @@
 
   /* ─────────────────────────────────────────────────────────────
      INTERNAL NAV SECTION
-     Right-aligned "Internal" dropdown for team-only links.
-     Smarty group conditionals gate each link individually:
-       - Leadership  → LEADERSHIP_GROUP_ID
-       - LEAF Team   → LEAF_TEAM_GROUP_ID (gates entire section)
-     The outer button is only rendered when at least one group
-     condition is true (LEAF_TEAM_GROUP_ID wraps the whole block).
+     Right-aligned group rendered as:
 
-     NOTE: The Smarty tags below are processed server-side when this
-     file is served through the PHP/Smarty wrapper. If you see the
-     literal strings "<!--{if" in the rendered HTML rather than the
-     conditional output, the wrapper is not processing this file —
-     run ?leafNavDebug=1 (group 12 members only) for a diagnosis.
+       [ 🔒 Internal ]  [ Leadership ]  [ LEAF Team ▾ ]
+                         (direct link)   (dropdown)
+
+     Smarty group conditionals gate each element:
+       - Entire group  → LEAF_TEAM_GROUP_ID  (outer wrapper)
+       - Leadership    → LEADERSHIP_GROUP_ID (individual link)
+       - LEAF Team     → LEAF_TEAM_GROUP_ID  (same as outer;
+                         redundant but explicit for clarity)
+
+     NOTE: Smarty tags below are processed server-side via the
+     PHP/Smarty wrapper. If you see literal "<!--{if" strings in
+     rendered HTML the wrapper is not processing this file — run
+     ?leafNavDebug=1 (group 12 members only) for a diagnosis.
   ───────────────────────────────────────────────────────────── */
-  function buildInternalNavHTML(leadershipGroupID, leagTeamGroupID) {
-    /* These arguments receive the *runtime* values that Smarty
-       already baked into the JS constants above. They are passed
-       in only so the debug utility can inspect what Smarty emitted. */
-
-    /* Desktop internal dropdown — Smarty-gated outer wrapper */
+  function buildInternalNavHTML(leadershipGroupID, leafTeamGroupID) {
+    /* ── Desktop: flat group of items ── */
     var desktopInternal =
       `
 <!--{if $empMembership['groupID'][` +
-      leagTeamGroupID +
+      leafTeamGroupID +
       `]}-->
-<li class="dd-item dd-item--internal" id="dd-item-internal">
-  <button class="dd-trigger dd-trigger--internal" aria-expanded="false" aria-controls="dd-internal">
-    <span class="material-symbols-outlined dd-internal-lock" aria-hidden="true">lock</span>
+<div class="lp-nav-internal" role="navigation" aria-label="Internal team links">
+
+  <!-- "Internal" label — non-interactive, purely visual -->
+  <span class="lp-internal-label" aria-hidden="true">
+    <span class="material-symbols-outlined lp-internal-label-icon" aria-hidden="true">lock</span>
     Internal
-    <span class="dd-chevron" aria-hidden="true"><span class="material-symbols-outlined">arrow_drop_down</span></span>
-    <span class="lp-sr-only"> — team-only links</span>
-  </button>
-  <div class="dd-panel dd-panel--internal" id="dd-internal" hidden>
-    <ul class="dd-list">
+  </span>
+
+  <!-- Vertical rule separating label from buttons -->
+  <span class="lp-internal-rule" aria-hidden="true"></span>
+
 <!--{if $empMembership['groupID'][` +
       leadershipGroupID +
       `]}-->
-      <li>
-        <a class="dd-link" href="/platform/projects/report.php?a=leadership">
-          <span class="dd-link-ico">
-            <span class="material-symbols-outlined" aria-hidden="true">groups</span>
-          </span>
-          <span class="dd-link-text">
-            <strong>Leadership</strong>
-            <span>Platform leadership dashboard</span>
-          </span>
-        </a>
-      </li>
+  <!-- Leadership: direct hash-routed link -->
+  <a class="lp-internal-btn" href="/platform/projects/report.php?a=leadership">
+    <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+    Leadership
+  </a>
 <!--{/if}-->
-      <li id="lpNavLeafTeamLinks" aria-live="polite">
-        <div class="dd-link dd-link--section-header">
-          <span class="dd-link-ico">
-            <span class="material-symbols-outlined" aria-hidden="true">hub</span>
-          </span>
-          <span class="dd-link-text">
-            <strong>LEAF Team</strong>
-            <span>Quick links managed by the team</span>
-          </span>
-        </div>
-      </li>
-    </ul>
+
+  <!-- LEAF Team: dropdown trigger + panel -->
+  <div class="dd-item dd-item--internal" id="dd-item-leaf-team" style="position:relative;">
+    <button class="lp-internal-btn lp-internal-btn--dd dd-trigger"
+            aria-expanded="false"
+            aria-controls="dd-leaf-team"
+            aria-haspopup="false">
+      <span class="material-symbols-outlined" aria-hidden="true">hub</span>
+      LEAF Team
+      <span class="dd-chevron" aria-hidden="true">
+        <span class="material-symbols-outlined">arrow_drop_down</span>
+      </span>
+    </button>
+    <div class="dd-panel dd-panel--internal" id="dd-leaf-team" hidden>
+      <ul class="dd-list" id="lpNavLeafTeamLinks" aria-live="polite">
+        <!-- Dynamic links injected by fetchLeafTeamLinks() -->
+        <li class="lp-internal-loading">
+          <span class="material-symbols-outlined" aria-hidden="true">sync</span>
+          Loading links…
+        </li>
+      </ul>
+    </div>
   </div>
-</li>
+
+</div>
 <!--{/if}-->`;
 
-    /* Mobile accordion entry for Internal section */
+    /* ── Mobile: appended at bottom of accordion ── */
     var mobileInternal =
       `
 <!--{if $empMembership['groupID'][` +
-      leagTeamGroupID +
+      leafTeamGroupID +
       `]}-->
-<li class="acc-item acc-item--internal" id="acc-item-internal">
-  <button class="acc-trigger acc-trigger--internal" aria-expanded="false" aria-controls="acc-internal">
-    <span class="material-symbols-outlined dd-internal-lock" aria-hidden="true">lock</span>
+
+<!-- Mobile separator before Internal section -->
+<li role="separator" aria-hidden="true">
+  <div class="lp-mobile-internal-sep">
+    <span class="material-symbols-outlined" aria-hidden="true">lock</span>
     Internal
-    <span class="dd-chevron" aria-hidden="true"><span class="material-symbols-outlined">arrow_drop_down</span></span>
-    <span class="lp-sr-only"> — team-only links</span>
-  </button>
-  <div class="acc-panel" id="acc-internal" hidden>
-    <ul class="dd-list">
+  </div>
+</li>
+
 <!--{if $empMembership['groupID'][` +
       leadershipGroupID +
       `]}-->
-      <li>
-        <a class="dd-link" href="/platform/projects/report.php?a=leadership">
-          <span class="dd-link-ico">
-            <span class="material-symbols-outlined" aria-hidden="true">groups</span>
-          </span>
-          <span class="dd-link-text">
-            <strong>Leadership</strong>
-            <span>Platform leadership dashboard</span>
-          </span>
-        </a>
-      </li>
+<li>
+  <a class="dd-link" href="/platform/projects/report.php?a=leadership">
+    <span class="dd-link-ico">
+      <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+    </span>
+    <span class="dd-link-text">
+      <strong>Leadership</strong>
+      <span>Platform leadership dashboard</span>
+    </span>
+  </a>
+</li>
 <!--{/if}-->
-      <li id="lpNavLeafTeamLinksMobile" aria-live="polite">
-        <div class="dd-link dd-link--section-header">
-          <span class="dd-link-ico">
-            <span class="material-symbols-outlined" aria-hidden="true">hub</span>
-          </span>
-          <span class="dd-link-text">
-            <strong>LEAF Team</strong>
-            <span>Quick links managed by the team</span>
-          </span>
-        </div>
+
+<li class="acc-item acc-item--internal" id="acc-item-leaf-team">
+  <button class="acc-trigger" aria-expanded="false" aria-controls="acc-leaf-team">
+    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:-3px;margin-right:4px;" aria-hidden="true">hub</span>
+    LEAF Team
+    <span class="dd-chevron" aria-hidden="true">
+      <span class="material-symbols-outlined">arrow_drop_down</span>
+    </span>
+  </button>
+  <div class="acc-panel" id="acc-leaf-team" hidden>
+    <ul class="dd-list" id="lpNavLeafTeamLinksMobile" aria-live="polite">
+      <li class="lp-internal-loading">
+        <span class="material-symbols-outlined" aria-hidden="true">sync</span>
+        Loading links…
       </li>
     </ul>
   </div>
 </li>
+
 <!--{/if}-->`;
 
     return { desktop: desktopInternal, mobile: mobileInternal };
@@ -398,24 +409,31 @@
     return `
 <nav class="lp-nav" id="lpNav" aria-label="Launchpad navigation">
   <div class="lp-nav-in">
+
+    <!-- Left: public nav sections -->
     <ul class="lp-nav-links" role="list">
       ${desktopItems}
     </ul>
 
-    <ul class="lp-nav-links lp-nav-links--right" role="list" aria-label="Internal team navigation">
-      ${internal.desktop}
-    </ul>
+    <!-- Right: internal group (margin-left:auto pushes it to the edge) -->
+    ${internal.desktop}
 
-    <button class="lp-nav-toggle" id="lpNavToggle" type="button" aria-expanded="false" aria-controls="lpMobilePanel" aria-label="Open menu">
-      <span class="lp-nav-toggle-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+    <!-- Mobile hamburger toggle -->
+    <button class="lp-nav-toggle" id="lpNavToggle" type="button"
+            aria-expanded="false" aria-controls="lpMobilePanel" aria-label="Open menu">
+      <span class="lp-nav-toggle-icon" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </span>
     </button>
 
+    <!-- Mobile panel -->
     <div class="lp-mobile-panel" id="lpMobilePanel" hidden>
       <ul class="lp-accordion" role="list">
         ${mobileItems}
         ${internal.mobile}
       </ul>
     </div>
+
   </div>
 </nav>`;
   }
@@ -481,88 +499,157 @@
     }
 
     /* ── Internal section styles ──────────────────────────────────
-       Injected here rather than leaf_nav.css so leaf_nav_v2.js is
-       fully self-contained. Move to leaf_nav.css when promoting
-       to production and remove this block. */
+       Injected here so leaf_nav_v2.js is fully self-contained.
+       When promoting to production, move all rules below into
+       leaf_nav.css and delete this block.
+
+       The .lp-nav-in flex patch is needed because leaf_nav.css
+       does not currently account for a sibling element after
+       .lp-nav-links. Move that rule to leaf_nav.css too. */
     if (!document.getElementById("lp-nav-internal-styles")) {
       var style = document.createElement("style");
       style.id = "lp-nav-internal-styles";
       style.textContent = [
-        /* Right-aligned nav group */
-        ".lp-nav-links--right {",
-        "  margin-left: auto;",
-        "  display: flex;",
-        "  align-items: center;",
-        "  list-style: none;",
-        "  margin-right: 0;",
-        "  padding: 0;",
+        /* ── lp-nav-in flex patch ───────────────────────────────
+           Ensures the nav bar is a flex row so margin-left:auto
+           on .lp-nav-internal actually pushes it to the right.
+           !important beats any LEAF global override. */
+        ".lp-nav .lp-nav-in {",
+        "  display: flex !important;",
+        "  align-items: center !important;",
+        "  width: 100%;",
         "}",
 
-        /* Internal trigger pill — visually distinct from public triggers */
-        ".dd-trigger--internal {",
+        /* ── Internal group container ───────────────────────────
+           Sits as a flex sibling after .lp-nav-links.
+           margin-left:auto is the sole mechanism that pushes it
+           to the far right — no absolute positioning needed. */
+        ".lp-nav-internal {",
+        "  display: flex;",
+        "  align-items: center;",
+        "  gap: 4px;",
+        "  margin-left: auto;",
+        "  padding-right: 4px;",
+        "  flex-shrink: 0;",
+        "}",
+
+        /* ── 'Internal' text label ──────────────────────────────
+           Visual-only — not a button. aria-hidden on the whole
+           span so screen readers skip it (the nav landmark +
+           button labels cover the context). */
+        ".lp-internal-label {",
+        "  display: inline-flex;",
+        "  align-items: center;",
+        "  gap: 3px;",
+        "  font-size: 0.75rem;",
+        "  font-weight: 700;",
+        "  letter-spacing: 0.06em;",
+        "  text-transform: uppercase;",
+        "  opacity: 0.6;",
+        "  user-select: none;",
+        "  white-space: nowrap;",
+        "  padding: 0 2px;",
+        "}",
+        ".lp-internal-label-icon {",
+        "  font-size: 13px !important;",
+        "  line-height: 1;",
+        "}",
+
+        /* ── Vertical rule between label and buttons ────────────*/
+        ".lp-internal-rule {",
+        "  display: inline-block;",
+        "  width: 1px;",
+        "  height: 18px;",
+        "  background: currentColor;",
+        "  opacity: 0.25;",
+        "  margin: 0 4px;",
+        "  flex-shrink: 0;",
+        "}",
+
+        /* ── Shared pill button style (Leadership + LEAF Team) ──*/
+        ".lp-internal-btn {",
         "  display: inline-flex;",
         "  align-items: center;",
         "  gap: 4px;",
-        "  padding: 5px 12px 5px 10px;",
+        "  padding: 5px 11px 5px 9px;",
         "  border-radius: 999px;",
-        "  border: 1.5px solid rgba(255,255,255,0.45);",
-        "  background: rgba(255,255,255,0.12);",
+        "  border: 1.5px solid rgba(255,255,255,0.4);",
+        "  background: rgba(255,255,255,0.1);",
         "  color: inherit;",
         "  font-size: 0.875rem;",
         "  font-weight: 600;",
-        "  letter-spacing: 0.01em;",
+        "  text-decoration: none;",
+        "  white-space: nowrap;",
         "  cursor: pointer;",
         "  transition: background 0.15s, border-color 0.15s;",
+        "  line-height: 1.4;",
         "}",
-        ".dd-trigger--internal:hover,",
-        ".dd-item--internal.open .dd-trigger--internal {",
-        "  background: rgba(255,255,255,0.22);",
+        ".lp-internal-btn .material-symbols-outlined {",
+        "  font-size: 16px !important;",
+        "  line-height: 1;",
+        "}",
+        ".lp-internal-btn:hover {",
+        "  background: rgba(255,255,255,0.2);",
         "  border-color: rgba(255,255,255,0.7);",
+        "  text-decoration: none;",
         "}",
-        ".dd-trigger--internal:focus-visible {",
+        ".lp-internal-btn:focus-visible {",
         "  outline: 2px solid #fff;",
         "  outline-offset: 2px;",
         "}",
 
-        /* Lock icon sizing */
-        ".dd-internal-lock {",
-        "  font-size: 15px !important;",
-        "  line-height: 1;",
-        "  opacity: 0.85;",
+        /* ── LEAF Team dropdown trigger (extends pill style) ─── */
+        ".lp-internal-btn--dd {",
+        "  /* inherits all .lp-internal-btn rules */",
+        "}",
+        ".dd-item--internal.open .lp-internal-btn--dd {",
+        "  background: rgba(255,255,255,0.22);",
+        "  border-color: rgba(255,255,255,0.7);",
         "}",
 
-        /* Internal panel — accent top border */
+        /* ── LEAF Team dropdown panel ───────────────────────────
+           Positioned relative to dd-item--internal (inline-block
+           parent). right:0 aligns panel's right edge to button's
+           right edge so it doesn't bleed off screen. */
         ".dd-panel--internal {",
         "  right: 0;",
         "  left: auto;",
-        "  min-width: 240px;",
+        "  min-width: 220px;",
         "  border-top: 3px solid #f59e0b;",
         "}",
 
-        /* Section header row inside the dropdown (non-interactive) */
-        ".dd-link--section-header {",
-        "  cursor: default;",
-        "  opacity: 0.7;",
-        "  pointer-events: none;",
-        "  font-size: 0.8rem;",
-        "  padding-top: 10px;",
-        "  padding-bottom: 4px;",
-        "}",
-
-        /* Mobile internal trigger */
-        ".acc-trigger--internal {",
+        /* ── Loading placeholder row ────────────────────────────*/
+        ".lp-internal-loading {",
         "  display: flex;",
         "  align-items: center;",
         "  gap: 6px;",
-        "  font-weight: 700;",
+        "  padding: 10px 14px;",
+        "  font-size: 0.85rem;",
+        "  opacity: 0.55;",
+        "  pointer-events: none;",
         "}",
+        ".lp-internal-loading .material-symbols-outlined {",
+        "  font-size: 16px !important;",
+        "  animation: lp-spin 1s linear infinite;",
+        "}",
+        "@keyframes lp-spin { to { transform: rotate(360deg); } }",
 
-        /* LEAF Team injected sub-list */
-        ".dd-list--leaf-team-links {",
-        "  list-style: none;",
-        "  margin: 0;",
-        "  padding: 0;",
-        "  border-top: 1px solid rgba(0,0,0,0.08);",
+        /* ── Mobile: Internal section separator ─────────────── */
+        ".lp-mobile-internal-sep {",
+        "  display: flex;",
+        "  align-items: center;",
+        "  gap: 5px;",
+        "  padding: 10px 16px 6px;",
+        "  font-size: 0.72rem;",
+        "  font-weight: 700;",
+        "  letter-spacing: 0.07em;",
+        "  text-transform: uppercase;",
+        "  opacity: 0.5;",
+        "  border-top: 1px solid rgba(255,255,255,0.15);",
+        "  margin-top: 4px;",
+        "}",
+        ".lp-mobile-internal-sep .material-symbols-outlined {",
+        "  font-size: 14px !important;",
         "}",
       ].join("\n");
       document.head.appendChild(style);
@@ -656,7 +743,7 @@
     var apiUrl =
       LEAF_TEAM_FORM_BASE +
       "/api/form/query" +
-      "?q[0][id]=1&q[0][operator]==&q[0][operand]=1" /* all records */ +
+      "?q[0][id]=1&q[0][operator]==&q[0][operand]=1" +
       "&indicators[]=" +
       LEAF_TEAM_LINK_NAME_INDICATOR_ID +
       "&indicators[]=" +
@@ -669,16 +756,14 @@
         return r.json();
       })
       .then(function (data) {
-        /* data is an object keyed by recordID */
         var records = Object.values(data);
-        if (!records.length) return;
 
+        /* Build link items — filter out records with missing/bad data */
         var itemsHTML = records
           .map(function (rec) {
             var name = rec["s1"]["id" + LEAF_TEAM_LINK_NAME_INDICATOR_ID] || "";
             var url = rec["s1"]["id" + LEAF_TEAM_LINK_URL_INDICATOR_ID] || "";
             if (!name || !url) return "";
-            /* Sanitise: only allow http/https hrefs */
             if (!/^https?:\/\//i.test(url)) return "";
             return (
               '<li><a class="dd-link" href="' +
@@ -693,24 +778,31 @@
           })
           .join("");
 
-        if (!itemsHTML) return;
-
-        function injectAfter(host) {
+        /* Replace the contents of each host <ul> — clears the loading placeholder */
+        function populate(host) {
           if (!host) return;
-          var frag = document.createElement("ul");
-          frag.className = "dd-list dd-list--leaf-team-links";
-          frag.innerHTML = itemsHTML;
-          /* Insert the link list immediately after the header <li> */
-          host.parentNode.insertBefore(frag, host.nextSibling);
-          /* Re-wire any new .dd-link items for the link intercept
-             (they have data-nav-external so intercept will skip them) */
+          host.innerHTML =
+            itemsHTML ||
+            '<li class="lp-internal-loading" style="opacity:0.45;">' +
+              '<span class="material-symbols-outlined" aria-hidden="true">link_off</span>' +
+              "No links found</li>";
         }
 
-        injectAfter(desktopHost);
-        injectAfter(mobileHost);
+        populate(desktopHost);
+        populate(mobileHost);
       })
       .catch(function (err) {
         console.warn("[LP Nav] LEAF Team links fetch failed:", err.message);
+        /* Clear spinner on failure so it doesn't spin forever */
+        function clearLoading(host) {
+          if (!host) return;
+          host.innerHTML =
+            '<li class="lp-internal-loading" style="opacity:0.45;">' +
+            '<span class="material-symbols-outlined" aria-hidden="true">cloud_off</span>' +
+            "Links unavailable</li>";
+        }
+        clearLoading(desktopHost);
+        clearLoading(mobileHost);
       });
   }
 
