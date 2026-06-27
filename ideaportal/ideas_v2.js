@@ -1403,33 +1403,61 @@ async function loadIdeasAndVotes() {
 
 async function advanceWorkflow(recordID) {
   try {
-    await fetch(`./api/form/${recordID}/submit`, {
+    // Step 1 — submit the record into the workflow
+    const submitRes = await fetch(`./api/form/${recordID}/submit`, {
       method: "POST",
       credentials: "same-origin",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ CSRFToken: csrfToken }),
     });
+    console.log(`[Workflow] submit HTTP ${submitRes.status}`);
 
+    // Step 2 — fetch current step to get dependencyID and actionType
     const stepRes = await fetch(`./api/formWorkflow/${recordID}/currentStep`, {
       credentials: "same-origin",
     });
-    const stepData = await stepRes.json();
+    const stepText = await stepRes.text();
+    console.log("[Workflow] currentStep raw:", stepText);
+
+    let stepData;
+    try {
+      stepData = JSON.parse(stepText);
+    } catch {
+      stepData = null;
+    }
+    console.log("[Workflow] currentStep parsed:", stepData);
 
     const firstStep = Array.isArray(stepData) ? stepData[0] : stepData;
-    const depID = firstStep?.dependencyID;
+    const depID = firstStep?.dependencyID ?? firstStep?.id ?? null;
     const actionType =
-      firstStep?.dependencyActions?.[0]?.actionType || "submit";
+      firstStep?.dependencyActions?.[0]?.actionType ||
+      firstStep?.actions?.[0]?.actionType ||
+      "submit";
+
+    console.log(
+      `[Workflow] applying — dependencyID: ${depID}, actionType: ${actionType}`,
+    );
+
+    // Step 3 — apply the workflow action
+    const applyBody = new URLSearchParams({ CSRFToken: csrfToken, actionType });
+    if (depID !== null && depID !== undefined) {
+      applyBody.set("dependencyID", String(depID));
+    }
 
     const applyRes = await fetch(`./api/formWorkflow/${recordID}/apply`, {
       method: "POST",
       credentials: "same-origin",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        CSRFToken: csrfToken,
-        actionType,
-        dependencyID: depID,
-      }),
+      body: applyBody,
     });
+    const applyText = await applyRes.text();
+    console.log(`[Workflow] apply HTTP ${applyRes.status}:`, applyText);
+
+    if (!applyRes.ok) {
+      console.warn(
+        `[Workflow] apply failed (${applyRes.status}) — record may still be draft`,
+      );
+    }
   } catch (err) {
     console.warn("[Workflow] advance failed:", err);
   }
@@ -1565,13 +1593,13 @@ async function NewIdea(advanceOnSuccess) {
       closeModal("addIdeaModal");
 
       if (advanceOnSuccess) {
-        await advanceWorkflow(newID);
-        // Approach B — second targeted POST after workflow advance to guarantee
-        // indicator 15 is written even if form/new ignored the date field.
+        // Approach B — write date BEFORE advancing workflow so it lands even
+        // if the workflow apply step 400s. advanceWorkflow is best-effort.
         console.log(
-          `[DateSubmit] Approach B — writing date to record ${newID} after workflow advance`,
+          `[DateSubmit] Approach B — writing date to record ${newID}`,
         );
         await writeDateSubmitted(newID, todayStr);
+        await advanceWorkflow(newID);
         showToast("Your idea has been submitted successfully.");
         await loadIdeasAndVotes();
       } else {
