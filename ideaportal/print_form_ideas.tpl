@@ -1,2101 +1,1973 @@
-<!--{if $deleted > 0}-->
-    <div style="font-size: 36px"><img src="dynicons/?img=emblem-unreadable.svg&amp;w=96" alt=""
-            style="float: left" /> Notice: This request has been marked as cancelled and will be permanently deleted.<br />
-        <span class="buttonNorm" onclick="restoreRequest(<!--{$recordID|strip_tags}-->)"><img
-                src="dynicons/?img=document-open.svg&amp;w=32" /> Restore request</span>
-    </div><br style="clear: both" />
-    <hr />
-<!--{/if}-->
+const PAGE_SIZE = 50;
+const SEARCH_DEBOUNCE_MS = 200;
+const RECORD_VIEW_URL =
+  "https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=";
 
-<!-- Public view for all users -->
+const FORM_IDS = {
+  idea: "form_ae642",
+  votes: "form_57e89",
+};
 
-<!--{if $empMembership['groupID'][226]}--><div class="pv-layout-row"><!--{/if}-->
-<div id="public-view">
-<!-- ── Skip link (accessibility: keyboard users jump past nav) ── -->
-<a href="#pv-main" class="pv-skip-link">Skip to main content</a>
+const FORM_KEYS = {
+  idea: FORM_IDS.idea.replace("form_", ""),
+  votes: FORM_IDS.votes.replace("form_", ""),
+};
 
-<!-- ── Scoped styles ── -->
-<style>
-/* ── Reset & scope ─────────────────────────────────── */
-#public-view *,
-#public-view *::before,
-#public-view *::after {
-    box-sizing: border-box;
+const IDEA_FIELDS = {
+  title: 5,
+  summary: 6,
+  benefit: 7,
+  category: 8,
+  impact: 9,
+  attachment: 10,
+  status: 12,
+  other_category: 13,
+  date_submitted: 15,
+};
+
+const VOTE_FIELDS = {
+  idea: 2,
+  user: 3,
+};
+
+const IDEA_INDICATORS = {
+  title: `id${IDEA_FIELDS.title}`,
+  summary: `id${IDEA_FIELDS.summary}`,
+  benefit: `id${IDEA_FIELDS.benefit}`,
+  category: `id${IDEA_FIELDS.category}`,
+  impact: `id${IDEA_FIELDS.impact}`,
+  attachment: `id${IDEA_FIELDS.attachment}`,
+  status: `id${IDEA_FIELDS.status}`,
+  other_category: `id${IDEA_FIELDS.other_category}`,
+};
+
+const VOTE_INDICATORS = {
+  idea: `id${VOTE_FIELDS.idea}`,
+  user: `id${VOTE_FIELDS.user}`,
+};
+
+// Fields to retrieve for idea records
+const IDEA_GETDATA = [
+  String(IDEA_FIELDS.category),
+  String(IDEA_FIELDS.title),
+  String(IDEA_FIELDS.status),
+];
+
+// Fields to retrieve for vote records
+const VOTE_GETDATA = [String(VOTE_FIELDS.idea), String(VOTE_FIELDS.user)];
+
+// x-filterData values — keep s1 so indicator data is preserved,
+// drop unused top-level metadata for bandwidth savings
+const IDEA_FILTER_DATA = "recordID,title,created_date,userID,s1";
+const VOTE_FILTER_DATA = "recordID,s1";
+
+const CATEGORY_FALLBACK = [
+  "Email Template",
+  "Forms",
+  "Inbox",
+  "Nexus",
+  "Print to PDF",
+  "Report Builder",
+  "Support",
+  "Training",
+  "User Access Groups",
+  "User Interface",
+  "Workflow",
+];
+
+const IMPACT_FALLBACK = [
+  "Impacts National",
+  "Impacts Regional",
+  "Impacts Local Facility",
+  "Impact is one or more, but not all users",
+];
+
+// Material Symbols Filled variation settings
+const ICON_FILL = `'opsz' 24, 'wght' 400, 'FILL' 1, 'GRAD' 0`;
+
+let ideas = [];
+let ideasRaw = [];
+let ideasById = {};
+let ideasVMById = {};
+let ideaOwnerMap = {};
+let voteCounts = {};
+
+const portalConfig = window.leafIdeaPortal || {};
+
+/* ─────────────────────────────────────────────────────────────
+   Utilities
+───────────────────────────────────────────────────────────── */
+
+function sanitizeLeafValue(value) {
+  return String(value || "")
+    .replace(/<!--|-->/g, "")
+    .trim();
 }
 
-/* ── Skip link ──────────────────────────────────────── */
-.pv-skip-link {
-    position: absolute;
-    top: -9999px;
-    left: 0;
-    z-index: 9999;
-    background: #1f2937;
-    color: #ffffff;
-    padding: 10px 16px;
-    font-size: 15px;
-    font-weight: 600;
-    border-radius: 0 0 8px 0;
-    text-decoration: none;
-}
-.pv-skip-link:focus {
-    top: 0;
-    outline: 3px solid #005ea2;
-    outline-offset: 2px;
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
-/* ── Wrapper ────────────────────────────────────────── */
-#public-view {
-    font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
-    color: #0f172a;
-    padding: 0 0 64px;
+function truncateTitle(title, max = 100) {
+  if (!title) return "";
+  return title.length <= max ? title : `${title.substring(0, max).trimEnd()}…`;
 }
 
-/* ── Group 226 side-by-side layout ─────────────────── */
-.pv-layout-row {
-    display: flex;
-    align-items: flex-start;
-    min-height: 100vh;
-}
-.pv-layout-row #public-view {
-    flex: 1 1 0;
-    min-width: 0;
-    padding-bottom: 64px;
-}
-.pv-layout-row #toolbar226 {
-    flex: 0 0 220px;
-    width: 220px;
-    position: sticky;
-    top: 0;
-    max-height: 100vh;
-    overflow-y: auto;
-    align-self: flex-start;
-}
-@media (max-width: 700px) {
-    .pv-layout-row {
-        flex-direction: column;
-    }
-    .pv-layout-row #toolbar226 {
-        position: static;
-        width: 100%;
-        max-height: none;
-    }
+function debounce(fn, delay) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
 }
 
-/* ── Back nav bar ───────────────────────────────────── */
-.pv-topbar {
-    border-bottom: 1px solid #cfd7e3;
-    padding: 10px 20px;
-}
-.pv-back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 15px;
-    font-weight: 600;
-    color: #005ea2;
-    text-decoration: none;
-    border-radius: 6px;
-    padding: 4px 2px;
-}
-.pv-back-link:hover,
-.pv-back-link:focus {
-    color: #004a82;
-    text-decoration: underline;
-}
-.pv-back-link:focus-visible {
-    outline: 3px solid #005ea2;
-    outline-offset: 2px;
-    text-decoration: none;
-}
-.pv-back-link svg {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    aria-hidden: true;
+/* ─────────────────────────────────────────────────────────────
+   API helpers (POST only — reads use LeafFormQuery)
+───────────────────────────────────────────────────────────── */
+
+async function apiPostJson(url, data) {
+  const body = new URLSearchParams();
+  Object.entries(data || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    body.append(String(key), String(value));
+  });
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    },
+    body: body.toString(),
+    credentials: "same-origin",
+  });
+
+  if (!response.ok)
+    throw new Error(`Request failed with status ${response.status}`);
+
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
 
-/* ── Main content container ─────────────────────────── */
-.pv-main {
-    max-width: 820px;
-    margin: 32px auto 0;
-    padding: 0 20px;
-    box-sizing: border-box;
+/* ─────────────────────────────────────────────────────────────
+   State
+───────────────────────────────────────────────────────────── */
+
+const userID = sanitizeLeafValue(portalConfig.userID);
+const csrfToken = sanitizeLeafValue(portalConfig.csrfToken);
+
+let userVotes = (() => {
+  try {
+    return JSON.parse(localStorage.getItem("leafIdeaVotes") || "{}");
+  } catch {
+    return {};
+  }
+})();
+
+let votingInProgress = false;
+let ideaSubmitInProgress = false;
+let implementedCount = 0;
+let myIdeasCache = [];
+let lastFocusedElement = null;
+let lastRecordFocusedElement = null;
+let resolvedVoterEmail = "";
+
+const state = {
+  search: "",
+  categoryFilter: "all",
+  pagination: {
+    all: { page: 1, showAll: false },
+    my: { page: 1, showAll: false },
+  },
+};
+
+const sortState = {
+  tblIdeas: { key: "", dir: "asc" },
+  tblTopIdeas: { key: "", dir: "desc" },
+  tblMyIdeas: { key: "", dir: "asc" },
+};
+
+const ui = {
+  results: null,
+  topResults: null,
+  myResults: null,
+  searchInput: null,
+  searchBtn: null,
+  status: { all: null, my: null },
+  pagination: { all: null, my: null },
+  pageInfo: { all: null, my: null },
+  pageHint: { all: null, my: null },
+  panels: { all: null, my: null },
+};
+
+/* ─────────────────────────────────────────────────────────────
+   DOM cache
+───────────────────────────────────────────────────────────── */
+
+function cacheElements() {
+  ui.results = document.getElementById("results");
+  ui.topResults = document.getElementById("topResults");
+  ui.myResults = document.getElementById("myResults");
+  ui.searchInput = document.getElementById("searchInput");
+  ui.searchBtn = document.getElementById("searchBtn");
+  ui.status.all = document.getElementById("allStatus");
+  ui.status.my = document.getElementById("myStatus");
+  ui.pagination.all = document.getElementById("allPagination");
+  ui.pagination.my = document.getElementById("myPagination");
+  ui.pageInfo.all = document.getElementById("allPageInfo");
+  ui.pageInfo.my = document.getElementById("myPageInfo");
+  ui.pageHint.all = document.getElementById("allPageHint");
+  ui.pageHint.my = document.getElementById("myPageHint");
+  ui.panels.all = document.getElementById("panel-all");
+  ui.panels.my = document.getElementById("panel-my");
 }
 
-/* ── Record ID + pills row ──────────────────────────── */
-.pv-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
-}
-.pv-id-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 3px 10px;
-    background: #1f1f1f;
-    color: #ffffff;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    line-height: 1.4;
-}
-.pv-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 12px;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.4;
-}
-.pv-pill--category {
-    background: #d9e8f6;
-    color: #004a82;
-    border: 1px solid #aacdec;
-}
-.pv-pill--impact {
-    background: #dcfce7;
-    color: #166534;
-    border: 1px solid #86efac;
+/* ─────────────────────────────────────────────────────────────
+   Toast
+───────────────────────────────────────────────────────────── */
+
+let _toastTimer = null;
+
+function showToast(msg, isError = false) {
+  const toast = document.getElementById("ipToast");
+  if (!toast) return;
+  toast.textContent = msg || "";
+  toast.classList.toggle("is-error", isError);
+  toast.classList.add("is-visible");
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(hideToast, 4000);
 }
 
-/* ── Page title (indicatorID 5) ─────────────────────── */
-.pv-title {
-    font-size: 26px;
-    font-weight: 700;
-    line-height: 1.25;
-    margin: 0 0 24px;
-    color: #0f172a;
-    font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
+function hideToast() {
+  document.getElementById("ipToast")?.classList.remove("is-visible");
 }
 
-/* ── Cards ──────────────────────────────────────────── */
-.pv-card {
-    background: #ffffff;
-    border: 1px solid #cfd7e3;
-    border-radius: 14px;
-    padding: 22px 24px;
-    margin-bottom: 14px;
-}
-.pv-card-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #475569;
-    margin: 0 0 10px;
-    display: block;
-}
-.pv-card-body {
-    font-size: 16px;
-    line-height: 1.7;
-    color: #0f172a;
-    margin: 0;
-    font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
-}
-.pv-card-body p {
-    margin: 0 0 0.75em;
-}
-.pv-card-body p:last-child {
-    margin-bottom: 0;
+/* ─────────────────────────────────────────────────────────────
+   Stats strip
+───────────────────────────────────────────────────────────── */
+
+function renderStatsStrip(totalIdeas, implemented, totalVotes) {
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val.toLocaleString();
+  };
+  set("statTotalIdeas", totalIdeas);
+  set("statImplemented", implemented);
+  set("statTotalVotes", totalVotes);
 }
 
-/* ── Two-column grid ────────────────────────────────── */
-.pv-two-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 14px;
-}
-@media (max-width: 560px) {
-    .pv-two-col {
-        grid-template-columns: 1fr;
-    }
-    .pv-title {
-        font-size: 20px;
-    }
-}
+/* ─────────────────────────────────────────────────────────────
+   Category sidebar
+───────────────────────────────────────────────────────────── */
 
-/* ── Divider inside a card ──────────────────────────── */
-.pv-card-divider {
-    border: none;
-    border-top: 1px solid #cfd7e3;
-    margin: 14px 0;
-}
+function buildCategorySidebar(ideaList) {
+  const catList = document.getElementById("catList");
+  if (!catList) return;
 
-/* ── Sub-question (Category: Other) ────────────────── */
-.pv-sub-card {
-    background: #f8fafc;
-    border: 1px solid #cfd7e3;
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin-top: 10px;
-}
-.pv-sub-card .pv-card-label {
-    color: #64748b;
-}
+  const counts = {};
+  let total = 0;
+  (ideaList || []).forEach((idea) => {
+    const cat = (idea.category || "").trim() || "Uncategorized";
+    counts[cat] = (counts[cat] || 0) + 1;
+    total++;
+  });
 
-/* ── No-data state ──────────────────────────────────── */
-.pv-empty {
-    font-size: 15px;
-    color: #64748b;
-    font-style: italic;
-}
+  const allCountEl = document.getElementById("ip-cat-count-all");
+  if (allCountEl) allCountEl.textContent = total;
 
-/* ── Attachments grid ───────────────────────────────── */
-.pv-attach-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 4px;
-}
+  // Remove previously injected items
+  catList.querySelectorAll("li[data-cat]").forEach((li) => {
+    if (!li.querySelector("[data-cat='all']")) catList.removeChild(li);
+  });
 
-/* Image attachment ─────────────────────────────────── */
-.pv-attach-figure {
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-.pv-attach-btn {
-    display: block;
-    padding: 0;
-    background: none;
-    border: 2px solid #cfd7e3;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: border-color 0.15s ease;
-    line-height: 0;
-    width: 130px;
-}
-.pv-attach-btn:hover,
-.pv-attach-btn:focus {
-    border-color: #005ea2;
-}
-.pv-attach-btn:focus-visible {
-    outline: 3px solid #005ea2;
-    outline-offset: 2px;
-}
-.pv-attach-thumb {
-    width: 126px;
-    height: 96px;
-    object-fit: cover;
-    border-radius: 8px;
-    display: block;
-}
-.pv-attach-caption {
-    font-size: 12px;
-    color: #475569;
-    max-width: 130px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: block;
-}
-
-/* File attachment ──────────────────────────────────── */
-.pv-file-list {
-    list-style: none;
-    padding: 0;
-    margin: 4px 0 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.pv-file-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.pv-file-icon {
-    flex-shrink: 0;
-    width: 32px;
-    height: 32px;
-    background: #d9e8f6;
-    border: 1px solid #aacdec;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.pv-file-icon svg {
-    width: 16px;
-    height: 16px;
-    color: #004a82;
-}
-.pv-file-link {
-    font-size: 15px;
-    font-weight: 600;
-    color: #005ea2;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    word-break: break-word;
-}
-.pv-file-link:hover,
-.pv-file-link:focus {
-    color: #004a82;
-}
-.pv-file-link:focus-visible {
-    outline: 3px solid #005ea2;
-    outline-offset: 2px;
-    border-radius: 2px;
-}
-.pm-transfer-wrap {
-    padding-bottom: 12px;
-}
-.pm-transfer-btn {
-    background: #c5ee93 !important;
-    color: #000 !important;
-    cursor: pointer;
-}
-.pm-transfer-btn:hover,
-.pm-transfer-btn:focus {
-    background: #7fb135 !important;
-    color: #fff !important;
-    cursor: pointer;
-}
-</style>
-
-<!-- ── Back nav ─────────────────────────────────────────────────────────── -->
-<div class="pv-topbar" role="navigation" aria-label="Breadcrumb">
-    <a href="https://leaf.va.gov/platform/ideas/" class="pv-back-link">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
-            <path d="M10 12L6 8l4-4"/>
-        </svg>
-        All Ideas
-    </a>
-</div>
-
-<!-- ── Main ─────────────────────────────────────────────────────────────── -->
-<main class="pv-main" id="pv-main" tabindex="-1">
-
-    <!-- Record ID + dynamic pills (populated by JS below) -->
-    <div class="pv-meta" role="group" aria-label="Idea metadata">
-        <span class="pv-id-badge" aria-label="Idea number <!--{$recordID|strip_tags}-->">#<!--{$recordID|strip_tags}--></span>
-        <!-- .pv-pill--category and .pv-pill--impact injected by JS after AJAX load -->
-        <span id="pv-category-pill" class="pv-pill pv-pill--category" aria-live="polite" hidden></span>
-        <span id="pv-impact-pill"   class="pv-pill pv-pill--impact"   aria-live="polite" hidden></span>
-    </div>
-
-    <!-- ── indicatorID 5: Title of idea ──────────────────────────────── -->
-    <h1 class="pv-title" id="pv-heading-5">
-        <span id="pv-value-5" aria-live="polite">
-            <span class="pv-empty">Loading&hellip;</span>
-        </span>
-    </h1>
-
-    <!-- ── indicatorID 6: Detailed summary ───────────────────────────── -->
-    <section class="pv-card" aria-labelledby="pv-label-6">
-        <span class="pv-card-label" id="pv-label-6">Detailed summary of your idea</span>
-        <div class="pv-card-body" id="pv-value-6" aria-live="polite">
-            <span class="pv-empty">Loading&hellip;</span>
-        </div>
-    </section>
-
-    <!-- ── Two-column: benefit (7) + category/impact (8, 9) ─────────── -->
-    <div class="pv-two-col">
-
-        <!-- Benefit (indicatorID 7) -->
-        <section class="pv-card" aria-labelledby="pv-label-7">
-            <span class="pv-card-label" id="pv-label-7">Benefit of implementing the idea</span>
-            <div class="pv-card-body" id="pv-value-7" aria-live="polite">
-                <span class="pv-empty">Loading&hellip;</span>
-            </div>
-        </section>
-
-        <!-- Category (8) + Impact (9) stacked in one card -->
-        <section class="pv-card" aria-labelledby="pv-label-8">
-            <span class="pv-card-label" id="pv-label-8">Category</span>
-            <div class="pv-card-body" id="pv-value-8" aria-live="polite">
-                <span class="pv-empty">Loading&hellip;</span>
-            </div>
-
-            <!-- Sub-question: indicatorID 13 (only shown if category = Other) -->
-            <div id="pv-subq-13" hidden>
-                <div class="pv-sub-card" aria-labelledby="pv-label-13">
-                    <span class="pv-card-label" id="pv-label-13">Please specify your category</span>
-                    <div class="pv-card-body" id="pv-value-13" aria-live="polite"></div>
-                </div>
-            </div>
-
-            <hr class="pv-card-divider" role="separator" />
-
-            <span class="pv-card-label" id="pv-label-9">Impact of idea</span>
-            <div class="pv-card-body" id="pv-value-9" aria-live="polite">
-                <span class="pv-empty">Loading&hellip;</span>
-            </div>
-        </section>
-
-    </div><!-- /.pv-two-col -->
-
-    <!-- ── indicatorID 10: Attachments ───────────────────────────────── -->
-    <section class="pv-card" aria-labelledby="pv-label-10">
-        <span class="pv-card-label" id="pv-label-10">Attachments</span>
-        <div id="pv-value-10" aria-live="polite" aria-label="Attachments loading">
-            <span class="pv-empty">Loading&hellip;</span>
-        </div>
-    </section>
-
-</main>
-
-<!-- ── Data loader ──────────────────────────────────────────────────────── -->
-<script>
-(function() {
-    var recordID  = <!--{$recordID|strip_tags|escape:'javascript'}-->;
-    var portalURL = '<!--{$portal_url|escape:'javascript'}-->';
-
-    /*
-     * Map of indicatorID -> config
-     *   target  : DOM id to write the text/HTML value into
-     *   onValue : optional callback(rawText) fired once data arrives
-     */
-    var fields = [
-        { id: 5,  target: 'pv-value-5'  },
-        { id: 6,  target: 'pv-value-6'  },
-        { id: 7,  target: 'pv-value-7'  },
-        { id: 8,  target: 'pv-value-8',
-          onValue: function(text) {
-              /* Show the category pill in the meta row */
-              var pill = document.getElementById('pv-category-pill');
-              if (pill && text.trim() !== '') {
-                  pill.textContent = text.trim();
-                  pill.removeAttribute('hidden');
-              }
-              /* If the user chose "Other", reveal the sub-question slot */
-              if (text.trim().toLowerCase() === 'other') {
-                  var subq = document.getElementById('pv-subq-13');
-                  if (subq) { subq.removeAttribute('hidden'); }
-                  loadIndicator(13);
-              }
-          }
-        },
-        { id: 9,  target: 'pv-value-9',
-          onValue: function(text) {
-              /* Show the impact pill in the meta row */
-              var pill = document.getElementById('pv-impact-pill');
-              if (pill && text.trim() !== '') {
-                  pill.textContent = text.trim();
-                  pill.removeAttribute('hidden');
-              }
-          }
-        },
-        { id: 10, target: 'pv-value-10', isAttachment: true }
-    ];
-
-    /* ── Extract the clean value from LEAF's indicator response ─────── */
-    /* LEAF appends htmlPrint markup (inputs, scripts) after the value span.
-       We only want the text inside data_N_1, not the whole response.      */
-    function extractCleanValue(html, indicatorID) {
-        var tmp = document.createElement('div');
-        tmp.innerHTML = html;
-        /* Try to find the canonical data span first */
-        var span = tmp.querySelector('[id^="data_' + indicatorID + '_"]');
-        if (span) {
-            return (span.textContent || span.innerText || '').trim();
-        }
-        /* Fallback: strip all script/input/button elements then read text */
-        var scripts = tmp.querySelectorAll('script, input, button, textarea, select');
-        scripts.forEach(function(s) { s.remove(); });
-        return (tmp.textContent || tmp.innerText || '').trim();
-    }
-
-    /* ── Render a plain-text field (clean value only) ────────────────── */
-    function renderText(el, html, indicatorID) {
-        var value = extractCleanValue(html, indicatorID);
-        if (value === '' || value === 'N/A') {
-            el.innerHTML = '<span class="pv-empty">Not provided</span>';
-        } else {
-            /* Safely set as text — no raw HTML from LEAF leaks through */
-            el.textContent = value;
-        }
-    }
-
-    /* ── Extract readable text (used by onValue callbacks) ──────────── */
-    function extractText(html, indicatorID) {
-        return extractCleanValue(html, indicatorID);
-    }
-
-    /* ── Render attachments (image or file) from raw AJAX HTML ───────── */
-    function renderAttachments(el, html) {
-        var tmp = document.createElement('div');
-        tmp.innerHTML = html;
-
-        /* Collect images */
-        var imgs = tmp.querySelectorAll('img[src*="image.php"]');
-        /* Collect file links */
-        var links = tmp.querySelectorAll('a[href*="file.php"]');
-
-        /* No attachments at all */
-        if (imgs.length === 0 && links.length === 0) {
-            el.innerHTML = '<span class="pv-empty">No attachments provided.</span>';
-            return;
-        }
-
-        var out = '<div class="pv-attach-grid">';
-
-        /* Images ────────────────────────────────────── */
-        imgs.forEach(function(img, i) {
-            var src    = img.getAttribute('src') || '';
-            var altRaw = img.getAttribute('alt') || '';
-            /* Strip LEAF's "image upload: " prefix from alt text */
-            var filename = altRaw.replace(/^image upload:\s*/i, '').trim() || ('Image ' + (i + 1));
-            /* Full-size URL for the popup (same path, larger display) */
-            var fullURL = src;
-
-            out += '<figure class="pv-attach-figure">';
-            out +=   '<button type="button" class="pv-attach-btn"'
-                  +        ' onclick="window.open(\'' + fullURL.replace(/'/g, "\\'") + '\',\'pv_img_' + i + '\',\'width=750,height=750,resizable=yes,scrollbars=yes\')"'
-                  +        ' aria-label="View full size: ' + filename.replace(/"/g, '&quot;') + '"'
-                  +  '>';
-            out +=     '<img src="' + src + '"'
-                  +         ' alt="' + filename.replace(/"/g, '&quot;') + '"'
-                  +         ' class="pv-attach-thumb"'
-                  +         ' onerror="this.closest(\'.pv-attach-btn\').setAttribute(\'aria-label\',\'Image could not load: ' + filename.replace(/"/g, '&quot;') + '\')"'
-                  +    '/>';
-            out +=   '</button>';
-            out +=   '<span class="pv-attach-caption" aria-hidden="true" title="' + filename.replace(/"/g, '&quot;') + '">' + filename + '</span>';
-            out += '</figure>';
-        });
-
-        /* File downloads ────────────────────────────── */
-        if (links.length > 0) {
-            out += '<ul class="pv-file-list" aria-label="Downloadable files">';
-            links.forEach(function(a) {
-                var href     = a.getAttribute('href') || '#';
-                var filename = (a.textContent || '').trim() || 'Download file';
-                out += '<li class="pv-file-item">';
-                out +=   '<span class="pv-file-icon" aria-hidden="true">';
-                out +=     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false">';
-                out +=       '<path d="M9 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V6L9 2z"/>';
-                out +=       '<path d="M9 2v4h4"/>';
-                out +=     '</svg>';
-                out +=   '</span>';
-                out +=   '<a href="' + href + '" target="_blank" rel="noopener noreferrer" class="pv-file-link"'
-                      +       ' aria-label="Download ' + filename.replace(/"/g, '&quot;') + ' (opens in new tab)"'
-                      +  '>' + filename + '</a>';
-                out += '</li>';
-            });
-            out += '</ul>';
-        }
-
-        out += '</div>';
-        el.innerHTML = out;
-    }
-
-    /* ── Core: fetch one indicator via LEAF's AJAX endpoint ─────────── */
-    function loadIndicator(indicatorID, cfg) {
-        /* cfg is optional (for the on-demand indicator 13 load) */
-        cfg = cfg || { target: 'pv-value-' + indicatorID, isAttachment: false };
-
-        var el = document.getElementById(cfg.target || 'pv-value-' + indicatorID);
-        if (!el) { return; }
-
-        $.ajax({
-            type: 'GET',
-            url: 'ajaxIndex.php?a=getprintindicator'
-                + '&recordID=' + encodeURIComponent(recordID)
-                + '&indicatorID=' + encodeURIComponent(indicatorID)
-                + '&series=1',
-            dataType: 'text',
-            cache: false,
-            success: function(html) {
-                if (cfg.isAttachment) {
-                    renderAttachments(el, html);
-                } else {
-                    renderText(el, html, indicatorID);
-                    if (typeof cfg.onValue === 'function') {
-                        cfg.onValue(extractText(html, indicatorID));
-                    }
-                }
-            },
-            error: function() {
-                el.innerHTML = '<span class="pv-empty">Could not load this field.</span>';
-            }
-        });
-    }
-
-    /* ── Kick off all field loads on DOM ready ───────────────────────── */
-    $(function() {
-        fields.forEach(function(cfg) {
-            loadIndicator(cfg.id, cfg);
-        });
+  Object.keys(counts)
+    .sort((a, b) => a.localeCompare(b))
+    .forEach((cat) => {
+      const li = document.createElement("li");
+      li.setAttribute("data-cat", cat);
+      li.innerHTML = `
+      <button class="ip-catItem" data-cat="${escapeHtml(cat)}" type="button">
+        <span>${escapeHtml(cat)}</span>
+        <span class="ip-catCount">${counts[cat]}</span>
+      </button>`;
+      catList.appendChild(li);
     });
 
-}());
-</script>
+  catList.addEventListener("click", (e) => {
+    const btn = e.target.closest(".ip-catItem");
+    if (!btn) return;
+    const cat = btn.getAttribute("data-cat") || "all";
+    state.categoryFilter = cat;
+    state.pagination.all.page = 1;
+    catList
+      .querySelectorAll(".ip-catItem")
+      .forEach((b) => b.classList.remove("is-active"));
+    btn.classList.add("is-active");
+    renderAllIdeas();
+  });
+}
 
-</div>
+/* ─────────────────────────────────────────────────────────────
+   Recently added bar
+───────────────────────────────────────────────────────────── */
 
-<!-- Group 226 toolbar: shown only to idea managers -->
-<!--{if $empMembership['groupID'][226]}-->
-<div id="toolbar226" class="toolbar_right toolbar noprint">
+function renderRecentChips(ideaList) {
+  const bar = document.getElementById("ipRecentBar");
+  const chips = document.getElementById("ipRecentChips");
+  if (!bar || !chips) return;
 
-    <div class="pm-transfer-wrap">
-        <button type="button" class="tools pm-transfer-btn" onclick="transferToPMDashboard()" title="Transfer to LEAF Projects">
-            <img src="dynicons/?img=go-next.svg&amp;w=32" alt="" aria-hidden="true" style="vertical-align: middle" /> Transfer to LEAF Projects
-        </button>
-    </div>
+  const list = ideaList || [];
+  // Sort by created_date descending; fall back to recordID descending when
+  // created_date is missing or zero (stripped by x-filterData on some sites).
+  const recent = [...list]
+    .filter((i) => i?.recordID)
+    .sort((a, b) => {
+      const aDate = Number(a.created_date) || 0;
+      const bDate = Number(b.created_date) || 0;
+      if (bDate !== aDate) return bDate - aDate;
+      return Number(b.recordID) - Number(a.recordID);
+    })
+    .slice(0, 5);
 
-    <div id="tools226" class="tools">
-        <h1>Idea Tools</h1>
-        <!--{if $submitted == 0}-->
-            <button type="button" class="tools" onclick="window.location='?a=view&amp;recordID=<!--{$recordID|strip_tags}-->'">
-                <img src="dynicons/?img=edit-find-replace.svg&amp;w=32" alt="" aria-hidden="true" style="vertical-align: middle" />
-                Edit this form
-            </button><br /><br />
-        <!--{/if}-->
-        <button type="button" class="tools" onclick="viewHistory()">
-            <img src="dynicons/?img=appointment.svg&amp;w=32" alt="" aria-hidden="true" style="vertical-align: middle" />
-            View History
-        </button>
-        <button type="button" class="tools"
-            onclick="window.location='mailto:?subject=FW:%20Request%20%23<!--{$recordID|strip_tags}-->%20-%20<!--{$title|escape:'url'}-->&amp;body=Request%20URL:%20<!--{if $smarty.server.HTTPS == on}-->https<!--{else}-->http<!--{/if}-->://<!--{$smarty.server.SERVER_NAME}--><!--{$smarty.server.REQUEST_URI|escape:'url'}-->%0A%0A'">
-            <img src="dynicons/?img=internet-mail.svg&amp;w=32" alt="" aria-hidden="true" style="vertical-align: middle" />
-            Write Email
-        </button>
-        <button type="button" class="tools" id="btn_printForm" title="Print this Form">
-            <img src="dynicons/?img=printer.svg&amp;w=32" alt="" style="vertical-align: middle" />
-            Print to PDF
-            <span style="font-style: italic; background-color: white; color: #d00; border: 1px solid black; padding: 4px">BETA</span>
-        </button>
-        <input type='hidden' id='abs_portal_path' value='<!--{$abs_portal_path}-->' />
-        <!--{if $bookmarked == ''}-->
-            <button type="button" class="tools" onclick="toggleBookmark()" id="tool_bookmarkText" title="Add Bookmark">
-                <img src="dynicons/?img=bookmark-new.svg&amp;w=32" alt="" style="vertical-align: middle" />
-                <span role="status" aria-live="polite">Add Bookmark</span>
-            </button>
-        <!--{else}-->
-            <button type="button" class="tools" onclick="toggleBookmark()" id="tool_bookmarkText" title="Delete Bookmark">
-                <img src="dynicons/?img=bookmark-new.svg&amp;w=32" alt="" style="vertical-align: middle" />
-                <span role="status" aria-live="polite">Delete Bookmark</span>
-            </button>
-        <!--{/if}-->
-        <button type="button" class="tools" onclick="copyRequest()" title="Copy Request"
-            style="background-image: url(dynicons/?img=edit-copy.svg&amp;w=32); background-repeat: no-repeat; background-position: left; text-align: left; text-indent: 35px; height: 38px">
-            Copy Request
-        </button>
-        <br /><br />
-        <!--{if $submitted == 0 || $is_admin}-->
-            <button type="button" class="tools" id="btn_cancelRequest" title="Cancel Request" onclick="cancelRequest()">
-                <img src="dynicons/?img=process-stop.svg&amp;w=16" alt="" style="vertical-align: middle" />
-                Cancel Request
-            </button>
-        <!--{/if}-->
-    </div>
+  if (!recent.length) {
+    bar.hidden = true;
+    return;
+  }
 
-    <div id="comments" style="display: none">
-        <h1 id='comment_header'><label for="note">Comments</label></h1>
-        <div id="notes">
-            <form id='note_form'>
-                <input type='hidden' name='userID' value='<!--{$userID|strip_tags}-->' />
-                <input type='text' id='note' name='note' placeholder='Enter a note!' />
-                <button type="button" id='add_note' class='button' onclick="submitNote(<!--{$recordID|strip_tags}-->)">Post</button>
-            </form>
-        </div>
-        <!--{section name=i loop=$comments}-->
-            <div class='comment_block'>
-                <span class="comments_time"><!--{$comments[i].time|date_format:' %b %e'|escape}--></span>
-                <span class="comments_name">
-                    <!--{$comments[i].actionTextPasttense|sanitize}-->
-                    <!--{if $comments[i].name != ''}--> by <!--{/if}-->
-                    <!--{$comments[i].name}-->
-                </span>
-                <div class="comments_message"><!--{$comments[i].comment|sanitize}--></div>
-            </div>
-        <!--{/section}-->
-    </div>
+  chips.innerHTML = recent
+    .map((idea) => {
+      const idLabel = `#${idea.recordID}`;
+      const titleText = truncateTitle(idea.title || `Idea ${idea.recordID}`, 36);
+      const label = escapeHtml(`${idLabel} ${titleText}`);
+      const url = escapeHtml(
+        idea.recordLink || `${RECORD_VIEW_URL}${idea.recordID}`,
+      );
+      const title = escapeHtml(idea.title || `Idea ${idea.recordID}`);
+      return `<button class="ip-recentChip" type="button"
+      data-chip-id="${escapeHtml(String(idea.recordID))}"
+      data-chip-url="${url}"
+      data-chip-title="${title}"
+      aria-label="View idea ${idLabel}: ${title}">${label}</button>`;
+    })
+    .join("");
 
-    <div id="category_list">
-        <h1>Internal Use</h1>
-        <button class="IUbutton"
-            onclick="scrollPage('formcontent');openContent('ajaxIndex.php?a=printview&amp;recordID=<!--{$recordID|strip_tags}-->');"
-            style="background-image: url(dynicons/?img=text-x-generic.svg&amp;w=16); background-repeat: no-repeat; background-position: left; text-align: left; text-indent: 20px;">
-            Main Request
-        </button>
-        <!--{section name=i loop=$childforms}-->
-            <button class="IUbutton"
-                onclick="scrollPage('formcontent');openContent('ajaxIndex.php?a=internalonlyview&amp;recordID=<!--{$recordID|strip_tags}-->&amp;childCategoryID=<!--{$childforms[i].childCategoryID|strip_tags}-->');"
-                style="background-image: url(dynicons/?img=text-x-generic.svg&amp;w=16); background-repeat: no-repeat; background-position: left; text-align: center">
-                <!--{$childforms[i].childCategoryName|sanitize}-->
-            </button>
-        <!--{/section}-->
-    </div>
+  bar.hidden = false;
+}
 
-    <div id="metaContainer" style="display: none">
-        <div id="metaLabel"></div>
-        <div id="metaContent"></div>
-    </div>
+/* ─────────────────────────────────────────────────────────────
+   My Activity sidebar
+───────────────────────────────────────────────────────────── */
 
-    <!--{if $is_admin}-->
-        <div id="adminTools" class="tools">
-            <h1>Administrative Tools</h1>
-            <!--{if $submitted != 0}-->
-                <button class="AdminButton" onclick="admin_changeStep()" title="Change Current Step"
-                    style="background-image: url(dynicons/?img=go-jump.svg&w=32); background-repeat: no-repeat; background-position: left; text-align: left; text-indent: 35px; height: 38px">
-                    Change Current Step
-                </button>
-            <!--{/if}-->
-            <button class="AdminButton" onclick="changeService()" title="Change Service"
-                style="background-image: url(dynicons/?img=user-home.svg&amp;w=32); background-repeat: no-repeat; background-position: left; text-align: left; text-indent: 35px; height: 38px">
-                Change Service
-            </button>
-            <button class="AdminButton" onclick="admin_changeForm()" title="Change Forms"
-                style="background-image: url(dynicons/?img=system-file-manager.svg&amp;w=32); background-repeat: no-repeat; background-position: left; text-align: left; text-indent: 35px; height: 38px">
-                Change Form(s)
-            </button>
-            <button class="AdminButton" onclick="admin_changeInitiator()" title="Change Initiator"
-                style="background-image: url(dynicons/?img=gnome-stock-person.svg&amp;w=32); background-repeat: no-repeat; background-position: left; text-align: left; text-indent: 35px; height: 38px">
-                Change Initiator
-            </button>
-        </div>
-    <!--{/if}-->
+function updateMyActivity(myCount, votedCount) {
+  const ideasEl = document.getElementById("myActivityIdeas");
+  const votesEl = document.getElementById("myActivityVotes");
+  if (ideasEl) ideasEl.textContent = myCount;
+  if (votesEl) votesEl.textContent = votedCount;
+}
 
-    <div class="toolbar_security">
-        <h1 role="heading">Security Permissions</h1>
-        <button class="buttonPermission" onclick="viewAccessLogsRead()">
-            <!--{if $canRead}-->
-                <img src="dynicons/?img=edit-find.svg&amp;w=32" alt="" style="vertical-align: middle" /> You have read access
-            <!--{else}-->
-                <img src="dynicons/?img=emblem-readonly.svg&amp;w=32" alt="" style="vertical-align: middle" /> You do not have read access
-            <!--{/if}-->
-        </button>
-        <button class="buttonPermission" onclick="viewAccessLogsWrite()">
-            <!--{if $canWrite}-->
-                <img src="dynicons/?img=accessories-text-editor.svg&amp;w=32" alt="" style="vertical-align: middle" /> You have write access
-            <!--{else}-->
-                <img src="dynicons/?img=emblem-readonly.svg&amp;w=32" alt="" style="vertical-align: middle" /> You do not have write access
-            <!--{/if}-->
-        </button>
-    </div>
+/* ─────────────────────────────────────────────────────────────
+   Status messages
+───────────────────────────────────────────────────────────── */
 
-</div>
-<!--{/if}-->
-<!--{if $empMembership['groupID'][226]}--></div><!--{/if}-->
+function setPanelBusy(scope, isBusy) {
+  ui.panels[scope]?.setAttribute("aria-busy", isBusy ? "true" : "false");
+}
 
-<!-- DIALOG BOXES -->
-<div id="formContainer"></div>
-<!--{include file="site_elements/generic_xhrDialog.tpl"}-->
-<!--{include file="site_elements/generic_confirm_xhrDialog.tpl"}-->
-<!--{include file="site_elements/generic_dialog.tpl"}-->
-<!--{include file="site_elements/generic_OkDialog.tpl"}-->
+function setStatus(scope, message, type) {
+  const el = ui.status[scope];
+  if (!el) return;
+  if (!message) {
+    el.hidden = true;
+    el.textContent = "";
+    el.classList.remove("is-error", "is-loading");
+    return;
+  }
+  el.textContent = message;
+  el.hidden = false;
+  el.classList.toggle("is-error", type === "error");
+  el.classList.toggle("is-loading", type === "loading");
+}
 
-<script type="text/javascript" src="js/functions/toggleZoom.js"></script>
-<script type="text/javascript" src="<!--{$app_js_path}-->/LEAF/sensitiveIndicator.js"></script>
-<script type="text/javascript">
+/* ─────────────────────────────────────────────────────────────
+   Modal helpers
+───────────────────────────────────────────────────────────── */
 
-    $(document).ready(function() {
-        let step = parseInt(<!--{$stepID|strip_tags}-->);
+function getFocusableElements(container) {
+  return Array.from(
+    container.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter(
+    (el) => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden"),
+  );
+}
 
-        $(window).keydown(function(event) {
-            if (event.keyCode == 13 && ($('#note').is(":focus") || $('#add_note').is(":focus"))) {
-                event.preventDefault();
-                submitNote(<!--{$recordID|strip_tags}-->);
-                return false;
-        }
+function bindFocusTrap(container) {
+  if (container.dataset.focusTrap === "true") return;
+  container.dataset.focusTrap = "true";
+  container.addEventListener("keydown", (e) => {
+    if (e.key !== "Tab") return;
+    const focusable = getFocusableElements(container);
+    if (!focusable.length) {
+      e.preventDefault();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  });
+}
+
+function setBackgroundHidden(hidden) {
+  const main = document.querySelector(".ip-wrap");
+  if (main) {
+    hidden
+      ? main.setAttribute("aria-hidden", "true")
+      : main.removeAttribute("aria-hidden");
+  }
+  const jump = document.getElementById("ipJumpTopBtn");
+  if (jump) {
+    hidden
+      ? jump.setAttribute("aria-hidden", "true")
+      : jump.removeAttribute("aria-hidden");
+  }
+}
+
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  lastFocusedElement = document.activeElement;
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
+  setBackgroundHidden(true);
+  bindFocusTrap(modal);
+  const target =
+    modal.querySelector("input, select, textarea") ||
+    getFocusableElements(modal)[0];
+  target?.focus();
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  modal.classList.remove("is-open");
+  modal.setAttribute("aria-hidden", "true");
+  setBackgroundHidden(false);
+  lastFocusedElement?.focus();
+  lastFocusedElement = null;
+}
+
+function bindModalEvents() {
+  document.querySelectorAll("[data-ip-open]").forEach((btn) => {
+    btn.addEventListener("click", () => openModal(btn.dataset.ipOpen));
+  });
+  document.querySelectorAll("[data-ip-close]").forEach((btn) => {
+    btn.addEventListener("click", () => closeModal(btn.dataset.ipClose));
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    document
+      .querySelectorAll(".ip-modal.is-open")
+      .forEach((m) => closeModal(m.id));
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Tabs
+───────────────────────────────────────────────────────────── */
+
+function bindTabs() {
+  const tabs = Array.from(document.querySelectorAll(".ip-tab"));
+  const panels = Array.from(document.querySelectorAll(".ip-panel"));
+
+  function syncTabs(target) {
+    tabs.forEach((tab) => {
+      tab.classList.remove("is-active");
+      tab.setAttribute("aria-selected", "false");
+      tab.setAttribute("tabindex", "-1");
+    });
+    panels.forEach((panel) => {
+      panel.classList.remove("is-active");
+      panel.setAttribute("aria-hidden", "true");
+    });
+    const active = target || tabs[0];
+    if (!active) return;
+    active.classList.add("is-active");
+    active.setAttribute("aria-selected", "true");
+    active.setAttribute("tabindex", "0");
+    const panel = document.getElementById(`panel-${active.dataset.ipTab}`);
+    if (panel) {
+      panel.classList.add("is-active");
+      panel.setAttribute("aria-hidden", "false");
+    }
+  }
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => syncTabs(tab));
+    tab.addEventListener("keydown", (e) => {
+      const idx = tabs.indexOf(tab);
+      let next = null;
+      if (e.key === "ArrowRight") next = (idx + 1) % tabs.length;
+      else if (e.key === "ArrowLeft")
+        next = (idx - 1 + tabs.length) % tabs.length;
+      else if (e.key === "Home") next = 0;
+      else if (e.key === "End") next = tabs.length - 1;
+      if (next !== null) {
+        e.preventDefault();
+        tabs[next].focus();
+        syncTabs(tabs[next]);
+      }
+    });
+  });
+
+  syncTabs();
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Record modal
+───────────────────────────────────────────────────────────── */
+
+function openRecordModal(title, url) {
+  const modal = document.getElementById("ipRecordModal");
+  const frame = document.getElementById("ipRecordModalFrame");
+  const titleEl = document.getElementById("ipRecordModalTitle");
+  const openBtn = document.getElementById("ipRecordModalOpenTabBtn");
+  if (!modal || !frame || !titleEl) return;
+  lastRecordFocusedElement = document.activeElement;
+  titleEl.textContent = title || "Idea Details";
+  // Append &iframe to suppress the LEAF site header in the modal view
+  const frameUrl = url ? `${url}&iframe` : url;
+  frame.src = frameUrl;
+  if (openBtn) openBtn.setAttribute("data-url", url || "");
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
+  setBackgroundHidden(true);
+  bindFocusTrap(modal);
+  getFocusableElements(modal)[0]?.focus();
+}
+
+function closeRecordModal() {
+  const modal = document.getElementById("ipRecordModal");
+  const frame = document.getElementById("ipRecordModalFrame");
+  const openBtn = document.getElementById("ipRecordModalOpenTabBtn");
+  if (!modal || !frame) return;
+  frame.src = "about:blank";
+  if (openBtn) openBtn.setAttribute("data-url", "");
+  modal.classList.remove("is-open");
+  modal.setAttribute("aria-hidden", "true");
+  setBackgroundHidden(false);
+  lastRecordFocusedElement?.focus();
+  lastRecordFocusedElement = null;
+}
+
+function bindRecordModal() {
+  document.addEventListener("click", (e) => {
+    const link = e.target.closest("a.ip-recordLink");
+    if (link) {
+      e.preventDefault();
+      const url = link.getAttribute("href");
+      const title = link.getAttribute("data-title") || "Idea Details";
+      if (url) openRecordModal(title, url);
+      return;
+    }
+    const chip = e.target.closest(".ip-recentChip");
+    if (chip) {
+      const url = chip.getAttribute("data-chip-url");
+      const title = chip.getAttribute("data-chip-title") || "Idea Details";
+      if (url) openRecordModal(title, url);
+    }
+  });
+
+  document
+    .getElementById("ipRecordModalCloseBtn")
+    ?.addEventListener("click", closeRecordModal);
+
+  document
+    .getElementById("ipRecordModalOpenTabBtn")
+    ?.addEventListener("click", function () {
+      const url = this.getAttribute("data-url") || "";
+      if (url) window.open(url, "_blank", "noopener");
     });
 
-    if (step > 0) {
-        $('#comments').css({'display': "block"});
-        $('#notes').css({'display': "block"});
-    } else if (step == 0 && $(".comment_block")[0]) {
-        $('#comments').css({'display': "block"});
-        $('#notes').css({'display': "none"});
+  document.getElementById("ipRecordModal")?.addEventListener("click", (e) => {
+    if (e.target?.getAttribute("data-ip-record-close") === "1")
+      closeRecordModal();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeRecordModal();
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Jump to top + credit badge
+───────────────────────────────────────────────────────────── */
+
+function wireJumpToTop() {
+  const btn = document.getElementById("ipJumpTopBtn");
+  if (!btn) return;
+
+  function updateVisibility() {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollHeight = Math.max(
+      document.body.scrollHeight,
+      document.documentElement.scrollHeight,
+    );
+    const clientHeight =
+      window.innerHeight || document.documentElement.clientHeight;
+    const needsScroll = scrollHeight - clientHeight > 80;
+    btn.classList.toggle("is-visible", needsScroll && scrollTop > 120);
+    const credit = document.getElementById("ipCreditBadge");
+    if (credit) {
+      credit.classList.toggle(
+        "is-visible",
+        scrollTop + clientHeight >= scrollHeight - 80,
+      );
+    }
+  }
+
+  btn.addEventListener("click", () => {
+    const prefersReduced = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    window.scrollTo({ top: 0, behavior: prefersReduced ? "auto" : "smooth" });
+  });
+
+  window.addEventListener("scroll", updateVisibility, { passive: true });
+  window.addEventListener("resize", updateVisibility);
+  updateVisibility();
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Data helpers
+───────────────────────────────────────────────────────────── */
+
+function getIdeaField(idea, s1Key, fallbackKey) {
+  if (idea?.s1?.[s1Key] !== undefined) return idea.s1[s1Key];
+  if (fallbackKey && idea?.[fallbackKey] !== undefined)
+    return idea[fallbackKey];
+  return "";
+}
+
+function normalizeStatusLabel(status) {
+  if (!status) return "";
+  return status.replace(/[()]/g, "").trim();
+}
+
+function buildIdeaViewModel(idea) {
+  if (!idea?.recordID) return null;
+  const recordID = String(idea.recordID);
+  const title = sanitizeLeafValue(
+    getIdeaField(idea, IDEA_INDICATORS.title, "title"),
+  );
+  const category = sanitizeLeafValue(
+    getIdeaField(idea, IDEA_INDICATORS.category, "category"),
+  );
+  const statusRaw = getIdeaField(idea, IDEA_INDICATORS.status, "status");
+  const status = normalizeStatusLabel(sanitizeLeafValue(statusRaw));
+  const votes = voteCounts[recordID] || 0;
+  const isVoted = userVotes[recordID] === true;
+  return {
+    recordID,
+    title,
+    category,
+    status,
+    votes,
+    isVoted,
+    created_date: idea.created_date || "",
+    recordLink: `${RECORD_VIEW_URL}${recordID}`,
+  };
+}
+
+function buildIdeasViewModelList(rawIdeas, updateMaps = false) {
+  const list = [];
+  const vmMap = {};
+  if (updateMaps) {
+    ideasById = {};
+    ideaOwnerMap = {};
+  }
+
+  (rawIdeas || []).forEach((idea) => {
+    const vm = buildIdeaViewModel(idea);
+    if (!vm) return;
+    list.push(vm);
+    vmMap[vm.recordID] = vm;
+    if (updateMaps) {
+      ideasById[vm.recordID] = idea;
+      ideaOwnerMap[vm.recordID] = idea.userID || "";
+    }
+  });
+
+  if (updateMaps) ideasVMById = vmMap;
+  return list;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Sort
+───────────────────────────────────────────────────────────── */
+
+function getIdeaSortValue(idea, key) {
+  switch (key) {
+    case "id":
+      return Number(idea.recordID) || 0;
+    case "title":
+      return String(idea.title || "");
+    case "category":
+      return String(idea.category || "");
+    case "status":
+      return String(normalizeStatusLabel(idea.status || ""));
+    case "votes":
+      return typeof idea.votes === "number"
+        ? idea.votes
+        : voteCounts[idea.recordID] || 0;
+    default:
+      return "";
+  }
+}
+
+function sortIdeasList(list, stateObj) {
+  if (!stateObj?.key) return list;
+  const dir = stateObj.dir === "desc" ? -1 : 1;
+  return [...list.filter((i) => i?.recordID)].sort((a, b) => {
+    const av = getIdeaSortValue(a, stateObj.key);
+    const bv = getIdeaSortValue(b, stateObj.key);
+    if (typeof av === "number" && typeof bv === "number")
+      return (av - bv) * dir;
+    return (
+      String(av).localeCompare(String(bv), undefined, {
+        numeric: true,
+        sensitivity: "base",
+      }) * dir
+    );
+  });
+}
+
+function setSortState(tableId, key) {
+  const s = sortState[tableId] || { key: "", dir: "asc" };
+  s.dir = s.key === key ? (s.dir === "asc" ? "desc" : "asc") : "asc";
+  s.key = key;
+  sortState[tableId] = s;
+}
+
+function applySortClasses(tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const s = sortState[tableId];
+  table.querySelectorAll(".ip-sortable").forEach((th) => {
+    th.classList.remove("is-asc", "is-desc");
+    const key = th.querySelector(".ip-sortBtn")?.getAttribute("data-sort");
+    if (s && key === s.key) {
+      th.classList.add(s.dir === "asc" ? "is-asc" : "is-desc");
+      th.setAttribute(
+        "aria-sort",
+        s.dir === "asc" ? "ascending" : "descending",
+      );
     } else {
-        $('#comments').css({'display': "none"});
-        $('#notes').css({'display': "none"});
+      th.setAttribute("aria-sort", "none");
     }
-});
-
-let currIndicatorID;
-let currSeries;
-var recordID = <!--{$recordID|strip_tags}-->;
-var serviceID = <!--{$serviceID|strip_tags}-->;
-let CSRFToken = '<!--{$CSRFToken}-->';
-let formPrintConditions = {};
-
-function doSubmit(recordID) {
-    $('#submitControl').empty().html('<img alt="" src="./images/indicator.gif" />Submitting...');
-    $.ajax({
-        type: 'POST',
-        url: "./api/form/" + recordID + "/submit",
-        data: {CSRFToken: '<!--{$CSRFToken}-->'},
-        success: function(response) {
-            if(response?.errors?.length === 0) {
-                $('#submitStatus').text('Request submmited');
-                $('#submitControl').empty().html('Submitted');
-                $('#submitContent').hide('blind', 500);
-                $('#comments').css({'display': "block"});
-                $('#notes').css({'display': "block"});
-                const isAdmin = '<!--{$is_admin}-->';
-                if (isAdmin !== "1") {
-                    $('#btn_cancelRequest').hide();
-                }
-                workflow.setExtraParams('masquerade=nonAdmin');
-                workflow.getWorkflow(recordID);
-            } else {
-                let errors = '';
-                for(let i in response.errors) {
-                    errors += response.errors[i] + '<br />';
-                }
-
-                $('#submitControl').empty().html('Error: ' + errors);
-                $('#submitStatus').text('Request can not be submmited');
-                }
-            },
-            error: function(res) {
-                console.log(res);
-            }
-        });
-    }
-
-    function submitNote(recordID) {
-        if ($('#note').val().trim() !== '') {
-            var form = $("#note_form").serialize();
-
-            $.ajax({
-                type: 'POST',
-                url: "./api/note/" + recordID,
-                data: {form,
-                CSRFToken: '<!--{$CSRFToken}-->'},
-                success: function(response) {
-                    $("#note").val('');
-
-                    addNote(response);
-
-                    dialog_ok.setTitle('Note Posted Successfully');
-                    dialog_ok.setContent(
-                        'Your note has been posted. <b style="color: red">Please keep in mind this does not send notifications.</b>'
-                    );
-                    dialog_ok.setSaveHandler(function() {
-                        dialog_ok.clearDialog();
-                        dialog_ok.hide();
-                    });
-                    dialog_ok.show();
-                },
-                error: function(res) {
-                    console.log(res);
-                }
-            });
-        }
-    }
-
-    function addNote(response) {
-        if (typeof response === 'object' && response !== null) {
-            let new_note;
-
-            new_note = '<div class="comment_block"> <span class="comments_time"> ' + response.date +
-                '</span> <span class="comments_name">Note Added by ' + response.user_name +
-                '</span> <div class="comments_message">' + response.note + '</div> </div>';
-
-            $(new_note).insertAfter("#notes");
-        } else {
-            console.log('An object was not returned');
-        }
-
-    }
-
-    function updateTags() {
-        $('#tags').fadeOut(250);
-        $.ajax({
-            type: 'GET',
-            url: "./api/form/<!--{$recordID|strip_tags}-->/tags",
-            success: function(res) {
-                let buffer = '';
-                if (res.length > 0) {
-                    buffer = res.length + ' Bookmarks'
-                }
-                let tags = $('#tags');
-                tags.empty().html(buffer);
-                tags.fadeIn(250);
-            },
-            cache: false
-        });
-    }
-
-    function getForm(indicatorID, series) {
-        form.dialog().show();
-        form.setPostModifyCallback(function() {
-            getIndicator(indicatorID, series);
-            updateProgress();
-            form.dialog().hide();
-        });
-        form.getForm(indicatorID, series);
-    }
-
-    function getIndicatorLog(indicatorID, series) {
-        dialog_message.setContent(
-            'Modifications made to this field:<table class="agenda" style="background-color: white"><thead><tr><th>Date/Author</th><th>Data</th></tr></thead><tbody id="history_' +
-            indicatorID + '"></tbody></table>');
-        dialog_message.indicateBusy();
-        dialog_message.show();
-
-        $.ajax({
-            type: 'GET',
-            url: "api/form/<!--{$recordID|strip_tags}-->/" + indicatorID + "/" + series + '/history',
-            success: function(res) {
-                let numChanges = res.length;
-                let prev = '';
-                for (let i = 0; i < numChanges; i++) {
-                    curr = res.pop();
-                    date = new Date(curr.timestamp * 1000);
-                    data = curr.data;
-
-                    if (i != 0) {
-                        data = diffString(prev, data);
-                    }
-
-                    $('#history_' + indicatorID).prepend('<tr><td>' + date.toString() + '<br /><b>' + curr
-                        .name + '</b></td><td><span class="printResponse" style="font-size: 16px">' +
-                        data + '</span></td></tr>');
-                    prev = curr.data;
-                }
-
-                dialog_message.indicateIdle();
-            },
-            error: function(res) {
-                dialog_message.setContent(res);
-                dialog_message.indicateIdle();
-            },
-            cache: false
-        });
-    }
-
-    function getIndicator(indicatorID, series) {
-        $.ajax({
-            type: 'GET',
-            url: "ajaxIndex.php?a=getprintindicator&recordID=<!--{$recordID|strip_tags}-->&indicatorID=" + indicatorID + "&series=" + series,
-            dataType: 'text',
-            success: function(response) {
-                let currentPHindicator = $("#PHindicator_" + indicatorID + "_" + series);
-                if (currentPHindicator.hasClass("printheading_missing")) {
-                    currentPHindicator.removeClass("printheading_missing");
-                    currentPHindicator.addClass("printheading");
-                }
-                let xhrIndicator = $("#xhrIndicator_" + indicatorID + "_" + series);
-                xhrIndicator.empty().html(response);
-                xhrIndicator.fadeOut(250, function() {
-                    xhrIndicator.fadeIn(250);
-                });
-                handlePrintConditionalIndicators(formPrintConditions);
-            },
-            error: function(res) {
-                console.log(res);
-            },
-            error: function() { console.log('There was an error getting the indicator!'); },
-            cache: false
-        });
-    }
-
-    function updateProgress() {
-        $.ajax({
-                type: 'GET',
-                url: "./api/form/<!--{$recordID|strip_tags}-->/progress",
-                dataType: 'json',
-                success: function(response) {
-                    if (response < 100) {
-                        $('#progressBar').progressbar('option', 'value', response);
-                        $('#progressLabel').text(response + '%');
-                    }
-                    else if('<!--{$submitted}-->' == '0') {
-                    $('#progressBar').progressbar('option', 'value', response);
-                    $('#progressLabel').text(response + '%');
-                    $('#progressSidebar').slideUp(500);
-                    $.ajax({
-                        type: 'GET',
-                        url: "ajaxIndex.php?a=getsubmitcontrol&recordID=<!--{$recordID|strip_tags}-->",
-                        dataType: 'text',
-                        success: function(response) {
-                            let submitContent = $("#submitContent");
-                            submitContent.empty().html(response);
-                            submitContent.css({
-                                'border': '1px solid black',
-                                'text-align': 'center',
-                                'background-color': '#ffaeae'
-                            });
-                            $("#workflowcontent").css({
-                                'font-size': "80%",
-                                'padding-top': "8px"
-                            });
-                        },
-                        error: function(response) {
-                            $("#xhr").html("Error: " + response);
-                        },
-                        cache: false
-                    });
-                }
-            },
-            error: function() { console.log('There was an error getting the progress!'); },
-            cache: false
-        });
-    }
-
-    /**
-     * Is this even used? I do not see it called here. are there external things that could rely on it?
-     */
-    function hideForm() {
-        dialog.hide();
-    }
-
-    function restoreRequest() {
-        $.ajax({
-            type: 'POST',
-            url: "ajaxIndex.php?a=restore",
-            data: {
-                restore: <!--{$recordID|strip_tags|escape}-->,
-                CSRFToken: '<!--{$CSRFToken}-->'
-            },
-            success: function(response) {
-                if (response > 0) {
-                    window.location.href="index.php?a=printview&recordID=<!--{$recordID|strip_tags}-->";
-                }
-            },
-            error: function() { console.log('There was an error restoring the request!'); }
-        });
-    }
-
-    <!--{if $bookmarked == ''}-->
-        let bookmarkStatus = 0;
-    <!--{else}-->
-        let bookmarkStatus = 1;
-    <!--{/if}-->
-
-    function toggleBookmark() {
-        if (bookmarkStatus == 0) {
-            addBookmark();
-            bookmarkStatus = 1;
-            $('#tool_bookmarkText span').empty().html('Delete Bookmark');
-        } else {
-            removeBookmark();
-            bookmarkStatus = 0;
-            $('#tool_bookmarkText span').empty().html('Add Bookmark');
-        }
-    }
-
-    function addBookmark() {
-        $.ajax({
-            type: 'POST',
-            url: "ajaxIndex.php?a=addbookmark&recordID=<!--{$recordID|strip_tags}-->",
-            data: {
-                CSRFToken: '<!--{$CSRFToken}-->'
-            },
-            success: function() {
-                updateTags();
-            },
-            error: function() { console.log('There was an error adding the bookmark!'); }
-        });
-    }
-
-    function removeBookmark() {
-        $.ajax({
-            type: 'POST',
-            url: "ajaxIndex.php?a=removebookmark&recordID=<!--{$recordID|strip_tags}-->",
-            data: {CSRFToken: '<!--{$CSRFToken}-->'},
-            success: function() {
-                updateTags();
-            },
-            error: function() { console.log('There was an error removing the bookmark!'); }
-        });
-    }
-
-    const valIncludesMultiselOption = (values = [], arrOptions = []) => {
-        let result = false;
-        let vals = values.map(v => v.replaceAll('\r', '').trim());
-        vals.forEach(v => {
-            if (arrOptions.includes(v)) {
-                result = true;
-            }
-        });
-        return result;
-    }
-
-    function handlePrintConditionalIndicators(formPrintConditions = {}) {
-        const multiChoiceFormats = ['multiselect', 'checkboxes'];
-
-        for (let c in formPrintConditions) {
-            const childFormat = formPrintConditions[c].format; //current format of the controlled question
-            const childFormatIsEnabled = childFormat !== 'raw_data';
-            const conditions = formPrintConditions[c].conditions;
-
-            let comparison = false;
-
-            for (let i in conditions) {
-                /* Validate outcome:
-                confirm child, i, has hide/show conditions that need to be processed.
-                Log a message to assist with debugging if it is configured with both directives. */
-                let outcomes = [];
-                if (conditions.some(c => c.selectedOutcome.toLowerCase() === "hide")) outcomes.push("hide");
-                if (conditions.some(c => c.selectedOutcome.toLowerCase() === "show")) outcomes.push("show");
-                if (outcomes.length > 1) {
-                    console.warn("Conflicting display conditions: check setup for", c);
-                }
-                if (outcomes.length < 1) {
-                    continue;
-                }
-                const outcome = outcomes[0];
-
-                const parentFormat = conditions[i].parentFormat.toLowerCase();
-                const elParentInd = document.getElementById('data_' + conditions[i].parentIndID +
-                    '_1'); //dropdown, text and radio elements
-                const selectedParentOptionsLI = Array.from(document.querySelectorAll(`#xhrIndicator_${conditions[i].parentIndID}_1 > span > ul > li`)); //multiselect and checkboxes li elements
-
-                let arrParVals = [];
-                selectedParentOptionsLI.forEach(li => arrParVals.push(li.textContent.trim()));
-
-                const elChildInd = document.getElementById('subIndicator_' + conditions[i].childIndID + '_1');
-
-                if (childFormatIsEnabled && (elParentInd !== null ||
-                        selectedParentOptionsLI !== null)) {
-
-                    if (comparison !== true) { //no need to re-assess if it has already become true
-                        let val = multiChoiceFormats.includes(parentFormat) ?
-                            arrParVals :
-                            [
-                                (elParentInd?.textContent || '').trim()
-                            ];
-                        val = val.filter(v => v !== '');
-
-                        let compVal = $('<div/>').html(conditions[i].selectedParentValue).text().trim().split('\n');
-                        compVal = compVal.map(v => v.trim());
-
-                        const op = conditions[i].selectedOp;
-                        switch (op) {
-                            case '==':
-                                comparison = valIncludesMultiselOption(val, compVal);
-                                break;
-                            case '!=':
-                                comparison = !valIncludesMultiselOption(val, compVal);
-                                break;
-                            case 'lt':
-                            case 'lte':
-                            case 'gt':
-                            case 'gte':
-                                const arrNumVals = val
-                                    .filter(v => !isNaN(v))
-                                    .map(v => +v);
-                                const arrNumComp = compVal
-                                    .filter(v => !isNaN(v))
-                                    .map(v => +v);
-                                const orEq = op.includes('e');
-                                const gtr = op.includes('g');
-                                if(arrNumComp.length > 0) {
-                                    for (let i = 0; i < arrNumVals.length; i++) {
-                                        const currVal = arrNumVals[i];
-                                        if(gtr === true) {
-                                            //unlikely to be set up with more than one comp val, but checking just in case
-                                            comparison = orEq === true ? currVal >= Math.max(...arrNumComp) : currVal > Math.max(...arrNumComp);
-                                        } else {
-                                            comparison = orEq === true ? currVal <= Math.min(...arrNumComp) : currVal < Math.min(...arrNumComp);
-                                        }
-                                        if(comparison === true) {
-                                            break;
-                                        }
-                                    }
-                                }
-                                break;
-                            default:
-                                console.log(conditions[i].selectedOp);
-                                break;
-                        }
-                    }
-
-                    switch (outcome) {
-                        case 'hide':
-                            if (elChildInd !== null) {
-                                elChildInd.style.display = comparison === true ? 'none' : 'block';
-                            }
-                            break;
-                        case 'show':
-                            if (elChildInd !== null) {
-                                elChildInd.style.display = comparison === true ? 'block' : 'none';
-                            }
-                            break;
-                        default:
-                            console.log(conditions[i].selectedOutcome);
-                            break;
-                    }
-                }
-            }
-        }
-    }
-
-    function openContent(url) {
-        $("#formcontent").html(
-            '<div style="border: 2px solid black; text-align: center; font-size: 24px; font-weight: bold; background: white; padding: 16px; width: 95%">Loading... <img src="images/largespinner.gif" alt="" /></div>'
-        );
-        $.ajax({
-            type: 'GET',
-            url: url,
-            dataType: 'text', // IE9 issue
-            success: function(res) {
-                $('#formcontent').empty().html(res);
-                // make box size more predictable
-                $('.printmainblock').each(function() {
-                    let boxSizer = {};
-                    $(this).find('.printsubheading').each(function() {
-                        layer = $(this).position().top;
-                        if (boxSizer[layer] == undefined) {
-                            boxSizer[layer] = $(this).height();
-                        }
-                        if ($(this).height() > boxSizer[layer]) {
-                            boxSizer[layer] = $(this).height();
-                        }
-                    });
-                    $(this).find('.printsubheading').each(function() {
-                        layer = $(this).position().top;
-                        if (boxSizer[layer] != undefined) {
-                            $(this).height(boxSizer[layer]);
-                        }
-                    });
-                });
-                handlePrintConditionalIndicators(formPrintConditions);
-            },
-            error: function(res) {
-                $('#formcontent').empty().html(res);
-            },
-            cache: false,
-        });
-    }
-
-    function openContentForPrint(){
-        $('#formcontent').empty().html('');
-        $.ajax({
-            type: 'GET',
-            url: 'ajaxIndex.php?a=printview&recordID=<!--{$recordID|strip_tags}-->',
-            dataType: 'text', // IE9 issue
-            success: function(res) {
-                $('#formcontent').append(res);
-                // make box size more predictable
-                $('.printmainblock').each(function() {
-                    let boxSizer = {};
-                    $(this).find('.printsubheading').each(function() {
-                        layer = $(this).position().top;
-                        if (boxSizer[layer] == undefined) {
-                            boxSizer[layer] = $(this).height();
-                        }
-                        if ($(this).height() > boxSizer[layer]) {
-                            boxSizer[layer] = $(this).height();
-                        }
-                    });
-                    $(this).find('.printsubheading').each(function() {
-                        layer = $(this).position().top;
-                        if (boxSizer[layer] != undefined) {
-                            $(this).height(boxSizer[layer]);
-                        }
-                    });
-                });
-                handlePrintConditionalIndicators(formPrintConditions);
-            },
-            error: function(res) {
-                $('#formcontent').empty().html(res);
-            },
-            cache: false,
-            async: false,
-        });
-      
-        <!--{section name=i loop=$childforms}-->
-            $.ajax({
-                type: 'GET',
-                url: 'ajaxIndex.php?a=internalonlyview&recordID=<!--{$recordID|strip_tags}-->&childCategoryID=<!--{$childforms[i].childCategoryID|strip_tags}-->',
-                dataType: 'text', // IE9 issue
-                success: function(res) {
-                    $('#formcontent').append(res);
-                    // make box size more predictable
-                    $('.printmainblock').each(function() {
-                        let boxSizer = {};
-                        $(this).find('.printsubheading').each(function() {
-                            layer = $(this).position().top;
-                            if (boxSizer[layer] == undefined) {
-                                boxSizer[layer] = $(this).height();
-                            }
-                            if ($(this).height() > boxSizer[layer]) {
-                                boxSizer[layer] = $(this).height();
-                            }
-                        });
-                        $(this).find('.printsubheading').each(function() {
-                            layer = $(this).position().top;
-                            if (boxSizer[layer] != undefined) {
-                                $(this).height(boxSizer[layer]);
-                            }
-                        });
-                    });
-                    handlePrintConditionalIndicators(formPrintConditions);
-                },
-                error: function(res) {
-                    //$('#formcontent').empty().html(res);
-                },
-                cache: false,
-                async: false,
-            });
-        <!--{/section}-->
-
-    }
-
-    function viewAccessLogsRead() {
-        // presents logs as bullet points in a message window
-        let viewAccessLogsRead = '<!--{foreach from=$accessLogs["read"] item=log}--> <li><!--{$log}--></li> <!--{/foreach}-->';
-        dialog_message.setTitle('Security Permissions');
-        dialog_message.setContent(viewAccessLogsRead);
-        dialog_message.show();
-        dialog_message.indicateIdle();
-        $('div[role="dialog"]').css('height', '20%');
-    }
-
-    function viewAccessLogsWrite() {
-        // presents logs as bullet points in a message window
-        let viewAccessLogsWrite = '<!--{foreach from=$accessLogs["write"] item=log}--> <li><!--{$log}--></li> <!--{/foreach}-->';
-        dialog_message.setTitle('Access Logs');
-        dialog_message.setContent(viewAccessLogsWrite);
-        dialog_message.show();
-        dialog_message.indicateIdle();
-        $('div[role="dialog"]').css('height', '20%');
-    }
-
-    function viewHistory() {
-        dialog_message.setContent('');
-        dialog_message.show();
-        dialog_message.indicateBusy();
-        $.ajax({
-            type: 'GET',
-            url: 'ajaxIndex.php?a=getstatus&recordID=<!--{$recordID|strip_tags}-->',
-            dataType: 'text',
-            success: function(res) {
-                dialog_message.setContent(res);
-                dialog_message.indicateIdle();
-            },
-            error: function() { console.log('There was an error collecting the history!'); },
-            cache: false
-        });
-    }
-
-    function cancelRequest() {
-        dialog_confirm.setContent(
-            `<div style="margin-left:-0.75rem;">
-                <div style="display:flex;align-items:center;gap:0.75rem;">
-                    <img src="dynicons/?img=process-stop.svg&amp;w=48" alt="">
-                    Are you sure you want to cancel this request?
-                </div>
-                <br>
-                <label for="cancel_comment" style="font-size:14px;">Comments:</label><br>
-                <textarea id="cancel_comment" cols=30 rows=3 placeholder="Enter Comment"
-                    style="width:100%;resize: vertical;"></textarea>
-            </div>`
-        );
-
-        dialog_confirm.setSaveHandler(function() {
-            let comment = $('#cancel_comment').val();
-
-            $.ajax({
-                type: 'POST',
-                url: 'api/form/<!--{$recordID|strip_tags|escape}-->/cancel',
-                data: {CSRFToken: '<!--{$CSRFToken}-->',
-                    comment: comment},
-                success: function(response) {
-                    if (response == 1) {
-                        window.location.href="index.php?a=cancelled_request&cancelled=<!--{$recordID|strip_tags}-->";
-                    } else {
-                        alert(response);
-                    }
-                },
-                error: function() { console.log('There was an error canceling the request!'); },
-                cache: false
-            });
-        });
-        dialog_confirm.show();
-        $('#cancel_comment').focus();
-    }
-
-    function changeTitle() {
-        dialog.setContent('<label for="title">Title:</label><br><input type="text" id="title" style="width: 300px" name="title" value="<!--{$title|escape:'quotes'}-->" /><input type="hidden" id="CSRFToken" name="CSRFToken" value="<!--{$CSRFToken}-->" />');
-
-        dialog.show();
-        dialog.setSaveHandler(function() {
-            $.ajax({
-                type: 'POST',
-                url: 'api/form/<!--{$recordID|strip_tags}-->/title',
-                data: {title: $('#title').val(),
-                CSRFToken: '<!--{$CSRFToken}-->'},
-                success: function(res) {
-                    if (res != null) {
-                        $('#requestTitle').empty().html(res);
-                    }
-                    dialog.hide();
-                },
-                error: function() { console.log('There was an error changing the title!'); }
-            });
-        });
-    }
-
-    /**
- *
-* @param {object} indicators
-    * @returns {array}
-    */
-
-    function getChildrenIndicatorIDs(indicators) {
-        let children = [];
-
-        if (indicators !== null && typeof indicators === 'object') {
-            Object.values(indicators).forEach(function(indicator) {
-
-                // make sure indicatorID exists
-                if (indicator.indicatorID !== undefined) {
-                    children.push(indicator.indicatorID);
-                }
-
-                // make sure child exists
-                if (indicator.child !== undefined) {
-                    let subchildren = getChildrenIndicatorIDs(indicator.child);
-                    children = children.concat(subchildren);
-                }
-            });
-        }
-
-        return children;
-    }
-
-    /**
-     * popup for duplicating the current form
-     * will allow an end user to choose which sections they would like to copy over
-     */
-    function copyRequest() {
-        $('body').on('click', '.pickAndChooseAll', function(event) {
-            $(".pickAndChoose").prop("checked", event.target.checked);
-        }).on('click', '.pickAndChoose', function() {
-            if ($(".pickAndChoose").length === $(".pickAndChoose:checked").length) {
-                $(".pickAndChooseAll").prop("checked", true);
-            } else {
-                $(".pickAndChooseAll").prop("checked", false);
-            }
-        });
-
-        dialog.setTitle('Copy Request <!--{$title|escape:'quotes'}-->');
-        dialog.show();
-
-        dialog.indicateBusy();
-        // options for the service dropdown
-        let serviceOptions = '';
-        // how is this supposed to work? Old functionality that is no longer used?
-        let series = 1;
-        // allow the end user to choose what should be copied.
-        let pickAndChoose = [];
-        // give it all, make it a bit easier
-        let pickAndChooseOptions =
-            '<label class="checkable leaf_check" style="float: none"> <input class="ischecked leaf_check pickAndChooseAll" checked="checked" type="checkbox"> <span class="leaf_check"> </span>All</label>';
-
-        let createData = {
-            CSRFToken: '<!--{$CSRFToken}-->'
-        };
-        //get information needed for the modal.
-        const requestInformation = [
-            // get our service list
-            $.ajax({
-                type: 'GET',
-                url: 'api/service',
-                CSRFToken: '<!--{$CSRFToken}-->',
-                success: function(res) {
-                    Object.values(res).forEach(function(resultValue) {
-                        let selected = (parseInt(resultValue.serviceID) === parseInt(serviceID)) ?
-                            'selected="selected"' : '';
-                        serviceOptions += '<option value="' + resultValue.serviceID + '" ' + selected +
-                            '>' + resultValue.service + '</option>';
-                    });
-                },
-                error: function() { console.log('Failed to gather services for dropdown!'); }
-            }),
-
-            //need the "categories" and attach them to the createData.
-            $.ajax({
-                type: 'GET',
-                url: 'api/form/<!--{$recordID|strip_tags}-->/recordinfo',
-                CSRFToken: '<!--{$CSRFToken}-->',
-                success: function(res) {
-                    // categories attached to the createData, need this to create a new form
-                    const categories = Object.values(res.categories);
-                    categories.forEach(c => createData['num' + c] = 'num' + c);
-                },
-                error: function() {
-                    console.log('Failed to gather categories before creating new form');
-                }
-            }),
-
-            $.ajax({
-                type: 'GET',
-                url: 'api/form/<!--{$recordID|strip_tags}-->/data/tree',
-                CSRFToken: '<!--{$CSRFToken}-->',
-                success: function(res) {
-                    Object.values(res).forEach(function(resultValue) {
-                        let children = getChildrenIndicatorIDs(resultValue.child);
-                        pickAndChoose.push({
-                            'name': resultValue.name,
-                            // need to include the parent here as well.
-                            'children': children.concat(resultValue.indicatorID)
-                        });
-                    });
-                },
-                error: function() { console.log('Failed to gather data to copy as well as make dropdowns'); }
-            }),
-        ];
-
-        Promise.all(requestInformation).then(res => {
-            if (pickAndChoose.length > 0) {
-                pickAndChoose.forEach(function(option) {
-                    let doc = new DOMParser().parseFromString(option.name, 'text/html');
-                    let finalName = doc.body.textContent || "";
-                    finalName = XSSHelpers.stripAllTags(finalName);
-
-                    pickAndChooseOptions +=
-                        '<label class="checkable leaf_check" style="float: none"> <input checked="checked" class="ischecked leaf_check pickAndChoose" name="pickAndChoose[]" type="checkbox" value="' +
-                        JSON.stringify(option.children) + '"> <span class="leaf_check"> </span>' + finalName +
-                        '</label>';
-                });
-            }
-
-            dialog.setContent('' +
-                '<div id="copy_request_error" style="display:none;margin:0.5rem 0;padding:0.5rem;background-color:#ffc;line-height:1.5"></div>' +
-                '<label for="title">Title:</label><br />'
-                + '<input id="title" name="title" type="text" value="<!--{$title|escape:'quotes'}-->" style="width:200px;"/><br /><br />'
-                +
-                '<div id="serviceWrapper"><label for="service">Service:</label><br />' +
-                '<select class="chosen" id="service" name="service">' + serviceOptions + '</select><br /><br /></div>' +
-                '<label for="priority">Priority:</label><br />' +
-                '<select class="chosen" id="priority" name="priority"><option value="-10">EMERGENCY</option><option value="0" selected="selected">Normal</option></select><br /><br />' +
-                '<fieldset><legend>Sections to Copy:</legend>' +
-                pickAndChooseOptions +
-                '</fieldset><br /><br />'
-            );
-
-            dialog.indicateIdle();
-
-            // hide service options if they are not available to choose from.
-            if (!(serviceOptions.length > 0)) {
-                $('#serviceWrapper').hide();
-            }
-            $('.chosen').chosen({ disable_search_threshold: 6 });
-            dialog.setSaveHandler(function() {
-
-                // we will add on the categories in the first ajax call, this takes in what data the end user updates
-                createData = {
-                    ...createData,
-                    title: $('#title').val(),
-                    service: $('#service').val(),
-                    priority: $('#priority').val(),
-                };
-                let updateData = {
-                    series: series,
-                    CSRFToken: '<!--{$CSRFToken}-->'
-                };
-
-                let chosenSections = [];
-                let pickAndChooseValues = $("input[name='pickAndChoose[]']:checked")
-                    .map(function(el) {
-                        return chosenSections.concat(JSON.parse($(this).val()));
-                    }).get();
-
-                // create the new record, we will update the existing data once we get a complete.
-                $.ajax({
-                    type: 'POST',
-                    url: './api/form/new',
-                    data: createData,
-                    success: function(res) {
-                        let newRecordID = +res;
-                        if (newRecordID > 0) {
-                            //If the request was created, res is new request ID. Continue on with getting information to copy over.
-                            if (pickAndChooseValues.length > 0) {
-                                let fileData = [];
-                                $.ajax({
-                                    type: 'GET',
-                                    url: 'api/form/<!--{$recordID|strip_tags}-->/data',
-                                    CSRFToken: '<!--{$CSRFToken}-->',
-                                    async: false, // I am not going to nest these to make things easier to follow.
-                                    success: function(res) {
-                                        Object.values(res).forEach(function(resultValue) {
-
-                                            if (pickAndChooseValues.includes(resultValue[series].indicatorID)) {
-
-                                                // uploaded files will need to have a special case done to them to copy them over to the new record
-                                                if ((resultValue[series].format == 'fileupload' ||
-                                                        resultValue[series].format == 'image') &&
-                                                    Array.isArray(resultValue[series].value)) {
-                                                    resultValue[series].value.forEach(function(
-                                                        currentFile) {
-                                                        let fileDat = {
-                                                            fileName: currentFile,
-                                                            series: series,
-                                                            indicatorID: resultValue[series]
-                                                                .indicatorID
-                                                        }
-                                                        fileData.push(fileDat);
-                                                    });
-                                                    // also need to pull this out of an array since it would then move this to an object which breaks everything.
-                                                    updateData[resultValue[series].indicatorID] =
-                                                        resultValue[series].value.join('\r\n');
-                                                } else {
-                                                    updateData[resultValue[series].indicatorID] =
-                                                        resultValue[series].value;
-                                                }
-
-                                            }
-
-                                        });
-                                    },
-                                    error: function() {
-                                        console.log('Failed to gather data to copy as well as make dropdowns');
-                                    }
-                                });
-
-                                $.ajax({
-                                    type: 'POST',
-                                    url: './api/form/' + newRecordID,
-                                    data: updateData,
-                                    async: false, // I am not going to nest these to make things easier to follow.
-                                    success: function() {
-                                        console.log('Questions copied over to new record.');
-                                    },
-                                    error: function() {
-                                        console.log('Failed to copy data to new form!')
-                                    }
-                                });
-
-                                // copy over files
-                                if (fileData.length > 0) {
-                                    fileData.forEach(function(theFile) {
-                                        $.ajax({
-                                            type: 'POST',
-                                            url: './api/form/files/copy',
-                                            data: {
-                                                CSRFToken: '<!--{$CSRFToken}-->',
-                                                recordID: <!--{$recordID|strip_tags}-->,
-                                                newRecordID: newRecordID,
-                                                indicatorID: theFile.indicatorID,
-                                                fileName: theFile.fileName,
-                                                series: theFile.series
-                                            },
-                                            async: false, // I am not going to nest these to make things easier to follow.
-                                            success: function() {
-                                                console.log(
-                                                    'Files copied over to new record.'
-                                                );
-                                            },
-                                            error: function() {
-                                                console.log(
-                                                    'Failed to copy data to new form!'
-                                                )
-                                            }
-                                        });
-                                    });
-                                }
-                            }
-
-                            // then redirect, not sure how to really structure this since we do have a bit of if checking here.
-                            window.location = "index.php?a=view&recordID=" + newRecordID;
-                            dialog.hide();
-
-                        } else {
-                            //could not create new form.  Either an error or form is set to unpublished.
-                            let elError = document.getElementById('copy_request_error');
-                            if(elError !== null) {
-                                elError.style.display = 'block';
-                                elError.innerHTML = '<b>Request could not be copied:</b><br>' + res;
-                            }
-                        }
-                    },
-                    error: function() { console.log('Failed to create new form!'); }
-                });
-
-            });
-
-        }).catch(err => console.log('an error has occurred', err));
-    }
-
-    function changeService() {
-        dialog.setTitle('Change Service');
-        dialog.setContent('<label id="newService_label" for="newService">Select new service: </label><br><div id="changeService"></div>');
-        dialog.show();
-        dialog.indicateBusy();
-        dialog.setSaveHandler(function() {
-            alert('Please wait for service list to load.');
-        });
-        $.ajax({
-            type: 'GET',
-            url: './api/system/services',
-            dataType: 'json',
-            success: function(res) {
-                let services = '<select id="newService" class="chosen" style="width: 250px">';
-                for (let i in res) {
-                    services += '<option value="' + res[i].groupID + '">' + res[i].groupTitle + '</option>';
-                }
-                services += '</select>';
-                $('#changeService').html(services);
-                $('.chosen').chosen({ disable_search_threshold: 6 });
-                $(`#newService_chosen input.chosen-search-input`).attr('role', 'combobox');
-                $(`#newService_chosen input.chosen-search-input`).attr('aria-labelledby', 'newService_label');
-                dialog.indicateIdle();
-                dialog.setSaveHandler(function() {
-                    $.ajax({
-                        type: 'POST',
-                        url: 'api/form/<!--{$recordID|strip_tags}-->/service',
-                        data: {
-                            serviceID: $('#newService').val(),
-                            CSRFToken: CSRFToken
-                        },
-                        success: function() {
-                            window.location.href="index.php?a=printview&recordID=<!--{$recordID|strip_tags}-->";
-                        },
-                        error: function() { console.log('Failed to gather services!'); }
-                    });
-                    dialog.hide();
-                });
-            },
-            error: function() { console.log('There was an error changing the service!'); },
-            cache: false
-        });
-    }
-
-    <!--{if $is_admin}-->
-        var currentRecordID = <!--{$recordID|strip_tags}-->;
-
-        async function admin_changeStep() {
-            dialog.setTitle('Change Step');
-            dialog.setContent('<label id="newStep_label" for="newStep">Set to this step:</label> <br />' +
-                '<div id="changeStep"></div><br /><br />' +
-                'Comments:<br />' +
-                '<textarea id="changeStep_comment" type="text" style="width: 90%; padding: 4px" aria-label="Comments"></textarea>' +
-                '<br /><br />' +
-                '<fieldset>' +
-                '<legend>Advanced Options</legend>' +
-                '<input id="showAllSteps" type="checkbox" />' +
-                '<label for="showAllSteps">Show steps from other workflows</label>' +
-                '</fieldset>');
-            dialog.show();
-            dialog.indicateBusy();
-
-            // Check the current step
-            let currentStepData = await $.ajax({
-                type: 'GET',
-                url: `api/formWorkflow/${currentRecordID}/currentStep`,
-                dataType: 'json',
-                error: function() {
-                    console.log('There was an error getting the current step!');
-                },
-                cache: false
-            });
-
-            // determine active workflows
-            let workflows = {};
-            for (let i in currentStepData) {
-                workflows[currentStepData[i].workflowID] = 1;
-            }
-
-            // If no workflows, estimate workflow by only checking the previous action
-            if(Object.keys(workflows).length == 0) {
-                let lastAction = await $.ajax({
-                    type: 'GET',
-                    url: `api/formWorkflow/${currentRecordID}/lastAction`,
-                    dataType: 'json',
-                    error: function() {
-                        console.log('There was an error getting the last action!');
-                    },
-                    cache: false
-                });
-                if(lastAction != null) {
-                    workflows[lastAction.workflowID] = 1; // add workflow to the active workflow list
-                }
-            }
-
-            // Get list of all steps
-            $.ajax({
-                type: 'GET',
-                url: 'api/workflow/steps',
-                dataType: 'json',
-                success: function(res) {
-                    let steps = '<select id="newStep" class="chosen">';
-                    let steps2 = '';
-                    let stepCounter = 0;
-                    let allStepsData = res;
-
-                    for (let i in allStepsData) {
-                        let recordID = allStepsData[i].recordID;
-
-                        if (
-                            Object.keys(workflows).length == 0 ||
-                            workflows[allStepsData[i].workflowID] != undefined
-                        ) {
-                            // keep track of steps that match the current workflow
-                            steps += `<option value="${allStepsData[i].stepID}">${allStepsData[i].description}: ${allStepsData[i].stepTitle}</option>`;
-                            stepCounter++;
-                        }
-                        // keep track of all steps in a different buffer
-                        steps2 += `<option value="${allStepsData[i].stepID}">${allStepsData[i].description} - ${allStepsData[i].stepTitle}</option>`;
-                    }
-
-                    if (stepCounter == 0) {
-                        steps += steps2;
-                    }
-                    steps += '</select>';
-                    $('#changeStep').html(steps);
-
-                    // This displays all steps from all the workflows when clicked
-                    $('#showAllSteps').on('click', function() {
-                        let newstep = $('#newStep');
-                        if ($('#showAllSteps').is(':checked')) {
-                            newstep.html(steps2);
-                        } else {
-                            newstep.html(steps);
-                        }
-                        newstep.trigger('chosen:updated');
-                    });
-
-                    $('.chosen').chosen({
-                        width: '100%',
-                        disable_search_threshold: 6
-                    });
-                    $(`#newStep_chosen input.chosen-search-input`).attr('role', 'combobox');
-                    $(`#newStep_chosen input.chosen-search-input`).attr('aria-labelledby', 'newStep_label');
-                    dialog.indicateIdle();
-                    dialog.setSaveHandler(function() {
-                        $.ajax({
-                            type: 'POST',
-                            url: `api/formWorkflow/${currentRecordID}/step`,
-                            data: {
-                                stepID: $('#newStep').val(),
-                                comment: $('#changeStep_comment').val(),
-                                CSRFToken: CSRFToken
-                            },
-                            success: function() {
-                                window.location.href = `index.php?a=printview&recordID=${currentRecordID}`;
-                            },
-                            error: function() {
-                                console.log(
-                                    'There was an error saving the workflow step!'
-                                );
-                            }
-                        });
-                        dialog.hide();
-                    });
-                },
-                error: function() {
-                    console.log('There was an error getting workflow steps!');
-                },
-                cache: false
-            });
-        }
-
-
-        function admin_changeForm() {
-            dialog.setTitle('Change Form(s)');
-            dialog.setContent('Select Forms: <br /><div id="changeForm"></div>');
-            dialog.show();
-            dialog.indicateBusy();
-            dialog.setSaveHandler(function() {
-                alert('Please wait for service list to load.');
-            });
-            $.ajax({
-                type: 'GET',
-                url: './api/workflow/categoriesUnabridged',
-                dataType: 'json',
-                success: function(res) {
-                    let categories = '';
-                    let adminUnpublishedWarn = '';
-                    for (let i in res) {
-                        adminUnpublishedWarn = res[i].visible === -1 ? '<span style="color:#c00;">&nbsp;(This form is unpublished)</span>' : '';
-                        categories += '<label class="checkable leaf_check" for="category_' + res[i].categoryID +
-                            '">';
-
-                        categories +=
-                            '<input type="checkbox" class="icheck admin_changeForm leaf_check" id="category_' +
-                            res[i].categoryID + '" name="categories[]" value="' + res[i].categoryID + '" />';
-                        categories += '<span class="leaf_check"></span>' + res[i].categoryName + adminUnpublishedWarn + '</label>';
-                    }
-                    $('#changeForm').html(categories);
-                    dialog.indicateIdle();
-                    dialog.setSaveHandler(function() {
-                        let data = {
-                            'categories[]': [],
-                            CSRFToken: CSRFToken
-                        };
-                        $('.admin_changeForm:checked').each(function() {
-                            data['categories[]'].push($(this).val());
-                        });
-
-                        $.ajax({
-                            type: 'POST',
-                            url: 'api/form/<!--{$recordID|strip_tags}-->/types',
-                            data: data,
-                            success: function() {
-                                window.location.href="index.php?a=printview&recordID=<!--{$recordID|strip_tags}-->";
-                            }
-                        });
-                        dialog.hide();
-                    });
-
-                    // find current forms
-                    let query = {terms: [{id: 'recordID', operator: '=', match: '<!--{$recordID|strip_tags}-->'}],joins: ['categoryNameUnabridged']};
-                    $.ajax({
-                        type: 'GET',
-                        url: './api/form/query',
-                        data: {
-                            q: JSON.stringify(query)
-                        },
-                        dataType: 'json',
-                        success: function(res) {
-                            let arrCatIDs = res[<!--{$recordID|strip_tags|escape}-->].categoryIDsUnabridged;
-                            $('label.checkable input').each(function(idx, input) {
-                                const formIsSelected = arrCatIDs.some(id => id === input.value);
-                                $('#' + input?.id).prop('checked', formIsSelected);
-                            });
-                        },
-                        error: function() {
-                            console.log(
-                                'There was an error getting the form via query!');
-                        },
-                        cache: false
-                    });
-                },
-                error: function() { console.log('There was an error getting the categories!'); },
-                cache: false
-            });
-        }
-
-        function admin_changeInitiator() {
-            dialog.setTitle('Change Initiator');
-            dialog.setContent(
-                'Select employee to be set as this request\'s initiator: <br /><div id="empSel_changeInitiator"></div><input type="hidden" id="changeInitiator" />'
-            );
-            dialog.show();
-            dialog.indicateBusy();
-
-            dialog.setSaveHandler(function() {
-                let changeInitiator = $('#changeInitiator');
-                if (changeInitiator.val() != '') {
-                    $.ajax({
-                        type: 'POST',
-                        url: './api/form/<!--{$recordID|strip_tags}-->/initiator',
-                        data: {
-                            CSRFToken: CSRFToken,
-                            initiator: changeInitiator.val()
-                        },
-
-                        success: function() {
-                            location.reload();
-                        },
-                        error: function() { console.log('There was an error saving the initiator!'); }
-                    });
-                } else {
-                    alert('An employee needs to be selected');
-                }
-            });
-
-            let empSel;
-
-            function init_empSel() {
-                empSel = new employeeSelector('empSel_changeInitiator');
-                empSel.apiPath = '<!--{$orgchartPath}-->/api/';
-                empSel.rootPath = '<!--{$orgchartPath}-->/';
-
-                empSel.setSelectHandler(function() {
-                    if (empSel.selectionData[empSel.selection] != undefined) {
-                        $('#changeInitiator').val(empSel.selectionData[empSel.selection].userName);
-                    }
-                });
-                empSel.setResultHandler(function() {
-                    if (empSel.selectionData[empSel.selection] != undefined) {
-                        $('#changeInitiator').val(empSel.selectionData[empSel.selection].userName);
-                    }
-                });
-                empSel.initialize();
-                dialog.indicateIdle();
-            }
-
-            if (typeof employeeSelector == 'undefined') {
-                $('head').append('<link type="text/css" rel="stylesheet" href="<!--{$orgchartPath}-->/css/employeeSelector.css" />');
-                $.ajax({
-                    type: 'GET',
-                    url: "<!--{$orgchartPath}-->/js/employeeSelector.js",
-                    dataType: 'script',
-                    success: function() {
-                        init_empSel();
-                    },
-                    error: function() { console.log('There was an error getting the employee selector!'); }
-                });
-            } else {
-                init_empSel();
-            }
-
-        }
-    <!--{/if}-->
-
-    function scrollPage(id) {
-        if ($(document).height() < $('#' + id).offset().top + 100) {
-            $('html, body').animate({scrollTop: $('#'+id).offset().top}, 500);
-        }
-    }
-
-    // Layout is handled by CSS flexbox (.pv-layout-row) — no JS sideBar needed
-
-    this.portalAPI = LEAFRequestPortalAPI();
-    this.portalAPI.setBaseURL('api/?a=');
-    this.portalAPI.setCSRFToken('<!--{$CSRFToken}-->');
-
-function transferToPMDashboard() {
-    var params = new URLSearchParams(window.location.search || "");
-    var id = params.get("recordID");
-    if (!id) return;
-    window.location.href =
-        "https://leaf.va.gov/platform/projects/?tab=tasks&transferFromIdea=" +
-        encodeURIComponent(id);
+  });
 }
 
-    $(function() {
-        $('#progressBar').progressbar({max: 100});
+/* ─────────────────────────────────────────────────────────────
+   Row builder
+───────────────────────────────────────────────────────────── */
 
-        form = new LeafForm('formContainer');
-        print = new printer();
+function getStatusBadgeClass(status) {
+  const map = {
+    "New Submission": "ip-badge--new",
+    "Under Review": "ip-badge--review",
+    "In Progress": "ip-badge--progress",
+    Completed: "ip-badge--done",
+    Discarded: "ip-badge--discarded",
+    Draft: "ip-badge--draft",
+  };
+  return map[status] || "";
+}
 
-        $('#btn_printForm').on('click', function() {
-            openContentForPrint();
-            print.printForm(recordID);
-        });
-        form.setRecordID(<!--{$recordID|strip_tags|escape}-->);
+function buildIdeaRow(idea) {
+  if (!idea?.recordID) return "";
+  const recordID = String(idea.recordID);
+  const titleRaw = idea.title || "";
+  const title = escapeHtml(titleRaw);
+  const titleDisplay = escapeHtml(truncateTitle(titleRaw));
+  const category = escapeHtml(idea.category || "");
 
-        workflow = new LeafWorkflow('workflowcontent', '<!--{$CSRFToken}-->');
-        <!--{if $submitted > 0}-->
-            workflow.getWorkflow(<!--{$recordID|strip_tags|escape}-->);
-        <!--{/if}-->
+  // Show "Draft" when status is empty (not-submitted records)
+  const statusLabel = idea.status || "Draft";
+  const statusBadgeClass = getStatusBadgeClass(statusLabel);
+  const statusMarkup = `<span class="ip-badge ${statusBadgeClass}">${statusLabel}</span>`;
 
-        /* General popup window */
-        dialog = new dialogController('xhrDialog', 'xhr', 'loadIndicator', 'button_save',
-            'button_cancelchange');
-        dialog_message = new dialogController('genericDialog', 'genericDialogxhr', 'genericDialogloadIndicator',
-            'genericDialogbutton_save', 'genericDialogbutton_cancelchange');
-        dialog_ok = new dialogController('ok_xhrDialog', 'ok_xhr', 'ok_loadIndicator', 'confirm_button_ok',
-            'confirm_button_cancelchange');
-        dialog_confirm = new dialogController('confirm_xhrDialog', 'confirm_xhr', 'confirm_loadIndicator',
-            'confirm_button_save', 'confirm_button_cancelchange');
+  const votes = idea.votes || 0;
+  const isVoted = idea.isVoted === true;
+  const recordLink = idea.recordLink || `${RECORD_VIEW_URL}${recordID}`;
+  const labelTitle = title || `Idea ${recordID}`;
+  const voteLabel = isVoted
+    ? `Already voted for ${labelTitle}`
+    : `Vote for ${labelTitle}`;
 
-        <!--{if $empMembership['groupID'][226]}-->
-        <!--{if $childCategoryID == ''}-->
-            openContent('ajaxIndex.php?a=printview&recordID=<!--{$recordID|strip_tags}-->');
-        <!--{else}-->
-            openContent('ajaxIndex.php?a=internalonlyview&recordID=<!--{$recordID|strip_tags}-->&childCategoryID=<!--{$childCategoryID|strip_tags}-->');
-        <!--{/if}-->
-        <!--{/if}-->
+  return `
+    <tr data-record-id="${recordID}">
+      <td>
+        <a class="ip-recordLink"
+           data-title="${title}"
+           aria-haspopup="dialog"
+           href="${escapeHtml(recordLink)}">#${recordID}</a>
+      </td>
+      <td title="${title}">${titleDisplay}</td>
+      <td>${category}</td>
+      <td>${statusMarkup}</td>
+      <td class="ip-votes">${votes}</td>
+      <td class="ip-actionsCell">
+        <button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}"
+          data-record-id="${recordID}"
+          ${isVoted ? "disabled" : ""}
+          aria-label="${voteLabel}"
+          aria-disabled="${isVoted}"
+          title="${isVoted ? "Already voted" : "Vote for this idea"}">
+          <span class="material-symbols-outlined" style="font-variation-settings:${ICON_FILL}" aria-hidden="true">thumb_up</span>
+        </button>
+        <button class="ip-btn ip-btn--ghost ip-share"
+          data-record-link="${escapeHtml(recordLink)}"
+          aria-label="Copy link for ${labelTitle}"
+          title="Copy shareable link">
+          <span class="material-symbols-outlined" style="font-variation-settings:${ICON_FILL}" aria-hidden="true">share</span>
+          Share
+        </button>
+      </td>
+    </tr>`;
+}
 
-        <!--{if $submitted == 0}-->
-            updateProgress();
-        <!--{/if}-->
+/* ─────────────────────────────────────────────────────────────
+   Filter
+───────────────────────────────────────────────────────────── */
 
-        //scroll event for dialog menu
-        let elParentForm = document.querySelector('[id^="LeafForm"][id$="_record"]');
-        let elFormMenu = document.getElementById('form-xhr-cancel-save-menu');
-        window.addEventListener('scroll', function() {
-            if (elParentForm && elFormMenu) {
-                let parent_Y = elParentForm.getBoundingClientRect().y;
-                elFormMenu.style.top = parent_Y > 0 ? 0 : (-1 * parent_Y) + "px";
-            }
-        });
+function getIdeaSearchText(idea) {
+  return [
+    idea.recordID ? String(idea.recordID) : "",
+    idea.title || "",
+    idea.category || "",
+    normalizeStatusLabel(idea.status || ""),
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+function filterIdeasList(list, query) {
+  let filtered = list;
+  if (state.categoryFilter && state.categoryFilter !== "all") {
+    filtered = filtered.filter(
+      (i) => (i.category || "").trim() === state.categoryFilter,
+    );
+  }
+  if (query) {
+    const q = query.toLowerCase();
+    filtered = filtered.filter((i) => getIdeaSearchText(i).includes(q));
+  }
+  return filtered;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Pagination
+───────────────────────────────────────────────────────────── */
+
+function paginateList(list, page, pageSize, showAll) {
+  if (showAll) return { pageItems: list, pageCount: 1, page: 1 };
+  const pageCount = Math.max(1, Math.ceil(list.length / pageSize));
+  const safePage = Math.min(Math.max(1, page), pageCount);
+  const start = (safePage - 1) * pageSize;
+  return {
+    pageItems: list.slice(start, start + pageSize),
+    pageCount,
+    page: safePage,
+  };
+}
+
+function renderRows(tbody, rowsHtml, emptyMessage) {
+  if (!tbody) return;
+  tbody.innerHTML = rowsHtml || `<tr><td colspan="6">${emptyMessage}</td></tr>`;
+}
+
+function renderTableMessage(tbody, message, opts = {}) {
+  if (!tbody) return;
+  const btn = opts.retry
+    ? ` <button type="button" class="ip-btn ip-btn--ghost ip-retry">Retry</button>`
+    : "";
+  tbody.innerHTML = `<tr><td colspan="6">${escapeHtml(message || "")}${btn}</td></tr>`;
+}
+
+function updatePaginationUI(
+  scope,
+  totalCount,
+  pageCount,
+  page,
+  showAll,
+  allowToggle,
+) {
+  const container = ui.pagination[scope];
+  if (!container) return;
+  if (totalCount < PAGE_SIZE) {
+    container.hidden = true;
+    return;
+  }
+  container.hidden = false;
+
+  const prevBtn = container.querySelector('[data-page-action="prev"]');
+  const nextBtn = container.querySelector('[data-page-action="next"]');
+  const toggleBtn = container.querySelector('[data-page-action="toggle"]');
+
+  if (prevBtn) prevBtn.disabled = showAll || page <= 1;
+  if (nextBtn) nextBtn.disabled = showAll || page >= pageCount;
+  if (ui.pageInfo[scope])
+    ui.pageInfo[scope].textContent = `Page ${page} of ${pageCount}`;
+  if (toggleBtn) {
+    toggleBtn.hidden = !allowToggle;
+    toggleBtn.textContent = showAll ? "Show pages" : "Show all";
+    toggleBtn.setAttribute("aria-pressed", showAll ? "true" : "false");
+  }
+  if (ui.pageHint[scope]) {
+    ui.pageHint[scope].textContent = showAll
+      ? "Showing all results. Large lists may be slow."
+      : `Showing ${PAGE_SIZE} per page.`;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Render panels
+───────────────────────────────────────────────────────────── */
+
+function renderAllIdeas() {
+  const filtered = filterIdeasList(ideas, state.search);
+  const sorted = sortIdeasList(filtered, sortState.tblIdeas);
+  applySortClasses("tblIdeas");
+
+  const shouldPaginate = sorted.length >= PAGE_SIZE;
+  if (!shouldPaginate) {
+    state.pagination.all.showAll = true;
+    state.pagination.all.page = 1;
+  }
+  const showAll = shouldPaginate ? state.pagination.all.showAll : true;
+  const pagination = paginateList(
+    sorted,
+    state.pagination.all.page,
+    PAGE_SIZE,
+    showAll,
+  );
+  state.pagination.all.page = pagination.page;
+
+  renderRows(
+    ui.results,
+    pagination.pageItems.map(buildIdeaRow).join(""),
+    state.search ? "No matching ideas." : "No data found",
+  );
+  updatePaginationUI(
+    "all",
+    sorted.length,
+    pagination.pageCount,
+    pagination.page,
+    showAll,
+    shouldPaginate,
+  );
+}
+
+function renderMyIdeas() {
+  const sorted = sortIdeasList(myIdeasCache, sortState.tblMyIdeas);
+  applySortClasses("tblMyIdeas");
+
+  const shouldPaginate = sorted.length >= PAGE_SIZE;
+  if (!shouldPaginate) {
+    state.pagination.my.showAll = true;
+    state.pagination.my.page = 1;
+  }
+  const showAll = shouldPaginate ? state.pagination.my.showAll : true;
+  const pagination = paginateList(
+    sorted,
+    state.pagination.my.page,
+    PAGE_SIZE,
+    showAll,
+  );
+  state.pagination.my.page = pagination.page;
+
+  renderRows(
+    ui.myResults,
+    pagination.pageItems.map(buildIdeaRow).join(""),
+    "No ideas submitted",
+  );
+  updatePaginationUI(
+    "my",
+    sorted.length,
+    pagination.pageCount,
+    pagination.page,
+    showAll,
+    shouldPaginate,
+  );
+}
+
+function renderTop10Ideas() {
+  if (!ui.topResults) return;
+  let top10 = [...ideas]
+    .filter((i) => i?.recordID)
+    .sort((a, b) => (b.votes || 0) - (a.votes || 0))
+    .slice(0, 10);
+  if (sortState.tblTopIdeas.key)
+    top10 = sortIdeasList(top10, sortState.tblTopIdeas);
+  applySortClasses("tblTopIdeas");
+  renderRows(ui.topResults, top10.map(buildIdeaRow).join(""), "No data found");
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Vote state helpers
+───────────────────────────────────────────────────────────── */
+
+function setVoteButtonsDisabled(isDisabled) {
+  document.querySelectorAll(".ip-upvote").forEach((btn) => {
+    if (isDisabled) {
+      btn.dataset.loadingDisabled = "true";
+      btn.disabled = true;
+      btn.setAttribute("aria-disabled", "true");
+    } else if (btn.dataset.loadingDisabled === "true") {
+      const voted = btn.classList.contains("is-voted");
+      btn.disabled = voted;
+      btn.setAttribute("aria-disabled", voted ? "true" : "false");
+      delete btn.dataset.loadingDisabled;
+    }
+  });
+}
+
+function setVotedState(recordID, isVoted) {
+  document
+    .querySelectorAll(`.ip-upvote[data-record-id="${recordID}"]`)
+    .forEach((btn) => {
+      btn.disabled = isVoted;
+      btn.classList.toggle("is-voted", isVoted);
+      btn.setAttribute("aria-disabled", isVoted ? "true" : "false");
     });
-</script>
+}
+
+function updateVoteDom(recordID) {
+  const key = String(recordID);
+
+  [
+    ideasVMById[key],
+    myIdeasCache.find((i) => String(i.recordID) === key),
+  ].forEach((item) => {
+    if (!item) return;
+    item.votes = voteCounts[key] || 0;
+    item.isVoted = true;
+  });
+
+  document
+    .querySelectorAll(`tr[data-record-id="${key}"] .ip-votes`)
+    .forEach((cell) => {
+      cell.textContent = voteCounts[key] || 0;
+    });
+  setVotedState(key, true);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Voter email resolution — orgchart API → userID fallback
+───────────────────────────────────────────────────────────── */
+
+function isRealEmail(str) {
+  return typeof str === "string" && str.includes("@") && !str.includes("<!--");
+}
+
+async function resolveVoterEmail() {
+  if (!userID) return;
+  try {
+    const res = await fetch(
+      `/platform/orgchart/api/employee/search?q=userName:${encodeURIComponent(userID)}&noLimit=0&_=${Date.now()}`,
+      { credentials: "same-origin" },
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const employees = Array.isArray(data) ? data : Object.values(data || {});
+      const match = employees.find(
+        (e) => e && (e.userName === userID || e.userName === userID.split("\\").pop()),
+      );
+      const email = match?.Email || match?.email || "";
+      if (isRealEmail(email)) {
+        resolvedVoterEmail = email;
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn("[resolveVoterEmail] orgchart API failed:", err);
+  }
+  // Last resort — userID so votes still record something identifiable
+  resolvedVoterEmail = userID;
+  console.warn("[resolveVoterEmail] Could not resolve email; falling back to userID");
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Vote submit
+───────────────────────────────────────────────────────────── */
+
+async function IdeaVotes(recordID) {
+  const key = String(recordID);
+  if (votingInProgress) return;
+  if (userVotes[key]) {
+    showToast("You already voted on this idea.", true);
+    return;
+  }
+
+  votingInProgress = true;
+  userVotes[key] = true;
+  setVotedState(key, true);
+
+  const payload = {
+    service: "",
+    title: `Idea #${key}`,
+    priority: 0,
+    CSRFToken: csrfToken,
+    [`numform_${FORM_KEYS.votes}`]: 1,
+    [VOTE_FIELDS.user]: resolvedVoterEmail || userID,
+    [VOTE_FIELDS.idea]: key,
+  };
+
+  try {
+    const response = await apiPostJson("./api/?a=form/new", payload);
+    const newID = parseFloat(response);
+
+    if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
+      voteCounts[key] = (voteCounts[key] || 0) + 1;
+      updateVoteDom(key);
+      renderTop10Ideas();
+      if (sortState.tblIdeas.key === "votes") renderAllIdeas();
+      if (sortState.tblMyIdeas.key === "votes") renderMyIdeas();
+
+      try {
+        localStorage.setItem("leafIdeaVotes", JSON.stringify(userVotes));
+      } catch {}
+
+      const totalVotes = Object.values(voteCounts).reduce((s, n) => s + n, 0);
+      renderStatsStrip(ideas.length, implementedCount, totalVotes);
+      showToast("Thanks for voting!");
+      updateMyActivity(
+        myIdeasCache.length,
+        Object.values(userVotes).filter(Boolean).length,
+      );
+    } else {
+      throw new Error(`Unexpected response: ${response}`);
+    }
+  } catch (err) {
+    console.error("[IdeaVotes] error:", err);
+    showToast("Error processing vote. Please try again.", true);
+    userVotes[key] = false;
+    [
+      ideasVMById[key],
+      myIdeasCache.find((i) => String(i.recordID) === key),
+    ].forEach((item) => {
+      if (item) item.isVoted = false;
+    });
+    setVotedState(key, false);
+  } finally {
+    votingInProgress = false;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Data fetches — direct REST (LeafFormQuery's stepID handling
+   without a status join silently returns 0 on this site)
+───────────────────────────────────────────────────────────── */
+
+async function leafFetchQuery(queryObj, filterData) {
+  const q = JSON.stringify(queryObj);
+  const url = `./api/form/query/?q=${encodeURIComponent(q)}&x-filterData=${encodeURIComponent(filterData)}&_=${Date.now()}`;
+  const res = await fetch(url, {
+    method: "GET",
+    credentials: "same-origin",
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function fetchIdeasData() {
+  try {
+    const data = await leafFetchQuery(
+      {
+        terms: [
+          { id: "categoryID", operator: "=",  match: FORM_IDS.idea,      gate: "AND" },
+          { id: "deleted",    operator: "=",  match: 0,                  gate: "AND" },
+          { id: "stepID",     operator: "!=", match: "notSubmitted",      gate: "AND" },
+        ],
+        joins: [],
+        sort: { id: "created_date", direction: "desc" },
+        getData: IDEA_GETDATA,
+      },
+      IDEA_FILTER_DATA,
+    );
+    const result = Object.values(data || {});
+    return result;
+  } catch (err) {
+    throw err;
+  }
+}
+
+async function fetchVotesData() {
+  try {
+    const voteData = await leafFetchQuery(
+      {
+        terms: [
+          { id: "categoryID", operator: "=", match: FORM_IDS.votes, gate: "AND" },
+          { id: "deleted",    operator: "=", match: 0,              gate: "AND" },
+        ],
+        joins: [],
+        sort: {},
+        getData: VOTE_GETDATA,
+      },
+      VOTE_FILTER_DATA,
+    );
+
+    voteCounts = {};
+    userVotes = {};
+
+    const votesList = Object.values(voteData || {});
+    votesList.forEach((vote) => {
+      const ideanum = vote.s1?.[VOTE_INDICATORS.idea];
+      const voter = vote.s1?.[VOTE_INDICATORS.user];
+      if (ideanum !== undefined && ideanum !== null && ideanum !== "") {
+        const key = String(ideanum);
+        voteCounts[key] = (voteCounts[key] || 0) + 1;
+        // Match on resolvedVoterEmail first; fall back to userID for records
+        // stored before the email migration or when email didn't resolve.
+        const voterIdentity = resolvedVoterEmail || userID;
+        if (voter && voterIdentity && voter === voterIdentity) {
+          userVotes[key] = true;
+        }
+      }
+    });
+
+    // Merge locally-cached votes (optimistic from past sessions)
+    try {
+      const saved = JSON.parse(localStorage.getItem("leafIdeaVotes") || "{}");
+      Object.keys(saved).forEach((k) => {
+        if (saved[k]) userVotes[k] = true;
+      });
+    } catch {}
+    return votesList.length;
+  } catch (err) {
+    throw err;
+  }
+}
+
+async function fetchUserSubmissions() {
+  if (!userID) {
+    myIdeasCache = [];
+    setStatus("my", "Sign in to view your ideas.", "error");
+    renderMyIdeas();
+    return;
+  }
+
+  setPanelBusy("my", true);
+  setStatus("my", "Loading your ideas…", "loading");
+  renderTableMessage(ui.myResults, "Loading…");
+
+  try {
+    // No stepID filter — includes the user's own drafts intentionally.
+    // Filter out vote records (title starts with "Idea #") which share userID.
+    const data = await leafFetchQuery(
+      {
+        terms: [
+          { id: "categoryID", operator: "=", match: FORM_IDS.idea, gate: "AND" },
+          { id: "userID",     operator: "=", match: userID,        gate: "AND" },
+          { id: "deleted",    operator: "=", match: 0,             gate: "AND" },
+        ],
+        joins: [],
+        sort: { id: "created_date", direction: "desc" },
+        getData: IDEA_GETDATA,
+      },
+      IDEA_FILTER_DATA,
+    );
+
+    const userIdeas = Object.values(data || {})
+      .filter((idea) => idea?.recordID && !(idea.title || "").startsWith("Idea #"))
+      .map((idea) => {
+        const key = String(idea.recordID);
+        if (ideasById[key]) {
+          // Record exists in the public submitted query — use enriched data as-is
+          return ideasById[key];
+        }
+        // Not in the submitted set — it's a draft. Clear the status indicator so
+        // buildIdeaRow falls back to the "Draft" label.
+        return { ...idea, s1: { ...(idea.s1 || {}), [IDEA_INDICATORS.status]: "" } };
+      });
+
+    myIdeasCache = buildIdeasViewModelList(userIdeas, false);
+    renderMyIdeas();
+    setStatus("my", "", "");
+    updateMyActivity(
+      myIdeasCache.length,
+      Object.values(userVotes).filter(Boolean).length,
+    );
+  } catch (err) {
+    console.error("fetchUserSubmissions error:", err);
+    renderTableMessage(ui.myResults, "Error loading your ideas.", { retry: true });
+    setStatus("my", "Error loading your ideas.", "error");
+  } finally {
+    setPanelBusy("my", false);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Main load
+───────────────────────────────────────────────────────────── */
+
+async function loadIdeasAndVotes() {
+  setPanelBusy("all", true);
+  setStatus("all", "Loading ideas…", "loading");
+  renderTableMessage(ui.results, "Loading…");
+  renderTableMessage(ui.topResults, "Loading…");
+  setVoteButtonsDisabled(true);
+
+  const fetchStart = performance.now();
+
+  // Resolve voter email before fetching votes so the "did I vote" check
+  // in fetchVotesData() uses the correct identity.
+  await resolveVoterEmail();
+
+  try {
+    const [ideasData] = await Promise.all([fetchIdeasData(), fetchVotesData()]);
+
+    ideasRaw = ideasData;
+    ideas = buildIdeasViewModelList(ideasRaw, true);
+
+    implementedCount = ideas.filter((i) => i.status === "Completed").length;
+    const totalVotes = Object.values(voteCounts).reduce((s, n) => s + n, 0);
+
+    renderStatsStrip(ideas.length, implementedCount, totalVotes);
+    buildCategorySidebar(ideas);
+    renderRecentChips(ideas);
+
+    renderAllIdeas();
+    renderTop10Ideas();
+    setStatus("all", "", "");
+
+    await fetchUserSubmissions();
+  } catch (err) {
+    console.error("IdeaPortal load error", err);
+    renderTableMessage(ui.results, "Error loading ideas.", { retry: true });
+    renderTableMessage(ui.topResults, "Error loading ideas.", { retry: true });
+    setStatus("all", "Error loading data.", "error");
+  } finally {
+    setPanelBusy("all", false);
+    setVoteButtonsDisabled(false);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Workflow advance (idea submission)
+───────────────────────────────────────────────────────────── */
+
+async function advanceWorkflow(recordID) {
+  try {
+    // Step 1 — submit the record into the workflow
+    const submitRes = await fetch(`./api/form/${recordID}/submit`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ CSRFToken: csrfToken }),
+    });
+    console.log(`[Workflow] submit HTTP ${submitRes.status}`);
+
+    // Step 2 — fetch current step to get dependencyID and actionType
+    const stepRes = await fetch(`./api/formWorkflow/${recordID}/currentStep`, {
+      credentials: "same-origin",
+    });
+    const stepText = await stepRes.text();
+    console.log("[Workflow] currentStep raw:", stepText);
+
+    let stepData;
+    try { stepData = JSON.parse(stepText); } catch { stepData = null; }
+    console.log("[Workflow] currentStep parsed:", stepData);
+
+    const firstStep = Array.isArray(stepData) ? stepData[0] : stepData;
+    const depID = firstStep?.dependencyID ?? firstStep?.id ?? null;
+    const actionType =
+      firstStep?.dependencyActions?.[0]?.actionType ||
+      firstStep?.actions?.[0]?.actionType ||
+      "submit";
+
+    console.log(`[Workflow] applying — dependencyID: ${depID}, actionType: ${actionType}`);
+
+    // Step 3 — apply the workflow action
+    const applyBody = new URLSearchParams({ CSRFToken: csrfToken, actionType });
+    if (depID !== null && depID !== undefined) {
+      applyBody.set("dependencyID", String(depID));
+    }
+
+    const applyRes = await fetch(`./api/formWorkflow/${recordID}/apply`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: applyBody,
+    });
+    const applyText = await applyRes.text();
+    console.log(`[Workflow] apply HTTP ${applyRes.status}:`, applyText);
+
+    if (!applyRes.ok) {
+      console.warn(`[Workflow] apply failed (${applyRes.status}) — record may still be draft`);
+    }
+  } catch (err) {
+    console.warn("[Workflow] advance failed:", err);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Date helper — returns today as YYYY-MM-DD in local time.
+   LEAF date inputs typically expect this format; the debug
+   write below will confirm whether it lands correctly.
+───────────────────────────────────────────────────────────── */
+
+function todayLocalYMD() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Write date_submitted (indicator 15) to an existing record.
+   Approach B — separate POST after record creation to guarantee
+   the field is written even if form/new ignores it.
+───────────────────────────────────────────────────────────── */
+
+async function writeDateSubmitted(recordID, dateStr) {
+  const body = new URLSearchParams({
+    CSRFToken: csrfToken,
+    recordID: String(recordID),
+    series: "1",
+    [IDEA_FIELDS.date_submitted]: dateStr,
+  });
+
+  console.log(`[DateSubmit] Writing indicator ${IDEA_FIELDS.date_submitted} → "${dateStr}" on record ${recordID}`);
+
+  try {
+    const res = await fetch(`./api/form/${encodeURIComponent(recordID)}`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+      body: body.toString(),
+    });
+    const text = await res.text();
+    if (res.ok) {
+      console.log(`[DateSubmit] ✅ Success (HTTP ${res.status}):`, text || "(empty body)");
+    } else {
+      console.warn(`[DateSubmit] ❌ HTTP ${res.status}:`, text);
+    }
+  } catch (err) {
+    console.warn("[DateSubmit] ❌ Network error:", err);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Idea form
+───────────────────────────────────────────────────────────── */
+
+async function NewIdea(advanceOnSuccess) {
+  const form = document.getElementById("ideaForm");
+  const submitBtn = document.getElementById("submitButton");
+  const saveBtn = document.getElementById("saveDraftButton");
+  const fileInputEl = document.getElementById("fileInput");
+
+  const val = (id) => document.getElementById(id)?.value.trim() || "";
+  const titleValue = val("inpTitle");
+  const descValue = val("inpDescription");
+  const benefitValue = val("inpBenefit");
+  const categoryValue = val("inpCategory");
+  const impactValue = val("inpImpact");
+  const otherCatValue = val("inpOtherCategory");
+
+  if (submitBtn) submitBtn.disabled = true;
+  if (saveBtn) saveBtn.disabled = true;
+  ideaSubmitInProgress = true;
+
+  // Build today's date — only written on submit, not draft saves
+  const todayStr = advanceOnSuccess ? todayLocalYMD() : null;
+
+  try {
+    const payload = {
+      service: "",
+      title: titleValue || "Idea Submission",
+      priority: 0,
+      CSRFToken: csrfToken,
+      [`numform_${FORM_KEYS.idea}`]: 1,
+      [IDEA_FIELDS.title]: titleValue,
+      [IDEA_FIELDS.summary]: descValue,
+      [IDEA_FIELDS.benefit]: benefitValue,
+      [IDEA_FIELDS.category]: categoryValue,
+      [IDEA_FIELDS.impact]: impactValue,
+    };
+    if (categoryValue === "Other" && otherCatValue) {
+      payload[IDEA_FIELDS.other_category] = otherCatValue;
+    }
+    // Approach A — include date in the initial create POST
+    if (todayStr) {
+      payload[IDEA_FIELDS.date_submitted] = todayStr;
+      console.log(`[DateSubmit] Approach A — including indicator ${IDEA_FIELDS.date_submitted} in form/new payload:`, todayStr);
+    }
+
+    const response = await apiPostJson("./api/?a=form/new", payload);
+    const newID = parseFloat(response);
+
+    if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
+      // File upload — fire and forget
+      const files = fileInputEl?.files ? Array.from(fileInputEl.files) : [];
+      if (files.length) {
+        const fd = new FormData();
+        fd.append("CSRFToken", csrfToken);
+        files.forEach((f) => fd.append("10", f));
+        fetch(`./api/?a=form/${newID}`, {
+          method: "POST",
+          credentials: "same-origin",
+          body: fd,
+        }).catch((err) => console.warn("[IdeaUpload] file upload failed", err));
+      }
+
+      form?.reset();
+      form?.classList.remove("was-validated");
+      if (fileInputEl) fileInputEl.value = "";
+      const fileList = document.getElementById("fileList");
+      if (fileList) fileList.innerHTML = "";
+      closeModal("addIdeaModal");
+
+      if (advanceOnSuccess) {
+        // Approach B — write date BEFORE advancing workflow so it lands even
+        // if the workflow apply step 400s. advanceWorkflow is best-effort.
+        console.log(`[DateSubmit] Approach B — writing date to record ${newID}`);
+        await writeDateSubmitted(newID, todayStr);
+        await advanceWorkflow(newID);
+        showToast("Your idea has been submitted successfully.");
+        await loadIdeasAndVotes();
+      } else {
+        showToast("Idea saved. You can find it in My Ideas.");
+        await fetchUserSubmissions();
+      }
+    } else {
+      throw new Error(`Unexpected response: ${response}`);
+    }
+  } catch (err) {
+    console.warn("[NewIdea] error:", err);
+    showToast("Error submitting idea. Please try again.", true);
+  } finally {
+    ideaSubmitInProgress = false;
+    if (submitBtn) submitBtn.disabled = false;
+    if (saveBtn) saveBtn.disabled = false;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Form selects + validation
+───────────────────────────────────────────────────────────── */
+
+function populateSelect(select, options, appendOther = false) {
+  if (!select) return;
+  const placeholder = select.options[0];
+  select.innerHTML = "";
+  if (placeholder) select.appendChild(placeholder);
+  options.forEach((opt) => {
+    const label = typeof opt === "string" ? opt : opt.label || opt.name || opt;
+    const el = document.createElement("option");
+    el.value = label;
+    el.textContent = label;
+    select.appendChild(el);
+  });
+  if (appendOther) {
+    const other = document.createElement("option");
+    other.value = "Other";
+    other.textContent = "Other";
+    select.appendChild(other);
+  }
+}
+
+async function loadCategoryOptions() {
+  try {
+    const res = await fetch(
+      "/platform/ideas/ajaxIndex.php?a=getindicator&indicatorID=8&series=1&recordID=0",
+      { credentials: "same-origin" },
+    );
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const sel = doc.querySelector("select#8");
+    if (!sel || !sel.options.length) throw new Error("no options");
+    populateSelect(
+      document.getElementById("inpCategory"),
+      Array.from(sel.options)
+        .map((o) => o.value)
+        .filter(Boolean),
+      false,
+    );
+  } catch {
+    populateSelect(
+      document.getElementById("inpCategory"),
+      CATEGORY_FALLBACK,
+      true,
+    );
+  }
+}
+
+async function loadImpactOptions() {
+  try {
+    const res = await fetch(
+      "/platform/ideas/ajaxIndex.php?a=getindicator&indicatorID=9&series=1&recordID=0",
+      { credentials: "same-origin" },
+    );
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const sel = doc.querySelector("select#9");
+    if (!sel || !sel.options.length) throw new Error("no options");
+    populateSelect(
+      document.getElementById("inpImpact"),
+      Array.from(sel.options)
+        .map((o) => o.value)
+        .filter(Boolean),
+      false,
+    );
+  } catch {
+    populateSelect(
+      document.getElementById("inpImpact"),
+      IMPACT_FALLBACK,
+      false,
+    );
+  }
+}
+
+function bindCategoryChange() {
+  const categorySelect = document.getElementById("inpCategory");
+  const otherWrapper = document.getElementById("otherCategoryWrapper");
+  const otherInput = document.getElementById("inpOtherCategory");
+  if (!categorySelect || !otherWrapper || !otherInput) return;
+
+  categorySelect.addEventListener("change", () => {
+    const isOther = categorySelect.value === "Other";
+    otherWrapper.style.display = isOther ? "" : "none";
+    otherInput.required = isOther;
+    if (!isOther) {
+      otherInput.value = "";
+      otherInput.removeAttribute("aria-invalid");
+    }
+  });
+}
+
+function initValidation() {
+  document.querySelectorAll(".needs-validation").forEach((form) => {
+    // Re-check validity on every input/change so errors clear as user fixes them
+    form.addEventListener("input", (e) => {
+      const target = e.target;
+      if (!target) return;
+      if (target.checkValidity?.()) {
+        target.removeAttribute("aria-invalid");
+      } else {
+        target.setAttribute("aria-invalid", "true");
+      }
+    });
+    form.addEventListener("change", (e) => {
+      const target = e.target;
+      if (!target) return;
+      if (target.checkValidity?.()) {
+        target.removeAttribute("aria-invalid");
+      } else {
+        target.setAttribute("aria-invalid", "true");
+      }
+    });
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Event delegation
+───────────────────────────────────────────────────────────── */
+
+function handleSortClick(sortBtn) {
+  const key = sortBtn.getAttribute("data-sort");
+  const tableId = sortBtn.closest("table")?.getAttribute("id");
+  if (!tableId || !key) return;
+  setSortState(tableId, key);
+  applySortClasses(tableId);
+  if (tableId === "tblIdeas") {
+    state.pagination.all.page = 1;
+    renderAllIdeas();
+  } else if (tableId === "tblTopIdeas") renderTop10Ideas();
+  else if (tableId === "tblMyIdeas") {
+    state.pagination.my.page = 1;
+    renderMyIdeas();
+  }
+}
+
+function handlePaginationAction(scope, action) {
+  const pager = state.pagination[scope];
+  if (!pager) return;
+  if (action === "prev") pager.page = Math.max(1, pager.page - 1);
+  else if (action === "next") pager.page += 1;
+  else if (action === "toggle") {
+    pager.showAll = !pager.showAll;
+    pager.page = 1;
+  }
+  if (scope === "all") renderAllIdeas();
+  else if (scope === "my") renderMyIdeas();
+}
+
+function bindDelegatedEvents() {
+  const wrap = document.querySelector(".ip-wrap");
+  if (!wrap) return;
+
+  wrap.addEventListener("click", (e) => {
+    const sortBtn = e.target.closest(".ip-sortBtn");
+    if (sortBtn) {
+      handleSortClick(sortBtn);
+      return;
+    }
+
+    const retryBtn = e.target.closest(".ip-retry");
+    if (retryBtn) {
+      loadIdeasAndVotes();
+      return;
+    }
+
+    const upvoteBtn = e.target.closest(".ip-upvote");
+    if (upvoteBtn && !upvoteBtn.disabled) {
+      IdeaVotes(upvoteBtn.getAttribute("data-record-id"));
+      return;
+    }
+
+    const shareBtn = e.target.closest(".ip-share");
+    if (shareBtn) {
+      const link = shareBtn.getAttribute("data-record-link");
+      if (!link) return;
+      navigator.clipboard
+        .writeText(link)
+        .then(() => showToast("Idea link copied to clipboard."))
+        .catch((err) => console.error("Could not copy link:", err));
+      return;
+    }
+
+    const pageBtn = e.target.closest(".ip-pageBtn, .ip-pageToggle");
+    if (pageBtn) {
+      handlePaginationAction(
+        pageBtn.getAttribute("data-page-scope"),
+        pageBtn.getAttribute("data-page-action"),
+      );
+    }
+  });
+}
+
+function applySearch(value) {
+  state.search = value.trim();
+  if (!state.pagination.all.showAll) state.pagination.all.page = 1;
+  renderAllIdeas();
+}
+
+function bindSearch() {
+  if (!ui.searchInput) return;
+  const handler = debounce(
+    (e) => applySearch(e.target.value),
+    SEARCH_DEBOUNCE_MS,
+  );
+  ui.searchInput.addEventListener("input", handler);
+  ui.searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      applySearch(ui.searchInput.value);
+    }
+  });
+  ui.searchBtn?.addEventListener("click", () =>
+    applySearch(ui.searchInput.value),
+  );
+}
+
+function bindFileInput() {
+  const fileInput = document.getElementById("fileInput");
+  const fileList = document.getElementById("fileList");
+  if (!fileInput || !fileList) return;
+  fileInput.addEventListener("change", () => {
+    fileList.innerHTML = Array.from(fileInput.files || [])
+      .map((f) => `<li>${escapeHtml(f.name)}</li>`)
+      .join("");
+  });
+}
+
+function bindMySearch() {
+  const input = document.getElementById("mySearchInput");
+  const btn = document.getElementById("mySearchBtn");
+  if (!input) return;
+  const handler = debounce(() => {
+    const q = input.value.toLowerCase();
+    document.querySelectorAll("#myResults tr").forEach((row) => {
+      row.style.display = row.textContent.toLowerCase().includes(q)
+        ? ""
+        : "none";
+    });
+  }, SEARCH_DEBOUNCE_MS);
+  input.addEventListener("input", handler);
+  btn?.addEventListener("click", handler);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Init
+───────────────────────────────────────────────────────────── */
+
+/* ─────────────────────────────────────────────────────────────
+   My Activity — clickable rows
+───────────────────────────────────────────────────────────── */
+
+function switchToMyIdeasTab() {
+  const myTab = document.querySelector('.ip-tab[data-ip-tab="my"]');
+  if (!myTab) return;
+  myTab.click();
+  myTab.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  myTab.focus();
+}
+
+function openVotedModal() {
+  const modal = document.getElementById("ipVotedModal");
+  const tableBody = document.getElementById("ipVotedTableBody");
+  const table = document.getElementById("ipVotedTable");
+  const empty = document.getElementById("ipVotedModalEmpty");
+  if (!modal || !tableBody || !table || !empty) return;
+
+  // Build rows from userVotes (keyed by recordID) + ideasVMById for details
+  const votedIDs = Object.keys(userVotes).filter((k) => userVotes[k] === true);
+
+  if (!votedIDs.length) {
+    table.hidden = true;
+    empty.hidden = false;
+  } else {
+    const rows = votedIDs.map((id) => {
+      const idea = ideasVMById[id];
+      if (!idea) {
+        // Vote exists but idea not in public set (e.g. deleted/draft)
+        return `<tr>
+          <td><span style="color:var(--ip-muted)">#${escapeHtml(id)}</span></td>
+          <td style="color:var(--ip-muted);font-style:italic">Idea not available</td>
+          <td>—</td><td>—</td><td>—</td>
+        </tr>`;
+      }
+      const title = escapeHtml(truncateTitle(idea.title || `Idea ${id}`));
+      const titleFull = escapeHtml(idea.title || `Idea ${id}`);
+      const category = escapeHtml(idea.category || "");
+      const statusLabel = idea.status || "Draft";
+      const statusBadgeClass = getStatusBadgeClass(statusLabel);
+      const votes = idea.votes || 0;
+      const recordLink = escapeHtml(idea.recordLink || `${RECORD_VIEW_URL}${id}`);
+      return `<tr>
+        <td><a class="ip-recordLink" href="${recordLink}" data-title="${titleFull}" aria-haspopup="dialog">#${escapeHtml(id)}</a></td>
+        <td title="${titleFull}">${title}</td>
+        <td>${category}</td>
+        <td><span class="ip-badge ${statusBadgeClass}">${escapeHtml(statusLabel)}</span></td>
+        <td>${votes}</td>
+      </tr>`;
+    }).join("");
+
+    tableBody.innerHTML = rows;
+    table.hidden = false;
+    empty.hidden = true;
+  }
+
+  lastFocusedElement = document.activeElement;
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
+  setBackgroundHidden(true);
+  bindFocusTrap(modal);
+  document.getElementById("ipVotedModalCloseBtn")?.focus();
+}
+
+function closeVotedModal() {
+  const modal = document.getElementById("ipVotedModal");
+  if (!modal) return;
+  modal.classList.remove("is-open");
+  modal.setAttribute("aria-hidden", "true");
+  setBackgroundHidden(false);
+  lastFocusedElement?.focus();
+  lastFocusedElement = null;
+}
+
+function bindVotedModal() {
+  document.getElementById("ipVotedModalCloseBtn")
+    ?.addEventListener("click", closeVotedModal);
+  document.getElementById("ipVotedModalBackdrop")
+    ?.addEventListener("click", closeVotedModal);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const modal = document.getElementById("ipVotedModal");
+      if (modal?.classList.contains("is-open")) closeVotedModal();
+    }
+  });
+}
+
+function bindActivityButtons() {
+  document.getElementById("actMyIdeasBtn")
+    ?.addEventListener("click", switchToMyIdeasTab);
+  document.getElementById("actVotedBtn")
+    ?.addEventListener("click", openVotedModal);
+}
+
+function initPortal() {
+
+  cacheElements();
+  bindModalEvents();
+  bindTabs();
+  bindRecordModal();
+  bindVotedModal();
+  bindActivityButtons();
+  bindDelegatedEvents();
+  bindSearch();
+  bindMySearch();
+  bindFileInput();
+  bindCategoryChange();
+  loadCategoryOptions();
+  loadImpactOptions();
+  wireJumpToTop();
+  initValidation();
+
+  document
+    .getElementById("saveDraftButton")
+    ?.addEventListener("click", async () => {
+      const form = document.getElementById("ideaForm");
+      if (!form) return;
+      const titleVal = document.getElementById("inpTitle")?.value.trim();
+      if (!titleVal) {
+        form.classList.add("was-validated");
+        document.getElementById("inpTitle")?.focus();
+        return;
+      }
+      await NewIdea(false);
+    });
+
+  document
+    .getElementById("submitButton")
+    ?.addEventListener("click", async () => {
+      const form = document.getElementById("ideaForm");
+      if (!form) return;
+      form.classList.add("was-validated");
+      // reportValidity() checks all fields including selects and returns false
+      // if any required field is empty, preventing premature submission.
+      if (!form.reportValidity()) return;
+      await NewIdea(true);
+    });
+
+  loadIdeasAndVotes().catch((err) => {
+    console.error("loadIdeasAndVotes failed", err);
+  });
+}
+
+// Fire init as soon as DOM is available
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initPortal);
+} else {
+  initPortal();
+}
