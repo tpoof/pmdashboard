@@ -552,7 +552,9 @@ function openRecordModal(title, url) {
   if (!modal || !frame || !titleEl) return;
   lastRecordFocusedElement = document.activeElement;
   titleEl.textContent = title || "Idea Details";
-  frame.src = url;
+  // Append &iframe to suppress the LEAF site header in the modal view
+  const frameUrl = url ? `${url}&iframe` : url;
+  frame.src = frameUrl;
   if (openBtn) openBtn.setAttribute("data-url", url || "");
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
