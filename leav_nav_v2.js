@@ -58,6 +58,31 @@
 (function () {
   "use strict";
 
+  /* ── Internal section config ────────────────────────────────────
+     Placeholder group IDs and indicator IDs — swap in real values
+     before promoting to production.
+
+     LEADERSHIP_GROUP_ID    : Smarty group that can see the Leadership link.
+     LEAF_TEAM_GROUP_ID     : Smarty group that can see the entire LEAF Team
+                              dropdown (and the Internal button itself).
+     LEAF_TEAM_LINK_NAME_INDICATOR_ID : Indicator ID for the link label field
+                              on the /platform/service_requests_launchpad/ form.
+     LEAF_TEAM_LINK_URL_INDICATOR_ID  : Indicator ID for the link URL field
+                              on the same form.
+
+     These constants drive the Smarty conditionals embedded in the
+     buildInternalNavHTML() template string and the fetch call in
+     fetchLeafTeamLinks(). Search "REPLACE_ME" to find all touch-points. */
+
+  var LEADERSHIP_GROUP_ID = "REPLACE_ME_LEADERSHIP_GROUP_ID";
+  var LEAF_TEAM_GROUP_ID = "REPLACE_ME_LEAF_TEAM_GROUP_ID";
+  var LEAF_TEAM_LINK_NAME_INDICATOR_ID = "REPLACE_ME_LINK_NAME_INDICATOR_ID";
+  var LEAF_TEAM_LINK_URL_INDICATOR_ID = "REPLACE_ME_LINK_URL_INDICATOR_ID";
+
+  /* Base URL for the LEAF form that stores LEAF Team quick-links.
+     The API path is appended automatically in fetchLeafTeamLinks(). */
+  var LEAF_TEAM_FORM_BASE = "/platform/service_requests_launchpad";
+
   /* ── Nav content (single source of truth for desktop + mobile) ──
      href values here are the canonical URLs used by the router.
      Hash keys are derived from the ?a= param value automatically.
@@ -138,8 +163,18 @@
   /* ── Router: hash key → { href, title, section } lookup table ──
      Built once at init from NAV_SECTIONS. Hash key is the ?a= param
      value (e.g. "impact", "find_site"). The launchpad's own ?a=
-     param is never read — the hash is the sole client-side router. */
+     param is never read — the hash is the sole client-side router.
+     Leadership is also registered here even though it lives in the
+     separate INTERNAL_SECTION — it still hash-routes. */
   var ROUTE_MAP = {};
+
+  /* Static definition for the Leadership internal link so the router
+     knows about it. LEAF Team links navigate away and are NOT registered. */
+  var INTERNAL_LEADERSHIP_ROUTE = {
+    href: "/platform/projects/report.php?a=leadership",
+    title: "Leadership",
+    section: "Internal",
+  };
 
   function buildRouteMap() {
     NAV_SECTIONS.forEach(function (section) {
@@ -155,6 +190,11 @@
         }
       });
     });
+    /* Register Leadership so the hash router can load it inline */
+    var leadershipKey = hrefToHashKey(INTERNAL_LEADERSHIP_ROUTE.href);
+    if (leadershipKey) {
+      ROUTE_MAP[leadershipKey] = INTERNAL_LEADERSHIP_ROUTE;
+    }
   }
 
   /* Derive a hash key from any href.
@@ -233,14 +273,137 @@
       </li>`;
   }
 
+  /* ─────────────────────────────────────────────────────────────
+     INTERNAL NAV SECTION
+     Right-aligned "Internal" dropdown for team-only links.
+     Smarty group conditionals gate each link individually:
+       - Leadership  → LEADERSHIP_GROUP_ID
+       - LEAF Team   → LEAF_TEAM_GROUP_ID (gates entire section)
+     The outer button is only rendered when at least one group
+     condition is true (LEAF_TEAM_GROUP_ID wraps the whole block).
+
+     NOTE: The Smarty tags below are processed server-side when this
+     file is served through the PHP/Smarty wrapper. If you see the
+     literal strings "<!--{if" in the rendered HTML rather than the
+     conditional output, the wrapper is not processing this file —
+     run ?leafNavDebug=1 (group 12 members only) for a diagnosis.
+  ───────────────────────────────────────────────────────────── */
+  function buildInternalNavHTML(leadershipGroupID, leagTeamGroupID) {
+    /* These arguments receive the *runtime* values that Smarty
+       already baked into the JS constants above. They are passed
+       in only so the debug utility can inspect what Smarty emitted. */
+
+    /* Desktop internal dropdown — Smarty-gated outer wrapper */
+    var desktopInternal =
+      `
+<!--{if $empMembership['groupID'][` +
+      leagTeamGroupID +
+      `]}-->
+<li class="dd-item dd-item--internal" id="dd-item-internal">
+  <button class="dd-trigger dd-trigger--internal" aria-expanded="false" aria-controls="dd-internal">
+    <span class="material-symbols-outlined dd-internal-lock" aria-hidden="true">lock</span>
+    Internal
+    <span class="dd-chevron" aria-hidden="true"><span class="material-symbols-outlined">arrow_drop_down</span></span>
+    <span class="lp-sr-only"> — team-only links</span>
+  </button>
+  <div class="dd-panel dd-panel--internal" id="dd-internal" hidden>
+    <ul class="dd-list">
+<!--{if $empMembership['groupID'][` +
+      leadershipGroupID +
+      `]}-->
+      <li>
+        <a class="dd-link" href="/platform/projects/report.php?a=leadership">
+          <span class="dd-link-ico">
+            <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+          </span>
+          <span class="dd-link-text">
+            <strong>Leadership</strong>
+            <span>Platform leadership dashboard</span>
+          </span>
+        </a>
+      </li>
+<!--{/if}-->
+      <li id="lpNavLeafTeamLinks" aria-live="polite">
+        <div class="dd-link dd-link--section-header">
+          <span class="dd-link-ico">
+            <span class="material-symbols-outlined" aria-hidden="true">hub</span>
+          </span>
+          <span class="dd-link-text">
+            <strong>LEAF Team</strong>
+            <span>Quick links managed by the team</span>
+          </span>
+        </div>
+      </li>
+    </ul>
+  </div>
+</li>
+<!--{/if}-->`;
+
+    /* Mobile accordion entry for Internal section */
+    var mobileInternal =
+      `
+<!--{if $empMembership['groupID'][` +
+      leagTeamGroupID +
+      `]}-->
+<li class="acc-item acc-item--internal" id="acc-item-internal">
+  <button class="acc-trigger acc-trigger--internal" aria-expanded="false" aria-controls="acc-internal">
+    <span class="material-symbols-outlined dd-internal-lock" aria-hidden="true">lock</span>
+    Internal
+    <span class="dd-chevron" aria-hidden="true"><span class="material-symbols-outlined">arrow_drop_down</span></span>
+    <span class="lp-sr-only"> — team-only links</span>
+  </button>
+  <div class="acc-panel" id="acc-internal" hidden>
+    <ul class="dd-list">
+<!--{if $empMembership['groupID'][` +
+      leadershipGroupID +
+      `]}-->
+      <li>
+        <a class="dd-link" href="/platform/projects/report.php?a=leadership">
+          <span class="dd-link-ico">
+            <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+          </span>
+          <span class="dd-link-text">
+            <strong>Leadership</strong>
+            <span>Platform leadership dashboard</span>
+          </span>
+        </a>
+      </li>
+<!--{/if}-->
+      <li id="lpNavLeafTeamLinksMobile" aria-live="polite">
+        <div class="dd-link dd-link--section-header">
+          <span class="dd-link-ico">
+            <span class="material-symbols-outlined" aria-hidden="true">hub</span>
+          </span>
+          <span class="dd-link-text">
+            <strong>LEAF Team</strong>
+            <span>Quick links managed by the team</span>
+          </span>
+        </div>
+      </li>
+    </ul>
+  </div>
+</li>
+<!--{/if}-->`;
+
+    return { desktop: desktopInternal, mobile: mobileInternal };
+  }
+
   function buildNavHTML() {
     var desktopItems = NAV_SECTIONS.map(desktopSectionHTML).join("");
     var mobileItems = NAV_SECTIONS.map(mobileSectionHTML).join("");
+    var internal = buildInternalNavHTML(
+      LEADERSHIP_GROUP_ID,
+      LEAF_TEAM_GROUP_ID,
+    );
     return `
 <nav class="lp-nav" id="lpNav" aria-label="Launchpad navigation">
   <div class="lp-nav-in">
     <ul class="lp-nav-links" role="list">
       ${desktopItems}
+    </ul>
+
+    <ul class="lp-nav-links lp-nav-links--right" role="list" aria-label="Internal team navigation">
+      ${internal.desktop}
     </ul>
 
     <button class="lp-nav-toggle" id="lpNavToggle" type="button" aria-expanded="false" aria-controls="lpMobilePanel" aria-label="Open menu">
@@ -250,6 +413,7 @@
     <div class="lp-mobile-panel" id="lpMobilePanel" hidden>
       <ul class="lp-accordion" role="list">
         ${mobileItems}
+        ${internal.mobile}
       </ul>
     </div>
   </div>
@@ -314,6 +478,94 @@
       bcLink.rel = "stylesheet";
       bcLink.href = LEAF_BREADCRUMB_CSS_HREF;
       document.head.appendChild(bcLink);
+    }
+
+    /* ── Internal section styles ──────────────────────────────────
+       Injected here rather than leaf_nav.css so leaf_nav_v2.js is
+       fully self-contained. Move to leaf_nav.css when promoting
+       to production and remove this block. */
+    if (!document.getElementById("lp-nav-internal-styles")) {
+      var style = document.createElement("style");
+      style.id = "lp-nav-internal-styles";
+      style.textContent = [
+        /* Right-aligned nav group */
+        ".lp-nav-links--right {",
+        "  margin-left: auto;",
+        "  display: flex;",
+        "  align-items: center;",
+        "  list-style: none;",
+        "  margin-right: 0;",
+        "  padding: 0;",
+        "}",
+
+        /* Internal trigger pill — visually distinct from public triggers */
+        ".dd-trigger--internal {",
+        "  display: inline-flex;",
+        "  align-items: center;",
+        "  gap: 4px;",
+        "  padding: 5px 12px 5px 10px;",
+        "  border-radius: 999px;",
+        "  border: 1.5px solid rgba(255,255,255,0.45);",
+        "  background: rgba(255,255,255,0.12);",
+        "  color: inherit;",
+        "  font-size: 0.875rem;",
+        "  font-weight: 600;",
+        "  letter-spacing: 0.01em;",
+        "  cursor: pointer;",
+        "  transition: background 0.15s, border-color 0.15s;",
+        "}",
+        ".dd-trigger--internal:hover,",
+        ".dd-item--internal.open .dd-trigger--internal {",
+        "  background: rgba(255,255,255,0.22);",
+        "  border-color: rgba(255,255,255,0.7);",
+        "}",
+        ".dd-trigger--internal:focus-visible {",
+        "  outline: 2px solid #fff;",
+        "  outline-offset: 2px;",
+        "}",
+
+        /* Lock icon sizing */
+        ".dd-internal-lock {",
+        "  font-size: 15px !important;",
+        "  line-height: 1;",
+        "  opacity: 0.85;",
+        "}",
+
+        /* Internal panel — accent top border */
+        ".dd-panel--internal {",
+        "  right: 0;",
+        "  left: auto;",
+        "  min-width: 240px;",
+        "  border-top: 3px solid #f59e0b;",
+        "}",
+
+        /* Section header row inside the dropdown (non-interactive) */
+        ".dd-link--section-header {",
+        "  cursor: default;",
+        "  opacity: 0.7;",
+        "  pointer-events: none;",
+        "  font-size: 0.8rem;",
+        "  padding-top: 10px;",
+        "  padding-bottom: 4px;",
+        "}",
+
+        /* Mobile internal trigger */
+        ".acc-trigger--internal {",
+        "  display: flex;",
+        "  align-items: center;",
+        "  gap: 6px;",
+        "  font-weight: 700;",
+        "}",
+
+        /* LEAF Team injected sub-list */
+        ".dd-list--leaf-team-links {",
+        "  list-style: none;",
+        "  margin: 0;",
+        "  padding: 0;",
+        "  border-top: 1px solid rgba(0,0,0,0.08);",
+        "}",
+      ].join("\n");
+      document.head.appendChild(style);
     }
   }
   ensureStylesheet();
@@ -383,6 +635,252 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
+     LEAF TEAM DYNAMIC LINKS
+     Fetches quick-link records from the service_requests_launchpad
+     form. Each record contributes:
+       indicator LEAF_TEAM_LINK_NAME_INDICATOR_ID → link label
+       indicator LEAF_TEAM_LINK_URL_INDICATOR_ID  → link href
+     Populates #lpNavLeafTeamLinks (desktop) and
+     #lpNavLeafTeamLinksMobile (mobile) after nav is in the DOM.
+     Links rendered here use data-nav-external so the launchpad
+     link intercept skips them — they navigate away rather than
+     hash-routing.
+     Silently no-ops if the containers aren't present (user isn't
+     in LEAF_TEAM_GROUP_ID and Smarty never emitted the elements).
+  ───────────────────────────────────────────────────────────── */
+  function fetchLeafTeamLinks() {
+    var desktopHost = document.getElementById("lpNavLeafTeamLinks");
+    var mobileHost = document.getElementById("lpNavLeafTeamLinksMobile");
+    if (!desktopHost && !mobileHost) return; /* group not met — nothing to do */
+
+    var apiUrl =
+      LEAF_TEAM_FORM_BASE +
+      "/api/form/query" +
+      "?q[0][id]=1&q[0][operator]==&q[0][operand]=1" /* all records */ +
+      "&indicators[]=" +
+      LEAF_TEAM_LINK_NAME_INDICATOR_ID +
+      "&indicators[]=" +
+      LEAF_TEAM_LINK_URL_INDICATOR_ID +
+      "&format=json";
+
+    fetch(apiUrl, { credentials: "same-origin" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        /* data is an object keyed by recordID */
+        var records = Object.values(data);
+        if (!records.length) return;
+
+        var itemsHTML = records
+          .map(function (rec) {
+            var name = rec["s1"]["id" + LEAF_TEAM_LINK_NAME_INDICATOR_ID] || "";
+            var url = rec["s1"]["id" + LEAF_TEAM_LINK_URL_INDICATOR_ID] || "";
+            if (!name || !url) return "";
+            /* Sanitise: only allow http/https hrefs */
+            if (!/^https?:\/\//i.test(url)) return "";
+            return (
+              '<li><a class="dd-link" href="' +
+              url +
+              '" data-nav-external>' +
+              '<span class="dd-link-ico"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span>' +
+              '<span class="dd-link-text"><strong>' +
+              name +
+              "</strong></span>" +
+              "</a></li>"
+            );
+          })
+          .join("");
+
+        if (!itemsHTML) return;
+
+        function injectAfter(host) {
+          if (!host) return;
+          var frag = document.createElement("ul");
+          frag.className = "dd-list dd-list--leaf-team-links";
+          frag.innerHTML = itemsHTML;
+          /* Insert the link list immediately after the header <li> */
+          host.parentNode.insertBefore(frag, host.nextSibling);
+          /* Re-wire any new .dd-link items for the link intercept
+             (they have data-nav-external so intercept will skip them) */
+        }
+
+        injectAfter(desktopHost);
+        injectAfter(mobileHost);
+      })
+      .catch(function (err) {
+        console.warn("[LP Nav] LEAF Team links fetch failed:", err.message);
+      });
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     SMARTY / PHP WRAPPER DEBUG UTILITY
+     Only runs when ALL of:
+       1. ?leafNavDebug=1 is in the query string
+       2. Smarty rendered the LEAF Team group check as true
+          (i.e., the user is in LEAF_TEAM_GROUP_ID / group 12)
+     Renders an amber dismissible banner + console group with:
+       - Whether Smarty processed this file at all
+       - Whether each group constant resolved to a real ID
+       - Whether $empMembership evaluated (banner visible = yes)
+  ───────────────────────────────────────────────────────────── */
+  function runNavDebug() {
+    /* Only show to LEAF Team members — the LEAF_TEAM_GROUP_ID
+       constant is a Smarty-rendered value. If Smarty didn't run,
+       it will still be the literal placeholder string. */
+    var isLeafTeamMember =
+      LEAF_TEAM_GROUP_ID !== "REPLACE_ME_LEAF_TEAM_GROUP_ID";
+
+    /* Detect whether Smarty processed this file at all by checking
+       if any constant still holds its literal placeholder. */
+    var smartyRan = LEADERSHIP_GROUP_ID !== "REPLACE_ME_LEADERSHIP_GROUP_ID";
+    var leadershipResolved =
+      smartyRan && /^\d+$/.test(String(LEADERSHIP_GROUP_ID));
+    var leafTeamResolved =
+      LEAF_TEAM_GROUP_ID !== "REPLACE_ME_LEAF_TEAM_GROUP_ID" &&
+      /^\d+$/.test(String(LEAF_TEAM_GROUP_ID));
+    var nameIndResolved =
+      LEAF_TEAM_LINK_NAME_INDICATOR_ID !== "REPLACE_ME_LINK_NAME_INDICATOR_ID";
+    var urlIndResolved =
+      LEAF_TEAM_LINK_URL_INDICATOR_ID !== "REPLACE_ME_LINK_URL_INDICATOR_ID";
+
+    /* Console output — always logged when param present, group check aside */
+    console.group("[LEAF Nav Debug] Smarty/PHP wrapper diagnostics");
+    console.log(
+      "Smarty processed this file:",
+      smartyRan ? "✅ YES" : "❌ NO — constants are still placeholder strings",
+    );
+    console.log(
+      "LEADERSHIP_GROUP_ID resolved:",
+      leadershipResolved
+        ? "✅ " + LEADERSHIP_GROUP_ID
+        : "❌ " + LEADERSHIP_GROUP_ID,
+    );
+    console.log(
+      "LEAF_TEAM_GROUP_ID resolved:",
+      leafTeamResolved
+        ? "✅ " + LEAF_TEAM_GROUP_ID
+        : "❌ " + LEAF_TEAM_GROUP_ID,
+    );
+    console.log(
+      "LEAF_TEAM_LINK_NAME_INDICATOR_ID resolved:",
+      nameIndResolved
+        ? "✅ " + LEAF_TEAM_LINK_NAME_INDICATOR_ID
+        : "❌ " + LEAF_TEAM_LINK_NAME_INDICATOR_ID,
+    );
+    console.log(
+      "LEAF_TEAM_LINK_URL_INDICATOR_ID resolved:",
+      urlIndResolved
+        ? "✅ " + LEAF_TEAM_LINK_URL_INDICATOR_ID
+        : "❌ " + LEAF_TEAM_LINK_URL_INDICATOR_ID,
+    );
+    console.log(
+      "Current user in LEAF Team group (banner visible):",
+      isLeafTeamMember ? "✅ YES" : "❌ NO",
+    );
+    console.log(
+      "#lpNavLeafTeamLinks in DOM:",
+      !!document.getElementById("lpNavLeafTeamLinks")
+        ? "✅ YES"
+        : "❌ NO (Smarty gated it out or group check failed)",
+    );
+    console.groupEnd();
+
+    /* Visual banner — only shown to LEAF Team members */
+    if (!isLeafTeamMember) return;
+
+    var rows = [
+      ["Smarty processed this file", smartyRan ? "✅ YES" : "❌ NO"],
+      [
+        "LEADERSHIP_GROUP_ID",
+        leadershipResolved
+          ? "✅ " + LEADERSHIP_GROUP_ID
+          : "❌ still placeholder",
+      ],
+      [
+        "LEAF_TEAM_GROUP_ID",
+        leafTeamResolved ? "✅ " + LEAF_TEAM_GROUP_ID : "❌ still placeholder",
+      ],
+      [
+        "LEAF_TEAM_LINK_NAME_INDICATOR_ID",
+        nameIndResolved
+          ? "✅ " + LEAF_TEAM_LINK_NAME_INDICATOR_ID
+          : "❌ still placeholder",
+      ],
+      [
+        "LEAF_TEAM_LINK_URL_INDICATOR_ID",
+        urlIndResolved
+          ? "✅ " + LEAF_TEAM_LINK_URL_INDICATOR_ID
+          : "❌ still placeholder",
+      ],
+      [
+        "$empMembership evaluated (you see this)",
+        "✅ YES — you are in LEAF Team group",
+      ],
+      [
+        "#lpNavLeafTeamLinks in DOM",
+        document.getElementById("lpNavLeafTeamLinks") ? "✅ YES" : "❌ NO",
+      ],
+    ];
+
+    var rowHTML = rows
+      .map(function (r) {
+        return (
+          "<tr>" +
+          '<td style="padding:3px 10px 3px 0;font-weight:600;white-space:nowrap;">' +
+          r[0] +
+          "</td>" +
+          '<td style="padding:3px 0;">' +
+          r[1] +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+
+    var banner = document.createElement("div");
+    banner.id = "lpNavDebugBanner";
+    banner.setAttribute("role", "region");
+    banner.setAttribute("aria-label", "LEAF Nav debug panel");
+    banner.style.cssText = [
+      "position:fixed",
+      "top:0",
+      "left:0",
+      "right:0",
+      "z-index:99999",
+      "background:#fffbeb",
+      "border-bottom:3px solid #f59e0b",
+      "padding:12px 16px",
+      "font-family:monospace",
+      "font-size:13px",
+      "color:#1c1917",
+      "box-shadow:0 2px 8px rgba(0,0,0,.15)",
+    ].join(";");
+
+    banner.innerHTML =
+      '<div style="display:flex;align-items:flex-start;gap:12px;">' +
+      '<span class="material-symbols-outlined" aria-hidden="true" style="font-size:20px;color:#d97706;flex-shrink:0;margin-top:2px;">bug_report</span>' +
+      '<div style="flex:1;">' +
+      '<strong style="display:block;margin-bottom:6px;">LEAF Nav — Smarty/PHP Debug <span style="font-weight:400;color:#78716c;">(visible to LEAF Team only · remove ?leafNavDebug=1 to hide)</span></strong>' +
+      "<table>" +
+      rowHTML +
+      "</table>" +
+      "</div>" +
+      "<button onclick=\"document.getElementById('lpNavDebugBanner').remove()\" " +
+      'style="background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:0;color:#78716c;" ' +
+      'aria-label="Dismiss debug banner">' +
+      '<span class="material-symbols-outlined" aria-hidden="true">close</span>' +
+      "</button>" +
+      "</div>";
+
+    /* Push page content down so banner doesn't overlap nav */
+    document.body.style.paddingTop =
+      "calc(" + (document.body.style.paddingTop || "0px") + " + 110px)";
+    document.body.insertBefore(banner, document.body.firstChild);
+  }
+
+  /* ─────────────────────────────────────────────────────────────
      INJECT
   ───────────────────────────────────────────────────────────── */
   function inject() {
@@ -399,6 +897,14 @@
     }
 
     wire();
+
+    /* Populate LEAF Team dynamic links after the nav is in the DOM */
+    fetchLeafTeamLinks();
+
+    /* Debug panel — only when ?leafNavDebug=1 is present */
+    if (/[?&]leafNavDebug=1/.test(window.location.search)) {
+      runNavDebug();
+    }
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -803,6 +1309,9 @@
       var link = e.target.closest(".dd-link, .lp-panel-link");
       if (!link) return;
 
+      /* External-flagged links (e.g. LEAF Team quick-links) navigate away normally */
+      if (link.hasAttribute("data-nav-external")) return;
+
       /* Modifier-key / middle-click → real new tab, no intercept */
       if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
         return;
@@ -905,6 +1414,7 @@
       });
     };
 
+    /* Covers both public .dd-trigger buttons and the internal .dd-trigger--internal */
     document.querySelectorAll(".dd-trigger").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var item = btn.closest(".dd-item");
