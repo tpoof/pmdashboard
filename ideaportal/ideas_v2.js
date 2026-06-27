@@ -340,52 +340,6 @@ function buildCategorySidebar(ideaList) {
    Recently added bar
 ───────────────────────────────────────────────────────────── */
 
-function renderRecentChips(ideaList) {
-  const bar = document.getElementById("ipRecentBar");
-  const chips = document.getElementById("ipRecentChips");
-  if (!bar || !chips) return;
-
-  const list = ideaList || [];
-  // Sort by created_date descending; fall back to recordID descending when
-  // created_date is missing or zero (stripped by x-filterData on some sites).
-  const recent = [...list]
-    .filter((i) => i?.recordID)
-    .sort((a, b) => {
-      const aDate = Number(a.created_date) || 0;
-      const bDate = Number(b.created_date) || 0;
-      if (bDate !== aDate) return bDate - aDate;
-      return Number(b.recordID) - Number(a.recordID);
-    })
-    .slice(0, 5);
-
-  if (!recent.length) {
-    bar.hidden = true;
-    return;
-  }
-
-  chips.innerHTML = recent
-    .map((idea) => {
-      const idLabel = `#${idea.recordID}`;
-      const titleText = truncateTitle(
-        idea.title || `Idea ${idea.recordID}`,
-        36,
-      );
-      const label = escapeHtml(`${idLabel} ${titleText}`);
-      const url = escapeHtml(
-        idea.recordLink || `${RECORD_VIEW_URL}${idea.recordID}`,
-      );
-      const title = escapeHtml(idea.title || `Idea ${idea.recordID}`);
-      return `<button class="ip-recentChip" type="button"
-      data-chip-id="${escapeHtml(String(idea.recordID))}"
-      data-chip-url="${url}"
-      data-chip-title="${title}"
-      aria-label="View idea ${idLabel}: ${title}">${label}</button>`;
-    })
-    .join("");
-
-  bar.hidden = false;
-}
-
 /* ─────────────────────────────────────────────────────────────
    My Activity sidebar
 ───────────────────────────────────────────────────────────── */
@@ -607,12 +561,6 @@ function bindRecordModal() {
       const title = link.getAttribute("data-title") || "Idea Details";
       if (url) openRecordModal(title, url);
       return;
-    }
-    const chip = e.target.closest(".ip-recentChip");
-    if (chip) {
-      const url = chip.getAttribute("data-chip-url");
-      const title = chip.getAttribute("data-chip-title") || "Idea Details";
-      if (url) openRecordModal(title, url);
     }
   });
 
@@ -849,7 +797,7 @@ function buildIdeaRow(idea) {
       <td>${statusMarkup}</td>
       <td class="ip-votes">${votes}</td>
       <td class="ip-actionsCell">
-        <button class="ip-btn ip-btn--ghost ip-btn--icon ip-upvote${isVoted ? " is-voted" : ""}"
+        <button class="ip-upvote${isVoted ? " is-voted" : ""}"
           data-record-id="${recordID}"
           ${isVoted ? "disabled" : ""}
           aria-label="${voteLabel}"
@@ -857,7 +805,7 @@ function buildIdeaRow(idea) {
           title="${isVoted ? "Already voted" : "Vote for this idea"}">
           <span class="material-symbols-outlined" style="font-variation-settings:${ICON_FILL}" aria-hidden="true">thumb_up</span>
         </button>
-        <button class="ip-btn ip-btn--ghost ip-share"
+        <button class="ip-share"
           data-record-link="${escapeHtml(recordLink)}"
           aria-label="Copy link for ${labelTitle}"
           title="Copy shareable link">
@@ -1395,7 +1343,6 @@ async function loadIdeasAndVotes() {
 
     renderStatsStrip(ideas.length, implementedCount, totalVotes);
     buildCategorySidebar(ideas);
-    renderRecentChips(ideas);
 
     renderAllIdeas();
     renderTop10Ideas();

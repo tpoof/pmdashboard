@@ -556,56 +556,6 @@
       }
 
       /* ── Recently added ── */
-      .ip-recentBar {
-        padding: 9px 16px;
-        margin: 24px 0;
-        background: #f0faf0;
-        border: 1px solid #86efac;
-        border-radius: var(--ip-r);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.9rem;
-        flex-wrap: wrap;
-        color: #166534;
-      }
-      .ip-recentBar .material-symbols-outlined {
-        color: #16a34a;
-        font-size: 1.1rem;
-        flex-shrink: 0;
-      }
-      .ip-recentBar strong {
-        color: #166534;
-      }
-      .ip-recentChips {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-      .ip-recentChip {
-        padding: 2px 10px;
-        background: #dcfce7;
-        border: 1px solid #86efac;
-        border-radius: 999px;
-        font-size: 0.875rem;
-        color: #166534;
-        cursor: pointer;
-        transition:
-          background 0.12s,
-          border-color 0.12s;
-        text-decoration: none;
-        font-family: "Source Sans 3", sans-serif;
-        font-weight: 600;
-      }
-      .ip-recentChip:hover {
-        background: #bbf7d0;
-        border-color: #4ade80;
-      }
-      .ip-recentChip:focus-visible {
-        outline: 2px solid #000;
-        outline-offset: 2px;
-      }
 
       /* ── Search ── */
       .ip-searchWrap {
@@ -694,6 +644,13 @@
       .ip-sortable {
         cursor: pointer;
         user-select: none;
+        transition: background 0.12s;
+      }
+      .ip-sortable:hover {
+        background: #dce8f5;
+      }
+      .ip-sortable:hover .ip-sortBtn {
+        color: var(--ip-blue);
       }
       .ip-sortBtn {
         background: none;
@@ -866,17 +823,20 @@
       .ip-upvote {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        padding: 5px 10px;
+        justify-content: center;
+        gap: 4px;
+        height: 32px;
+        padding: 0 10px;
         border: 1.5px solid var(--ip-blue-20);
         border-radius: var(--ip-r);
         background: #fff;
         color: var(--ip-blue);
-        font-size: 0.875rem;
+        font-size: 0.8rem;
         font-weight: 700;
         font-family: "Public Sans", sans-serif;
         cursor: pointer;
         transition: all 0.15s;
+        box-sizing: border-box;
       }
       .ip-upvote:hover:not(:disabled) {
         background: var(--ip-blue);
@@ -905,11 +865,17 @@
         outline-offset: 2px;
       }
       .ip-upvote .material-symbols-outlined {
-        font-size: 0.95rem;
+        font-size: 0.9rem;
+        line-height: 1;
       }
       .ip-share {
-        font-size: 0.875rem;
-        padding: 5px 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        height: 32px;
+        padding: 0 10px;
+        font-size: 0.8rem;
         background: transparent;
         border: 1.5px solid var(--ip-blue-20);
         border-radius: var(--ip-r);
@@ -919,11 +885,16 @@
         font-weight: 600;
         transition: all 0.15s;
         margin-left: 4px;
+        box-sizing: border-box;
       }
       .ip-share:hover {
         background: var(--ip-blue-lt);
         border-color: var(--ip-blue);
         color: var(--ip-blue);
+      }
+      .ip-share .material-symbols-outlined {
+        font-size: 0.9rem;
+        line-height: 1;
       }
 
       /* ── Pagination ── */
@@ -1216,10 +1187,13 @@
         pointer-events: auto;
       }
       .ip-jumpTop:hover {
-        background: var(--lp-blue-soft);
-        border-color: var(--lp-blue-deep);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+        background: var(--lp-hl);
+        border-color: var(--lp-hl);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
         transform: translateY(-2px);
+      }
+      .ip-jumpTop:hover .material-symbols-outlined {
+        color: #fff !important;
       }
       .ip-jumpTop:active {
         transform: translateY(1px);
@@ -1567,13 +1541,6 @@
                 role="tabpanel"
                 aria-labelledby="all-tab"
               >
-                <div class="ip-recentBar" id="ipRecentBar" hidden>
-                  <span class="material-symbols-outlined" aria-hidden="true"
-                    >new_releases</span
-                  >
-                  <strong>Recently added:</strong>
-                  <div class="ip-recentChips" id="ipRecentChips"></div>
-                </div>
                 <div class="ip-tableWrap">
                   <p class="ip-panelDesc">
                     Browse all submitted ideas from across the organization.
