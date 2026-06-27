@@ -762,14 +762,29 @@
     var mobileHost = document.getElementById("lpNavLeafTeamLinksMobile");
     if (!desktopHost && !mobileHost) return;
 
+    /* Build query using the JSON-encoded ?q= format that LEAF's
+       api/form/query endpoint actually expects. The query string
+       param format (?q[0][id]=...) causes 500s — only LeafFormQuery
+       uses that internally. Direct fetch must use encodeURIComponent
+       on a stringified query object, matching CustomerOverview.html
+       and project_v*.js patterns. */
+    var queryObj = {
+      terms: [
+        { id: "categoryID", operator: "=", match: "form_531cc", gate: "AND" },
+        { id: "stepID", operator: "=", match: "notDeleted", gate: "AND" },
+      ],
+      joins: [],
+      sort: {},
+      getData: [
+        String(LEAF_TEAM_LINK_NAME_INDICATOR_ID),
+        String(LEAF_TEAM_LINK_URL_INDICATOR_ID),
+      ],
+    };
+
     var apiUrl =
       LEAF_TEAM_FORM_BASE +
-      "/api/form/query" +
-      "?q[0][id]=categoryID&q[0][operator]==&q[0][operand]=form_531cc" +
-      "&indicators[]=" +
-      LEAF_TEAM_LINK_NAME_INDICATOR_ID +
-      "&indicators[]=" +
-      LEAF_TEAM_LINK_URL_INDICATOR_ID +
+      "/api/form/query?q=" +
+      encodeURIComponent(JSON.stringify(queryObj)) +
       "&format=json";
 
     var isDebug = /[?&]leafNavDebug=1/.test(window.location.search);
@@ -779,18 +794,18 @@
       console.log("Fetch URL:", apiUrl);
       console.log("LEAF_TEAM_FORM_BASE:", LEAF_TEAM_FORM_BASE);
       console.log("window.location.origin:", window.location.origin);
-      console.log("form scoped to: form_531cc");
-      console.log(
-        "indicators: name=" +
-          LEAF_TEAM_LINK_NAME_INDICATOR_ID +
-          ", url=" +
-          LEAF_TEAM_LINK_URL_INDICATOR_ID,
-      );
+      console.log("Query object:", JSON.stringify(queryObj, null, 2));
       console.log("#lpNavLeafTeamLinks in DOM:", !!desktopHost);
       console.log("#lpNavLeafTeamLinksMobile in DOM:", !!mobileHost);
     }
 
-    fetch(apiUrl, { credentials: "same-origin" })
+    fetch(apiUrl, {
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+        "x-requested-with": "XMLHttpRequest",
+      },
+    })
       .then(function (r) {
         if (isDebug) {
           console.log("HTTP status:", r.status, r.statusText);
