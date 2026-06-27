@@ -523,14 +523,23 @@
         /* ── Internal group container ───────────────────────────
            Sits as a flex sibling after .lp-nav-links.
            margin-left:auto is the sole mechanism that pushes it
-           to the far right — no absolute positioning needed. */
+           to the far right — no absolute positioning needed.
+           The background container uses nav palette values so it
+           reads as "part of the nav" but clearly distinct.
+           It is non-interactive (role=presentation on the bg
+           itself) — all WCAG contrast obligations are met by
+           the text and icon elements inside, not the container. */
         ".lp-nav-internal {",
         "  display: flex;",
         "  align-items: center;",
         "  gap: 4px;",
         "  margin-left: auto;",
-        "  padding-right: 4px;",
         "  flex-shrink: 0;",
+        "  padding: 4px 10px 4px 8px;",
+        "  background: #eff6fb;" /* --nav-hover-bg tint */,
+        "  border: 1px solid #d9e8f6;" /* --nav-panel-bd */,
+        "  border-radius: 8px;" /* --nav-r-lg */,
+        "  box-shadow: inset 0 1px 2px rgba(0,10,60,0.04);" /* very subtle depth */,
         "}",
 
         /* ── 'Internal' text label ──────────────────────────────
@@ -541,11 +550,12 @@
         "  display: inline-flex;",
         "  align-items: center;",
         "  gap: 3px;",
-        "  font-size: 0.75rem;",
+        "  font-family: inherit;",
+        "  font-size: 0.72rem;",
         "  font-weight: 700;",
         "  letter-spacing: 0.06em;",
         "  text-transform: uppercase;",
-        "  opacity: 0.6;",
+        "  color: #3d4551;" /* --nav-muted — meets 4.5:1 on #eff6fb */,
         "  user-select: none;",
         "  white-space: nowrap;",
         "  padding: 0 2px;",
@@ -560,41 +570,47 @@
         "  display: inline-block;",
         "  width: 1px;",
         "  height: 18px;",
-        "  background: currentColor;",
-        "  opacity: 0.25;",
+        "  background: #aacdec;" /* --nav-border */,
         "  margin: 0 4px;",
         "  flex-shrink: 0;",
         "}",
 
-        /* ── Shared pill button style (Leadership + LEAF Team) ──*/
+        /* ── Shared pill button style (Leadership + LEAF Team) ──
+           Colors are chosen to work against the #eff6fb container.
+           Border uses --nav-border (#aacdec), bg is white so the
+           pills lift slightly off the container — clear but subtle. */
         ".lp-internal-btn {",
         "  display: inline-flex;",
         "  align-items: center;",
         "  gap: 4px;",
-        "  padding: 5px 11px 5px 9px;",
+        "  padding: 4px 11px 4px 9px;",
         "  border-radius: 999px;",
-        "  border: 1.5px solid rgba(255,255,255,0.4);",
-        "  background: rgba(255,255,255,0.1);",
-        "  color: inherit;",
-        "  font-size: 0.875rem;",
-        "  font-weight: 600;",
+        "  border: 1px solid #aacdec;" /* --nav-border */,
+        "  background: #ffffff;",
+        "  color: #3d4551;" /* --nav-muted */,
+        "  font: inherit;" /* match .dd-trigger exactly */,
         "  text-decoration: none;",
         "  white-space: nowrap;",
         "  cursor: pointer;",
-        "  transition: background 0.15s, border-color 0.15s;",
+        "  transition: background 0.15s, border-color 0.15s, color 0.15s;",
         "  line-height: 1.4;",
         "}",
         ".lp-internal-btn .material-symbols-outlined {",
         "  font-size: 16px !important;",
         "  line-height: 1;",
+        "  color: #005ea2;" /* --nav-accent */,
         "}",
         ".lp-internal-btn:hover {",
-        "  background: rgba(255,255,255,0.2);",
-        "  border-color: rgba(255,255,255,0.7);",
+        "  background: #eff6fb;" /* --nav-hover-bg */,
+        "  border-color: #005ea2;" /* --nav-accent */,
+        "  color: #005ea2;",
         "  text-decoration: none;",
         "}",
+        ".lp-internal-btn:hover .material-symbols-outlined {",
+        "  color: #005ea2;",
+        "}",
         ".lp-internal-btn:focus-visible {",
-        "  outline: 2px solid #fff;",
+        "  outline: 3px solid #005ea2;" /* --nav-accent */,
         "  outline-offset: 2px;",
         "}",
 
@@ -603,8 +619,12 @@
         "  /* inherits all .lp-internal-btn rules */",
         "}",
         ".dd-item--internal.open .lp-internal-btn--dd {",
-        "  background: rgba(255,255,255,0.22);",
-        "  border-color: rgba(255,255,255,0.7);",
+        "  background: #eff6fb;" /* --nav-hover-bg */,
+        "  border-color: #005ea2;" /* --nav-accent */,
+        "  color: #005ea2;",
+        "}",
+        ".dd-item--internal.open .lp-internal-btn--dd .material-symbols-outlined {",
+        "  color: #005ea2;",
         "}",
 
         /* ── LEAF Team dropdown panel ───────────────────────────
