@@ -213,13 +213,21 @@
         cursor: pointer;
         transition:
           transform 0.2s,
-          box-shadow 0.2s;
+          box-shadow 0.2s,
+          background 0.2s,
+          color 0.2s;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         animation: ipFadeSlideDown 0.6s 0.4s ease both;
       }
       .ip-hero-cta:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+        background: var(--ip-hero-accent);
+        color: var(--ip-hero-deep);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 32px rgba(0, 0, 0, 0.25);
+      }
+      .ip-hero-cta:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
       }
       .ip-hero-cta:focus-visible {
         outline: 3px solid #fff;
@@ -550,8 +558,10 @@
       /* ── Recently added ── */
       .ip-recentBar {
         padding: 9px 16px;
+        margin: 24px 0;
         background: #f0faf0;
-        border-bottom: 1px solid #86efac;
+        border: 1px solid #86efac;
+        border-radius: var(--ip-r);
         display: flex;
         align-items: center;
         gap: 8px;
@@ -1184,31 +1194,36 @@
         height: 46px;
         border-radius: 999px;
         border: 1px solid var(--lp-blue-mid);
-        background: var(--lp-blue-soft);
+        background: #fff;
         color: #111;
         font-size: 20px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
         z-index: 400;
         opacity: 0;
         pointer-events: none;
         transition:
           opacity 0.15s ease,
-          transform 0.15s ease;
+          transform 0.15s ease,
+          background 0.15s ease,
+          box-shadow 0.15s ease;
       }
       .ip-jumpTop.is-visible {
         opacity: 1;
         pointer-events: auto;
       }
       .ip-jumpTop:hover {
-        background: var(--lp-blue-mid);
+        background: var(--lp-blue-soft);
         border-color: var(--lp-blue-deep);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+        transform: translateY(-2px);
       }
       .ip-jumpTop:active {
         transform: translateY(1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
       }
       .ip-jumpTop:focus-visible {
         outline: 2px solid #000;

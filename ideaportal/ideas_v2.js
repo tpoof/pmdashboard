@@ -1786,10 +1786,7 @@ function handlePaginationAction(scope, action) {
 }
 
 function bindDelegatedEvents() {
-  const wrap = document.querySelector(".ip-wrap");
-  if (!wrap) return;
-
-  wrap.addEventListener("click", (e) => {
+  document.addEventListener("click", (e) => {
     const sortBtn = e.target.closest(".ip-sortBtn");
     if (sortBtn) {
       handleSortClick(sortBtn);
