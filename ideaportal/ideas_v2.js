@@ -250,6 +250,27 @@ function hideToast() {
   document.getElementById("ipToast")?.classList.remove("is-visible");
 }
 
+function copyFallback(text) {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    if (ok) {
+      showToast("Idea link copied to clipboard.");
+    } else {
+      showToast("Could not copy — please copy the URL manually.", true);
+    }
+  } catch (err) {
+    console.warn("[Share] copyFallback failed:", err);
+    showToast("Could not copy — please copy the URL manually.", true);
+  }
+}
+
 /* ─────────────────────────────────────────────────────────────
    Stats strip
 ───────────────────────────────────────────────────────────── */
@@ -634,13 +655,6 @@ function wireJumpToTop() {
       window.innerHeight || document.documentElement.clientHeight;
     const needsScroll = scrollHeight - clientHeight > 80;
     btn.classList.toggle("is-visible", needsScroll && scrollTop > 120);
-    const credit = document.getElementById("ipCreditBadge");
-    if (credit) {
-      credit.classList.toggle(
-        "is-visible",
-        scrollTop + clientHeight >= scrollHeight - 80,
-      );
-    }
   }
 
   btn.addEventListener("click", () => {
@@ -1798,10 +1812,17 @@ function bindDelegatedEvents() {
     if (shareBtn) {
       const link = shareBtn.getAttribute("data-record-link");
       if (!link) return;
-      navigator.clipboard
-        .writeText(link)
-        .then(() => showToast("Idea link copied to clipboard."))
-        .catch((err) => console.error("Could not copy link:", err));
+
+      // Try modern clipboard API first; fall back to execCommand for
+      // iframe contexts or browsers where clipboard API is unavailable.
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard
+          .writeText(link)
+          .then(() => showToast("Idea link copied to clipboard."))
+          .catch(() => copyFallback(link));
+      } else {
+        copyFallback(link);
+      }
       return;
     }
 

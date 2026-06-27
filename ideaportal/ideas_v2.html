@@ -1226,27 +1226,20 @@
 
       /* ── Credit badge ── */
       .ip-creditBadge {
-        display: none;
-        position: fixed;
-        bottom: 24px;
-        left: 24px;
-        background: rgba(255, 255, 255, 0.95);
-        border: 1px solid var(--ip-blue-10);
-        border-radius: 999px;
-        padding: 7px 14px;
-        font-size: 0.875rem;
-        color: var(--ip-muted);
-        align-items: center;
-        gap: 6px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-        z-index: 400;
-      }
-      .ip-creditBadge.is-visible {
         display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 5px;
+        padding: 10px 32px 14px;
+        font-size: 0.8rem;
+        color: var(--ip-muted);
+        background: #eef2f6;
+        opacity: 0.7;
       }
       .ip-creditBadge .material-symbols-outlined {
-        font-size: 1rem;
+        font-size: 0.95rem;
         color: var(--ip-blue);
+        opacity: 0.7;
       }
 
       .lp-bottom-safe {
@@ -1915,6 +1908,14 @@
         </div>
         <!-- /.ip-mainLayout -->
 
+        <!-- Subtle page footer credit -->
+        <div class="ip-creditBadge" aria-label="Credit">
+          <span class="material-symbols-outlined" aria-hidden="true"
+            >editor_choice</span
+          >
+          <span>Co-created with LEAF collaborator, Eugene Weast</span>
+        </div>
+
         <!-- Toast -->
         <div
           id="ipToast"
@@ -2186,14 +2187,6 @@
             >arrow_upward</span
           >
         </button>
-
-        <!-- Credit badge -->
-        <div class="ip-creditBadge" id="ipCreditBadge" aria-label="Credit">
-          <span class="material-symbols-outlined" aria-hidden="true"
-            >editor_choice</span
-          >
-          <span>Co-created with LEAF collaborator, Eugene Weast</span>
-        </div>
 
         <div class="lp-bottom-safe" aria-hidden="true"></div>
       </main>
