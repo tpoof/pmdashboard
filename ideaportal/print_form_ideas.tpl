@@ -14,6 +14,9 @@
 <!-- ── Skip link (accessibility: keyboard users jump past nav) ── -->
 <a href="#pv-main" class="pv-skip-link">Skip to main content</a>
 
+<!-- Material Symbols (for vote + share icons, matching ideas portal) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,1,0" />
+
 <!-- ── Scoped styles ── -->
 <style>
 /* ── Reset & scope ─────────────────────────────────── */
@@ -557,77 +560,95 @@
     background: #cbd5e1;
     flex-shrink: 0;
 }
-/* Vote button — mirrors ip-upvote from ideas portal */
+/* Vote button — exact match to ip-upvote in ideas portal */
 .pv-upvote {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border: 1.5px solid #a3bfda;
+    justify-content: center;
+    gap: 4px;
+    height: 32px;
+    padding: 0 10px;
+    border: 1.5px solid #cce4f5;
     border-radius: 6px;
-    background: #ffffff;
+    background: #fff;
     color: #005ea2;
-    font-size: 14px;
-    font-weight: 600;
-    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-family: 'Public Sans', 'Source Sans 3', sans-serif;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-    line-height: 1.3;
+    transition: all 0.15s;
+    box-sizing: border-box;
 }
 .pv-upvote:hover:not(:disabled) {
     background: #005ea2;
-    color: #ffffff;
+    color: #fff;
     border-color: #005ea2;
 }
-.pv-upvote:focus-visible {
-    outline: 3px solid #005ea2;
-    outline-offset: 2px;
+.pv-upvote:hover:not(:disabled) .material-symbols-outlined {
+    color: #fff !important;
 }
 .pv-upvote.is-voted {
-    background: #005ea2;
-    color: #ffffff;
-    border-color: #005ea2;
+    background: #e8e8e8;
+    color: #666;
+    border-color: #ccc;
     cursor: default;
+    opacity: 1;
+}
+.pv-upvote.is-voted .material-symbols-outlined {
+    color: #666 !important;
+}
+.pv-upvote.is-voted:focus-visible {
+    outline: 2px solid #000;
+    outline-offset: 3px;
 }
 .pv-upvote:disabled {
     opacity: 0.65;
-    cursor: default;
 }
-.pv-upvote svg {
-    width: 15px;
-    height: 15px;
-    flex-shrink: 0;
+.pv-upvote:focus-visible {
+    outline: 2px solid #000;
+    outline-offset: 2px;
 }
-/* Share button */
+.pv-upvote .material-symbols-outlined {
+    font-size: 0.9rem;
+    line-height: 1;
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 24, 'GRAD' 0;
+}
+/* Share button — exact match to ip-share in ideas portal */
 .pv-share {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border: 1.5px solid #cbd5e1;
+    justify-content: center;
+    gap: 4px;
+    height: 32px;
+    padding: 0 10px;
+    font-size: 0.8rem;
+    background: transparent;
+    border: 1.5px solid #cce4f5;
     border-radius: 6px;
-    background: #ffffff;
     color: #475569;
-    font-size: 14px;
-    font-weight: 600;
-    font-family: inherit;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-    line-height: 1.3;
+    font-family: 'Public Sans', 'Source Sans 3', sans-serif;
+    font-weight: 600;
+    transition: all 0.15s;
+    margin-left: 4px;
+    box-sizing: border-box;
 }
 .pv-share:hover {
-    background: #f1f5f9;
-    border-color: #94a3b8;
-    color: #1e293b;
+    background: #005ea2;
+    border-color: #005ea2;
+    color: #fff;
+}
+.pv-share:hover .material-symbols-outlined {
+    color: #fff !important;
 }
 .pv-share:focus-visible {
-    outline: 3px solid #005ea2;
+    outline: 2px solid #000;
     outline-offset: 2px;
 }
-.pv-share svg {
-    width: 15px;
-    height: 15px;
-    flex-shrink: 0;
+.pv-share .material-symbols-outlined {
+    font-size: 0.9rem;
+    line-height: 1;
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 24, 'GRAD' 0;
 }
 /* Toast notification */
 #pvToast {
@@ -816,9 +837,7 @@
                 data-record-id="<!--{$recordID|strip_tags}-->"
                 aria-label="Vote for this idea"
                 title="Vote for this idea">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false">
-                <path d="M8 2L10.5 6.5H14L10.5 9.5L12 14L8 11L4 14L5.5 9.5L2 6.5H5.5L8 2Z"/>
-            </svg>
+            <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
             Vote
         </button>
 
@@ -829,10 +848,7 @@
                 data-record-link="https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=<!--{$recordID|strip_tags}-->"
                 aria-label="Copy shareable link for this idea"
                 title="Copy shareable link">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false">
-                <circle cx="12" cy="3" r="1.5"/><circle cx="12" cy="13" r="1.5"/><circle cx="4" cy="8" r="1.5"/>
-                <path d="M10.5 3.8L5.5 7.2M10.5 12.2L5.5 8.8"/>
-            </svg>
+            <span class="material-symbols-outlined" aria-hidden="true">share</span>
             Share
         </button>
     </div>
@@ -1150,7 +1166,8 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         })
         .then(function(r) { return r.text(); })
         .then(function(text) {
-            var newID = parseFloat(text);
+            /* Response may be JSON-encoded ("26") or plain (26) */
+            var newID = parseFloat(text.replace(/^"|"$/g, ''));
             if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
                 pvShowToast('Thanks for voting!');
             } else {
