@@ -856,6 +856,9 @@
         color: #fff;
         border-color: var(--ip-blue);
       }
+      .ip-upvote:hover:not(:disabled) .material-symbols-outlined {
+        color: #fff !important;
+      }
       .ip-upvote.is-voted {
         background: #e8e8e8;
         color: #666;
@@ -901,9 +904,12 @@
         box-sizing: border-box;
       }
       .ip-share:hover {
-        background: var(--ip-blue-lt);
+        background: var(--ip-blue);
         border-color: var(--ip-blue);
-        color: var(--ip-blue);
+        color: #fff;
+      }
+      .ip-share:hover .material-symbols-outlined {
+        color: #fff !important;
       }
       .ip-share .material-symbols-outlined {
         font-size: 0.9rem;
