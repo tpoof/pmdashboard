@@ -529,6 +529,133 @@
     gap: 10px;
     flex-wrap: wrap;
 }
+
+/* ── Actions bar ─────────────────────────────────────── */
+.pv-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    padding: 16px 24px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+}
+.pv-actions-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #475569;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+.pv-actions-divider {
+    width: 1px;
+    height: 24px;
+    background: #cbd5e1;
+    flex-shrink: 0;
+}
+/* Vote button — mirrors ip-upvote from ideas portal */
+.pv-upvote {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1.5px solid #a3bfda;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #005ea2;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    line-height: 1.3;
+}
+.pv-upvote:hover:not(:disabled) {
+    background: #005ea2;
+    color: #ffffff;
+    border-color: #005ea2;
+}
+.pv-upvote:focus-visible {
+    outline: 3px solid #005ea2;
+    outline-offset: 2px;
+}
+.pv-upvote.is-voted {
+    background: #005ea2;
+    color: #ffffff;
+    border-color: #005ea2;
+    cursor: default;
+}
+.pv-upvote:disabled {
+    opacity: 0.65;
+    cursor: default;
+}
+.pv-upvote svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+/* Share button */
+.pv-share {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    line-height: 1.3;
+}
+.pv-share:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #1e293b;
+}
+.pv-share:focus-visible {
+    outline: 3px solid #005ea2;
+    outline-offset: 2px;
+}
+.pv-share svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+/* Toast notification */
+#pvToast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: #1e293b;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 9999;
+    white-space: nowrap;
+}
+#pvToast.is-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+#pvToast.is-error {
+    background: #b91c1c;
+}
 </style>
 
 <!-- ── Back nav ─────────────────────────────────────────────────────────── -->
@@ -677,7 +804,43 @@
         </div>
     </section>
 
+    <!-- ── Actions bar: Vote + Share ─────────────────────────────────── -->
+    <div class="pv-actions" role="group" aria-label="Idea actions">
+        <span class="pv-actions-label">Actions</span>
+        <div class="pv-actions-divider" role="separator" aria-hidden="true"></div>
+
+        <!-- Vote -->
+        <button type="button"
+                class="pv-upvote"
+                id="pv-vote-btn"
+                data-record-id="<!--{$recordID|strip_tags}-->"
+                aria-label="Vote for this idea"
+                title="Vote for this idea">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false">
+                <path d="M8 2L10.5 6.5H14L10.5 9.5L12 14L8 11L4 14L5.5 9.5L2 6.5H5.5L8 2Z"/>
+            </svg>
+            Vote
+        </button>
+
+        <!-- Share -->
+        <button type="button"
+                class="pv-share"
+                id="pv-share-btn"
+                data-record-link="https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=<!--{$recordID|strip_tags}-->"
+                aria-label="Copy shareable link for this idea"
+                title="Copy shareable link">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="3" r="1.5"/><circle cx="12" cy="13" r="1.5"/><circle cx="4" cy="8" r="1.5"/>
+                <path d="M10.5 3.8L5.5 7.2M10.5 12.2L5.5 8.8"/>
+            </svg>
+            Share
+        </button>
+    </div>
+
 </main>
+
+<!-- Toast notification -->
+<div id="pvToast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- ── Data loader ──────────────────────────────────────────────────────── -->
 <script>
@@ -871,6 +1034,166 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
 
 }());
 
+/* ── Self-contained vote + share for printview ───────────────────────────
+   Extracted from ideas_v2.js. No portal globals required.
+   Dependencies already on page: jQuery, CSRFToken (let, from main JS block)
+──────────────────────────────────────────────────────────────────────── */
+(function() {
+    var PV_RECORD_ID  = <!--{$recordID|strip_tags|escape:'javascript'}-->;
+    var PV_USER_ID    = '<!--{$userID|strip_tags|escape:'javascript'}-->';
+    var PV_FORM_KEY   = '57e89';          /* votes form key (form_57e89)  */
+    var PV_VOTE_IND_IDEA = 2;             /* indicatorID: linked idea      */
+    var PV_VOTE_IND_USER = 3;             /* indicatorID: voter userID     */
+    var _pvToastTimer = null;
+    var _pvVotingInProgress = false;
+
+    /* ── Toast ── */
+    function pvShowToast(msg, isError) {
+        var toast = document.getElementById('pvToast');
+        if (!toast) { return; }
+        toast.textContent = msg || '';
+        toast.classList.toggle('is-error', !!isError);
+        toast.classList.add('is-visible');
+        if (_pvToastTimer) { clearTimeout(_pvToastTimer); }
+        _pvToastTimer = setTimeout(function() {
+            toast.classList.remove('is-visible');
+        }, 4000);
+    }
+
+    /* ── Clipboard fallback ── */
+    function pvCopyFallback(text) {
+        try {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            var ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            pvShowToast(ok ? 'Idea link copied to clipboard.' : 'Could not copy — please copy the URL manually.', !ok);
+        } catch(e) {
+            pvShowToast('Could not copy — please copy the URL manually.', true);
+        }
+    }
+
+    /* ── Set voted visual state ── */
+    function pvSetVoted(isVoted) {
+        var btn = document.getElementById('pv-vote-btn');
+        if (!btn) { return; }
+        btn.disabled = isVoted;
+        btn.setAttribute('aria-disabled', isVoted ? 'true' : 'false');
+        btn.classList.toggle('is-voted', isVoted);
+        btn.setAttribute('aria-label', isVoted ? 'You\'ve already voted for this idea' : 'Vote for this idea');
+        btn.title = isVoted ? 'You\'ve already voted for this idea' : 'Vote for this idea';
+    }
+
+    /* ── Check if current user already voted (runs on page load) ── */
+    function pvCheckVoted() {
+        if (!PV_USER_ID) { return; }
+        var q = {
+            terms: [
+                { id: 'categoryID', operator: '=', match: 'form_57e89', gate: 'AND' },
+                { id: 'deleted',    operator: '=', match: 0,             gate: 'AND' }
+            ],
+            joins: [],
+            getData: [String(PV_VOTE_IND_IDEA), String(PV_VOTE_IND_USER)]
+        };
+        $.ajax({
+            type: 'GET',
+            url: './api/form/query',
+            data: { q: JSON.stringify(q), 'x-filterData': 'recordID,s1' },
+            dataType: 'json',
+            cache: false,
+            success: function(res) {
+                var ideaKey  = String(PV_RECORD_ID);
+                var userKey  = String(PV_USER_ID);
+                var hasVoted = false;
+                $.each(res, function(_, vote) {
+                    var linkedIdea = String((vote.s1 && vote.s1['id' + PV_VOTE_IND_IDEA]) || '');
+                    var voter      = String((vote.s1 && vote.s1['id' + PV_VOTE_IND_USER]) || '');
+                    if (linkedIdea === ideaKey && voter === userKey) {
+                        hasVoted = true;
+                        return false; /* break */
+                    }
+                });
+                if (hasVoted) { pvSetVoted(true); }
+            },
+            error: function() { /* silently fail — vote button stays enabled */ }
+        });
+    }
+
+    /* ── Submit vote ── */
+    function pvIdeaVotes() {
+        if (_pvVotingInProgress) { return; }
+        var btn = document.getElementById('pv-vote-btn');
+        if (btn && btn.disabled) {
+            pvShowToast('You already voted on this idea.', true);
+            return;
+        }
+        _pvVotingInProgress = true;
+        pvSetVoted(true); /* optimistic */
+
+        var payload = new URLSearchParams();
+        payload.append('service', '');
+        payload.append('title', 'Idea #' + PV_RECORD_ID);
+        payload.append('priority', '0');
+        payload.append('CSRFToken', CSRFToken);
+        payload.append('numform_' + PV_FORM_KEY, '1');
+        payload.append(String(PV_VOTE_IND_USER), PV_USER_ID);
+        payload.append(String(PV_VOTE_IND_IDEA), String(PV_RECORD_ID));
+
+        fetch('./api/?a=form/new', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: payload.toString()
+        })
+        .then(function(r) { return r.text(); })
+        .then(function(text) {
+            var newID = parseFloat(text);
+            if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
+                pvShowToast('Thanks for voting!');
+            } else {
+                throw new Error('Unexpected response: ' + text);
+            }
+        })
+        .catch(function(err) {
+            console.error('[pvIdeaVotes] error:', err);
+            pvShowToast('Error processing vote. Please try again.', true);
+            pvSetVoted(false); /* roll back optimistic state */
+        })
+        .finally(function() {
+            _pvVotingInProgress = false;
+        });
+    }
+
+    /* ── Share ── */
+    function pvShare() {
+        var btn  = document.getElementById('pv-share-btn');
+        var link = btn ? btn.getAttribute('data-record-link') : window.location.href;
+        if (!link) { return; }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(link)
+                .then(function()  { pvShowToast('Idea link copied to clipboard.'); })
+                .catch(function() { pvCopyFallback(link); });
+        } else {
+            pvCopyFallback(link);
+        }
+    }
+
+    /* ── Wire buttons on DOM ready ── */
+    $(function() {
+        var voteBtn  = document.getElementById('pv-vote-btn');
+        var shareBtn = document.getElementById('pv-share-btn');
+        if (voteBtn)  { voteBtn.addEventListener('click',  pvIdeaVotes); }
+        if (shareBtn) { shareBtn.addEventListener('click', pvShare); }
+        pvCheckVoted();
+    });
+
+}());
+</script>
+
+<script type="text/javascript">
 /* ── Edit handler: opens LEAF's native form dialog for a field ───────── */
 function pvOpenEdit(indicatorID) {
     if (!pvCanEdit) { return; }
