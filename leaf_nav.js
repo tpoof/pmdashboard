@@ -1,5 +1,5 @@
 /* ============================================================
-   LEAF Universal Nav  |  leaf_nav.js
+   LEAF Universal Nav  |  leaf_nav.js  |  v4
    ─────────────────────────────────────────────────────────────
    Lives at /platform/designs/files/leaf_nav.js — every page
    should point here directly so there's exactly one copy to
@@ -22,6 +22,23 @@
    used to build both the desktop dropdowns and the mobile
    accordion, so links only ever need to be edited once.
 
+   ── Option B: Hash router (Launchpad v4) ────────────────────
+   On the launchpad page (report.php?a=launchpad), nav link
+   left-clicks push a hash and trigger a fetch+inject cycle:
+
+   1. Hash is pushed to window.location → hashchange fires
+   2. Router maps hash key → URL from NAV_SECTIONS
+   3. fetch(url) → DOMParser → extract #content
+   4. Chrome suppression strips #header, #footer, nav, etc.
+   5. Safe script re-execution re-appends <script> nodes
+   6. Injected into #lpSwapHost; launchpad <main> hidden
+   7. Breadcrumb updates to reflect current view
+   8. Live region announces new page to screen readers
+
+   Back button works natively via hash history.
+   Modifier-key clicks (Ctrl/Cmd/middle) always open real tabs.
+   Pages not on the launchpad are unaffected.
+
    ── Accessibility (WCAG 2.1 AA / Section 508) ───────────────
    • Skip navigation link auto-injected at top of <body>
      (targets #main-content; auto-added to first <main> if absent)
@@ -32,28 +49,34 @@
    • Mobile panel traps focus while open; Escape returns focus
    • window.LEAF_NAV_CURRENT = "Section Label" marks active
      section with aria-current="true" for screen readers
+   • SPA view changes announced via #lp-live-region (aria-live)
+   • Focus moved to #lpSwapHost after each view load
+   • document.title updated to fetched page title on each view
    • prefers-reduced-motion: all animations suppressed in CSS
    ============================================================ */
 
 (function () {
   "use strict";
 
-  /* ── Nav content (single source of truth for desktop + mobile) ── */
+  /* ── Nav content (single source of truth for desktop + mobile) ──
+     href values here are the canonical URLs used by the router.
+     Hash keys are derived from the ?a= param value automatically.
+     Placeholder hrefs (#) are skipped by the router. */
   var NAV_SECTIONS = [
     {
-      label: "What is LEAF?",
+      label: "About LEAF",
       items: [
         {
           icon: "bar_chart",
           title: "Our Impact",
-          desc: "See how LEAF has transformed VA workflows across the country",
-          href: "#", // placeholder — intentional, page not live yet
+          desc: "LEAF's impact across the VA enterprise",
+          href: "/platform/designs/report.php?a=impact",
         },
         {
           icon: "route",
           title: "Roadmap",
-          desc: "Upcoming features and platform improvements",
-          href: "#", // placeholder — intentional, page not live yet
+          desc: "What's coming to LEAF",
+          href: "#",
         },
       ],
     },
@@ -63,19 +86,19 @@
         {
           icon: "library_books",
           title: "Use Cases",
-          desc: "Browse real-life VA workflows built with LEAF",
+          desc: "Explore real workflows from teams across the VA",
           href: "#",
         },
         {
           icon: "description",
           title: "Form Library",
-          desc: "Ready-to-use templates for common VA processes",
-          href: "#",
+          desc: "Forms and templates built by VA teams",
+          href: "/platform/designs/report.php?a=form_library",
         },
         {
           icon: "cable",
           title: "Integrations",
-          desc: "Connect LEAF with other VA systems and tools",
+          desc: "Connect LEAF to other systems and tools",
           href: "#",
         },
       ],
@@ -85,41 +108,84 @@
       items: [
         {
           icon: "location_on",
-          title: "Find your local LEAF site",
-          desc: "Search for LEAF at your VA facility",
-          href: "report.php?a=Find_my_site",
+          title: "Find a LEAF Site",
+          desc: "Locate a LEAF site at your VA facility",
+          href: "/platform/designs/report.php?a=find_site",
         },
         { divider: true },
         {
           icon: "menu_book",
-          title: "Help library",
-          desc: "Guides, tutorials, and documentation",
+          title: "Help Library",
+          desc: "Guides and documentation",
           href: "https://leaf.va.gov/platform/help_library/report.php?a=stephanie_test1",
         },
         {
           icon: "group",
-          title: "Community of practice",
-          desc: "Connect with LEAF users across VA",
-          href: "/platform/CoP/",
-          external: true,
+          title: "Community of Practice",
+          desc: "Connect with LEAF users VA-wide",
+          href: "/platform/CoP/report.php?a=test_homepage",
         },
         {
           icon: "lightbulb",
-          title: "Suggest an idea",
-          desc: "Share feature requests with the LEAF team",
-          href: "/platform/ideas/",
-          external: true,
+          title: "Suggest an Idea",
+          desc: "Submit an idea to improve LEAF",
+          href: "/platform/ideas/report.php?a=v3",
         },
       ],
     },
   ];
 
-  /* ── Markup builders (shared by desktop dropdowns + mobile accordion) ── */
+  /* ── Router: hash key → { href, title, section } lookup table ──
+     Built once at init from NAV_SECTIONS. Hash key is the ?a= param
+     value (e.g. "impact", "find_site"). The launchpad's own ?a=
+     param is never read — the hash is the sole client-side router. */
+  var ROUTE_MAP = {};
+
+  function buildRouteMap() {
+    NAV_SECTIONS.forEach(function (section) {
+      section.items.forEach(function (item) {
+        if (item.divider || !item.href || item.href === "#") return;
+        var key = hrefToHashKey(item.href);
+        if (key) {
+          ROUTE_MAP[key] = {
+            href: item.href,
+            title: item.title,
+            section: section.label,
+          };
+        }
+      });
+    });
+  }
+
+  /* Derive a hash key from any href.
+     "/platform/designs/report.php?a=find_site" → "find_site"
+     "report.php?a=Find_my_site"               → "find_my_site" (lowercased)
+     Absolute URLs with different origin handled gracefully. */
+  function hrefToHashKey(href) {
+    if (!href || href === "#") return null;
+    var match = href.match(/[?&]a=([^&#]+)/i);
+    if (match) return match[1].toLowerCase();
+    /* Fall back: use last path segment for hrefs without ?a= */
+    var pathMatch = href.replace(/\/$/, "").match(/([^/?#]+)$/);
+    return pathMatch ? pathMatch[1].toLowerCase() : null;
+  }
+
+  /* ── Detect whether we're on the launchpad ──
+     The router only activates on report.php?a=launchpad.
+     All other pages get the nav only — no router, no fetch. */
+  function isLaunchpad() {
+    /* Check for the swap host placeholder — present only on the launchpad page */
+    if (document.getElementById("lpSwapHost")) return true;
+    if (document.getElementById("lp-main")) return true;
+    return false;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     MARKUP BUILDERS
+     Shared by desktop dropdowns + mobile accordion
+  ───────────────────────────────────────────────────────────── */
   function linkHTML(item) {
     if (item.divider) return '<hr class="dd-divider" aria-hidden="true">';
-    /* All nav links open in-panel on left-click (intercepted below).
-       Ctrl/Cmd/middle-click still opens a real new tab naturally via the href.
-       No target="_blank" needed — it would conflict with the intercept. */
     return `
       <li>
         <a class="dd-link" href="${item.href}">
@@ -135,9 +201,6 @@
   }
 
   function desktopSectionHTML(section, i) {
-    /* Disclosure navigation pattern: aria-expanded only, no aria-haspopup.
-       This avoids a role mismatch (haspopup implies role="menu" which the
-       panel doesn't have). Tab key navigates into the open panel naturally. */
     var isCurrent =
       window.LEAF_NAV_CURRENT &&
       window.LEAF_NAV_CURRENT.trim().toLowerCase() ===
@@ -170,38 +233,6 @@
       </li>`;
   }
 
-  /* ── Panel HTML (self-injected alongside the nav) ── */
-  function buildPanelHTML() {
-    return `<div
-      id="lpInlinePanel"
-      class="lp-inline-panel"
-      role="dialog"
-      aria-modal="true"
-      aria-label="LEAF page panel"
-      hidden>
-      <div class="lp-inline-bar">
-        <button
-          class="lp-inline-back"
-          id="lpInlineClose"
-          type="button"
-          aria-label="Close and return to Launchpad">
-          <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-          Back to Launchpad
-        </button>
-      </div>
-      <div class="lp-inline-loading" id="lpInlineLoading" aria-hidden="true">
-        <span class="lp-inline-spinner"></span>
-      </div>
-      <iframe
-        id="lpInlineFrame"
-        src=""
-        class="lp-inline-frame"
-        title="Page content"
-        frameborder="0">
-      </iframe>
-    </div>`;
-  }
-
   function buildNavHTML() {
     var desktopItems = NAV_SECTIONS.map(desktopSectionHTML).join("");
     var mobileItems = NAV_SECTIONS.map(mobileSectionHTML).join("");
@@ -225,12 +256,12 @@
 </nav>`;
   }
 
-  /* ── Skip navigation link ──
-     Injected as the very first child of <body> so it's the first
-     Tab stop on the page. Visually hidden until focused.
-     Targets #main-content. If no element with that ID exists on
-     the page, this script adds it to the first <main> element,
-     or to the first block-level element after the nav. */
+  /* ─────────────────────────────────────────────────────────────
+     SKIP NAVIGATION LINK
+     Injected as the very first child of <body>. Visually hidden
+     until focused. Targets #main-content (which we reassign
+     depending on current view state in the router).
+  ───────────────────────────────────────────────────────────── */
   function ensureSkipLink() {
     if (document.getElementById("lp-skip-nav")) return;
     var skip = document.createElement("a");
@@ -248,47 +279,48 @@
       main.id = "main-content";
       return;
     }
-    /* Fall back: first sibling element after the nav */
     var nav = document.getElementById("lpNav");
     if (nav && nav.nextElementSibling) {
       nav.nextElementSibling.id = "main-content";
     }
   }
 
-  /* ── Self-mount: stylesheet ──
-     If the page already links leaf_nav.css (or leaf-nav.css)
-     directly, leave it alone. Otherwise, derive the CSS path
-     from this <script>'s own src and inject a <link> for it. */
+  /* ─────────────────────────────────────────────────────────────
+     SELF-MOUNT: STYLESHEET
+  ───────────────────────────────────────────────────────────── */
+  /* Hardcoded path — CSS filename is always leaf_nav.css regardless
+     of what version filename this JS is deployed as (leaf_nav_v2.js,
+     leaf_nav_v3.js, etc.). Update this constant if the CSS ever moves. */
+  var LEAF_NAV_CSS_HREF = "/platform/designs/files/leaf_nav.css";
+  var LEAF_BREADCRUMB_CSS_HREF = "/platform/designs/files/leaf_breadcrumb.css";
+
   function ensureStylesheet() {
+    /* Nav CSS — hardcoded so it loads correctly regardless of JS filename */
     if (
-      document.querySelector(
+      !document.querySelector(
         'link[href*="leaf_nav.css"], link[href*="leaf-nav.css"]',
       )
     ) {
-      return;
+      var navLink = document.createElement("link");
+      navLink.rel = "stylesheet";
+      navLink.href = LEAF_NAV_CSS_HREF;
+      document.head.appendChild(navLink);
     }
-    var thisScript =
-      document.currentScript ||
-      (function () {
-        var scripts = document.getElementsByTagName("script");
-        return scripts[scripts.length - 1];
-      })();
-    var src = thisScript && thisScript.getAttribute("src");
-    if (!src) return;
-    var cssHref = src.replace(/leaf[_-]nav\.js(\?.*)?$/i, function (match) {
-      return match.replace(/\.js/i, ".css");
-    });
-    if (cssHref === src) return;
-    var link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = cssHref;
-    document.head.appendChild(link);
+    /* Breadcrumb CSS — needed on the launchpad so the router-injected
+       breadcrumb is styled without leaf_breadcrumb.js having to run.
+       Safe to load on all pages — it's a small file and causes no conflicts. */
+    if (!document.querySelector('link[href*="leaf_breadcrumb.css"]')) {
+      var bcLink = document.createElement("link");
+      bcLink.rel = "stylesheet";
+      bcLink.href = LEAF_BREADCRUMB_CSS_HREF;
+      document.head.appendChild(bcLink);
+    }
   }
   ensureStylesheet();
 
-  /* ── Self-mount: host element ──
-     Use the existing #lp-nav-host if the page already has one;
-     otherwise create one at the very top of <body>. */
+  /* ─────────────────────────────────────────────────────────────
+     SELF-MOUNT: HOST ELEMENT
+  ───────────────────────────────────────────────────────────── */
   function ensureHost() {
     var host = document.getElementById("lp-nav-host");
     if (host) return host;
@@ -298,149 +330,533 @@
     return host;
   }
 
-  /* ── Inject nav into placeholder ── */
+  /* ─────────────────────────────────────────────────────────────
+     SELF-MOUNT: SWAP HOST
+     The persistent container that receives fetched page content.
+     Only injected on the launchpad page. Hidden by default.
+  ───────────────────────────────────────────────────────────── */
+  function ensureSwapHost() {
+    /* Mark existing element with stable attribute if present */
+    var existing = document.getElementById("lpSwapHost");
+    if (existing) {
+      existing.setAttribute("data-lp-swap-host", "");
+      return;
+    }
+    var host = document.createElement("div");
+    host.id = "lpSwapHost";
+    host.setAttribute("data-lp-swap-host", ""); /* stable lookup anchor */
+    host.setAttribute("hidden", "");
+    host.setAttribute("tabindex", "-1");
+    host.setAttribute("aria-label", "Page content");
+    /* Insert after nav, before everything else */
+    var nav = document.getElementById("lpNav");
+    if (nav && nav.parentNode) {
+      nav.parentNode.insertBefore(host, nav.nextSibling);
+    } else {
+      document.body.appendChild(host);
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     SELF-MOUNT: LIVE REGION
+     Announces view changes to screen readers without moving focus.
+     aria-live="polite" waits for current speech to finish.
+  ───────────────────────────────────────────────────────────── */
+  function ensureLiveRegion() {
+    if (document.getElementById("lp-live-region")) return;
+    var region = document.createElement("div");
+    region.id = "lp-live-region";
+    region.setAttribute("aria-live", "polite");
+    region.setAttribute("aria-atomic", "true");
+    region.className = "lp-sr-only";
+    document.body.appendChild(region);
+  }
+
+  function announce(msg) {
+    var region = document.getElementById("lp-live-region");
+    if (!region) return;
+    /* Clear then set to ensure re-announcement of same text */
+    region.textContent = "";
+    setTimeout(function () {
+      region.textContent = msg;
+    }, 50);
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     INJECT
+  ───────────────────────────────────────────────────────────── */
   function inject() {
     ensureSkipLink();
     var host = ensureHost();
     host.outerHTML = buildNavHTML();
     ensureMainContentTarget();
-    ensurePanel();
+
+    if (isLaunchpad()) {
+      buildRouteMap();
+      ensureSwapHost();
+      ensureLiveRegion();
+      wireRouter();
+    }
+
     wire();
   }
 
-  /* ── Self-mount: inline panel ──
-     Only injects if #lpInlinePanel isn't already on the page
-     (e.g. launchpadv3.html already has it baked in). */
-  function ensurePanel() {
-    if (document.getElementById("lpInlinePanel")) return;
-    var container = document.createElement("div");
-    container.innerHTML = buildPanelHTML();
-    document.body.appendChild(container.firstElementChild);
-    wirePanelClose();
-  }
+  /* ─────────────────────────────────────────────────────────────
+     CHROME SUPPRESSION LIST
+     Applied to the parsed DOMParser document before extraction.
+     Covers both old Smarty template (DIV#header, DIV#footer) and
+     new template (HEADER#header, FOOTER#footer.noprint).
+  ───────────────────────────────────────────────────────────── */
+  var CHROME_SELECTORS = [
+    "#header",
+    "#footer",
+    ".noprint",
+    "#lp-skip-nav",
+    "#nav-skip-link",
+    "#LeafSession_dialog",
+    "#lpInlinePanel",
+    "#lpSwapHost",
+    ".lp-nav",
+    "#lp-nav-host",
+    ".lp-breadcrumb",
+    "#lp-breadcrumb-host",
+    "#lp-live-region",
+  ];
 
-  /* ── Wire the panel's close button, Escape, focus trap,
-     spinner hide-on-load, and new-tab link sync ── */
-  function wirePanelClose() {
-    var panel = document.getElementById("lpInlinePanel");
-    var frame = document.getElementById("lpInlineFrame");
-    var loading = document.getElementById("lpInlineLoading");
-    var closeBtn = document.getElementById("lpInlineClose");
-    if (!panel || !frame || !closeBtn) return;
-
-    function closePanel() {
-      console.log("[LP Panel] closePanel called");
-      frame.src = "";
-      panel.setAttribute("hidden", "");
-      document.body.style.overflow = "";
-      var trigger = document.querySelector(".dd-trigger");
-      if (trigger) trigger.focus();
-    }
-
-    /* ── iframe chrome suppression via MutationObserver ──
-        The load event fires too early on LEAF Programmer pages (the wrapper
-        loads first, then Programmer content is injected). A MutationObserver
-        watches the iframe document and hides LEAF chrome (#header, .lp-nav,
-        .lp-breadcrumb) the instant each element appears, regardless of how
-        many load cycles the page goes through. */
-    var iframeObserver = null;
-
-    function suppressIframeChrome(iDoc) {
-      if (!iDoc) return;
-      /* Inject stylesheet once — guard against duplicates */
-      if (!iDoc.getElementById("lp-iframe-overrides")) {
-        var style = iDoc.createElement("style");
-        style.id = "lp-iframe-overrides";
-        style.textContent = [
-          "#header { display: none !important; }",
-          ".lp-nav { display: none !important; }",
-          ".lp-breadcrumb { display: none !important; }",
-        ].join(" ");
-        (iDoc.head || iDoc.documentElement).appendChild(style);
-        console.log(
-          "[LP Panel] iframe chrome suppressed (style injected) \u2713",
-        );
-      }
-      /* Also imperatively hide already-rendered elements in case style
-          injection raced with rendering */
-      ["#header", ".lp-nav", ".lp-breadcrumb"].forEach(function (sel) {
-        var el = iDoc.querySelector(sel);
-        if (el) el.style.setProperty("display", "none", "important");
+  /* ─────────────────────────────────────────────────────────────
+     CONTENT EXTRACTION
+     Priority order:
+       1. [data-lp-content]  — explicit opt-in (add to pages over time)
+       2. #content            — stable Smarty template contract
+       3. #bodyarea           — one level deeper, safety net
+       4. <main>              — generic semantic fallback
+       5. body minus chrome   — last resort
+  ───────────────────────────────────────────────────────────── */
+  function suppressChrome(doc) {
+    CHROME_SELECTORS.forEach(function (sel) {
+      var els = doc.querySelectorAll(sel);
+      els.forEach(function (el) {
+        if (el && el.parentNode) el.parentNode.removeChild(el);
       });
-    }
-
-    function startObservingIframe() {
-      if (iframeObserver) {
-        iframeObserver.disconnect();
-        iframeObserver = null;
-      }
-      try {
-        var iDoc = frame.contentDocument || frame.contentWindow.document;
-        if (!iDoc) return;
-        suppressIframeChrome(iDoc);
-        iframeObserver = new MutationObserver(function () {
-          suppressIframeChrome(iDoc);
-        });
-        iframeObserver.observe(iDoc.documentElement || iDoc.body, {
-          childList: true,
-          subtree: true,
-        });
-        console.log("[LP Panel] MutationObserver started on iframe \u2713");
-      } catch (err) {
-        console.log(
-          "[LP Panel] Could not observe iframe (cross-origin?):",
-          err.message,
-        );
-      }
-    }
-
-    /* Re-run on every load cycle so we catch the Programmer page injection */
-    frame.addEventListener("load", function () {
-      if (loading) loading.setAttribute("hidden", "");
-      startObservingIframe();
     });
+  }
 
-    /* Show spinner when a new URL is opened; disconnect stale observer */
-    panel.addEventListener("lp:open", function () {
-      if (loading) loading.removeAttribute("hidden");
-      if (iframeObserver) {
-        iframeObserver.disconnect();
-        iframeObserver = null;
-      }
+  function extractContent(doc) {
+    /* 1. Explicit opt-in */
+    var el = doc.querySelector("[data-lp-content]");
+    if (el) return el;
+
+    /* 2. Smarty #content div — consistent across both template generations */
+    el = doc.getElementById("content");
+    if (el && el.innerHTML.trim().length > 0) return el;
+
+    /* 3. #bodyarea — one level deeper */
+    el = doc.getElementById("bodyarea");
+    if (el && el.innerHTML.trim().length > 0) return el;
+
+    /* 4. <main> — semantic fallback */
+    el = doc.querySelector("main");
+    if (el && el.innerHTML.trim().length > 0) return el;
+
+    /* 5. Body minus chrome — last resort: return body itself
+       (chrome already stripped by suppressChrome) */
+    return doc.body;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     SAFE SCRIPT RE-EXECUTION
+     Inline scripts: wrapped in new Function() to avoid top-level
+     var declarations stomping outer window globals.
+     External scripts: re-appended to <head> with a new node so
+     the browser fetches and executes them.
+     Guards: document.write calls are skipped (they'd overwrite
+     the outer page). Scripts already loaded by src are tracked
+     in a seen-set to avoid duplicate execution across navigations.
+  ───────────────────────────────────────────────────────────── */
+  var _seenExternalScripts = {};
+
+  /* Scripts that must never re-execute inside a fetched page context.
+     Shell-level scripts (nav, breadcrumb) manage the outer document —
+     re-running them injects duplicate elements and undoes router state. */
+  var SCRIPT_BLOCKLIST = [
+    "leaf_nav",
+    "leaf_breadcrumb",
+    "leaf-nav",
+    "leaf-breadcrumb",
+  ];
+
+  function isBlocklistedScript(src) {
+    return SCRIPT_BLOCKLIST.some(function (term) {
+      return src.indexOf(term) > -1;
     });
+  }
 
-    closeBtn.addEventListener("click", closePanel);
+  function reExecuteScripts(container) {
+    var scripts = Array.prototype.slice.call(
+      container.querySelectorAll("script"),
+    );
 
-    /* Escape closes the panel */
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && !panel.hasAttribute("hidden")) {
-        closePanel();
+    scripts.forEach(function (oldScript) {
+      if (
+        oldScript.textContent &&
+        oldScript.textContent.indexOf("document.write") > -1
+      ) {
+        console.warn("[LP] Skipped script containing document.write");
+        return;
       }
-    });
 
-    /* Focus trap: cycle within the panel while it's open */
-    panel.addEventListener("keydown", function (e) {
-      if (e.key !== "Tab") return;
-      var focusable = Array.prototype.slice.call(
-        panel.querySelectorAll(
-          'button:not([disabled]), a[href]:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ),
-      );
-      if (!focusable.length) return;
-      var first = focusable[0];
-      var last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
+      if (oldScript.src) {
+        var src = oldScript.src;
+        if (isBlocklistedScript(src)) return;
+        if (_seenExternalScripts[src]) return;
+        _seenExternalScripts[src] = true;
+
+        var newScript = document.createElement("script");
+        newScript.src = src;
+        newScript.async = false;
+        if (oldScript.type) newScript.type = oldScript.type;
+        document.head.appendChild(newScript);
+      } else if (oldScript.textContent && oldScript.textContent.trim()) {
+        try {
+          var fn = new Function("document", "window", oldScript.textContent);
+          fn(document, window);
+        } catch (err) {
+          console.warn("[LP] Inline script execution error:", err.message);
+        }
       }
     });
   }
 
-  /* ── Focus trap helpers ──
-     Used by the mobile panel to keep keyboard focus inside while open. */
+  /* ─────────────────────────────────────────────────────────────
+     SWAP HOST: LOADING / ERROR / CONTENT STATES
+  ───────────────────────────────────────────────────────────── */
+  /* Helper: find swap host by stable data attribute regardless of
+     what id it currently holds (it temporarily holds "main-content") */
+  function getSwapHost() {
+    /* Primary: stable data attribute — survives any id reassignment */
+    return (
+      document.querySelector("[data-lp-swap-host]") ||
+      document.getElementById("lpSwapHost")
+    );
+  }
+
+  function showSwapLoading() {
+    var host = getSwapHost();
+    if (!host) return;
+    host.innerHTML =
+      '<div class="lp-swap-loading" aria-hidden="true">' +
+      '<span class="lp-swap-spinner"></span>' +
+      "</div>";
+    host.removeAttribute("hidden");
+  }
+
+  function showSwapError(url) {
+    var host = getSwapHost();
+    if (!host) return;
+    host.innerHTML =
+      '<div class="lp-swap-error" role="alert">' +
+      '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true">error_outline</span>' +
+      '<p class="lp-swap-error-msg">This page couldn\'t be loaded.</p>' +
+      '<a class="lp-swap-error-link btn btn-sec" href="' +
+      url +
+      '" target="_blank" rel="noopener noreferrer">' +
+      '<span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>' +
+      "Open in a new tab" +
+      "</a>" +
+      "</div>";
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     ELEMENT CACHE
+     Resolved once at router init. Using cached references means
+     show/hide never relies on getElementById — so ID reassignment
+     can never break visibility toggling. IDs never change after init.
+  ───────────────────────────────────────────────────────────── */
+  var _lpMain = null; /* launchpad home <main id="lp-main"> */
+  var _swapHost = null; /* swap container [data-lp-swap-host] */
+
+  function initElementCache() {
+    _lpMain = document.getElementById("lp-main");
+    _swapHost =
+      document.querySelector("[data-lp-swap-host]") ||
+      document.getElementById("lpSwapHost");
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     SHOW / HIDE
+     Explicit inline display style beats any stylesheet rule,
+     including LEAF's own overrides. IDs never change — the skip
+     link always targets #lp-main (home) or #lpSwapHost (fetched).
+  ───────────────────────────────────────────────────────────── */
+  function showLaunchpadHome() {
+    if (_lpMain) _lpMain.style.display = "";
+    if (_swapHost) {
+      _swapHost.style.display = "none";
+      _swapHost.innerHTML = "";
+    }
+
+    /* Skip link → home */
+    var skip = document.getElementById("lp-skip-nav");
+    if (skip) skip.href = "#lp-main";
+
+    document.title = "LEAF Launchpad";
+    announce("Returned to Launchpad home");
+    updateNavCurrent(null);
+  }
+
+  function showSwapView() {
+    if (_lpMain) _lpMain.style.display = "none";
+    if (_swapHost) _swapHost.style.display = "";
+
+    /* Skip link → fetched content */
+    var skip = document.getElementById("lp-skip-nav");
+    if (skip) skip.href = "#lpSwapHost";
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     BREADCRUMB
+     Rendered directly into the top of the swap host on every
+     view load — no dependency on leaf_breadcrumb.js timing.
+     Trail: LEAF Launchpad → [Section] → [Page Title]
+  ───────────────────────────────────────────────────────────── */
+  function buildBreadcrumbHTML(route) {
+    /* Matches leaf_breadcrumb.js output exactly — flat children inside
+       <nav class="lp-breadcrumb">, same .lp-bc-sep and .lp-bc-current
+       spans, so leaf_breadcrumb.css styles it without any extra rules. */
+    var trail = [{ label: "Launchpad", href: "/platform/designs" }];
+    if (route) {
+      if (route.section) trail.push({ label: route.section, href: null });
+      trail.push({ label: route.title, href: null, current: true });
+    }
+
+    var inner = trail
+      .map(function (crumb, i) {
+        var isLast = i === trail.length - 1;
+        var sep =
+          i > 0 ? '<span class="lp-bc-sep" aria-hidden="true">/</span>' : "";
+        var node =
+          isLast || !crumb.href
+            ? '<span class="lp-bc-current" aria-current="page">' +
+              crumb.label +
+              "</span>"
+            : '<a href="' + crumb.href + '">' + crumb.label + "</a>";
+        return sep + node;
+      })
+      .join("");
+
+    return (
+      '<nav class="lp-breadcrumb" id="lpBreadcrumb" aria-label="Breadcrumb">' +
+      inner +
+      "</nav>"
+    );
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     MOUNT CONTENT
+  ───────────────────────────────────────────────────────────── */
+  function mountContent(el, sourceDoc, route) {
+    var host = _swapHost;
+    if (!host) {
+      console.error("[LP] mountContent: swap host not found");
+      return;
+    }
+
+    /* Breadcrumb bar above content */
+    var bc = document.createElement("div");
+    bc.innerHTML = buildBreadcrumbHTML(route);
+
+    /* Content wrapper */
+    var wrapper = document.createElement("div");
+    wrapper.className = "lp-swap-content";
+    while (el.firstChild) {
+      wrapper.appendChild(el.firstChild);
+    }
+
+    host.innerHTML = "";
+    host.appendChild(bc.firstElementChild);
+    host.appendChild(wrapper);
+
+    /* Re-execute scripts in the injected content */
+    reExecuteScripts(wrapper);
+
+    /* Update document title */
+    var fetchedTitle = sourceDoc.title;
+    if (fetchedTitle) document.title = fetchedTitle;
+
+    /* Announce view change to screen readers */
+    announce(
+      (route && route.title ? route.title : fetchedTitle || "Page") + " loaded",
+    );
+
+    /* Move focus to swap host */
+    host.focus();
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     NAV CURRENT STATE
+     Marks the active section's trigger with aria-current.
+  ───────────────────────────────────────────────────────────── */
+  function updateNavCurrent(sectionLabel) {
+    document.querySelectorAll(".dd-trigger").forEach(function (btn) {
+      btn.removeAttribute("aria-current");
+    });
+    if (!sectionLabel) return;
+    document.querySelectorAll(".dd-trigger").forEach(function (btn) {
+      if (
+        btn.textContent
+          .trim()
+          .toLowerCase()
+          .indexOf(sectionLabel.trim().toLowerCase()) === 0
+      ) {
+        btn.setAttribute("aria-current", "true");
+      }
+    });
+    window.LEAF_NAV_CURRENT = sectionLabel;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     FETCH + INJECT
+     Core router action. Fetches url, parses, suppresses chrome,
+     extracts #content, mounts into swap host.
+  ───────────────────────────────────────────────────────────── */
+  function loadView(hash, route) {
+    if (!route) {
+      console.warn("[LP Router] No route found for hash:", hash);
+      showSwapError("#");
+      return;
+    }
+
+    var url = route.href;
+
+    showSwapView();
+    showSwapLoading();
+    updateNavCurrent(route.section);
+
+    fetch(url, {
+      credentials: "same-origin" /* send session cookies so auth works */,
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+    })
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error(
+            "HTTP " + response.status + " " + response.statusText,
+          );
+        }
+        return response.text();
+      })
+      .then(function (html) {
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(html, "text/html");
+
+        /* Suppress chrome elements in the parsed document */
+        suppressChrome(doc);
+
+        /* Extract content zone */
+        var contentEl = extractContent(doc);
+
+        if (!contentEl || contentEl.innerHTML.trim().length === 0) {
+          throw new Error("Content extraction returned empty result");
+        }
+
+        /* Mount into swap host */
+        mountContent(contentEl, doc, route);
+
+        /* Scroll swap host to top */
+        var host = getSwapHost();
+        if (host) host.scrollTop = 0;
+        window.scrollTo(0, 0);
+      })
+      .catch(function (err) {
+        console.error("[LP Router] Fetch failed for", url, ":", err.message);
+        showSwapError(url);
+        announce("This page couldn't be loaded. Try opening it in a new tab.");
+      });
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     ROUTER
+     Reads window.location.hash and dispatches to the right view.
+     Called on init and on every hashchange event.
+  ───────────────────────────────────────────────────────────── */
+  function router() {
+    var raw = window.location.hash; /* e.g. "#find_site" or "" */
+    var key = raw.replace(/^#/, "").toLowerCase();
+
+    if (!key || key === "home" || key === "launchpad") {
+      showLaunchpadHome();
+      return;
+    }
+
+    var route = ROUTE_MAP[key];
+    loadView(key, route);
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     LINK INTERCEPT
+     Replaces Option A's click handler. Left-clicking a .dd-link
+     or .lp-panel-link pushes a hash instead of navigating.
+     Modifier-key and middle-clicks fall through to the browser.
+  ───────────────────────────────────────────────────────────── */
+  function wireLinkIntercept() {
+    document.addEventListener("click", function (e) {
+      /* Match both nav dropdown links and footer quick-resource links */
+      var link = e.target.closest(".dd-link, .lp-panel-link");
+      if (!link) return;
+
+      /* Modifier-key / middle-click → real new tab, no intercept */
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
+        return;
+      }
+
+      var href = link.getAttribute("href");
+      if (!href || href === "#") return; /* placeholder — ignore */
+
+      e.preventDefault();
+      closeAllDropdowns(null);
+
+      /* Derive hash key from href */
+      var key = hrefToHashKey(href);
+      if (!key) {
+        /* Unrecognised href — fall back to direct navigation */
+        window.location.href = href;
+        return;
+      }
+
+      /* Push hash → triggers hashchange → router() */
+      var newHash = "#" + key;
+      if (window.location.hash === newHash) {
+        /* Same hash clicked again — re-run router manually
+           (hashchange won't fire if hash hasn't changed) */
+        router();
+      } else {
+        window.location.hash = newHash;
+      }
+    });
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     WIRE ROUTER
+     Called only on the launchpad page.
+  ───────────────────────────────────────────────────────────── */
+  function wireRouter() {
+    /* Cache element references once — used by show/hide throughout */
+    initElementCache();
+
+    /* hashchange drives back/forward navigation */
+    window.addEventListener("hashchange", function () {
+      router();
+    });
+
+    /* Wire link intercept (replaces Option A panel opener) */
+    wireLinkIntercept();
+
+    /* Run router on init to handle deep-linked URLs */
+    router();
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     FOCUS TRAP HELPERS
+  ───────────────────────────────────────────────────────────── */
   function getFocusableElements(container) {
     return Array.prototype.slice.call(
       container.querySelectorAll(
@@ -449,7 +865,16 @@
     );
   }
 
-  /* ── Wire interactions ── */
+  /* closeAllDropdowns is referenced by wireLinkIntercept above,
+     so it's declared here at module scope and assigned in wire() */
+  var closeAllDropdowns = function () {};
+
+  /* ─────────────────────────────────────────────────────────────
+     WIRE INTERACTIONS
+     Desktop dropdowns, mobile accordion, scroll shadow, Escape.
+     Unchanged from v3 except closeAllDropdowns is now module-scoped
+     so wireLinkIntercept can call it.
+  ───────────────────────────────────────────────────────────── */
   function wire() {
     var nav = document.getElementById("lpNav");
     var navToggle = document.getElementById("lpNavToggle");
@@ -469,7 +894,7 @@
     }
 
     /* ── Desktop dropdowns (disclosure pattern) ── */
-    function closeAllDropdowns(except) {
+    closeAllDropdowns = function (except) {
       document.querySelectorAll(".dd-item.open").forEach(function (item) {
         if (item === except) return;
         item.classList.remove("open");
@@ -478,7 +903,7 @@
         if (btn) btn.setAttribute("aria-expanded", "false");
         if (panel) panel.setAttribute("hidden", "");
       });
-    }
+    };
 
     document.querySelectorAll(".dd-trigger").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -493,88 +918,6 @@
           lastFocusedTrigger = btn;
         }
       });
-    });
-
-    /* ── Inline panel: intercept left-clicks on nav links ──
-       Placed here (after closeAllDropdowns is defined) so it can
-       safely call it. Bubble phase (no capture flag) so preventDefault
-       reliably cancels navigation across all browsers. */
-    function openInlinePanel(url) {
-      console.log("[LP Panel] openInlinePanel called:", url);
-
-      var panel = document.getElementById("lpInlinePanel");
-      var frame = document.getElementById("lpInlineFrame");
-      var loading = document.getElementById("lpInlineLoading");
-
-      console.log("[LP Panel] Elements found:", {
-        panel: !!panel,
-        frame: !!frame,
-        loading: !!loading,
-      });
-
-      if (!panel || !frame) {
-        console.warn(
-          "[LP Panel] ABORT — #lpInlinePanel or #lpInlineFrame not found in DOM.",
-        );
-        return false;
-      }
-
-      if (loading) loading.removeAttribute("hidden");
-      console.log("[LP Panel] Setting iframe src to:", url);
-      frame.src = url;
-      panel.removeAttribute("hidden");
-      document.body.style.overflow = "hidden";
-
-      var ev = new CustomEvent("lp:open", { detail: { url: url } });
-      panel.dispatchEvent(ev);
-      console.log("[LP Panel] lp:open event dispatched");
-
-      var closeBtn = document.getElementById("lpInlineClose");
-      if (closeBtn) closeBtn.focus();
-      console.log("[LP Panel] Panel opened successfully ✓");
-      return true;
-    }
-
-    document.addEventListener("click", function (e) {
-      var link = e.target.closest(".dd-link");
-      if (!link) return;
-
-      console.log("[LP Nav] dd-link clicked:", link);
-      console.log(
-        "[LP Nav] modifier keys — ctrl:",
-        e.ctrlKey,
-        "meta:",
-        e.metaKey,
-        "shift:",
-        e.shiftKey,
-        "button:",
-        e.button,
-      );
-
-      // Let modifier-key / middle-clicks pass through to browser (real new tab)
-      if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
-        console.log(
-          "[LP Nav] Modifier key detected — letting browser handle (new tab)",
-        );
-        return;
-      }
-
-      var href = link.getAttribute("href");
-      console.log("[LP Nav] href:", href);
-
-      if (!href || href === "#") {
-        console.log(
-          "[LP Nav] href is empty or # — skipping panel, no navigation",
-        );
-        return;
-      }
-
-      e.preventDefault();
-      console.log("[LP Nav] preventDefault() called — navigation cancelled");
-
-      closeAllDropdowns(null);
-      console.log("[LP Nav] Opening panel for:", href);
-      openInlinePanel(href);
     });
 
     /* ── Mobile accordion ── */
@@ -613,7 +956,6 @@
       navToggle.setAttribute("aria-label", "Close menu");
       mobilePanel.removeAttribute("hidden");
       document.body.style.overflow = "hidden";
-      /* Move focus to the first focusable element in the panel */
       var focusable = getFocusableElements(mobilePanel);
       if (focusable.length) focusable[0].focus();
     }
@@ -640,30 +982,21 @@
       });
     }
 
-    /* ── Focus trap for mobile panel ──
-       While the panel is open, Tab and Shift+Tab cycle within it.
-       Any focus leaving the panel (e.g. via mouse click outside)
-       is handled by the outside-click listener below. */
+    /* ── Focus trap for mobile panel ── */
     if (mobilePanel) {
       mobilePanel.addEventListener("keydown", function (e) {
         if (e.key !== "Tab") return;
-        /* Only trap when the panel is actually visible */
         if (mobilePanel.hasAttribute("hidden")) return;
-
         var focusable = getFocusableElements(mobilePanel);
         if (!focusable.length) return;
-
         var first = focusable[0];
         var last = focusable[focusable.length - 1];
-
         if (e.shiftKey) {
-          /* Shift+Tab from first element → wrap to last */
           if (document.activeElement === first) {
             e.preventDefault();
             last.focus();
           }
         } else {
-          /* Tab from last element → wrap to first */
           if (document.activeElement === last) {
             e.preventDefault();
             first.focus();
@@ -672,14 +1005,14 @@
       });
     }
 
-    /* Close the mobile menu after a link inside it is followed */
+    /* Close mobile menu after a link inside it is followed */
     if (mobilePanel) {
       mobilePanel.addEventListener("click", function (e) {
         if (e.target.closest("a")) closeMobileMenu(false);
       });
     }
 
-    /* Auto-close the mobile menu if the viewport grows past the breakpoint */
+    /* Auto-close mobile menu if viewport grows past breakpoint */
     window.addEventListener("resize", function () {
       if (
         window.innerWidth > 640 &&

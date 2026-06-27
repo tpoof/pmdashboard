@@ -64,18 +64,18 @@
      Placeholder hrefs (#) are skipped by the router. */
   var NAV_SECTIONS = [
     {
-      label: "What is LEAF?",
+      label: "About LEAF",
       items: [
         {
           icon: "bar_chart",
           title: "Our Impact",
-          desc: "See how LEAF has transformed VA workflows across the country",
+          desc: "LEAF's impact across the VA enterprise",
           href: "/platform/designs/report.php?a=impact",
         },
         {
           icon: "route",
           title: "Roadmap",
-          desc: "Upcoming features and platform improvements",
+          desc: "What's coming to LEAF",
           href: "#",
         },
       ],
@@ -86,19 +86,19 @@
         {
           icon: "library_books",
           title: "Use Cases",
-          desc: "Browse real-life VA workflows built with LEAF",
+          desc: "Explore real workflows from teams across the VA",
           href: "#",
         },
         {
           icon: "description",
           title: "Form Library",
-          desc: "Ready-to-use templates for common VA processes",
+          desc: "Forms and templates built by VA teams",
           href: "/platform/designs/report.php?a=form_library",
         },
         {
           icon: "cable",
           title: "Integrations",
-          desc: "Connect LEAF with other VA systems and tools",
+          desc: "Connect LEAF to other systems and tools",
           href: "#",
         },
       ],
@@ -108,27 +108,27 @@
       items: [
         {
           icon: "location_on",
-          title: "Find your local LEAF site",
-          desc: "Search for LEAF at your VA facility",
+          title: "Find a LEAF Site",
+          desc: "Locate a LEAF site at your VA facility",
           href: "/platform/designs/report.php?a=find_site",
         },
         { divider: true },
         {
           icon: "menu_book",
-          title: "Help library",
-          desc: "Guides, tutorials, and documentation",
+          title: "Help Library",
+          desc: "Guides and documentation",
           href: "https://leaf.va.gov/platform/help_library/report.php?a=stephanie_test1",
         },
         {
           icon: "group",
-          title: "Community of practice",
-          desc: "Connect with LEAF users across VA",
+          title: "Community of Practice",
+          desc: "Connect with LEAF users VA-wide",
           href: "/platform/CoP/report.php?a=test_homepage",
         },
         {
           icon: "lightbulb",
-          title: "Suggest an idea",
-          desc: "Share feature requests with the LEAF team",
+          title: "Suggest an Idea",
+          desc: "Submit an idea to improve LEAF",
           href: "/platform/ideas/report.php?a=v3",
         },
       ],
@@ -599,8 +599,7 @@
     var skip = document.getElementById("lp-skip-nav");
     if (skip) skip.href = "#lp-main";
 
-    document.title =
-      "LEAF Launchpad — Your Platform for Digital Transformation";
+    document.title = "LEAF Launchpad";
     announce("Returned to Launchpad home");
     updateNavCurrent(null);
   }
