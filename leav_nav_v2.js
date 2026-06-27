@@ -314,7 +314,6 @@
       `]}-->
   <!-- Leadership: direct hash-routed link -->
   <a class="lp-internal-btn" href="/platform/projects/report.php?a=leadership">
-    <span class="material-symbols-outlined" aria-hidden="true">groups</span>
     Leadership
   </a>
 <!--{/if}-->
@@ -325,7 +324,6 @@
             aria-expanded="false"
             aria-controls="dd-leaf-team"
             aria-haspopup="false">
-      <span class="material-symbols-outlined" aria-hidden="true">hub</span>
       LEAF Team
       <span class="dd-chevron" aria-hidden="true">
         <span class="material-symbols-outlined">arrow_drop_down</span>
@@ -353,7 +351,7 @@
       `]}-->
 
 <!-- Mobile separator before Internal section -->
-<li role="separator" aria-hidden="true">
+<li class="lp-internal-mobile-item" role="separator" aria-hidden="true">
   <div class="lp-mobile-internal-sep">
     <span class="material-symbols-outlined" aria-hidden="true">lock</span>
     Internal
@@ -363,7 +361,7 @@
 <!--{if $empMembership['groupID'][` +
       leadershipGroupID +
       `]}-->
-<li>
+<li class="lp-internal-mobile-item">
   <a class="dd-link" href="/platform/projects/report.php?a=leadership">
     <span class="dd-link-ico">
       <span class="material-symbols-outlined" aria-hidden="true">groups</span>
@@ -376,9 +374,8 @@
 </li>
 <!--{/if}-->
 
-<li class="acc-item acc-item--internal" id="acc-item-leaf-team">
+<li class="lp-internal-mobile-item acc-item acc-item--internal" id="acc-item-leaf-team">
   <button class="acc-trigger" aria-expanded="false" aria-controls="acc-leaf-team">
-    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:-3px;margin-right:4px;" aria-hidden="true">hub</span>
     LEAF Team
     <span class="dd-chevron" aria-hidden="true">
       <span class="material-symbols-outlined">arrow_drop_down</span>
@@ -576,41 +573,36 @@
         "}",
 
         /* ── Shared pill button style (Leadership + LEAF Team) ──
-           Colors are chosen to work against the #eff6fb container.
-           Border uses --nav-border (#aacdec), bg is white so the
-           pills lift slightly off the container — clear but subtle. */
+           Font values match .dd-trigger exactly from leaf_nav.css:
+           "Public Sans", 0.9rem, weight 600. font:inherit is not
+           used because browser UA stylesheets reset button/a fonts
+           before inheritance can apply. */
         ".lp-internal-btn {",
         "  display: inline-flex;",
         "  align-items: center;",
         "  gap: 4px;",
         "  padding: 4px 11px 4px 9px;",
         "  border-radius: 999px;",
-        "  border: 1px solid #aacdec;" /* --nav-border */,
+        "  border: 1px solid #aacdec;",
         "  background: #ffffff;",
-        "  color: #3d4551;" /* --nav-muted */,
-        "  font: inherit;" /* match .dd-trigger exactly */,
+        "  color: #3d4551;",
+        '  font-family: "Public Sans", sans-serif;',
+        "  font-size: 0.9rem;",
+        "  font-weight: 600;",
         "  text-decoration: none;",
         "  white-space: nowrap;",
         "  cursor: pointer;",
         "  transition: background 0.15s, border-color 0.15s, color 0.15s;",
         "  line-height: 1.4;",
         "}",
-        ".lp-internal-btn .material-symbols-outlined {",
-        "  font-size: 16px !important;",
-        "  line-height: 1;",
-        "  color: #005ea2;" /* --nav-accent */,
-        "}",
         ".lp-internal-btn:hover {",
-        "  background: #eff6fb;" /* --nav-hover-bg */,
-        "  border-color: #005ea2;" /* --nav-accent */,
+        "  background: #eff6fb;",
+        "  border-color: #005ea2;",
         "  color: #005ea2;",
         "  text-decoration: none;",
         "}",
-        ".lp-internal-btn:hover .material-symbols-outlined {",
-        "  color: #005ea2;",
-        "}",
         ".lp-internal-btn:focus-visible {",
-        "  outline: 3px solid #005ea2;" /* --nav-accent */,
+        "  outline: 3px solid #005ea2;",
         "  outline-offset: 2px;",
         "}",
 
@@ -664,12 +656,23 @@
         "  font-weight: 700;",
         "  letter-spacing: 0.07em;",
         "  text-transform: uppercase;",
-        "  opacity: 0.5;",
-        "  border-top: 1px solid rgba(255,255,255,0.15);",
+        "  color: #3d4551;" /* --nav-muted — visible on white mobile panel */,
+        "  border-top: 1px solid #d9e8f6;" /* --nav-panel-bd */,
         "  margin-top: 4px;",
         "}",
         ".lp-mobile-internal-sep .material-symbols-outlined {",
         "  font-size: 14px !important;",
+        "}",
+
+        /* ── Responsive: mirror leaf_nav.css breakpoint (640px) ──
+           Desktop (≥641px): hide mobile accordion internal items.
+           Mobile (≤640px): hide the desktop internal group;
+             the accordion items handle internal links instead. */
+        "@media (max-width: 640px) {",
+        "  .lp-nav-internal { display: none !important; }",
+        "}",
+        "@media (min-width: 641px) {",
+        "  .lp-internal-mobile-item { display: none !important; }",
         "}",
       ].join("\n");
       document.head.appendChild(style);
