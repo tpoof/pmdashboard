@@ -22,6 +22,7 @@ const IDEA_FIELDS = {
   attachment: 10,
   status: 12,
   other_category: 13,
+  date_submitted: 15,
 };
 
 const VOTE_FIELDS = {
@@ -343,9 +344,12 @@ function renderRecentChips(ideaList) {
 
   chips.innerHTML = recent
     .map((idea) => {
-      const label = escapeHtml(
-        truncateTitle(idea.title || `Idea ${idea.recordID}`, 40),
+      const idLabel = `#${idea.recordID}`;
+      const titleText = truncateTitle(
+        idea.title || `Idea ${idea.recordID}`,
+        36,
       );
+      const label = escapeHtml(`${idLabel} ${titleText}`);
       const url = escapeHtml(
         idea.recordLink || `${RECORD_VIEW_URL}${idea.recordID}`,
       );
@@ -354,7 +358,7 @@ function renderRecentChips(ideaList) {
       data-chip-id="${escapeHtml(String(idea.recordID))}"
       data-chip-url="${url}"
       data-chip-title="${title}"
-      aria-label="View idea: ${title}">${label}</button>`;
+      aria-label="View idea ${idLabel}: ${title}">${label}</button>`;
     })
     .join("");
 
@@ -1432,6 +1436,61 @@ async function advanceWorkflow(recordID) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Date helper — returns today as YYYY-MM-DD in local time.
+   LEAF date inputs typically expect this format; the debug
+   write below will confirm whether it lands correctly.
+───────────────────────────────────────────────────────────── */
+
+function todayLocalYMD() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Write date_submitted (indicator 15) to an existing record.
+   Approach B — separate POST after record creation to guarantee
+   the field is written even if form/new ignores it.
+───────────────────────────────────────────────────────────── */
+
+async function writeDateSubmitted(recordID, dateStr) {
+  const body = new URLSearchParams({
+    CSRFToken: csrfToken,
+    recordID: String(recordID),
+    series: "1",
+    [IDEA_FIELDS.date_submitted]: dateStr,
+  });
+
+  console.log(
+    `[DateSubmit] Writing indicator ${IDEA_FIELDS.date_submitted} → "${dateStr}" on record ${recordID}`,
+  );
+
+  try {
+    const res = await fetch(`./api/form/${encodeURIComponent(recordID)}`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      },
+      body: body.toString(),
+    });
+    const text = await res.text();
+    if (res.ok) {
+      console.log(
+        `[DateSubmit] ✅ Success (HTTP ${res.status}):`,
+        text || "(empty body)",
+      );
+    } else {
+      console.warn(`[DateSubmit] ❌ HTTP ${res.status}:`, text);
+    }
+  } catch (err) {
+    console.warn("[DateSubmit] ❌ Network error:", err);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
    Idea form
 ───────────────────────────────────────────────────────────── */
 
@@ -1453,6 +1512,9 @@ async function NewIdea(advanceOnSuccess) {
   if (saveBtn) saveBtn.disabled = true;
   ideaSubmitInProgress = true;
 
+  // Build today's date — only written on submit, not draft saves
+  const todayStr = advanceOnSuccess ? todayLocalYMD() : null;
+
   try {
     const payload = {
       service: "",
@@ -1468,6 +1530,14 @@ async function NewIdea(advanceOnSuccess) {
     };
     if (categoryValue === "Other" && otherCatValue) {
       payload[IDEA_FIELDS.other_category] = otherCatValue;
+    }
+    // Approach A — include date in the initial create POST
+    if (todayStr) {
+      payload[IDEA_FIELDS.date_submitted] = todayStr;
+      console.log(
+        `[DateSubmit] Approach A — including indicator ${IDEA_FIELDS.date_submitted} in form/new payload:`,
+        todayStr,
+      );
     }
 
     const response = await apiPostJson("./api/?a=form/new", payload);
@@ -1496,6 +1566,12 @@ async function NewIdea(advanceOnSuccess) {
 
       if (advanceOnSuccess) {
         await advanceWorkflow(newID);
+        // Approach B — second targeted POST after workflow advance to guarantee
+        // indicator 15 is written even if form/new ignored the date field.
+        console.log(
+          `[DateSubmit] Approach B — writing date to record ${newID} after workflow advance`,
+        );
+        await writeDateSubmitted(newID, todayStr);
         showToast("Your idea has been submitted successfully.");
         await loadIdeasAndVotes();
       } else {
