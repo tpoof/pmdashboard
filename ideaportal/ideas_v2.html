@@ -800,6 +800,14 @@
         border-color: var(--ip-blue);
         padding: 9px 18px;
       }
+      .ip-btn--primary .material-symbols-outlined {
+        color: #fff !important;
+        font-variation-settings:
+          "FILL" 1,
+          "wght" 400,
+          "opsz" 24,
+          "GRAD" 0 !important;
+      }
       .ip-btn--primary:hover {
         filter: brightness(1.08);
         box-shadow: 0 3px 12px rgba(0, 94, 162, 0.25);
@@ -959,7 +967,7 @@
         background: #fff;
         border-radius: var(--ip-r-lg);
         width: 100%;
-        max-width: 560px;
+        max-width: 720px;
         max-height: 90vh;
         overflow-y: auto;
         box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
@@ -1030,8 +1038,18 @@
         color: var(--ip-red);
         display: none;
       }
-      .was-validated .ip-error {
+      /* Only show error text when the preceding field is actually invalid */
+      .was-validated .ip-field input:invalid ~ .ip-error,
+      .was-validated .ip-field textarea:invalid ~ .ip-error,
+      .was-validated .ip-field select:invalid ~ .ip-error {
         display: block;
+      }
+      /* Highlight invalid fields with a red border */
+      .was-validated .ip-field input:invalid,
+      .was-validated .ip-field textarea:invalid,
+      .was-validated .ip-field select:invalid {
+        border-color: var(--ip-red);
+        box-shadow: 0 0 0 3px rgba(213, 67, 9, 0.1);
       }
       .ip-fileInput {
         font-size: 0.85rem;
@@ -1362,8 +1380,7 @@
               Open for Ideas
             </div>
             <h1 class="ip-hero-title">
-              Welcome to the <span class="ip-hero-title__leaf">LEAF</span> Idea
-              Portal
+              Shape the Future of <span class="ip-hero-title__leaf">LEAF</span>
             </h1>
             <p class="ip-hero-tagline">Your ideas grow here.</p>
             <p class="ip-hero-desc">
@@ -1442,21 +1459,6 @@
             <!-- Sidebar -->
             <aside class="ip-sidebar" aria-label="Filters">
               <div class="ip-sideCard">
-                <div class="ip-sideCard__hd">Categories</div>
-                <ul class="ip-catList" id="catList" role="list">
-                  <li>
-                    <button
-                      class="ip-catItem is-active"
-                      data-cat="all"
-                      type="button"
-                    >
-                      <span>All Categories</span>
-                      <span class="ip-catCount" id="ip-cat-count-all">—</span>
-                    </button>
-                  </li>
-                </ul>
-              </div>
-              <div class="ip-sideCard">
                 <div class="ip-sideCard__hd">My Activity</div>
                 <ul class="ip-myActivity" role="list">
                   <li>
@@ -1479,6 +1481,21 @@
                     >
                       <span>Ideas I've voted for</span>
                       <span class="ip-catCount" id="myActivityVotes">—</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+              <div class="ip-sideCard">
+                <div class="ip-sideCard__hd">Categories</div>
+                <ul class="ip-catList" id="catList" role="list">
+                  <li>
+                    <button
+                      class="ip-catItem is-active"
+                      data-cat="all"
+                      type="button"
+                    >
+                      <span>All Categories</span>
+                      <span class="ip-catCount" id="ip-cat-count-all">—</span>
                     </button>
                   </li>
                 </ul>
@@ -1986,6 +2003,7 @@
                   >
                   <select
                     id="inpCategory"
+                    name="inpCategory"
                     required
                     aria-describedby="errCategory"
                   >
@@ -2013,7 +2031,12 @@
                 </div>
                 <div class="ip-field">
                   <label for="inpImpact" class="ip-label">Idea Impact</label>
-                  <select id="inpImpact" required aria-describedby="errImpact">
+                  <select
+                    id="inpImpact"
+                    name="inpImpact"
+                    required
+                    aria-describedby="errImpact"
+                  >
                     <option selected disabled value="">
                       Click here to select the impact
                     </option>

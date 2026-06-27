@@ -323,11 +323,17 @@ function renderRecentChips(ideaList) {
   const chips = document.getElementById("ipRecentChips");
   if (!bar || !chips) return;
 
-  const recent = [...(ideaList || [])]
-    .filter((i) => i?.created_date)
-    .sort(
-      (a, b) => (Number(b.created_date) || 0) - (Number(a.created_date) || 0),
-    )
+  const list = ideaList || [];
+  // Sort by created_date descending; fall back to recordID descending when
+  // created_date is missing or zero (stripped by x-filterData on some sites).
+  const recent = [...list]
+    .filter((i) => i?.recordID)
+    .sort((a, b) => {
+      const aDate = Number(a.created_date) || 0;
+      const bDate = Number(b.created_date) || 0;
+      if (bDate !== aDate) return bDate - aDate;
+      return Number(b.recordID) - Number(a.recordID);
+    })
     .slice(0, 5);
 
   if (!recent.length) {
@@ -1604,9 +1610,24 @@ function bindCategoryChange() {
 
 function initValidation() {
   document.querySelectorAll(".needs-validation").forEach((form) => {
+    // Re-check validity on every input/change so errors clear as user fixes them
     form.addEventListener("input", (e) => {
       const target = e.target;
-      if (target?.checkValidity?.()) target.removeAttribute("aria-invalid");
+      if (!target) return;
+      if (target.checkValidity?.()) {
+        target.removeAttribute("aria-invalid");
+      } else {
+        target.setAttribute("aria-invalid", "true");
+      }
+    });
+    form.addEventListener("change", (e) => {
+      const target = e.target;
+      if (!target) return;
+      if (target.checkValidity?.()) {
+        target.removeAttribute("aria-invalid");
+      } else {
+        target.setAttribute("aria-invalid", "true");
+      }
     });
   });
 }
@@ -1883,7 +1904,9 @@ function initPortal() {
       const form = document.getElementById("ideaForm");
       if (!form) return;
       form.classList.add("was-validated");
-      if (!form.checkValidity()) return;
+      // reportValidity() checks all fields including selects and returns false
+      // if any required field is empty, preventing premature submission.
+      if (!form.reportValidity()) return;
       await NewIdea(true);
     });
 
