@@ -79,8 +79,13 @@
   var LEAF_TEAM_LINK_NAME_INDICATOR_ID = 479;
   var LEAF_TEAM_LINK_URL_INDICATOR_ID = 480;
 
-  /* Base URL for the LEAF form that stores LEAF Team quick-links. */
-  var LEAF_TEAM_FORM_BASE = "/platform/service_requests_launchpad";
+  /* Base URL for the LEAF form that stores LEAF Team quick-links.
+     Must be absolute — this JS runs on the launchpad URL which is
+     a different origin path, so a relative URL would resolve wrong.
+     window.location.origin gives us the correct host (e.g.
+     https://leaf.va.gov) regardless of which page loads this file. */
+  var LEAF_TEAM_FORM_BASE =
+    window.location.origin + "/platform/service_requests_launchpad";
 
   /* ── Nav content (single source of truth for desktop + mobile) ──
      href values here are the canonical URLs used by the router.
@@ -755,7 +760,7 @@
   function fetchLeafTeamLinks() {
     var desktopHost = document.getElementById("lpNavLeafTeamLinks");
     var mobileHost = document.getElementById("lpNavLeafTeamLinksMobile");
-    if (!desktopHost && !mobileHost) return; /* group not met — nothing to do */
+    if (!desktopHost && !mobileHost) return;
 
     var apiUrl =
       LEAF_TEAM_FORM_BASE +
@@ -767,15 +772,55 @@
       LEAF_TEAM_LINK_URL_INDICATOR_ID +
       "&format=json";
 
+    var isDebug = /[?&]leafNavDebug=1/.test(window.location.search);
+
+    if (isDebug) {
+      console.group("[LP Nav Debug] fetchLeafTeamLinks");
+      console.log("Fetch URL:", apiUrl);
+      console.log("LEAF_TEAM_FORM_BASE:", LEAF_TEAM_FORM_BASE);
+      console.log("window.location.origin:", window.location.origin);
+      console.log("form scoped to: form_531cc");
+      console.log(
+        "indicators: name=" +
+          LEAF_TEAM_LINK_NAME_INDICATOR_ID +
+          ", url=" +
+          LEAF_TEAM_LINK_URL_INDICATOR_ID,
+      );
+      console.log("#lpNavLeafTeamLinks in DOM:", !!desktopHost);
+      console.log("#lpNavLeafTeamLinksMobile in DOM:", !!mobileHost);
+    }
+
     fetch(apiUrl, { credentials: "same-origin" })
       .then(function (r) {
+        if (isDebug) {
+          console.log("HTTP status:", r.status, r.statusText);
+          console.log("Response URL (actual):", r.url);
+        }
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
       })
       .then(function (data) {
+        if (isDebug) {
+          console.log("Raw response data:", data);
+          console.log("Record count:", Object.keys(data).length);
+          Object.entries(data).forEach(function (entry) {
+            var id = entry[0],
+              rec = entry[1];
+            console.log(
+              "Record " + id + ":",
+              "name=" +
+                (rec["s1"] &&
+                  rec["s1"]["id" + LEAF_TEAM_LINK_NAME_INDICATOR_ID]),
+              "url=" +
+                (rec["s1"] &&
+                  rec["s1"]["id" + LEAF_TEAM_LINK_URL_INDICATOR_ID]),
+            );
+          });
+          console.groupEnd();
+        }
+
         var records = Object.values(data);
 
-        /* Build link items — filter out records with missing/bad data */
         var itemsHTML = records
           .map(function (rec) {
             var name = rec["s1"]["id" + LEAF_TEAM_LINK_NAME_INDICATOR_ID] || "";
@@ -786,7 +831,6 @@
               '<li><a class="dd-link" href="' +
               url +
               '" data-nav-external>' +
-              '<span class="dd-link-ico"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span>' +
               '<span class="dd-link-text"><strong>' +
               name +
               "</strong></span>" +
@@ -795,7 +839,6 @@
           })
           .join("");
 
-        /* Replace the contents of each host <ul> — clears the loading placeholder */
         function populate(host) {
           if (!host) return;
           host.innerHTML =
@@ -809,8 +852,11 @@
         populate(mobileHost);
       })
       .catch(function (err) {
+        if (isDebug) {
+          console.error("[LP Nav Debug] Fetch failed:", err);
+          console.groupEnd();
+        }
         console.warn("[LP Nav] LEAF Team links fetch failed:", err.message);
-        /* Clear spinner on failure so it doesn't spin forever */
         function clearLoading(host) {
           if (!host) return;
           host.innerHTML =
