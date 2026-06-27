@@ -386,7 +386,95 @@
     cursor: pointer;
 }
 
-/* ── Inline edit pencil button ──────────────────────── */
+/* ── View Votes sidebar button ──────────────────────── */
+.pv-votes-btn {
+    background: #ede9fe !important;
+    color: #4c1d95 !important;
+    border: 1px solid #c4b5fd !important;
+    border-radius: 6px !important;
+    font-weight: 700 !important;
+    margin-top: 6px;
+    width: 100%;
+    text-align: left;
+    padding: 6px 8px !important;
+    display: flex !important;
+    align-items: center;
+    transition: background 0.15s ease !important;
+}
+.pv-votes-btn:hover,
+.pv-votes-btn:focus {
+    background: #ddd6fe !important;
+    color: #3b0764 !important;
+}
+.pv-votes-btn[aria-expanded="true"] {
+    background: #7c3aed !important;
+    color: #ffffff !important;
+    border-color: #7c3aed !important;
+}
+.pv-votes-btn[aria-expanded="true"] img {
+    filter: brightness(0) invert(1);
+}
+
+/* ── Votes panel (collapsed by default) ─────────────── */
+#pv-votes-panel {
+    font-size: 14px;
+    border: 1px solid #c4b5fd;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+}
+#pv-votes-panel .pv-votes-table-wrap {
+    max-height: 300px;
+    overflow-y: auto;
+}
+#pv-votes-panel table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+#pv-votes-panel thead tr {
+    background: #f5f3ff;
+    position: sticky;
+    top: 0;
+}
+#pv-votes-panel th {
+    padding: 7px 10px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6d28d9;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+#pv-votes-panel td {
+    padding: 7px 10px;
+    border-top: 1px solid #ede9fe;
+    color: #0f172a;
+}
+#pv-votes-panel .pv-votes-footer {
+    padding: 7px 10px;
+    border-top: 1px solid #ede9fe;
+    background: #f5f3ff;
+    text-align: center;
+}
+#pv-votes-panel .pv-votes-showall {
+    font-size: 13px;
+    font-weight: 600;
+    color: #7c3aed;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+}
+#pv-votes-panel .pv-votes-showall:hover {
+    color: #4c1d95;
+}
+#pv-votes-panel .pv-votes-empty {
+    padding: 12px 10px;
+    color: #64748b;
+    font-style: italic;
+}
 .pv-edit-btn {
     display: inline-flex;
     align-items: center;
@@ -897,11 +985,14 @@ function pvOpenEdit(indicatorID) {
             </button>
         <!--{/section}-->
         <!--{if $is_admin}-->
-        <button class="IUbutton" id="btn-votes"
-            onclick="scrollPage('formcontent');loadVotes(<!--{$recordID|strip_tags|escape}-->);"
-            style="background-image: url(dynicons/?img=vote.svg&amp;w=16); background-repeat: no-repeat; background-position: left; text-align: left; text-indent: 20px;">
-            View Votes
+        <button class="IUbutton pv-votes-btn" id="btn-votes"
+            onclick="toggleVotes(<!--{$recordID|strip_tags|escape}-->);"
+            aria-expanded="false"
+            aria-controls="pv-votes-panel">
+            <img src="dynicons/?img=award-ribbon.svg&amp;w=16" alt="" aria-hidden="true" style="vertical-align:middle;margin-right:5px;" />
+            <span id="btn-votes-label">View Votes</span>
         </button>
+        <div id="pv-votes-panel" hidden style="margin-top:6px;"></div>
         <!--{/if}-->
     </div>
 
@@ -957,7 +1048,7 @@ function pvOpenEdit(indicatorID) {
 <!--{if $empMembership['groupID'][226]}--></div><!--{/if}-->
 
 <!-- Internal form content target (loaded by openContent / loadVotes) -->
-<div id="formcontent" style="margin-top: 24px;"></div>
+<div id="formcontent" style="margin-top: 40px;"></div>
 
 <!-- DIALOG BOXES -->
 <div id="formContainer"></div>
@@ -1443,11 +1534,69 @@ function doSubmit(recordID) {
         });
     }
 
-    /* ── loadVotes: query form_57e89 for votes on this idea ─────────── */
-    function loadVotes(ideaRecordID) {
-        var fc = document.getElementById('formcontent');
-        if (!fc) { return; }
-        fc.innerHTML = '<div style="padding:16px;font-size:15px;color:#475569;">Loading votes&hellip;</div>';
+    /* ── Vote count fetch: called on page load for admins ───────────── */
+    <!--{if $is_admin}-->
+    function fetchVoteCount() {
+        var ideaKey = String(<!--{$recordID|strip_tags|escape}-->);
+        var q = {
+            terms: [
+                { id: 'categoryID', operator: '=', match: 'form_57e89', gate: 'AND' },
+                { id: 'deleted',    operator: '=', match: 0,             gate: 'AND' }
+            ],
+            joins: [],
+            getData: ['2']
+        };
+        $.ajax({
+            type: 'GET',
+            url: './api/form/query',
+            data: { q: JSON.stringify(q), 'x-filterData': 'recordID,s1' },
+            dataType: 'json',
+            cache: false,
+            success: function(res) {
+                var count = 0;
+                $.each(res, function(_, vote) {
+                    if (String((vote.s1 && vote.s1['id2']) || '') === ideaKey) { count++; }
+                });
+                var lbl = document.getElementById('btn-votes-label');
+                if (lbl) { lbl.textContent = 'View Votes (' + count + ')'; }
+                window._pvVoteCount = count;
+            },
+            error: function() { /* silently fail — button still works */ }
+        });
+    }
+    <!--{/if}-->
+
+    /* ── toggleVotes: collapsed summary, default 20, expandable ─────────── */
+    var _pvVotesLoaded   = false;   /* true after first successful fetch     */
+    var _pvAllVoters     = [];      /* full voter list once fetched           */
+    var _pvVotesExpanded = false;   /* panel open/closed state               */
+    var _pvShowAll       = false;   /* whether cap is lifted                 */
+    var PV_VOTE_CAP      = 20;
+
+    function toggleVotes(ideaRecordID) {
+        var btn   = document.getElementById('btn-votes');
+        var panel = document.getElementById('pv-votes-panel');
+        if (!btn || !panel) { return; }
+
+        /* Toggle open/closed */
+        _pvVotesExpanded = !_pvVotesExpanded;
+        btn.setAttribute('aria-expanded', _pvVotesExpanded ? 'true' : 'false');
+
+        if (!_pvVotesExpanded) {
+            panel.hidden = true;
+            return;
+        }
+
+        panel.hidden = false;
+
+        /* If already fetched, just re-render (respects _pvShowAll state) */
+        if (_pvVotesLoaded) {
+            _pvRenderVotes(panel);
+            return;
+        }
+
+        /* First open — fetch */
+        panel.innerHTML = '<div class="pv-votes-empty">Loading&hellip;</div>';
 
         var q = {
             terms: [
@@ -1461,53 +1610,61 @@ function doSubmit(recordID) {
         $.ajax({
             type: 'GET',
             url: './api/form/query',
-            data: {
-                q: JSON.stringify(q),
-                'x-filterData': 'recordID,s1'
-            },
+            data: { q: JSON.stringify(q), 'x-filterData': 'recordID,s1' },
             dataType: 'json',
             cache: false,
             success: function(res) {
-                /* Filter to votes that reference this idea */
                 var ideaKey = String(ideaRecordID);
-                var voters  = [];
+                _pvAllVoters = [];
                 $.each(res, function(_, vote) {
-                    var linkedIdea = vote.s1 && (vote.s1['id2'] || '');
-                    if (String(linkedIdea) === ideaKey) {
-                        var voter = vote.s1 && (vote.s1['id3'] || '');
-                        if (voter) { voters.push(voter); }
+                    if (String((vote.s1 && vote.s1['id2']) || '') === ideaKey) {
+                        var v = (vote.s1 && vote.s1['id3']) || '';
+                        if (v) { _pvAllVoters.push(v); }
                     }
                 });
-
-                if (voters.length === 0) {
-                    fc.innerHTML =
-                        '<div style="padding:16px;font-size:15px;color:#64748b;font-style:italic;">No votes recorded for this idea.</div>';
-                    return;
-                }
-
-                var rows = voters.map(function(v, i) {
-                    return '<tr style="border-bottom:1px solid #e2e8f0">'
-                        + '<td style="padding:8px 12px;color:#475569">' + (i + 1) + '</td>'
-                        + '<td style="padding:8px 12px;font-weight:600;color:#0f172a">' + $('<div/>').text(v).html() + '</td>'
-                        + '</tr>';
-                }).join('');
-
-                fc.innerHTML =
-                    '<div style="padding:16px;">'
-                    + '<h2 style="font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#475569;margin:0 0 12px;">Votes ('
-                    + voters.length + ')</h2>'
-                    + '<table style="width:100%;border-collapse:collapse;font-size:15px;background:#fff;border:1px solid #cfd7e3;border-radius:8px;overflow:hidden">'
-                    + '<thead><tr style="background:#f1f5f9">'
-                    + '<th style="padding:8px 12px;text-align:left;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em">#</th>'
-                    + '<th style="padding:8px 12px;text-align:left;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em">User ID</th>'
-                    + '</thead><tbody>'
-                    + rows
-                    + '</tbody></table></div>';
+                _pvVotesLoaded = true;
+                _pvRenderVotes(panel);
             },
             error: function() {
-                fc.innerHTML = '<div style="padding:16px;color:#b91c1c;">Could not load votes.</div>';
+                panel.innerHTML = '<div class="pv-votes-empty" style="color:#b91c1c;">Could not load votes.</div>';
             }
         });
+    }
+
+    function _pvRenderVotes(panel) {
+        if (_pvAllVoters.length === 0) {
+            panel.innerHTML = '<div class="pv-votes-empty">No votes recorded for this idea.</div>';
+            return;
+        }
+
+        var total    = _pvAllVoters.length;
+        var showList = _pvShowAll ? _pvAllVoters : _pvAllVoters.slice(0, PV_VOTE_CAP);
+        var rows     = showList.map(function(v, i) {
+            return '<tr>'
+                + '<td style="width:32px;color:#6d28d9;font-weight:700">' + (i + 1) + '</td>'
+                + '<td>' + $('<div/>').text(v).html() + '</td>'
+                + '</tr>';
+        }).join('');
+
+        var footer = '';
+        if (!_pvShowAll && total > PV_VOTE_CAP) {
+            footer = '<div class="pv-votes-footer">'
+                + '<button type="button" class="pv-votes-showall" onclick="_pvShowAll=true;_pvRenderVotes(document.getElementById(\'pv-votes-panel\'));">'
+                + 'Show all ' + total + ' votes'
+                + '</button></div>';
+        } else if (_pvShowAll && total > PV_VOTE_CAP) {
+            footer = '<div class="pv-votes-footer">'
+                + '<button type="button" class="pv-votes-showall" onclick="_pvShowAll=false;_pvRenderVotes(document.getElementById(\'pv-votes-panel\'));">'
+                + 'Show fewer'
+                + '</button></div>';
+        }
+
+        panel.innerHTML =
+            '<div class="pv-votes-table-wrap">'
+            + '<table><thead><tr><th>#</th><th>User ID</th></tr></thead>'
+            + '<tbody>' + rows + '</tbody></table>'
+            + '</div>'
+            + footer;
     }
 
     function openContentForPrint(){
@@ -2336,6 +2493,11 @@ function transferToPMDashboard() {
 
         <!--{if $submitted == 0}-->
             updateProgress();
+        <!--{/if}-->
+
+        <!--{if $is_admin}-->
+        /* fetch vote count on load so button label shows total immediately */
+        fetchVoteCount();
         <!--{/if}-->
 
         //scroll event for dialog menu
