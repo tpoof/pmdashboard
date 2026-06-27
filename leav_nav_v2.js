@@ -596,8 +596,8 @@
         "  line-height: 1.4;",
         "}",
         ".lp-internal-btn:hover {",
-        "  background: #eff6fb;" /* --nav-hover-bg */,
-        "  color: #005ea2;" /* --nav-accent */,
+        "  background: #ffffff;",
+        "  color: #005ea2;",
         "  text-decoration: none;",
         "}",
         ".lp-internal-btn:focus-visible {",
@@ -610,8 +610,8 @@
         "  /* inherits all .lp-internal-btn rules */",
         "}",
         ".dd-item--internal.open .lp-internal-btn--dd {",
-        "  background: #eff6fb;" /* --nav-hover-bg, matches dd-item.open .dd-trigger */,
-        "  color: #005ea2;" /* --nav-accent */,
+        "  background: #ffffff;",
+        "  color: #005ea2;",
         "}",
 
         /* ── LEAF Team dropdown panel ───────────────────────────
