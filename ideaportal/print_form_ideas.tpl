@@ -1051,17 +1051,20 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
 }());
 
 /* ── Self-contained vote + share for printview ───────────────────────────
-   Extracted from ideas_v2.js. No portal globals required.
-   Dependencies already on page: jQuery, CSRFToken (let, from main JS block)
+   Mirrors ideas_v2.js behavior: resolves email via orgchart before voting
+   and before checking voted state. Falls back to userID for legacy records.
 ──────────────────────────────────────────────────────────────────────── */
 (function() {
-    var PV_RECORD_ID  = <!--{$recordID|strip_tags|escape:'javascript'}-->;
-    var PV_USER_ID    = '<!--{$userID|strip_tags|escape:'javascript'}-->';
-    var PV_FORM_KEY   = '57e89';          /* votes form key (form_57e89)  */
-    var PV_VOTE_IND_IDEA = 2;             /* indicatorID: linked idea      */
-    var PV_VOTE_IND_USER = 3;             /* indicatorID: voter userID     */
-    var _pvToastTimer = null;
-    var _pvVotingInProgress = false;
+    var PV_RECORD_ID     = <!--{$recordID|strip_tags|escape:'javascript'}-->;
+    var PV_USER_ID       = '<!--{$userID|strip_tags|escape:'javascript'}-->';
+    var PV_ORGCHART_PATH = '<!--{$orgchartPath|escape:'javascript'}-->';
+    var PV_FORM_KEY      = '57e89';
+    var PV_VOTE_IND_IDEA = 2;
+    var PV_VOTE_IND_USER = 3;
+    var _pvToastTimer         = null;
+    var _pvVotingInProgress   = false;
+    var _pvResolvedEmail      = '';   /* set by pvResolveEmail(), used by vote + check */
+    var _pvEmailResolved      = false;
 
     /* ── Toast ── */
     function pvShowToast(msg, isError) {
@@ -1104,7 +1107,36 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         btn.title = isVoted ? 'You\'ve already voted for this idea' : 'Vote for this idea';
     }
 
-    /* ── Check if current user already voted (runs on page load) ── */
+    /* ── Resolve email via orgchart API (mirrors ideas_v2.js resolveVoterEmail) ── */
+    function pvResolveEmail() {
+        return new Promise(function(resolve) {
+            if (!PV_USER_ID) { resolve(''); return; }
+            var url = PV_ORGCHART_PATH + '/api/employee/search'
+                + '?q=userName:' + encodeURIComponent(PV_USER_ID)
+                + '&noLimit=0&_=' + Date.now();
+            fetch(url)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var employees = Array.isArray(data) ? data : (data.employees || Object.values(data) || []);
+                    var match = employees.find(function(e) {
+                        var uname = e.userName || '';
+                        return uname === PV_USER_ID || uname === PV_USER_ID.split('\\').pop();
+                    });
+                    var email = (match && match.Email) ? match.Email.trim() : '';
+                    _pvResolvedEmail = email || PV_USER_ID;
+                    _pvEmailResolved = true;
+                    resolve(_pvResolvedEmail);
+                })
+                .catch(function() {
+                    /* Orgchart unavailable — fall back to userID */
+                    _pvResolvedEmail = PV_USER_ID;
+                    _pvEmailResolved = true;
+                    resolve(_pvResolvedEmail);
+                });
+        });
+    }
+
+    /* ── Check if current user already voted (runs after email resolved) ── */
     function pvCheckVoted() {
         if (!PV_USER_ID) { return; }
         var q = {
@@ -1123,19 +1155,21 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
             cache: false,
             success: function(res) {
                 var ideaKey  = String(PV_RECORD_ID);
-                var userKey  = String(PV_USER_ID);
+                /* Match against resolved email (new votes) OR raw userID (legacy) */
+                var emailKey = _pvResolvedEmail ? _pvResolvedEmail.toLowerCase() : '';
+                var userKey  = PV_USER_ID.toLowerCase();
                 var hasVoted = false;
                 $.each(res, function(_, vote) {
                     var linkedIdea = String((vote.s1 && vote.s1['id' + PV_VOTE_IND_IDEA]) || '');
-                    var voter      = String((vote.s1 && vote.s1['id' + PV_VOTE_IND_USER]) || '');
-                    if (linkedIdea === ideaKey && voter === userKey) {
+                    var voter      = String((vote.s1 && vote.s1['id' + PV_VOTE_IND_USER]) || '').toLowerCase();
+                    if (linkedIdea === ideaKey && (voter === emailKey || voter === userKey)) {
                         hasVoted = true;
                         return false; /* break */
                     }
                 });
                 if (hasVoted) { pvSetVoted(true); }
             },
-            error: function() { /* silently fail — vote button stays enabled */ }
+            error: function() { /* silently fail */ }
         });
     }
 
@@ -1150,38 +1184,48 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         _pvVotingInProgress = true;
         pvSetVoted(true); /* optimistic */
 
-        var payload = new URLSearchParams();
-        payload.append('service', '');
-        payload.append('title', 'Idea #' + PV_RECORD_ID);
-        payload.append('priority', '0');
-        payload.append('CSRFToken', CSRFToken);
-        payload.append('numform_' + PV_FORM_KEY, '1');
-        payload.append(String(PV_VOTE_IND_USER), PV_USER_ID);
-        payload.append(String(PV_VOTE_IND_IDEA), String(PV_RECORD_ID));
+        /* Ensure email resolved before submitting */
+        var doSubmit = function(voterIdentity) {
+            var payload = new URLSearchParams();
+            payload.append('service', '');
+            payload.append('title', 'Idea #' + PV_RECORD_ID);
+            payload.append('priority', '0');
+            payload.append('CSRFToken', CSRFToken);
+            payload.append('numform_' + PV_FORM_KEY, '1');
+            payload.append(String(PV_VOTE_IND_USER), voterIdentity);
+            payload.append(String(PV_VOTE_IND_IDEA), String(PV_RECORD_ID));
 
-        fetch('./api/?a=form/new', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: payload.toString()
-        })
-        .then(function(r) { return r.text(); })
-        .then(function(text) {
-            /* Response may be JSON-encoded ("26") or plain (26) */
-            var newID = parseFloat(text.replace(/^"|"$/g, ''));
-            if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
-                pvShowToast('Thanks for voting!');
-            } else {
-                throw new Error('Unexpected response: ' + text);
-            }
-        })
-        .catch(function(err) {
-            console.error('[pvIdeaVotes] error:', err);
-            pvShowToast('Error processing vote. Please try again.', true);
-            pvSetVoted(false); /* roll back optimistic state */
-        })
-        .finally(function() {
-            _pvVotingInProgress = false;
-        });
+            fetch('./api/?a=form/new', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: payload.toString()
+            })
+            .then(function(r) { return r.text(); })
+            .then(function(text) {
+                var newID = parseFloat(text.replace(/^"|"$/g, ''));
+                if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
+                    pvShowToast('Thanks for voting!');
+                } else {
+                    throw new Error('Unexpected response: ' + text);
+                }
+            })
+            .catch(function(err) {
+                console.error('[pvIdeaVotes] error:', err);
+                pvShowToast('Error processing vote. Please try again.', true);
+                pvSetVoted(false);
+            })
+            .finally(function() {
+                _pvVotingInProgress = false;
+            });
+        };
+
+        if (_pvEmailResolved) {
+            doSubmit(_pvResolvedEmail);
+        } else {
+            pvResolveEmail().then(function(identity) {
+                doSubmit(identity);
+            });
+        }
     }
 
     /* ── Share ── */
@@ -1198,13 +1242,17 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         }
     }
 
-    /* ── Wire buttons on DOM ready ── */
+    /* ── Init on DOM ready: resolve email first, then check voted state ── */
     $(function() {
         var voteBtn  = document.getElementById('pv-vote-btn');
         var shareBtn = document.getElementById('pv-share-btn');
         if (voteBtn)  { voteBtn.addEventListener('click',  pvIdeaVotes); }
         if (shareBtn) { shareBtn.addEventListener('click', pvShare); }
-        pvCheckVoted();
+
+        /* Resolve email then check voted — parallel with page-load vote count fetch */
+        pvResolveEmail().then(function() {
+            pvCheckVoted();
+        });
     });
 
 }());
@@ -1343,11 +1391,10 @@ function pvOpenEdit(indicatorID) {
         <button class="IUbutton pv-votes-btn" id="btn-votes"
             onclick="toggleVotes(<!--{$recordID|strip_tags|escape}-->);"
             aria-expanded="false"
-            aria-controls="pv-votes-panel">
+            aria-controls="formcontent">
             <img src="dynicons/?img=award-ribbon.svg&amp;w=16" alt="" aria-hidden="true" style="vertical-align:middle;margin-right:5px;" />
             <span id="btn-votes-label">Votes</span>
         </button>
-        <div id="pv-votes-panel" hidden style="margin-top:6px;"></div>
         <!--{/if}-->
     </div>
 
@@ -1927,37 +1974,34 @@ function doSubmit(recordID) {
     }
     <!--{/if}-->
 
-    /* ── toggleVotes: collapsed summary, default 20, expandable ─────────── */
-    var _pvVotesLoaded   = false;   /* true after first successful fetch     */
-    var _pvAllVoters     = [];      /* full voter list once fetched           */
-    var _pvVotesExpanded = false;   /* panel open/closed state               */
-    var _pvShowAll       = false;   /* whether cap is lifted                 */
+    /* ── toggleVotes: writes into #formcontent like openContent() ───────── */
+    var _pvVotesLoaded   = false;
+    var _pvAllVoters     = [];
+    var _pvVotesExpanded = false;
+    var _pvShowAll       = false;
     var PV_VOTE_CAP      = 20;
 
     function toggleVotes(ideaRecordID) {
-        var btn   = document.getElementById('btn-votes');
-        var panel = document.getElementById('pv-votes-panel');
-        if (!btn || !panel) { return; }
+        var btn = document.getElementById('btn-votes');
+        var fc  = document.getElementById('formcontent');
+        if (!btn || !fc) { return; }
 
-        /* Toggle open/closed */
         _pvVotesExpanded = !_pvVotesExpanded;
         btn.setAttribute('aria-expanded', _pvVotesExpanded ? 'true' : 'false');
 
         if (!_pvVotesExpanded) {
-            panel.hidden = true;
+            fc.innerHTML = '';
             return;
         }
 
-        panel.hidden = false;
-
-        /* If already fetched, just re-render (respects _pvShowAll state) */
+        /* If already fetched, just re-render */
         if (_pvVotesLoaded) {
-            _pvRenderVotes(panel);
+            _pvRenderVotes(fc);
             return;
         }
 
         /* First open — fetch */
-        panel.innerHTML = '<div class="pv-votes-empty">Loading&hellip;</div>';
+        fc.innerHTML = '<div style="padding:16px;font-size:15px;color:#475569;">Loading votes&hellip;</div>';
 
         var q = {
             terms: [
@@ -1984,17 +2028,17 @@ function doSubmit(recordID) {
                     }
                 });
                 _pvVotesLoaded = true;
-                _pvRenderVotes(panel);
+                _pvRenderVotes(fc);
             },
             error: function() {
-                panel.innerHTML = '<div class="pv-votes-empty" style="color:#b91c1c;">Could not load votes.</div>';
+                fc.innerHTML = '<div style="padding:16px;color:#b91c1c;">Could not load votes.</div>';
             }
         });
     }
 
-    function _pvRenderVotes(panel) {
+    function _pvRenderVotes(fc) {
         if (_pvAllVoters.length === 0) {
-            panel.innerHTML = '<div class="pv-votes-empty">No votes recorded for this idea.</div>';
+            fc.innerHTML = '<div style="padding:16px;font-size:15px;color:#64748b;font-style:italic;">No votes recorded for this idea.</div>';
             return;
         }
 
@@ -2002,27 +2046,31 @@ function doSubmit(recordID) {
         var showList = _pvShowAll ? _pvAllVoters : _pvAllVoters.slice(0, PV_VOTE_CAP);
         var rows     = showList.map(function(v, i) {
             return '<tr>'
-                + '<td style="width:32px;color:#94a3b8;">' + (i + 1) + '</td>'
-                + '<td>' + $('<div/>').text(v).html() + '</td>'
+                + '<td style="width:32px;color:#94a3b8;padding:7px 10px;border-top:1px solid #f1f5f9;">' + (i + 1) + '</td>'
+                + '<td style="padding:7px 10px;border-top:1px solid #f1f5f9;color:#0f172a;">' + $('<div/>').text(v).html() + '</td>'
                 + '</tr>';
         }).join('');
 
         var footer = '';
         if (!_pvShowAll && total > PV_VOTE_CAP) {
             footer = '<div class="pv-votes-footer">'
-                + '<button type="button" class="pv-votes-showall" onclick="_pvShowAll=true;_pvRenderVotes(document.getElementById(\'pv-votes-panel\'));">'
+                + '<button type="button" class="pv-votes-showall" onclick="_pvShowAll=true;_pvRenderVotes(document.getElementById(\'formcontent\'));">'
                 + 'Show all ' + total + ' votes'
                 + '</button></div>';
         } else if (_pvShowAll && total > PV_VOTE_CAP) {
             footer = '<div class="pv-votes-footer">'
-                + '<button type="button" class="pv-votes-showall" onclick="_pvShowAll=false;_pvRenderVotes(document.getElementById(\'pv-votes-panel\'));">'
+                + '<button type="button" class="pv-votes-showall" onclick="_pvShowAll=false;_pvRenderVotes(document.getElementById(\'formcontent\'));">'
                 + 'Show fewer'
                 + '</button></div>';
         }
 
-        panel.innerHTML =
+        fc.innerHTML =
             '<div class="pv-votes-table-wrap">'
-            + '<table><thead><tr><th>#</th><th>User ID</th></tr></thead>'
+            + '<table style="width:100%;border-collapse:collapse;font-size:14px;">'
+            + '<thead><tr style="background:#f8fafc;position:sticky;top:0;">'
+            + '<th style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;width:32px;">#</th>'
+            + '<th style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Voter</th>'
+            + '</tr></thead>'
             + '<tbody>' + rows + '</tbody></table>'
             + '</div>'
             + footer;

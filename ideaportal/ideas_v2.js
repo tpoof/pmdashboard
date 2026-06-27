@@ -543,6 +543,9 @@ function closeRecordModal() {
   const frame = document.getElementById("ipRecordModalFrame");
   const openBtn = document.getElementById("ipRecordModalOpenTabBtn");
   if (!modal || !frame) return;
+
+  const needsRefresh = frame._leafLoaded === true;
+  frame._leafLoaded = false;
   frame.src = "about:blank";
   if (openBtn) openBtn.setAttribute("data-url", "");
   modal.classList.remove("is-open");
@@ -550,9 +553,28 @@ function closeRecordModal() {
   setBackgroundHidden(false);
   lastRecordFocusedElement?.focus();
   lastRecordFocusedElement = null;
+
+  // Silently re-fetch data if the iframe loaded at least once — the user
+  // may have changed the record's status, cancelled it, or edited it.
+  if (needsRefresh) {
+    loadIdeasAndVotes().catch((err) =>
+      console.warn("[RecordModal] silent refresh failed:", err),
+    );
+  }
 }
 
 function bindRecordModal() {
+  const frame = document.getElementById("ipRecordModalFrame");
+
+  // Mark the iframe as having loaded content so closeRecordModal knows
+  // a refresh is warranted. Skip the initial about:blank load.
+  if (frame) {
+    frame.addEventListener("load", () => {
+      if (frame.src && frame.src !== "about:blank") {
+        frame._leafLoaded = true;
+      }
+    });
+  }
   document.addEventListener("click", (e) => {
     const link = e.target.closest("a.ip-recordLink");
     if (link) {
