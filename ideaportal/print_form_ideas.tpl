@@ -382,6 +382,24 @@
     cursor: pointer;
 }
 
+/* ── Internal view banner ───────────────────────────── */
+.pv-internal-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 40px;
+    padding: 10px 20px;
+    background: #fef3c7;
+    border-top: 2px solid #f59e0b;
+    border-bottom: 2px solid #f59e0b;
+    color: #78350f;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-align: center;
+}
+
 /* ── View Votes sidebar button ──────────────────────── */
 .pv-votes-btn {
     background: #f1f5f9 !important;
@@ -1045,7 +1063,13 @@ function pvOpenEdit(indicatorID) {
 <!--{if $empMembership['groupID'][226]}--></div><!--{/if}-->
 
 <!-- Internal form content target (loaded by openContent / loadVotes) -->
-<div id="formcontent" style="margin-top: 40px;"></div>
+<!--{if $empMembership['groupID'][226]}-->
+<div class="pv-internal-banner noprint" role="note" aria-label="Internal view notice">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false" style="width:15px;height:15px;flex-shrink:0;"><path d="M8 1L1 14h14L8 1z"/><path d="M8 6v4M8 11.5v.5"/></svg>
+    LEAF TEAM — INTERNAL VIEW ONLY
+</div>
+<!--{/if}-->
+<div id="formcontent" style="margin-top: 0;"></div>
 
 <!-- DIALOG BOXES -->
 <div id="formContainer"></div>
