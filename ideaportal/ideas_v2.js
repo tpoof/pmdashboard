@@ -92,7 +92,6 @@ let ideaOwnerMap = {};
 let voteCounts = {};
 
 const portalConfig = window.leafIdeaPortal || {};
-const debugEnabled = portalConfig?.debug === true;
 
 /* ─────────────────────────────────────────────────────────────
    Utilities
@@ -102,13 +101,6 @@ function sanitizeLeafValue(value) {
   return String(value || "")
     .replace(/<!--|-->/g, "")
     .trim();
-}
-
-function logDebug(message, data) {
-  if (!debugEnabled) return;
-  data !== undefined
-    ? console.log("IdeaPortal debug:", message, data)
-    : console.log("IdeaPortal debug:", message);
 }
 
 function escapeHtml(value) {
@@ -258,163 +250,6 @@ function hideToast() {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Debug Panel
-───────────────────────────────────────────────────────────── */
-
-const PortalDebug = (() => {
-  const $ = (id) => document.getElementById(id);
-
-  const colorFor = (status) =>
-    status === "success"
-      ? "#4ade80"
-      : status === "error"
-        ? "#f87171"
-        : status === "loading"
-          ? "#facc15"
-          : "#94a3b8";
-
-  const iconFor = (status) =>
-    status === "success"
-      ? "✅"
-      : status === "error"
-        ? "❌"
-        : status === "loading"
-          ? "⏳"
-          : "○";
-
-  const dbgState = {
-    dom: "initializing",
-    leaf: "unknown",
-    ideas: { status: "pending", count: 0, error: null },
-    votes: { status: "pending", count: 0, error: null },
-    stats: { total: "—", implemented: "—", votes: "—" },
-    initFired: false,
-    tables: { results: 0, topResults: 0, myResults: 0 },
-  };
-
-  function render() {
-    const panel = $("ipDebugPanel");
-    if (!panel) return;
-
-    const domEl = $("ipDbgDom");
-    if (domEl) {
-      domEl.textContent = `🌐 DOM readyState: ${dbgState.dom}`;
-      domEl.style.color = ["complete", "interactive"].includes(dbgState.dom)
-        ? "#4ade80"
-        : "#facc15";
-    }
-
-    const leafEl = $("ipDbgLeaf");
-    if (leafEl) {
-      const ok = typeof LeafFormQuery !== "undefined";
-      leafEl.textContent = `📦 LeafFormQuery: ${ok ? "available ✅" : "NOT FOUND ❌"}`;
-      leafEl.style.color = ok ? "#4ade80" : "#f87171";
-    }
-
-    const userEl = $("ipDbgUser");
-    if (userEl) {
-      const uid = (window.leafIdeaPortal || {}).userID || "(none)";
-      const isReal = uid && !uid.includes("<!--");
-      userEl.textContent = `👤 userID: ${isReal ? uid.substring(0, 20) : "(Smarty not rendering — check CMS)"}`;
-      userEl.style.color = isReal ? "#4ade80" : "#f87171";
-    }
-
-    const emailEl = $("ipDbgEmail");
-    if (emailEl) {
-      const candidates = (window.leafIdeaPortal || {}).emailCandidates || [];
-      const rendered = candidates.map((c, i) => {
-        const isReal = c && !c.includes("<!--") && c.includes("@");
-        return `[${i}] ${isReal ? c : "(not rendered)"}`;
-      });
-      const anyReal = rendered.some((r) => !r.includes("(not rendered)"));
-      emailEl.textContent = `📧 email candidates: ${rendered.join(" | ")}`;
-      emailEl.style.color = anyReal ? "#4ade80" : "#f87171";
-    }
-
-    const voterEmailEl = $("ipDbgVoterEmail");
-    if (voterEmailEl) {
-      const ve = resolvedVoterEmail;
-      const ok = ve && ve.includes("@");
-      voterEmailEl.textContent = `🗳️ resolvedVoterEmail: ${ok ? ve : ve ? `"${ve}" (no @ — check)` : "(pending)"}`;
-      voterEmailEl.style.color = ok ? "#4ade80" : ve ? "#f87171" : "#94a3b8";
-    }
-
-    const initEl = $("ipDbgInit");
-    if (initEl) {
-      initEl.textContent = `🔧 init fired: ${dbgState.initFired ? "yes ✅" : "NO"}`;
-      initEl.style.color = dbgState.initFired ? "#4ade80" : "#f87171";
-    }
-
-    const ideasEl = $("ipDbgIdeas");
-    if (ideasEl) {
-      const i = dbgState.ideas;
-      const countStr =
-        i.status === "success" || i.count > 0 ? ` — ${i.count} records` : "";
-      ideasEl.textContent = `${iconFor(i.status)} Ideas query: ${i.status}${countStr}${i.error ? ` | ERR: ${i.error}` : ""}`;
-      ideasEl.style.color = colorFor(i.status);
-    }
-
-    const votesEl = $("ipDbgVotes");
-    if (votesEl) {
-      const v = dbgState.votes;
-      const countStr =
-        v.status === "success" || v.count > 0 ? ` — ${v.count} records` : "";
-      votesEl.textContent = `${iconFor(v.status)} Votes query: ${v.status}${countStr}${v.error ? ` | ERR: ${v.error}` : ""}`;
-      votesEl.style.color = colorFor(v.status);
-    }
-
-    const statsEl = $("ipDbgStats");
-    if (statsEl) {
-      statsEl.textContent = `📊 Stats → total: ${dbgState.stats.total} | implemented: ${dbgState.stats.implemented} | votes: ${dbgState.stats.votes}`;
-    }
-
-    const tableEl = $("ipDbgTable");
-    if (tableEl) {
-      const t = dbgState.tables;
-      tableEl.textContent = `📋 Rows rendered → All: ${t.results} | Top10: ${t.topResults} | Mine: ${t.myResults}`;
-    }
-  }
-
-  function wireToggle() {
-    const btn = $("ipDbgToggle");
-    const body = $("ipDbgBody");
-    const icon = $("ipDbgToggleIcon");
-    if (!btn || !body) return;
-    btn.addEventListener("click", () => {
-      const hidden = body.style.display === "none";
-      body.style.display = hidden ? "grid" : "none";
-      if (icon) icon.textContent = hidden ? "▼" : "▲";
-    });
-  }
-
-  function set(key, value) {
-    const parts = key.split(".");
-    let obj = dbgState;
-    for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
-    obj[parts[parts.length - 1]] = value;
-    render();
-  }
-
-  return {
-    init() {
-      wireToggle();
-      dbgState.dom = document.readyState;
-      render();
-    },
-    set,
-    error(msg) {
-      const el = $("ipDbgErr");
-      if (el) {
-        el.style.display = "block";
-        el.textContent = `🚨 ${msg}`;
-      }
-      render();
-    },
-    render,
-  };
-})();
-
-/* ─────────────────────────────────────────────────────────────
    Stats strip
 ───────────────────────────────────────────────────────────── */
 
@@ -426,9 +261,6 @@ function renderStatsStrip(totalIdeas, implemented, totalVotes) {
   set("statTotalIdeas", totalIdeas);
   set("statImplemented", implemented);
   set("statTotalVotes", totalVotes);
-  PortalDebug.set("stats.total", totalIdeas);
-  PortalDebug.set("stats.implemented", implemented);
-  PortalDebug.set("stats.votes", totalVotes);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1132,7 +964,6 @@ function renderAllIdeas() {
     pagination.pageItems.map(buildIdeaRow).join(""),
     state.search ? "No matching ideas." : "No data found",
   );
-  PortalDebug.set("tables.results", pagination.pageItems.length);
   updatePaginationUI(
     "all",
     sorted.length,
@@ -1166,7 +997,6 @@ function renderMyIdeas() {
     pagination.pageItems.map(buildIdeaRow).join(""),
     "No ideas submitted",
   );
-  PortalDebug.set("tables.myResults", pagination.pageItems.length);
   updatePaginationUI(
     "my",
     sorted.length,
@@ -1187,7 +1017,6 @@ function renderTop10Ideas() {
     top10 = sortIdeasList(top10, sortState.tblTopIdeas);
   applySortClasses("tblTopIdeas");
   renderRows(ui.topResults, top10.map(buildIdeaRow).join(""), "No data found");
-  PortalDebug.set("tables.topResults", top10.length);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1240,8 +1069,7 @@ function updateVoteDom(recordID) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Voter email resolution
-   Priority: Smarty-injected candidate → orgchart API → userID fallback
+   Voter email resolution — orgchart API → userID fallback
 ───────────────────────────────────────────────────────────── */
 
 function isRealEmail(str) {
@@ -1249,60 +1077,34 @@ function isRealEmail(str) {
 }
 
 async function resolveVoterEmail() {
-  // 1. Try Smarty-injected candidates first (zero cost if one rendered)
-  const candidates = (window.leafIdeaPortal || {}).emailCandidates || [];
-  for (let i = 0; i < candidates.length; i++) {
-    if (isRealEmail(candidates[i])) {
-      resolvedVoterEmail = candidates[i];
-      logDebug(
-        `[resolveVoterEmail] Smarty candidate [${i}] resolved:`,
-        resolvedVoterEmail,
+  if (!userID) return;
+  try {
+    const res = await fetch(
+      `/platform/orgchart/api/employee/search?q=userName:${encodeURIComponent(userID)}&noLimit=0&_=${Date.now()}`,
+      { credentials: "same-origin" },
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const employees = Array.isArray(data) ? data : Object.values(data || {});
+      const match = employees.find(
+        (e) =>
+          e &&
+          (e.userName === userID || e.userName === userID.split("\\").pop()),
       );
-      PortalDebug.render();
-      return;
-    }
-  }
-
-  // 2. Orgchart API fallback — look up current user by userName
-  if (userID) {
-    try {
-      const res = await fetch(
-        `/platform/orgchart/api/employee/search?q=userName:${encodeURIComponent(userID)}&noLimit=0&_=${Date.now()}`,
-        { credentials: "same-origin" },
-      );
-      if (res.ok) {
-        const data = await res.json();
-        const employees = Array.isArray(data)
-          ? data
-          : Object.values(data || {});
-        const match = employees.find(
-          (e) =>
-            e &&
-            (e.userName === userID || e.userName === userID.split("\\").pop()),
-        );
-        const email = match?.Email || match?.email || "";
-        if (isRealEmail(email)) {
-          resolvedVoterEmail = email;
-          logDebug(
-            "[resolveVoterEmail] orgchart API resolved:",
-            resolvedVoterEmail,
-          );
-          PortalDebug.render();
-          return;
-        }
+      const email = match?.Email || match?.email || "";
+      if (isRealEmail(email)) {
+        resolvedVoterEmail = email;
+        return;
       }
-    } catch (err) {
-      console.warn("[resolveVoterEmail] orgchart API failed:", err);
     }
+  } catch (err) {
+    console.warn("[resolveVoterEmail] orgchart API failed:", err);
   }
-
-  // 3. Last resort — store userID so votes still record something identifiable
-  resolvedVoterEmail = userID || "";
+  // Last resort — userID so votes still record something identifiable
+  resolvedVoterEmail = userID;
   console.warn(
-    "[resolveVoterEmail] Could not resolve email; falling back to userID:",
-    resolvedVoterEmail,
+    "[resolveVoterEmail] Could not resolve email; falling back to userID",
   );
-  PortalDebug.render();
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1331,11 +1133,8 @@ async function IdeaVotes(recordID) {
     [VOTE_FIELDS.idea]: key,
   };
 
-  logDebug("[IdeaVotes] payload", payload);
-
   try {
     const response = await apiPostJson("./api/?a=form/new", payload);
-    logDebug("[IdeaVotes] response", response);
     const newID = parseFloat(response);
 
     if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
@@ -1394,7 +1193,6 @@ async function leafFetchQuery(queryObj, filterData) {
 }
 
 async function fetchIdeasData() {
-  PortalDebug.set("ideas.status", "loading");
   try {
     const data = await leafFetchQuery(
       {
@@ -1415,19 +1213,13 @@ async function fetchIdeasData() {
       IDEA_FILTER_DATA,
     );
     const result = Object.values(data || {});
-    PortalDebug.set("ideas.count", result.length);
-    PortalDebug.set("ideas.status", "success");
     return result;
   } catch (err) {
-    PortalDebug.set("ideas.status", "error");
-    PortalDebug.set("ideas.error", String(err));
-    PortalDebug.error(`Ideas query failed: ${err}`);
     throw err;
   }
 }
 
 async function fetchVotesData() {
-  PortalDebug.set("votes.status", "loading");
   try {
     const voteData = await leafFetchQuery(
       {
@@ -1473,14 +1265,8 @@ async function fetchVotesData() {
         if (saved[k]) userVotes[k] = true;
       });
     } catch {}
-
-    PortalDebug.set("votes.count", votesList.length);
-    PortalDebug.set("votes.status", "success");
     return votesList.length;
   } catch (err) {
-    PortalDebug.set("votes.status", "error");
-    PortalDebug.set("votes.error", String(err));
-    PortalDebug.error(`Votes query failed: ${err}`);
     throw err;
   }
 }
@@ -1589,8 +1375,6 @@ async function loadIdeasAndVotes() {
     renderTop10Ideas();
     setStatus("all", "", "");
 
-    logDebug("Fetch duration (ms)", Math.round(performance.now() - fetchStart));
-
     await fetchUserSubmissions();
   } catch (err) {
     console.error("IdeaPortal load error", err);
@@ -1620,7 +1404,6 @@ async function advanceWorkflow(recordID) {
       credentials: "same-origin",
     });
     const stepData = await stepRes.json();
-    logDebug("[Workflow] current step:", stepData);
 
     const firstStep = Array.isArray(stepData) ? stepData[0] : stepData;
     const depID = firstStep?.dependencyID;
@@ -1637,7 +1420,6 @@ async function advanceWorkflow(recordID) {
         dependencyID: depID,
       }),
     });
-    logDebug("[Workflow] advance response:", await applyRes.text());
   } catch (err) {
     console.warn("[Workflow] advance failed:", err);
   }
@@ -1961,14 +1743,116 @@ function bindMySearch() {
    Init
 ───────────────────────────────────────────────────────────── */
 
-function initPortal() {
-  PortalDebug.set("initFired", true);
-  PortalDebug.set("dom", document.readyState);
+/* ─────────────────────────────────────────────────────────────
+   My Activity — clickable rows
+───────────────────────────────────────────────────────────── */
 
+function switchToMyIdeasTab() {
+  const myTab = document.querySelector('.ip-tab[data-ip-tab="my"]');
+  if (!myTab) return;
+  myTab.click();
+  myTab.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  myTab.focus();
+}
+
+function openVotedModal() {
+  const modal = document.getElementById("ipVotedModal");
+  const tableBody = document.getElementById("ipVotedTableBody");
+  const table = document.getElementById("ipVotedTable");
+  const empty = document.getElementById("ipVotedModalEmpty");
+  if (!modal || !tableBody || !table || !empty) return;
+
+  // Build rows from userVotes (keyed by recordID) + ideasVMById for details
+  const votedIDs = Object.keys(userVotes).filter((k) => userVotes[k] === true);
+
+  if (!votedIDs.length) {
+    table.hidden = true;
+    empty.hidden = false;
+  } else {
+    const rows = votedIDs
+      .map((id) => {
+        const idea = ideasVMById[id];
+        if (!idea) {
+          // Vote exists but idea not in public set (e.g. deleted/draft)
+          return `<tr>
+          <td><span style="color:var(--ip-muted)">#${escapeHtml(id)}</span></td>
+          <td style="color:var(--ip-muted);font-style:italic">Idea not available</td>
+          <td>—</td><td>—</td><td>—</td>
+        </tr>`;
+        }
+        const title = escapeHtml(truncateTitle(idea.title || `Idea ${id}`));
+        const titleFull = escapeHtml(idea.title || `Idea ${id}`);
+        const category = escapeHtml(idea.category || "");
+        const statusLabel = idea.status || "Draft";
+        const statusBadgeClass = getStatusBadgeClass(statusLabel);
+        const votes = idea.votes || 0;
+        const recordLink = escapeHtml(
+          idea.recordLink || `${RECORD_VIEW_URL}${id}`,
+        );
+        return `<tr>
+        <td><a class="ip-recordLink" href="${recordLink}" data-title="${titleFull}" aria-haspopup="dialog">#${escapeHtml(id)}</a></td>
+        <td title="${titleFull}">${title}</td>
+        <td>${category}</td>
+        <td><span class="ip-badge ${statusBadgeClass}">${escapeHtml(statusLabel)}</span></td>
+        <td>${votes}</td>
+      </tr>`;
+      })
+      .join("");
+
+    tableBody.innerHTML = rows;
+    table.hidden = false;
+    empty.hidden = true;
+  }
+
+  lastFocusedElement = document.activeElement;
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
+  setBackgroundHidden(true);
+  bindFocusTrap(modal);
+  document.getElementById("ipVotedModalCloseBtn")?.focus();
+}
+
+function closeVotedModal() {
+  const modal = document.getElementById("ipVotedModal");
+  if (!modal) return;
+  modal.classList.remove("is-open");
+  modal.setAttribute("aria-hidden", "true");
+  setBackgroundHidden(false);
+  lastFocusedElement?.focus();
+  lastFocusedElement = null;
+}
+
+function bindVotedModal() {
+  document
+    .getElementById("ipVotedModalCloseBtn")
+    ?.addEventListener("click", closeVotedModal);
+  document
+    .getElementById("ipVotedModalBackdrop")
+    ?.addEventListener("click", closeVotedModal);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const modal = document.getElementById("ipVotedModal");
+      if (modal?.classList.contains("is-open")) closeVotedModal();
+    }
+  });
+}
+
+function bindActivityButtons() {
+  document
+    .getElementById("actMyIdeasBtn")
+    ?.addEventListener("click", switchToMyIdeasTab);
+  document
+    .getElementById("actVotedBtn")
+    ?.addEventListener("click", openVotedModal);
+}
+
+function initPortal() {
   cacheElements();
   bindModalEvents();
   bindTabs();
   bindRecordModal();
+  bindVotedModal();
+  bindActivityButtons();
   bindDelegatedEvents();
   bindSearch();
   bindMySearch();
@@ -2005,12 +1889,8 @@ function initPortal() {
 
   loadIdeasAndVotes().catch((err) => {
     console.error("loadIdeasAndVotes failed", err);
-    PortalDebug.error(`loadIdeasAndVotes threw: ${err}`);
   });
 }
-
-// Wire debug panel immediately
-PortalDebug.init();
 
 // Fire init as soon as DOM is available
 if (document.readyState === "loading") {

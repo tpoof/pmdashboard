@@ -422,6 +422,84 @@
         font-weight: 700;
         color: var(--ip-navy);
       }
+      /* Clickable activity row */
+      .ip-actRow--btn {
+        width: 100%;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        text-align: left;
+        border-radius: 4px;
+        transition: background 0.15s;
+      }
+      .ip-actRow--btn:hover {
+        background: var(--ip-blue-lt);
+      }
+      .ip-actRow--btn:hover .ip-actRow {
+        color: var(--ip-blue);
+      }
+      .ip-actRow--btn:focus-visible {
+        outline: 2px solid #000;
+        outline-offset: 2px;
+      }
+
+      /* ── Voted modal ── */
+      .ip-votedModal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 500;
+      }
+      .ip-votedModal.is-open {
+        display: block;
+      }
+      .ip-votedModal__backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(10, 20, 60, 0.45);
+      }
+      .ip-votedModal__dialog {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #fff;
+        border-radius: var(--ip-r-lg);
+        width: 90vw;
+        max-width: 800px;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+      }
+      .ip-votedModal__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--ip-blue-10);
+        flex-shrink: 0;
+        background: #fff;
+      }
+      .ip-votedModal__title {
+        font-family: "Public Sans", sans-serif;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--ip-navy);
+      }
+      .ip-votedModal__body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0;
+      }
+      .ip-votedModal__empty {
+        padding: 32px;
+        text-align: center;
+        color: var(--ip-muted);
+        font-size: 0.9rem;
+      }
 
       /* ── Main content ── */
       .ip-main {
@@ -569,6 +647,10 @@
         cursor: pointer;
         display: flex;
         align-items: center;
+      }
+      .ip-searchIconBtn:focus-visible {
+        outline: 2px solid #000;
+        outline-offset: -3px;
       }
       .ip-searchIconBtn .material-symbols-outlined {
         font-size: 1.1rem;
@@ -794,8 +876,16 @@
         border-color: var(--ip-blue);
         cursor: default;
       }
+      .ip-upvote.is-voted:focus-visible {
+        outline: 2px solid #000;
+        outline-offset: 3px;
+      }
       .ip-upvote:disabled {
         opacity: 0.65;
+      }
+      .ip-upvote:focus-visible {
+        outline: 2px solid #000;
+        outline-offset: 2px;
       }
       .ip-upvote .material-symbols-outlined {
         font-size: 0.95rem;
@@ -1095,7 +1185,7 @@
         background: var(--ip-blue);
       }
       .ip-jumpTop:focus-visible {
-        outline: 3px solid var(--ip-blue);
+        outline: 2px solid #000;
         outline-offset: 3px;
       }
 
@@ -1189,44 +1279,6 @@
         .ip-hero-badge__dot {
           animation: none;
         }
-      }
-
-      /* ── Debug panel ── */
-      #ipDebugPanel {
-        position: fixed;
-        bottom: 24px;
-        right: 74px;
-        z-index: 9999;
-        font-family: "Public Sans", monospace, sans-serif;
-        font-size: 11px;
-        line-height: 1.5;
-        width: 380px;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.22);
-        border-radius: 8px;
-        overflow: hidden;
-      }
-      #ipDbgToggle {
-        width: 100%;
-        background: var(--lp-hl);
-        color: #fff;
-        border: none;
-        padding: 7px 12px;
-        text-align: left;
-        font-family: inherit;
-        font-size: 11px;
-        font-weight: 700;
-        cursor: pointer;
-        letter-spacing: 0.04em;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      #ipDbgBody {
-        background: #0d2345;
-        color: #e8f0fb;
-        padding: 10px 12px;
-        display: grid;
-        gap: 5px;
       }
     </style>
 
@@ -1400,13 +1452,27 @@
               <div class="ip-sideCard">
                 <div class="ip-sideCard__hd">My Activity</div>
                 <div class="ip-myActivity">
-                  <div class="ip-actRow">
-                    <span>My ideas</span><span id="myActivityIdeas">—</span>
-                  </div>
-                  <div class="ip-actRow">
-                    <span>Ideas I've voted for</span
-                    ><span id="myActivityVotes">—</span>
-                  </div>
+                  <button
+                    type="button"
+                    class="ip-actRow--btn"
+                    id="actMyIdeasBtn"
+                    aria-label="Jump to My Ideas tab"
+                  >
+                    <div class="ip-actRow">
+                      <span>My ideas</span><span id="myActivityIdeas">—</span>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    class="ip-actRow--btn"
+                    id="actVotedBtn"
+                    aria-label="View ideas I've voted for"
+                  >
+                    <div class="ip-actRow">
+                      <span>Ideas I've voted for</span
+                      ><span id="myActivityVotes">—</span>
+                    </div>
+                  </button>
                 </div>
               </div>
             </aside>
@@ -2031,6 +2097,48 @@
           </div>
         </div>
 
+        <!-- Voted ideas modal -->
+        <div class="ip-votedModal" id="ipVotedModal" aria-hidden="true">
+          <div class="ip-votedModal__backdrop" id="ipVotedModalBackdrop"></div>
+          <div
+            class="ip-votedModal__dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ipVotedModalTitle"
+          >
+            <div class="ip-votedModal__header">
+              <div class="ip-votedModal__title" id="ipVotedModalTitle">
+                Ideas I've Voted For
+              </div>
+              <button
+                type="button"
+                class="ip-btn ip-btn--ghost ip-btn--icon"
+                id="ipVotedModalCloseBtn"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div class="ip-votedModal__body">
+              <div class="ip-votedModal__empty" id="ipVotedModalEmpty" hidden>
+                You haven't voted for any ideas yet.
+              </div>
+              <table class="ip-table" id="ipVotedTable" hidden>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Votes</th>
+                  </tr>
+                </thead>
+                <tbody id="ipVotedTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- Jump to top -->
         <button
           type="button"
@@ -2054,40 +2162,6 @@
         <div class="lp-bottom-safe" aria-hidden="true"></div>
       </main>
       <!-- /#lp-main -->
-
-      <!-- Debug panel (gated — remove or set debug:false for production) -->
-      <div id="ipDebugPanel">
-        <button id="ipDbgToggle" type="button">
-          <span>🔬 IDEA PORTAL DEBUG</span>
-          <span id="ipDbgToggleIcon">▼</span>
-        </button>
-        <div id="ipDbgBody">
-          <div id="ipDbgDom" style="color: #facc15">⏳ DOM: initializing…</div>
-          <div id="ipDbgLeaf" style="color: #facc15">
-            ⏳ LeafFormQuery: checking…
-          </div>
-          <div id="ipDbgUser" style="color: #94a3b8">👤 userID: —</div>
-          <div id="ipDbgEmail" style="color: #94a3b8">
-            📧 email candidates: —
-          </div>
-          <div id="ipDbgVoterEmail" style="color: #94a3b8">
-            🗳️ resolvedVoterEmail: —
-          </div>
-          <div id="ipDbgInit" style="color: #94a3b8">🔧 init: waiting…</div>
-          <hr style="border-color: #1e3a5f; margin: 4px 0" />
-          <div id="ipDbgIdeas" style="color: #facc15">
-            ⏳ Ideas query: pending
-          </div>
-          <div id="ipDbgVotes" style="color: #facc15">
-            ⏳ Votes query: pending
-          </div>
-          <hr style="border-color: #1e3a5f; margin: 4px 0" />
-          <div id="ipDbgStats" style="color: #94a3b8">📊 Stats: —</div>
-          <div id="ipDbgErr" style="color: #f87171; display: none"></div>
-          <hr style="border-color: #1e3a5f; margin: 4px 0" />
-          <div id="ipDbgTable" style="color: #94a3b8">📋 Tables: —</div>
-        </div>
-      </div>
     </div>
     <!-- /.lp -->
 
@@ -2100,31 +2174,7 @@
       window.leafIdeaPortal = {
         userID: '<!--{$userID|unescape|escape:"quotes"}-->',
         csrfToken: '<!--{$CSRFToken|unescape|escape:"quotes"}-->',
-        debug: true,
-        // Email candidates — Smarty variable name TBD; whichever renders a real
-        // address will be used; the others will remain as literal comment strings.
-        emailCandidates: [
-          '<!--{$userEmail|unescape|escape:"quotes"}-->',
-          '<!--{$Email|unescape|escape:"quotes"}-->',
-          '<!--{$user.email|unescape|escape:"quotes"}-->',
-        ],
       };
-    </script>
-
-    <!-- Debug panel toggle -->
-    <script>
-      (() => {
-        const toggle = document.getElementById("ipDbgToggle");
-        const body = document.getElementById("ipDbgBody");
-        const icon = document.getElementById("ipDbgToggleIcon");
-        if (!toggle || !body) return;
-        let open = true;
-        toggle.addEventListener("click", () => {
-          open = !open;
-          body.style.display = open ? "grid" : "none";
-          icon.textContent = open ? "▼" : "▶";
-        });
-      })();
     </script>
 
     <!-- TODO: verify path before production -->
