@@ -1,76 +1,26 @@
-/* ── LEAF IDEAS DEBUG — remove before production ── */
-(function pvDebug() {
-    var d = {
-        smarty: {
-            canWrite:     '<!--{$canWrite}-->',
-            is_admin:     '<!--{$is_admin}-->',
-            userID:       '<!--{$userID|strip_tags}-->',
-            initiatorID:  '<!--{$initiatorID|strip_tags}-->',
-            submitted:    '<!--{$submitted|strip_tags}-->',
-            stepID:       '<!--{$stepID|strip_tags}-->',
-            childforms:   <!--{if $childforms}--><!--{$childforms|@json_encode}--><!--{else}-->null<!--{/if}-->,
-            recordID:     '<!--{$recordID|strip_tags}-->'
-        }
-    };
-    console.group('🌿 LEAF Ideas Debug — print_form_ideas.tpl');
-    console.log('Smarty vars:', d.smarty);
-
-    // Check DOM for formcontent div
-    console.log('#formcontent exists in DOM:', !!document.getElementById('formcontent'));
-
-    // Fetch attached forms via API
-    var recID = <!--{$recordID|strip_tags|escape}-->;
-    var q = {
-        terms: [{ id: 'recordID', operator: '=', match: recID }],
-        joins: ['categoryIDsUnabridged', 'categoryNameUnabridged']
-    };
-    $.ajax({
-        type: 'GET',
-        url: './api/form/query',
-        data: { q: JSON.stringify(q) },
-        dataType: 'json',
-        success: function(res) {
-            var rec = res[recID] || res[String(recID)] || null;
-            console.log('api/form/query result for record:', rec);
-            if (rec) {
-                console.log('categoryIDsUnabridged:', rec.categoryIDsUnabridged);
-                console.log('categoryNamesUnabridged:', rec.categoryNamesUnabridged);
-            }
-        },
-        error: function(xhr) {
-            console.warn('api/form/query failed:', xhr.status, xhr.responseText);
-        },
-        cache: false
-    });
-
-    // Fetch raw getprintindicator for indicator 5 (title)
-    $.ajax({
-        type: 'GET',
-        url: 'ajaxIndex.php?a=getprintindicator&recordID=' + recID + '&indicatorID=5&series=1',
-        dataType: 'text',
-        success: function(html) {
-            console.log('Raw getprintindicator response (indicatorID 5):', html);
-        },
-        error: function(xhr) {
-            console.warn('getprintindicator failed:', xhr.status);
-        },
-        cache: false
-    });
-
-    // Fetch write access check via API
-    $.ajax({
-        type: 'GET',
-        url: './api/form/' + recID + '/accessible',
-        dataType: 'json',
-        success: function(res) {
-            console.log('api/form/accessible result:', res);
-        },
-        error: function(xhr) {
-            console.warn('api/form/accessible failed:', xhr.status, xhr.responseText);
-        },
-        cache: false
-    });
-
-    console.groupEnd();
-}());
-/* ── END LEAF IDEAS DEBUG ── */
+// Fetch votes for this idea
+var voteQuery = {
+  terms: [{ id: "2", operator: "=", match: recID }],
+  joins: ["status"],
+  x_filterData: "recordID,s1",
+};
+$.ajax({
+  type: "GET",
+  url: "./api/form/query",
+  data: {
+    q: JSON.stringify(voteQuery),
+    form: "form_57e89",
+    x_filterData: "recordID,s1",
+  },
+  dataType: "json",
+  success: function (res) {
+    console.log("Votes query raw result:", res);
+    console.log("Vote count:", Object.keys(res).length);
+    var first = Object.values(res)[0];
+    if (first) console.log("Sample vote record shape:", first);
+  },
+  error: function (xhr) {
+    console.warn("Votes query failed:", xhr.status, xhr.responseText);
+  },
+  cache: false,
+});
