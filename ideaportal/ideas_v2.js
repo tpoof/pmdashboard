@@ -1524,9 +1524,17 @@ async function fetchUserSubmissions() {
         (idea) => idea?.recordID && !(idea.title || "").startsWith("Idea #"),
       )
       .map((idea) => {
-        // Prefer enriched data from the main ideas fetch when available
         const key = String(idea.recordID);
-        return ideasById[key] || idea;
+        if (ideasById[key]) {
+          // Record exists in the public submitted query — use enriched data as-is
+          return ideasById[key];
+        }
+        // Not in the submitted set — it's a draft. Clear the status indicator so
+        // buildIdeaRow falls back to the "Draft" label.
+        return {
+          ...idea,
+          s1: { ...(idea.s1 || {}), [IDEA_INDICATORS.status]: "" },
+        };
       });
 
     myIdeasCache = buildIdeasViewModelList(userIdeas, false);
