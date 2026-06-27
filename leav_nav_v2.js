@@ -572,33 +572,32 @@
         "  flex-shrink: 0;",
         "}",
 
-        /* ── Shared pill button style (Leadership + LEAF Team) ──
-           Font values match .dd-trigger exactly from leaf_nav.css:
-           "Public Sans", 0.9rem, weight 600. font:inherit is not
-           used because browser UA stylesheets reset button/a fonts
-           before inheritance can apply. */
+        /* ── Shared button style (Leadership + LEAF Team) ───────
+           Matches .dd-trigger shape exactly: border-radius 5px
+           (--nav-r), no border, transparent background.
+           The container background provides the visual distinction.
+           Font values copied verbatim from .dd-trigger. */
         ".lp-internal-btn {",
         "  display: inline-flex;",
         "  align-items: center;",
         "  gap: 4px;",
-        "  padding: 4px 11px 4px 9px;",
-        "  border-radius: 999px;",
-        "  border: 1px solid #aacdec;",
-        "  background: #ffffff;",
-        "  color: #3d4551;",
+        "  padding: 7px 13px;" /* matches .dd-trigger padding */,
+        "  border-radius: 5px;" /* --nav-r */,
+        "  border: none;",
+        "  background: transparent;",
+        "  color: #3d4551;" /* --nav-muted */,
         '  font-family: "Public Sans", sans-serif;',
         "  font-size: 0.9rem;",
         "  font-weight: 600;",
         "  text-decoration: none;",
         "  white-space: nowrap;",
         "  cursor: pointer;",
-        "  transition: background 0.15s, border-color 0.15s, color 0.15s;",
+        "  transition: color 0.15s, background 0.15s;",
         "  line-height: 1.4;",
         "}",
         ".lp-internal-btn:hover {",
-        "  background: #eff6fb;",
-        "  border-color: #005ea2;",
-        "  color: #005ea2;",
+        "  background: #eff6fb;" /* --nav-hover-bg */,
+        "  color: #005ea2;" /* --nav-accent */,
         "  text-decoration: none;",
         "}",
         ".lp-internal-btn:focus-visible {",
@@ -606,17 +605,13 @@
         "  outline-offset: 2px;",
         "}",
 
-        /* ── LEAF Team dropdown trigger (extends pill style) ─── */
+        /* ── LEAF Team dropdown trigger (extends .lp-internal-btn) */
         ".lp-internal-btn--dd {",
         "  /* inherits all .lp-internal-btn rules */",
         "}",
         ".dd-item--internal.open .lp-internal-btn--dd {",
-        "  background: #eff6fb;" /* --nav-hover-bg */,
-        "  border-color: #005ea2;" /* --nav-accent */,
-        "  color: #005ea2;",
-        "}",
-        ".dd-item--internal.open .lp-internal-btn--dd .material-symbols-outlined {",
-        "  color: #005ea2;",
+        "  background: #eff6fb;" /* --nav-hover-bg, matches dd-item.open .dd-trigger */,
+        "  color: #005ea2;" /* --nav-accent */,
         "}",
 
         /* ── LEAF Team dropdown panel ───────────────────────────
