@@ -291,17 +291,27 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 18px;
         flex-shrink: 0;
+      }
+      .ip-statNew-icon .material-symbols-outlined {
+        font-size: 22px;
+        font-variation-settings:
+          "FILL" 1,
+          "wght" 400,
+          "opsz" 24,
+          "GRAD" 0;
       }
       .ip-statNew-icon--ideas {
         background: #e8f5e3;
+        color: #2e7d32;
       }
       .ip-statNew-icon--done {
         background: #fff3e0;
+        color: #e65100;
       }
       .ip-statNew-icon--votes {
         background: var(--c-blue5);
+        color: var(--ip-blue);
       }
       .ip-statNew-text {
         line-height: 1.25;
@@ -406,42 +416,11 @@
         color: #fff;
       }
       .ip-myActivity {
-        padding: 12px 14px;
+        list-style: none;
+        padding: 6px;
+        margin: 0;
         display: grid;
-        gap: 10px;
-      }
-      .ip-actRow {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-size: 0.85rem;
-        color: var(--ip-muted);
-      }
-      .ip-actRow span:last-child {
-        font-family: "Public Sans", sans-serif;
-        font-weight: 700;
-        color: var(--ip-navy);
-      }
-      /* Clickable activity row */
-      .ip-actRow--btn {
-        width: 100%;
-        background: none;
-        border: none;
-        padding: 0;
-        cursor: pointer;
-        text-align: left;
-        border-radius: 4px;
-        transition: background 0.15s;
-      }
-      .ip-actRow--btn:hover {
-        background: var(--ip-blue-lt);
-      }
-      .ip-actRow--btn:hover .ip-actRow {
-        color: var(--ip-blue);
-      }
-      .ip-actRow--btn:focus-visible {
-        outline: 2px solid #000;
-        outline-offset: 2px;
+        gap: 2px;
       }
 
       /* ── Voted modal ── */
@@ -654,6 +633,12 @@
       }
       .ip-searchIconBtn .material-symbols-outlined {
         font-size: 1.1rem;
+        color: #fff !important;
+        font-variation-settings:
+          "FILL" 1,
+          "wght" 400,
+          "opsz" 24,
+          "GRAD" 0 !important;
       }
       .ip-srOnly {
         position: absolute;
@@ -871,10 +856,14 @@
         border-color: var(--ip-blue);
       }
       .ip-upvote.is-voted {
-        background: var(--ip-blue);
-        color: #fff;
-        border-color: var(--ip-blue);
+        background: #e8e8e8;
+        color: #666;
+        border-color: #ccc;
         cursor: default;
+        opacity: 1;
+      }
+      .ip-upvote.is-voted .material-symbols-outlined {
+        color: #666 !important;
       }
       .ip-upvote.is-voted:focus-visible {
         outline: 2px solid #000;
@@ -1161,32 +1150,50 @@
       /* ── Jump to top ── */
       .ip-jumpTop {
         position: fixed;
-        bottom: 24px;
-        right: 24px;
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        background: var(--lp-hl);
-        color: #fff;
-        font-size: 1.1rem;
-        border: none;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        width: 46px;
+        height: 46px;
+        border-radius: 999px;
+        border: 1px solid var(--lp-blue-mid);
+        background: var(--lp-blue-soft);
+        color: #111;
+        font-size: 20px;
         cursor: pointer;
-        display: none;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
         z-index: 400;
-        transition: opacity 0.2s;
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.15s ease,
+          transform 0.15s ease;
       }
       .ip-jumpTop.is-visible {
-        display: flex;
+        opacity: 1;
+        pointer-events: auto;
       }
       .ip-jumpTop:hover {
-        background: var(--ip-blue);
+        background: var(--lp-blue-mid);
+        border-color: var(--lp-blue-deep);
+      }
+      .ip-jumpTop:active {
+        transform: translateY(1px);
       }
       .ip-jumpTop:focus-visible {
         outline: 2px solid #000;
         outline-offset: 3px;
+      }
+      .ip-jumpTop .material-symbols-outlined {
+        font-size: 20px;
+        color: #111 !important;
+        font-variation-settings:
+          "FILL" 1,
+          "wght" 400,
+          "opsz" 24,
+          "GRAD" 0 !important;
       }
 
       /* ── Credit badge ── */
@@ -1397,7 +1404,7 @@
               class="ip-statNew-icon ip-statNew-icon--ideas"
               aria-hidden="true"
             >
-              💡
+              <span class="material-symbols-outlined">lightbulb</span>
             </div>
             <div class="ip-statNew-text">
               <div class="ip-statNew-number" id="statTotalIdeas">—</div>
@@ -1409,7 +1416,7 @@
               class="ip-statNew-icon ip-statNew-icon--done"
               aria-hidden="true"
             >
-              ✅
+              <span class="material-symbols-outlined">task_alt</span>
             </div>
             <div class="ip-statNew-text">
               <div class="ip-statNew-number" id="statImplemented">—</div>
@@ -1421,7 +1428,7 @@
               class="ip-statNew-icon ip-statNew-icon--votes"
               aria-hidden="true"
             >
-              🗳️
+              <span class="material-symbols-outlined">how_to_vote</span>
             </div>
             <div class="ip-statNew-text">
               <div class="ip-statNew-number" id="statTotalVotes">—</div>
@@ -1451,29 +1458,30 @@
               </div>
               <div class="ip-sideCard">
                 <div class="ip-sideCard__hd">My Activity</div>
-                <div class="ip-myActivity">
-                  <button
-                    type="button"
-                    class="ip-actRow--btn"
-                    id="actMyIdeasBtn"
-                    aria-label="Jump to My Ideas tab"
-                  >
-                    <div class="ip-actRow">
-                      <span>My ideas</span><span id="myActivityIdeas">—</span>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    class="ip-actRow--btn"
-                    id="actVotedBtn"
-                    aria-label="View ideas I've voted for"
-                  >
-                    <div class="ip-actRow">
-                      <span>Ideas I've voted for</span
-                      ><span id="myActivityVotes">—</span>
-                    </div>
-                  </button>
-                </div>
+                <ul class="ip-myActivity" role="list">
+                  <li>
+                    <button
+                      type="button"
+                      class="ip-catItem"
+                      id="actMyIdeasBtn"
+                      aria-label="Jump to My Ideas tab"
+                    >
+                      <span>My ideas</span>
+                      <span class="ip-catCount" id="myActivityIdeas">—</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      class="ip-catItem"
+                      id="actVotedBtn"
+                      aria-label="View ideas I've voted for"
+                    >
+                      <span>Ideas I've voted for</span>
+                      <span class="ip-catCount" id="myActivityVotes">—</span>
+                    </button>
+                  </li>
+                </ul>
               </div>
             </aside>
 
