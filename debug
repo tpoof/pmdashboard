@@ -1,26 +1,8 @@
-// Fetch votes for this idea
-var voteQuery = {
-  terms: [{ id: "2", operator: "=", match: recID }],
-  joins: ["status"],
-  x_filterData: "recordID,s1",
-};
-$.ajax({
-  type: "GET",
-  url: "./api/form/query",
-  data: {
-    q: JSON.stringify(voteQuery),
-    form: "form_57e89",
-    x_filterData: "recordID,s1",
-  },
-  dataType: "json",
-  success: function (res) {
-    console.log("Votes query raw result:", res);
-    console.log("Vote count:", Object.keys(res).length);
-    var first = Object.values(res)[0];
-    if (first) console.log("Sample vote record shape:", first);
-  },
-  error: function (xhr) {
-    console.warn("Votes query failed:", xhr.status, xhr.responseText);
-  },
-  cache: false,
-});
+console.log(
+  "userID:",
+  typeof userID !== "undefined" ? userID : "NOT SET",
+  "| CSRFToken:",
+  typeof CSRFToken !== "undefined" ? CSRFToken.slice(0, 8) + "..." : "NOT SET",
+  "| leafIdeaPortal:",
+  JSON.stringify(window.leafIdeaPortal || null),
+);
