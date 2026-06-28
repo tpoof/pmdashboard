@@ -571,7 +571,7 @@
     border: 1.5px solid #cce4f5;
     border-radius: 6px;
     background: #fff;
-    color: #005ea2;
+    color: #1e293b;
     font-size: 0.8rem;
     font-weight: 700;
     font-family: 'Public Sans', 'Source Sans 3', sans-serif;
@@ -838,7 +838,7 @@
                 aria-label="Vote for this idea"
                 title="Vote for this idea">
             <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
-            Vote
+            Vote for this idea
         </button>
 
         <!-- Share -->
@@ -1057,16 +1057,51 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
 (function() {
     var PV_RECORD_ID     = <!--{$recordID|strip_tags|escape:'javascript'}-->;
     var PV_USER_ID       = '<!--{$userID|strip_tags|escape:'javascript'}-->';
-    var PV_ORGCHART_PATH = '<!--{$orgchartPath|escape:'javascript'}-->';
     var PV_FORM_KEY      = '57e89';
     var PV_VOTE_IND_IDEA = 2;
     var PV_VOTE_IND_USER = 3;
     var _pvToastTimer         = null;
     var _pvVotingInProgress   = false;
-    var _pvResolvedEmail      = '';   /* set by pvResolveEmail(), used by vote + check */
+    var _pvResolvedEmail      = '';
     var _pvEmailResolved      = false;
 
-    /* ── Toast ── */
+    /* ── Email guard (mirrors ideas_v2.js isRealEmail) ── */
+    function pvIsRealEmail(str) {
+        return typeof str === 'string' && str.includes('@') && !str.includes('<!--');
+    }
+
+    /* ── Resolve email via orgchart (exact mirror of ideas_v2.js resolveVoterEmail) ── */
+    function pvResolveEmail() {
+        return new Promise(function(resolve) {
+            if (!PV_USER_ID) { resolve(''); return; }
+            var url = '/platform/orgchart/api/employee/search'
+                + '?q=userName:' + encodeURIComponent(PV_USER_ID)
+                + '&noLimit=0&_=' + Date.now();
+            fetch(url, { credentials: 'same-origin' })
+                .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+                .then(function(data) {
+                    var employees = Array.isArray(data) ? data : Object.values(data || {});
+                    var match = employees.find(function(e) {
+                        return e && (e.userName === PV_USER_ID || e.userName === PV_USER_ID.split('\\').pop());
+                    });
+                    var email = (match && (match.Email || match.email)) || '';
+                    if (pvIsRealEmail(email)) {
+                        _pvResolvedEmail = email;
+                    } else {
+                        console.warn('[pvResolveEmail] Could not resolve email; falling back to userID');
+                        _pvResolvedEmail = PV_USER_ID;
+                    }
+                    _pvEmailResolved = true;
+                    resolve(_pvResolvedEmail);
+                })
+                .catch(function(err) {
+                    console.warn('[pvResolveEmail] orgchart API failed:', err);
+                    _pvResolvedEmail = PV_USER_ID;
+                    _pvEmailResolved = true;
+                    resolve(_pvResolvedEmail);
+                });
+        });
+    }
     function pvShowToast(msg, isError) {
         var toast = document.getElementById('pvToast');
         if (!toast) { return; }
@@ -1105,35 +1140,6 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         btn.classList.toggle('is-voted', isVoted);
         btn.setAttribute('aria-label', isVoted ? 'You\'ve already voted for this idea' : 'Vote for this idea');
         btn.title = isVoted ? 'You\'ve already voted for this idea' : 'Vote for this idea';
-    }
-
-    /* ── Resolve email via orgchart API (mirrors ideas_v2.js resolveVoterEmail) ── */
-    function pvResolveEmail() {
-        return new Promise(function(resolve) {
-            if (!PV_USER_ID) { resolve(''); return; }
-            var url = PV_ORGCHART_PATH + '/api/employee/search'
-                + '?q=userName:' + encodeURIComponent(PV_USER_ID)
-                + '&noLimit=0&_=' + Date.now();
-            fetch(url)
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    var employees = Array.isArray(data) ? data : (data.employees || Object.values(data) || []);
-                    var match = employees.find(function(e) {
-                        var uname = e.userName || '';
-                        return uname === PV_USER_ID || uname === PV_USER_ID.split('\\').pop();
-                    });
-                    var email = (match && match.Email) ? match.Email.trim() : '';
-                    _pvResolvedEmail = email || PV_USER_ID;
-                    _pvEmailResolved = true;
-                    resolve(_pvResolvedEmail);
-                })
-                .catch(function() {
-                    /* Orgchart unavailable — fall back to userID */
-                    _pvResolvedEmail = PV_USER_ID;
-                    _pvEmailResolved = true;
-                    resolve(_pvResolvedEmail);
-                });
-        });
     }
 
     /* ── Check if current user already voted (runs after email resolved) ── */
