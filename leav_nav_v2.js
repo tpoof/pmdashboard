@@ -1168,6 +1168,19 @@
   ───────────────────────────────────────────────────────────── */
   var _seenExternalScripts = {};
 
+  /* Guard: tracks dep URLs already injected so ensureLeafUIDeps
+     never logs or re-injects on repeated mountContent calls. */
+  var _loadedDepSrcs = new Set();
+
+  /* Guard: URL currently being fetched — prevents stacked concurrent
+     loadView calls for the same or a rapid-fire different route. */
+  var _currentLoadUrl = null;
+
+  /* Guard: suppresses the hashchange → router() path while deferred
+     init functions are draining, preventing any hash side-effect
+     inside those inits from re-triggering a full navigation. */
+  var _routerSuppressed = false;
+
   /* Scripts that must never re-execute inside a fetched page context.
      Shell-level scripts (nav, breadcrumb) manage the outer document —
      re-running them injects duplicate elements and undoes router state. */
@@ -1245,13 +1258,19 @@
     });
 
     var toLoad = [];
-    if (needsJQueryUI && jqueryUISrc) toLoad.push(jqueryUISrc);
-    if (needsDialog && dialogSrc) toLoad.push(dialogSrc);
+    if (needsJQueryUI && jqueryUISrc && !_loadedDepSrcs.has(jqueryUISrc))
+      toLoad.push(jqueryUISrc);
+    if (needsDialog && dialogSrc && !_loadedDepSrcs.has(dialogSrc))
+      toLoad.push(dialogSrc);
 
     if (!toLoad.length) return Promise.resolve();
 
     console.warn("[LP] Lazy-loading LEAF UI deps for fetched page:", toLoad);
-    return loadScriptSequential(toLoad);
+    return loadScriptSequential(toLoad).then(function () {
+      toLoad.forEach(function (src) {
+        _loadedDepSrcs.add(src);
+      });
+    });
   }
 
   function reExecuteScripts(container) {
@@ -1578,6 +1597,7 @@
          which we intercept via the mockDoc proxy. */
       setTimeout(function () {
         if (window.__lpDeferredInits && window.__lpDeferredInits.length) {
+          _routerSuppressed = true;
           var inits = window.__lpDeferredInits.splice(0);
           inits.forEach(function (fn) {
             try {
@@ -1586,6 +1606,10 @@
               console.warn("[LP] Deferred init error:", e.message);
             }
           });
+          /* Re-enable router after any sync hash side-effects settle */
+          setTimeout(function () {
+            _routerSuppressed = false;
+          }, 0);
         }
       }, 0);
     });
@@ -1639,6 +1663,10 @@
 
     var url = route.href;
 
+    /* Prevent stacked fetches: if this URL is already in-flight, bail. */
+    if (_currentLoadUrl === url) return;
+    _currentLoadUrl = url;
+
     showSwapView();
     showSwapLoading();
     updateNavCurrent(route.section);
@@ -1678,6 +1706,7 @@
 
         /* Mount into swap host */
         mountContent(contentEl, doc, route);
+        _currentLoadUrl = null;
 
         /* Scroll swap host to top */
         var host = getSwapHost();
@@ -1685,6 +1714,7 @@
         window.scrollTo(0, 0);
       })
       .catch(function (err) {
+        _currentLoadUrl = null;
         console.error("[LP Router] Fetch failed for", url, ":", err.message);
         showSwapError(url);
         announce("This page couldn't be loaded. Try opening it in a new tab.");
@@ -1697,6 +1727,10 @@
      Called on init and on every hashchange event.
   ───────────────────────────────────────────────────────────── */
   function router() {
+    /* Bail if suppressed during deferred-init drain to prevent
+       hash side-effects inside init functions re-triggering navigation. */
+    if (_routerSuppressed) return;
+
     var raw = window.location.hash; /* e.g. "#find_site" or "" */
     var key = raw.replace(/^#/, "").toLowerCase();
 
