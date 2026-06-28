@@ -607,34 +607,10 @@ function buildDetailSkeleton(recordID, title, votes, isVoted, statusLabel) {
       <h2 class="ip-detail__title" id="ip-detail-title" tabindex="-1">${escapeHtml(title || "Idea Details")}</h2>
     </div>
 
-    <!-- Info row: Status · Votes · Category · Impact -->
+    <!-- Info row: Status · Votes -->
     <div class="ip-detail__info-row" role="group" aria-label="Idea metadata">
       ${statusLabel ? `<span class="ip-detail__info-item"><span class="ip-detail__info-label">Status</span><span class="ip-detail__info-val ip-detail__info-val--status" id="ip-detail-status-text">${escapeHtml(statusLabel)}</span></span><span class="ip-detail__info-sep" aria-hidden="true">·</span>` : ""}
       <span class="ip-detail__info-item"><span class="ip-detail__info-label">Votes</span><span class="ip-detail__info-val ip-detail__info-val--votes" id="ip-detail-votes-text"><span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>${votesText}</span></span>
-      <span class="ip-detail__info-sep" aria-hidden="true">·</span>
-      <span class="ip-detail__info-item"><span class="ip-detail__info-label">Category</span><span class="ip-detail__info-val ip-detail__info-val--category" id="ip-detail-category-text"><span class="ip-detail__loading">Loading\u2026</span></span></span>
-      <span class="ip-detail__info-sep" aria-hidden="true">·</span>
-      <span class="ip-detail__info-item"><span class="ip-detail__info-label">Impact</span><span class="ip-detail__info-val ip-detail__info-val--impact" id="ip-detail-impact-text"><span class="ip-detail__loading">Loading\u2026</span></span></span>
-    </div>
-
-    <!-- Actions -->
-    <div class="ip-detail__actions" role="group" aria-label="Idea actions">
-      <span class="ip-detail__meta-label">Actions</span>
-      <button type="button"
-        class="ip-upvote${isVotedClass}"
-        data-detail-vote="${escapeHtml(recordID)}"
-        aria-label="${voteAriaLabel}"
-        ${voteDisabled}>
-        <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
-        ${isVoted ? "Voted" : "Vote"}
-      </button>
-      <button type="button"
-        class="ip-share"
-        data-record-link="${escapeHtml(RECORD_VIEW_URL + recordID)}"
-        aria-label="Copy link to idea #${escapeHtml(recordID)}">
-        <span class="material-symbols-outlined" aria-hidden="true">share</span>
-        Share
-      </button>
     </div>
 
     <section class="ip-detail__card" aria-labelledby="ip-dl-6">
@@ -664,6 +640,26 @@ function buildDetailSkeleton(recordID, title, votes, isVoted, statusLabel) {
       <span class="ip-detail__card-label" id="ip-dl-10">Attachments</span>
       <div id="ip-dv-10" aria-live="polite"><span class="ip-detail__loading">Loading\u2026</span></div>
     </section>
+
+    <!-- Actions -->
+    <div class="ip-detail__actions" role="group" aria-label="Idea actions">
+      <span class="ip-detail__meta-label">Actions</span>
+      <button type="button"
+        class="ip-upvote${isVotedClass}"
+        data-detail-vote="${escapeHtml(recordID)}"
+        aria-label="${voteAriaLabel}"
+        ${voteDisabled}>
+        <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
+        ${isVoted ? "Voted" : "Vote"}
+      </button>
+      <button type="button"
+        class="ip-share"
+        data-record-link="${escapeHtml(RECORD_VIEW_URL + recordID)}"
+        aria-label="Copy link to idea #${escapeHtml(recordID)}">
+        <span class="material-symbols-outlined" aria-hidden="true">share</span>
+        Share
+      </button>
+    </div>
   </div>`;
 }
 
@@ -757,12 +753,6 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
     populateDetailField(ridStr, 7),
     populateDetailField(ridStr, 8, {
       onValue(val) {
-        // Plain text in meta col
-        const txt = document.getElementById("ip-detail-category-text");
-        if (txt && val.trim()) txt.textContent = val.trim();
-        else if (txt)
-          txt.innerHTML = `<span class="ip-detail__empty">Not provided</span>`;
-        // Still populate the card body below
         if (val.trim().toLowerCase() === "other") {
           const subq = document.getElementById("ip-dv-subq-13");
           if (subq) subq.removeAttribute("hidden");
@@ -770,14 +760,7 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
         }
       },
     }),
-    populateDetailField(ridStr, 9, {
-      onValue(val) {
-        const txt = document.getElementById("ip-detail-impact-text");
-        if (txt && val.trim()) txt.textContent = val.trim();
-        else if (txt)
-          txt.innerHTML = `<span class="ip-detail__empty">Not provided</span>`;
-      },
-    }),
+    populateDetailField(ridStr, 9),
     populateDetailField(ridStr, 10, { isAttachment: true }),
   ]);
 }
