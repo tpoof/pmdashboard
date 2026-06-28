@@ -1,28 +1,13 @@
-$.ajax({
-  type: "GET",
-  url: "./api/form/query",
-  data: {
-    q: JSON.stringify({
-      terms: [
-        { id: "categoryID", operator: "=", match: "form_57e89", gate: "AND" },
-        { id: "deleted", operator: "=", match: 0, gate: "AND" },
-      ],
-      joins: [],
-      getData: ["2", "3"],
-    }),
-    "x-filterData": "recordID,s1",
-  },
-  dataType: "json",
-  cache: false,
-  success: function (res) {
-    var forIdea1 = Object.values(res).filter(function (v) {
-      return String(v.s1?.id2) === "1";
-    });
-    console.log(
-      "Votes for idea 1:",
-      forIdea1.map(function (v) {
-        return { id2: v.s1?.id2, id3: v.s1?.id3 };
-      }),
-    );
-  },
-});
+// Find orgchart path from existing empSelector on page
+console.log(
+  "orgchart path candidates:",
+  document.querySelector("[data-orgchart]")?.dataset?.orgchart,
+  window.empSel?.apiPath,
+);
+
+// Check what orgchart API returns for your user
+fetch(
+  "<!--orgchartPath-->/api/employee/search?q=userName:oitauslumags&noLimit=0",
+)
+  .then((r) => r.json())
+  .then((d) => console.log("Orgchart result:", JSON.stringify(d)));
