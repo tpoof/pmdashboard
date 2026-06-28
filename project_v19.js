@@ -3893,13 +3893,24 @@
     var ideaId = getQueryParam("transferFromIdea");
     var legacyId = getQueryParam("transferFromPortal");
 
-    // Project transfer param
+    // Project transfer params
     var uxProjectId = getQueryParam("transferProjectFromUX");
+    var ideaProjectId = getQueryParam("transferProjectFromIdea");
 
-    var isProjectTransfer = !!uxProjectId;
-    var sourceId = uxProjectId || uxTaskId || supportId || ideaId || legacyId;
+    var isProjectTransfer = !!(uxProjectId || ideaProjectId);
+    var sourceId =
+      uxProjectId ||
+      ideaProjectId ||
+      uxTaskId ||
+      supportId ||
+      ideaId ||
+      legacyId;
     var sourceType =
-      uxProjectId || uxTaskId ? "ux" : ideaId ? "idea" : "support";
+      uxProjectId || uxTaskId
+        ? "ux"
+        : ideaId || ideaProjectId
+          ? "idea"
+          : "support";
     var sourceLabel =
       sourceType === "ux" ? "UX" : sourceType === "idea" ? "Idea" : "Support";
 
@@ -3932,6 +3943,7 @@
       var params = new URLSearchParams(window.location.search || "");
       params.delete("transferTaskFromUX");
       params.delete("transferProjectFromUX");
+      params.delete("transferProjectFromIdea");
       params.delete("transferFromUX");
       params.delete("transferFromIdea");
       params.delete("transferFromSupport");

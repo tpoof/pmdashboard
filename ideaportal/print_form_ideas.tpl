@@ -384,6 +384,27 @@
     color: #fff !important;
     cursor: pointer;
 }
+/* Transfer modal */
+.pm-transferOverlay{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;}
+.pm-transferOverlay[hidden]{display:none!important;}
+.pm-transferBackdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);}
+.pm-transferDialog{position:relative;width:min(92vw,440px);background:#fff;border-radius:16px;border:1px solid rgba(0,0,0,.12);box-shadow:0 6px 16px rgba(15,23,42,.12);display:flex;flex-direction:column;animation:pmFadeIn .15s ease;}
+@keyframes pmFadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.pm-transferHeader{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f8fafc;border-bottom:1px solid #dbe1e8;border-radius:16px 16px 0 0;}
+.pm-transferTitle{font-weight:900;font-size:1rem;color:#1f2933;margin:0;}
+.pm-transferClose{border:0;background:transparent;font-size:18px;cursor:pointer;min-width:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;color:#3f4a57;line-height:1;}
+.pm-transferClose:hover{background:#dbe1e8;color:#1f2933;}
+.pm-transferBody{padding:16px;}
+.pm-transferPrompt{margin:0 0 12px;color:#3f4a57;font-size:.95rem;}
+.pm-transferChoices{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.pm-transferChoice{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;border:2px solid #dbe1e8;border-radius:12px;background:#fff;cursor:pointer;font-weight:700;font-size:.95rem;color:#1f2933;text-align:center;transition:border-color .15s,background .15s,box-shadow .15s;box-shadow:0 1px 2px rgba(16,24,40,.08);}
+.pm-transferChoice:hover{border-color:#2563eb;background:#e7efff;color:#1d4ed8;box-shadow:0 4px 12px rgba(37,99,235,.15);}
+.pm-transferChoice:focus-visible{outline:2px solid #0b5cab;outline-offset:2px;}
+.pm-transferChoice:active{transform:translateY(1px);}
+.pm-transferChoiceIcon{font-size:28px;line-height:1;}
+.pm-transferChoiceLabel{font-weight:800;font-size:1rem;}
+.pm-transferChoiceDesc{font-weight:400;font-size:.82rem;color:#3f4a57;line-height:1.35;}
+.pm-transferChoice:hover .pm-transferChoiceDesc{color:#1d4ed8;}
 
 /* ── Internal view banner ───────────────────────────── */
 .pv-internal-banner {
@@ -2866,10 +2887,32 @@ function transferToPMDashboard() {
     var params = new URLSearchParams(window.location.search || "");
     var id = params.get("recordID");
     if (!id) return;
-    window.location.href =
-        "https://leaf.va.gov/platform/projects/?tab=tasks&transferFromIdea=" +
-        encodeURIComponent(id);
+    var modal = document.getElementById('pmTransferModal');
+    if (!modal) return;
+    modal.dataset.recordId = id;
+    modal.hidden = false;
+    document.getElementById('pmTransferChoiceTask').focus();
 }
+
+function doTransferAs(type) {
+    var modal = document.getElementById('pmTransferModal');
+    var id = modal ? modal.dataset.recordId : '';
+    if (!id) return;
+    modal.hidden = true;
+    var param = type === 'project' ? 'transferProjectFromIdea' : 'transferFromIdea';
+    window.location.href =
+        'https://leaf.va.gov/platform/projects/?tab=' + (type === 'project' ? 'projects' : 'tasks') +
+        '&' + param + '=' + encodeURIComponent(id);
+}
+
+function closeTransferModal() {
+    var modal = document.getElementById('pmTransferModal');
+    if (modal) modal.hidden = true;
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeTransferModal();
+});
 
     $(function() {
         $('#progressBar').progressbar({max: 100});
@@ -2926,3 +2969,33 @@ function transferToPMDashboard() {
         });
     });
 </script>
+
+<!-- Transfer to LEAF Projects modal -->
+<div id="pmTransferModal" class="pm-transferOverlay" role="dialog" aria-modal="true"
+     aria-labelledby="pmTransferModalTitle" hidden>
+    <div class="pm-transferBackdrop" onclick="closeTransferModal()" aria-hidden="true"></div>
+    <div class="pm-transferDialog">
+        <div class="pm-transferHeader">
+            <h2 class="pm-transferTitle" id="pmTransferModalTitle">Transfer to LEAF Projects</h2>
+            <button type="button" class="pm-transferClose" onclick="closeTransferModal()"
+                    aria-label="Close">&times;</button>
+        </div>
+        <div class="pm-transferBody">
+            <p class="pm-transferPrompt">How would you like to transfer this record?</p>
+            <div class="pm-transferChoices">
+                <button type="button" class="pm-transferChoice" id="pmTransferChoiceTask"
+                        onclick="doTransferAs('task')">
+                    <span class="pm-transferChoiceIcon" aria-hidden="true">&#9989;</span>
+                    <span class="pm-transferChoiceLabel">As a Task</span>
+                    <span class="pm-transferChoiceDesc">Add to the Tasks table with ticket reference</span>
+                </button>
+                <button type="button" class="pm-transferChoice" id="pmTransferChoiceProject"
+                        onclick="doTransferAs('project')">
+                    <span class="pm-transferChoiceIcon" aria-hidden="true">&#128193;</span>
+                    <span class="pm-transferChoiceLabel">As a Project</span>
+                    <span class="pm-transferChoiceDesc">Create a new Project with ticket reference</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
