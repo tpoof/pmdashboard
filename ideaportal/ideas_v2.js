@@ -519,91 +519,255 @@ function bindTabs() {
    Record modal
 ───────────────────────────────────────────────────────────── */
 
-function openRecordModal(title, url) {
+async function fetchIndicator(recordID, indicatorID) {
+  const url = `./ajaxIndex.php?a=getprintindicator&recordID=${encodeURIComponent(recordID)}&indicatorID=${encodeURIComponent(indicatorID)}&series=1`;
+  const res = await fetch(url, {
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.text();
+}
+
+function extractCleanValue(html, indicatorID) {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  const span = tmp.querySelector(`[id^="data_${indicatorID}_"]`);
+  if (span) return (span.textContent || "").trim();
+  tmp
+    .querySelectorAll("script, input, button, textarea, select")
+    .forEach((el) => el.remove());
+  return (tmp.textContent || "").trim();
+}
+
+function renderAttachmentsHTML(html) {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  const imgs = Array.from(tmp.querySelectorAll('img[src*="image.php"]'));
+  const links = Array.from(tmp.querySelectorAll('a[href*="file.php"]'));
+  if (!imgs.length && !links.length)
+    return `<span class="ip-detail__empty">No attachments provided.</span>`;
+  let out = `<div class="ip-detail__attach-grid">`;
+  imgs.forEach((img, i) => {
+    const src = escapeHtml(img.getAttribute("src") || "");
+    const rawAlt =
+      (img.getAttribute("alt") || "")
+        .replace(/^image upload:\s*/i, "")
+        .trim() || `Image ${i + 1}`;
+    const filename = escapeHtml(rawAlt);
+    out += `<figure style="margin:0;display:flex;flex-direction:column;gap:6px">
+      <button type="button" class="ip-detail__attach-btn"
+        onclick="window.open('${src}','pv_img_${i}','width=750,height=750,resizable=yes,scrollbars=yes')"
+        aria-label="View full size: ${filename}">
+        <img src="${src}" alt="${filename}" class="ip-detail__attach-thumb" />
+      </button>
+      <span class="ip-detail__attach-caption" aria-hidden="true" title="${filename}">${filename}</span>
+    </figure>`;
+  });
+  if (links.length) {
+    out += `<ul class="ip-detail__file-list" aria-label="Downloadable files">`;
+    links.forEach((a) => {
+      const href = escapeHtml(a.getAttribute("href") || "#");
+      const filename = escapeHtml(
+        (a.textContent || "").trim() || "Download file",
+      );
+      out += `<li class="ip-detail__file-item">
+        <a href="${href}" target="_blank" rel="noopener noreferrer"
+          class="ip-detail__file-link"
+          aria-label="Download ${filename} (opens in new tab)">${filename}</a></li>`;
+    });
+    out += `</ul>`;
+  }
+  out += `</div>`;
+  return out;
+}
+
+function buildDetailSkeleton(recordID, title, votes) {
+  const voteLabel = votes === 1 ? "1 vote" : `${votes} votes`;
+  return `<div class="ip-detail" id="ipDetailRoot">
+    <div class="ip-detail__meta" role="group" aria-label="Idea metadata">
+      <span class="ip-detail__id" aria-label="Idea number ${escapeHtml(recordID)}">#${escapeHtml(recordID)}</span>
+      <span id="ip-detail-pill-category" class="ip-detail__pill ip-detail__pill--category" hidden></span>
+      <span id="ip-detail-pill-impact"   class="ip-detail__pill ip-detail__pill--impact"   hidden></span>
+      <span id="ip-detail-pill-status"   class="ip-detail__pill ip-detail__pill--status"   hidden></span>
+      <span class="ip-detail__pill ip-detail__pill--votes" aria-label="${voteLabel}">
+        <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>${escapeHtml(String(votes))}
+      </span>
+    </div>
+    <h2 class="ip-detail__title" id="ip-detail-title" tabindex="-1">${escapeHtml(title || "Idea Details")}</h2>
+    <section class="ip-detail__card" aria-labelledby="ip-dl-6">
+      <span class="ip-detail__card-label" id="ip-dl-6">Detailed Summary</span>
+      <div class="ip-detail__card-body" id="ip-dv-6"><span class="ip-detail__loading">Loading…</span></div>
+    </section>
+    <div class="ip-detail__two-col">
+      <section class="ip-detail__card" aria-labelledby="ip-dl-7">
+        <span class="ip-detail__card-label" id="ip-dl-7">Benefit</span>
+        <div class="ip-detail__card-body" id="ip-dv-7"><span class="ip-detail__loading">Loading…</span></div>
+      </section>
+      <section class="ip-detail__card" aria-labelledby="ip-dl-8">
+        <span class="ip-detail__card-label" id="ip-dl-8">Category</span>
+        <div class="ip-detail__card-body" id="ip-dv-8"><span class="ip-detail__loading">Loading…</span></div>
+        <div id="ip-dv-subq-13" hidden>
+          <div class="ip-detail__sub-card" aria-labelledby="ip-dl-13">
+            <span class="ip-detail__card-label" id="ip-dl-13">Please specify category</span>
+            <div class="ip-detail__card-body" id="ip-dv-13"></div>
+          </div>
+        </div>
+        <hr class="ip-detail__divider" role="separator" />
+        <span class="ip-detail__card-label" id="ip-dl-9">Impact</span>
+        <div class="ip-detail__card-body" id="ip-dv-9"><span class="ip-detail__loading">Loading…</span></div>
+      </section>
+    </div>
+    <section class="ip-detail__card" aria-labelledby="ip-dl-10">
+      <span class="ip-detail__card-label" id="ip-dl-10">Attachments</span>
+      <div id="ip-dv-10" aria-live="polite"><span class="ip-detail__loading">Loading…</span></div>
+    </section>
+  </div>`;
+}
+
+async function populateDetailField(recordID, indicatorID, opts = {}) {
+  const el = document.getElementById(`ip-dv-${indicatorID}`);
+  if (!el) return;
+  try {
+    const html = await fetchIndicator(recordID, indicatorID);
+    const value = extractCleanValue(html, indicatorID);
+    if (opts.isAttachment) {
+      el.innerHTML = renderAttachmentsHTML(html);
+      return;
+    }
+    if (!value) {
+      el.innerHTML = `<span class="ip-detail__empty">Not provided</span>`;
+    } else el.textContent = value;
+    if (opts.onValue) opts.onValue(value);
+  } catch {
+    el.innerHTML = `<span class="ip-detail__empty">Could not load this field.</span>`;
+  }
+}
+
+async function openIdeaDetailModal(recordID, title, openTabUrl) {
   const modal = document.getElementById("ipRecordModal");
-  const frame = document.getElementById("ipRecordModalFrame");
-  const titleEl = document.getElementById("ipRecordModalTitle");
+  const body = document.getElementById("ipRecordModalBody");
+  const header = document.getElementById("ipRecordModalTitle");
   const openBtn = document.getElementById("ipRecordModalOpenTabBtn");
-  if (!modal || !frame || !titleEl) return;
+  if (!modal || !body) return;
+
+  const ridStr = String(recordID);
+  const vm = ideasVMById?.[ridStr];
+  const votes = vm?.votes ?? voteCounts[ridStr] ?? 0;
+
+  if (header) header.textContent = title || "Idea Details";
+  if (openBtn) {
+    openBtn.setAttribute("data-url", openTabUrl || "");
+    openBtn.hidden = !openTabUrl;
+  }
+
+  body.innerHTML = buildDetailSkeleton(ridStr, title, votes);
+
   lastRecordFocusedElement = document.activeElement;
-  titleEl.textContent = title || "Idea Details";
-  // Append &iframe to suppress the LEAF site header in the modal view
-  const frameUrl = url ? `${url}&iframe` : url;
-  frame.src = frameUrl;
-  if (openBtn) openBtn.setAttribute("data-url", url || "");
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
   setBackgroundHidden(true);
   bindFocusTrap(modal);
-  getFocusableElements(modal)[0]?.focus();
+  document.getElementById("ip-detail-title")?.focus();
+
+  // Status pill from already-loaded VM — no extra fetch needed
+  const statusLabel = vm?.status || "";
+  if (statusLabel) {
+    const pill = document.getElementById("ip-detail-pill-status");
+    if (pill) {
+      pill.textContent = statusLabel;
+      pill.removeAttribute("hidden");
+    }
+  }
+
+  await Promise.allSettled([
+    populateDetailField(ridStr, 5, {
+      onValue(val) {
+        const h2 = document.getElementById("ip-detail-title");
+        if (h2 && val) h2.textContent = val;
+        if (header && val) header.textContent = val;
+      },
+    }),
+    populateDetailField(ridStr, 6),
+    populateDetailField(ridStr, 7),
+    populateDetailField(ridStr, 8, {
+      onValue(val) {
+        const pill = document.getElementById("ip-detail-pill-category");
+        if (pill && val.trim()) {
+          pill.textContent = val.trim();
+          pill.removeAttribute("hidden");
+        }
+        if (val.trim().toLowerCase() === "other") {
+          const subq = document.getElementById("ip-dv-subq-13");
+          if (subq) subq.removeAttribute("hidden");
+          populateDetailField(ridStr, 13);
+        }
+      },
+    }),
+    populateDetailField(ridStr, 9, {
+      onValue(val) {
+        const pill = document.getElementById("ip-detail-pill-impact");
+        if (pill && val.trim()) {
+          pill.textContent = val.trim();
+          pill.removeAttribute("hidden");
+        }
+      },
+    }),
+    populateDetailField(ridStr, 10, { isAttachment: true }),
+  ]);
 }
 
 function closeRecordModal() {
   const modal = document.getElementById("ipRecordModal");
-  const frame = document.getElementById("ipRecordModalFrame");
+  const body = document.getElementById("ipRecordModalBody");
   const openBtn = document.getElementById("ipRecordModalOpenTabBtn");
-  if (!modal || !frame) return;
-
-  const needsRefresh = frame._leafLoaded === true;
-  frame._leafLoaded = false;
-  frame.src = "about:blank";
+  if (!modal) return;
+  if (body) body.innerHTML = "";
   if (openBtn) openBtn.setAttribute("data-url", "");
   modal.classList.remove("is-open");
   modal.setAttribute("aria-hidden", "true");
   setBackgroundHidden(false);
   lastRecordFocusedElement?.focus();
   lastRecordFocusedElement = null;
-
-  // Silently re-fetch data if the iframe loaded at least once — the user
-  // may have changed the record's status, cancelled it, or edited it.
-  if (needsRefresh) {
-    loadIdeasAndVotes().catch((err) =>
-      console.warn("[RecordModal] silent refresh failed:", err),
-    );
-  }
+  loadIdeasAndVotes().catch((err) =>
+    console.warn("[RecordModal] silent refresh failed:", err),
+  );
 }
 
 function bindRecordModal() {
-  const frame = document.getElementById("ipRecordModalFrame");
-
-  // Mark the iframe as having loaded content so closeRecordModal knows
-  // a refresh is warranted. Skip the initial about:blank load.
-  if (frame) {
-    frame.addEventListener("load", () => {
-      if (frame.src && frame.src !== "about:blank") {
-        frame._leafLoaded = true;
-      }
-    });
-  }
   document.addEventListener("click", (e) => {
     const link = e.target.closest("a.ip-recordLink");
     if (link) {
       e.preventDefault();
-      const url = link.getAttribute("href");
+      const href = link.getAttribute("href") || "";
+      const recordID =
+        link.getAttribute("data-record-id") ||
+        href.split("recordID=")[1]?.split("&")[0] ||
+        "";
       const title = link.getAttribute("data-title") || "Idea Details";
-      if (url) openRecordModal(title, url);
+      if (recordID) openIdeaDetailModal(recordID, title, href);
       return;
     }
   });
-
   document
     .getElementById("ipRecordModalCloseBtn")
     ?.addEventListener("click", closeRecordModal);
-
   document
     .getElementById("ipRecordModalOpenTabBtn")
     ?.addEventListener("click", function () {
       const url = this.getAttribute("data-url") || "";
       if (url) window.open(url, "_blank", "noopener");
     });
-
   document.getElementById("ipRecordModal")?.addEventListener("click", (e) => {
     if (e.target?.getAttribute("data-ip-record-close") === "1")
       closeRecordModal();
   });
-
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeRecordModal();
+    if (
+      e.key === "Escape" &&
+      document.getElementById("ipRecordModal")?.classList.contains("is-open")
+    )
+      closeRecordModal();
   });
 }
 
@@ -810,6 +974,7 @@ function buildIdeaRow(idea) {
     <tr data-record-id="${recordID}">
       <td>
         <a class="ip-recordLink"
+           data-record-id="${recordID}"
            data-title="${title}"
            aria-haspopup="dialog"
            href="${escapeHtml(recordLink)}">#${recordID}</a>
@@ -1904,7 +2069,7 @@ function openVotedModal() {
           idea.recordLink || `${RECORD_VIEW_URL}${id}`,
         );
         return `<tr>
-        <td><a class="ip-recordLink" href="${recordLink}" data-title="${titleFull}" aria-haspopup="dialog">#${escapeHtml(id)}</a></td>
+        <td><a class="ip-recordLink" href="${recordLink}" data-record-id="${escapeHtml(id)}" data-title="${titleFull}" aria-haspopup="dialog">#${escapeHtml(id)}</a></td>
         <td title="${titleFull}">${title}</td>
         <td>${category}</td>
         <td><span class="ip-badge ${statusBadgeClass}">${escapeHtml(statusLabel)}</span></td>
