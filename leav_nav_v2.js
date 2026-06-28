@@ -1270,6 +1270,11 @@
       _swapHost.innerHTML = "";
     }
 
+    /* Remove the route base tag so the launchpad's own relative
+       paths aren't affected when returning to the home view */
+    var routeBase = document.getElementById("lp-route-base");
+    if (routeBase) routeBase.remove();
+
     /* Skip link → home */
     var skip = document.getElementById("lp-skip-nav");
     if (skip) skip.href = "#lp-main";
@@ -1334,6 +1339,38 @@
     if (!host) {
       console.error("[LP] mountContent: swap host not found");
       return;
+    }
+
+    /* ── Base URL injection ───────────────────────────────────────
+       Fetched pages (Ideas, Help Library, etc.) make relative API
+       calls like ./api/form/query. When their scripts re-execute
+       inside the launchpad document, those relative URLs resolve
+       against the launchpad's own URL instead of the fetched page's
+       origin — causing 404s and empty data.
+
+       Fix: inject a <base href> into <head> pointing to the fetched
+       page's directory BEFORE reExecuteScripts() runs, so all
+       relative fetch/XHR calls inside injected scripts resolve
+       correctly. A <base> inside a <div> is invalid and ignored by
+       browsers — it must be in <head>.
+
+       We remove the previous route's <base> first, then add the new
+       one. On return to launchpad home the base is removed entirely
+       so the launchpad's own relative paths aren't affected.
+
+       Derived from route.href:
+         /platform/projects/report.php?a=ideas
+         → base href: https://leaf.va.gov/platform/projects/
+    ───────────────────────────────────────────────────────────── */
+    var existingBase = document.getElementById("lp-route-base");
+    if (existingBase) existingBase.remove();
+
+    if (route && route.href) {
+      var dir = route.href.replace(/[^/]*(\?.*)?$/, "") || "/";
+      var newBase = document.createElement("base");
+      newBase.id = "lp-route-base";
+      newBase.href = window.location.origin + dir;
+      document.head.insertBefore(newBase, document.head.firstChild);
     }
 
     /* Breadcrumb bar above content */
