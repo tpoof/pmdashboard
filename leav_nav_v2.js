@@ -1294,15 +1294,29 @@
              "loading" so fetched pages that gate their init on
              readyState (e.g. ideas_v2.js) take the DOMContentLoaded
              listener path rather than calling initPortal() immediately
-             before the content is in the DOM. The synthetic
-             DOMContentLoaded dispatched after mount then fires their
-             init correctly. */
+             before the content is in the DOM.
+
+             DOMContentLoaded listeners registered on mockDoc are
+             captured in window.__lpDeferredInits and drained after
+             mount — NOT dispatched as a real DOMContentLoaded event,
+             which would retrigger the nav's own init and cause an
+             infinite re-mount loop. */
+          window.__lpDeferredInits = window.__lpDeferredInits || [];
           var mockDoc = Object.create(document);
           Object.defineProperty(mockDoc, "readyState", {
             get: function () {
               return "loading";
             },
+            configurable: true,
           });
+          mockDoc.addEventListener = function (type, fn, opts) {
+            if (type === "DOMContentLoaded") {
+              /* Capture for deferred drain — never register on real document */
+              window.__lpDeferredInits.push(fn);
+            } else {
+              document.addEventListener(type, fn, opts);
+            }
+          };
 
           var mockLocation = {
             href: window.__lpRouteHref || window.location.href,
@@ -1547,19 +1561,32 @@
     ensureLeafUIDeps(sourceDoc).then(function () {
       reExecuteScripts(wrapper);
 
-      /* Dispatch a synthetic DOMContentLoaded after scripts are injected.
-         Fetched pages that check document.readyState === "loading" and
-         register a DOMContentLoaded listener (e.g. ideas_v2.js initPortal)
-         will have already missed the real event — this synthetic one fires
-         their init correctly now that the content is in the DOM.
-         setTimeout(0) yields to let any synchronous script setup finish
-         before the event fires. */
+      /* After scripts run, call any deferred page init functions.
+         Fetched pages that gate on readyState (e.g. ideas_v2.js) have
+         their inline scripts executed with mockDoc.readyState="loading"
+         so they register their init as a DOMContentLoaded listener on
+         the real document instead of calling it immediately.
+
+         We do NOT dispatch a synthetic DOMContentLoaded — that would
+         retrigger the nav's own DOMContentLoaded listener and cause
+         an infinite re-mount loop.
+
+         Instead, we maintain a registry: each fetched page's inline
+         script can push to window.__lpDeferredInits, and we drain
+         that queue here after mount. ideas_v2.js and similar pages
+         register via document.addEventListener('DOMContentLoaded', fn)
+         which we intercept via the mockDoc proxy. */
       setTimeout(function () {
-        var evt = new Event("DOMContentLoaded", {
-          bubbles: true,
-          cancelable: false,
-        });
-        document.dispatchEvent(evt);
+        if (window.__lpDeferredInits && window.__lpDeferredInits.length) {
+          var inits = window.__lpDeferredInits.splice(0);
+          inits.forEach(function (fn) {
+            try {
+              fn();
+            } catch (e) {
+              console.warn("[LP] Deferred init error:", e.message);
+            }
+          });
+        }
       }, 0);
     });
 
