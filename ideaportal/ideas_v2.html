@@ -64,6 +64,10 @@
         margin: 0 auto;
         padding: 0;
       }
+      /* Override smarty_styles.css margin: 32px auto 48px on .ip-wrap */
+      body.smarty.page-ideaportal .ip-wrap {
+        margin-top: 0;
+      }
 
       /* ── Hero banner ── */
       .ip-hero {
@@ -1151,47 +1155,63 @@
         max-width: 820px;
         margin: 0 auto;
       }
-      .ip-detail__meta-grid {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        gap: 0 24px;
-        margin-bottom: 20px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid #e2e8f0;
-        align-items: start;
-      }
-      .ip-detail__meta-col {
+      /* ── Inline detail: title + info row ── */
+      .ip-detail__title-row {
         display: flex;
-        flex-direction: column;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .ip-detail__info-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 12px 0;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      .ip-detail__info-item {
+        display: inline-flex;
+        align-items: baseline;
         gap: 4px;
       }
-      .ip-detail__meta-label {
+      .ip-detail__info-label {
         font-size: 0.75rem;
         font-weight: 700;
         color: var(--ip-muted);
         font-family: "Public Sans", sans-serif;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
-        margin-bottom: 2px;
       }
-      .ip-detail__meta-text {
+      .ip-detail__info-val {
         font-size: 0.9rem;
         color: var(--ip-navy);
         font-family: "Public Sans", sans-serif;
         font-weight: 600;
-        line-height: 1.4;
+      }
+      .ip-detail__info-sep {
+        color: #cbd5e1;
+        font-size: 0.9rem;
+        user-select: none;
       }
       .ip-detail__actions {
         display: flex;
-        gap: 6px;
         align-items: center;
+        gap: 8px;
         flex-wrap: wrap;
-        margin-top: 2px;
+        margin-bottom: 20px;
       }
       @media (max-width: 560px) {
-        .ip-detail__meta-grid {
-          grid-template-columns: 1fr;
-          gap: 14px 0;
+        .ip-detail__info-row {
+          gap: 6px;
+        }
+        .ip-detail__info-sep {
+          display: none;
+        }
+        .ip-detail__info-item {
+          flex-direction: column;
+          gap: 1px;
         }
       }
       .ip-detail__id {
@@ -1209,9 +1229,17 @@
         font-size: 1.5rem;
         font-weight: 700;
         line-height: 1.25;
-        margin: 0 0 20px;
+        margin: 0;
         color: #0f172a;
         font-family: "Source Sans 3", "Public Sans", sans-serif;
+      }
+      .ip-detail__meta-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--ip-muted);
+        font-family: "Public Sans", sans-serif;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
       }
       .ip-detail__card {
         background: #fff;
@@ -2127,277 +2155,266 @@
           <span>Co-created with LEAF collaborator, Eugene Weast</span>
         </div>
 
-        <!-- Toast -->
-        <div
-          id="ipToast"
-          class="ip-toast"
-          role="alert"
-          aria-live="polite"
-        ></div>
+        <div class="lp-bottom-safe" aria-hidden="true"></div>
+      </main>
+      <!-- /#lp-main -->
 
-        <!-- Add Idea modal -->
-        <div
-          class="ip-modal"
-          id="addIdeaModal"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="addIdeaModalLabel"
-          aria-hidden="true"
-        >
-          <div class="ip-modal__overlay" data-ip-close="addIdeaModal"></div>
-          <div class="ip-modal__content" role="document">
-            <div class="ip-modal__header">
-              <h3 class="ip-modal__title" id="addIdeaModalLabel">
-                <span
-                  class="material-symbols-outlined"
-                  aria-hidden="true"
-                  style="
-                    color: var(--ip-blue);
-                    vertical-align: middle;
-                    margin-right: 6px;
-                    font-size: 1.1rem;
-                  "
-                  >lightbulb</span
-                >
-                Add Idea
-              </h3>
-              <button
-                type="button"
-                class="ip-btn ip-btn--icon"
-                aria-label="Close"
-                data-ip-close="addIdeaModal"
+      <!-- Toast — outside main so aria-hidden on main doesn't suppress it -->
+      <div id="ipToast" class="ip-toast" role="alert" aria-live="polite"></div>
+
+      <!-- Add Idea modal — outside main so focus trap works correctly -->
+      <div
+        class="ip-modal"
+        id="addIdeaModal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="addIdeaModalLabel"
+        aria-hidden="true"
+      >
+        <div class="ip-modal__overlay" data-ip-close="addIdeaModal"></div>
+        <div class="ip-modal__content" role="document">
+          <div class="ip-modal__header">
+            <h3 class="ip-modal__title" id="addIdeaModalLabel">
+              <span
+                class="material-symbols-outlined"
+                aria-hidden="true"
+                style="
+                  color: var(--ip-blue);
+                  vertical-align: middle;
+                  margin-right: 6px;
+                  font-size: 1.1rem;
+                "
+                >lightbulb</span
               >
-                <span aria-hidden="true" style="font-size: 1.3rem">×</span>
-              </button>
-            </div>
-            <div class="ip-modal__body">
-              <form id="ideaForm" class="ip-form needs-validation" novalidate>
-                <div class="ip-field">
-                  <label for="inpTitle" class="ip-label">Idea Title</label>
+              Add Idea
+            </h3>
+            <button
+              type="button"
+              class="ip-btn ip-btn--icon"
+              aria-label="Close"
+              data-ip-close="addIdeaModal"
+            >
+              <span aria-hidden="true" style="font-size: 1.3rem">×</span>
+            </button>
+          </div>
+          <div class="ip-modal__body">
+            <form id="ideaForm" class="ip-form needs-validation" novalidate>
+              <div class="ip-field">
+                <label for="inpTitle" class="ip-label">Idea Title</label>
+                <input
+                  type="text"
+                  id="inpTitle"
+                  required
+                  aria-describedby="errTitle"
+                />
+                <div class="ip-error" id="errTitle">
+                  Please provide a title for your idea.
+                </div>
+              </div>
+              <div class="ip-field">
+                <label for="inpDescription" class="ip-label"
+                  >Idea Description</label
+                >
+                <textarea
+                  class="ip-input ip-textarea"
+                  id="inpDescription"
+                  rows="3"
+                  required
+                  aria-describedby="errDescription"
+                ></textarea>
+                <div class="ip-error" id="errDescription">
+                  Please provide a description of your idea.
+                </div>
+              </div>
+              <div class="ip-field">
+                <label for="inpBenefit" class="ip-label">Idea Benefit(s)</label>
+                <textarea
+                  class="ip-input ip-textarea"
+                  id="inpBenefit"
+                  rows="3"
+                  required
+                  aria-describedby="errBenefit"
+                ></textarea>
+                <div class="ip-error" id="errBenefit">
+                  Briefly describe the benefit of your idea.
+                </div>
+              </div>
+              <div class="ip-field">
+                <label for="inpCategory" class="ip-label">Idea Category</label>
+                <select
+                  id="inpCategory"
+                  name="inpCategory"
+                  required
+                  aria-describedby="errCategory"
+                >
+                  <option selected disabled value="">
+                    Click here to select a category
+                  </option>
+                </select>
+                <div
+                  id="otherCategoryWrapper"
+                  style="display: none; margin-top: 0.5rem"
+                >
+                  <label for="inpOtherCategory">Please specify category:</label>
                   <input
                     type="text"
-                    id="inpTitle"
-                    required
-                    aria-describedby="errTitle"
+                    id="inpOtherCategory"
+                    maxlength="255"
+                    placeholder="Enter custom category…"
                   />
-                  <div class="ip-error" id="errTitle">
-                    Please provide a title for your idea.
-                  </div>
                 </div>
-                <div class="ip-field">
-                  <label for="inpDescription" class="ip-label"
-                    >Idea Description</label
-                  >
-                  <textarea
-                    class="ip-input ip-textarea"
-                    id="inpDescription"
-                    rows="3"
-                    required
-                    aria-describedby="errDescription"
-                  ></textarea>
-                  <div class="ip-error" id="errDescription">
-                    Please provide a description of your idea.
-                  </div>
+                <div class="ip-error" id="errCategory">
+                  Please select a category.
                 </div>
-                <div class="ip-field">
-                  <label for="inpBenefit" class="ip-label"
-                    >Idea Benefit(s)</label
-                  >
-                  <textarea
-                    class="ip-input ip-textarea"
-                    id="inpBenefit"
-                    rows="3"
-                    required
-                    aria-describedby="errBenefit"
-                  ></textarea>
-                  <div class="ip-error" id="errBenefit">
-                    Briefly describe the benefit of your idea.
-                  </div>
+              </div>
+              <div class="ip-field">
+                <label for="inpImpact" class="ip-label">Idea Impact</label>
+                <select
+                  id="inpImpact"
+                  name="inpImpact"
+                  required
+                  aria-describedby="errImpact"
+                >
+                  <option selected disabled value="">
+                    Click here to select the impact
+                  </option>
+                </select>
+                <div class="ip-error" id="errImpact">
+                  Please select an impact level.
                 </div>
-                <div class="ip-field">
-                  <label for="inpCategory" class="ip-label"
-                    >Idea Category</label
-                  >
-                  <select
-                    id="inpCategory"
-                    name="inpCategory"
-                    required
-                    aria-describedby="errCategory"
-                  >
-                    <option selected disabled value="">
-                      Click here to select a category
-                    </option>
-                  </select>
-                  <div
-                    id="otherCategoryWrapper"
-                    style="display: none; margin-top: 0.5rem"
-                  >
-                    <label for="inpOtherCategory"
-                      >Please specify category:</label
-                    >
-                    <input
-                      type="text"
-                      id="inpOtherCategory"
-                      maxlength="255"
-                      placeholder="Enter custom category…"
-                    />
-                  </div>
-                  <div class="ip-error" id="errCategory">
-                    Please select a category.
-                  </div>
-                </div>
-                <div class="ip-field">
-                  <label for="inpImpact" class="ip-label">Idea Impact</label>
-                  <select
-                    id="inpImpact"
-                    name="inpImpact"
-                    required
-                    aria-describedby="errImpact"
-                  >
-                    <option selected disabled value="">
-                      Click here to select the impact
-                    </option>
-                  </select>
-                  <div class="ip-error" id="errImpact">
-                    Please select an impact level.
-                  </div>
-                </div>
-                <div class="ip-field">
-                  <label for="fileInput" class="ip-label"
-                    >Upload Images (e.g. Concepts/Screenshots To Support Your
-                    Idea)</label
-                  >
-                  <input
-                    id="fileInput"
-                    name="fileInput"
-                    type="file"
-                    accept="image/*"
-                    class="ip-fileInput"
-                  />
-                  <ul id="fileList" class="ip-fileList"></ul>
-                </div>
-              </form>
+              </div>
+              <div class="ip-field">
+                <label for="fileInput" class="ip-label"
+                  >Upload Images (e.g. Concepts/Screenshots To Support Your
+                  Idea)</label
+                >
+                <input
+                  id="fileInput"
+                  name="fileInput"
+                  type="file"
+                  accept="image/*"
+                  class="ip-fileInput"
+                />
+                <ul id="fileList" class="ip-fileList"></ul>
+              </div>
+            </form>
+          </div>
+          <div class="ip-actions">
+            <button
+              type="button"
+              class="ip-btn ip-btn--ghost"
+              id="saveDraftButton"
+            >
+              Save Idea
+            </button>
+            <button
+              type="button"
+              class="ip-btn ip-btn--primary"
+              id="submitButton"
+            >
+              <span
+                class="material-symbols-outlined"
+                aria-hidden="true"
+                style="font-size: 1rem"
+                >send</span
+              >
+              Submit Idea
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Record detail modal -->
+      <div class="ip-recordModal" id="ipRecordModal" aria-hidden="true">
+        <div class="ip-recordModal__backdrop" data-ip-record-close="1"></div>
+        <div
+          class="ip-recordModal__dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ipRecordModalTitle"
+        >
+          <div class="ip-recordModal__header">
+            <div class="ip-recordModal__title" id="ipRecordModalTitle">
+              Idea Details
             </div>
-            <div class="ip-actions">
+            <div class="ip-recordModal__actions">
               <button
                 type="button"
-                class="ip-btn ip-btn--ghost"
-                id="saveDraftButton"
+                class="ip-btn ip-btn--ghost ip-recordModal__openTab"
+                id="ipRecordModalOpenTabBtn"
+                aria-label="Open in new tab"
               >
-                Save Idea
+                Open in new tab
               </button>
               <button
                 type="button"
-                class="ip-btn ip-btn--primary"
-                id="submitButton"
-              >
-                <span
-                  class="material-symbols-outlined"
-                  aria-hidden="true"
-                  style="font-size: 1rem"
-                  >send</span
-                >
-                Submit Idea
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Record detail modal -->
-        <div class="ip-recordModal" id="ipRecordModal" aria-hidden="true">
-          <div class="ip-recordModal__backdrop" data-ip-record-close="1"></div>
-          <div
-            class="ip-recordModal__dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="ipRecordModalTitle"
-          >
-            <div class="ip-recordModal__header">
-              <div class="ip-recordModal__title" id="ipRecordModalTitle">
-                Idea Details
-              </div>
-              <div class="ip-recordModal__actions">
-                <button
-                  type="button"
-                  class="ip-btn ip-btn--ghost ip-recordModal__openTab"
-                  id="ipRecordModalOpenTabBtn"
-                  aria-label="Open in new tab"
-                >
-                  Open in new tab
-                </button>
-                <button
-                  type="button"
-                  class="ip-btn ip-btn--ghost ip-btn--icon ip-recordModal__close"
-                  id="ipRecordModalCloseBtn"
-                  aria-label="Close"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-            <div class="ip-recordModal__body" id="ipRecordModalBody">
-              <!-- Populated by openIdeaDetailModal() -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Voted ideas modal -->
-        <div class="ip-votedModal" id="ipVotedModal" aria-hidden="true">
-          <div class="ip-votedModal__backdrop" id="ipVotedModalBackdrop"></div>
-          <div
-            class="ip-votedModal__dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="ipVotedModalTitle"
-          >
-            <div class="ip-votedModal__header">
-              <div class="ip-votedModal__title" id="ipVotedModalTitle">
-                Ideas I've Voted For
-              </div>
-              <button
-                type="button"
-                class="ip-btn ip-btn--ghost ip-btn--icon"
-                id="ipVotedModalCloseBtn"
+                class="ip-btn ip-btn--ghost ip-btn--icon ip-recordModal__close"
+                id="ipRecordModalCloseBtn"
                 aria-label="Close"
               >
                 ✕
               </button>
             </div>
-            <div class="ip-votedModal__body">
-              <div class="ip-votedModal__empty" id="ipVotedModalEmpty" hidden>
-                You haven't voted for any ideas yet.
-              </div>
-              <table class="ip-table" id="ipVotedTable" hidden>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Title</th>
-                    <th>Category</th>
-                    <th>Status</th>
-                    <th>Votes</th>
-                  </tr>
-                </thead>
-                <tbody id="ipVotedTableBody"></tbody>
-              </table>
-            </div>
+          </div>
+          <div class="ip-recordModal__body" id="ipRecordModalBody">
+            <!-- Populated by openIdeaDetailModal() -->
           </div>
         </div>
+      </div>
 
-        <!-- Jump to top -->
-        <button
-          type="button"
-          class="ip-jumpTop"
-          id="ipJumpTopBtn"
-          aria-label="Jump to top"
+      <!-- Voted ideas modal -->
+      <div class="ip-votedModal" id="ipVotedModal" aria-hidden="true">
+        <div class="ip-votedModal__backdrop" id="ipVotedModalBackdrop"></div>
+        <div
+          class="ip-votedModal__dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ipVotedModalTitle"
         >
-          <span class="material-symbols-outlined" aria-hidden="true"
-            >arrow_upward</span
-          >
-        </button>
+          <div class="ip-votedModal__header">
+            <div class="ip-votedModal__title" id="ipVotedModalTitle">
+              Ideas I've Voted For
+            </div>
+            <button
+              type="button"
+              class="ip-btn ip-btn--ghost ip-btn--icon"
+              id="ipVotedModalCloseBtn"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <div class="ip-votedModal__body">
+            <div class="ip-votedModal__empty" id="ipVotedModalEmpty" hidden>
+              You haven't voted for any ideas yet.
+            </div>
+            <table class="ip-table" id="ipVotedTable" hidden>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Votes</th>
+                </tr>
+              </thead>
+              <tbody id="ipVotedTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
-        <div class="lp-bottom-safe" aria-hidden="true"></div>
-      </main>
-      <!-- /#lp-main -->
+      <!-- Jump to top -->
+      <button
+        type="button"
+        class="ip-jumpTop"
+        id="ipJumpTopBtn"
+        aria-label="Jump to top"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true"
+          >arrow_upward</span
+        >
+      </button>
     </div>
     <!-- /.lp -->
 
