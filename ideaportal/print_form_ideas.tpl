@@ -14,9 +14,6 @@
 <!-- ── Skip link (accessibility: keyboard users jump past nav) ── -->
 <a href="#pv-main" class="pv-skip-link">Skip to main content</a>
 
-<!-- Material Symbols (for vote + share icons, matching ideas portal) -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,1,0" />
-
 <!-- ── Scoped styles ── -->
 <style>
 /* ── Reset & scope ─────────────────────────────────── */
@@ -67,6 +64,10 @@
 .pv-layout-row #toolbar226 {
     flex: 0 0 220px;
     width: 220px;
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y: auto;
     align-self: flex-start;
 }
 @media (max-width: 700px) {
@@ -121,40 +122,13 @@
     box-sizing: border-box;
 }
 
-/* ── Record ID + pills row ──────────────────────────── */
+/* ── Record ID row ──────────────────────────────────── */
 .pv-meta {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
     margin-bottom: 16px;
-}
-/* push cancel button to the far right */
-.pv-cancel-btn {
-    margin-left: auto;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 12px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #b91c1c;
-    background: #fee2e2;
-    border: 1px solid #fca5a5;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
-    line-height: 1.4;
-}
-.pv-cancel-btn:hover,
-.pv-cancel-btn:focus {
-    background: #b91c1c;
-    color: #ffffff;
-    outline: none;
-}
-.pv-cancel-btn:focus-visible {
-    outline: 3px solid #b91c1c;
-    outline-offset: 2px;
 }
 .pv-id-badge {
     display: inline-flex;
@@ -169,24 +143,58 @@
     letter-spacing: 0.02em;
     line-height: 1.4;
 }
-.pv-pill {
+
+/* ── Info row: Status · Votes ───────────────────────── */
+.pv-info-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 8px 0 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e2e8f0;
+}
+.pv-info-item {
     display: inline-flex;
     align-items: center;
-    padding: 3px 12px;
+    gap: 5px;
+}
+.pv-info-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+.pv-info-val {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
     border-radius: 999px;
     font-size: 13px;
     font-weight: 600;
-    line-height: 1.4;
+    line-height: 1.5;
 }
-.pv-pill--category {
+.pv-info-val--status {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+}
+.pv-info-val--votes {
     background: #d9e8f6;
     color: #004a82;
     border: 1px solid #aacdec;
+    gap: 4px;
 }
-.pv-pill--impact {
-    background: #dcfce7;
-    color: #166534;
-    border: 1px solid #86efac;
+.pv-info-val--votes .material-symbols-outlined {
+    font-size: 13px;
+    line-height: 1;
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 20, 'GRAD' 0;
+}
+.pv-info-sep {
+    color: #cbd5e1;
+    font-size: 14px;
+    user-select: none;
 }
 
 /* ── Page title (indicatorID 5) ─────────────────────── */
@@ -194,7 +202,7 @@
     font-size: 26px;
     font-weight: 700;
     line-height: 1.25;
-    margin: 0 0 24px;
+    margin: 0 0 8px;
     color: #0f172a;
     font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
 }
@@ -384,320 +392,6 @@
     color: #fff !important;
     cursor: pointer;
 }
-/* Transfer modal */
-.pm-transferOverlay{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;}
-.pm-transferOverlay[hidden]{display:none!important;}
-.pm-transferBackdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);}
-.pm-transferDialog{position:relative;width:min(92vw,440px);background:#fff;border-radius:16px;border:1px solid rgba(0,0,0,.12);box-shadow:0 6px 16px rgba(15,23,42,.12);display:flex;flex-direction:column;animation:pmFadeIn .15s ease;}
-@keyframes pmFadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
-.pm-transferHeader{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f8fafc;border-bottom:1px solid #dbe1e8;border-radius:16px 16px 0 0;}
-.pm-transferTitle{font-weight:900;font-size:1rem;color:#1f2933;margin:0;}
-.pm-transferClose{border:0;background:transparent;font-size:18px;cursor:pointer;min-width:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;color:#3f4a57;line-height:1;}
-.pm-transferClose:hover{background:#dbe1e8;color:#1f2933;}
-.pm-transferBody{padding:16px;}
-.pm-transferPrompt{margin:0 0 12px;color:#3f4a57;font-size:.95rem;}
-.pm-transferChoices{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.pm-transferChoice{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;border:2px solid #dbe1e8;border-radius:12px;background:#fff;cursor:pointer;font-weight:700;font-size:.95rem;color:#1f2933;text-align:center;transition:border-color .15s,background .15s,box-shadow .15s;box-shadow:0 1px 2px rgba(16,24,40,.08);}
-.pm-transferChoice:hover{border-color:#2563eb;background:#e7efff;color:#1d4ed8;box-shadow:0 4px 12px rgba(37,99,235,.15);}
-.pm-transferChoice:focus-visible{outline:2px solid #0b5cab;outline-offset:2px;}
-.pm-transferChoice:active{transform:translateY(1px);}
-.pm-transferChoiceIcon{font-size:28px;line-height:1;}
-.pm-transferChoiceLabel{font-weight:800;font-size:1rem;}
-.pm-transferChoiceDesc{font-weight:400;font-size:.82rem;color:#3f4a57;line-height:1.35;}
-.pm-transferChoice:hover .pm-transferChoiceDesc{color:#1d4ed8;}
-
-/* ── Internal view banner ───────────────────────────── */
-.pv-internal-banner {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 40px;
-    padding: 10px 20px;
-    background: #fef3c7;
-    border-top: 2px solid #f59e0b;
-    border-bottom: 2px solid #f59e0b;
-    color: #78350f;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-align: center;
-}
-
-/* ── View Votes sidebar button ──────────────────────── */
-.pv-votes-btn {
-    background: #f1f5f9 !important;
-    color: #475569 !important;
-    border: 1px solid #cbd5e1 !important;
-    border-radius: 6px !important;
-    font-weight: 400 !important;
-    margin-top: 6px;
-    width: 100%;
-    text-align: center;
-    justify-content: center;
-    padding: 6px 8px !important;
-    display: flex !important;
-    align-items: center;
-    transition: background 0.15s ease !important;
-}
-.pv-votes-btn:hover,
-.pv-votes-btn:focus {
-    background: #e2e8f0 !important;
-    color: #1e293b !important;
-}
-.pv-votes-btn[aria-expanded="true"] {
-    background: #e2e8f0 !important;
-    color: #1e293b !important;
-    border-color: #94a3b8 !important;
-}
-.pv-votes-btn[aria-expanded="true"] img {
-    filter: none;
-}
-
-/* ── Votes panel (collapsed by default) ─────────────── */
-#pv-votes-panel {
-    font-size: 14px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    background: #fff;
-    overflow: hidden;
-}
-#pv-votes-panel .pv-votes-table-wrap {
-    max-height: 300px;
-    overflow-y: auto;
-}
-#pv-votes-panel table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-#pv-votes-panel thead tr {
-    background: #f8fafc;
-    position: sticky;
-    top: 0;
-}
-#pv-votes-panel th {
-    padding: 7px 10px;
-    text-align: left;
-    font-size: 11px;
-    font-weight: 700;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-}
-#pv-votes-panel td {
-    padding: 7px 10px;
-    border-top: 1px solid #f1f5f9;
-    color: #0f172a;
-}
-#pv-votes-panel .pv-votes-footer {
-    padding: 7px 10px;
-    border-top: 1px solid #e2e8f0;
-    background: #f8fafc;
-    text-align: center;
-}
-#pv-votes-panel .pv-votes-showall {
-    font-size: 13px;
-    font-weight: 600;
-    color: #475569;
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-decoration: underline;
-    padding: 0;
-}
-#pv-votes-panel .pv-votes-showall:hover {
-    color: #1e293b;
-}
-#pv-votes-panel .pv-votes-empty {
-    padding: 12px 10px;
-    color: #64748b;
-    font-style: italic;
-}
-.pv-edit-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    margin-left: 8px;
-    padding: 2px 8px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #005ea2;
-    background: #d9e8f6;
-    border: 1px solid #aacdec;
-    border-radius: 4px;
-    cursor: pointer;
-    vertical-align: middle;
-    line-height: 1.4;
-    transition: background 0.15s ease, color 0.15s ease;
-}
-.pv-edit-btn:hover,
-.pv-edit-btn:focus {
-    background: #005ea2;
-    color: #ffffff;
-    outline: none;
-}
-.pv-edit-btn:focus-visible {
-    outline: 3px solid #005ea2;
-    outline-offset: 2px;
-}
-.pv-edit-btn svg {
-    width: 13px;
-    height: 13px;
-    flex-shrink: 0;
-}
-/* title edit button sits inline with the h1 */
-.pv-title-edit-wrap {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-/* ── Actions bar ─────────────────────────────────────── */
-.pv-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 20px;
-    padding: 16px 24px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-}
-.pv-actions-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #475569;
-    margin-right: 4px;
-    flex-shrink: 0;
-}
-.pv-actions-divider {
-    width: 1px;
-    height: 24px;
-    background: #cbd5e1;
-    flex-shrink: 0;
-}
-/* Vote button — exact match to ip-upvote in ideas portal */
-.pv-upvote {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    height: 32px;
-    padding: 0 10px;
-    border: 1.5px solid #cce4f5;
-    border-radius: 6px;
-    background: #fff;
-    color: #1e293b;
-    font-size: 0.8rem;
-    font-weight: 700;
-    font-family: 'Public Sans', 'Source Sans 3', sans-serif;
-    cursor: pointer;
-    transition: all 0.15s;
-    box-sizing: border-box;
-}
-.pv-upvote:hover:not(:disabled) {
-    background: #005ea2;
-    color: #fff;
-    border-color: #005ea2;
-}
-.pv-upvote:hover:not(:disabled) .material-symbols-outlined {
-    color: #fff !important;
-}
-.pv-upvote.is-voted {
-    background: #e8e8e8;
-    color: #666;
-    border-color: #ccc;
-    cursor: default;
-    opacity: 1;
-}
-.pv-upvote.is-voted .material-symbols-outlined {
-    color: #666 !important;
-}
-.pv-upvote.is-voted:focus-visible {
-    outline: 2px solid #000;
-    outline-offset: 3px;
-}
-.pv-upvote:disabled {
-    opacity: 0.65;
-}
-.pv-upvote:focus-visible {
-    outline: 2px solid #000;
-    outline-offset: 2px;
-}
-.pv-upvote .material-symbols-outlined {
-    font-size: 0.9rem;
-    line-height: 1;
-    font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 24, 'GRAD' 0;
-}
-/* Share button — exact match to ip-share in ideas portal */
-.pv-share {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    height: 32px;
-    padding: 0 10px;
-    font-size: 0.8rem;
-    background: transparent;
-    border: 1.5px solid #cce4f5;
-    border-radius: 6px;
-    color: #475569;
-    cursor: pointer;
-    font-family: 'Public Sans', 'Source Sans 3', sans-serif;
-    font-weight: 600;
-    transition: all 0.15s;
-    margin-left: 4px;
-    box-sizing: border-box;
-}
-.pv-share:hover {
-    background: #005ea2;
-    border-color: #005ea2;
-    color: #fff;
-}
-.pv-share:hover .material-symbols-outlined {
-    color: #fff !important;
-}
-.pv-share:focus-visible {
-    outline: 2px solid #000;
-    outline-offset: 2px;
-}
-.pv-share .material-symbols-outlined {
-    font-size: 0.9rem;
-    line-height: 1;
-    font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 24, 'GRAD' 0;
-}
-/* Toast notification */
-#pvToast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(12px);
-    background: #1e293b;
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 10px 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    z-index: 9999;
-    white-space: nowrap;
-}
-#pvToast.is-visible {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-    pointer-events: auto;
-}
-#pvToast.is-error {
-    background: #b91c1c;
-}
 </style>
 
 <!-- ── Back nav ─────────────────────────────────────────────────────────── -->
@@ -713,50 +407,37 @@
 <!-- ── Main ─────────────────────────────────────────────────────────────── -->
 <main class="pv-main" id="pv-main" tabindex="-1">
 
-    <!-- Record ID + dynamic pills (populated by JS below) -->
+    <!-- Record ID badge -->
     <div class="pv-meta" role="group" aria-label="Idea metadata">
         <span class="pv-id-badge" aria-label="Idea number <!--{$recordID|strip_tags}-->">#<!--{$recordID|strip_tags}--></span>
-        <!-- .pv-pill--category and .pv-pill--impact injected by JS after AJAX load -->
-        <span id="pv-category-pill" class="pv-pill pv-pill--category" aria-live="polite" hidden></span>
-        <span id="pv-impact-pill"   class="pv-pill pv-pill--impact"   aria-live="polite" hidden></span>
-        <!--{if $submitted == 0 || $is_admin}-->
-        <button type="button"
-                class="pv-cancel-btn noprint"
-                onclick="cancelRequest()"
-                aria-label="Cancel this request"
-                title="Cancel Request">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false" style="width:14px;height:14px;flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5"/></svg>
-            Cancel Request
-        </button>
-        <!--{/if}-->
     </div>
 
     <!-- ── indicatorID 5: Title of idea ──────────────────────────────── -->
-    <div class="pv-title-edit-wrap">
-        <h1 class="pv-title" id="pv-heading-5">
-            <span id="pv-value-5" aria-live="polite">
-                <span class="pv-empty">Loading&hellip;</span>
+    <h1 class="pv-title" id="pv-heading-5">
+        <span id="pv-value-5" aria-live="polite">
+            <span class="pv-empty">Loading&hellip;</span>
+        </span>
+    </h1>
+
+    <!-- Info row: Status · Votes (populated by JS) -->
+    <div class="pv-info-row" role="group" aria-label="Idea details">
+        <span class="pv-info-item" id="pv-status-item" hidden>
+            <span class="pv-info-label">Status</span>
+            <span class="pv-info-val pv-info-val--status" id="pv-status-val" aria-live="polite"></span>
+        </span>
+        <span class="pv-info-sep" aria-hidden="true" id="pv-info-sep" hidden>·</span>
+        <span class="pv-info-item">
+            <span class="pv-info-label">Votes</span>
+            <span class="pv-info-val pv-info-val--votes" id="pv-votes-val" aria-live="polite">
+                <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
+                <span id="pv-votes-count">&hellip;</span>
             </span>
-        </h1>
-        <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
-        <button type="button" class="pv-edit-btn noprint" data-ind="5" onclick="pvOpenEdit(5)" aria-label="Edit title">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
-            Edit
-        </button>
-        <!--{/if}-->
+        </span>
     </div>
 
     <!-- ── indicatorID 6: Detailed summary ───────────────────────────── -->
     <section class="pv-card" aria-labelledby="pv-label-6">
-        <span class="pv-card-label" id="pv-label-6">
-            Detailed summary of your idea
-            <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
-            <button type="button" class="pv-edit-btn noprint" data-ind="6" onclick="pvOpenEdit(6)" aria-label="Edit detailed summary">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
-                Edit
-            </button>
-            <!--{/if}-->
-        </span>
+        <span class="pv-card-label" id="pv-label-6">Detailed Summary</span>
         <div class="pv-card-body" id="pv-value-6" aria-live="polite">
             <span class="pv-empty">Loading&hellip;</span>
         </div>
@@ -767,15 +448,7 @@
 
         <!-- Benefit (indicatorID 7) -->
         <section class="pv-card" aria-labelledby="pv-label-7">
-            <span class="pv-card-label" id="pv-label-7">
-                Benefit of implementing the idea
-                <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
-                <button type="button" class="pv-edit-btn noprint" data-ind="7" onclick="pvOpenEdit(7)" aria-label="Edit benefit">
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
-                    Edit
-                </button>
-                <!--{/if}-->
-            </span>
+            <span class="pv-card-label" id="pv-label-7">Benefit</span>
             <div class="pv-card-body" id="pv-value-7" aria-live="polite">
                 <span class="pv-empty">Loading&hellip;</span>
             </div>
@@ -783,15 +456,7 @@
 
         <!-- Category (8) + Impact (9) stacked in one card -->
         <section class="pv-card" aria-labelledby="pv-label-8">
-            <span class="pv-card-label" id="pv-label-8">
-                Category
-                <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
-                <button type="button" class="pv-edit-btn noprint" data-ind="8" onclick="pvOpenEdit(8)" aria-label="Edit category">
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
-                    Edit
-                </button>
-                <!--{/if}-->
-            </span>
+            <span class="pv-card-label" id="pv-label-8">Category</span>
             <div class="pv-card-body" id="pv-value-8" aria-live="polite">
                 <span class="pv-empty">Loading&hellip;</span>
             </div>
@@ -799,30 +464,14 @@
             <!-- Sub-question: indicatorID 13 (only shown if category = Other) -->
             <div id="pv-subq-13" hidden>
                 <div class="pv-sub-card" aria-labelledby="pv-label-13">
-                    <span class="pv-card-label" id="pv-label-13">
-                        Please specify your category
-                        <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
-                        <button type="button" class="pv-edit-btn noprint" data-ind="13" onclick="pvOpenEdit(13)" aria-label="Edit category specification">
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
-                            Edit
-                        </button>
-                        <!--{/if}-->
-                    </span>
+                    <span class="pv-card-label" id="pv-label-13">Please specify your category</span>
                     <div class="pv-card-body" id="pv-value-13" aria-live="polite"></div>
                 </div>
             </div>
 
             <hr class="pv-card-divider" role="separator" />
 
-            <span class="pv-card-label" id="pv-label-9">
-                Impact of idea
-                <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
-                <button type="button" class="pv-edit-btn noprint" data-ind="9" onclick="pvOpenEdit(9)" aria-label="Edit impact">
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
-                    Edit
-                </button>
-                <!--{/if}-->
-            </span>
+            <span class="pv-card-label" id="pv-label-9">Impact</span>
             <div class="pv-card-body" id="pv-value-9" aria-live="polite">
                 <span class="pv-empty">Loading&hellip;</span>
             </div>
@@ -832,80 +481,28 @@
 
     <!-- ── indicatorID 10: Attachments ───────────────────────────────── -->
     <section class="pv-card" aria-labelledby="pv-label-10">
-        <span class="pv-card-label" id="pv-label-10">
-            Attachments
-            <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
-            <button type="button" class="pv-edit-btn noprint" data-ind="10" onclick="pvOpenEdit(10)" aria-label="Edit attachments">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
-                Edit
-            </button>
-            <!--{/if}-->
-        </span>
+        <span class="pv-card-label" id="pv-label-10">Attachments</span>
         <div id="pv-value-10" aria-live="polite" aria-label="Attachments loading">
             <span class="pv-empty">Loading&hellip;</span>
         </div>
     </section>
 
-    <!-- ── Actions bar: Vote + Share ─────────────────────────────────── -->
-    <div class="pv-actions" role="group" aria-label="Idea actions">
-        <span class="pv-actions-label">Actions</span>
-        <div class="pv-actions-divider" role="separator" aria-hidden="true"></div>
-
-        <!-- Vote -->
-        <button type="button"
-                class="pv-upvote"
-                id="pv-vote-btn"
-                data-record-id="<!--{$recordID|strip_tags}-->"
-                aria-label="Vote for this idea"
-                title="Vote for this idea">
-            <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
-            Vote for this idea
-        </button>
-
-        <!-- Share -->
-        <button type="button"
-                class="pv-share"
-                id="pv-share-btn"
-                data-record-link="https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=<!--{$recordID|strip_tags}-->"
-                aria-label="Copy shareable link for this idea"
-                title="Copy shareable link">
-            <span class="material-symbols-outlined" aria-hidden="true">share</span>
-            Share
-        </button>
-    </div>
-
 </main>
-
-<!-- Toast notification -->
-<div id="pvToast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- ── Data loader ──────────────────────────────────────────────────────── -->
 <script>
-/* Permission flag — set once from Smarty, read by pvOpenEdit */
-var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{else}-->false<!--{/if}-->;
-
 (function() {
     var recordID  = <!--{$recordID|strip_tags|escape:'javascript'}-->;
     var portalURL = '<!--{$portal_url|escape:'javascript'}-->';
+    var PV_VOTE_FORM_KEY = 'form_57e89';
+    var PV_VOTE_IND_IDEA = 2;
 
-    /*
-     * Map of indicatorID -> config
-     *   target  : DOM id to write the text/HTML value into
-     *   onValue : optional callback(rawText) fired once data arrives
-     */
     var fields = [
         { id: 5,  target: 'pv-value-5'  },
         { id: 6,  target: 'pv-value-6'  },
         { id: 7,  target: 'pv-value-7'  },
         { id: 8,  target: 'pv-value-8',
           onValue: function(text) {
-              /* Show the category pill in the meta row */
-              var pill = document.getElementById('pv-category-pill');
-              if (pill && text.trim() !== '') {
-                  pill.textContent = text.trim();
-                  pill.removeAttribute('hidden');
-              }
-              /* If the user chose "Other", reveal the sub-question slot */
               if (text.trim().toLowerCase() === 'other') {
                   var subq = document.getElementById('pv-subq-13');
                   if (subq) { subq.removeAttribute('hidden'); }
@@ -913,18 +510,71 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
               }
           }
         },
-        { id: 9,  target: 'pv-value-9',
-          onValue: function(text) {
-              /* Show the impact pill in the meta row */
-              var pill = document.getElementById('pv-impact-pill');
-              if (pill && text.trim() !== '') {
-                  pill.textContent = text.trim();
-                  pill.removeAttribute('hidden');
-              }
-          }
-        },
+        { id: 9,  target: 'pv-value-9' },
         { id: 10, target: 'pv-value-10', isAttachment: true }
     ];
+
+    /* ── Load status (indicator 12) into the info row ─────────────────── */
+    function loadStatus() {
+        $.ajax({
+            type: 'GET',
+            url: 'ajaxIndex.php?a=getprintindicator'
+                + '&recordID=' + encodeURIComponent(recordID)
+                + '&indicatorID=12'
+                + '&series=1',
+            dataType: 'text',
+            cache: false,
+            success: function(html) {
+                var tmp = document.createElement('div');
+                tmp.innerHTML = html;
+                var span = tmp.querySelector('[id^="data_12_"]');
+                var val = span ? (span.textContent || span.innerText || '').trim() : '';
+                if (val && val !== 'N/A') {
+                    var statusVal  = document.getElementById('pv-status-val');
+                    var statusItem = document.getElementById('pv-status-item');
+                    var sep        = document.getElementById('pv-info-sep');
+                    if (statusVal)  { statusVal.textContent = val; }
+                    if (statusItem) { statusItem.removeAttribute('hidden'); }
+                    if (sep)        { sep.removeAttribute('hidden'); }
+                }
+            },
+            error: function() { /* silently skip — votes still show */ }
+        });
+    }
+
+    /* ── Load live vote count into the info row ────────────────────────── */
+    function loadVoteCount() {
+        var q = {
+            terms: [
+                { id: 'categoryID', operator: '=', match: PV_VOTE_FORM_KEY, gate: 'AND' },
+                { id: 'deleted',    operator: '=', match: 0,                gate: 'AND' }
+            ],
+            joins: [],
+            getData: [String(PV_VOTE_IND_IDEA)]
+        };
+        $.ajax({
+            type: 'GET',
+            url: './api/form/query',
+            data: { q: JSON.stringify(q), 'x-filterData': 'recordID,s1' },
+            dataType: 'json',
+            cache: false,
+            success: function(res) {
+                var ideaKey = String(recordID);
+                var count = 0;
+                $.each(res, function(_, vote) {
+                    if (String((vote.s1 && vote.s1['id' + PV_VOTE_IND_IDEA]) || '') === ideaKey) {
+                        count++;
+                    }
+                });
+                var el = document.getElementById('pv-votes-count');
+                if (el) { el.textContent = count + ' ' + (count === 1 ? 'vote' : 'votes'); }
+            },
+            error: function() {
+                var el = document.getElementById('pv-votes-count');
+                if (el) { el.textContent = '—'; }
+            }
+        });
+    }
 
     /* ── Extract the clean value from LEAF's indicator response ─────── */
     /* LEAF appends htmlPrint markup (inputs, scripts) after the value span.
@@ -1063,260 +713,11 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         fields.forEach(function(cfg) {
             loadIndicator(cfg.id, cfg);
         });
-    });
-
-    /* ── Expose loadIndicator so pvOpenEdit callback can refresh cards ── */
-    window._pvLoadIndicator = loadIndicator;
-    window._pvFields        = fields;
-
-}());
-
-/* ── Self-contained vote + share for printview ───────────────────────────
-   Mirrors ideas_v2.js behavior: resolves email via orgchart before voting
-   and before checking voted state. Falls back to userID for legacy records.
-──────────────────────────────────────────────────────────────────────── */
-(function() {
-    var PV_RECORD_ID     = <!--{$recordID|strip_tags|escape:'javascript'}-->;
-    var PV_USER_ID       = '<!--{$userID|strip_tags|escape:'javascript'}-->';
-    var PV_FORM_KEY      = '57e89';
-    var PV_VOTE_IND_IDEA = 2;
-    var PV_VOTE_IND_USER = 3;
-    var _pvToastTimer         = null;
-    var _pvVotingInProgress   = false;
-    var _pvResolvedEmail      = '';
-    var _pvEmailResolved      = false;
-
-    /* ── Email guard (mirrors ideas_v2.js isRealEmail) ── */
-    function pvIsRealEmail(str) {
-        return typeof str === 'string' && str.includes('@') && !str.includes('<!--');
-    }
-
-    /* ── Resolve email via orgchart (exact mirror of ideas_v2.js resolveVoterEmail) ── */
-    function pvResolveEmail() {
-        return new Promise(function(resolve) {
-            if (!PV_USER_ID) { resolve(''); return; }
-            var url = '/platform/orgchart/api/employee/search'
-                + '?q=userName:' + encodeURIComponent(PV_USER_ID)
-                + '&noLimit=0&_=' + Date.now();
-            fetch(url, { credentials: 'same-origin' })
-                .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
-                .then(function(data) {
-                    var employees = Array.isArray(data) ? data : Object.values(data || {});
-                    var match = employees.find(function(e) {
-                        return e && (e.userName === PV_USER_ID || e.userName === PV_USER_ID.split('\\').pop());
-                    });
-                    var email = (match && (match.Email || match.email)) || '';
-                    if (pvIsRealEmail(email)) {
-                        _pvResolvedEmail = email;
-                    } else {
-                        console.warn('[pvResolveEmail] Could not resolve email; falling back to userID');
-                        _pvResolvedEmail = PV_USER_ID;
-                    }
-                    _pvEmailResolved = true;
-                    resolve(_pvResolvedEmail);
-                })
-                .catch(function(err) {
-                    console.warn('[pvResolveEmail] orgchart API failed:', err);
-                    _pvResolvedEmail = PV_USER_ID;
-                    _pvEmailResolved = true;
-                    resolve(_pvResolvedEmail);
-                });
-        });
-    }
-    function pvShowToast(msg, isError) {
-        var toast = document.getElementById('pvToast');
-        if (!toast) { return; }
-        toast.textContent = msg || '';
-        toast.classList.toggle('is-error', !!isError);
-        toast.classList.add('is-visible');
-        if (_pvToastTimer) { clearTimeout(_pvToastTimer); }
-        _pvToastTimer = setTimeout(function() {
-            toast.classList.remove('is-visible');
-        }, 4000);
-    }
-
-    /* ── Clipboard fallback ── */
-    function pvCopyFallback(text) {
-        try {
-            var ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
-            document.body.appendChild(ta);
-            ta.focus();
-            ta.select();
-            var ok = document.execCommand('copy');
-            document.body.removeChild(ta);
-            pvShowToast(ok ? 'Idea link copied to clipboard.' : 'Could not copy — please copy the URL manually.', !ok);
-        } catch(e) {
-            pvShowToast('Could not copy — please copy the URL manually.', true);
-        }
-    }
-
-    /* ── Set voted visual state ── */
-    function pvSetVoted(isVoted) {
-        var btn = document.getElementById('pv-vote-btn');
-        if (!btn) { return; }
-        btn.disabled = isVoted;
-        btn.setAttribute('aria-disabled', isVoted ? 'true' : 'false');
-        btn.classList.toggle('is-voted', isVoted);
-        btn.setAttribute('aria-label', isVoted ? 'You\'ve already voted for this idea' : 'Vote for this idea');
-        btn.title = isVoted ? 'You\'ve already voted for this idea' : 'Vote for this idea';
-    }
-
-    /* ── Check if current user already voted (runs after email resolved) ── */
-    function pvCheckVoted() {
-        if (!PV_USER_ID) { return; }
-        var q = {
-            terms: [
-                { id: 'categoryID', operator: '=', match: 'form_57e89', gate: 'AND' },
-                { id: 'deleted',    operator: '=', match: 0,             gate: 'AND' }
-            ],
-            joins: [],
-            getData: [String(PV_VOTE_IND_IDEA), String(PV_VOTE_IND_USER)]
-        };
-        $.ajax({
-            type: 'GET',
-            url: './api/form/query',
-            data: { q: JSON.stringify(q), 'x-filterData': 'recordID,s1' },
-            dataType: 'json',
-            cache: false,
-            success: function(res) {
-                var ideaKey  = String(PV_RECORD_ID);
-                /* Match against resolved email (new votes) OR raw userID (legacy) */
-                var emailKey = _pvResolvedEmail ? _pvResolvedEmail.toLowerCase() : '';
-                var userKey  = PV_USER_ID.toLowerCase();
-                var hasVoted = false;
-                $.each(res, function(_, vote) {
-                    var linkedIdea = String((vote.s1 && vote.s1['id' + PV_VOTE_IND_IDEA]) || '');
-                    var voter      = String((vote.s1 && vote.s1['id' + PV_VOTE_IND_USER]) || '').toLowerCase();
-                    if (linkedIdea === ideaKey && (voter === emailKey || voter === userKey)) {
-                        hasVoted = true;
-                        return false; /* break */
-                    }
-                });
-                if (hasVoted) { pvSetVoted(true); }
-            },
-            error: function() { /* silently fail */ }
-        });
-    }
-
-    /* ── Submit vote ── */
-    function pvIdeaVotes() {
-        if (_pvVotingInProgress) { return; }
-        var btn = document.getElementById('pv-vote-btn');
-        if (btn && btn.disabled) {
-            pvShowToast('You already voted on this idea.', true);
-            return;
-        }
-        _pvVotingInProgress = true;
-        pvSetVoted(true); /* optimistic */
-
-        /* Ensure email resolved before submitting */
-        var doSubmit = function(voterIdentity) {
-            var payload = new URLSearchParams();
-            payload.append('service', '');
-            payload.append('title', 'Idea #' + PV_RECORD_ID);
-            payload.append('priority', '0');
-            payload.append('CSRFToken', CSRFToken);
-            payload.append('numform_' + PV_FORM_KEY, '1');
-            payload.append(String(PV_VOTE_IND_USER), voterIdentity);
-            payload.append(String(PV_VOTE_IND_IDEA), String(PV_RECORD_ID));
-
-            fetch('./api/?a=form/new', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: payload.toString()
-            })
-            .then(function(r) { return r.text(); })
-            .then(function(text) {
-                var newID = parseFloat(text.replace(/^"|"$/g, ''));
-                if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
-                    pvShowToast('Thanks for voting!');
-                } else {
-                    throw new Error('Unexpected response: ' + text);
-                }
-            })
-            .catch(function(err) {
-                console.error('[pvIdeaVotes] error:', err);
-                pvShowToast('Error processing vote. Please try again.', true);
-                pvSetVoted(false);
-            })
-            .finally(function() {
-                _pvVotingInProgress = false;
-            });
-        };
-
-        if (_pvEmailResolved) {
-            doSubmit(_pvResolvedEmail);
-        } else {
-            pvResolveEmail().then(function(identity) {
-                doSubmit(identity);
-            });
-        }
-    }
-
-    /* ── Share ── */
-    function pvShare() {
-        var btn  = document.getElementById('pv-share-btn');
-        var link = btn ? btn.getAttribute('data-record-link') : window.location.href;
-        if (!link) { return; }
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(link)
-                .then(function()  { pvShowToast('Idea link copied to clipboard.'); })
-                .catch(function() { pvCopyFallback(link); });
-        } else {
-            pvCopyFallback(link);
-        }
-    }
-
-    /* ── Init on DOM ready: resolve email first, then check voted state ── */
-    $(function() {
-        var voteBtn  = document.getElementById('pv-vote-btn');
-        var shareBtn = document.getElementById('pv-share-btn');
-        if (voteBtn)  { voteBtn.addEventListener('click',  pvIdeaVotes); }
-        if (shareBtn) { shareBtn.addEventListener('click', pvShare); }
-
-        /* Resolve email then check voted — parallel with page-load vote count fetch */
-        pvResolveEmail().then(function() {
-            pvCheckVoted();
-        });
+        loadStatus();
+        loadVoteCount();
     });
 
 }());
-</script>
-
-<script type="text/javascript">
-/* ── Edit handler: opens LEAF's native form dialog for a field ───────── */
-function pvOpenEdit(indicatorID) {
-    if (!pvCanEdit) { return; }
-    if (typeof form === 'undefined') {
-        console.warn('pvOpenEdit: LeafForm not ready yet');
-        return;
-    }
-    /* After save, refresh the matching public-view card */
-    form.setPostModifyCallback(function() {
-        var fields  = window._pvFields || [];
-        var loadFn  = window._pvLoadIndicator;
-        var cfg     = null;
-        for (var i = 0; i < fields.length; i++) {
-            if (fields[i].id === indicatorID) { cfg = fields[i]; break; }
-        }
-        /* indicator 13 (sub-question) is loaded on-demand, handle separately */
-        if (!cfg) { cfg = { id: indicatorID, target: 'pv-value-' + indicatorID }; }
-        if (typeof loadFn === 'function') { loadFn(indicatorID, cfg); }
-        /* Also refresh category pill / impact pill / sub-question visibility */
-        if (indicatorID === 8 || indicatorID === 9) {
-            var parentCfg = null;
-            for (var j = 0; j < fields.length; j++) {
-                if (fields[j].id === indicatorID) { parentCfg = fields[j]; break; }
-            }
-            if (parentCfg && typeof loadFn === 'function') { loadFn(indicatorID, parentCfg); }
-        }
-        form.dialog().hide();
-    });
-    form.dialog().show();
-    form.getForm(indicatorID, 1);
-}
 </script>
 
 </div>
@@ -1414,15 +815,6 @@ function pvOpenEdit(indicatorID) {
                 <!--{$childforms[i].childCategoryName|sanitize}-->
             </button>
         <!--{/section}-->
-        <!--{if $is_admin}-->
-        <button class="IUbutton pv-votes-btn" id="btn-votes"
-            onclick="toggleVotes(<!--{$recordID|strip_tags|escape}-->);"
-            aria-expanded="false"
-            aria-controls="formcontent">
-            <img src="dynicons/?img=award-ribbon.svg&amp;w=16" alt="" aria-hidden="true" style="vertical-align:middle;margin-right:5px;" />
-            <span id="btn-votes-label">Votes</span>
-        </button>
-        <!--{/if}-->
     </div>
 
     <div id="metaContainer" style="display: none">
@@ -1475,15 +867,6 @@ function pvOpenEdit(indicatorID) {
 </div>
 <!--{/if}-->
 <!--{if $empMembership['groupID'][226]}--></div><!--{/if}-->
-
-<!-- Internal form content target (loaded by openContent / loadVotes) -->
-<!--{if $empMembership['groupID'][226]}-->
-<div class="pv-internal-banner noprint" role="note" aria-label="Internal view notice">
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false" style="width:15px;height:15px;flex-shrink:0;"><path d="M8 1L1 14h14L8 1z"/><path d="M8 6v4M8 11.5v.5"/></svg>
-    LEAF TEAM — INTERNAL VIEW ONLY
-</div>
-<!--{/if}-->
-<div id="formcontent" style="margin-top: 0;"></div>
 
 <!-- DIALOG BOXES -->
 <div id="formContainer"></div>
@@ -1967,140 +1350,6 @@ function doSubmit(recordID) {
             },
             cache: false,
         });
-    }
-
-    /* ── Vote count fetch: called on page load for admins ───────────── */
-    <!--{if $is_admin}-->
-    function fetchVoteCount() {
-        var ideaKey = String(<!--{$recordID|strip_tags|escape}-->);
-        var q = {
-            terms: [
-                { id: 'categoryID', operator: '=', match: 'form_57e89', gate: 'AND' },
-                { id: 'deleted',    operator: '=', match: 0,             gate: 'AND' }
-            ],
-            joins: [],
-            getData: ['2']
-        };
-        $.ajax({
-            type: 'GET',
-            url: './api/form/query',
-            data: { q: JSON.stringify(q), 'x-filterData': 'recordID,s1' },
-            dataType: 'json',
-            cache: false,
-            success: function(res) {
-                var count = 0;
-                $.each(res, function(_, vote) {
-                    if (String((vote.s1 && vote.s1['id2']) || '') === ideaKey) { count++; }
-                });
-                var lbl = document.getElementById('btn-votes-label');
-                if (lbl) { lbl.textContent = 'Votes (' + count + ')'; }
-                window._pvVoteCount = count;
-            },
-            error: function() { /* silently fail — button still works */ }
-        });
-    }
-    <!--{/if}-->
-
-    /* ── toggleVotes: writes into #formcontent like openContent() ───────── */
-    var _pvVotesLoaded   = false;
-    var _pvAllVoters     = [];
-    var _pvVotesExpanded = false;
-    var _pvShowAll       = false;
-    var PV_VOTE_CAP      = 20;
-
-    function toggleVotes(ideaRecordID) {
-        var btn = document.getElementById('btn-votes');
-        var fc  = document.getElementById('formcontent');
-        if (!btn || !fc) { return; }
-
-        _pvVotesExpanded = !_pvVotesExpanded;
-        btn.setAttribute('aria-expanded', _pvVotesExpanded ? 'true' : 'false');
-
-        if (!_pvVotesExpanded) {
-            fc.innerHTML = '';
-            return;
-        }
-
-        /* If already fetched, just re-render */
-        if (_pvVotesLoaded) {
-            _pvRenderVotes(fc);
-            return;
-        }
-
-        /* First open — fetch */
-        fc.innerHTML = '<div style="padding:16px;font-size:15px;color:#475569;">Loading votes&hellip;</div>';
-
-        var q = {
-            terms: [
-                { id: 'categoryID', operator: '=', match: 'form_57e89', gate: 'AND' },
-                { id: 'deleted',    operator: '=', match: 0,             gate: 'AND' }
-            ],
-            joins: [],
-            getData: ['2', '3']
-        };
-
-        $.ajax({
-            type: 'GET',
-            url: './api/form/query',
-            data: { q: JSON.stringify(q), 'x-filterData': 'recordID,s1' },
-            dataType: 'json',
-            cache: false,
-            success: function(res) {
-                var ideaKey = String(ideaRecordID);
-                _pvAllVoters = [];
-                $.each(res, function(_, vote) {
-                    if (String((vote.s1 && vote.s1['id2']) || '') === ideaKey) {
-                        var v = (vote.s1 && vote.s1['id3']) || '';
-                        if (v) { _pvAllVoters.push(v); }
-                    }
-                });
-                _pvVotesLoaded = true;
-                _pvRenderVotes(fc);
-            },
-            error: function() {
-                fc.innerHTML = '<div style="padding:16px;color:#b91c1c;">Could not load votes.</div>';
-            }
-        });
-    }
-
-    function _pvRenderVotes(fc) {
-        if (_pvAllVoters.length === 0) {
-            fc.innerHTML = '<div style="padding:16px;font-size:15px;color:#64748b;font-style:italic;">No votes recorded for this idea.</div>';
-            return;
-        }
-
-        var total    = _pvAllVoters.length;
-        var showList = _pvShowAll ? _pvAllVoters : _pvAllVoters.slice(0, PV_VOTE_CAP);
-        var rows     = showList.map(function(v, i) {
-            return '<tr>'
-                + '<td style="width:32px;color:#94a3b8;padding:7px 10px;border-top:1px solid #f1f5f9;">' + (i + 1) + '</td>'
-                + '<td style="padding:7px 10px;border-top:1px solid #f1f5f9;color:#0f172a;">' + $('<div/>').text(v).html() + '</td>'
-                + '</tr>';
-        }).join('');
-
-        var footer = '';
-        if (!_pvShowAll && total > PV_VOTE_CAP) {
-            footer = '<div class="pv-votes-footer">'
-                + '<button type="button" class="pv-votes-showall" onclick="_pvShowAll=true;_pvRenderVotes(document.getElementById(\'formcontent\'));">'
-                + 'Show all ' + total + ' votes'
-                + '</button></div>';
-        } else if (_pvShowAll && total > PV_VOTE_CAP) {
-            footer = '<div class="pv-votes-footer">'
-                + '<button type="button" class="pv-votes-showall" onclick="_pvShowAll=false;_pvRenderVotes(document.getElementById(\'formcontent\'));">'
-                + 'Show fewer'
-                + '</button></div>';
-        }
-
-        fc.innerHTML =
-            '<div class="pv-votes-table-wrap">'
-            + '<table style="width:100%;border-collapse:collapse;font-size:14px;">'
-            + '<thead><tr style="background:#f8fafc;position:sticky;top:0;">'
-            + '<th style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;width:32px;">#</th>'
-            + '<th style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Voter</th>'
-            + '</tr></thead>'
-            + '<tbody>' + rows + '</tbody></table>'
-            + '</div>'
-            + footer;
     }
 
     function openContentForPrint(){
@@ -2887,32 +2136,10 @@ function transferToPMDashboard() {
     var params = new URLSearchParams(window.location.search || "");
     var id = params.get("recordID");
     if (!id) return;
-    var modal = document.getElementById('pmTransferModal');
-    if (!modal) return;
-    modal.dataset.recordId = id;
-    modal.hidden = false;
-    document.getElementById('pmTransferChoiceTask').focus();
-}
-
-function doTransferAs(type) {
-    var modal = document.getElementById('pmTransferModal');
-    var id = modal ? modal.dataset.recordId : '';
-    if (!id) return;
-    modal.hidden = true;
-    var param = type === 'project' ? 'transferProjectFromIdea' : 'transferFromIdea';
     window.location.href =
-        'https://leaf.va.gov/platform/projects/?tab=' + (type === 'project' ? 'projects' : 'tasks') +
-        '&' + param + '=' + encodeURIComponent(id);
+        "https://leaf.va.gov/platform/projects/?tab=tasks&transferFromIdea=" +
+        encodeURIComponent(id);
 }
-
-function closeTransferModal() {
-    var modal = document.getElementById('pmTransferModal');
-    if (modal) modal.hidden = true;
-}
-
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeTransferModal();
-});
 
     $(function() {
         $('#progressBar').progressbar({max: 100});
@@ -2953,11 +2180,6 @@ document.addEventListener('keydown', function(e) {
             updateProgress();
         <!--{/if}-->
 
-        <!--{if $is_admin}-->
-        /* fetch vote count on load so button label shows total immediately */
-        fetchVoteCount();
-        <!--{/if}-->
-
         //scroll event for dialog menu
         let elParentForm = document.querySelector('[id^="LeafForm"][id$="_record"]');
         let elFormMenu = document.getElementById('form-xhr-cancel-save-menu');
@@ -2969,33 +2191,3 @@ document.addEventListener('keydown', function(e) {
         });
     });
 </script>
-
-<!-- Transfer to LEAF Projects modal -->
-<div id="pmTransferModal" class="pm-transferOverlay" role="dialog" aria-modal="true"
-     aria-labelledby="pmTransferModalTitle" hidden>
-    <div class="pm-transferBackdrop" onclick="closeTransferModal()" aria-hidden="true"></div>
-    <div class="pm-transferDialog">
-        <div class="pm-transferHeader">
-            <h2 class="pm-transferTitle" id="pmTransferModalTitle">Transfer to LEAF Projects</h2>
-            <button type="button" class="pm-transferClose" onclick="closeTransferModal()"
-                    aria-label="Close">&times;</button>
-        </div>
-        <div class="pm-transferBody">
-            <p class="pm-transferPrompt">How would you like to transfer this record?</p>
-            <div class="pm-transferChoices">
-                <button type="button" class="pm-transferChoice" id="pmTransferChoiceTask"
-                        onclick="doTransferAs('task')">
-                    <span class="pm-transferChoiceIcon" aria-hidden="true">&#9989;</span>
-                    <span class="pm-transferChoiceLabel">As a Task</span>
-                    <span class="pm-transferChoiceDesc">Add to the Tasks table with ticket reference</span>
-                </button>
-                <button type="button" class="pm-transferChoice" id="pmTransferChoiceProject"
-                        onclick="doTransferAs('project')">
-                    <span class="pm-transferChoiceIcon" aria-hidden="true">&#128193;</span>
-                    <span class="pm-transferChoiceLabel">As a Project</span>
-                    <span class="pm-transferChoiceDesc">Create a new Project with ticket reference</span>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
