@@ -415,21 +415,24 @@ function bindFocusTrap(container) {
 }
 
 function setBackgroundHidden(hidden) {
-  // Target the main content area — ip-wrap was removed; use lp-main
-  const main =
-    document.getElementById("lp-main") ||
-    document.querySelector(".ip-mainLayout");
-  if (main) {
-    hidden
-      ? main.setAttribute("aria-hidden", "true")
-      : main.removeAttribute("aria-hidden");
-  }
-  const jump = document.getElementById("ipJumpTopBtn");
-  if (jump) {
-    hidden
-      ? jump.setAttribute("aria-hidden", "true")
-      : jump.removeAttribute("aria-hidden");
-  }
+  // Use `inert` to block both keyboard focus and screen reader access on
+  // background content. `aria-hidden` alone doesn't stop keyboard Tab.
+  const targets = [
+    document.getElementById("lp-main"),
+    document.getElementById("lp-nav-host"),
+    document.querySelector(".ip-creditBadge"),
+    document.getElementById("ipJumpTopBtn"),
+  ].filter(Boolean);
+
+  targets.forEach((el) => {
+    if (hidden) {
+      el.setAttribute("inert", "");
+      el.setAttribute("aria-hidden", "true");
+    } else {
+      el.removeAttribute("inert");
+      el.removeAttribute("aria-hidden");
+    }
+  });
 }
 
 function openModal(modalId) {
@@ -595,52 +598,44 @@ function buildDetailSkeleton(recordID, title, votes, isVoted, statusLabel) {
   const voteAriaLabel = isVoted
     ? "You already voted"
     : `Vote for idea #${escapeHtml(recordID)}`;
+  const votesText = `${escapeHtml(String(votes))} ${votes === 1 ? "vote" : "votes"}`;
   return `<div class="ip-detail" id="ipDetailRoot">
 
-    <!-- Meta row: ID | Status + Votes | Category + Impact | Actions -->
-    <div class="ip-detail__meta-grid" role="group" aria-label="Idea metadata">
+    <!-- Title row: #ID + h2 side by side -->
+    <div class="ip-detail__title-row">
+      <span class="ip-detail__id" aria-label="Idea number ${escapeHtml(recordID)}">#${escapeHtml(recordID)}</span>
+      <h2 class="ip-detail__title" id="ip-detail-title" tabindex="-1">${escapeHtml(title || "Idea Details")}</h2>
+    </div>
 
-      <!-- Col 1: Record ID -->
-      <div class="ip-detail__meta-col">
-        <span class="ip-detail__meta-label">ID</span>
-        <span class="ip-detail__id" aria-label="Idea number ${escapeHtml(recordID)}">#${escapeHtml(recordID)}</span>
-        ${statusLabel ? `<span class="ip-detail__meta-text">${escapeHtml(statusLabel)}</span>` : ""}
-        <span class="ip-detail__meta-text" id="ip-detail-votes-text">${escapeHtml(String(votes))} ${votes === 1 ? "vote" : "votes"}</span>
-      </div>
+    <!-- Info row: Status · Votes · Category · Impact -->
+    <div class="ip-detail__info-row" role="group" aria-label="Idea metadata">
+      ${statusLabel ? `<span class="ip-detail__info-item"><span class="ip-detail__info-label">Status</span><span class="ip-detail__info-val" id="ip-detail-status-text">${escapeHtml(statusLabel)}</span></span><span class="ip-detail__info-sep" aria-hidden="true">·</span>` : ""}
+      <span class="ip-detail__info-item"><span class="ip-detail__info-label">Votes</span><span class="ip-detail__info-val" id="ip-detail-votes-text">${votesText}</span></span>
+      <span class="ip-detail__info-sep" aria-hidden="true">·</span>
+      <span class="ip-detail__info-item"><span class="ip-detail__info-label">Category</span><span class="ip-detail__info-val" id="ip-detail-category-text"><span class="ip-detail__loading">Loading\u2026</span></span></span>
+      <span class="ip-detail__info-sep" aria-hidden="true">·</span>
+      <span class="ip-detail__info-item"><span class="ip-detail__info-label">Impact</span><span class="ip-detail__info-val" id="ip-detail-impact-text"><span class="ip-detail__loading">Loading\u2026</span></span></span>
+    </div>
 
-      <!-- Col 2: Category + Impact plain text -->
-      <div class="ip-detail__meta-col">
-        <span class="ip-detail__meta-label">Category</span>
-        <span class="ip-detail__meta-text" id="ip-detail-category-text"><span class="ip-detail__loading">Loading\u2026</span></span>
-        <span class="ip-detail__meta-label">Impact</span>
-        <span class="ip-detail__meta-text" id="ip-detail-impact-text"><span class="ip-detail__loading">Loading\u2026</span></span>
-      </div>
-
-      <!-- Col 3: Actions -->
-      <div class="ip-detail__meta-col">
-        <span class="ip-detail__meta-label">Actions</span>
-        <div class="ip-detail__actions">
-          <button type="button"
-            class="ip-upvote${isVotedClass}"
-            data-detail-vote="${escapeHtml(recordID)}"
-            aria-label="${voteAriaLabel}"
-            ${voteDisabled}>
-            <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
-            ${isVoted ? "Voted" : "Vote"}
-          </button>
-          <button type="button"
-            class="ip-share"
-            data-record-link="${escapeHtml(RECORD_VIEW_URL + recordID)}"
-            aria-label="Copy link to idea #${escapeHtml(recordID)}">
-            <span class="material-symbols-outlined" aria-hidden="true">share</span>
-            Share
-          </button>
-        </div>
-      </div>
-
-    </div><!-- /.ip-detail__meta-grid -->
-
-    <h2 class="ip-detail__title" id="ip-detail-title" tabindex="-1">${escapeHtml(title || "Idea Details")}</h2>
+    <!-- Actions -->
+    <div class="ip-detail__actions" role="group" aria-label="Idea actions">
+      <span class="ip-detail__meta-label">Actions</span>
+      <button type="button"
+        class="ip-upvote${isVotedClass}"
+        data-detail-vote="${escapeHtml(recordID)}"
+        aria-label="${voteAriaLabel}"
+        ${voteDisabled}>
+        <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
+        ${isVoted ? "Voted" : "Vote"}
+      </button>
+      <button type="button"
+        class="ip-share"
+        data-record-link="${escapeHtml(RECORD_VIEW_URL + recordID)}"
+        aria-label="Copy link to idea #${escapeHtml(recordID)}">
+        <span class="material-symbols-outlined" aria-hidden="true">share</span>
+        Share
+      </button>
+    </div>
 
     <section class="ip-detail__card" aria-labelledby="ip-dl-6">
       <span class="ip-detail__card-label" id="ip-dl-6">Detailed Summary</span>
@@ -796,6 +791,8 @@ function closeRecordModal() {
   if (openBtn) openBtn.setAttribute("data-url", "");
   modal.classList.remove("is-open");
   modal.setAttribute("aria-hidden", "true");
+  // Clear the focus trap guard so it re-binds correctly next open
+  delete modal.dataset.focusTrap;
   setBackgroundHidden(false);
   lastRecordFocusedElement?.focus();
   lastRecordFocusedElement = null;
@@ -2166,6 +2163,7 @@ function closeVotedModal() {
   if (!modal) return;
   modal.classList.remove("is-open");
   modal.setAttribute("aria-hidden", "true");
+  delete modal.dataset.focusTrap;
   setBackgroundHidden(false);
   lastFocusedElement?.focus();
   lastFocusedElement = null;
