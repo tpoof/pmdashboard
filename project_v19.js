@@ -3896,11 +3896,17 @@
     // Project transfer params
     var uxProjectId = getQueryParam("transferProjectFromUX");
     var ideaProjectId = getQueryParam("transferProjectFromIdea");
+    var supportProjectId = getQueryParam("transferProjectFromSupport");
 
-    var isProjectTransfer = !!(uxProjectId || ideaProjectId);
+    var isProjectTransfer = !!(
+      uxProjectId ||
+      ideaProjectId ||
+      supportProjectId
+    );
     var sourceId =
       uxProjectId ||
       ideaProjectId ||
+      supportProjectId ||
       uxTaskId ||
       supportId ||
       ideaId ||
@@ -3944,6 +3950,7 @@
       params.delete("transferTaskFromUX");
       params.delete("transferProjectFromUX");
       params.delete("transferProjectFromIdea");
+      params.delete("transferProjectFromSupport");
       params.delete("transferFromUX");
       params.delete("transferFromIdea");
       params.delete("transferFromSupport");
