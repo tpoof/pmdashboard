@@ -139,7 +139,7 @@
           icon: "location_on",
           title: "Find a LEAF Site",
           desc: "Locate a LEAF site at your VA facility",
-          href: "/platform/designs/report.php?a=find_site",
+          href: "/platform/service_requests_launchpad/report.php?a=steph_search",
         },
         { divider: true },
         {
@@ -1284,8 +1284,30 @@
         document.head.appendChild(newScript);
       } else if (oldScript.textContent && oldScript.textContent.trim()) {
         try {
-          var fn = new Function("document", "window", oldScript.textContent);
-          fn(document, window);
+          /* Pass a mock location reflecting the route URL so any
+             script that reads location.search, location.href, or
+             location.pathname gets the fetched page's URL rather
+             than the launchpad's URL. This prevents "undefined"
+             appearing in search fields that initialise from URL params. */
+          var mockLocation = {
+            href: window.__lpRouteHref || window.location.href,
+            search: window.__lpRouteSearch || "",
+            pathname: window.__lpRouteHref
+              ? window.__lpRouteHref.split("?")[0]
+              : window.location.pathname,
+            hash: "",
+            origin: window.location.origin,
+            host: window.location.host,
+            hostname: window.location.hostname,
+            protocol: window.location.protocol,
+          };
+          var fn = new Function(
+            "document",
+            "window",
+            "location",
+            oldScript.textContent,
+          );
+          fn(document, window, mockLocation);
         } catch (err) {
           console.warn("[LP] Inline script execution error:", err.message);
         }
@@ -1365,6 +1387,8 @@
        paths aren't affected when returning to the home view */
     var routeBase = document.getElementById("lp-route-base");
     if (routeBase) routeBase.remove();
+    window.__lpRouteHref = "";
+    window.__lpRouteSearch = "";
 
     /* Skip link → home */
     var skip = document.getElementById("lp-skip-nav");
@@ -1464,6 +1488,16 @@
       document.head.insertBefore(newBase, document.head.firstChild);
     }
 
+    /* Expose the route's original URL on window so fetched page scripts
+       that read window.location.search or URL params get the right values
+       instead of the launchpad's own URL params (which would be empty or
+       wrong, causing "undefined" to appear in search fields). */
+    window.__lpRouteHref = route ? route.href : "";
+    window.__lpRouteSearch =
+      route && route.href.indexOf("?") > -1
+        ? "?" + route.href.split("?")[1]
+        : "";
+
     /* Breadcrumb bar above content */
     var bc = document.createElement("div");
     bc.innerHTML = buildBreadcrumbHTML(route);
@@ -1540,8 +1574,15 @@
     updateNavCurrent(route.section);
 
     fetch(url, {
-      credentials:
-        "include" /* send all cookies including cross-path session cookies */,
+      credentials: "include",
+      headers: {
+        /* Tell LEAF this is a normal browser navigation, not an AJAX
+           call. Without Accept: text/html some LEAF pages detect the
+           fetch and serve a stripped / read-only response. */
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Cache-Control": "no-cache",
+      },
     })
       .then(function (response) {
         if (!response.ok) {
