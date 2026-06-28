@@ -230,9 +230,12 @@
   ───────────────────────────────────────────────────────────── */
   function linkHTML(item) {
     if (item.divider) return '<hr class="dd-divider" aria-hidden="true">';
+    /* Use <button data-href> instead of <a href> so the browser status
+       bar never previews the destination URL on hover. Navigation is
+       handled by wireLinkIntercept() which reads data-href. */
     return `
       <li>
-        <a class="dd-link" href="${item.href}">
+        <button class="dd-link" data-href="${item.href}">
           <span class="dd-link-ico">
             <span class="material-symbols-outlined" aria-hidden="true">${item.icon}</span>
           </span>
@@ -240,7 +243,7 @@
             <strong>${item.title}</strong>
             <span>${item.desc}</span>
           </span>
-        </a>
+        </button>
       </li>`;
   }
 
@@ -317,9 +320,9 @@
       leadershipGroupID +
       `]}-->
   <!-- Leadership: direct hash-routed link -->
-  <a class="lp-internal-btn" href="/platform/projects/report.php?a=leadership">
+  <button class="lp-internal-btn" data-href="/platform/projects/report.php?a=leadership">
     Leadership
-  </a>
+  </button>
 <!--{/if}-->
 
   <!-- LEAF Team: dropdown trigger + panel -->
@@ -366,7 +369,7 @@
       leadershipGroupID +
       `]}-->
 <li class="lp-internal-mobile-item">
-  <a class="dd-link" href="/platform/projects/report.php?a=leadership">
+  <button class="dd-link" data-href="/platform/projects/report.php?a=leadership">
     <span class="dd-link-ico">
       <span class="material-symbols-outlined" aria-hidden="true">groups</span>
     </span>
@@ -374,7 +377,7 @@
       <strong>Leadership</strong>
       <span>Platform leadership dashboard</span>
     </span>
-  </a>
+  </button>
 </li>
 <!--{/if}-->
 
@@ -511,6 +514,21 @@
       var style = document.createElement("style");
       style.id = "lp-nav-internal-styles";
       style.textContent = [
+        /* ── dd-link button reset ───────────────────────────────
+           .dd-link is now a <button> (not <a>) so the browser
+           status bar never shows the destination URL on hover.
+           These rules make it look and behave identically to the
+           old anchor version. */
+        "button.dd-link {",
+        "  width: 100%;",
+        "  text-align: left;",
+        "  background: none;",
+        "  border: none;",
+        "  font: inherit;",
+        "  cursor: pointer;",
+        "  padding: 10px 12px;",
+        "}",
+
         /* ── lp-nav-in flex patch ───────────────────────────────
            Ensures the nav bar is a flex row so margin-left:auto
            on .lp-nav-internal actually pushes it to the right.
@@ -1166,7 +1184,80 @@
     });
   }
 
+  /* ─────────────────────────────────────────────────────────────
+     DEPENDENCY LAZY-LOADER
+     Some fetched pages (Help Library, Form Library) require jQuery
+     UI and dialogController.js which aren't on the launchpad page.
+     loadScriptSequential() injects them into <head> in order,
+     waiting for each load event before proceeding.
+     ensureLeafUIDeps() scans the fetched document's <script> tags,
+     detects which deps are needed, and loads only what's missing.
+  ───────────────────────────────────────────────────────────── */
+  function loadScriptSequential(srcs) {
+    /* Returns a promise that resolves after all srcs are loaded in order */
+    return srcs.reduce(function (chain, src) {
+      return chain.then(function () {
+        return new Promise(function (resolve, reject) {
+          /* Already in DOM — skip */
+          if (document.querySelector('script[src="' + src + '"]')) {
+            resolve();
+            return;
+          }
+          var s = document.createElement("script");
+          s.src = src;
+          s.async = false;
+          s.onload = resolve;
+          s.onerror = function () {
+            console.warn("[LP] Failed to load dependency:", src);
+            resolve(); /* resolve anyway so remaining scripts still run */
+          };
+          document.head.appendChild(s);
+        });
+      });
+    }, Promise.resolve());
+  }
+
+  function ensureLeafUIDeps(sourceDoc) {
+    /* Scan fetched document's script srcs for known UI dependencies */
+    var scriptSrcs = Array.prototype.map.call(
+      sourceDoc.querySelectorAll("script[src]"),
+      function (s) {
+        return s.src;
+      } /* already absolute after DOMParser */,
+    );
+
+    var needsJQueryUI = scriptSrcs.some(function (s) {
+      return /jquery-ui/i.test(s);
+    });
+    var needsDialog = scriptSrcs.some(function (s) {
+      return /dialogController/i.test(s);
+    });
+
+    if (!needsJQueryUI && !needsDialog) return Promise.resolve();
+
+    /* Derive the jQuery UI path from the fetched page's own script src
+       so we use the exact same file — no hardcoded paths */
+    var jqueryUISrc = scriptSrcs.find(function (s) {
+      return /jquery-ui/i.test(s);
+    });
+    var dialogSrc = scriptSrcs.find(function (s) {
+      return /dialogController/i.test(s);
+    });
+
+    var toLoad = [];
+    if (needsJQueryUI && jqueryUISrc) toLoad.push(jqueryUISrc);
+    if (needsDialog && dialogSrc) toLoad.push(dialogSrc);
+
+    if (!toLoad.length) return Promise.resolve();
+
+    console.warn("[LP] Lazy-loading LEAF UI deps for fetched page:", toLoad);
+    return loadScriptSequential(toLoad);
+  }
+
   function reExecuteScripts(container) {
+    /* NOTE: reExecuteScripts is now called AFTER ensureLeafUIDeps()
+       resolves, so jQuery UI is guaranteed available when inline
+       scripts that call $(...).dialog() run. */
     var scripts = Array.prototype.slice.call(
       container.querySelectorAll("script"),
     );
@@ -1388,8 +1479,12 @@
     host.appendChild(bc.firstElementChild);
     host.appendChild(wrapper);
 
-    /* Re-execute scripts in the injected content */
-    reExecuteScripts(wrapper);
+    /* Lazy-load any LEAF UI dependencies the fetched page needs
+       (e.g. jquery-ui, dialogController) before re-executing its
+       inline scripts. reExecuteScripts runs only after all deps load. */
+    ensureLeafUIDeps(sourceDoc).then(function () {
+      reExecuteScripts(wrapper);
+    });
 
     /* Update document title */
     var fetchedTitle = sourceDoc.title;
@@ -1445,8 +1540,8 @@
     updateNavCurrent(route.section);
 
     fetch(url, {
-      credentials: "same-origin" /* send session cookies so auth works */,
-      headers: { "X-Requested-With": "XMLHttpRequest" },
+      credentials:
+        "include" /* send all cookies including cross-path session cookies */,
     })
       .then(function (response) {
         if (!response.ok) {
@@ -1511,11 +1606,15 @@
   ───────────────────────────────────────────────────────────── */
   function wireLinkIntercept() {
     document.addEventListener("click", function (e) {
-      /* Match both nav dropdown links and footer quick-resource links */
-      var link = e.target.closest(".dd-link, .lp-panel-link");
+      /* Match nav dropdown links, internal buttons, and footer quick-resource links.
+         .dd-link elements are now <button data-href> — no href attribute —
+         so the browser status bar never previews the destination URL on hover.
+         .lp-internal-btn elements (Leadership) also use data-href.
+         .dd-link[data-nav-external] are <a> tags (LEAF Team links) — left alone. */
+      var link = e.target.closest(".dd-link, .lp-panel-link, .lp-internal-btn");
       if (!link) return;
 
-      /* External-flagged links (e.g. LEAF Team quick-links) navigate away normally */
+      /* External-flagged <a> links (LEAF Team quick-links) navigate away normally */
       if (link.hasAttribute("data-nav-external")) return;
 
       /* Modifier-key / middle-click → real new tab, no intercept */
@@ -1523,8 +1622,9 @@
         return;
       }
 
-      var href = link.getAttribute("href");
-      if (!href || href === "#") return; /* placeholder — ignore */
+      /* Read href from data-href (buttons) or href attribute (legacy <a> fallback) */
+      var href = link.getAttribute("data-href") || link.getAttribute("href");
+      if (!href || href === "#") return;
 
       e.preventDefault();
       closeAllDropdowns(null);
