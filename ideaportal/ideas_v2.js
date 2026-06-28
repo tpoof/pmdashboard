@@ -384,7 +384,11 @@ function getFocusableElements(container) {
       'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
     ),
   ).filter(
-    (el) => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden"),
+    (el) =>
+      !el.hasAttribute("disabled") &&
+      !el.getAttribute("aria-hidden") &&
+      !el.hasAttribute("hidden") &&
+      el.offsetParent !== null,
   );
 }
 
@@ -411,7 +415,10 @@ function bindFocusTrap(container) {
 }
 
 function setBackgroundHidden(hidden) {
-  const main = document.querySelector(".ip-wrap");
+  // Target the main content area — ip-wrap was removed; use lp-main
+  const main =
+    document.getElementById("lp-main") ||
+    document.querySelector(".ip-mainLayout");
   if (main) {
     hidden
       ? main.setAttribute("aria-hidden", "true")
@@ -582,31 +589,65 @@ function renderAttachmentsHTML(html) {
   return out;
 }
 
-function buildDetailSkeleton(recordID, title, votes) {
+function buildDetailSkeleton(recordID, title, votes, isVoted, statusLabel) {
   const voteLabel = votes === 1 ? "1 vote" : `${votes} votes`;
+  const isVotedClass = isVoted ? " is-voted" : "";
+  const voteDisabled = isVoted ? "disabled" : "";
+  const voteAriaLabel = isVoted
+    ? "You already voted"
+    : `Vote for idea #${escapeHtml(recordID)}`;
   return `<div class="ip-detail" id="ipDetailRoot">
-    <div class="ip-detail__meta" role="group" aria-label="Idea metadata">
+
+    <!-- Row 1: ID · Status · Votes -->
+    <div class="ip-detail__row1" role="group" aria-label="Idea status">
       <span class="ip-detail__id" aria-label="Idea number ${escapeHtml(recordID)}">#${escapeHtml(recordID)}</span>
-      <span id="ip-detail-pill-category" class="ip-detail__pill ip-detail__pill--category" hidden></span>
-      <span id="ip-detail-pill-impact"   class="ip-detail__pill ip-detail__pill--impact"   hidden></span>
-      <span id="ip-detail-pill-status"   class="ip-detail__pill ip-detail__pill--status"   hidden></span>
+      <span id="ip-detail-pill-status" class="ip-detail__pill ip-detail__pill--status"${statusLabel ? "" : " hidden"}>${escapeHtml(statusLabel || "")}</span>
       <span class="ip-detail__pill ip-detail__pill--votes" aria-label="${voteLabel}">
         <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>${escapeHtml(String(votes))}
       </span>
     </div>
+
+    <!-- Row 2: Category · Impact labels + pills -->
+    <div class="ip-detail__row2" role="group" aria-label="Idea classification">
+      <span class="ip-detail__meta-label">Category</span>
+      <span id="ip-detail-pill-category" class="ip-detail__pill ip-detail__pill--category" hidden></span>
+      <span class="ip-detail__meta-label">Impact</span>
+      <span id="ip-detail-pill-impact" class="ip-detail__pill ip-detail__pill--impact" hidden></span>
+    </div>
+
+    <!-- Actions -->
+    <div class="ip-detail__actions" role="group" aria-label="Idea actions">
+      <button type="button"
+        class="ip-upvote${isVotedClass}"
+        data-detail-vote="${escapeHtml(recordID)}"
+        aria-label="${voteAriaLabel}"
+        ${voteDisabled}>
+        <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
+        ${isVoted ? "Voted" : "Vote"}
+      </button>
+      <button type="button"
+        class="ip-share"
+        data-record-link="${escapeHtml(RECORD_VIEW_URL + recordID)}"
+        aria-label="Copy link to idea #${escapeHtml(recordID)}">
+        <span class="material-symbols-outlined" aria-hidden="true">share</span>
+        Share
+      </button>
+    </div>
+
     <h2 class="ip-detail__title" id="ip-detail-title" tabindex="-1">${escapeHtml(title || "Idea Details")}</h2>
+
     <section class="ip-detail__card" aria-labelledby="ip-dl-6">
       <span class="ip-detail__card-label" id="ip-dl-6">Detailed Summary</span>
-      <div class="ip-detail__card-body" id="ip-dv-6"><span class="ip-detail__loading">Loading…</span></div>
+      <div class="ip-detail__card-body" id="ip-dv-6"><span class="ip-detail__loading">Loading\u2026</span></div>
     </section>
     <div class="ip-detail__two-col">
       <section class="ip-detail__card" aria-labelledby="ip-dl-7">
         <span class="ip-detail__card-label" id="ip-dl-7">Benefit</span>
-        <div class="ip-detail__card-body" id="ip-dv-7"><span class="ip-detail__loading">Loading…</span></div>
+        <div class="ip-detail__card-body" id="ip-dv-7"><span class="ip-detail__loading">Loading\u2026</span></div>
       </section>
       <section class="ip-detail__card" aria-labelledby="ip-dl-8">
         <span class="ip-detail__card-label" id="ip-dl-8">Category</span>
-        <div class="ip-detail__card-body" id="ip-dv-8"><span class="ip-detail__loading">Loading…</span></div>
+        <div class="ip-detail__card-body" id="ip-dv-8"><span class="ip-detail__loading">Loading\u2026</span></div>
         <div id="ip-dv-subq-13" hidden>
           <div class="ip-detail__sub-card" aria-labelledby="ip-dl-13">
             <span class="ip-detail__card-label" id="ip-dl-13">Please specify category</span>
@@ -615,12 +656,12 @@ function buildDetailSkeleton(recordID, title, votes) {
         </div>
         <hr class="ip-detail__divider" role="separator" />
         <span class="ip-detail__card-label" id="ip-dl-9">Impact</span>
-        <div class="ip-detail__card-body" id="ip-dv-9"><span class="ip-detail__loading">Loading…</span></div>
+        <div class="ip-detail__card-body" id="ip-dv-9"><span class="ip-detail__loading">Loading\u2026</span></div>
       </section>
     </div>
     <section class="ip-detail__card" aria-labelledby="ip-dl-10">
       <span class="ip-detail__card-label" id="ip-dl-10">Attachments</span>
-      <div id="ip-dv-10" aria-live="polite"><span class="ip-detail__loading">Loading…</span></div>
+      <div id="ip-dv-10" aria-live="polite"><span class="ip-detail__loading">Loading\u2026</span></div>
     </section>
   </div>`;
 }
@@ -654,6 +695,8 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
   const ridStr = String(recordID);
   const vm = ideasVMById?.[ridStr];
   const votes = vm?.votes ?? voteCounts[ridStr] ?? 0;
+  const isVoted = userVotes[ridStr] === true;
+  const statusLabel = vm?.status || "";
 
   if (header) header.textContent = title || "Idea Details";
   if (openBtn) {
@@ -661,24 +704,49 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
     openBtn.hidden = !openTabUrl;
   }
 
-  body.innerHTML = buildDetailSkeleton(ridStr, title, votes);
+  // Render skeleton with pill layout + action buttons
+  body.innerHTML = buildDetailSkeleton(
+    ridStr,
+    title,
+    votes,
+    isVoted,
+    statusLabel,
+  );
+
+  // Wire the vote button inside the modal
+  body
+    .querySelector("[data-detail-vote]")
+    ?.addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      if (btn.disabled || votingInProgress) return;
+      await IdeaVotes(ridStr);
+      // Refresh the vote button state
+      const newVoted = userVotes[ridStr] === true;
+      const newCount = voteCounts[ridStr] || 0;
+      if (newVoted) {
+        btn.disabled = true;
+        btn.classList.add("is-voted");
+        btn.setAttribute("aria-label", "You already voted");
+        btn.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">thumb_up</span> Voted`;
+      }
+      // Update votes pill
+      const votesPill = body.querySelector(".ip-detail__pill--votes");
+      if (votesPill) {
+        votesPill.setAttribute(
+          "aria-label",
+          newCount === 1 ? "1 vote" : `${newCount} votes`,
+        );
+        votesPill.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>${newCount}`;
+      }
+    });
 
   lastRecordFocusedElement = document.activeElement;
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
   setBackgroundHidden(true);
   bindFocusTrap(modal);
-  document.getElementById("ip-detail-title")?.focus();
-
-  // Status pill from already-loaded VM — no extra fetch needed
-  const statusLabel = vm?.status || "";
-  if (statusLabel) {
-    const pill = document.getElementById("ip-detail-pill-status");
-    if (pill) {
-      pill.textContent = statusLabel;
-      pill.removeAttribute("hidden");
-    }
-  }
+  // Focus the close button first so Tab order starts at the top of the modal
+  document.getElementById("ipRecordModalCloseBtn")?.focus();
 
   await Promise.allSettled([
     populateDetailField(ridStr, 5, {
