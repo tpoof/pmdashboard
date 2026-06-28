@@ -609,12 +609,12 @@ function buildDetailSkeleton(recordID, title, votes, isVoted, statusLabel) {
 
     <!-- Info row: Status · Votes · Category · Impact -->
     <div class="ip-detail__info-row" role="group" aria-label="Idea metadata">
-      ${statusLabel ? `<span class="ip-detail__info-item"><span class="ip-detail__info-label">Status</span><span class="ip-detail__info-val" id="ip-detail-status-text">${escapeHtml(statusLabel)}</span></span><span class="ip-detail__info-sep" aria-hidden="true">·</span>` : ""}
-      <span class="ip-detail__info-item"><span class="ip-detail__info-label">Votes</span><span class="ip-detail__info-val" id="ip-detail-votes-text">${votesText}</span></span>
+      ${statusLabel ? `<span class="ip-detail__info-item"><span class="ip-detail__info-label">Status</span><span class="ip-detail__info-val ip-detail__info-val--status" id="ip-detail-status-text">${escapeHtml(statusLabel)}</span></span><span class="ip-detail__info-sep" aria-hidden="true">·</span>` : ""}
+      <span class="ip-detail__info-item"><span class="ip-detail__info-label">Votes</span><span class="ip-detail__info-val ip-detail__info-val--votes" id="ip-detail-votes-text"><span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>${votesText}</span></span>
       <span class="ip-detail__info-sep" aria-hidden="true">·</span>
-      <span class="ip-detail__info-item"><span class="ip-detail__info-label">Category</span><span class="ip-detail__info-val" id="ip-detail-category-text"><span class="ip-detail__loading">Loading\u2026</span></span></span>
+      <span class="ip-detail__info-item"><span class="ip-detail__info-label">Category</span><span class="ip-detail__info-val ip-detail__info-val--category" id="ip-detail-category-text"><span class="ip-detail__loading">Loading\u2026</span></span></span>
       <span class="ip-detail__info-sep" aria-hidden="true">·</span>
-      <span class="ip-detail__info-item"><span class="ip-detail__info-label">Impact</span><span class="ip-detail__info-val" id="ip-detail-impact-text"><span class="ip-detail__loading">Loading\u2026</span></span></span>
+      <span class="ip-detail__info-item"><span class="ip-detail__info-label">Impact</span><span class="ip-detail__info-val ip-detail__info-val--impact" id="ip-detail-impact-text"><span class="ip-detail__loading">Loading\u2026</span></span></span>
     </div>
 
     <!-- Actions -->
@@ -730,10 +730,10 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
         btn.setAttribute("aria-label", "You already voted");
         btn.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">thumb_up</span> Voted`;
       }
-      // Update votes text
+      // Update votes pill
       const votesText = body.querySelector("#ip-detail-votes-text");
       if (votesText) {
-        votesText.textContent = `${newCount} ${newCount === 1 ? "vote" : "votes"}`;
+        votesText.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>${newCount} ${newCount === 1 ? "vote" : "votes"}`;
       }
     });
 
