@@ -1151,34 +1151,48 @@
         max-width: 820px;
         margin: 0 auto;
       }
-      .ip-detail__row1 {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 8px;
+      .ip-detail__meta-grid {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 0 24px;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e2e8f0;
+        align-items: start;
       }
-      .ip-detail__row2 {
+      .ip-detail__meta-col {
         display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 14px;
+        flex-direction: column;
+        gap: 4px;
       }
       .ip-detail__meta-label {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         font-weight: 700;
         color: var(--ip-muted);
         font-family: "Public Sans", sans-serif;
-        letter-spacing: 0.03em;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
+        margin-bottom: 2px;
+      }
+      .ip-detail__meta-text {
+        font-size: 0.9rem;
+        color: var(--ip-navy);
+        font-family: "Public Sans", sans-serif;
+        font-weight: 600;
+        line-height: 1.4;
       }
       .ip-detail__actions {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         align-items: center;
-        margin-bottom: 20px;
         flex-wrap: wrap;
+        margin-top: 2px;
+      }
+      @media (max-width: 560px) {
+        .ip-detail__meta-grid {
+          grid-template-columns: 1fr;
+          gap: 14px 0;
+        }
       }
       .ip-detail__id {
         display: inline-flex;
@@ -1190,43 +1204,6 @@
         font-size: 0.8rem;
         font-weight: 700;
         letter-spacing: 0.02em;
-      }
-      .ip-detail__pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 3px 12px;
-        border-radius: 999px;
-        font-size: 0.8rem;
-        font-weight: 600;
-      }
-      .ip-detail__pill--category {
-        background: #d9e8f6;
-        color: #004a82;
-        border: 1px solid #aacdec;
-      }
-      .ip-detail__pill--impact {
-        background: #dcfce7;
-        color: #166534;
-        border: 1px solid #86efac;
-      }
-      .ip-detail__pill--status {
-        background: #f1f5f9;
-        color: #334155;
-        border: 1px solid #cbd5e1;
-      }
-      .ip-detail__pill--votes {
-        background: var(--ip-blue-lt);
-        color: var(--ip-blue);
-        border: 1px solid var(--ip-blue-20);
-        gap: 4px;
-      }
-      .ip-detail__pill--votes .material-symbols-outlined {
-        font-size: 0.85rem;
-        font-variation-settings:
-          "FILL" 1,
-          "wght" 400,
-          "opsz" 20,
-          "GRAD" 0;
       }
       .ip-detail__title {
         font-size: 1.5rem;

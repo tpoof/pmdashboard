@@ -590,7 +590,6 @@ function renderAttachmentsHTML(html) {
 }
 
 function buildDetailSkeleton(recordID, title, votes, isVoted, statusLabel) {
-  const voteLabel = votes === 1 ? "1 vote" : `${votes} votes`;
   const isVotedClass = isVoted ? " is-voted" : "";
   const voteDisabled = isVoted ? "disabled" : "";
   const voteAriaLabel = isVoted
@@ -598,41 +597,48 @@ function buildDetailSkeleton(recordID, title, votes, isVoted, statusLabel) {
     : `Vote for idea #${escapeHtml(recordID)}`;
   return `<div class="ip-detail" id="ipDetailRoot">
 
-    <!-- Row 1: ID · Status · Votes -->
-    <div class="ip-detail__row1" role="group" aria-label="Idea status">
-      <span class="ip-detail__id" aria-label="Idea number ${escapeHtml(recordID)}">#${escapeHtml(recordID)}</span>
-      <span id="ip-detail-pill-status" class="ip-detail__pill ip-detail__pill--status"${statusLabel ? "" : " hidden"}>${escapeHtml(statusLabel || "")}</span>
-      <span class="ip-detail__pill ip-detail__pill--votes" aria-label="${voteLabel}">
-        <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>${escapeHtml(String(votes))}
-      </span>
-    </div>
+    <!-- Meta row: ID | Status + Votes | Category + Impact | Actions -->
+    <div class="ip-detail__meta-grid" role="group" aria-label="Idea metadata">
 
-    <!-- Row 2: Category · Impact labels + pills -->
-    <div class="ip-detail__row2" role="group" aria-label="Idea classification">
-      <span class="ip-detail__meta-label">Category</span>
-      <span id="ip-detail-pill-category" class="ip-detail__pill ip-detail__pill--category" hidden></span>
-      <span class="ip-detail__meta-label">Impact</span>
-      <span id="ip-detail-pill-impact" class="ip-detail__pill ip-detail__pill--impact" hidden></span>
-    </div>
+      <!-- Col 1: Record ID -->
+      <div class="ip-detail__meta-col">
+        <span class="ip-detail__meta-label">ID</span>
+        <span class="ip-detail__id" aria-label="Idea number ${escapeHtml(recordID)}">#${escapeHtml(recordID)}</span>
+        ${statusLabel ? `<span class="ip-detail__meta-text">${escapeHtml(statusLabel)}</span>` : ""}
+        <span class="ip-detail__meta-text" id="ip-detail-votes-text">${escapeHtml(String(votes))} ${votes === 1 ? "vote" : "votes"}</span>
+      </div>
 
-    <!-- Actions -->
-    <div class="ip-detail__actions" role="group" aria-label="Idea actions">
-      <button type="button"
-        class="ip-upvote${isVotedClass}"
-        data-detail-vote="${escapeHtml(recordID)}"
-        aria-label="${voteAriaLabel}"
-        ${voteDisabled}>
-        <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
-        ${isVoted ? "Voted" : "Vote"}
-      </button>
-      <button type="button"
-        class="ip-share"
-        data-record-link="${escapeHtml(RECORD_VIEW_URL + recordID)}"
-        aria-label="Copy link to idea #${escapeHtml(recordID)}">
-        <span class="material-symbols-outlined" aria-hidden="true">share</span>
-        Share
-      </button>
-    </div>
+      <!-- Col 2: Category + Impact plain text -->
+      <div class="ip-detail__meta-col">
+        <span class="ip-detail__meta-label">Category</span>
+        <span class="ip-detail__meta-text" id="ip-detail-category-text"><span class="ip-detail__loading">Loading\u2026</span></span>
+        <span class="ip-detail__meta-label">Impact</span>
+        <span class="ip-detail__meta-text" id="ip-detail-impact-text"><span class="ip-detail__loading">Loading\u2026</span></span>
+      </div>
+
+      <!-- Col 3: Actions -->
+      <div class="ip-detail__meta-col">
+        <span class="ip-detail__meta-label">Actions</span>
+        <div class="ip-detail__actions">
+          <button type="button"
+            class="ip-upvote${isVotedClass}"
+            data-detail-vote="${escapeHtml(recordID)}"
+            aria-label="${voteAriaLabel}"
+            ${voteDisabled}>
+            <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
+            ${isVoted ? "Voted" : "Vote"}
+          </button>
+          <button type="button"
+            class="ip-share"
+            data-record-link="${escapeHtml(RECORD_VIEW_URL + recordID)}"
+            aria-label="Copy link to idea #${escapeHtml(recordID)}">
+            <span class="material-symbols-outlined" aria-hidden="true">share</span>
+            Share
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /.ip-detail__meta-grid -->
 
     <h2 class="ip-detail__title" id="ip-detail-title" tabindex="-1">${escapeHtml(title || "Idea Details")}</h2>
 
@@ -729,14 +735,10 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
         btn.setAttribute("aria-label", "You already voted");
         btn.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">thumb_up</span> Voted`;
       }
-      // Update votes pill
-      const votesPill = body.querySelector(".ip-detail__pill--votes");
-      if (votesPill) {
-        votesPill.setAttribute(
-          "aria-label",
-          newCount === 1 ? "1 vote" : `${newCount} votes`,
-        );
-        votesPill.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>${newCount}`;
+      // Update votes text
+      const votesText = body.querySelector("#ip-detail-votes-text");
+      if (votesText) {
+        votesText.textContent = `${newCount} ${newCount === 1 ? "vote" : "votes"}`;
       }
     });
 
@@ -760,11 +762,12 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
     populateDetailField(ridStr, 7),
     populateDetailField(ridStr, 8, {
       onValue(val) {
-        const pill = document.getElementById("ip-detail-pill-category");
-        if (pill && val.trim()) {
-          pill.textContent = val.trim();
-          pill.removeAttribute("hidden");
-        }
+        // Plain text in meta col
+        const txt = document.getElementById("ip-detail-category-text");
+        if (txt && val.trim()) txt.textContent = val.trim();
+        else if (txt)
+          txt.innerHTML = `<span class="ip-detail__empty">Not provided</span>`;
+        // Still populate the card body below
         if (val.trim().toLowerCase() === "other") {
           const subq = document.getElementById("ip-dv-subq-13");
           if (subq) subq.removeAttribute("hidden");
@@ -774,11 +777,10 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
     }),
     populateDetailField(ridStr, 9, {
       onValue(val) {
-        const pill = document.getElementById("ip-detail-pill-impact");
-        if (pill && val.trim()) {
-          pill.textContent = val.trim();
-          pill.removeAttribute("hidden");
-        }
+        const txt = document.getElementById("ip-detail-impact-text");
+        if (txt && val.trim()) txt.textContent = val.trim();
+        else if (txt)
+          txt.innerHTML = `<span class="ip-detail__empty">Not provided</span>`;
       },
     }),
     populateDetailField(ridStr, 10, { isAttachment: true }),
