@@ -139,7 +139,7 @@
           icon: "location_on",
           title: "Find a LEAF Site",
           desc: "Locate a LEAF site at your VA facility",
-          href: "/platform/service_requests_launchpad/report.php?a=steph_search",
+          href: "/launchpad/report.php?a=steph_search",
         },
         { divider: true },
         {
@@ -1288,7 +1288,22 @@
              script that reads location.search, location.href, or
              location.pathname gets the fetched page's URL rather
              than the launchpad's URL. This prevents "undefined"
-             appearing in search fields that initialise from URL params. */
+             appearing in search fields that initialise from URL params.
+
+             Also pass a mock document that overrides readyState to
+             "loading" so fetched pages that gate their init on
+             readyState (e.g. ideas_v2.js) take the DOMContentLoaded
+             listener path rather than calling initPortal() immediately
+             before the content is in the DOM. The synthetic
+             DOMContentLoaded dispatched after mount then fires their
+             init correctly. */
+          var mockDoc = Object.create(document);
+          Object.defineProperty(mockDoc, "readyState", {
+            get: function () {
+              return "loading";
+            },
+          });
+
           var mockLocation = {
             href: window.__lpRouteHref || window.location.href,
             search: window.__lpRouteSearch || "",
@@ -1307,7 +1322,7 @@
             "location",
             oldScript.textContent,
           );
-          fn(document, window, mockLocation);
+          fn(mockDoc, window, mockLocation);
         } catch (err) {
           console.warn("[LP] Inline script execution error:", err.message);
         }
@@ -1481,10 +1496,23 @@
     if (existingBase) existingBase.remove();
 
     if (route && route.href) {
-      var dir = route.href.replace(/[^/]*(\?.*)?$/, "") || "/";
+      var routeHref = route.href;
+      var dir;
+      if (/^https?:\/\//i.test(routeHref)) {
+        /* Already absolute — strip filename+query to get directory.
+           e.g. https://leaf.va.gov/platform/help_library/report.php?a=x
+                → https://leaf.va.gov/platform/help_library/           */
+        dir = routeHref.replace(/[^/]*(\?.*)?$/, "") || "/";
+      } else {
+        /* Relative path — prepend origin.
+           e.g. /platform/projects/report.php?a=ideas
+                → https://leaf.va.gov/platform/projects/               */
+        var relDir = routeHref.replace(/[^/]*(\?.*)?$/, "") || "/";
+        dir = window.location.origin + relDir;
+      }
       var newBase = document.createElement("base");
       newBase.id = "lp-route-base";
-      newBase.href = window.location.origin + dir;
+      newBase.href = dir;
       document.head.insertBefore(newBase, document.head.firstChild);
     }
 
@@ -1518,6 +1546,21 @@
        inline scripts. reExecuteScripts runs only after all deps load. */
     ensureLeafUIDeps(sourceDoc).then(function () {
       reExecuteScripts(wrapper);
+
+      /* Dispatch a synthetic DOMContentLoaded after scripts are injected.
+         Fetched pages that check document.readyState === "loading" and
+         register a DOMContentLoaded listener (e.g. ideas_v2.js initPortal)
+         will have already missed the real event — this synthetic one fires
+         their init correctly now that the content is in the DOM.
+         setTimeout(0) yields to let any synchronous script setup finish
+         before the event fires. */
+      setTimeout(function () {
+        var evt = new Event("DOMContentLoaded", {
+          bubbles: true,
+          cancelable: false,
+        });
+        document.dispatchEvent(evt);
+      }, 0);
     });
 
     /* Update document title */
