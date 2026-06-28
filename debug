@@ -1,17 +1,33 @@
-// Scan all script content on the page for orgchart references
-Array.from(document.querySelectorAll("script")).forEach(function (s) {
-  if (s.textContent.includes("orgchart")) {
-    var matches = s.textContent.match(/https?:\/\/[^\s'"]+orgchart[^\s'"]+/gi);
-    if (matches) console.log("Found orgchart URLs:", matches);
-  }
-});
+I need two specific fixes reverted in this file. Do not change anything else.
+Revert 1 — Restore the #header/#footer CSS suppression rule.
 
-// Also check the empSelector vars directly
-console.log(
-  "empSel apiPath:",
-  typeof empSel !== "undefined" ? empSel.apiPath : "not defined",
-);
-console.log(
-  "orgchartPath var:",
-  typeof orgchartPath !== "undefined" ? orgchartPath : "not defined",
-);
+Find this comment in the <style> block:
+css/* NOTE: #header/#footer suppression intentionally omitted —
+   suppressChrome() in leaf_nav.js handles this when hash-routed.
+   Adding it here bleeds into the outer document via #lpSwapHost. */
+Replace it with:
+css#header,
+#footer {
+  display: none !important;
+}
+Revert 2 — Remove the breadcrumb guard.
+
+Find this guarded script block:
+html<!-- Breadcrumb guard — only render standalone, not when hash-routed.
+     When hash-routed, leaf_nav.js injects its own breadcrumb into #lpSwapHost
+     and leaf_breadcrumb.js is blocklisted from re-execution. -->
+<script>
+  if (!document.getElementById('lpSwapHost')) {
+    window.LEAF_BREADCRUMB = [
+      /* ...values... */
+    ];
+  }
+</script>
+Replace it with the original unguarded form, keeping whatever label and href values are inside:
+html<!-- Breadcrumb data — must be set before leaf_breadcrumb.js loads -->
+<script>
+  window.LEAF_BREADCRUMB = [
+    /* ...same values unchanged... */
+  ];
+</script>
+That's all. No other changes.

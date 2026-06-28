@@ -31,9 +31,10 @@
           "GRAD" 0 !important;
       }
 
-      /* NOTE: #header/#footer suppression intentionally omitted —
-         suppressChrome() in leaf_nav.js handles this when hash-routed.
-         Adding it here bleeds into the outer document via #lpSwapHost. */
+      #header,
+      #footer {
+        display: none !important;
+      }
 
       /* ── Idea Portal tokens (mapped to launchpad.css vars) ── */
       :root {
@@ -63,11 +64,6 @@
         max-width: var(--ip-max);
         margin: 0 auto;
         padding: 0;
-      }
-      /* Override smarty_styles.css margin: 32px auto 48px on .ip-wrap */
-      .ip-wrap,
-      body.smarty.page-ideaportal .ip-wrap {
-        margin-top: 0 !important;
       }
 
       /* ── Hero banner ── */
