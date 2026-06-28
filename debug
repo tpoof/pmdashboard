@@ -1,13 +1,17 @@
-// Find orgchart path from existing empSelector on page
-console.log(
-  "orgchart path candidates:",
-  document.querySelector("[data-orgchart]")?.dataset?.orgchart,
-  window.empSel?.apiPath,
-);
+// Scan all script content on the page for orgchart references
+Array.from(document.querySelectorAll("script")).forEach(function (s) {
+  if (s.textContent.includes("orgchart")) {
+    var matches = s.textContent.match(/https?:\/\/[^\s'"]+orgchart[^\s'"]+/gi);
+    if (matches) console.log("Found orgchart URLs:", matches);
+  }
+});
 
-// Check what orgchart API returns for your user
-fetch(
-  "<!--orgchartPath-->/api/employee/search?q=userName:oitauslumags&noLimit=0",
-)
-  .then((r) => r.json())
-  .then((d) => console.log("Orgchart result:", JSON.stringify(d)));
+// Also check the empSelector vars directly
+console.log(
+  "empSel apiPath:",
+  typeof empSel !== "undefined" ? empSel.apiPath : "not defined",
+);
+console.log(
+  "orgchartPath var:",
+  typeof orgchartPath !== "undefined" ? orgchartPath : "not defined",
+);
