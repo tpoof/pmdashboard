@@ -795,6 +795,13 @@ function bindRecordModal() {
         href.split("recordID=")[1]?.split("&")[0] ||
         "";
       const title = link.getAttribute("data-title") || "Idea Details";
+      // If the voted modal is open, close it silently before opening the record
+      const votedModal = document.getElementById("ipVotedModal");
+      if (votedModal?.classList.contains("is-open")) {
+        votedModal.classList.remove("is-open");
+        votedModal.setAttribute("aria-hidden", "true");
+        delete votedModal.dataset.focusTrap;
+      }
       if (recordID) openIdeaDetailModal(recordID, title, href);
       return;
     }
@@ -2086,54 +2093,152 @@ function switchToMyIdeasTab() {
   myTab.focus();
 }
 
-function openVotedModal() {
-  const modal = document.getElementById("ipVotedModal");
+/* ─────────────────────────────────────────────────────────────
+   Voted modal — sort + search state
+───────────────────────────────────────────────────────────── */
+
+const votedModalState = {
+  sort: { key: "id", dir: "asc" },
+  search: "",
+  // Full list of view-model objects built when modal opens
+  allRows: [],
+};
+
+function buildVotedRow(id, idea) {
+  if (!idea) {
+    return `<tr data-voted-id="${escapeHtml(id)}">
+      <td><span style="color:var(--ip-muted)">#${escapeHtml(id)}</span></td>
+      <td style="color:var(--ip-muted);font-style:italic" colspan="4">Idea not available</td>
+    </tr>`;
+  }
+  const titleFull = escapeHtml(idea.title || `Idea ${id}`);
+  const titleDisplay = escapeHtml(truncateTitle(idea.title || `Idea ${id}`));
+  const category = escapeHtml(idea.category || "");
+  const statusLabel = idea.status || "Draft";
+  const statusBadgeClass = getStatusBadgeClass(statusLabel);
+  const votes = idea.votes || 0;
+  const recordLink = escapeHtml(idea.recordLink || `${RECORD_VIEW_URL}${id}`);
+  return `<tr data-voted-id="${escapeHtml(id)}">
+    <td><a class="ip-recordLink" href="${recordLink}" data-record-id="${escapeHtml(id)}" data-title="${titleFull}" aria-haspopup="dialog">#${escapeHtml(id)}</a></td>
+    <td class="ip-col-title" title="${titleFull}">${titleDisplay}</td>
+    <td>${category}</td>
+    <td><span class="ip-badge ${statusBadgeClass}">${escapeHtml(statusLabel)}</span></td>
+    <td>${votes}</td>
+  </tr>`;
+}
+
+function getVotedSortValue(row, key) {
+  switch (key) {
+    case "id":
+      return Number(row.id) || 0;
+    case "title":
+      return String(row.idea?.title || "").toLowerCase();
+    case "category":
+      return String(row.idea?.category || "").toLowerCase();
+    case "status":
+      return String(row.idea?.status || "").toLowerCase();
+    case "votes":
+      return Number(row.idea?.votes) || 0;
+    default:
+      return "";
+  }
+}
+
+function renderVotedTable() {
   const tableBody = document.getElementById("ipVotedTableBody");
   const table = document.getElementById("ipVotedTable");
   const empty = document.getElementById("ipVotedModalEmpty");
-  if (!modal || !tableBody || !table || !empty) return;
+  const noResults = document.getElementById("ipVotedModalNoResults");
+  if (!tableBody || !table || !empty) return;
 
-  // Build rows from userVotes (keyed by recordID) + ideasVMById for details
-  const votedIDs = Object.keys(userVotes).filter((k) => userVotes[k] === true);
+  const q = votedModalState.search.toLowerCase();
+  let filtered = votedModalState.allRows;
 
-  if (!votedIDs.length) {
+  if (q) {
+    filtered = filtered.filter(({ id, idea }) => {
+      if (!idea) return String(id).includes(q);
+      return [
+        String(id),
+        idea.title || "",
+        idea.category || "",
+        idea.status || "",
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(q);
+    });
+  }
+
+  // Sort
+  const { key, dir } = votedModalState.sort;
+  const mult = dir === "desc" ? -1 : 1;
+  const sorted = [...filtered].sort((a, b) => {
+    const av = getVotedSortValue(a, key);
+    const bv = getVotedSortValue(b, key);
+    if (typeof av === "number" && typeof bv === "number")
+      return (av - bv) * mult;
+    return (
+      String(av).localeCompare(String(bv), undefined, {
+        numeric: true,
+        sensitivity: "base",
+      }) * mult
+    );
+  });
+
+  // Apply sort indicator classes to headers
+  const thead = table.querySelector("thead");
+  thead?.querySelectorAll(".ip-sortable").forEach((th) => {
+    th.classList.remove("is-asc", "is-desc");
+    const k = th.querySelector(".ip-sortBtn")?.getAttribute("data-sort");
+    if (k === key) {
+      th.classList.add(dir === "asc" ? "is-asc" : "is-desc");
+      th.setAttribute("aria-sort", dir === "asc" ? "ascending" : "descending");
+    } else {
+      th.setAttribute("aria-sort", "none");
+    }
+  });
+
+  if (!votedModalState.allRows.length) {
     table.hidden = true;
     empty.hidden = false;
-  } else {
-    const rows = votedIDs
-      .map((id) => {
-        const idea = ideasVMById[id];
-        if (!idea) {
-          // Vote exists but idea not in public set (e.g. deleted/draft)
-          return `<tr>
-          <td><span style="color:var(--ip-muted)">#${escapeHtml(id)}</span></td>
-          <td style="color:var(--ip-muted);font-style:italic">Idea not available</td>
-          <td>—</td><td>—</td><td>—</td>
-        </tr>`;
-        }
-        const title = escapeHtml(truncateTitle(idea.title || `Idea ${id}`));
-        const titleFull = escapeHtml(idea.title || `Idea ${id}`);
-        const category = escapeHtml(idea.category || "");
-        const statusLabel = idea.status || "Draft";
-        const statusBadgeClass = getStatusBadgeClass(statusLabel);
-        const votes = idea.votes || 0;
-        const recordLink = escapeHtml(
-          idea.recordLink || `${RECORD_VIEW_URL}${id}`,
-        );
-        return `<tr>
-        <td><a class="ip-recordLink" href="${recordLink}" data-record-id="${escapeHtml(id)}" data-title="${titleFull}" aria-haspopup="dialog">#${escapeHtml(id)}</a></td>
-        <td title="${titleFull}">${title}</td>
-        <td>${category}</td>
-        <td><span class="ip-badge ${statusBadgeClass}">${escapeHtml(statusLabel)}</span></td>
-        <td>${votes}</td>
-      </tr>`;
-      })
-      .join("");
-
-    tableBody.innerHTML = rows;
-    table.hidden = false;
-    empty.hidden = true;
+    if (noResults) noResults.hidden = true;
+    return;
   }
+
+  empty.hidden = true;
+
+  if (!sorted.length) {
+    table.hidden = true;
+    if (noResults) noResults.hidden = false;
+    return;
+  }
+
+  if (noResults) noResults.hidden = true;
+  tableBody.innerHTML = sorted
+    .map(({ id, idea }) => buildVotedRow(id, idea))
+    .join("");
+  table.hidden = false;
+}
+
+function openVotedModal() {
+  const modal = document.getElementById("ipVotedModal");
+  const searchWrap = document.getElementById("ipVotedModalSearch");
+  const searchInput = document.getElementById("ipVotedSearchInput");
+  if (!modal) return;
+
+  // Build the full row data — reset sort/search to defaults each open
+  const votedIDs = Object.keys(userVotes).filter((k) => userVotes[k] === true);
+  votedModalState.allRows = votedIDs.map((id) => ({
+    id,
+    idea: ideasVMById[id] || null,
+  }));
+  votedModalState.sort = { key: "id", dir: "asc" };
+  votedModalState.search = "";
+
+  if (searchInput) searchInput.value = "";
+  if (searchWrap) searchWrap.hidden = !votedIDs.length;
+
+  renderVotedTable();
 
   lastFocusedElement = document.activeElement;
   modal.classList.add("is-open");
@@ -2161,6 +2266,44 @@ function bindVotedModal() {
   document
     .getElementById("ipVotedModalBackdrop")
     ?.addEventListener("click", closeVotedModal);
+
+  // Sort — delegated on the table header
+  document.getElementById("ipVotedTable")?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".ip-sortBtn");
+    if (!btn) return;
+    const key = btn.getAttribute("data-sort");
+    if (!key) return;
+    if (votedModalState.sort.key === key) {
+      votedModalState.sort.dir =
+        votedModalState.sort.dir === "asc" ? "desc" : "asc";
+    } else {
+      votedModalState.sort = { key, dir: "asc" };
+    }
+    renderVotedTable();
+  });
+
+  // Search
+  const searchInput = document.getElementById("ipVotedSearchInput");
+  const searchBtn = document.getElementById("ipVotedSearchBtn");
+  if (searchInput) {
+    const handler = debounce(() => {
+      votedModalState.search = searchInput.value;
+      renderVotedTable();
+    }, SEARCH_DEBOUNCE_MS);
+    searchInput.addEventListener("input", handler);
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        votedModalState.search = searchInput.value;
+        renderVotedTable();
+      }
+    });
+  }
+  searchBtn?.addEventListener("click", () => {
+    votedModalState.search = searchInput?.value || "";
+    renderVotedTable();
+  });
+
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       const modal = document.getElementById("ipVotedModal");

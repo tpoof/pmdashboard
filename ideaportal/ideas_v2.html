@@ -482,12 +482,20 @@
         flex: 1;
         overflow-y: auto;
         padding: 0;
+        display: flex;
+        flex-direction: column;
       }
       .ip-votedModal__empty {
         padding: 32px;
         text-align: center;
         color: var(--ip-muted);
         font-size: 0.9rem;
+      }
+      .ip-votedModal__search {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--ip-blue-10);
+        flex-shrink: 0;
+        background: #fff;
       }
 
       /* ── Main content ── */
@@ -2487,18 +2495,67 @@
               ✕
             </button>
           </div>
+          <div class="ip-votedModal__search" id="ipVotedModalSearch" hidden>
+            <div class="ip-searchInner">
+              <input
+                type="search"
+                id="ipVotedSearchInput"
+                class="ip-searchInput"
+                placeholder="Search by title, category, or idea #…"
+                autocomplete="off"
+                aria-label="Search voted ideas"
+              />
+              <button
+                type="button"
+                class="ip-searchIconBtn"
+                id="ipVotedSearchBtn"
+                aria-label="Search"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true"
+                  >search</span
+                >
+              </button>
+            </div>
+          </div>
           <div class="ip-votedModal__body">
             <div class="ip-votedModal__empty" id="ipVotedModalEmpty" hidden>
               You haven't voted for any ideas yet.
             </div>
+            <div class="ip-votedModal__empty" id="ipVotedModalNoResults" hidden>
+              No ideas match your search.
+            </div>
             <table class="ip-table" id="ipVotedTable" hidden>
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Title</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Votes</th>
+                  <th class="ip-sortable" scope="col" aria-sort="ascending">
+                    <button class="ip-sortBtn" type="button" data-sort="id">
+                      ID
+                    </button>
+                  </th>
+                  <th class="ip-sortable" scope="col" aria-sort="none">
+                    <button class="ip-sortBtn" type="button" data-sort="title">
+                      Title
+                    </button>
+                  </th>
+                  <th class="ip-sortable" scope="col" aria-sort="none">
+                    <button
+                      class="ip-sortBtn"
+                      type="button"
+                      data-sort="category"
+                    >
+                      Category
+                    </button>
+                  </th>
+                  <th class="ip-sortable" scope="col" aria-sort="none">
+                    <button class="ip-sortBtn" type="button" data-sort="status">
+                      Status
+                    </button>
+                  </th>
+                  <th class="ip-sortable" scope="col" aria-sort="none">
+                    <button class="ip-sortBtn" type="button" data-sort="votes">
+                      Votes
+                    </button>
+                  </th>
                 </tr>
               </thead>
               <tbody id="ipVotedTableBody"></tbody>
