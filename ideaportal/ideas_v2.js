@@ -829,12 +829,9 @@ function bindRecordModal() {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Jump to top + credit badge
+   Credit badge
 ───────────────────────────────────────────────────────────── */
 
-function wireJumpToTop() {
-  const btn = document.getElementById("ipJumpTopBtn");
-  if (!btn) return;
 
   function updateVisibility() {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -2335,7 +2332,6 @@ function initPortal() {
   bindCategoryChange();
   loadCategoryOptions();
   loadImpactOptions();
-  wireJumpToTop();
   initValidation();
 
   document

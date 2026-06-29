@@ -1505,63 +1505,6 @@
         opacity: 1;
       }
 
-      /* ── Jump to top ── */
-      .ip-jumpTop {
-        position: fixed;
-        bottom: 1.5rem;
-        right: 1.5rem;
-        width: 46px;
-        height: 46px;
-        border-radius: 999px;
-        border: 1px solid var(--lp-blue-mid);
-        background: #fff;
-        color: #111;
-        font-size: 20px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-        z-index: 400;
-        opacity: 0;
-        pointer-events: none;
-        transition:
-          opacity 0.15s ease,
-          transform 0.15s ease,
-          background 0.15s ease,
-          box-shadow 0.15s ease;
-      }
-      .ip-jumpTop.is-visible {
-        opacity: 1;
-        pointer-events: auto;
-      }
-      .ip-jumpTop:hover {
-        background: var(--lp-hl);
-        border-color: var(--lp-hl);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
-        transform: translateY(-2px);
-      }
-      .ip-jumpTop:hover .material-symbols-outlined {
-        color: #fff !important;
-      }
-      .ip-jumpTop:active {
-        transform: translateY(1px);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-      }
-      .ip-jumpTop:focus-visible {
-        outline: 2px solid #000;
-        outline-offset: 3px;
-      }
-      .ip-jumpTop .material-symbols-outlined {
-        font-size: 20px;
-        color: #111 !important;
-        font-variation-settings:
-          "FILL" 1,
-          "wght" 400,
-          "opsz" 24,
-          "GRAD" 0 !important;
-      }
-
       /* ── Credit badge ── */
       .ip-creditBadge {
         display: flex;
@@ -2563,18 +2506,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Jump to top -->
-      <button
-        type="button"
-        class="ip-jumpTop"
-        id="ipJumpTopBtn"
-        aria-label="Jump to top"
-      >
-        <span class="material-symbols-outlined" aria-hidden="true"
-          >arrow_upward</span
-        >
-      </button>
     </div>
     <!-- /.lp -->
 
