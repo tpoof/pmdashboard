@@ -649,6 +649,7 @@
         width: 100%;
         border-collapse: collapse;
         font-size: 0.9rem;
+        table-layout: fixed;
       }
       .ip-table thead th {
         padding: 0;
@@ -724,7 +725,6 @@
         color: var(--ip-blue);
         font-size: 0.9rem;
         white-space: nowrap;
-        width: 1%;
       }
       .ip-recordLink {
         color: var(--ip-blue);
@@ -745,14 +745,50 @@
         font-weight: 700;
         color: var(--ip-navy);
         white-space: nowrap;
-        width: 1%;
       }
       .ip-col-actions,
       .ip-actionsCell {
         text-align: left;
         white-space: nowrap;
-        min-width: 120px;
-        width: 1%;
+      }
+
+      /* ── Column widths (requires table-layout: fixed on .ip-table) ── */
+      .ip-table th:nth-child(1),
+      .ip-table td:nth-child(1) {
+        width: 10%;
+      } /* ID       */
+
+      .ip-table th:nth-child(2),
+      .ip-table td:nth-child(2) {
+        width: 36%;
+      } /* Title    */
+
+      .ip-table th:nth-child(3),
+      .ip-table td:nth-child(3) {
+        width: 20%;
+      } /* Category */
+
+      .ip-table th:nth-child(4),
+      .ip-table td:nth-child(4) {
+        width: 16%;
+      } /* Status   */
+
+      .ip-table th:nth-child(5),
+      .ip-table td:nth-child(5) {
+        width: 8%;
+      } /* Votes    */
+
+      .ip-table th:nth-child(6),
+      .ip-table td:nth-child(6) {
+        width: 10%;
+      } /* Actions  */
+
+      /* ── Title column ellipsis ── */
+      .ip-col-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: default;
       }
 
       /* ── Status badges ── */
