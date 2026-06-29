@@ -513,9 +513,12 @@
         flex: 1;
       }
       .ip-tab {
+        display: flex;
+        align-items: center;
+        gap: 6px;
         padding: 12px 20px;
         font-family: "Public Sans", sans-serif;
-        font-size: 0.88rem;
+        font-size: 0.93rem;
         font-weight: 600;
         color: var(--ip-muted);
         background: transparent;
@@ -539,6 +542,25 @@
       .ip-tab:focus-visible {
         outline: 2px solid var(--ip-blue);
         outline-offset: -2px;
+      }
+
+      /* Tab icons — outlined on inactive, filled on active/hover */
+      .ip-tab .material-symbols-outlined {
+        font-size: 20px;
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "opsz" 20,
+          "GRAD" 0 !important;
+        transition: font-variation-settings 0.15s;
+      }
+      .ip-tab.is-active .material-symbols-outlined,
+      .ip-tab:hover .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 1,
+          "wght" 400,
+          "opsz" 20,
+          "GRAD" 0 !important;
       }
 
       /* ── Panels ── */
@@ -1794,6 +1816,9 @@
                     aria-selected="true"
                     type="button"
                   >
+                    <span class="material-symbols-outlined" aria-hidden="true"
+                      >format_list_bulleted</span
+                    >
                     All Ideas
                   </button>
                   <button
@@ -1805,6 +1830,9 @@
                     aria-selected="false"
                     type="button"
                   >
+                    <span class="material-symbols-outlined" aria-hidden="true"
+                      >emoji_events</span
+                    >
                     Top 10 Ideas
                   </button>
                   <button
@@ -1816,6 +1844,9 @@
                     aria-selected="false"
                     type="button"
                   >
+                    <span class="material-symbols-outlined" aria-hidden="true"
+                      >person</span
+                    >
                     My Ideas
                   </button>
                 </div>
@@ -2335,6 +2366,12 @@
               class="ip-btn ip-btn--ghost"
               id="saveDraftButton"
             >
+              <span
+                class="material-symbols-outlined"
+                aria-hidden="true"
+                style="font-size: 1rem"
+                >save</span
+              >
               Save Idea
             </button>
             <button
