@@ -31,7 +31,7 @@
 .pv-main { max-width: 820px; margin: 32px auto 0; padding: 0 20px; box-sizing: border-box; }
 
 /* ── Record ID row ── */
-.pv-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.pv-meta { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .pv-cancel-btn { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; font-size: 13px; font-weight: 600; color: #b91c1c; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; line-height: 1.4; }
 .pv-cancel-btn:hover, .pv-cancel-btn:focus { background: #b91c1c; color: #fff; outline: none; }
 .pv-cancel-btn:focus-visible { outline: 3px solid #b91c1c; outline-offset: 2px; }
@@ -49,7 +49,7 @@
 @media (max-width: 560px) { .pv-info-row { gap: 6px; } .pv-info-sep { display: none; } .pv-info-item { flex-direction: column; gap: 2px; } }
 
 /* ── Title ── */
-.pv-title { font-size: 26px; font-weight: 700; line-height: 1.25; margin: 0 0 24px; color: #0f172a; font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif; }
+.pv-title { font-size: 26px; font-weight: 700; line-height: 1.25; margin: 0; color: #0f172a; font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif; flex: 1 1 auto; min-width: 0; }
 
 /* ── Cards ── */
 .pv-card { background: #fff; border: 1px solid #cfd7e3; border-radius: 14px; padding: 22px 24px; margin-bottom: 14px; }
@@ -128,10 +128,12 @@
 .pv-edit-btn:hover, .pv-edit-btn:focus { background: #005ea2; color: #fff; outline: none; }
 .pv-edit-btn:focus-visible { outline: 3px solid #005ea2; outline-offset: 2px; }
 .pv-edit-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
-.pv-title-edit-wrap { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+
 
 /* ── Actions bar (flat, matching modal) ── */
 .pv-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+.pv-actions-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; flex-shrink: 0; }
+.pv-actions-divider { width: 1px; height: 24px; background: #cbd5e1; flex-shrink: 0; }
 .pv-upvote { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; padding: 0 10px; border: 1.5px solid #cce4f5; border-radius: 6px; background: #fff; color: #1e293b; font-size: 0.8rem; font-weight: 700; font-family: 'Public Sans', 'Source Sans 3', sans-serif; cursor: pointer; transition: all 0.15s; box-sizing: border-box; }
 .pv-upvote:hover:not(:disabled) { background: #005ea2; color: #fff; border-color: #005ea2; }
 .pv-upvote:hover:not(:disabled) .material-symbols-outlined { color: #fff !important; }
@@ -162,9 +164,18 @@
 <!-- ── Main ── -->
 <main class="pv-main" id="pv-main" tabindex="-1">
 
-    <!-- Record ID badge + Cancel button -->
+    <!-- ── Row 1: ID badge · Title · Edit · Cancel (right-aligned) ── -->
     <div class="pv-meta" role="group" aria-label="Idea metadata">
         <span class="pv-id-badge" aria-label="Idea number <!--{$recordID|strip_tags}-->">#<!--{$recordID|strip_tags}--></span>
+        <h1 class="pv-title" id="pv-heading-5">
+            <span id="pv-value-5" aria-live="polite"><span class="pv-empty">Loading&hellip;</span></span>
+        </h1>
+        <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
+        <button type="button" class="pv-edit-btn noprint" data-ind="5" onclick="pvOpenEdit(5)" aria-label="Edit title">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
+            Edit
+        </button>
+        <!--{/if}-->
         <!--{if $submitted == 0 || $is_admin}-->
         <button type="button"
                 class="pv-cancel-btn noprint"
@@ -177,7 +188,7 @@
         <!--{/if}-->
     </div>
 
-    <!-- ── Info row: Status · Votes ── -->
+    <!-- ── Row 2: Status · Votes ── -->
     <div class="pv-info-row" role="group" aria-label="Idea status and votes">
         <span class="pv-info-item" id="pv-status-item" hidden>
             <span class="pv-info-label">Status</span>
@@ -191,19 +202,6 @@
                 <span id="pv-votes-count">—</span>
             </span>
         </span>
-    </div>
-
-    <!-- ── indicatorID 5: Title ── -->
-    <div class="pv-title-edit-wrap">
-        <h1 class="pv-title" id="pv-heading-5">
-            <span id="pv-value-5" aria-live="polite"><span class="pv-empty">Loading&hellip;</span></span>
-        </h1>
-        <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
-        <button type="button" class="pv-edit-btn noprint" data-ind="5" onclick="pvOpenEdit(5)" aria-label="Edit title">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
-            Edit
-        </button>
-        <!--{/if}-->
     </div>
 
     <!-- ── indicatorID 6: Detailed Summary ── -->
@@ -296,8 +294,10 @@
         <div id="pv-value-10" aria-live="polite" aria-label="Attachments loading"><span class="pv-empty">Loading&hellip;</span></div>
     </section>
 
-    <!-- ── Actions bar: Vote + Share (flat, matching modal) ── -->
+    <!-- ── Actions bar: Vote + Share ── -->
     <div class="pv-actions" role="group" aria-label="Idea actions">
+        <span class="pv-actions-label">Actions</span>
+        <div class="pv-actions-divider" role="separator" aria-hidden="true"></div>
         <button type="button"
                 class="pv-upvote"
                 id="pv-vote-btn"
@@ -686,9 +686,7 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
     });
 
 }());
-</script>
 
-<script type="text/javascript">
 /* ── Edit handler ── */
 function pvOpenEdit(indicatorID) {
     if (!pvCanEdit) { return; }
@@ -908,12 +906,12 @@ function pvOpenEdit(indicatorID) {
         }
     });
 
-    let currIndicatorID;
-    let currSeries;
+    var currIndicatorID;
+    var currSeries;
     var recordID  = <!--{$recordID|strip_tags}-->;
     var serviceID = <!--{$serviceID|strip_tags}-->;
-    let CSRFToken = '<!--{$CSRFToken}-->';
-    let formPrintConditions = {};
+    var CSRFToken = '<!--{$CSRFToken}-->';
+    var formPrintConditions = {};
 
     function doSubmit(recordID) {
         $('#submitControl').empty().html('<img alt="" src="./images/indicator.gif" />Submitting...');
@@ -1095,9 +1093,9 @@ function pvOpenEdit(indicatorID) {
     }
 
     <!--{if $bookmarked == ''}-->
-        let bookmarkStatus = 0;
+        var bookmarkStatus = 0;
     <!--{else}-->
-        let bookmarkStatus = 1;
+        var bookmarkStatus = 1;
     <!--{/if}-->
 
     function toggleBookmark() {
@@ -1321,10 +1319,10 @@ function pvOpenEdit(indicatorID) {
                             layer = $(this).position().top;
                             if (boxSizer[layer] != undefined) { $(this).height(boxSizer[layer]); }
                         });
-                        handlePrintConditionalIndicators(formPrintConditions);
                     });
+                    handlePrintConditionalIndicators(formPrintConditions);
                 },
-                error: function(res) { //$('#formcontent').empty().html(res); },
+                error: function() {},
                 cache: false, async: false,
             });
         <!--{/section}-->
