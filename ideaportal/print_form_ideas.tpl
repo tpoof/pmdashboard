@@ -50,7 +50,7 @@
 @media (max-width: 560px) { .pv-info-row { gap: 6px; } .pv-info-sep { display: none; } .pv-info-item { flex-direction: column; gap: 2px; } }
 
 /* ── Title ── */
-.pv-title { font-size: 26px; font-weight: 700; line-height: 1.25; margin: 0; color: #0f172a; font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif; flex: 1 1 0; min-width: 0; word-break: break-word; }
+.pv-title { font-size: 26px; font-weight: 700; line-height: 1.25; margin: 0; color: #0f172a; font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif; flex: 1 1 0; min-width: 0; word-break: break-word; display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 
 /* ── Cards ── */
 .pv-card { background: #fff; border: 1px solid #cfd7e3; border-radius: 14px; padding: 22px 24px; margin-bottom: 14px; }
@@ -125,7 +125,7 @@
 #pv-votes-panel .pv-votes-empty { padding: 12px 10px; color: #64748b; font-style: italic; }
 
 /* ── Edit button ── */
-.pv-edit-btn { display: inline-flex; align-items: center; gap: 5px; margin-left: 6px; padding: 5px 12px; font-size: 0.82rem; font-weight: 700; font-family: 'Public Sans', 'Source Sans 3', sans-serif; color: #005ea2; background: transparent; border: 1.5px solid #cce4f5; border-radius: 6px; cursor: pointer; line-height: 1; transition: all 0.15s; flex-shrink: 0; }
+.pv-edit-btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; font-size: 0.82rem; font-weight: 700; font-family: 'Public Sans', 'Source Sans 3', sans-serif; color: #005ea2; background: transparent; border: 1.5px solid #cce4f5; border-radius: 6px; cursor: pointer; line-height: 1; transition: all 0.15s; flex-shrink: 0; }
 .pv-edit-btn:hover, .pv-edit-btn:focus { background: #eef4fb; border-color: #005ea2; color: #005ea2; outline: none; }
 .pv-edit-btn:focus-visible { outline: 2px solid #005ea2; outline-offset: 2px; }
 .pv-edit-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
@@ -179,18 +179,18 @@
     </div>
     <!--{/if}-->
 
-    <!-- ── Row 1: ID badge · Title · Edit button ── -->
+    <!-- ── Row 1: ID badge · Title (with inline edit button) ── -->
     <div class="pv-meta" role="group" aria-label="Idea metadata">
         <span class="pv-id-badge" aria-label="Idea number <!--{$recordID|strip_tags}-->">#<!--{$recordID|strip_tags}--></span>
         <h1 class="pv-title" id="pv-heading-5">
             <span id="pv-value-5" aria-live="polite"><span class="pv-empty">Loading&hellip;</span></span>
+            <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
+            <button type="button" class="pv-edit-btn noprint" data-ind="5" onclick="pvOpenEdit(5)" aria-label="Edit title">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
+                Edit
+            </button>
+            <!--{/if}-->
         </h1>
-        <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
-        <button type="button" class="pv-edit-btn noprint" data-ind="5" onclick="pvOpenEdit(5)" aria-label="Edit title">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
-            Edit
-        </button>
-        <!--{/if}-->
     </div>
 
     <!-- ── Row 2: Status · Votes ── -->
