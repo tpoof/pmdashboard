@@ -1004,7 +1004,9 @@ function buildIdeaRow(idea) {
   const recordID = String(idea.recordID);
   const titleRaw = idea.title || "";
   const title = escapeHtml(titleRaw);
-  const titleDisplay = escapeHtml(truncateTitle(titleRaw));
+  // CSS handles truncation via text-overflow:ellipsis on .ip-col-title;
+  // render the full title so the tooltip always matches the visible text.
+  const titleDisplay = title;
   const category = escapeHtml(idea.category || "");
 
   // Show "Draft" when status is empty (not-submitted records)
@@ -1029,7 +1031,7 @@ function buildIdeaRow(idea) {
            aria-haspopup="dialog"
            href="${escapeHtml(recordLink)}">#${recordID}</a>
       </td>
-      <td title="${title}">${titleDisplay}</td>
+      <td class="ip-col-title" title="${title}">${titleDisplay}</td>
       <td>${category}</td>
       <td>${statusMarkup}</td>
       <td class="ip-votes">${votes}</td>
