@@ -31,11 +31,12 @@
 .pv-main { max-width: 820px; margin: 32px auto 0; padding: 0 20px; box-sizing: border-box; }
 
 /* ── Record ID row ── */
-.pv-meta { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-.pv-cancel-btn { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; font-size: 13px; font-weight: 600; color: #b91c1c; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; line-height: 1.4; }
+.pv-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.pv-cancel-row { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+.pv-cancel-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; font-size: 13px; font-weight: 600; color: #b91c1c; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; line-height: 1.4; }
 .pv-cancel-btn:hover, .pv-cancel-btn:focus { background: #b91c1c; color: #fff; outline: none; }
 .pv-cancel-btn:focus-visible { outline: 3px solid #b91c1c; outline-offset: 2px; }
-.pv-id-badge { display: inline-flex; align-items: center; justify-content: center; padding: 3px 10px; background: #1f1f1f; color: #fff; border-radius: 4px; font-size: 13px; font-weight: 700; letter-spacing: 0.02em; line-height: 1.4; }
+.pv-id-badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 12px; background: #1f1f1f; color: #fff; border-radius: 4px; font-size: 22px; font-weight: 700; letter-spacing: 0.01em; line-height: 1.25; flex-shrink: 0; }
 
 /* ── Info row: Status · Votes ── */
 .pv-info-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 16px; padding-bottom: 14px; border-bottom: 1px solid #e2e8f0; }
@@ -49,7 +50,7 @@
 @media (max-width: 560px) { .pv-info-row { gap: 6px; } .pv-info-sep { display: none; } .pv-info-item { flex-direction: column; gap: 2px; } }
 
 /* ── Title ── */
-.pv-title { font-size: 26px; font-weight: 700; line-height: 1.25; margin: 0; color: #0f172a; font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif; flex: 1 1 auto; min-width: 0; }
+.pv-title { font-size: 26px; font-weight: 700; line-height: 1.25; margin: 0; color: #0f172a; font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif; flex: 1 1 0; min-width: 0; word-break: break-word; }
 
 /* ── Cards ── */
 .pv-card { background: #fff; border: 1px solid #cfd7e3; border-radius: 14px; padding: 22px 24px; margin-bottom: 14px; }
@@ -124,9 +125,9 @@
 #pv-votes-panel .pv-votes-empty { padding: 12px 10px; color: #64748b; font-style: italic; }
 
 /* ── Edit button ── */
-.pv-edit-btn { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; padding: 2px 8px; font-size: 12px; font-weight: 600; color: #005ea2; background: #d9e8f6; border: 1px solid #aacdec; border-radius: 4px; cursor: pointer; vertical-align: middle; line-height: 1.4; transition: background 0.15s ease, color 0.15s ease; }
-.pv-edit-btn:hover, .pv-edit-btn:focus { background: #005ea2; color: #fff; outline: none; }
-.pv-edit-btn:focus-visible { outline: 3px solid #005ea2; outline-offset: 2px; }
+.pv-edit-btn { display: inline-flex; align-items: center; gap: 5px; margin-left: 6px; padding: 5px 12px; font-size: 0.82rem; font-weight: 700; font-family: 'Public Sans', 'Source Sans 3', sans-serif; color: #005ea2; background: transparent; border: 1.5px solid #cce4f5; border-radius: 6px; cursor: pointer; line-height: 1; transition: all 0.15s; flex-shrink: 0; }
+.pv-edit-btn:hover, .pv-edit-btn:focus { background: #eef4fb; border-color: #005ea2; color: #005ea2; outline: none; }
+.pv-edit-btn:focus-visible { outline: 2px solid #005ea2; outline-offset: 2px; }
 .pv-edit-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
 
 
@@ -164,7 +165,21 @@
 <!-- ── Main ── -->
 <main class="pv-main" id="pv-main" tabindex="-1">
 
-    <!-- ── Row 1: ID badge · Title · Edit · Cancel (right-aligned) ── -->
+    <!-- ── Row 0: Cancel button (right-aligned, own row) ── -->
+    <!--{if $submitted == 0 || $is_admin}-->
+    <div class="pv-cancel-row noprint">
+        <button type="button"
+                class="pv-cancel-btn"
+                onclick="cancelRequest()"
+                aria-label="Cancel this request"
+                title="Cancel Request">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false" style="width:14px;height:14px;flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5"/></svg>
+            Cancel Request
+        </button>
+    </div>
+    <!--{/if}-->
+
+    <!-- ── Row 1: ID badge · Title · Edit button ── -->
     <div class="pv-meta" role="group" aria-label="Idea metadata">
         <span class="pv-id-badge" aria-label="Idea number <!--{$recordID|strip_tags}-->">#<!--{$recordID|strip_tags}--></span>
         <h1 class="pv-title" id="pv-heading-5">
@@ -174,16 +189,6 @@
         <button type="button" class="pv-edit-btn noprint" data-ind="5" onclick="pvOpenEdit(5)" aria-label="Edit title">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
             Edit
-        </button>
-        <!--{/if}-->
-        <!--{if $submitted == 0 || $is_admin}-->
-        <button type="button"
-                class="pv-cancel-btn noprint"
-                onclick="cancelRequest()"
-                aria-label="Cancel this request"
-                title="Cancel Request">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false" style="width:14px;height:14px;flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5"/></svg>
-            Cancel Request
         </button>
         <!--{/if}-->
     </div>
@@ -942,21 +947,40 @@ function pvOpenEdit(indicatorID) {
     }
 
     function submitNote(recordID) {
-        if ($('#note').val().trim() !== '') {
-            var form = $("#note_form").serialize();
-            $.ajax({
-                type: 'POST',
-                url: "./api/note/" + recordID,
-                data: {form, CSRFToken: '<!--{$CSRFToken}-->'},
-                success: function(response) {
-                    $("#note").val('');
-                    addNote(response);
-                    dialog_ok.setTitle('Note Posted Successfully');
-                    dialog_ok.setContent('Your note has been posted. <b style="color: red">Please keep in mind this does not send notifications.</b>');
-                    dialog_ok.setSaveHandler(function() { dialog_ok.clearDialog(); dialog_ok.hide(); });
-                    dialog_ok.show();
+        const noteEl = document.getElementById('note');
+
+        if (noteEl.value.trim() !== '') {
+            const postData = new URLSearchParams();
+            postData.append('note', noteEl.value);
+            postData.append('CSRFToken', '<!--{$CSRFToken}-->');
+
+            fetch("./api/note/" + recordID, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
                 },
-                error: function(res) { console.log(res); }
+                body: postData
+            }).then(function(response) {
+                if (response.ok) {
+                    return response.json();
+                }
+                return response.text().then(function(error) {
+                    throw new Error(error);
+                });
+            }).then(function(response) {
+                noteEl.value = '';
+                addNote(response);
+                dialog_ok.setTitle('Note Posted Successfully');
+                dialog_ok.setContent(
+                    'Your note has been posted. <b style="color: red">Please keep in mind this does not send notifications.</b>'
+                );
+                dialog_ok.setSaveHandler(function() {
+                    dialog_ok.clearDialog();
+                    dialog_ok.hide();
+                });
+                dialog_ok.show();
+            }).catch(function(error) {
+                console.log(error);
             });
         }
     }
@@ -1344,18 +1368,439 @@ function pvOpenEdit(indicatorID) {
         $('div[role="dialog"]').css('height', '20%');
     }
 
-    function viewHistory() {
-        dialog_message.setContent('');
-        dialog_message.show(); dialog_message.indicateBusy();
-        $.ajax({
-            type: 'GET', url: 'ajaxIndex.php?a=getstatus&recordID=<!--{$recordID|strip_tags}-->', dataType: 'text',
-            success: function(res) { dialog_message.setContent(res); dialog_message.indicateIdle(); },
-            error: function() { console.log('There was an error collecting the history!'); },
-            cache: false
+    const recordHistoryState = {
+        page: 1,
+        pageSize: 20,
+        types: ['workflow'],
+        items: [],
+        requestID: 0,
+        isLoadingMore: false,
+        sortKey: 'timestampText',
+        sortOrder: 'asc'
+    };
+    let recordHistoryGrid = null;
+    let recordHistoryGridColumnCount = 0;
+
+    function buildRecordHistoryDialogContent() {
+        return `
+            <div id="record-history-dialog">
+                <style>
+                    #record-history-dialog {
+                        box-sizing: border-box;
+                        font-family: verdana;
+                        max-width: calc(100vw - 4rem);
+                        width: 620px;
+                    }
+                    #record-history-summary {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        gap: 1rem;
+                        margin-bottom: 0.75rem;
+                    }
+                    #record-history-summary .history-request-summary { flex: 1 1 auto; }
+                    #record-history-summary .history-print-button {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.35rem;
+                        margin-top: 0.15rem;
+                        white-space: nowrap;
+                    }
+                    #record-history-summary .history-request-meta {
+                        font-size: 14px;
+                        line-height: 1.35;
+                    }
+                    #record-history-filters {
+                        margin: 0 0 0.75rem 0;
+                        padding: 0;
+                        border: 0;
+                    }
+                    #record-history-filters legend {
+                        font-size: 15px;
+                        font-weight: bold;
+                        padding: 0;
+                        margin: 0 0 0.45rem 0;
+                    }
+                    #record-history-filters .history-filter-list {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 0.65rem 1.5rem;
+                    }
+                    #record-history-filters .history-filter {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.35rem;
+                        font-size: 14px;
+                        font-weight: normal;
+                    }
+                    #record-history-status {
+                        margin: 0 0 0.5rem 0;
+                        padding: 0;
+                        font-size: 14px;
+                    }
+                    #record-history-table-wrapper {
+                        max-height: none;
+                        overflow-y: visible;
+                        padding: 0;
+                    }
+                    #record-history-table-wrapper table.leaf_grid {
+                        border: 1px solid #666;
+                        border-collapse: collapse;
+                        border-spacing: 0;
+                        margin: 0;
+                        width: 100%;
+                    }
+                    #record-history-table-wrapper table.leaf_grid th {
+                        background-color: #d7e3ff;
+                        border: 1px solid #666;
+                        font-weight: bold;
+                        padding: 6px 8px;
+                    }
+                    #record-history-table-wrapper table.leaf_grid th:hover,
+                    #record-history-table-wrapper table.leaf_grid th:focus {
+                        background-color: #d7e3ff;
+                    }
+                    #record-history-table-wrapper table.leaf_grid td {
+                        border: 1px solid #666;
+                        padding: 8px 10px;
+                        vertical-align: top;
+                    }
+                </style>
+                <div id="record-history-summary">
+                    <div class="history-request-summary">
+                        <div class="history-request-meta">Service: <!--{$service|sanitize}--></div>
+                        <div class="history-request-meta">Title of Request: <a href="?a=printview&amp;recordID=<!--{$recordID|strip_tags|escape}-->"><!--{$title|sanitize}--></a></div>
+                    </div>
+                    <a class="buttonNorm history-print-button" href="?a=status&amp;recordID=<!--{$recordID|strip_tags}-->">
+                        <img src="dynicons/?img=printer.svg&amp;w=16" alt="" /> Print
+                    </a>
+                </div>
+                <fieldset id="record-history-filters" aria-label="Record history filters">
+                    <legend>Request Data</legend>
+                    <div class="history-filter-list">
+                        <label class="history-filter"><input type="checkbox" class="history-filter-input" data-history-type="workflow" checked="checked" />Action</label>
+                        <label class="history-filter"><input type="checkbox" class="history-filter-input" data-history-type="notes" />Notes</label>
+                        <label class="history-filter"><input type="checkbox" class="history-filter-input" data-history-type="email" />Email Delivery</label>
+                    </div>
+                </fieldset>
+                <div id="record-history-status"></div>
+                <div id="record-history-table-wrapper">
+                    <div id="record-history-grid"></div>
+                </div>
+            </div>
+        `;
+    }
+
+    function escapeHistoryHTML(value) {
+        if (value == null || value === '') { return ''; }
+        return DOMPurify.sanitize(String(value), {
+            ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'ol', 'ul', 'li', 'a'],
+            ALLOWED_ATTR: ['href', 'target']
         });
     }
 
+    function formatHistoryTimestamp(timestamp) {
+        const date = new Date(timestamp * 1000);
+        const monthName = date.toLocaleString(undefined, {month: 'long'});
+        const day = date.getDate();
+        const year = date.getFullYear();
+        let hour = date.getHours();
+        const minute = String(date.getMinutes()).padStart(2, '0');
+        const meridiem = hour >= 12 ? 'PM' : 'AM';
+        const tz = Intl.DateTimeFormat(undefined, {timeZoneName: 'short'})
+            .formatToParts(new Date())
+            .find(part => part.type === 'timeZoneName').value;
+        hour = hour % 12 || 12;
+        return `${monthName} ${day}, ${year}. ${hour}:${minute} ${meridiem} ${tz}`;
+    }
+
+    function getRecordHistoryTimestampMinute(timestamp) {
+        return Math.floor((Number(timestamp) || 0) / 60);
+    }
+
+    function renderHistoryComment(item) {
+        if (!item.comment) { return ''; }
+        const escapedComment = escapeHistoryHTML(item.comment).replace(/\n/g, '<br />');
+        if (item.historyType === 'email') {
+            return `<div style="margin-top:0.35rem;">${escapedComment}</div>`;
+        }
+        return `<div style="margin-top:0.35rem;">Comment: ${escapedComment}</div>`;
+    }
+
+    function getRecordHistoryItemTypeLabel(item) {
+        if (item.historyType === 'email') { return 'Email Delivery'; }
+        if (item.historyType === 'notes') { return 'Notes'; }
+        return 'Action';
+    }
+
+    function getRecordHistoryGridHeaders() {
+        const headers = [
+            {
+                name: 'Timestamp',
+                indicatorID: 'timestampText',
+                editable: false,
+                callback: function(data, blob) {
+                    $('#' + data.cellContainerID).text(blob[data.recordID].timestampDisplay);
+                }
+            }
+        ];
+        if (recordHistoryState.types.length > 1) {
+            headers.push({
+                name: 'Type',
+                indicatorID: 'typeLabel',
+                editable: false,
+                callback: function(data, blob) {
+                    $('#' + data.cellContainerID).text(blob[data.recordID].typeLabel);
+                }
+            });
+        }
+        headers.push({
+            name: 'Action Taken',
+            indicatorID: 'actionDisplay',
+            editable: false,
+            callback: function(data, blob) {
+                $('#' + data.cellContainerID).html(blob[data.recordID].actionDisplay);
+            }
+        });
+        return headers;
+    }
+
+    function setRecordHistoryGridMessage(message) {
+        if (!recordHistoryGrid) { return; }
+        const tbody = document.getElementById(recordHistoryGrid.getPrefixID() + 'tbody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="${recordHistoryGrid.headers().length}" style="text-align:center;">${escapeHistoryHTML(message)}</td></tr>`;
+        }
+    }
+
+    function sortRecordHistoryItems(items) {
+        if (!Array.isArray(items)) { return []; }
+        const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+        const sortKey   = recordHistoryState.sortKey || 'timestampText';
+        const sortOrder = recordHistoryState.sortOrder === 'asc' ? 'asc' : 'desc';
+        return items.slice().sort(function(a, b) {
+            let comparison = 0;
+            if (sortKey === 'timestampText') {
+                comparison = getRecordHistoryTimestampMinute(a.timestamp) - getRecordHistoryTimestampMinute(b.timestamp);
+                if (comparison === 0) {
+                    const sortOrderComparison = (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0);
+                    const timestampComparison = (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0);
+                    const fallbackComparison  = sortOrderComparison !== 0 ? sortOrderComparison : timestampComparison;
+                    return sortOrder === 'asc' ? fallbackComparison : fallbackComparison * -1;
+                }
+            } else if (sortKey === 'typeLabel') {
+                comparison = collator.compare(getRecordHistoryItemTypeLabel(a), getRecordHistoryItemTypeLabel(b));
+            } else {
+                const actionA = `${a.description || ''} ${a.comment || ''}`;
+                const actionB = `${b.description || ''} ${b.comment || ''}`;
+                comparison = collator.compare(actionA, actionB);
+            }
+            return sortOrder === 'asc' ? comparison : comparison * -1;
+        });
+    }
+
+    function sortRecordHistoryGridRows(rows, key, order) {
+        if (!Array.isArray(rows) || key !== 'timestampText') { return rows; }
+        const sortOrder = order === 'asc' ? 'asc' : 'desc';
+        return rows.slice().sort(function(a, b) {
+            const comparison = getRecordHistoryTimestampMinute(a.timestampText) - getRecordHistoryTimestampMinute(b.timestampText);
+            if (comparison === 0) {
+                const sortOrderComparison = (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0);
+                const timestampComparison = (Number(a.timestampText) || 0) - (Number(b.timestampText) || 0);
+                const fallbackComparison  = sortOrderComparison !== 0 ? sortOrderComparison : timestampComparison;
+                return sortOrder === 'asc' ? fallbackComparison : fallbackComparison * -1;
+            }
+            return sortOrder === 'asc' ? comparison : comparison * -1;
+        });
+    }
+
+    function renderRecordHistoryGrid(items) {
+        const nextColumnCount = recordHistoryState.types.length > 1 ? 3 : 2;
+        const gridData  = {};
+        const sortedItems = sortRecordHistoryItems(items);
+        const gridRows  = sortedItems.map(function(item, index) {
+            const recID           = index + 1;
+            const userText        = item.userName ? ` by ${escapeHistoryHTML(item.userName)}` : '';
+            const timestampText   = formatHistoryTimestamp(item.timestamp);
+            const descriptionText = escapeHistoryHTML(item.description);
+            gridData[recID] = {
+                recordID:         recID,
+                timestampText:    item.timestamp,
+                timestampDisplay: timestampText,
+                typeLabel:        getRecordHistoryItemTypeLabel(item),
+                actionDisplay:    `<div><b>${descriptionText}</b>${userText}</div>${renderHistoryComment(item)}`
+            };
+            return {
+                recordID:      recID,
+                timestampText: item.timestamp,
+                sortOrder:     item.sortOrder,
+                typeLabel:     gridData[recID].typeLabel,
+                actionDisplay: gridData[recID].actionDisplay
+            };
+        });
+
+        document.getElementById('record-history-grid').innerHTML = '';
+        recordHistoryGrid = new LeafFormGrid('record-history-grid', {readOnly: true});
+        recordHistoryGrid.hideIndex();
+        recordHistoryGrid.setPostSortRequestFunc(function(key, order) {
+            recordHistoryState.sortKey   = key;
+            recordHistoryState.sortOrder = order;
+            recordHistoryGrid.setData(sortRecordHistoryGridRows(recordHistoryGrid.getCurrentData(), key, order));
+        });
+        recordHistoryGridColumnCount = nextColumnCount;
+        recordHistoryGrid.setHeaders(getRecordHistoryGridHeaders());
+        recordHistoryGrid.setDataBlob(gridData);
+        recordHistoryGrid.setData(gridRows);
+        if (recordHistoryState.sortKey) {
+            recordHistoryGrid.sort(recordHistoryState.sortKey, recordHistoryState.sortOrder);
+            recordHistoryGrid.setData(sortRecordHistoryGridRows(recordHistoryGrid.getCurrentData(), recordHistoryState.sortKey, recordHistoryState.sortOrder));
+        }
+        recordHistoryGrid.renderBody(0, Infinity);
+        $('#' + recordHistoryGrid.getPrefixID() + 'table').css('width', '100%');
+        if (gridRows.length === 0) {
+            setRecordHistoryGridMessage('No history to show.');
+        }
+    }
+
+    function getRecordHistoryTypeLabel(types) {
+        if (!Array.isArray(types) || types.length === 0) { return 'Action'; }
+        if (types.length === 3) { return 'All'; }
+        return types.map(function(type) {
+            if (type === 'email') { return 'Email Delivery'; }
+            if (type === 'notes') { return 'Notes'; }
+            return 'Action';
+        }).join(', ');
+    }
+
+    function updateRecordHistoryFilterSelection() {
+        document.querySelectorAll('#record-history-filters .history-filter-input').forEach(function(input) {
+            input.checked = recordHistoryState.types.includes(input.dataset.historyType);
+        });
+        const dialog = document.getElementById('record-history-dialog');
+        if (dialog) {
+            dialog.classList.toggle('multi-type-history', recordHistoryState.types.length > 1);
+        }
+    }
+
+    function updateRecordHistoryStatus() {
+        const status = document.getElementById('record-history-status');
+        if (status) {
+            const typeLabel     = getRecordHistoryTypeLabel(recordHistoryState.types);
+            const loadingSuffix = recordHistoryState.isLoadingMore ? ' Loading more...' : '';
+            status.textContent  = `Showing ${typeLabel} History: ${recordHistoryState.items.length} Loaded${loadingSuffix}`;
+        }
+    }
+
+    async function fetchRecordHistoryPage(page) {
+        const params = new URLSearchParams({
+            types:    recordHistoryState.types.join(','),
+            page:     page,
+            pageSize: recordHistoryState.pageSize
+        });
+        const response = await fetch(`api/form/<!--{$recordID|strip_tags}-->/history?${params.toString()}`, {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) {
+            throw new Error(`History request failed with status ${response.status}`);
+        }
+        return response.json();
+    }
+
+    async function loadRemainingRecordHistoryPages(requestID, startPage) {
+        let nextPage = startPage;
+        while (recordHistoryState.requestID === requestID && recordHistoryState.isLoadingMore) {
+            const res = await fetchRecordHistoryPage(nextPage);
+            if (recordHistoryState.requestID !== requestID) { return; }
+            recordHistoryState.items = recordHistoryState.items.concat(res.items || []);
+            renderRecordHistoryGrid(recordHistoryState.items);
+            updateRecordHistoryFilterSelection();
+            updateRecordHistoryStatus();
+            if (!res.hasNext) {
+                recordHistoryState.isLoadingMore = false;
+                updateRecordHistoryStatus();
+                return;
+            }
+            nextPage += 1;
+        }
+    }
+
+    async function loadRecordHistoryPage() {
+        const gridContainer = document.getElementById('record-history-grid');
+        if (!gridContainer) { return; }
+        recordHistoryState.requestID += 1;
+        const requestID = recordHistoryState.requestID;
+        recordHistoryState.items         = [];
+        recordHistoryState.page          = 1;
+        recordHistoryState.isLoadingMore = false;
+        renderRecordHistoryGrid([]);
+        setRecordHistoryGridMessage('Loading history...');
+        dialog_message.indicateBusy();
+        try {
+            const res = await fetchRecordHistoryPage(1);
+            if (recordHistoryState.requestID !== requestID) { return; }
+            recordHistoryState.items         = res.items || [];
+            renderRecordHistoryGrid(recordHistoryState.items);
+            updateRecordHistoryFilterSelection();
+            recordHistoryState.isLoadingMore = res.hasNext;
+            updateRecordHistoryStatus();
+            if (res.hasNext) {
+                loadRemainingRecordHistoryPages(requestID, 2).catch(function(error) {
+                    if (recordHistoryState.requestID !== requestID) { return; }
+                    console.error('There was an error collecting the remaining history!', error);
+                    recordHistoryState.isLoadingMore = false;
+                    updateRecordHistoryStatus();
+                });
+            }
+        } catch (error) {
+            console.error('There was an error collecting the history!', error);
+            renderRecordHistoryGrid([]);
+            setRecordHistoryGridMessage('There was an error collecting the history.');
+        } finally {
+            dialog_message.indicateIdle();
+        }
+    }
+
+    function initializeRecordHistoryDialog() {
+        document.querySelectorAll('#record-history-filters .history-filter-input').forEach(function(input) {
+            input.addEventListener('change', function() {
+                const historyType = input.dataset.historyType || 'workflow';
+                const nextTypes = recordHistoryState.types.filter(function(type) {
+                    return type !== historyType;
+                });
+                if (input.checked) { nextTypes.push(historyType); }
+                if (nextTypes.length === 0) { input.checked = true; return; }
+                recordHistoryState.types = ['workflow', 'notes', 'email'].filter(function(type) {
+                    return nextTypes.includes(type);
+                });
+                loadRecordHistoryPage();
+            });
+        });
+        updateRecordHistoryFilterSelection();
+        loadRecordHistoryPage();
+    }
+
+    function viewHistory() {
+        recordHistoryState.page          = 1;
+        recordHistoryState.types         = ['workflow'];
+        recordHistoryGrid                = null;
+        recordHistoryGridColumnCount     = 0;
+        dialog_message.setTitle(`View History of Request ID#: <!--{$recordID|sanitize}-->`);
+        dialog_message.setContent(buildRecordHistoryDialogContent());
+        dialog_message.show();
+        initializeRecordHistoryDialog();
+    }
+
     function cancelRequest() {
+        const admin       = '<!--{$is_admin}-->';
+        const submitted   = '<!--{$submitted}-->';
+        const allowCancel = '<!--{$allowCancel}-->';
+        const requireComment = admin != '1' && +submitted > 0 && allowCancel == '1';
+
+        const requiredAttr = requireComment === true ? ' required' : '';
+        const requiredHTML = requireComment === true
+            ? ' <span id="cancel_comment_required" style="color:#b00;font-weight:bold;"> (*required)</span>'
+            : '';
+
         dialog_confirm.setContent(
             `<div style="margin-left:-0.75rem;">
                 <div style="display:flex;align-items:center;gap:0.75rem;">
@@ -1363,24 +1808,42 @@ function pvOpenEdit(indicatorID) {
                     Are you sure you want to cancel this request?
                 </div>
                 <br>
-                <label for="cancel_comment" style="font-size:14px;">Comments:</label><br>
-                <textarea id="cancel_comment" cols=30 rows=3 placeholder="Enter Comment" style="width:100%;resize: vertical;"></textarea>
+                <label for="cancel_comment" style="font-size:14px;">Comments${requiredHTML}:</label><br>
+                <textarea id="cancel_comment" cols=30 rows=3 placeholder="Enter Comment"
+                    style="width:100%;resize: vertical;" ${requiredAttr}></textarea>
             </div>`
         );
-        dialog_confirm.setSaveHandler(function() {
+
+        const handleCancel = () => {
             let comment = $('#cancel_comment').val();
-            $.ajax({
-                type: 'POST', url: 'api/form/<!--{$recordID|strip_tags|escape}-->/cancel',
-                data: {CSRFToken: '<!--{$CSRFToken}-->', comment: comment},
-                success: function(response) {
-                    if (response == 1) {
-                        window.location.href="index.php?a=cancelled_request&cancelled=<!--{$recordID|strip_tags}-->";
-                    } else { alert(response); }
-                },
-                error: function() { console.log('There was an error canceling the request!'); },
-                cache: false
-            });
-        });
+            if (comment.trim() === '' && requireComment === true) {
+                let errEl = document.getElementById('cancel_comment_required');
+                if (errEl !== null) {
+                    errEl.style.backgroundColor = '#b00';
+                    errEl.style.color = '#fff';
+                }
+                setTimeout(() => {
+                    dialog_confirm?.setSaveHandler(handleCancel);
+                });
+            } else {
+                $.ajax({
+                    type: 'POST',
+                    url: 'api/form/<!--{$recordID|strip_tags|escape}-->/cancel',
+                    data: { CSRFToken: '<!--{$CSRFToken}-->', comment: comment },
+                    success: function(response) {
+                        if (response == 1) {
+                            window.location.href = "index.php?a=cancelled_request&cancelled=<!--{$recordID|strip_tags}-->";
+                        } else {
+                            alert(response);
+                        }
+                    },
+                    error: function() { console.log('There was an error canceling the request!'); },
+                    cache: false
+                });
+            }
+        };
+
+        dialog_confirm.setSaveHandler(handleCancel);
         dialog_confirm.show();
         $('#cancel_comment').focus();
     }
