@@ -829,35 +829,6 @@ function bindRecordModal() {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Credit badge
-───────────────────────────────────────────────────────────── */
-
-
-  function updateVisibility() {
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const scrollHeight = Math.max(
-      document.body.scrollHeight,
-      document.documentElement.scrollHeight,
-    );
-    const clientHeight =
-      window.innerHeight || document.documentElement.clientHeight;
-    const needsScroll = scrollHeight - clientHeight > 80;
-    btn.classList.toggle("is-visible", needsScroll && scrollTop > 120);
-  }
-
-  btn.addEventListener("click", () => {
-    const prefersReduced = window.matchMedia?.(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    window.scrollTo({ top: 0, behavior: prefersReduced ? "auto" : "smooth" });
-  });
-
-  window.addEventListener("scroll", updateVisibility, { passive: true });
-  window.addEventListener("resize", updateVisibility);
-  updateVisibility();
-}
-
-/* ─────────────────────────────────────────────────────────────
    Data helpers
 ───────────────────────────────────────────────────────────── */
 
