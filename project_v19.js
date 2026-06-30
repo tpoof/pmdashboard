@@ -1229,7 +1229,6 @@
     try {
       var query = new LeafFormQuery();
       query.addTerm("categoryID", "=", "form_9b302");
-      query.addTerm("stepID", "=", "submitted");
       query.addTerm("deleted", "=", "0");
       query.getData([
         TASK_IND.projectKey,
@@ -10709,15 +10708,18 @@
     _stepIDFetchPending.clear();
     try {
       // Silent refresh — LeafFormQuery handles chunked loading internally.
-      // stepID = "submitted" excludes in-progress copies/drafts (ghost records)
-      // that were initiated but never completed to submission. NOTE: per the
-      // LEAF formQuery docs, the "stepID" column only documents "=" paired with
-      // symbolic values (submitted, notSubmitted, resolved, notResolved,
-      // actionable, etc.) — "!=" + a symbolic value is NOT a documented
-      // combination and was unreliable in practice. "submitted" is the
-      // documented inverse of "notSubmitted" and includes records that have
-      // since progressed/resolved, since "submitted" just means "left draft
-      // state," not "still on step 1."
+      // IMPORTANT: do NOT add a "stepID" addTerm() to these queries. This
+      // LEAF instance returns stepID = null for some legitimate, non-deleted
+      // records (confirmed via direct query against task 278 / key result
+      // 80, which both have a real, populated, non-draft s1 block but
+      // stepID: null). Every documented symbolic stepID value (submitted,
+      // notSubmitted, resolved, notResolved, actionable) excludes a record
+      // whose stepID is null, so ANY stepID term — including the original
+      // "!= notSubmitted" and a later "= submitted" attempt — silently drops
+      // these records. Filtering relies on "deleted = 0" only. If
+      // ghost/draft-copy records become a visible problem again, filter
+      // those client-side (e.g. records with no populated fields at all)
+      // rather than reintroducing a stepID query term.
       var refreshCounts = {
         projects: 0,
         tasks: 0,
@@ -10739,7 +10741,6 @@
       }
 
       var projectsQuery = new LeafFormQuery();
-      projectsQuery.addTerm("stepID", "=", "submitted");
       projectsQuery.addTerm("deleted", "=", "0");
       projectsQuery.getData([
         PROJECT_IND.projectKey,
@@ -10769,7 +10770,6 @@
 
       var tasksQuery = new LeafFormQuery();
       tasksQuery.addTerm("categoryID", "=", "form_9b302");
-      tasksQuery.addTerm("stepID", "=", "submitted");
       tasksQuery.addTerm("deleted", "=", "0");
       tasksQuery.getData([
         TASK_IND.projectKey,
@@ -10796,7 +10796,6 @@
       });
 
       var keyResultsQuery = new LeafFormQuery();
-      keyResultsQuery.addTerm("stepID", "=", "submitted");
       keyResultsQuery.addTerm("deleted", "=", "0");
       keyResultsQuery.getData([KEY_RESULT_IND.okrKey, KEY_RESULT_IND.name]);
       keyResultsQuery.setExtraParams("&x-filterData=recordID,date");
@@ -10809,7 +10808,6 @@
       // projects. See state.objectivesAll note above for why.
       var objectivesQuery = new LeafFormQuery();
       objectivesQuery.addTerm("categoryID", "=", "form_a2b55");
-      objectivesQuery.addTerm("stepID", "=", "submitted");
       objectivesQuery.addTerm("deleted", "=", "0");
       objectivesQuery.getData([
         OKR_IND.okrKey,
@@ -11129,12 +11127,10 @@
       }
 
       // ── Projects query ─────────────────────────────────────────────────────
-      // stepID = "submitted" excludes in-progress copies/drafts (ghost records)
-      // initiated but never completed to submission. See note in
-      // runSilentRefresh() above — "!=" + symbolic value is not a documented
-      // stepID combination, so we use the documented "=" pairing instead.
+      // IMPORTANT: no "stepID" term — see note in runSilentRefresh() above.
+      // This LEAF instance returns stepID = null for legitimate records, so
+      // any stepID term (any symbolic value) silently drops them.
       var projectsQuery = new LeafFormQuery();
-      projectsQuery.addTerm("stepID", "=", "submitted");
       projectsQuery.addTerm("deleted", "=", "0");
       projectsQuery.getData([
         PROJECT_IND.projectKey,
@@ -11166,7 +11162,6 @@
       // Important: include ALL task fields
       var tasksQuery = new LeafFormQuery();
       tasksQuery.addTerm("categoryID", "=", "form_9b302");
-      tasksQuery.addTerm("stepID", "=", "submitted");
       tasksQuery.addTerm("deleted", "=", "0");
       tasksQuery.getData([
         TASK_IND.projectKey,
@@ -11194,7 +11189,6 @@
 
       // ── Key results query ──────────────────────────────────────────────────
       var keyResultsQuery = new LeafFormQuery();
-      keyResultsQuery.addTerm("stepID", "=", "submitted");
       keyResultsQuery.addTerm("deleted", "=", "0");
       keyResultsQuery.getData([KEY_RESULT_IND.okrKey, KEY_RESULT_IND.name]);
       keyResultsQuery.setExtraParams("&x-filterData=recordID,date");
@@ -11208,7 +11202,6 @@
       // state.objectivesAll note for why this is necessary.
       var objectivesQuery = new LeafFormQuery();
       objectivesQuery.addTerm("categoryID", "=", "form_a2b55");
-      objectivesQuery.addTerm("stepID", "=", "submitted");
       objectivesQuery.addTerm("deleted", "=", "0");
       objectivesQuery.getData([
         OKR_IND.okrKey,
