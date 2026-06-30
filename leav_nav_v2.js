@@ -1122,6 +1122,7 @@
     }
 
     wire();
+    ensureJumpToTop();
 
     /* Populate LEAF Team dynamic links after the nav is in the DOM */
     fetchLeafTeamLinks();
@@ -1922,6 +1923,64 @@
         'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
       ),
     );
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     JUMP TO TOP
+     Injected once by the nav so every page that loads leaf_nav.js
+     gets the button automatically — no per-page markup needed.
+
+     Scroll container: window is ALWAYS used. #lpSwapHost has no
+     overflow set in launchpad.css, so fetched content scrolls the
+     window — not the element itself. Calling swapHost.scrollTo()
+     on an element without overflow silently no-ops, which was the
+     original bug.
+
+     Click handler uses belt-and-suspenders scrolling so it works in
+     VA iframe contexts and browsers that silently ignore
+     { behavior: "smooth" }:
+       1. document.documentElement.scrollTop = 0  (immediate, universal)
+       2. document.body.scrollTop = 0             (Safari fallback)
+       3. window.scrollTo({ top:0, behavior:'smooth' })  (progressive)
+  ───────────────────────────────────────────────────────────── */
+  function ensureJumpToTop() {
+    if (document.getElementById("leaf-jump-top")) return;
+
+    var btn = document.createElement("button");
+    btn.id = "leaf-jump-top";
+    btn.type = "button";
+    btn.setAttribute("aria-label", "Back to top");
+    btn.setAttribute("aria-hidden", "true");
+    btn.tabIndex = -1;
+    btn.innerHTML =
+      '<span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>';
+    document.body.appendChild(btn);
+
+    function update() {
+      var top =
+        window.pageYOffset ||
+        document.documentElement.scrollTop ||
+        document.body.scrollTop ||
+        0;
+      var vis = top > 120;
+      btn.classList.toggle("lp-jump-vis", vis);
+      btn.setAttribute("aria-hidden", String(!vis));
+      btn.tabIndex = vis ? 0 : -1;
+    }
+
+    btn.addEventListener("click", function () {
+      /* Direct assignment first — works in all environments including
+         VA iframe contexts where window.scrollTo may be silently ignored. */
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (e) {}
+    });
+
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    update();
   }
 
   /* closeAllDropdowns is referenced by wireLinkIntercept above,

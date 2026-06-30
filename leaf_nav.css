@@ -371,6 +371,47 @@
   }
 }
 
+/* ── Jump to top ──
+   Injected by leaf_nav.js into every page that loads the nav.
+   Uses #leaf-jump-top (nav-namespaced ID) so it never collides
+   with any page-level .lp-jump styles.
+   z-index: 200 sits below the nav (300) and dropdown panels (400)
+   but above normal page content. */
+#leaf-jump-top {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--nav-border);
+  color: var(--nav-accent);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+#leaf-jump-top.lp-jump-vis {
+  opacity: 1;
+  pointer-events: auto;
+}
+#leaf-jump-top:hover {
+  background: var(--nav-hover-bg);
+}
+#leaf-jump-top:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 3px;
+}
+#leaf-jump-top .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
 /* ── Reduced motion (Section 508 502.2.2 / WCAG 2.3.3) ──
    Disable all transitions and animations for users who prefer
    reduced motion at the OS level. */
@@ -381,7 +422,8 @@
   .dd-link,
   .lp-nav-toggle-icon span,
   .lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(1),
-  .lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(3) {
+  .lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(3),
+  #leaf-jump-top {
     transition: none !important;
     animation: none !important;
   }

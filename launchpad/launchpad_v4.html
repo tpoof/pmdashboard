@@ -523,20 +523,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Jump to top -->
-      <button
-        class="lp-jump"
-        id="lpJump"
-        type="button"
-        aria-label="Back to top"
-        aria-hidden="true"
-        tabindex="-1"
-      >
-        <span class="material-symbols-outlined" aria-hidden="true"
-          >arrow_upward</span
-        >
-      </button>
     </div>
     <!-- /.lp -->
 
@@ -551,51 +537,6 @@
       document.addEventListener("dragstart", function (e) {
         if (e.target.tagName === "IMG") e.preventDefault();
       });
-
-      /* ── Jump-to-top ──
-         Tracks scroll on both window and #lpSwapHost so the button
-         appears correctly whether on the home view or a fetched view. */
-      (function () {
-        var btn = document.getElementById("lpJump");
-        if (!btn) return;
-
-        function update() {
-          var swapHost = document.getElementById("lpSwapHost");
-          var top =
-            (swapHost && !swapHost.hasAttribute("hidden")
-              ? swapHost.scrollTop
-              : 0) ||
-            window.pageYOffset ||
-            document.documentElement.scrollTop;
-          var vis = top > 120;
-          btn.classList.toggle("vis", vis);
-          btn.setAttribute("aria-hidden", String(!vis));
-          btn.tabIndex = vis ? 0 : -1;
-        }
-
-        btn.addEventListener("click", function () {
-          var swapHost = document.getElementById("lpSwapHost");
-          if (swapHost && !swapHost.hasAttribute("hidden")) {
-            swapHost.scrollTo({ top: 0, behavior: "smooth" });
-          } else {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }
-        });
-
-        window.addEventListener("scroll", update, { passive: true });
-        window.addEventListener("resize", update);
-
-        /* Also listen for scroll inside swap host */
-        document.addEventListener(
-          "scroll",
-          function (e) {
-            if (e.target && e.target.id === "lpSwapHost") update();
-          },
-          { passive: true, capture: true },
-        );
-
-        update();
-      })();
 
       /* ── Demo modal ── */
       (function () {
