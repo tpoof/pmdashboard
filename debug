@@ -4,7 +4,7 @@
   q.getData([8,9,10,44,11,12,13,14,16,17,18,30,39,47]);
   q.setExtraParams("&x-filterData=recordID,date,categoryID,stepID");
   var json = await q.execute();
-  console.log("RAW RESPONSE for task 278:", json);
+  console.log("RAW RESPONSE for task 278:\n" + JSON.stringify(json, null, 2));
 })();
 
 (async function debugKR80() {
@@ -13,5 +13,5 @@
   q.getData([35,36]);
   q.setExtraParams("&x-filterData=recordID,date,categoryID,stepID");
   var json = await q.execute();
-  console.log("RAW RESPONSE for key result 80:", json);
+  console.log("RAW RESPONSE for key result 80:\n" + JSON.stringify(json, null, 2));
 })();
