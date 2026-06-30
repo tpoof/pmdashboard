@@ -141,25 +141,6 @@
           desc: "Locate a LEAF site at your VA facility",
           href: "/launchpad/report.php?a=steph_search",
         },
-        { divider: true },
-        {
-          icon: "menu_book",
-          title: "Help Library",
-          desc: "Guides and documentation",
-          href: "https://leaf.va.gov/platform/help_library/report.php?a=stephanie_test1",
-        },
-        {
-          icon: "quiz",
-          title: "FAQ",
-          desc: "Answers to common questions about LEAF",
-          href: "#",
-        },
-        {
-          icon: "school",
-          title: "Learning Center",
-          desc: "Courses and training to get the most out of LEAF",
-          href: "#",
-        },
         {
           icon: "group",
           title: "Community of Practice",
@@ -171,6 +152,29 @@
           title: "Suggest an Idea",
           desc: "Submit an idea to improve LEAF",
           href: "https://leaf.va.gov/platform/ideas/",
+        },
+      ],
+    },
+    {
+      label: "Knowledge Center",
+      items: [
+        {
+          icon: "school",
+          title: "Learn",
+          desc: "Structured courses and training",
+          href: "#",
+        },
+        {
+          icon: "menu_book",
+          title: "Help Library",
+          desc: "Guides and documentation",
+          href: "https://leaf.va.gov/platform/help_library/report.php?a=stephanie_test1",
+        },
+        {
+          icon: "quiz",
+          title: "FAQ",
+          desc: "Quick answers to common questions",
+          href: "#",
         },
       ],
     },
