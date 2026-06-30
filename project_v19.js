@@ -2741,17 +2741,19 @@
     if (el2) fetchAndInjectWorkflowIcons(el2);
   }
 
-  function renderOkrsObjectivesTable(projects) {
+  function renderOkrsObjectivesTable(projects, objectives) {
     var el = document.getElementById("pmOkrsTable");
     if (!el) return;
 
-    // Primary source: the independent Objectives query (state.objectivesAll).
+    // Primary source: the independent Objectives query (state.objectivesAll
+    // by default, or a fiscal-year-filtered subset passed in by the caller).
     // Previously this table was built entirely from `projects`, which meant
     // an Objective with zero linked projects — or whose only linked
     // project(s) got filtered out upstream — would silently disappear with
     // no indication anything was missing. Objectives now have their own
     // identity; projects are only used below as a fallback enrichment for
     // an objective that's somehow missing a field on its own record.
+    var objectivesSource = objectives || state.objectivesAll || [];
     var projectOkrByKey = {};
     (projects || []).forEach(function (p) {
       var k =
@@ -2761,7 +2763,7 @@
     });
 
     var seenOkrKeys = {};
-    var okrRows = (state.objectivesAll || [])
+    var okrRows = objectivesSource
       .filter(function (o) {
         return (
           String(o.okrKey || "").trim() ||
@@ -2948,11 +2950,11 @@
     setSortIndicator("pmOkrsTable", s.key, s.dir);
   }
 
-  function renderOkrsTable(projects) {
+  function renderOkrsTable(projects, objectives) {
     if (state.okrTableView === "keyResults") {
       renderOkrsKeyResultsTable();
     } else {
-      renderOkrsObjectivesTable(projects);
+      renderOkrsObjectivesTable(projects, objectives);
     }
   }
 
@@ -2996,15 +2998,27 @@
     }
     var okrBaseTasks = state.tasksAll;
 
+    // okrRecords (1st arg) must be the independent Objectives list, not
+    // projects — an Objective with zero linked projects still needs to
+    // exist as a bucket here, otherwise any Key Result tagged with that
+    // Objective's okrKey has nowhere to attach and silently disappears
+    // from the rollup/analytics view even though it loaded fine.
+    var okrRecordsForRollup = state.objectivesAll || [];
+    if (selectedOkrFiscalYears && selectedOkrFiscalYears.size) {
+      okrRecordsForRollup = okrRecordsForRollup.filter(function (o) {
+        return selectedOkrFiscalYears.has(String(o.okrFiscalYear || "").trim());
+      });
+    }
+
     renderOkrsRollup(
-      okrBaseProjects,
+      okrRecordsForRollup,
       okrBaseProjects,
       okrBaseTasks,
       "",
       "",
       selectedOkrFiscalYears,
     );
-    renderOkrsTable(okrFiltered);
+    renderOkrsTable(okrFiltered, okrRecordsForRollup);
 
     var summary = document.getElementById("pmOkrsSummary");
     var indexWrap = document.getElementById("pmOkrIndex");
@@ -3178,21 +3192,24 @@
         okrMap[key].title = String(r.okrObjective || "").trim();
       }
     });
-    if (!Object.keys(okrMap).length && state.projectsAll.length) {
-      (state.projectsAll || []).forEach(function (r) {
-        var key = normalizeOkrKey(r.okrKey);
-        if (!key) return;
-        if (!okrMap[key]) {
-          okrMap[key] = {
-            key: key,
-            title: String(r.okrObjective || "").trim(),
-            fiscalYear: String(r.okrFiscalYear || "").trim(),
-          };
-        } else if (!okrMap[key].title && r.okrObjective) {
-          okrMap[key].title = String(r.okrObjective || "").trim();
-        }
-      });
-    }
+    // Merge in any OKR key referenced by a project but missing from the
+    // Objectives list (e.g. a legacy/orphaned okrAssociation with no
+    // matching Objective record at all). Previously this only ran when
+    // okrMap was completely empty, which meant a project-only OKR key could
+    // get silently dropped as soon as even one real Objective existed.
+    (state.projectsAll || []).forEach(function (r) {
+      var key = normalizeOkrKey(r.okrAssociation) || normalizeOkrKey(r.okrKey);
+      if (!key) return;
+      if (!okrMap[key]) {
+        okrMap[key] = {
+          key: key,
+          title: String(r.okrObjective || "").trim(),
+          fiscalYear: String(r.okrFiscalYear || "").trim(),
+        };
+      } else if (!okrMap[key].title && r.okrObjective) {
+        okrMap[key].title = String(r.okrObjective || "").trim();
+      }
+    });
 
     var keyResultsByOkr = {};
     (state.keyResultsAll || []).forEach(function (kr) {
@@ -3203,6 +3220,20 @@
       if (!keyResultsByOkr[okrKey]) keyResultsByOkr[okrKey] = {};
       if (!keyResultsByOkr[okrKey][matchKey])
         keyResultsByOkr[okrKey][matchKey] = name;
+    });
+
+    // Safety net: a Key Result whose okrKey doesn't match any known
+    // Objective or project reference is truly orphaned (e.g. typo'd OKR
+    // key, or the Objective record was deleted/never created). Rather than
+    // silently dropping it, surface it under a synthetic placeholder bucket
+    // so it stays visible and the mismatch is discoverable.
+    Object.keys(keyResultsByOkr).forEach(function (okrKey) {
+      if (okrMap[okrKey]) return;
+      okrMap[okrKey] = {
+        key: okrKey,
+        title: "(No matching Objective found — check OKR Key)",
+        fiscalYear: "",
+      };
     });
 
     var projectsByOkr = {};
