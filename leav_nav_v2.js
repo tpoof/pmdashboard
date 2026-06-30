@@ -149,6 +149,18 @@
           href: "https://leaf.va.gov/platform/help_library/report.php?a=stephanie_test1",
         },
         {
+          icon: "quiz",
+          title: "FAQ",
+          desc: "Answers to common questions about LEAF",
+          href: "#",
+        },
+        {
+          icon: "school",
+          title: "Learning Center",
+          desc: "Courses and training to get the most out of LEAF",
+          href: "#",
+        },
+        {
           icon: "group",
           title: "Community of Practice",
           desc: "Connect with LEAF users VA-wide",
