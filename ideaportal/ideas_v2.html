@@ -688,10 +688,17 @@
       /* ── Table ── */
       .ip-table {
         width: 100%;
-        min-width: 640px;
         border-collapse: collapse;
         font-size: 0.9rem;
         table-layout: fixed;
+      }
+      /* Only enforce a minimum table width below the point where fixed
+         percentage columns would crush content illegibly. Above that,
+         the table simply fills its container — no forced overflow. */
+      @media (max-width: 680px) {
+        .ip-table {
+          min-width: 640px;
+        }
       }
       .ip-table thead th {
         padding: 0;
@@ -797,32 +804,32 @@
       /* ── Column widths (requires table-layout: fixed on .ip-table) ── */
       .ip-table th:nth-child(1),
       .ip-table td:nth-child(1) {
-        width: 10%;
+        width: 9%;
       } /* ID       */
 
       .ip-table th:nth-child(2),
       .ip-table td:nth-child(2) {
-        width: 36%;
+        width: 30%;
       } /* Title    */
 
       .ip-table th:nth-child(3),
       .ip-table td:nth-child(3) {
-        width: 20%;
+        width: 19%;
       } /* Category */
 
       .ip-table th:nth-child(4),
       .ip-table td:nth-child(4) {
-        width: 16%;
+        width: 17%;
       } /* Status   */
 
       .ip-table th:nth-child(5),
       .ip-table td:nth-child(5) {
-        width: 8%;
+        width: 10%;
       } /* Votes    */
 
       .ip-table th:nth-child(6),
       .ip-table td:nth-child(6) {
-        width: 10%;
+        width: 15%;
       } /* Actions  */
 
       /* ── Title column ellipsis ── */
@@ -1627,6 +1634,117 @@
           right: 10%;
           width: auto;
           height: 1px;
+        }
+      }
+
+      /* ── Stacked card layout for tables (phones only, ≤480px) ──
+         Below this width, horizontal scrolling is replaced with a
+         vertical card list: title becomes the card heading, remaining
+         cells become labeled rows via data-label + ::before. Table
+         semantics are preserved (thead/th/scope untouched) for
+         screen readers; only the visual presentation changes. */
+      @media (max-width: 480px) {
+        .ip-tableScroll {
+          overflow-x: visible;
+          background: none;
+        }
+        .ip-table {
+          min-width: 0;
+          width: 100%;
+          table-layout: auto;
+          font-size: 0.92rem;
+        }
+        .ip-table thead {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
+        }
+        .ip-table tbody tr {
+          display: block;
+          padding: 14px 14px 12px;
+          margin-bottom: 12px;
+          border: 1px solid var(--c-gray5);
+          border-radius: var(--ip-r);
+          background: #fff;
+        }
+        .ip-table tbody tr:last-child {
+          margin-bottom: 0;
+        }
+        .ip-table tbody tr:hover td {
+          background: transparent;
+        }
+        .ip-table td {
+          display: block;
+          width: auto !important;
+          padding: 6px 0;
+          border-bottom: none;
+          white-space: normal;
+          text-align: left;
+        }
+        .ip-table td[data-label]:not(:last-child) {
+          border-bottom: 1px solid var(--c-gray5);
+        }
+        .ip-table td[data-label]::before {
+          content: attr(data-label) ": ";
+          font-family: "Public Sans", sans-serif;
+          font-weight: 700;
+          font-size: 0.78rem;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+          color: var(--ip-muted);
+          display: block;
+          margin-bottom: 2px;
+        }
+        .ip-table td.ip-cardHeading {
+          font-family: "Public Sans", sans-serif;
+          font-weight: 700;
+          font-size: 1rem;
+          color: var(--ip-navy);
+          white-space: normal;
+          overflow: visible;
+          text-overflow: clip;
+          padding-bottom: 8px;
+          margin-bottom: 4px;
+          border-bottom: 1px solid var(--ip-blue-10);
+        }
+        .ip-table td:first-child {
+          /* ID badge stays inline, top-right of card via flex on the row */
+        }
+        .ip-table tbody tr {
+          position: relative;
+        }
+        .ip-table tbody tr td[data-label="ID"] {
+          position: absolute;
+          top: 14px;
+          right: 14px;
+          padding: 0;
+        }
+        .ip-table tbody tr td[data-label="ID"]::before {
+          content: "";
+          display: none;
+        }
+        .ip-table td.ip-cardHeading {
+          padding-right: 70px;
+        }
+        .ip-table td.ip-actionsCell {
+          display: flex;
+          gap: 8px;
+          padding-top: 10px;
+          border-bottom: none;
+        }
+        .ip-table td.ip-actionsCell::before {
+          display: none;
+        }
+        .ip-table td.ip-actionsCell .ip-upvote,
+        .ip-table td.ip-actionsCell .ip-share {
+          flex: 1 1 auto;
+          justify-content: center;
         }
       }
       @media (prefers-reduced-motion: reduce) {

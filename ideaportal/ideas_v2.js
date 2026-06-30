@@ -999,18 +999,18 @@ function buildIdeaRow(idea) {
 
   return `
     <tr data-record-id="${recordID}">
-      <td>
+      <td data-label="ID">
         <a class="ip-recordLink"
            data-record-id="${recordID}"
            data-title="${title}"
            aria-haspopup="dialog"
            href="${escapeHtml(recordLink)}">#${recordID}</a>
       </td>
-      <td class="ip-col-title" title="${title}">${titleDisplay}</td>
-      <td>${category}</td>
-      <td>${statusMarkup}</td>
-      <td class="ip-votes">${votes}</td>
-      <td class="ip-actionsCell">
+      <td class="ip-col-title ip-cardHeading" title="${title}">${titleDisplay}</td>
+      <td data-label="Category">${category}</td>
+      <td data-label="Status">${statusMarkup}</td>
+      <td class="ip-votes" data-label="Votes">${votes}</td>
+      <td class="ip-actionsCell" data-label="Actions">
         <button class="ip-upvote${isVoted ? " is-voted" : ""}"
           data-record-id="${recordID}"
           ${isVoted ? "disabled" : ""}
@@ -2079,8 +2079,8 @@ const votedModalState = {
 function buildVotedRow(id, idea) {
   if (!idea) {
     return `<tr data-voted-id="${escapeHtml(id)}">
-      <td><span style="color:var(--ip-muted)">#${escapeHtml(id)}</span></td>
-      <td style="color:var(--ip-muted);font-style:italic" colspan="4">Idea not available</td>
+      <td data-label="ID"><span style="color:var(--ip-muted)">#${escapeHtml(id)}</span></td>
+      <td class="ip-cardHeading" style="color:var(--ip-muted);font-style:italic" colspan="4">Idea not available</td>
     </tr>`;
   }
   const titleFull = escapeHtml(idea.title || `Idea ${id}`);
@@ -2091,11 +2091,11 @@ function buildVotedRow(id, idea) {
   const votes = idea.votes || 0;
   const recordLink = escapeHtml(idea.recordLink || `${RECORD_VIEW_URL}${id}`);
   return `<tr data-voted-id="${escapeHtml(id)}">
-    <td><a class="ip-recordLink" href="${recordLink}" data-record-id="${escapeHtml(id)}" data-title="${titleFull}" aria-haspopup="dialog">#${escapeHtml(id)}</a></td>
-    <td class="ip-col-title" title="${titleFull}">${titleDisplay}</td>
-    <td>${category}</td>
-    <td><span class="ip-badge ${statusBadgeClass}">${escapeHtml(statusLabel)}</span></td>
-    <td>${votes}</td>
+    <td data-label="ID"><a class="ip-recordLink" href="${recordLink}" data-record-id="${escapeHtml(id)}" data-title="${titleFull}" aria-haspopup="dialog">#${escapeHtml(id)}</a></td>
+    <td class="ip-col-title ip-cardHeading" title="${titleFull}">${titleDisplay}</td>
+    <td data-label="Category">${category}</td>
+    <td data-label="Status"><span class="ip-badge ${statusBadgeClass}">${escapeHtml(statusLabel)}</span></td>
+    <td data-label="Votes">${votes}</td>
   </tr>`;
 }
 
