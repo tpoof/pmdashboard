@@ -276,6 +276,164 @@
     okrKeyToTitle: {}, // okrKey → objective title
   };
 
+  // ── Debug helpers ──────────────────────────────────────────────────────
+  // Exposed on window so specific records can be traced through every stage
+  // of the load/filter/render pipeline from the browser console. Usage:
+  //   pmDebug.traceTask(278)
+  //   pmDebug.traceKeyResult(80)
+  //   pmDebug.state   // live reference to internal state, for ad-hoc checks
+  window.pmDebug = {
+    state: state,
+    traceTask: function (recordID) {
+      var rid = String(recordID).trim();
+      console.group("[pmDebug] Tracing task " + rid);
+
+      var inTasksAll = (state.tasksAll || []).find(function (t) {
+        return String(t.recordID) === rid;
+      });
+      console.log(
+        "1) In state.tasksAll (passed query filter + pre-filter + normalize)?",
+        !!inTasksAll,
+        inTasksAll || "",
+      );
+
+      if (!inTasksAll) {
+        console.warn(
+          "Record did not survive the load pipeline (query term, categoryID guard, or hasAnyS1Value pre-filter). " +
+            "Run the raw LeafFormQuery check from the console (see earlier debugTask278 snippet) to inspect stepID/categoryID/s-blocks directly.",
+        );
+        console.groupEnd();
+        return;
+      }
+
+      var filters = buildTaskFilterState();
+      console.log("2) Current active task filters:", {
+        searchQuery: filters.q,
+        projectKeys: Array.from(filters.projectKeys),
+        statuses: Array.from(filters.statuses),
+        assignees: Array.from(filters.assignees),
+        priorities: Array.from(filters.priorities),
+        categories: Array.from(filters.categories),
+        devOnly: filters.devOnly,
+        recurringOnly: filters.recurringOnly,
+        dateRange: filters.dateRange,
+      });
+
+      var matches = taskMatchesFilters(inTasksAll, filters);
+      console.log("3) taskMatchesFilters() result:", matches);
+      if (!matches) {
+        // Re-derive *why* it failed by checking each predicate in isolation.
+        var reasons = [];
+        if (filters.devOnly && !isDevelopmentTask(inTasksAll))
+          reasons.push("devOnly filter active, task is not a dev task");
+        if (filters.recurringOnly && !inTasksAll.isRecurring)
+          reasons.push("recurringOnly filter active, task is not recurring");
+        if (!matchesFilterSet(inTasksAll.projectKey, filters.projectKeys))
+          reasons.push(
+            'projectKey "' +
+              inTasksAll.projectKey +
+              '" not in active project filter set',
+          );
+        if (!matchesFilterSet(inTasksAll.status, filters.statuses))
+          reasons.push(
+            'status "' +
+              inTasksAll.status +
+              '" not in active status filter set',
+          );
+        if (!matchesFilterSet(inTasksAll.assignedTo, filters.assignees))
+          reasons.push(
+            'assignedTo "' +
+              inTasksAll.assignedTo +
+              '" not in active assignee filter set',
+          );
+        if (!matchesFilterSet(inTasksAll.priority, filters.priorities))
+          reasons.push(
+            'priority "' +
+              inTasksAll.priority +
+              '" not in active priority filter set',
+          );
+        if (!matchesFilterSet(inTasksAll.category, filters.categories))
+          reasons.push(
+            'category "' +
+              inTasksAll.category +
+              '" not in active category filter set',
+          );
+        console.warn("Failed filter predicate(s):", reasons);
+      } else {
+        console.log(
+          "Task passes all active filters. If it's still not visible, the issue is in pagination, sort, or a specific view's own filtering (e.g. Gantt drops archived-status tasks).",
+        );
+      }
+      console.groupEnd();
+    },
+    traceKeyResult: function (recordID) {
+      var rid = String(recordID).trim();
+      console.group("[pmDebug] Tracing key result " + rid);
+
+      var inKRAll = (state.keyResultsAll || []).find(function (k) {
+        return String(k.recordID) === rid;
+      });
+      console.log(
+        "1) In state.keyResultsAll (passed query filter + pre-filter + normalize)?",
+        !!inKRAll,
+        inKRAll || "",
+      );
+      if (!inKRAll) {
+        console.warn(
+          "Record did not survive the load pipeline. Run the raw LeafFormQuery check to inspect stepID/categoryID/s-blocks directly.",
+        );
+        console.groupEnd();
+        return;
+      }
+
+      var okrKey = normalizeOkrKey(inKRAll.okrKey);
+      console.log("2) Normalized OKR key:", okrKey || "(blank)");
+      if (!okrKey) {
+        console.warn(
+          "Key result has no okrKey — it cannot attach to any Objective and will not appear in the rollup.",
+        );
+        console.groupEnd();
+        return;
+      }
+
+      var inObjectivesAll = (state.objectivesAll || []).find(function (o) {
+        return normalizeOkrKey(o.okrKey) === okrKey;
+      });
+      console.log(
+        "3) Matching Objective in state.objectivesAll (independent query)?",
+        !!inObjectivesAll,
+        inObjectivesAll || "",
+      );
+
+      var matchingProjects = (state.projectsAll || []).filter(function (p) {
+        return (
+          normalizeOkrKey(p.okrAssociation) === okrKey ||
+          normalizeOkrKey(p.okrKey) === okrKey
+        );
+      });
+      console.log(
+        "4) Projects referencing this OKR key:",
+        matchingProjects.length,
+        matchingProjects,
+      );
+
+      if (!inObjectivesAll && !matchingProjects.length) {
+        console.warn(
+          'No Objective record and no project references OKR key "' +
+            okrKey +
+            '". This key result is orphaned — it should now appear under a synthetic "(No matching Objective found)" bucket in the rollup. If it does not, the rollup itself may not be re-rendering — try switching tabs or hard-refreshing.',
+        );
+      } else {
+        console.log(
+          "Key result has a valid anchor (Objective and/or project) and should appear in the rollup grouped under " +
+            okrKey +
+            ". If it's still not visible in the UI, check whether an OKR Fiscal Year filter is active and excluding it — fiscal year is read from the Objective/project record, not the key result itself.",
+        );
+      }
+      console.groupEnd();
+    },
+  };
+
   var _kanbanColsCache = { devOnly: null, cols: null };
 
   // Persistent dedup — survives page refresh
