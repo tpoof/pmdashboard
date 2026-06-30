@@ -1595,6 +1595,7 @@
       @media (max-width: 860px) {
         .ip-mainLayout {
           grid-template-columns: 1fr;
+          padding: 16px 16px 20px;
         }
         .ip-sidebar {
           position: static;
@@ -1605,8 +1606,26 @@
           flex-wrap: wrap;
           padding-right: 0;
         }
+        .ip-tabs {
+          flex-wrap: wrap;
+          width: 100%;
+        }
         .ip-tab {
           padding: 10px 14px;
+          flex: 1 1 auto;
+          justify-content: center;
+        }
+      }
+      @media (max-width: 420px) {
+        .ip-tab {
+          padding: 9px 8px;
+          font-size: 0.82rem;
+          gap: 4px;
+          white-space: normal;
+          text-align: center;
+        }
+        .ip-tab .material-symbols-outlined {
+          font-size: 18px;
         }
       }
       @media (max-width: 600px) {
