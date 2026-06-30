@@ -158,7 +158,7 @@
           icon: "lightbulb",
           title: "Suggest an Idea",
           desc: "Submit an idea to improve LEAF",
-          href: "/platform/ideas/report.php?a=v3",
+          href: "https://leaf.va.gov/platform/ideas/",
         },
       ],
     },

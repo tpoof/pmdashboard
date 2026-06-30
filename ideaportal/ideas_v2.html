@@ -652,9 +652,43 @@
         border: 0;
       }
 
+      /* ── Table scroll wrapper (horizontal scroll fallback for narrow
+           viewports). Wraps .ip-table so columns never get crushed below
+           a usable width — users scroll horizontally on small screens
+           instead of content being clipped or overlapping. ── */
+      .ip-tableScroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: var(--ip-r);
+        /* Subtle edge-fade cue so users notice the table scrolls when it
+           overflows; fades disappear automatically once fully scrolled. */
+        background:
+          linear-gradient(to right, #fff 30%, rgba(255, 255, 255, 0)),
+          linear-gradient(to right, rgba(255, 255, 255, 0), #fff 70%) 100% 0,
+          radial-gradient(
+            farthest-side at 0 50%,
+            rgba(0, 0, 0, 0.12),
+            rgba(0, 0, 0, 0)
+          ),
+          radial-gradient(
+              farthest-side at 100% 50%,
+              rgba(0, 0, 0, 0.12),
+              rgba(0, 0, 0, 0)
+            )
+            100% 0;
+        background-repeat: no-repeat;
+        background-size:
+          40px 100%,
+          40px 100%,
+          14px 100%,
+          14px 100%;
+        background-attachment: local, local, scroll, scroll;
+      }
+
       /* ── Table ── */
       .ip-table {
         width: 100%;
+        min-width: 640px;
         border-collapse: collapse;
         font-size: 0.9rem;
         table-layout: fixed;
@@ -1143,6 +1177,17 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      @media (max-width: 400px) {
+        .ip-actions {
+          padding: 14px 16px;
+        }
+        .ip-actions .ip-btn {
+          flex: 1 1 auto;
+          justify-content: center;
+        }
       }
 
       /* ── Record modal ── */
@@ -1183,6 +1228,18 @@
         border-bottom: 1px solid var(--ip-blue-10);
         flex-shrink: 0;
         background: #fff;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      @media (max-width: 400px) {
+        .ip-recordModal__header {
+          padding: 12px 14px;
+        }
+        .ip-recordModal__openTab {
+          font-size: 0.85rem;
+          padding-left: 10px;
+          padding-right: 10px;
+        }
       }
       .ip-recordModal__title {
         font-family: "Public Sans", sans-serif;
@@ -1884,62 +1941,64 @@
                     aria-live="polite"
                     hidden
                   ></div>
-                  <table id="tblIdeas" class="ip-table">
-                    <caption class="ip-srOnly">
-                      All ideas table
-                    </caption>
-                    <thead>
-                      <tr>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="id"
-                          >
-                            ID
-                          </button>
-                        </th>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="title"
-                          >
-                            Title
-                          </button>
-                        </th>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="category"
-                          >
-                            Category
-                          </button>
-                        </th>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="status"
-                          >
-                            Status
-                          </button>
-                        </th>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="votes"
-                          >
-                            Votes
-                          </button>
-                        </th>
-                        <th class="ip-col-actions" scope="col">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="results"></tbody>
-                  </table>
+                  <div class="ip-tableScroll">
+                    <table id="tblIdeas" class="ip-table">
+                      <caption class="ip-srOnly">
+                        All ideas table
+                      </caption>
+                      <thead>
+                        <tr>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="id"
+                            >
+                              ID
+                            </button>
+                          </th>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="title"
+                            >
+                              Title
+                            </button>
+                          </th>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="category"
+                            >
+                              Category
+                            </button>
+                          </th>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="status"
+                            >
+                              Status
+                            </button>
+                          </th>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="votes"
+                            >
+                              Votes
+                            </button>
+                          </th>
+                          <th class="ip-col-actions" scope="col">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="results"></tbody>
+                    </table>
+                  </div>
                   <div
                     class="ip-pagination"
                     id="allPagination"
@@ -1992,62 +2051,64 @@
                     The 10 most voted ideas, ranked by votes. Cast your vote to
                     help the best ideas rise to the top.
                   </p>
-                  <table id="tblTopIdeas" class="ip-table">
-                    <caption class="ip-srOnly">
-                      Top 10 ideas table
-                    </caption>
-                    <thead>
-                      <tr>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="id"
-                          >
-                            ID
-                          </button>
-                        </th>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="title"
-                          >
-                            Title
-                          </button>
-                        </th>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="category"
-                          >
-                            Category
-                          </button>
-                        </th>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="status"
-                          >
-                            Status
-                          </button>
-                        </th>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="votes"
-                          >
-                            Votes
-                          </button>
-                        </th>
-                        <th class="ip-col-actions" scope="col">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="topResults"></tbody>
-                  </table>
+                  <div class="ip-tableScroll">
+                    <table id="tblTopIdeas" class="ip-table">
+                      <caption class="ip-srOnly">
+                        Top 10 ideas table
+                      </caption>
+                      <thead>
+                        <tr>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="id"
+                            >
+                              ID
+                            </button>
+                          </th>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="title"
+                            >
+                              Title
+                            </button>
+                          </th>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="category"
+                            >
+                              Category
+                            </button>
+                          </th>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="status"
+                            >
+                              Status
+                            </button>
+                          </th>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="votes"
+                            >
+                              Votes
+                            </button>
+                          </th>
+                          <th class="ip-col-actions" scope="col">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="topResults"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
@@ -2095,62 +2156,64 @@
                     aria-live="polite"
                     hidden
                   ></div>
-                  <table id="tblMyIdeas" class="ip-table">
-                    <caption class="ip-srOnly">
-                      My ideas table
-                    </caption>
-                    <thead>
-                      <tr>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="id"
-                          >
-                            ID
-                          </button>
-                        </th>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="title"
-                          >
-                            Title
-                          </button>
-                        </th>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="category"
-                          >
-                            Category
-                          </button>
-                        </th>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="status"
-                          >
-                            Status
-                          </button>
-                        </th>
-                        <th class="ip-sortable" scope="col" aria-sort="none">
-                          <button
-                            class="ip-sortBtn"
-                            type="button"
-                            data-sort="votes"
-                          >
-                            Votes
-                          </button>
-                        </th>
-                        <th class="ip-col-actions" scope="col">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="myResults"></tbody>
-                  </table>
+                  <div class="ip-tableScroll">
+                    <table id="tblMyIdeas" class="ip-table">
+                      <caption class="ip-srOnly">
+                        My ideas table
+                      </caption>
+                      <thead>
+                        <tr>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="id"
+                            >
+                              ID
+                            </button>
+                          </th>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="title"
+                            >
+                              Title
+                            </button>
+                          </th>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="category"
+                            >
+                              Category
+                            </button>
+                          </th>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="status"
+                            >
+                              Status
+                            </button>
+                          </th>
+                          <th class="ip-sortable" scope="col" aria-sort="none">
+                            <button
+                              class="ip-sortBtn"
+                              type="button"
+                              data-sort="votes"
+                            >
+                              Votes
+                            </button>
+                          </th>
+                          <th class="ip-col-actions" scope="col">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="myResults"></tbody>
+                    </table>
+                  </div>
                   <div
                     class="ip-pagination"
                     id="myPagination"
@@ -2302,6 +2365,7 @@
                 <div
                   id="otherCategoryWrapper"
                   style="display: none; margin-top: 0.5rem"
+                  aria-live="polite"
                 >
                   <label for="inpOtherCategory">Please specify category:</label>
                   <input
@@ -2467,42 +2531,56 @@
             <div class="ip-votedModal__empty" id="ipVotedModalNoResults" hidden>
               No ideas match your search.
             </div>
-            <table class="ip-table" id="ipVotedTable" hidden>
-              <thead>
-                <tr>
-                  <th class="ip-sortable" scope="col" aria-sort="ascending">
-                    <button class="ip-sortBtn" type="button" data-sort="id">
-                      ID
-                    </button>
-                  </th>
-                  <th class="ip-sortable" scope="col" aria-sort="none">
-                    <button class="ip-sortBtn" type="button" data-sort="title">
-                      Title
-                    </button>
-                  </th>
-                  <th class="ip-sortable" scope="col" aria-sort="none">
-                    <button
-                      class="ip-sortBtn"
-                      type="button"
-                      data-sort="category"
-                    >
-                      Category
-                    </button>
-                  </th>
-                  <th class="ip-sortable" scope="col" aria-sort="none">
-                    <button class="ip-sortBtn" type="button" data-sort="status">
-                      Status
-                    </button>
-                  </th>
-                  <th class="ip-sortable" scope="col" aria-sort="none">
-                    <button class="ip-sortBtn" type="button" data-sort="votes">
-                      Votes
-                    </button>
-                  </th>
-                </tr>
-              </thead>
-              <tbody id="ipVotedTableBody"></tbody>
-            </table>
+            <div class="ip-tableScroll">
+              <table class="ip-table" id="ipVotedTable" hidden>
+                <thead>
+                  <tr>
+                    <th class="ip-sortable" scope="col" aria-sort="ascending">
+                      <button class="ip-sortBtn" type="button" data-sort="id">
+                        ID
+                      </button>
+                    </th>
+                    <th class="ip-sortable" scope="col" aria-sort="none">
+                      <button
+                        class="ip-sortBtn"
+                        type="button"
+                        data-sort="title"
+                      >
+                        Title
+                      </button>
+                    </th>
+                    <th class="ip-sortable" scope="col" aria-sort="none">
+                      <button
+                        class="ip-sortBtn"
+                        type="button"
+                        data-sort="category"
+                      >
+                        Category
+                      </button>
+                    </th>
+                    <th class="ip-sortable" scope="col" aria-sort="none">
+                      <button
+                        class="ip-sortBtn"
+                        type="button"
+                        data-sort="status"
+                      >
+                        Status
+                      </button>
+                    </th>
+                    <th class="ip-sortable" scope="col" aria-sort="none">
+                      <button
+                        class="ip-sortBtn"
+                        type="button"
+                        data-sort="votes"
+                      >
+                        Votes
+                      </button>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="ipVotedTableBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

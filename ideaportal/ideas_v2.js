@@ -1882,7 +1882,11 @@ function bindCategoryChange() {
     const isOther = categorySelect.value === "Other";
     otherWrapper.style.display = isOther ? "" : "none";
     otherInput.required = isOther;
-    if (!isOther) {
+    if (isOther) {
+      // Move focus into the newly revealed field so keyboard and screen
+      // reader users immediately know it has appeared and is required.
+      otherInput.focus();
+    } else {
       otherInput.value = "";
       otherInput.removeAttribute("aria-invalid");
     }

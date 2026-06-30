@@ -14,6 +14,8 @@
 
      <script>
        window.LEAF_BREADCRUMB = ["resources", { label: "Help Library" }];
+       // or: ["about-leaf", { label: "Impact" }]
+       // or: ["solutions", { label: "Form Library" }]
      </script>
      <script src="/platform/designs/files/leaf_breadcrumb.js"></script>
 
@@ -34,7 +36,9 @@
 
   /* ── Shared crumb groups — edit here to rename/repoint sitewide ── */
   var CRUMB_GROUPS = {
-    resources: { label: "Resources", href: "/platform/?a=Resources" },
+    "about-leaf": { label: "About LEAF" },
+    solutions: { label: "Solutions" },
+    resources: { label: "Resources" },
   };
 
   var HOME_CRUMB = {
