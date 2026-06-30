@@ -1,17 +1,37 @@
-(async function debugTask278() {
-  var q = new LeafFormQuery();
-  q.addTerm("recordID", "=", "278");
-  q.getData([8,9,10,44,11,12,13,14,16,17,18,30,39,47]);
-  q.setExtraParams("&x-filterData=recordID,date,categoryID,stepID");
-  var json = await q.execute();
-  console.log("RAW RESPONSE for task 278:\n" + JSON.stringify(json, null, 2));
+(async function debugStepID() {
+  var q1 = new LeafFormQuery();
+  q1.addTerm("recordID", "=", "278");
+  q1.join("status");
+  q1.setExtraParams("&x-filterData=recordID,date,categoryID,stepID,status");
+  var r1 = await q1.execute();
+  console.log("TASK 278 with status join:\n" + JSON.stringify(r1, null, 2));
+
+  var q2 = new LeafFormQuery();
+  q2.addTerm("recordID", "=", "80");
+  q2.join("status");
+  q2.setExtraParams("&x-filterData=recordID,date,categoryID,stepID,status");
+  var r2 = await q2.execute();
+  console.log("KEY RESULT 80 with status join:\n" + JSON.stringify(r2, null, 2));
 })();
 
-(async function debugKR80() {
+
+
+(async function testSubmittedFilter() {
+  var q = new LeafFormQuery();
+  q.addTerm("recordID", "=", "278");
+  q.addTerm("stepID", "=", "submitted");
+  var r = await q.execute();
+  console.log("TASK 278 WITH stepID=submitted filter:", r);
+  console.log("Is empty?", !r || Object.keys(r).length === 0);
+})();
+
+
+
+(async function testSubmittedFilterKR() {
   var q = new LeafFormQuery();
   q.addTerm("recordID", "=", "80");
-  q.getData([35,36]);
-  q.setExtraParams("&x-filterData=recordID,date,categoryID,stepID");
-  var json = await q.execute();
-  console.log("RAW RESPONSE for key result 80:\n" + JSON.stringify(json, null, 2));
+  q.addTerm("stepID", "=", "submitted");
+  var r = await q.execute();
+  console.log("KR 80 WITH stepID=submitted filter:", r);
+  console.log("Is empty?", !r || Object.keys(r).length === 0);
 })();
