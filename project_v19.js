@@ -206,6 +206,13 @@
     },
     drilldownActive: {},
     keyResultsAll: [],
+    // Independent Objectives list (NOT derived from projects). Previously the
+    // OKR Objectives table was built solely from project records that happen
+    // to link to an OKR via okrAssociation — an Objective with zero linked
+    // projects, or whose only linked project got filtered out upstream,
+    // would silently vanish with no indication anything was missing. This
+    // gives Objectives their own query/identity, same pattern as Key Results.
+    objectivesAll: [],
     projectsLoaded: false,
     tasksVersion: 0,
     projectsVersion: 0,
@@ -1064,6 +1071,7 @@
     try {
       var query = new LeafFormQuery();
       query.addTerm("categoryID", "=", "form_9b302");
+      query.addTerm("stepID", "=", "submitted");
       query.addTerm("deleted", "=", "0");
       query.getData([
         TASK_IND.projectKey,
@@ -1874,6 +1882,26 @@
     return decodeEntities(String(v).trim());
   }
 
+  // String-safe field accessor that, unlike extractFromS1, doesn't stop at
+  // row.s1 — it falls back through later workflow step blocks (s2, s3, ...),
+  // then the row root, then row.data, via extractRawIndicator. Use this for
+  // any task/project field that should keep showing up after a record
+  // progresses through workflow steps. Returns "" (not null) for missing
+  // values and coerces non-string raw values (objects/numbers) to a trimmed
+  // string, mirroring extractFromS1's contract so callers don't need to change.
+  function extractFieldText(row, indicatorId) {
+    var v = extractRawIndicator(row, indicatorId);
+    if (v == null) return "";
+    if (typeof v === "object") {
+      try {
+        v = JSON.stringify(v);
+      } catch (e) {
+        v = "";
+      }
+    }
+    return String(v).trim();
+  }
+
   function extractRawIndicator(row, indicatorId) {
     if (!row) return null;
     var key = "id" + String(indicatorId);
@@ -2094,7 +2122,7 @@
     var depsRaw =
       depsRawAny != null && typeof depsRawAny !== "object"
         ? String(depsRawAny)
-        : extractFromS1(row, TASK_IND.dependencies);
+        : extractFieldText(row, TASK_IND.dependencies);
 
     // If we actually got an array/object, try to JSON-stringify then parse with the same logic
     if (depsRawAny != null && typeof depsRawAny === "object") {
@@ -2107,25 +2135,39 @@
 
     return {
       recordID: recordID,
-      projectKey: extractFromS1(row, TASK_IND.projectKey),
-      title: extractFromS1(row, TASK_IND.title),
-      status: extractFromS1(row, TASK_IND.status),
-      otherSubType: extractFromS1(row, TASK_IND.otherSubType),
-      assignedTo: extractFromS1(row, TASK_IND.assignedTo),
+      projectKey: extractFieldText(row, TASK_IND.projectKey),
+      title: extractFieldText(row, TASK_IND.title),
+      status: extractFieldText(row, TASK_IND.status),
+      otherSubType: extractFieldText(row, TASK_IND.otherSubType),
+      assignedTo: extractFieldText(row, TASK_IND.assignedTo),
       assignedToUserName: (function () {
-        var og = row.s1 && row.s1["id" + TASK_IND.assignedTo + "_orgchart"];
+        // orgchart metadata can live alongside the field value in whichever
+        // step block currently holds it, so check s1 first, then later steps.
+        var idKey = "id" + TASK_IND.assignedTo + "_orgchart";
+        var og = row.s1 && row.s1[idKey];
+        if (!og) {
+          var stepKeys = Object.keys(row || {}).filter(function (k) {
+            return /^s\d+$/.test(k);
+          });
+          for (var i = 0; i < stepKeys.length; i++) {
+            if (row[stepKeys[i]] && row[stepKeys[i]][idKey]) {
+              og = row[stepKeys[i]][idKey];
+              break;
+            }
+          }
+        }
         return og && og.userName ? String(og.userName).trim() : "";
       })(),
-      start: extractFromS1(row, TASK_IND.startDate),
-      due: extractFromS1(row, TASK_IND.dueDate),
-      priority: extractFromS1(row, TASK_IND.priority),
-      category: extractFromS1(row, TASK_IND.category),
-      supportTicket: extractFromS1(row, TASK_IND.supportTicket),
-      okrAssociation: extractFromS1(row, TASK_IND.okrAssociation),
-      keyResultSelection: extractFromS1(row, TASK_IND.keyResultSelection),
-      actualCompletion: extractFromS1(row, TASK_IND.actualCompletionDate),
+      start: extractFieldText(row, TASK_IND.startDate),
+      due: extractFieldText(row, TASK_IND.dueDate),
+      priority: extractFieldText(row, TASK_IND.priority),
+      category: extractFieldText(row, TASK_IND.category),
+      supportTicket: extractFieldText(row, TASK_IND.supportTicket),
+      okrAssociation: extractFieldText(row, TASK_IND.okrAssociation),
+      keyResultSelection: extractFieldText(row, TASK_IND.keyResultSelection),
+      actualCompletion: extractFieldText(row, TASK_IND.actualCompletionDate),
       isRecurring: (function () {
-        var v = extractFromS1(row, TASK_IND.isRecurring);
+        var v = extractFieldText(row, TASK_IND.isRecurring);
         return v === "Yes" || v === "1" || v === "yes";
       })(),
       createdAt: createdAt,
@@ -2150,28 +2192,43 @@
       "";
     return {
       recordID: recordID,
-      projectKey: extractFromS1(row, PROJECT_IND.projectKey),
-      projectName: extractFromS1(row, PROJECT_IND.projectName),
-      description: extractFromS1(row, PROJECT_IND.description),
-      owner: extractFromS1(row, PROJECT_IND.owner),
-      projectStatus: extractFromS1(row, PROJECT_IND.projectStatus),
-      projectFiscalYear: extractFromS1(row, PROJECT_IND.projectFiscalYear),
-      okrAssociation: extractFromS1(row, PROJECT_IND.okrAssociation),
-      projectType: extractFromS1(row, PROJECT_IND.projectType),
-      keyResultSelection: extractFromS1(row, PROJECT_IND.keyResultSelection),
-      ticketNumber: extractFromS1(row, PROJECT_IND.ticketNumber),
-      projectStartDate: extractFromS1(row, PROJECT_IND.projectStartDate),
-      projectEndDate: extractFromS1(row, PROJECT_IND.projectEndDate),
-      customerOverviewUrl: extractFromS1(row, PROJECT_IND.customerOverviewUrl),
+      projectKey: extractFieldText(row, PROJECT_IND.projectKey),
+      projectName: extractFieldText(row, PROJECT_IND.projectName),
+      description: extractFieldText(row, PROJECT_IND.description),
+      owner: extractFieldText(row, PROJECT_IND.owner),
+      projectStatus: extractFieldText(row, PROJECT_IND.projectStatus),
+      projectFiscalYear: extractFieldText(row, PROJECT_IND.projectFiscalYear),
+      okrAssociation: extractFieldText(row, PROJECT_IND.okrAssociation),
+      projectType: extractFieldText(row, PROJECT_IND.projectType),
+      keyResultSelection: extractFieldText(row, PROJECT_IND.keyResultSelection),
+      ticketNumber: extractFieldText(row, PROJECT_IND.ticketNumber),
+      projectStartDate: extractFieldText(row, PROJECT_IND.projectStartDate),
+      projectEndDate: extractFieldText(row, PROJECT_IND.projectEndDate),
+      customerOverviewUrl: extractFieldText(
+        row,
+        PROJECT_IND.customerOverviewUrl,
+      ),
       ownerUserName: (function () {
-        var og = row.s1 && row.s1["id" + PROJECT_IND.owner + "_orgchart"];
+        var idKey = "id" + PROJECT_IND.owner + "_orgchart";
+        var og = row.s1 && row.s1[idKey];
+        if (!og) {
+          var stepKeys = Object.keys(row || {}).filter(function (k) {
+            return /^s\d+$/.test(k);
+          });
+          for (var i = 0; i < stepKeys.length; i++) {
+            if (row[stepKeys[i]] && row[stepKeys[i]][idKey]) {
+              og = row[stepKeys[i]][idKey];
+              break;
+            }
+          }
+        }
         return og && og.userName ? String(og.userName).trim() : "";
       })(),
-      okrKey: extractFromS1(row, OKR_IND.okrKey),
-      okrObjective: extractFromS1(row, OKR_IND.objective),
-      okrStartDate: extractFromS1(row, OKR_IND.startDate),
-      okrEndDate: extractFromS1(row, OKR_IND.endDate),
-      okrFiscalYear: extractFromS1(row, OKR_IND.fiscalYear),
+      okrKey: extractFieldText(row, OKR_IND.okrKey),
+      okrObjective: extractFieldText(row, OKR_IND.objective),
+      okrStartDate: extractFieldText(row, OKR_IND.startDate),
+      okrEndDate: extractFieldText(row, OKR_IND.endDate),
+      okrFiscalYear: extractFieldText(row, OKR_IND.fiscalYear),
       createdAt: createdAt,
       href: recordID
         ? "index.php?a=printview&recordID=" + encodeURIComponent(recordID)
@@ -2192,11 +2249,42 @@
     };
   }
 
+  // Normalizes a record from the independent Objectives query (form_a2b55).
+  // Field names intentionally match the okr* fields already denormalized
+  // onto project records (okrKey, okrObjective, etc.) so existing render
+  // code that reads p.okrKey/p.okrObjective can be pointed at an objective
+  // object with minimal changes.
+  function normalizeObjective(row) {
+    var recordID = getRecordID(row);
+    return {
+      recordID: recordID,
+      okrKey: String(extractRawIndicator(row, OKR_IND.okrKey) || "").trim(),
+      okrObjective: String(
+        extractRawIndicator(row, OKR_IND.objective) || "",
+      ).trim(),
+      okrStartDate: String(
+        extractRawIndicator(row, OKR_IND.startDate) || "",
+      ).trim(),
+      okrEndDate: String(
+        extractRawIndicator(row, OKR_IND.endDate) || "",
+      ).trim(),
+      okrFiscalYear: String(
+        extractRawIndicator(row, OKR_IND.fiscalYear) || "",
+      ).trim(),
+    };
+  }
+
+  // NOTE: originally checked row.s1 only. Records that have progressed past
+  // step 1 in the LEAF workflow can have their current field values living in
+  // a later step block (s2, s3, ...) rather than s1, which caused legitimate
+  // tasks/projects to be silently dropped here even though the data existed.
+  // This now mirrors hasAnyIndicatorValue's lenient, multi-step lookup via
+  // extractRawIndicator so the pre-filter can't disagree with what
+  // normalizeTask/normalizeProject would actually find.
   function hasAnyS1Value(row, indicatorIds) {
-    if (!row || !row.s1) return false;
+    if (!row) return false;
     for (var i = 0; i < indicatorIds.length; i++) {
-      var key = "id" + String(indicatorIds[i]);
-      var v = row.s1[key];
+      var v = extractRawIndicator(row, indicatorIds[i]);
       if (v !== null && v !== undefined && String(v).trim() !== "") return true;
     }
     return false;
@@ -2657,14 +2745,72 @@
     var el = document.getElementById("pmOkrsTable");
     if (!el) return;
 
-    var okrRows = (projects || []).filter(function (p) {
-      return (
+    // Primary source: the independent Objectives query (state.objectivesAll).
+    // Previously this table was built entirely from `projects`, which meant
+    // an Objective with zero linked projects — or whose only linked
+    // project(s) got filtered out upstream — would silently disappear with
+    // no indication anything was missing. Objectives now have their own
+    // identity; projects are only used below as a fallback enrichment for
+    // an objective that's somehow missing a field on its own record.
+    var projectOkrByKey = {};
+    (projects || []).forEach(function (p) {
+      var k =
+        normalizeOkrKey(p.okrAssociation) || normalizeOkrKey(p.okrKey) || "";
+      if (!k) return;
+      if (!projectOkrByKey[k]) projectOkrByKey[k] = p;
+    });
+
+    var seenOkrKeys = {};
+    var okrRows = (state.objectivesAll || [])
+      .filter(function (o) {
+        return (
+          String(o.okrKey || "").trim() ||
+          String(o.okrObjective || "").trim() ||
+          String(o.okrStartDate || "").trim() ||
+          String(o.okrEndDate || "").trim() ||
+          String(o.okrFiscalYear || "").trim()
+        );
+      })
+      .map(function (o) {
+        var k = normalizeOkrKey(o.okrKey) || "";
+        var fallback = k ? projectOkrByKey[k] : null;
+        var merged = {
+          okrKey: o.okrKey,
+          okrObjective:
+            o.okrObjective || (fallback && fallback.okrObjective) || "",
+          okrStartDate:
+            o.okrStartDate || (fallback && fallback.okrStartDate) || "",
+          okrEndDate: o.okrEndDate || (fallback && fallback.okrEndDate) || "",
+          okrFiscalYear:
+            o.okrFiscalYear || (fallback && fallback.okrFiscalYear) || "",
+        };
+        if (k) seenOkrKeys[k] = true;
+        return merged;
+      });
+
+    // Safety net: include any OKR key that only shows up denormalized on a
+    // project (e.g. the independent Objectives query hasn't loaded yet, or a
+    // legacy project references an OKR key with no matching Objective
+    // record at all) so we never regress to showing fewer rows than before.
+    (projects || []).forEach(function (p) {
+      var k =
+        normalizeOkrKey(p.okrAssociation) || normalizeOkrKey(p.okrKey) || "";
+      if (!k || seenOkrKeys[k]) return;
+      var hasData =
         String(p.okrKey || "").trim() ||
         String(p.okrObjective || "").trim() ||
         String(p.okrStartDate || "").trim() ||
         String(p.okrEndDate || "").trim() ||
-        String(p.okrFiscalYear || "").trim()
-      );
+        String(p.okrFiscalYear || "").trim();
+      if (!hasData) return;
+      seenOkrKeys[k] = true;
+      okrRows.push({
+        okrKey: p.okrKey,
+        okrObjective: p.okrObjective,
+        okrStartDate: p.okrStartDate,
+        okrEndDate: p.okrEndDate,
+        okrFiscalYear: p.okrFiscalYear,
+      });
     });
 
     if (state.sort.okrs.key) {
@@ -10374,15 +10520,28 @@
     _stepIDFetchPending.clear();
     try {
       // Silent refresh — LeafFormQuery handles chunked loading internally.
-      // stepID != "notSubmitted" excludes in-progress copies (ghost records)
-      // that were initiated via LEAF's copy utility but never completed.
-      var refreshCounts = { projects: 0, tasks: 0, keyResults: 0 };
+      // stepID = "submitted" excludes in-progress copies/drafts (ghost records)
+      // that were initiated but never completed to submission. NOTE: per the
+      // LEAF formQuery docs, the "stepID" column only documents "=" paired with
+      // symbolic values (submitted, notSubmitted, resolved, notResolved,
+      // actionable, etc.) — "!=" + a symbolic value is NOT a documented
+      // combination and was unreliable in practice. "submitted" is the
+      // documented inverse of "notSubmitted" and includes records that have
+      // since progressed/resolved, since "submitted" just means "left draft
+      // state," not "still on step 1."
+      var refreshCounts = {
+        projects: 0,
+        tasks: 0,
+        keyResults: 0,
+        objectives: 0,
+      };
 
       function updateRefreshProgress() {
         var total =
           refreshCounts.projects +
           refreshCounts.tasks +
-          refreshCounts.keyResults;
+          refreshCounts.keyResults +
+          refreshCounts.objectives;
         document.title = `Refreshing… (${total}+) | LEAF Project Dashboard`;
       }
 
@@ -10391,7 +10550,7 @@
       }
 
       var projectsQuery = new LeafFormQuery();
-      projectsQuery.addTerm("stepID", "!=", "notSubmitted");
+      projectsQuery.addTerm("stepID", "=", "submitted");
       projectsQuery.addTerm("deleted", "=", "0");
       projectsQuery.getData([
         PROJECT_IND.projectKey,
@@ -10421,7 +10580,7 @@
 
       var tasksQuery = new LeafFormQuery();
       tasksQuery.addTerm("categoryID", "=", "form_9b302");
-      tasksQuery.addTerm("stepID", "!=", "notSubmitted");
+      tasksQuery.addTerm("stepID", "=", "submitted");
       tasksQuery.addTerm("deleted", "=", "0");
       tasksQuery.getData([
         TASK_IND.projectKey,
@@ -10448,7 +10607,7 @@
       });
 
       var keyResultsQuery = new LeafFormQuery();
-      keyResultsQuery.addTerm("stepID", "!=", "notSubmitted");
+      keyResultsQuery.addTerm("stepID", "=", "submitted");
       keyResultsQuery.addTerm("deleted", "=", "0");
       keyResultsQuery.getData([KEY_RESULT_IND.okrKey, KEY_RESULT_IND.name]);
       keyResultsQuery.setExtraParams("&x-filterData=recordID,date");
@@ -10457,10 +10616,30 @@
         updateRefreshProgress();
       });
 
+      // Objectives — independent query (form_a2b55), not derived from
+      // projects. See state.objectivesAll note above for why.
+      var objectivesQuery = new LeafFormQuery();
+      objectivesQuery.addTerm("categoryID", "=", "form_a2b55");
+      objectivesQuery.addTerm("stepID", "=", "submitted");
+      objectivesQuery.addTerm("deleted", "=", "0");
+      objectivesQuery.getData([
+        OKR_IND.okrKey,
+        OKR_IND.objective,
+        OKR_IND.startDate,
+        OKR_IND.endDate,
+        OKR_IND.fiscalYear,
+      ]);
+      objectivesQuery.setExtraParams("&x-filterData=recordID,date,categoryID");
+      objectivesQuery.onProgress(function (count) {
+        refreshCounts.objectives = count;
+        updateRefreshProgress();
+      });
+
       var results = await Promise.all([
         projectsQuery.execute(),
         tasksQuery.execute(),
         keyResultsQuery.execute(),
+        objectivesQuery.execute(),
       ]);
       clearRefreshProgress();
 
@@ -10468,6 +10647,11 @@
       var taskRowsAll = coerceRows(results[1]) || [];
       var keyResultRows = (coerceRows(results[2]) || []).filter(function (r) {
         return hasAnyIndicatorValue(r, [35, 36]);
+      });
+      var objectiveRowsAll = coerceRows(results[3]) || [];
+      var objectiveRows = objectiveRowsAll.filter(function (r) {
+        if (r.categoryID && r.categoryID !== "form_a2b55") return false;
+        return hasAnyIndicatorValue(r, [23, 24, 25, 26, 33]);
       });
 
       var projectRows = projectRowsAll.filter(function (r) {
@@ -10537,7 +10721,44 @@
         state.tasksById.set(String(t.recordID), t);
       });
       state.keyResultsAll = keyResultRows.map(normalizeKeyResult);
+
+      var seenObjectiveIDs = new Map();
+      var uniqueObjectiveRows = objectiveRows.filter(function (r) {
+        var rid = String(r.recordID || getRecordID(r) || "").trim();
+        if (!rid || seenObjectiveIDs.has(rid)) return false;
+        seenObjectiveIDs.set(rid, true);
+        return true;
+      });
+      state.objectivesAll = uniqueObjectiveRows.map(normalizeObjective);
       invalidateTaskCaches();
+
+      // Diagnostic: raw API rows vs. rows that survived filtering, per
+      // entity type. If "missing records" come up again, check this first —
+      // a big gap here points at the pre-filter/extraction; counts matching
+      // but the UI still missing rows points at rendering/grouping instead.
+      console.debug(
+        "[pm-dashboard] silent refresh record counts — " +
+          "projects: " +
+          projectRowsAll.length +
+          " raw / " +
+          uniqueProjectRows.length +
+          " kept, " +
+          "tasks: " +
+          taskRowsAll.length +
+          " raw / " +
+          uniqueTaskRows.length +
+          " kept, " +
+          "keyResults: " +
+          (coerceRows(results[2]) || []).length +
+          " raw / " +
+          keyResultRows.length +
+          " kept, " +
+          "objectives: " +
+          objectiveRowsAll.length +
+          " raw / " +
+          uniqueObjectiveRows.length +
+          " kept",
+      );
 
       // Refresh all dropdowns
       populateProjectKeyDropdown(state.projectsAll);
@@ -10692,13 +10913,19 @@
       // then restore it when done. This works whether the overlay is visible or
       // the user is already looking at the tab in the background.
       var originalTitle = document.title;
-      var progressCounts = { projects: 0, tasks: 0, keyResults: 0 };
+      var progressCounts = {
+        projects: 0,
+        tasks: 0,
+        keyResults: 0,
+        objectives: 0,
+      };
 
       function updateLoadingProgress() {
         var total =
           progressCounts.projects +
           progressCounts.tasks +
-          progressCounts.keyResults;
+          progressCounts.keyResults +
+          progressCounts.objectives;
         var titleEl = document.querySelector(".pm-title");
         if (titleEl) {
           titleEl.textContent = `Loading data… (${total}+ records)`;
@@ -10713,10 +10940,12 @@
       }
 
       // ── Projects query ─────────────────────────────────────────────────────
-      // stepID != "notSubmitted" excludes in-progress copies (ghost records)
-      // initiated via LEAF's copy utility but never completed to submission.
+      // stepID = "submitted" excludes in-progress copies/drafts (ghost records)
+      // initiated but never completed to submission. See note in
+      // runSilentRefresh() above — "!=" + symbolic value is not a documented
+      // stepID combination, so we use the documented "=" pairing instead.
       var projectsQuery = new LeafFormQuery();
-      projectsQuery.addTerm("stepID", "!=", "notSubmitted");
+      projectsQuery.addTerm("stepID", "=", "submitted");
       projectsQuery.addTerm("deleted", "=", "0");
       projectsQuery.getData([
         PROJECT_IND.projectKey,
@@ -10748,7 +10977,7 @@
       // Important: include ALL task fields
       var tasksQuery = new LeafFormQuery();
       tasksQuery.addTerm("categoryID", "=", "form_9b302");
-      tasksQuery.addTerm("stepID", "!=", "notSubmitted");
+      tasksQuery.addTerm("stepID", "=", "submitted");
       tasksQuery.addTerm("deleted", "=", "0");
       tasksQuery.getData([
         TASK_IND.projectKey,
@@ -10776,7 +11005,7 @@
 
       // ── Key results query ──────────────────────────────────────────────────
       var keyResultsQuery = new LeafFormQuery();
-      keyResultsQuery.addTerm("stepID", "!=", "notSubmitted");
+      keyResultsQuery.addTerm("stepID", "=", "submitted");
       keyResultsQuery.addTerm("deleted", "=", "0");
       keyResultsQuery.getData([KEY_RESULT_IND.okrKey, KEY_RESULT_IND.name]);
       keyResultsQuery.setExtraParams("&x-filterData=recordID,date");
@@ -10785,16 +11014,38 @@
         updateLoadingProgress();
       });
 
+      // ── Objectives query ───────────────────────────────────────────────────
+      // Independent query (form_a2b55), not derived from projects. See
+      // state.objectivesAll note for why this is necessary.
+      var objectivesQuery = new LeafFormQuery();
+      objectivesQuery.addTerm("categoryID", "=", "form_a2b55");
+      objectivesQuery.addTerm("stepID", "=", "submitted");
+      objectivesQuery.addTerm("deleted", "=", "0");
+      objectivesQuery.getData([
+        OKR_IND.okrKey,
+        OKR_IND.objective,
+        OKR_IND.startDate,
+        OKR_IND.endDate,
+        OKR_IND.fiscalYear,
+      ]);
+      objectivesQuery.setExtraParams("&x-filterData=recordID,date,categoryID");
+      objectivesQuery.onProgress(function (count) {
+        progressCounts.objectives = count;
+        updateLoadingProgress();
+      });
+
       var results = await Promise.all([
         projectsQuery.execute(),
         tasksQuery.execute(),
         keyResultsQuery.execute(),
+        objectivesQuery.execute(),
       ]);
       clearLoadingProgress();
 
       var projectsJson = results[0];
       var tasksJson = results[1];
       var keyResultsJson = results[2];
+      var objectivesJson = results[3];
 
       var projectRowsAll = coerceRows(projectsJson) || [];
       var taskRowsAll = coerceRows(tasksJson) || [];
@@ -10817,6 +11068,12 @@
           return hasAnyIndicatorValue(r, [35, 36]);
         },
       );
+      var objectiveRows = (coerceRows(objectivesJson) || []).filter(
+        function (r) {
+          if (r.categoryID && r.categoryID !== "form_a2b55") return false;
+          return hasAnyIndicatorValue(r, [23, 24, 25, 26, 33]);
+        },
+      );
 
       // Dedup by recordID — safety net against any duplicate rows in the API
       // response (e.g. ghost records that slipped through, or pagination overlap).
@@ -10836,6 +11093,14 @@
         return true;
       });
 
+      var seenObjectiveIDs = new Map();
+      var uniqueObjectiveRows = objectiveRows.filter(function (r) {
+        var rid = String(r.recordID || getRecordID(r) || "").trim();
+        if (!rid || seenObjectiveIDs.has(rid)) return false;
+        seenObjectiveIDs.set(rid, true);
+        return true;
+      });
+
       state.projectsAll = uniqueProjectRows.map(normalizeProject);
 
       state.projectsVersion = (state.projectsVersion || 0) + 1;
@@ -10847,7 +11112,33 @@
       });
       invalidateTaskCaches();
       state.keyResultsAll = keyResultRows.map(normalizeKeyResult);
+      state.objectivesAll = uniqueObjectiveRows.map(normalizeObjective);
       state.projectsLoaded = true;
+
+      console.debug(
+        "[pm-dashboard] initial load record counts — " +
+          "projects: " +
+          projectRowsAll.length +
+          " raw / " +
+          uniqueProjectRows.length +
+          " kept, " +
+          "tasks: " +
+          taskRowsAll.length +
+          " raw / " +
+          uniqueTaskRows.length +
+          " kept, " +
+          "keyResults: " +
+          (coerceRows(keyResultsJson) || []).length +
+          " raw / " +
+          keyResultRows.length +
+          " kept, " +
+          "objectives: " +
+          (coerceRows(objectivesJson) || []).length +
+          " raw / " +
+          uniqueObjectiveRows.length +
+          " kept",
+      );
+
       backfillSupportTicketLabels(state.tasksAll);
       checkAndCopyResolvedRecurringTasks();
       renderOverdueAlert();
@@ -10882,6 +11173,14 @@
           state.okrKeyToTitle[ok] = okrTitle;
         if (okFromKey && okrTitle && !state.okrKeyToTitle[okFromKey])
           state.okrKeyToTitle[okFromKey] = okrTitle;
+      });
+      // Also populate (and let take priority over project-derived guesses)
+      // from the authoritative, independent Objectives list — covers
+      // objectives with zero linked projects.
+      (state.objectivesAll || []).forEach(function (o) {
+        var okFromKey = normalizeOkrKey(o.okrKey);
+        var okrTitle = String(o.okrObjective || "").trim();
+        if (okFromKey && okrTitle) state.okrKeyToTitle[okFromKey] = okrTitle;
       });
 
       populateProjectKeyDropdown(state.projectsAll);
