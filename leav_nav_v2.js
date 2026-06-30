@@ -153,6 +153,12 @@
           desc: "Submit an idea to improve LEAF",
           href: "https://leaf.va.gov/platform/ideas/",
         },
+        {
+          icon: "privacy_tip",
+          title: "Privacy & Compliance",
+          desc: "LEAF-S certification, privacy enhancements, and VA privacy resources",
+          href: "#",
+        },
       ],
     },
     {
@@ -1409,8 +1415,36 @@
             },
           });
 
+          /* mockLocation: intercepts navigation calls from re-executed inline
+             scripts so that links/buttons using location.href = url,
+             location.assign(url), or location.replace(url) inside fetched
+             pages hash-route to known routes instead of navigating away.
+             Unknown URLs (external links, non-LEAF pages) fall through to
+             the real window.location so normal navigation still works.
+             NOTE: scripts that use window.location.href (not the local
+             location binding) bypass this mock and navigate normally — that
+             is intentional; only inline scripts using the location parameter
+             are intercepted. */
+          function _lpNavigate(url) {
+            if (!url) return;
+            var key = hrefToHashKey(url);
+            if (key && ROUTE_MAP[key]) {
+              /* Known route → hash-route it (triggers router via hashchange) */
+              var newHash = "#" + key;
+              if (window.location.hash === newHash) {
+                /* Same hash already set — fire router manually */
+                router();
+              } else {
+                window.location.hash = newHash;
+              }
+            } else {
+              /* Unknown route → let the browser navigate normally */
+              window.location.href = url;
+            }
+          }
+
+          var _mockLocationHref = window.__lpRouteHref || window.location.href;
           var mockLocation = {
-            href: window.__lpRouteHref || window.location.href,
             search: window.__lpRouteSearch || "",
             pathname: window.__lpRouteHref
               ? window.__lpRouteHref.split("?")[0]
@@ -1424,15 +1458,25 @@
               window.location.reload();
             },
             assign: function (url) {
-              window.location.assign(url);
+              _lpNavigate(url);
             },
             replace: function (url) {
-              window.location.replace(url);
+              _lpNavigate(url);
             },
             toString: function () {
-              return this.href;
+              return _mockLocationHref;
             },
           };
+          Object.defineProperty(mockLocation, "href", {
+            get: function () {
+              return _mockLocationHref;
+            },
+            set: function (url) {
+              _lpNavigate(url);
+            },
+            enumerable: true,
+            configurable: true,
+          });
           var fn = new Function(
             "document",
             "window",

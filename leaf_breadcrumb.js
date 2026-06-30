@@ -49,6 +49,9 @@
     /* ── Resources ── */
     resources: { label: "Resources" },
 
+    /* ── Privacy & Compliance ── */
+    "privacy-compliance": { label: "Privacy & Compliance" },
+
     /* ── Knowledge Center ── */
     "knowledge-center": { label: "Knowledge Center" },
     "help-library": {
