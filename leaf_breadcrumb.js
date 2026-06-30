@@ -36,13 +36,25 @@
 
   /* ── Shared crumb groups — edit here to rename/repoint sitewide ── */
   var CRUMB_GROUPS = {
+    /* ── About LEAF ── */
     "about-leaf": { label: "About LEAF" },
     "our-impact": {
       label: "Our Impact",
       href: "/platform/designs/report.php?a=impact",
     },
+
+    /* ── Solutions ── */
     solutions: { label: "Solutions" },
+
+    /* ── Resources ── */
     resources: { label: "Resources" },
+
+    /* ── Knowledge Center ── */
+    "knowledge-center": { label: "Knowledge Center" },
+    "help-library": {
+      label: "Help Library",
+      href: "https://leaf.va.gov/platform/help_library/report.php?a=stephanie_test1",
+    },
   };
 
   var HOME_CRUMB = {
