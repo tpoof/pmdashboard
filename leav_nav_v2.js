@@ -693,6 +693,14 @@
         "}",
         "@keyframes lp-spin { to { transform: rotate(360deg); } }",
 
+        /* ── Icon FOUT prevention ────────────────────────────────
+           Hide Material Symbols glyphs until the font is ready
+           so the raw icon names never flash as plain text.
+           The transition is only on the ready class so cached
+           fonts snap in instantly; first-load gets a soft fade. */
+        "#lpNav .material-symbols-outlined { opacity: 0; }",
+        "#lpNav.lp-icons-ready .material-symbols-outlined { opacity: 1; transition: opacity 0.15s ease; }",
+
         /* ── Mobile: Internal section separator ─────────────── */
         ".lp-mobile-internal-sep {",
         "  display: flex;",
@@ -1118,6 +1126,14 @@
     /* Populate LEAF Team dynamic links after the nav is in the DOM */
     fetchLeafTeamLinks();
 
+    /* Reveal icons once the Material Symbols font is loaded.
+       fonts.ready resolves immediately when fonts are cached,
+       so repeat visits get no perceptible delay. */
+    document.fonts.ready.then(function () {
+      var nav = document.getElementById("lpNav");
+      if (nav) nav.classList.add("lp-icons-ready");
+    });
+
     /* Debug panel — only when ?leafNavDebug=1 is present */
     if (/[?&]leafNavDebug=1/.test(window.location.search)) {
       runNavDebug();
@@ -1349,26 +1365,7 @@
              captured in window.__lpDeferredInits and drained after
              mount — NOT dispatched as a real DOMContentLoaded event,
              which would retrigger the nav's own init and cause an
-             infinite re-mount loop.
-
-             ── Why a Proxy instead of Object.create(document) ──────
-             Object.create(document) was previously used here, but it
-             throws "TypeError: Illegal invocation" the moment a fetched
-             page's inline script calls any native DOM method (e.g.
-             document.getElementById, document.querySelector). Native
-             DOM methods are spec-"branded" — they require `this` to be
-             the real Document instance internally, even when inherited
-             via the prototype chain. A plain prototypal copy breaks
-             that internal check.
-
-             A Proxy avoids this entirely: every property/method access
-             that isn't explicitly overridden (readyState,
-             addEventListener) is transparently forwarded to the real
-             `document`. Functions are returned pre-bound to the real
-             document via .bind(), so `this` is always correct no matter
-             how the fetched script invokes them — fixing pages like
-             Help Library, Form Library, and Leadership Hub whose inline
-             scripts call document.* methods directly at parse time. */
+             infinite re-mount loop. */
           window.__lpDeferredInits = window.__lpDeferredInits || [];
 
           var mockDoc = new Proxy(document, {
@@ -1406,11 +1403,6 @@
             host: window.location.host,
             hostname: window.location.hostname,
             protocol: window.location.protocol,
-            /* Defensive method stubs — fetched pages haven't called these
-               so far, but a plain object literal throws "is not a
-               function" if any inline script ever does. Forward to the
-               real window.location rather than silently no-opping, so
-               behavior matches what the page author expects. */
             reload: function () {
               window.location.reload();
             },
@@ -1828,6 +1820,36 @@
   ───────────────────────────────────────────────────────────── */
   function wireLinkIntercept() {
     document.addEventListener("click", function (e) {
+      /* ── Plain <a href> links inside fetched page content ───────────
+         Nav buttons (.dd-link etc.) use data-href and are caught below.
+         Links inside loaded pages are regular <a> tags — they bypass
+         the nav-button check entirely and trigger full page navigation.
+         Intercept them here: if the href maps to a known ROUTE_MAP entry,
+         push the hash. Unknown hrefs (external, in-page anchors, API
+         paths) fall through and the browser handles them normally. */
+      var contentLink = e.target.closest("[data-lp-swap-host] a[href]");
+      if (contentLink && !contentLink.hasAttribute("data-nav-external")) {
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
+          /* modifier-key clicks open a real tab — don't intercept */
+        } else {
+          var contentHref = contentLink.getAttribute("href");
+          if (contentHref && contentHref !== "#") {
+            var contentKey = hrefToHashKey(contentHref);
+            if (contentKey && ROUTE_MAP[contentKey]) {
+              e.preventDefault();
+              var contentHash = "#" + contentKey;
+              if (window.location.hash === contentHash) {
+                router();
+              } else {
+                window.location.hash = contentHash;
+              }
+              return;
+            }
+            /* Not a known route — let browser navigate normally */
+          }
+        }
+      }
+
       /* Match nav dropdown links, internal buttons, and footer quick-resource links.
          .dd-link elements are now <button data-href> — no href attribute —
          so the browser status bar never previews the destination URL on hover.
