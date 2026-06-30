@@ -164,6 +164,30 @@
     },
   ];
 
+  /* ── Sub-routes: pages nested under a nav item (not in the dropdown) ──
+     These get registered in ROUTE_MAP at init so the hash router can
+     load them and breadcrumbs get the correct 4-level trail. */
+  var SUBROUTES = [
+    {
+      href: "/platform/designs/report.php?a=brand_guide",
+      title: "Brand Guide",
+      section: "About LEAF",
+      parent: {
+        label: "Our Impact",
+        href: "/platform/designs/report.php?a=impact",
+      },
+    },
+    {
+      href: "/platform/designs/report.php?a=voc",
+      title: "Voice of the Customer",
+      section: "About LEAF",
+      parent: {
+        label: "Our Impact",
+        href: "/platform/designs/report.php?a=impact",
+      },
+    },
+  ];
+
   /* ── Router: hash key → { href, title, section } lookup table ──
      Built once at init from NAV_SECTIONS. Hash key is the ?a= param
      value (e.g. "impact", "find_site"). The launchpad's own ?a=
@@ -194,6 +218,12 @@
         }
       });
     });
+    /* Register sub-routes (pages nested under a nav item) */
+    SUBROUTES.forEach(function (route) {
+      var key = hrefToHashKey(route.href);
+      if (key) ROUTE_MAP[key] = route;
+    });
+
     /* Register Leadership so the hash router can load it inline */
     var leadershipKey = hrefToHashKey(INTERNAL_LEADERSHIP_ROUTE.href);
     if (leadershipKey) {
@@ -1319,23 +1349,51 @@
              captured in window.__lpDeferredInits and drained after
              mount — NOT dispatched as a real DOMContentLoaded event,
              which would retrigger the nav's own init and cause an
-             infinite re-mount loop. */
+             infinite re-mount loop.
+
+             ── Why a Proxy instead of Object.create(document) ──────
+             Object.create(document) was previously used here, but it
+             throws "TypeError: Illegal invocation" the moment a fetched
+             page's inline script calls any native DOM method (e.g.
+             document.getElementById, document.querySelector). Native
+             DOM methods are spec-"branded" — they require `this` to be
+             the real Document instance internally, even when inherited
+             via the prototype chain. A plain prototypal copy breaks
+             that internal check.
+
+             A Proxy avoids this entirely: every property/method access
+             that isn't explicitly overridden (readyState,
+             addEventListener) is transparently forwarded to the real
+             `document`. Functions are returned pre-bound to the real
+             document via .bind(), so `this` is always correct no matter
+             how the fetched script invokes them — fixing pages like
+             Help Library, Form Library, and Leadership Hub whose inline
+             scripts call document.* methods directly at parse time. */
           window.__lpDeferredInits = window.__lpDeferredInits || [];
-          var mockDoc = Object.create(document);
-          Object.defineProperty(mockDoc, "readyState", {
-            get: function () {
-              return "loading";
+
+          var mockDoc = new Proxy(document, {
+            get: function (target, prop, receiver) {
+              if (prop === "readyState") return "loading";
+              if (prop === "addEventListener") {
+                return function (type, fn, opts) {
+                  if (type === "DOMContentLoaded") {
+                    /* Capture for deferred drain — never register on real document */
+                    window.__lpDeferredInits.push(fn);
+                  } else {
+                    document.addEventListener(type, fn, opts);
+                  }
+                };
+              }
+              var value = target[prop];
+              /* Native methods must stay bound to the real document —
+                 returning them unbound through the Proxy's receiver
+                 reintroduces the same "Illegal invocation" failure. */
+              if (typeof value === "function") {
+                return value.bind(target);
+              }
+              return value;
             },
-            configurable: true,
           });
-          mockDoc.addEventListener = function (type, fn, opts) {
-            if (type === "DOMContentLoaded") {
-              /* Capture for deferred drain — never register on real document */
-              window.__lpDeferredInits.push(fn);
-            } else {
-              document.addEventListener(type, fn, opts);
-            }
-          };
 
           var mockLocation = {
             href: window.__lpRouteHref || window.location.href,
@@ -1348,6 +1406,23 @@
             host: window.location.host,
             hostname: window.location.hostname,
             protocol: window.location.protocol,
+            /* Defensive method stubs — fetched pages haven't called these
+               so far, but a plain object literal throws "is not a
+               function" if any inline script ever does. Forward to the
+               real window.location rather than silently no-opping, so
+               behavior matches what the page author expects. */
+            reload: function () {
+              window.location.reload();
+            },
+            assign: function (url) {
+              window.location.assign(url);
+            },
+            replace: function (url) {
+              window.location.replace(url);
+            },
+            toString: function () {
+              return this.href;
+            },
           };
           var fn = new Function(
             "document",
@@ -1469,6 +1544,8 @@
     var trail = [{ label: "Launchpad", href: "/platform/designs" }];
     if (route) {
       if (route.section) trail.push({ label: route.section, href: null });
+      if (route.parent)
+        trail.push({ label: route.parent.label, href: route.parent.href });
       trail.push({ label: route.title, href: null, current: true });
     }
 

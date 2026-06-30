@@ -37,6 +37,10 @@
   /* ── Shared crumb groups — edit here to rename/repoint sitewide ── */
   var CRUMB_GROUPS = {
     "about-leaf": { label: "About LEAF" },
+    "our-impact": {
+      label: "Our Impact",
+      href: "/platform/designs/report.php?a=impact",
+    },
     solutions: { label: "Solutions" },
     resources: { label: "Resources" },
   };
