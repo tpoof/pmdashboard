@@ -1299,6 +1299,21 @@
     }, Promise.resolve());
   }
 
+  /* Known external dependencies that fetched-page inline scripts may
+     assume are already loaded and executed. Each entry's `test` regex
+     is matched against every external <script src> found in the fetched
+     document. Add new deps here — do NOT rely on reExecuteScripts()'s
+     generic script loop for anything an inline script calls synchronously;
+     that loop appends external <script src> tags to <head> but does not
+     await their load/execution before running the next script, so any
+     inline script depending on one can race it (see VAFacilityHelper
+     "is not defined" errors on fetched pages that need it). */
+  var LEAF_UI_DEP_PATTERNS = [
+    { name: "jquery-ui", test: /jquery-ui/i },
+    { name: "dialogController", test: /dialogController/i },
+    { name: "VAFacilityHelper", test: /VAFacilityHelper/i },
+  ];
+
   function ensureLeafUIDeps(sourceDoc) {
     /* Scan fetched document's script srcs for known UI dependencies */
     var scriptSrcs = Array.prototype.map.call(
@@ -1308,29 +1323,16 @@
       } /* already absolute after DOMParser */,
     );
 
-    var needsJQueryUI = scriptSrcs.some(function (s) {
-      return /jquery-ui/i.test(s);
-    });
-    var needsDialog = scriptSrcs.some(function (s) {
-      return /dialogController/i.test(s);
-    });
-
-    if (!needsJQueryUI && !needsDialog) return Promise.resolve();
-
-    /* Derive the jQuery UI path from the fetched page's own script src
-       so we use the exact same file — no hardcoded paths */
-    var jqueryUISrc = scriptSrcs.find(function (s) {
-      return /jquery-ui/i.test(s);
-    });
-    var dialogSrc = scriptSrcs.find(function (s) {
-      return /dialogController/i.test(s);
-    });
-
+    /* For each known dep pattern, find the matching src (if any) in the
+       fetched page's own scripts — never hardcode a path, always use
+       the exact file the fetched page itself references. */
     var toLoad = [];
-    if (needsJQueryUI && jqueryUISrc && !_loadedDepSrcs.has(jqueryUISrc))
-      toLoad.push(jqueryUISrc);
-    if (needsDialog && dialogSrc && !_loadedDepSrcs.has(dialogSrc))
-      toLoad.push(dialogSrc);
+    LEAF_UI_DEP_PATTERNS.forEach(function (dep) {
+      var src = scriptSrcs.find(function (s) {
+        return dep.test.test(s);
+      });
+      if (src && !_loadedDepSrcs.has(src)) toLoad.push(src);
+    });
 
     if (!toLoad.length) return Promise.resolve();
 
