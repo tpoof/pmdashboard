@@ -78,8 +78,14 @@
   }
 
   function crumbHTML(crumb, isLast) {
-    if (isLast || !crumb.href) {
+    if (isLast) {
+      /* Current page — styled as active, not a link */
       return `<span class="lp-bc-current" aria-current="page">${crumb.label}</span>`;
+    }
+    if (!crumb.href) {
+      /* Intermediate section label with no destination (e.g. "About LEAF") —
+         render as muted text, not a link and not aria-current */
+      return `<span class="lp-bc-section">${crumb.label}</span>`;
     }
     return `<a href="${crumb.href}">${crumb.label}</a>`;
   }
@@ -127,7 +133,13 @@
      it in right after the nav — or at the top of <body> if the
      nav isn't there yet for some reason. */
   function ensureHost() {
-    var host = document.getElementById("lp-breadcrumb-host");
+    /* Check both the placeholder ID and the rendered ID — render() now
+       mutates the element in place rather than replacing outerHTML, so
+       subsequent runs find the existing element here instead of creating
+       a duplicate breadcrumb below the first one. */
+    var host =
+      document.getElementById("lp-breadcrumb-host") ||
+      document.getElementById("lpBreadcrumb");
     if (host) return host;
     host = document.createElement("nav");
     host.id = "lp-breadcrumb-host";
@@ -142,7 +154,14 @@
 
   function render() {
     var host = ensureHost();
-    host.outerHTML = `<nav class="lp-breadcrumb" id="lpBreadcrumb" aria-label="Breadcrumb">${buildTrailHTML()}</nav>`;
+    /* Mutate the existing element rather than replacing outerHTML.
+       The outerHTML swap changed the element's id from lp-breadcrumb-host
+       to lpBreadcrumb, so the next run couldn't find it and created a
+       second breadcrumb instead of updating the first one. */
+    host.id = "lpBreadcrumb";
+    host.className = "lp-breadcrumb";
+    host.setAttribute("aria-label", "Breadcrumb");
+    host.innerHTML = buildTrailHTML();
   }
 
   if (document.readyState === "loading") {

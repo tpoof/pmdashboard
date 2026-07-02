@@ -63,6 +63,13 @@
   font-style: italic;
 }
 
+/* Intermediate section label with no href (e.g. "About LEAF") —
+   muted non-italic text so it reads as a structural label,
+   not an active link or the current page. */
+.lp-bc-section {
+  color: var(--nav-muted, #3d4551);
+}
+
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .lp-breadcrumb {

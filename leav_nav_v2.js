@@ -156,7 +156,7 @@
         {
           icon: "privacy_tip",
           title: "Privacy & Compliance",
-          desc: "LEAF-S certification, privacy enhancements, and VA privacy resources",
+          desc: "LEAF privacy and compliance resources",
           href: "#",
         },
       ],
@@ -204,8 +204,8 @@
       title: "Voice of the Customer",
       section: "About LEAF",
       parent: {
-        label: "Our Impact",
-        href: "/platform/designs/report.php?a=impact",
+        label: "Roadmap",
+        href: "/platform/designs/report.php?a=roadmap",
       },
     },
   ];
@@ -1477,13 +1477,33 @@
             enumerable: true,
             configurable: true,
           });
+          /* Wrap the real window so that window.location.href = url
+             and window.location.assign/replace() in re-executed scripts
+             are also intercepted — not just the local `location` binding.
+             All other window properties fall through to the real window. */
+          var mockWindow = new Proxy(window, {
+            get: function (target, prop) {
+              if (prop === "location") return mockLocation;
+              var val = target[prop];
+              return typeof val === "function" ? val.bind(target) : val;
+            },
+            set: function (target, prop, value) {
+              if (prop === "location") {
+                _lpNavigate(String(value));
+                return true;
+              }
+              target[prop] = value;
+              return true;
+            },
+          });
+
           var fn = new Function(
             "document",
             "window",
             "location",
             oldScript.textContent,
           );
-          fn(mockDoc, window, mockLocation);
+          fn(mockDoc, mockWindow, mockLocation);
         } catch (err) {
           console.warn("[LP] Inline script execution error:", err.message);
         }
