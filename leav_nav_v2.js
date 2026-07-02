@@ -1590,6 +1590,13 @@
     var host = getSwapHost();
     if (!host) return;
 
+    /* showSwapLoading() is normally what clears this on the way in —
+       but the "missing route" path (no ROUTE_MAP entry) never calls
+       showSwapLoading(), so the host stayed hidden even though this
+       function wrote content into it. Clear it here unconditionally
+       so showSwapError() is correct no matter what ran before it. */
+    host.removeAttribute("hidden");
+
     if (reason === "missing") {
       host.innerHTML =
         '<div class="lp-swap-error lp-swap-error--missing" role="alert" style="text-align:center;padding:2rem 1.5rem;">' +
