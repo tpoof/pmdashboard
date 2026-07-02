@@ -174,7 +174,7 @@
           icon: "menu_book",
           title: "Help Library",
           desc: "Guides and documentation",
-          href: "https://leaf.va.gov/platform/help_library/report.php?a=stephanie_test1",
+          href: "https://leaf.va.gov/platform/help_library/report.php?a=homepage",
         },
         {
           icon: "quiz",
@@ -1314,24 +1314,33 @@
     { name: "VAFacilityHelper", test: /VAFacilityHelper/i },
   ];
 
-  function ensureLeafUIDeps(sourceDoc) {
-    /* Scan fetched document's script srcs for known UI dependencies */
+  /* Scans a document for known dependency <script src> tags and returns
+     the matched, absolute URLs. Must be called BEFORE suppressChrome()
+     strips #header/#footer/.noprint — those regions are exactly where
+     LEAF's shared global helpers (e.g. VAFacilityHelper.js) tend to be
+     included from, and once suppressChrome removes those nodes the
+     script is gone for good, so this has to run first. */
+  function collectLeafUIDepSrcs(doc) {
     var scriptSrcs = Array.prototype.map.call(
-      sourceDoc.querySelectorAll("script[src]"),
+      doc.querySelectorAll("script[src]"),
       function (s) {
         return s.src;
       } /* already absolute after DOMParser */,
     );
 
-    /* For each known dep pattern, find the matching src (if any) in the
-       fetched page's own scripts — never hardcode a path, always use
-       the exact file the fetched page itself references. */
-    var toLoad = [];
+    var found = [];
     LEAF_UI_DEP_PATTERNS.forEach(function (dep) {
       var src = scriptSrcs.find(function (s) {
         return dep.test.test(s);
       });
-      if (src && !_loadedDepSrcs.has(src)) toLoad.push(src);
+      if (src) found.push(src);
+    });
+    return found;
+  }
+
+  function ensureLeafUIDeps(depScriptSrcs) {
+    var toLoad = (depScriptSrcs || []).filter(function (src) {
+      return !_loadedDepSrcs.has(src);
     });
 
     if (!toLoad.length) return Promise.resolve();
@@ -1649,7 +1658,7 @@
   /* ─────────────────────────────────────────────────────────────
      MOUNT CONTENT
   ───────────────────────────────────────────────────────────── */
-  function mountContent(el, sourceDoc, route) {
+  function mountContent(el, sourceDoc, route, depScriptSrcs) {
     var host = _swapHost;
     if (!host) {
       console.error("[LP] mountContent: swap host not found");
@@ -1727,9 +1736,12 @@
     host.appendChild(wrapper);
 
     /* Lazy-load any LEAF UI dependencies the fetched page needs
-       (e.g. jquery-ui, dialogController) before re-executing its
-       inline scripts. reExecuteScripts runs only after all deps load. */
-    ensureLeafUIDeps(sourceDoc).then(function () {
+       (e.g. jquery-ui, dialogController, VAFacilityHelper) before
+       re-executing its inline scripts. depScriptSrcs was scanned in
+       loadView() BEFORE chrome suppression, so deps that live inside
+       #header/#footer/.noprint are still caught. reExecuteScripts
+       runs only after all deps load. */
+    ensureLeafUIDeps(depScriptSrcs).then(function () {
       reExecuteScripts(wrapper);
 
       /* After scripts run, call any deferred page init functions.
@@ -1846,6 +1858,16 @@
         var parser = new DOMParser();
         var doc = parser.parseFromString(html, "text/html");
 
+        /* Scan for known external UI/helper dependencies BEFORE chrome
+           suppression runs. Some LEAF pages (e.g. steph_search) load
+           helpers like VAFacilityHelper.js from inside the header
+           include — suppressChrome() deletes #header/#footer/.noprint
+           wholesale, so if we scanned afterward (as ensureLeafUIDeps
+           used to, via the already-stripped doc) that <script src>
+           would already be gone and the dep would silently never load,
+           leaving content scripts to throw "X is not defined". */
+        var depScriptSrcs = collectLeafUIDepSrcs(doc);
+
         /* Suppress chrome elements in the parsed document */
         suppressChrome(doc);
 
@@ -1857,7 +1879,7 @@
         }
 
         /* Mount into swap host */
-        mountContent(contentEl, doc, route);
+        mountContent(contentEl, doc, route, depScriptSrcs);
         _currentLoadUrl = null;
 
         /* Scroll swap host to top */
