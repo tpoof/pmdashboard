@@ -1545,19 +1545,91 @@
     host.removeAttribute("hidden");
   }
 
-  function showSwapError(url) {
+  /* ── Suggested links for the "missing route" error state ────────
+     One item per top-level NAV_SECTIONS group (the first non-"#" href
+     in each), so the list stays in sync with NAV_SECTIONS automatically
+     rather than needing a second hand-maintained list. Rendered as
+     .dd-link buttons with data-href so wireLinkIntercept() (already
+     listens for .dd-link clicks) hash-routes them with no extra wiring. */
+  function buildErrorSuggestedLinksHTML() {
+    var items = NAV_SECTIONS.map(function (section) {
+      return section.items.find(function (item) {
+        return item.href && item.href !== "#";
+      });
+    }).filter(Boolean);
+
+    return items
+      .map(function (item) {
+        return (
+          '<button class="dd-link lp-error-suggest-link" data-href="' +
+          item.href +
+          '" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #d9e8f6;border-radius:5px;font-size:13px;">' +
+          '<span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">' +
+          item.icon +
+          "</span>" +
+          "<span>" +
+          item.title +
+          "</span>" +
+          "</button>"
+        );
+      })
+      .join("");
+  }
+
+  /* ── Error state ──────────────────────────────────────────────
+     Two distinct causes get two distinct messages + recovery paths:
+       "missing" — hash has no ROUTE_MAP entry (a true 404, e.g. an
+                   old bookmark to a since-renamed hash key). No
+                   retry makes sense here; offer a way out instead.
+       "fetch"   — route exists but the request failed (network
+                   error, non-2xx, empty content). Likely transient;
+                   offer retry + open-in-new-tab.
+     `url` is the route's href — used for the retry/new-tab actions
+     on the "fetch" state; unused (may be null) for "missing". */
+  function showSwapError(url, reason) {
     var host = getSwapHost();
     if (!host) return;
+
+    if (reason === "missing") {
+      host.innerHTML =
+        '<div class="lp-swap-error lp-swap-error--missing" role="alert" style="text-align:center;padding:2rem 1.5rem;">' +
+        '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true" style="font-size:32px;color:#6b7280;">wrong_location</span>' +
+        '<p class="lp-swap-error-msg" style="font-weight:600;font-size:16px;margin:12px 0 4px;">This page doesn\'t exist</p>' +
+        '<p style="font-size:13px;color:#6b7280;margin:0 0 20px;">It may have moved or the link is outdated.</p>' +
+        '<div style="display:flex;justify-content:center;margin-bottom:24px;">' +
+        '<button class="lp-panel-link btn btn-primary" data-href="report.php?a=launchpad">' +
+        '<span class="material-symbols-outlined" aria-hidden="true">home</span> Back to Launchpad' +
+        "</button>" +
+        "</div>" +
+        '<div style="border-top:1px solid #d9e8f6;padding-top:16px;text-align:left;max-width:420px;margin:0 auto;">' +
+        '<p style="font-size:12px;color:#9ca3af;margin:0 0 8px;">Try one of these instead</p>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+        buildErrorSuggestedLinksHTML() +
+        "</div>" +
+        "</div>" +
+        "</div>";
+      return;
+    }
+
+    /* "fetch" (default/fallback) */
     host.innerHTML =
-      '<div class="lp-swap-error" role="alert">' +
-      '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true">error_outline</span>' +
-      '<p class="lp-swap-error-msg">This page couldn\'t be loaded.</p>' +
+      '<div class="lp-swap-error lp-swap-error--fetch" role="alert" style="text-align:center;padding:2rem 1.5rem;">' +
+      '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true" style="font-size:32px;color:#b45309;">cloud_off</span>' +
+      '<p class="lp-swap-error-msg" style="font-weight:600;font-size:16px;margin:12px 0 4px;">This page is temporarily unavailable</p>' +
+      '<p style="font-size:13px;color:#6b7280;margin:0 0 20px;">We reached the site but couldn\'t load the content. This is usually temporary.</p>' +
+      '<div style="display:flex;gap:8px;justify-content:center;">' +
+      '<button class="lp-panel-link btn btn-primary" data-href="' +
+      url +
+      '">' +
+      '<span class="material-symbols-outlined" aria-hidden="true">refresh</span> Try again' +
+      "</button>" +
       '<a class="lp-swap-error-link btn btn-sec" href="' +
       url +
       '" target="_blank" rel="noopener noreferrer">' +
       '<span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>' +
       "Open in a new tab" +
       "</a>" +
+      "</div>" +
       "</div>";
   }
 
@@ -1821,7 +1893,9 @@
   function loadView(hash, route) {
     if (!route) {
       console.warn("[LP Router] No route found for hash:", hash);
-      showSwapError("#");
+      showSwapView();
+      showSwapError(null, "missing");
+      announce("This page doesn't exist.");
       return;
     }
 
@@ -1890,8 +1964,10 @@
       .catch(function (err) {
         _currentLoadUrl = null;
         console.error("[LP Router] Fetch failed for", url, ":", err.message);
-        showSwapError(url);
-        announce("This page couldn't be loaded. Try opening it in a new tab.");
+        showSwapError(url, "fetch");
+        announce(
+          "This page is temporarily unavailable. Try again or open it in a new tab.",
+        );
       });
   }
 
