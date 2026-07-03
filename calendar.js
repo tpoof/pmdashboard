@@ -939,6 +939,56 @@ function applyConditionalFields(type) {
   byId("calCondOoo").hidden = type !== "Out-of-Office";
 }
 
+/* ------------------------------------------------------------
+   Details field — Trumbowyg (LEAF's native advanced formatting
+   editor, already loaded globally by LEAF's page shell).
+   ------------------------------------------------------------ */
+let bodyEditorReady = false;
+
+function initBodyEditor() {
+  if (
+    typeof window.$ === "undefined" ||
+    !window.$.fn ||
+    !window.$.fn.trumbowyg
+  ) {
+    // Trumbowyg isn't available (e.g. running this page outside LEAF's
+    // shell for local testing) — fall back to a plain textarea so the
+    // form still works.
+    return;
+  }
+  window.$("#calFldBody").trumbowyg({
+    btns: [
+      "bold",
+      "italic",
+      "underline",
+      "|",
+      "unorderedList",
+      "orderedList",
+      "|",
+      "justifyLeft",
+      "justifyCenter",
+      "justifyRight",
+      "fullscreen",
+    ],
+  });
+  bodyEditorReady = true;
+}
+
+function setBodyEditorValue(html) {
+  if (bodyEditorReady) {
+    window.$("#calFldBody").trumbowyg("html", html || "");
+  } else {
+    byId("calFldBody").value = html || "";
+  }
+}
+
+function getBodyEditorValue() {
+  if (bodyEditorReady) {
+    return window.$("#calFldBody").trumbowyg("html").trim();
+  }
+  return byId("calFldBody").value.trim();
+}
+
 function openEntryModal(entry, presetDate) {
   state.editing = entry || null;
   state.draftLinks = entry ? entry.links.map((l) => ({ ...l })) : [];
@@ -968,13 +1018,8 @@ function openEntryModal(entry, presetDate) {
   byId("calFldTitle").value = entry ? entry.title : "";
   // Ensure the editor starts from clean <p> markup even for entries saved
   // before normalizeRichText() existed, so re-editing doesn't compound div soup.
-  byId("calFldBody").innerHTML = entry
-    ? normalizeRichText(entry.body || "")
-    : "";
-  byId("calFldBody").setAttribute(
-    "data-placeholder",
-    "Notes, decisions, links…",
-  );
+  const bodyHtml = entry ? normalizeRichText(entry.body || "") : "";
+  setBodyEditorValue(bodyHtml);
 
   byId("calFldStatus").value = entry && entry.status ? entry.status : "Open";
   byId("calFldDue").value = entry && entry.dueDate ? ymd(entry.dueDate) : "";
@@ -1242,16 +1287,6 @@ async function saveEntry() {
   const date = byId("calFldDate").value;
   const title = byId("calFldTitle").value.trim();
 
-  if (!date) {
-    msg.textContent = "Pick a date.";
-    byId("calFldDate").focus();
-    return;
-  }
-  if (!type) {
-    msg.textContent = "Choose an entry type.";
-    byId("calFldType").focus();
-    return;
-  }
   if (!title) {
     msg.textContent = "Add a title.";
     byId("calFldTitle").focus();
@@ -1267,7 +1302,7 @@ async function saveEntry() {
   values[I.entryDate] = date;
   values[I.entryType] = type;
   values[I.title] = title;
-  values[I.body] = normalizeRichText(byId("calFldBody").innerHTML.trim());
+  values[I.body] = normalizeRichText(getBodyEditorValue());
   values[I.linked] = JSON.stringify(
     state.draftLinks.map((l) => ({
       recordID: l.recordID,
@@ -1463,25 +1498,9 @@ function wireControls() {
     applyConditionalFields(this.value);
   });
 
-  // Rich text toolbar
-  byId("calFldBodyToolbar").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-cmd]");
-    if (!b) return;
-    e.preventDefault();
-    byId("calFldBody").focus();
-    document.execCommand(b.getAttribute("data-cmd"), false, null);
-  });
-
-  // Nudge execCommand toward <p> paragraphs instead of its default bare
-  // <div> line-wrapping (normalizeRichText still does the full cleanup
-  // on save — this just reduces how much cleanup is needed).
-  byId("calFldBody").addEventListener("focus", () => {
-    try {
-      document.execCommand("defaultParagraphSeparator", false, "p");
-    } catch (e) {
-      /* unsupported in some browsers — normalizeRichText() still cleans up on save */
-    }
-  });
+  // Rich text editor — LEAF's native Trumbowyg (jQuery + Trumbowyg are
+  // already loaded globally by LEAF's page shell, so we just init here).
+  initBodyEditor();
 
   // People pickers
   wirePeople("assigned", "calAssignedSearch", "calAssignedResults");

@@ -259,19 +259,35 @@
         aria-labelledby="calEntryModalTitle"
       >
         <div class="cal-modalBackdrop" data-close="entry"></div>
-        <div class="cal-modalPanel" role="document">
+        <div class="cal-modalPanel cal-modalPanel--wide" role="document">
           <div class="cal-modalHead">
             <h2 class="cal-modalTitle" id="calEntryModalTitle">New entry</h2>
-            <button
-              type="button"
-              class="cal-iconBtn"
-              data-close="entry"
-              aria-label="Close"
-            >
-              <span class="material-symbols-outlined" aria-hidden="true"
-                >close</span
+            <div class="cal-modalHeadActions">
+              <a
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="cal-iconBtn"
+                id="calEntryOpenTab"
+                title="Open in new tab"
+                aria-label="Open in new tab"
+                hidden
               >
-            </button>
+                <span class="material-symbols-outlined" aria-hidden="true"
+                  >open_in_new</span
+                >
+              </a>
+              <button
+                type="button"
+                class="cal-iconBtn"
+                data-close="entry"
+                aria-label="Close"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true"
+                  >close</span
+                >
+              </button>
+            </div>
           </div>
 
           <form id="calEntryForm" class="cal-form" novalidate>
@@ -279,16 +295,12 @@
 
             <div class="cal-formRow cal-formRow--split">
               <label class="cal-field">
-                <span class="cal-label"
-                  >Date <span class="cal-req">*</span></span
-                >
-                <input type="date" id="calFldDate" class="cal-input" required />
+                <span class="cal-label">Date</span>
+                <input type="date" id="calFldDate" class="cal-input" />
               </label>
               <label class="cal-field">
-                <span class="cal-label"
-                  >Type <span class="cal-req">*</span></span
-                >
-                <select id="calFldType" class="cal-select" required>
+                <span class="cal-label">Type</span>
+                <select id="calFldType" class="cal-select">
                   <option value="">Choose…</option>
                   <option value="Meeting Notes">Meeting Notes</option>
                   <option value="Action Item">Action Item</option>
@@ -299,69 +311,24 @@
             </div>
 
             <label class="cal-field">
-              <span class="cal-label"
-                >Title <span class="cal-req">*</span></span
-              >
+              <span class="cal-label">Title</span>
               <input
                 type="text"
                 id="calFldTitle"
                 class="cal-input"
                 maxlength="200"
-                required
                 placeholder="e.g. Weekly sync — release blockers"
               />
             </label>
 
             <label class="cal-field">
               <span class="cal-label" id="calFldBodyLabel">Details</span>
-              <div
-                id="calFldBodyToolbar"
-                class="cal-rtToolbar"
-                role="toolbar"
-                aria-label="Formatting"
-                aria-controls="calFldBody"
-              >
-                <button
-                  type="button"
-                  data-cmd="bold"
-                  class="cal-rtBtn"
-                  aria-label="Bold"
-                >
-                  <b>B</b>
-                </button>
-                <button
-                  type="button"
-                  data-cmd="italic"
-                  class="cal-rtBtn"
-                  aria-label="Italic"
-                >
-                  <i>I</i>
-                </button>
-                <button
-                  type="button"
-                  data-cmd="insertUnorderedList"
-                  class="cal-rtBtn"
-                  aria-label="Bulleted list"
-                >
-                  •—
-                </button>
-                <button
-                  type="button"
-                  data-cmd="insertOrderedList"
-                  class="cal-rtBtn"
-                  aria-label="Numbered list"
-                >
-                  1.
-                </button>
+              <div class="cal-rtWrap">
+                <textarea
+                  id="calFldBody"
+                  aria-labelledby="calFldBodyLabel"
+                ></textarea>
               </div>
-              <div
-                id="calFldBody"
-                class="cal-rtArea"
-                contenteditable="true"
-                role="textbox"
-                aria-multiline="true"
-                aria-labelledby="calFldBodyLabel"
-              ></div>
             </label>
 
             <!-- Action-item-only fields -->
@@ -446,25 +413,23 @@
 
             <!-- Linked records -->
             <div class="cal-field">
-              <span class="cal-label" id="calLinkChipsLabel"
-                >Linked records</span
-              >
+              <div class="cal-linkFieldHead">
+                <span class="cal-label" id="calLinkChipsLabel"
+                  >Linked records</span
+                >
+                <button type="button" class="cal-ghostBtn" id="calLinkAddBtn">
+                  <span class="material-symbols-outlined" aria-hidden="true"
+                    >link</span
+                  >
+                  Select record
+                </button>
+              </div>
               <div
                 class="cal-linkChips"
                 id="calLinkChips"
                 role="list"
                 aria-labelledby="calLinkChipsLabel"
               ></div>
-              <button
-                type="button"
-                class="cal-ghostBtn cal-ghostBtn--full"
-                id="calLinkAddBtn"
-              >
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  >link</span
-                >
-                Attach a record
-              </button>
             </div>
 
             <div class="cal-formMsg" id="calEntryMsg" role="alert"></div>
@@ -478,19 +443,6 @@
               >
                 Delete
               </button>
-              <a
-                href="#"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="cal-ghostBtn"
-                id="calEntryOpenTab"
-                hidden
-              >
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  >open_in_new</span
-                >
-                Open in LEAF
-              </a>
               <span class="cal-actionsSpacer"></span>
               <button type="button" class="cal-ghostBtn" data-close="entry">
                 Cancel

@@ -661,7 +661,7 @@
   flex-direction: column;
   gap: 6px;
   cursor: pointer;
-  flex: 1;
+  min-height: 90px;
 }
 .cal-weekColBody:hover {
   background: var(--cal-surface-alt);
@@ -876,6 +876,10 @@
   display: flex;
   flex-direction: column;
 }
+.cal-modalPanel--wide {
+  width: 80vw;
+  max-width: 80vw;
+}
 .cal-modalHead {
   display: flex;
   align-items: center;
@@ -927,9 +931,6 @@
   color: var(--cal-muted);
   font-size: 12px;
 }
-.cal-req {
-  color: var(--cal-danger);
-}
 .cal-field .cal-input,
 .cal-field .cal-select {
   width: 100%;
@@ -948,46 +949,17 @@
   display: none;
 }
 
-/* Rich text */
-.cal-rtToolbar {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 4px;
-}
-.cal-rtBtn {
-  border: 1px solid var(--cal-border-strong);
-  background: var(--cal-surface);
-  border-radius: 6px;
-  min-width: 32px;
-  height: 30px;
-  font-size: 13px;
-  cursor: pointer;
-}
-.cal-rtBtn:hover {
-  background: var(--cal-surface-alt);
-}
-.cal-rtBtn:focus-visible {
-  outline: 2px solid var(--cal-focus);
-  outline-offset: 1px;
-}
-.cal-rtArea {
-  min-height: 110px;
-  border: 1px solid var(--cal-border-strong);
+/* Rich text (Trumbowyg — LEAF's native advanced formatting editor) */
+.cal-rtWrap {
   border-radius: var(--cal-radius-sm);
-  padding: 10px 12px;
+}
+.cal-rtWrap .trumbowyg-box,
+.cal-rtWrap .trumbowyg-editor {
+  min-height: 140px;
   font-size: 14px;
-  line-height: 1.5;
-  background: var(--cal-surface);
-  overflow-y: auto;
-  max-height: 260px;
 }
-.cal-rtArea:focus-visible {
-  outline: 2px solid var(--cal-focus);
-  outline-offset: 1px;
-}
-.cal-rtArea:empty::before {
-  content: attr(data-placeholder);
-  color: #6b7684;
+.cal-rtWrap .trumbowyg-box {
+  margin: 0;
 }
 
 /* People picker */
@@ -1063,10 +1035,24 @@
 }
 
 /* Link chips */
+.cal-linkFieldHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.cal-linkFieldHead .cal-label {
+  margin: 0;
+}
 .cal-linkChips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+.cal-linkChipsEmpty {
+  font-size: 13px;
+  color: var(--cal-muted);
+  font-style: italic;
 }
 .cal-linkChip {
   display: inline-flex;
@@ -1270,6 +1256,9 @@
 }
 .cal-jumpTop[hidden] {
   display: none;
+}
+.cal-jumpTop .material-symbols-outlined {
+  color: #fff !important;
 }
 
 /* ── Responsive ───────────────────────────────────────── */
