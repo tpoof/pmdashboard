@@ -1,45 +1,33 @@
 /* ============================================================
-   TEAM CONTINUITY CALENDAR — LEAF standalone app
-   Pattern mirrors ideas_v2.js / project_v19.js:
-     • Reads   → LeafFormQuery (global on LEAF sites)
+   TEAM COMMAND CENTER — LEAF standalone app
+   Pattern:
+     • Reads   → LeafFormQuery (global on LEAF sites), per formQuery.md
      • Writes  → POST ./api/form/new  → POST ./api/form/{id} → submit
      • Records → opened in an iframe modal (printview)
 
    ============================================================
    ▼▼▼  CONFIG — FILL THIS IN AFTER YOU BUILD THE FORM  ▼▼▼
-   ============================================================
-   HOW TO GET THESE VALUES
-   1. Build the "Calendar Entry" form in the Form Editor from the
-      spec we agreed on (single, no-reviewer workflow step).
-   2. Either:
-        a) Report Builder → build a report on this form →
-           JSON → "JavaScript Template" → copy the indicator IDs, OR
-        b) Set window.leafCalendar.debug = true (in calendar.html),
-           reload, and read the indicator list printed to the console.
-   3. Replace every REPLACE_ME below with the real numeric ID.
-   ------------------------------------------------------------ */
-var CONFIG = {
-  // Form category, e.g. "form_abc12"  (with the "form_" prefix)
-  categoryID: "REPLACE_ME_form_xxxxx",
+   ============================================================ */
+const CONFIG = {
+  // Form category for the Calendar Entry form
+  categoryID: "form_34212",
 
-  // The BASE URL of THIS LEAF site's record printview.
-  // ideas used: https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=
-  // Change "ideas" to this site's slug. A relative fallback is used if left as-is.
+  // Base URL of this LEAF site's record printview
   recordViewBase:
-    "REPLACE_ME_https://leaf.va.gov/platform/<site>/index.php?a=printview&recordID=",
+    "https://leaf.va.gov/platform/calendar/index.php?a=printview&recordID=",
 
   // Numeric indicator IDs from the Calendar Entry form
   indicators: {
-    entryDate: "REPLACE_ME", // Date       — the day the entry lands on
-    entryType: "REPLACE_ME", // Dropdown   — Meeting Notes / Action Item / Out-of-Office / General Log
-    title: "REPLACE_ME", // Text       — chip label
-    body: "REPLACE_ME", // Textarea / rich text — details
-    linked: "REPLACE_ME", // Textarea   — app-managed JSON list of {recordID, categoryID}
-    status: "REPLACE_ME", // Dropdown   — Open / In Progress / Done / Carried Forward
-    assignedTo: "REPLACE_ME", // Orgchart employee (empUID) — action-item owner
-    dueDate: "REPLACE_ME", // Date       — action-item due date
-    endDate: "REPLACE_ME", // Date       — OOO range end
-    coveredBy: "REPLACE_ME", // Orgchart employee (empUID) — OOO coverage
+    entryDate: "11", // Date       — the day the entry lands on
+    entryType: "2", // Dropdown   — Meeting Notes / Action Item / Out-of-Office / General Log
+    title: "3", // Text       — chip label
+    body: "4", // Textarea / rich text — details
+    linked: "5", // Textarea   — app-managed JSON list of {recordID, categoryID}
+    status: "6", // Dropdown   — Open / In Progress / Done / Carried Forward
+    assignedTo: "7", // Orgchart employee (empUID) — action-item owner
+    dueDate: "8", // Date       — action-item due date
+    endDate: "9", // Date       — OOO range end
+    coveredBy: "10", // Orgchart employee (empUID) — OOO coverage
   },
 
   // How many chips fit in a month cell before "+N more"
@@ -53,19 +41,17 @@ var CONFIG = {
 /* ============================================================
    Runtime config from the page (Smarty-filled in LEAF)
    ============================================================ */
-var pageConfig = window.leafCalendar || {};
-var DEBUG = pageConfig.debug === true;
+const pageConfig = window.leafCalendar || {};
+const DEBUG = pageConfig.debug === true;
 
-function sanitizeLeafValue(value) {
-  return String(value || "")
-    .replace(/<!--|-->/g, "")
-    .trim();
-}
-var CSRF = sanitizeLeafValue(pageConfig.csrfToken);
-var CURRENT_USER = sanitizeLeafValue(pageConfig.userID);
+// calendar.html escapes CSRF/userID server-side via |unescape|escape:"quotes"
+// (same convention as ideas.html), so no client-side comment-stripping
+// workaround is needed here.
+const CSRF = String(pageConfig.csrfToken || "").trim();
+const CURRENT_USER = String(pageConfig.userID || "").trim();
 
-var TYPES = ["Meeting Notes", "Action Item", "Out-of-Office", "General Log"];
-var TYPE_CLASS = {
+const TYPES = ["Meeting Notes", "Action Item", "Out-of-Office", "General Log"];
+const TYPE_CLASS = {
   "Meeting Notes": "meeting",
   "Action Item": "action",
   "Out-of-Office": "ooo",
@@ -75,8 +61,8 @@ var TYPE_CLASS = {
 /* ============================================================
    State
    ============================================================ */
-var state = {
-  view: "month", // month | week | agenda
+const state = {
+  view: "week", // week | month
   cursor: startOfDay(new Date()), // the date the current view is centered on
   entries: [], // normalized entry view-models
   entriesByDate: {}, // 'YYYY-MM-DD' -> [entry]
@@ -88,12 +74,16 @@ var state = {
   draftCovered: null, // {empUID, name}
 };
 
+// Tracks in-flight link searches so a fast typist can't race an old
+// response into overwriting a newer one.
+let linkSearchToken = 0;
+
 /* ============================================================
    Small utilities
    ============================================================ */
-function logDebug() {
+function logDebug(...args) {
   if (!DEBUG) return;
-  console.log.apply(console, ["[Calendar]"].concat([].slice.call(arguments)));
+  console.log("[Calendar]", ...args);
 }
 
 function byId(id) {
@@ -122,28 +112,24 @@ function decodeEntities(str) {
 }
 
 function debounce(fn, delay) {
-  var timer;
-  return function () {
-    var ctx = this,
-      args = arguments;
+  let timer;
+  return function debounced(...args) {
     clearTimeout(timer);
-    timer = setTimeout(function () {
-      fn.apply(ctx, args);
-    }, delay);
+    timer = setTimeout(() => fn.apply(this, args), delay);
   };
 }
 
 function announce(msg, assertive) {
-  var node = byId(assertive ? "cal-live-assertive" : "cal-live-polite");
+  const node = byId(assertive ? "cal-live-assertive" : "cal-live-polite");
   if (!node) return;
   node.textContent = "";
-  setTimeout(function () {
+  setTimeout(() => {
     node.textContent = msg;
   }, 50);
 }
 
 function setStatus(msg, isError) {
-  var el = byId("calStatus");
+  const el = byId("calStatus");
   if (!el) return;
   el.textContent = msg || "";
   el.classList.toggle("is-error", !!isError);
@@ -151,29 +137,28 @@ function setStatus(msg, isError) {
 
 /* ── Date helpers (local-time, no UTC drift) ─────────────── */
 function startOfDay(d) {
-  var x = new Date(d);
+  const x = new Date(d);
   x.setHours(0, 0, 0, 0);
   return x;
 }
 function ymd(d) {
-  var y = d.getFullYear();
-  var m = String(d.getMonth() + 1).padStart(2, "0");
-  var day = String(d.getDate()).padStart(2, "0");
-  return y + "-" + m + "-" + day;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 function parseYMD(s) {
   if (!s) return null;
-  var m = String(s)
-    .trim()
-    .match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const str = String(s).trim();
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!m) {
-    var d = new Date(s);
-    return isNaN(d) ? null : startOfDay(d);
+    const d = new Date(str);
+    return Number.isNaN(d.getTime()) ? null : startOfDay(d);
   }
   return new Date(+m[1], +m[2] - 1, +m[3]);
 }
 function addDays(d, n) {
-  var x = new Date(d);
+  const x = new Date(d);
   x.setDate(x.getDate() + n);
   return x;
 }
@@ -184,7 +169,7 @@ function isTodayDate(d) {
   return sameDay(d, new Date());
 }
 
-var MONTHS = [
+const MONTHS = [
   "January",
   "February",
   "March",
@@ -198,8 +183,8 @@ var MONTHS = [
   "November",
   "December",
 ];
-var DOW_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-var DOW_LONG = [
+const DOW_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DOW_LONG = [
   "Sunday",
   "Monday",
   "Tuesday",
@@ -210,43 +195,35 @@ var DOW_LONG = [
 ];
 
 function orderedDow() {
-  var out = [];
-  for (var i = 0; i < 7; i++) out.push((CONFIG.weekStartsOn + i) % 7);
+  const out = [];
+  for (let i = 0; i < 7; i++) out.push((CONFIG.weekStartsOn + i) % 7);
   return out;
 }
 function startOfWeek(d) {
-  var x = startOfDay(d);
-  var diff = (x.getDay() - CONFIG.weekStartsOn + 7) % 7;
+  const x = startOfDay(d);
+  const diff = (x.getDay() - CONFIG.weekStartsOn + 7) % 7;
   return addDays(x, -diff);
 }
 function fmtLongDate(d) {
-  return (
-    DOW_LONG[d.getDay()] +
-    ", " +
-    MONTHS[d.getMonth()] +
-    " " +
-    d.getDate() +
-    ", " +
-    d.getFullYear()
-  );
+  return `${DOW_LONG[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
 /* ============================================================
    LEAF API helpers
    ============================================================ */
 function recordViewURL(recordID) {
-  var base = CONFIG.recordViewBase || "";
+  const base = CONFIG.recordViewBase || "";
   if (!base || base.indexOf("REPLACE_ME") === 0) {
     // Relative fallback — works when the app is served from the site root
-    return "index.php?a=printview&recordID=" + encodeURIComponent(recordID);
+    return `index.php?a=printview&recordID=${encodeURIComponent(recordID)}`;
   }
-  return base + encodeURIComponent(recordID);
+  return `${base}${encodeURIComponent(recordID)}`;
 }
 
 function encodeBody(obj) {
-  var body = new URLSearchParams();
-  Object.keys(obj || {}).forEach(function (k) {
-    var v = obj[k];
+  const body = new URLSearchParams();
+  Object.keys(obj || {}).forEach((k) => {
+    const v = obj[k];
     if (v === undefined || v === null) return;
     body.append(String(k), String(v));
   });
@@ -255,7 +232,7 @@ function encodeBody(obj) {
 
 // POST helper returning text (or parsed JSON when possible)
 async function apiPost(url, dataObj) {
-  var res = await fetch(url, {
+  const res = await fetch(url, {
     method: "POST",
     credentials: "same-origin",
     headers: {
@@ -264,8 +241,8 @@ async function apiPost(url, dataObj) {
     },
     body: encodeBody(dataObj),
   });
-  if (!res.ok) throw new Error("POST " + url + " → HTTP " + res.status);
-  var text = await res.text();
+  if (!res.ok) throw new Error(`POST ${url} → HTTP ${res.status}`);
+  const text = await res.text();
   try {
     return JSON.parse(text);
   } catch (e) {
@@ -274,43 +251,50 @@ async function apiPost(url, dataObj) {
 }
 
 async function apiGet(url) {
-  var res = await fetch(url, {
+  const res = await fetch(url, {
     credentials: "same-origin",
     headers: {
       "x-requested-with": "XMLHttpRequest",
       Accept: "application/json",
     },
   });
-  if (!res.ok) throw new Error("GET " + url + " → HTTP " + res.status);
+  if (!res.ok) throw new Error(`GET ${url} → HTTP ${res.status}`);
   return res.json();
 }
 
-// Create a record of CONFIG.categoryID; returns the new numeric recordID
+// Create a record of CONFIG.categoryID; returns the new numeric recordID.
+// Field name confirmed against the working SNAP/UC-cache pattern in
+// activity_map.html: the POST field is `num{categoryID}` with the
+// "form_" prefix INTACT (e.g. "numform_34212"), not stripped.
 async function createRecord() {
-  var numKey = "num" + String(CONFIG.categoryID).replace("form_", "");
-  var payload = { CSRFToken: CSRF, title: "Calendar Entry" };
-  payload[numKey] = numKey;
-  payload["numform_" + String(CONFIG.categoryID).replace("form_", "")] = 1;
-  var res = await apiPost("./api/form/new", payload);
-  var id = parseInt(String(res).trim().replace(/^"|"$/g, ""), 10);
-  if (!id || id <= 0) throw new Error("Record creation returned no ID: " + res);
+  const payload = {
+    CSRFToken: CSRF,
+    title: "Calendar Entry",
+    [`num${CONFIG.categoryID}`]: "on",
+  };
+  const res = await apiPost("./api/form/new", payload);
+  const id = parseInt(String(res).trim().replace(/^"|"$/g, ""), 10);
+  if (!id || id <= 0) throw new Error(`Record creation returned no ID: ${res}`);
   return id;
 }
 
-// Write indicator values to a record
+// Write indicator values to a record.
+// Payload shape confirmed against LeafForm.doModify() (form.js): the POST
+// body must include `recordID` as a top-level field alongside each
+// {indicatorID: value} pair.
 async function writeIndicators(recordID, indicatorValues) {
-  var payload = { CSRFToken: CSRF, series: 1 };
-  Object.keys(indicatorValues).forEach(function (indID) {
+  const payload = { recordID, CSRFToken: CSRF };
+  Object.keys(indicatorValues).forEach((indID) => {
     if (indID && indID !== "REPLACE_ME")
       payload[indID] = indicatorValues[indID];
   });
-  return apiPost("./api/form/" + encodeURIComponent(recordID), payload);
+  return apiPost(`./api/form/${encodeURIComponent(recordID)}`, payload);
 }
 
 // Submit a freshly-created record into its (single-step) workflow so it's live
 async function submitRecord(recordID) {
   try {
-    await apiPost("./api/form/" + encodeURIComponent(recordID) + "/submit", {
+    await apiPost(`./api/form/${encodeURIComponent(recordID)}/submit`, {
       CSRFToken: CSRF,
     });
   } catch (e) {
@@ -326,35 +310,26 @@ async function runDiagnostics() {
   console.log("=== CALENDAR DIAGNOSTICS ===");
   console.log("Configured categoryID:", CONFIG.categoryID);
   try {
-    var cats = await apiGet("./api/workflow/categoriesUnabridged");
+    const cats = await apiGet("./api/workflow/categoriesUnabridged");
     console.log("--- Forms available on this site ---");
-    (Array.isArray(cats) ? cats : Object.values(cats || {})).forEach(
-      function (c) {
-        console.log(
-          "  " + (c.categoryID || c.id) + " => " + (c.categoryName || c.name),
-        );
-      },
-    );
+    (Array.isArray(cats) ? cats : Object.values(cats || {})).forEach((c) => {
+      console.log(`  ${c.categoryID || c.id} => ${c.categoryName || c.name}`);
+    });
   } catch (e) {
     console.log("Could not list categories:", e.message);
   }
 
   if (CONFIG.categoryID && CONFIG.categoryID.indexOf("REPLACE_ME") !== 0) {
     try {
-      var raw = String(CONFIG.categoryID).replace("form_", "");
-      var inds = await apiGet(
-        "./api/formEditor/indicator/list/category/" + raw,
+      const raw = String(CONFIG.categoryID).replace("form_", "");
+      const inds = await apiGet(
+        `./api/formEditor/indicator/list/category/${raw}`,
       );
-      console.log("--- Indicator IDs for " + CONFIG.categoryID + " ---");
-      Object.keys(inds || {}).forEach(function (k) {
-        var i = inds[k];
+      console.log(`--- Indicator IDs for ${CONFIG.categoryID} ---`);
+      Object.keys(inds || {}).forEach((k) => {
+        const i = inds[k];
         console.log(
-          "  id " +
-            k +
-            " | " +
-            (i.name || i.description || "") +
-            " | format: " +
-            (i.format || i.input_type || ""),
+          `  id ${k} | ${i.name || i.description || ""} | format: ${i.format || i.input_type || ""}`,
         );
       });
       console.log(">>> Copy these numbers into CONFIG.indicators above.");
@@ -373,28 +348,25 @@ async function runDiagnostics() {
 
 /* ============================================================
    Data loading — read all Calendar Entry records
+   Uses LeafFormQuery per formQuery.md rather than hitting
+   api/form/query directly, and reports progress via onProgress
+   so large record sets don't look like a hang.
    ============================================================ */
 function indVal(series, indID) {
-  if (!indID || indID === "REPLACE_ME") return "";
-  if (!series) return "";
-  // LEAF result shapes: s1.id{ID}.value | s1.id{ID} | s1[ID].value | s1[ID]
-  var v = series["id" + indID];
+  if (!indID || indID === "REPLACE_ME" || !series) return "";
+  // LEAF response shape is s1.id{N} (optionally {value: ...}).
+  let v = series[`id${indID}`];
   if (v && typeof v === "object" && "value" in v) v = v.value;
-  if (v == null) {
-    var v2 = series[indID];
-    if (v2 && typeof v2 === "object" && "value" in v2) v2 = v2.value;
-    v = v2;
-  }
   return v == null ? "" : decodeEntities(String(v));
 }
 
 function safeParseLinks(raw) {
   if (!raw) return [];
   try {
-    var arr = JSON.parse(raw);
+    const arr = JSON.parse(raw);
     if (Array.isArray(arr)) {
       return arr
-        .map(function (o) {
+        .map((o) => {
           if (o == null) return null;
           if (typeof o === "number" || typeof o === "string") {
             return { recordID: String(o), categoryID: "" };
@@ -404,9 +376,7 @@ function safeParseLinks(raw) {
             categoryID: String(o.categoryID || ""),
           };
         })
-        .filter(function (o) {
-          return o && o.recordID;
-        });
+        .filter((o) => o && o.recordID);
     }
   } catch (e) {
     /* fall through to delimiter parse */
@@ -415,20 +385,18 @@ function safeParseLinks(raw) {
   return String(raw)
     .split(/[\s,;]+/)
     .filter(Boolean)
-    .map(function (id) {
-      return { recordID: id, categoryID: "" };
-    });
+    .map((id) => ({ recordID: id, categoryID: "" }));
 }
 
 function normalizeEntry(recordID, rec) {
-  var series = rec.s1 || rec;
-  var I = CONFIG.indicators;
-  var type = indVal(series, I.entryType) || "General Log";
-  var dateStr = indVal(series, I.entryDate);
-  var d = parseYMD(dateStr) || parseYMD(rec.date) || null;
+  const series = rec.s1 || rec;
+  const I = CONFIG.indicators;
+  const type = indVal(series, I.entryType) || "General Log";
+  const dateStr = indVal(series, I.entryDate);
+  const d = parseYMD(dateStr) || parseYMD(rec.date) || null;
   return {
     recordID: String(recordID),
-    type: type,
+    type,
     typeClass: TYPE_CLASS[type] || "log",
     date: d,
     dateKey: d ? ymd(d) : "",
@@ -455,35 +423,43 @@ async function loadEntries() {
     );
     throw new Error("LeafFormQuery missing");
   }
-  var I = CONFIG.indicators;
-  var q = new LeafFormQuery();
+  const I = CONFIG.indicators;
+  const wantedIndicators = [
+    I.entryDate,
+    I.entryType,
+    I.title,
+    I.body,
+    I.linked,
+    I.status,
+    I.assignedTo,
+    I.dueDate,
+    I.endDate,
+    I.coveredBy,
+  ].filter((x) => x && x !== "REPLACE_ME");
+
+  const q = new LeafFormQuery();
   q.addTerm("categoryID", "=", CONFIG.categoryID);
   q.addTerm("deleted", "=", 0);
   q.join("initiatorName");
-  q.getData(
-    [
-      I.entryDate,
-      I.entryType,
-      I.title,
-      I.body,
-      I.linked,
-      I.status,
-      I.assignedTo,
-      I.dueDate,
-      I.endDate,
-      I.coveredBy,
-    ].filter(function (x) {
-      return x && x !== "REPLACE_ME";
-    }),
-  );
+  q.getData(wantedIndicators);
+
+  // IMPORTANT: indicator data lives under the nested "s1" object in the
+  // response (s1.id{N}), not a top-level "s1" scalar. Naming "s1" in
+  // x-filterData strips the entire indicator payload and silently
+  // breaks every entry — so we only whitelist the flat, top-level
+  // fields we actually read off `rec` directly.
   q.setExtraParams(
-    "&x-filterData=recordID,title,userID,initiatorName,lastUpdated,s1",
+    "&x-filterData=recordID,title,userID,initiatorName,lastUpdated",
   );
 
-  var res = await q.execute();
-  var entries = [];
-  Object.keys(res || {}).forEach(function (rid) {
-    var e = normalizeEntry(rid, res[rid]);
+  q.onProgress((count) => {
+    setStatus(`Loading entries… ${count} loaded`);
+  });
+
+  const res = await q.execute();
+  const entries = [];
+  Object.keys(res || {}).forEach((rid) => {
+    const e = normalizeEntry(rid, res[rid]);
     if (e.date) entries.push(e);
   });
 
@@ -496,62 +472,52 @@ async function loadEntries() {
 }
 
 function indexEntries() {
-  var map = {};
+  const map = {};
   // Carry-forward: open/in-progress action items also appear on "today" until closed
-  var todayKey = ymd(new Date());
-  state.entries.forEach(function (e) {
+  const todayKey = ymd(new Date());
+  state.entries.forEach((e) => {
     (map[e.dateKey] = map[e.dateKey] || []).push(e);
 
-    // OOO ranges: also index each day between date..endDate
+    // OOO ranges: also index each day between date..endDate (used by week
+    // view; month view renders OOO as a spanning band instead)
     if (e.type === "Out-of-Office" && e.endDate && e.endDate > e.date) {
-      var cur = addDays(e.date, 1);
+      let cur = addDays(e.date, 1);
       while (cur <= e.endDate) {
-        var k = ymd(cur);
-        var clone = Object.assign({}, e, { _spanDay: true, dateKey: k });
+        const k = ymd(cur);
+        const clone = { ...e, _spanDay: true, dateKey: k };
         (map[k] = map[k] || []).push(clone);
         cur = addDays(cur, 1);
       }
     }
 
     // Carry-forward open action items onto today (if the entry is in the past)
-    if (
+    const isOpenAction =
       e.type === "Action Item" &&
       (e.status === "Open" ||
         e.status === "In Progress" ||
-        e.status === "Carried Forward") &&
-      e.dateKey &&
-      e.dateKey < todayKey
-    ) {
-      if (todayKey !== e.dateKey) {
-        var cf = Object.assign({}, e, {
-          _carriedForward: true,
-          dateKey: todayKey,
-        });
-        (map[todayKey] = map[todayKey] || []).push(cf);
-      }
+        e.status === "Carried Forward");
+    if (isOpenAction && e.dateKey && e.dateKey < todayKey) {
+      const cf = { ...e, _carriedForward: true, dateKey: todayKey };
+      (map[todayKey] = map[todayKey] || []).push(cf);
     }
   });
   state.entriesByDate = map;
 }
 
 function buildAuthorFilter() {
-  var sel = byId("calFilterAuthor");
+  const sel = byId("calFilterAuthor");
   if (!sel) return;
-  var seen = {};
-  state.entries.forEach(function (e) {
-    if (e.author && !seen[e.author]) {
-      seen[e.author] = e.authorName || e.author;
-    }
+  const seen = {};
+  state.entries.forEach((e) => {
+    if (e.author && !seen[e.author]) seen[e.author] = e.authorName || e.author;
   });
   state.authors = seen;
-  var keep = sel.value;
+  const keep = sel.value;
   sel.innerHTML = '<option value="">Everyone</option>';
   Object.keys(seen)
-    .sort(function (a, b) {
-      return String(seen[a]).localeCompare(String(seen[b]));
-    })
-    .forEach(function (uid) {
-      var o = document.createElement("option");
+    .sort((a, b) => String(seen[a]).localeCompare(String(seen[b])))
+    .forEach((uid) => {
+      const o = document.createElement("option");
       o.value = uid;
       o.textContent = seen[uid];
       sel.appendChild(o);
@@ -561,27 +527,30 @@ function buildAuthorFilter() {
 
 // Resolve titles for all linked records in one batched query, so chips show live names
 async function resolveLinkTitles() {
-  var ids = {};
-  state.entries.forEach(function (e) {
-    e.links.forEach(function (l) {
+  const ids = {};
+  state.entries.forEach((e) => {
+    e.links.forEach((l) => {
       if (l.recordID) ids[l.recordID] = true;
     });
   });
-  var idList = Object.keys(ids);
+  const idList = Object.keys(ids);
   if (!idList.length || typeof LeafFormQuery === "undefined") return;
   try {
-    var q = new LeafFormQuery();
-    q.addTerm("recordID", "=", idList.join(","));
+    const q = new LeafFormQuery();
+    q.addTerm("recordIDs", "=", idList.join(","));
     q.join("categoryName");
     q.setExtraParams(
       "&x-filterData=recordID,title,categoryID,categoryName,categoryNames",
     );
-    var res = await q.execute();
-    var titleMap = {};
-    Object.keys(res || {}).forEach(function (rid) {
-      var r = res[rid];
+    q.onProgress((count) => {
+      logDebug(`Resolving linked record titles… ${count} loaded`);
+    });
+    const res = await q.execute();
+    const titleMap = {};
+    Object.keys(res || {}).forEach((rid) => {
+      const r = res[rid];
       titleMap[rid] = {
-        title: decodeEntities(r.title || "#" + rid),
+        title: decodeEntities(r.title || `#${rid}`),
         formName:
           r.categoryName ||
           (Array.isArray(r.categoryNames) ? r.categoryNames.join(", ") : "") ||
@@ -589,15 +558,15 @@ async function resolveLinkTitles() {
         categoryID: r.categoryID || "",
       };
     });
-    state.entries.forEach(function (e) {
-      e.links.forEach(function (l) {
-        var m = titleMap[l.recordID];
+    state.entries.forEach((e) => {
+      e.links.forEach((l) => {
+        const m = titleMap[l.recordID];
         if (m) {
           l.title = m.title;
           l.formName = m.formName;
           if (!l.categoryID) l.categoryID = m.categoryID;
         } else if (!l.title) {
-          l.title = "#" + l.recordID;
+          l.title = `#${l.recordID}`;
         }
       });
     });
@@ -610,7 +579,7 @@ async function resolveLinkTitles() {
    Filtering
    ============================================================ */
 function passesFilter(e) {
-  var f = state.filters;
+  const f = state.filters;
   if (f.type && e.type !== f.type) return false;
   if (f.author && e.author !== f.author) return false;
   if (
@@ -623,125 +592,210 @@ function passesFilter(e) {
     return false;
   }
   if (f.search) {
-    var hay = (e.title + " " + stripHtml(e.body)).toLowerCase();
-    if (hay.indexOf(f.search.toLowerCase()) === -1) return false;
+    const hay = `${e.title} ${stripHtml(e.body)}`.toLowerCase();
+    if (!hay.includes(f.search.toLowerCase())) return false;
   }
   return true;
 }
 
 function stripHtml(html) {
   if (!html) return "";
-  var tmp = document.createElement("div");
+  const tmp = document.createElement("div");
   tmp.innerHTML = html;
   return tmp.textContent || tmp.innerText || "";
 }
 
+// document.execCommand (used by the rich-text toolbar) notoriously wraps
+// every line in its own <div> in Chromium browsers, producing "div soup"
+// like <div>text</div><div>text</div> instead of real paragraphs. This
+// collapses top-level <div> wrappers into <p> tags and normalizes legacy
+// <b>/<i> (also produced by execCommand) into <strong>/<em>.
+function normalizeRichText(html) {
+  if (!html) return "";
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+
+  Array.from(tmp.children).forEach((child) => {
+    if (child.tagName === "DIV") {
+      const p = document.createElement("p");
+      p.innerHTML = child.innerHTML;
+      child.replaceWith(p);
+    }
+  });
+
+  tmp.querySelectorAll("b").forEach((el) => {
+    const strong = document.createElement("strong");
+    strong.innerHTML = el.innerHTML;
+    el.replaceWith(strong);
+  });
+  tmp.querySelectorAll("i").forEach((el) => {
+    const em = document.createElement("em");
+    em.innerHTML = el.innerHTML;
+    el.replaceWith(em);
+  });
+
+  tmp.querySelectorAll("p").forEach((p) => {
+    if (p.innerHTML.trim() === "<br>" || p.innerHTML.trim() === "") {
+      p.remove();
+    }
+  });
+
+  return tmp.innerHTML.trim();
+}
+
 function entriesForDay(dateKey) {
-  var list = (state.entriesByDate[dateKey] || []).filter(passesFilter);
+  const list = (state.entriesByDate[dateKey] || []).filter(passesFilter);
   // Stable order: type priority then title
-  var order = {
+  const order = {
     "Out-of-Office": 0,
     "Meeting Notes": 1,
     "Action Item": 2,
     "General Log": 3,
   };
-  return list.sort(function (a, b) {
-    return order[a.type] - order[b.type] || a.title.localeCompare(b.title);
-  });
+  return list.sort(
+    (a, b) => order[a.type] - order[b.type] || a.title.localeCompare(b.title),
+  );
 }
 
 /* ============================================================
    Rendering — shared chip / helpers
    ============================================================ */
 function chipLabel(e) {
-  if (e._spanDay && e.type === "Out-of-Office") {
-    return e.title + " (out)";
-  }
+  if (e._spanDay && e.type === "Out-of-Office") return `${e.title} (out)`;
   return e.title;
 }
 
 function chipHTML(e) {
-  var cls = "cal-chip t-" + e.typeClass;
+  let cls = `cal-chip t-${e.typeClass}`;
   if (e.type === "Action Item" && e.status === "Done") cls += " is-done";
   if (e._carriedForward) cls += " is-carried";
-  var prefix = e._carriedForward ? "↺ " : "";
-  return (
-    '<button type="button" class="' +
-    cls +
-    '" data-record="' +
-    escapeHtml(e.recordID) +
-    '" ' +
-    'title="' +
-    escapeHtml(e.type + ": " + e.title) +
-    '">' +
-    escapeHtml(prefix) +
-    escapeHtml(chipLabel(e)) +
-    "</button>"
-  );
+  const prefix = e._carriedForward ? "↺ " : "";
+  return `<button type="button" class="${cls}" data-record="${escapeHtml(e.recordID)}" title="${escapeHtml(`${e.type}: ${e.title}`)}">${escapeHtml(prefix)}${escapeHtml(chipLabel(e))}</button>`;
 }
 
 /* ── Month view ──────────────────────────────────────────── */
+// Single CSS grid for the whole month (not one grid per week) with
+// explicit row/column line numbers on every cell. Each week occupies:
+//   - 1 row for day numbers
+//   - 1 row per OOO band that touches that week
+//   - 1 row for chip content
+// Using one grid (rather than nested grids) avoids cascade/context bugs
+// where a child grid's own `display:grid` fails to apply and its cells
+// fall back to block/flex stacking.
 function renderMonth() {
-  var head = byId("calWeekHead");
-  var grid = byId("calMonthGrid");
+  const head = byId("calWeekHead");
+  const grid = byId("calMonthGrid");
   if (!head || !grid) return;
 
   head.innerHTML = orderedDow()
-    .map(function (d) {
-      return "<div>" + DOW_SHORT[d] + "</div>";
-    })
+    .map((d) => `<div>${DOW_SHORT[d]}</div>`)
     .join("");
 
-  var first = new Date(state.cursor.getFullYear(), state.cursor.getMonth(), 1);
-  var gridStart = startOfWeek(first);
-  var html = "";
-  for (var i = 0; i < 42; i++) {
-    var day = addDays(gridStart, i);
-    var key = ymd(day);
-    var outside = day.getMonth() !== state.cursor.getMonth();
-    var list = entriesForDay(key);
-    var limit = CONFIG.monthCellChipLimit;
-    var shown = list.slice(0, limit);
-    var extra = list.length - shown.length;
+  const first = new Date(
+    state.cursor.getFullYear(),
+    state.cursor.getMonth(),
+    1,
+  );
+  const monthEnd = new Date(
+    state.cursor.getFullYear(),
+    state.cursor.getMonth() + 1,
+    0,
+  );
+  const gridStart = startOfWeek(first);
+  const gridEnd = startOfWeek(monthEnd);
+  const totalDays = Math.round((gridEnd - gridStart) / 86400000) + 7;
+  const totalWeeks = totalDays / 7;
 
-    html +=
-      '<div class="cal-dayCell' +
-      (outside ? " is-outside" : "") +
-      (isTodayDate(day) ? " is-today" : "") +
-      '" data-day="' +
-      key +
-      '" ' +
-      'tabindex="0" role="button" aria-label="' +
-      escapeHtml(fmtLongDate(day)) +
-      ", " +
-      list.length +
-      ' entries">';
-    html += '<span class="cal-dayNum">' + day.getDate() + "</span>";
-    html += '<div class="cal-dayChips">';
-    shown.forEach(function (e) {
-      html += chipHTML(e);
-    });
-    if (extra > 0) {
-      html +=
-        '<button type="button" class="cal-moreLink" data-more="' +
-        key +
-        '">+' +
-        extra +
-        " more</button>";
+  const oooEntries = state.entries.filter(
+    (e) => e.type === "Out-of-Office" && passesFilter(e),
+  );
+
+  // First pass: figure out how many OOO band rows each week needs, and
+  // the absolute grid-row line number where each week's content starts.
+  const weekBands = []; // weekBands[w] = [{entry, colStart, colEnd}, ...]
+  const weekRowStart = []; // weekRowStart[w] = grid-row line where week w's day-number row begins
+  let cursorRow = 1;
+  for (let w = 0; w < totalWeeks; w++) {
+    const rowStart = addDays(gridStart, w * 7);
+    const rowEnd = addDays(rowStart, 6);
+    const bands = oooEntries
+      .map((e) => {
+        const spanStart = e.date;
+        const spanEnd = e.endDate && e.endDate > e.date ? e.endDate : e.date;
+        if (spanEnd < rowStart || spanStart > rowEnd) return null;
+        const segStart = spanStart > rowStart ? spanStart : rowStart;
+        const segEnd = spanEnd < rowEnd ? spanEnd : rowEnd;
+        return {
+          entry: e,
+          colStart: Math.round((segStart - rowStart) / 86400000),
+          colEnd: Math.round((segEnd - rowStart) / 86400000),
+        };
+      })
+      .filter(Boolean);
+    weekBands.push(bands);
+    weekRowStart.push(cursorRow);
+    cursorRow += 1 + bands.length + 1; // day-number row + band rows + chip row
+  }
+  const totalRows = cursorRow - 1;
+
+  // Build the grid-template-rows track list to match: auto for day-number
+  // rows, a fixed 22px for each band row, 1fr (min 96px) for chip rows.
+  const rowTracks = [];
+  for (let w = 0; w < totalWeeks; w++) {
+    rowTracks.push("auto"); // day numbers
+    weekBands[w].forEach(() => rowTracks.push("22px")); // one per band
+    rowTracks.push("minmax(96px, 1fr)"); // chip content
+  }
+  grid.style.gridTemplateColumns = "repeat(7, 1fr)";
+  grid.style.gridTemplateRows = rowTracks.join(" ");
+
+  let html = "";
+  for (let w = 0; w < totalWeeks; w++) {
+    const rowStart = addDays(gridStart, w * 7);
+    const dayNumRow = weekRowStart[w];
+    const bands = weekBands[w];
+    const chipRow = dayNumRow + 1 + bands.length;
+
+    // Day-number row
+    for (let d = 0; d < 7; d++) {
+      const day = addDays(rowStart, d);
+      const outside = day.getMonth() !== state.cursor.getMonth();
+      html += `<div class="cal-dayNumCell${outside ? " is-outside" : ""}${isTodayDate(day) ? " is-today" : ""}" style="grid-column:${d + 1};grid-row:${dayNumRow}"><span class="cal-dayNum">${day.getDate()}</span></div>`;
     }
-    html += "</div></div>";
 
-    if (
-      i >= 34 &&
-      day.getMonth() !== state.cursor.getMonth() &&
-      day.getDay() === orderedDow()[6]
-    ) {
-      // stop after the week that completes the month to avoid a trailing empty row
-      if (
-        day >
-        new Date(state.cursor.getFullYear(), state.cursor.getMonth() + 1, 0)
-      )
-        break;
+    // OOO band rows for this week
+    bands.forEach((b, bandIdx) => {
+      const gridRow = dayNumRow + 1 + bandIdx;
+      const spanStartLabel = fmtLongDate(b.entry.date);
+      const spanEndLabel =
+        b.entry.endDate && b.entry.endDate > b.entry.date
+          ? ` through ${fmtLongDate(b.entry.endDate)}`
+          : "";
+      html += `<button type="button" class="cal-oooBand" style="grid-column:${b.colStart + 1} / span ${b.colEnd - b.colStart + 1};grid-row:${gridRow}" data-record="${escapeHtml(b.entry.recordID)}" title="${escapeHtml(`${b.entry.type}: ${b.entry.title}`)}" aria-label="${escapeHtml(b.entry.title)}, Out-of-Office, ${escapeHtml(spanStartLabel)}${escapeHtml(spanEndLabel)}">${escapeHtml(b.entry.title)}</button>`;
+    });
+
+    // Chip content row — always the last row for this week, below every
+    // band row above it, so it can never be visually covered.
+    for (let d = 0; d < 7; d++) {
+      const day = addDays(rowStart, d);
+      const key = ymd(day);
+      const outside = day.getMonth() !== state.cursor.getMonth();
+      const list = entriesForDay(key).filter(
+        (e) => !(e.type === "Out-of-Office" && (e._spanDay || e.endDate)),
+      );
+      const limit = CONFIG.monthCellChipLimit;
+      const shown = list.slice(0, limit);
+      const extra = list.length - shown.length;
+
+      html += `<div class="cal-dayCell${outside ? " is-outside" : ""}${isTodayDate(day) ? " is-today" : ""}" style="grid-column:${d + 1};grid-row:${chipRow}" data-day="${key}" tabindex="0" role="button" aria-label="${escapeHtml(fmtLongDate(day))}, ${list.length} ${list.length === 1 ? "entry" : "entries"}">`;
+      html += '<div class="cal-dayChips">';
+      shown.forEach((e) => {
+        html += chipHTML(e);
+      });
+      if (extra > 0) {
+        html += `<button type="button" class="cal-moreLink" data-more="${key}">+${extra} more</button>`;
+      }
+      html += "</div></div>";
     }
   }
   grid.innerHTML = html;
@@ -749,47 +803,24 @@ function renderMonth() {
 
 /* ── Week view ───────────────────────────────────────────── */
 function renderWeek() {
-  var board = byId("calWeekBoard");
+  const board = byId("calWeekBoard");
   if (!board) return;
-  var start = startOfWeek(state.cursor);
-  var html = "";
-  for (var i = 0; i < 7; i++) {
-    var day = addDays(start, i);
-    var key = ymd(day);
-    var list = entriesForDay(key);
-    var today = isTodayDate(day);
+  const start = startOfWeek(state.cursor);
+  let html = "";
+  for (let i = 0; i < 7; i++) {
+    const day = addDays(start, i);
+    const key = ymd(day);
+    const list = entriesForDay(key);
+    const today = isTodayDate(day);
     html += '<div class="cal-weekCol">';
-    html +=
-      '<div class="cal-weekColHead' +
-      (today ? " is-today" : "") +
-      '">' +
-      '<div class="cal-weekDow">' +
-      DOW_SHORT[day.getDay()] +
-      "</div>" +
-      '<div class="cal-weekDate">' +
-      day.getDate() +
-      "</div></div>";
-    html += '<div class="cal-weekColBody" data-day="' + key + '">';
+    html += `<div class="cal-weekColHead${today ? " is-today" : ""}"><div class="cal-weekDow">${DOW_SHORT[day.getDay()]}</div><div class="cal-weekDate">${day.getDate()}</div></div>`;
+    html += `<div class="cal-weekColBody" data-day="${key}">`;
     if (!list.length) {
       html += '<span style="font-size:12px;color:#97a1ad">No entries</span>';
     } else {
-      list.forEach(function (e) {
-        var meta = weekCardMeta(e);
-        html +=
-          '<div class="cal-weekCard t-' +
-          e.typeClass +
-          '" data-record="' +
-          escapeHtml(e.recordID) +
-          '">' +
-          '<div class="cal-weekCardType">' +
-          escapeHtml(e.type) +
-          (e._carriedForward ? " ↺" : "") +
-          "</div>" +
-          '<div class="cal-weekCardTitle">' +
-          escapeHtml(e.title) +
-          "</div>" +
-          (meta ? '<div class="cal-weekCardMeta">' + meta + "</div>" : "") +
-          "</div>";
+      list.forEach((e) => {
+        const meta = weekCardMeta(e);
+        html += `<div class="cal-weekCard t-${e.typeClass}" data-record="${escapeHtml(e.recordID)}"><div class="cal-weekCardType">${escapeHtml(e.type)}${e._carriedForward ? " ↺" : ""}</div><div class="cal-weekCardTitle">${escapeHtml(e.title)}</div>${meta ? `<div class="cal-weekCardMeta">${meta}</div>` : ""}</div>`;
       });
     }
     html += "</div></div>";
@@ -798,111 +829,20 @@ function renderWeek() {
 }
 
 function weekCardMeta(e) {
-  var bits = [];
+  const bits = [];
   if (e.type === "Action Item") {
     if (e.status) bits.push(escapeHtml(e.status));
-    if (e.assignedTo) bits.push("👤 " + escapeHtml(peopleLabel(e.assignedTo)));
+    if (e.assignedTo) bits.push(`👤 ${escapeHtml(peopleLabel(e.assignedTo))}`);
   }
-  if (e.type === "Out-of-Office" && e.coveredBy)
-    bits.push("Covered: " + escapeHtml(peopleLabel(e.coveredBy)));
-  if (e.links && e.links.length) bits.push("🔗 " + e.links.length);
+  if (e.type === "Out-of-Office" && e.coveredBy) {
+    bits.push(`Covered: ${escapeHtml(peopleLabel(e.coveredBy))}`);
+  }
+  if (e.links && e.links.length) bits.push(`🔗 ${e.links.length}`);
   return bits.join(" · ");
 }
 
-/* ── Agenda view ─────────────────────────────────────────── */
-function renderAgenda() {
-  var wrap = byId("calAgenda");
-  if (!wrap) return;
-  // Agenda spans the visible month, day by day, only days with entries
-  var first = new Date(state.cursor.getFullYear(), state.cursor.getMonth(), 1);
-  var last = new Date(
-    state.cursor.getFullYear(),
-    state.cursor.getMonth() + 1,
-    0,
-  );
-  var html = "";
-  var anyDay = false;
-  for (var day = new Date(first); day <= last; day = addDays(day, 1)) {
-    var key = ymd(day);
-    var list = entriesForDay(key);
-    if (!list.length) continue;
-    anyDay = true;
-    var today = isTodayDate(day);
-    html += '<div class="cal-agendaDay">';
-    html +=
-      '<div class="cal-agendaDayHead' +
-      (today ? " is-today" : "") +
-      '">' +
-      escapeHtml(fmtLongDate(day)) +
-      '<span class="cal-agendaCount">' +
-      list.length +
-      " " +
-      (list.length === 1 ? "entry" : "entries") +
-      "</span></div>";
-    html += '<div class="cal-agendaList">';
-    list.forEach(function (e) {
-      html += agendaItemHTML(e);
-    });
-    html += "</div></div>";
-  }
-  if (!anyDay) {
-    html =
-      '<div class="cal-emptyState"><span class="material-symbols-outlined">event_busy</span>' +
-      "<p>No entries this month. Use <strong>New entry</strong> to add one.</p></div>";
-  }
-  wrap.innerHTML = html;
-}
-
-function agendaItemHTML(e) {
-  var meta = [];
-  if (e.type === "Action Item") {
-    if (e.status) meta.push("Status: " + escapeHtml(e.status));
-    if (e.assignedTo)
-      meta.push("Assigned: " + escapeHtml(peopleLabel(e.assignedTo)));
-    if (e.dueDate) meta.push("Due " + ymd(e.dueDate));
-  }
-  if (e.type === "Out-of-Office") {
-    if (e.endDate && e.endDate > e.date) meta.push("Through " + ymd(e.endDate));
-    if (e.coveredBy)
-      meta.push("Covered by " + escapeHtml(peopleLabel(e.coveredBy)));
-  }
-  if (e.authorName) meta.push("by " + escapeHtml(e.authorName));
-  var linkPill =
-    e.links && e.links.length
-      ? '<span class="cal-linkCountPill"><span class="material-symbols-outlined" style="font-size:15px">link</span>' +
-        e.links.length +
-        "</span>"
-      : "";
-  return (
-    '<div class="cal-agendaItem t-' +
-    e.typeClass +
-    '" data-record="' +
-    escapeHtml(e.recordID) +
-    '">' +
-    '<span class="cal-agendaBadge t-' +
-    e.typeClass +
-    '">' +
-    escapeHtml(e.type) +
-    (e._carriedForward ? " ↺" : "") +
-    "</span>" +
-    '<div class="cal-agendaBody"><div class="cal-agendaTitle">' +
-    escapeHtml(e.title) +
-    "</div>" +
-    (meta.length
-      ? '<div class="cal-agendaMeta">' +
-        meta.join(" · ") +
-        " " +
-        linkPill +
-        "</div>"
-      : linkPill
-        ? '<div class="cal-agendaMeta">' + linkPill + "</div>"
-        : "") +
-    "</div></div>"
-  );
-}
-
 // Display label for an empUID we may have cached; falls back to the raw value
-var peopleCache = {}; // empUID -> name
+const peopleCache = {}; // empUID -> name
 function peopleLabel(empUID) {
   if (!empUID) return "";
   return peopleCache[empUID] || String(empUID);
@@ -913,55 +853,40 @@ function render() {
   updateRangeLabel();
   byId("calMonthView").hidden = state.view !== "month";
   byId("calWeekView").hidden = state.view !== "week";
-  byId("calAgendaView").hidden = state.view !== "agenda";
   if (state.view === "month") renderMonth();
-  else if (state.view === "week") renderWeek();
-  else renderAgenda();
+  else renderWeek();
 }
 
 function updateRangeLabel() {
-  var el = byId("calRangeLabel");
+  const el = byId("calRangeLabel");
   if (!el) return;
   if (state.view === "week") {
-    var s = startOfWeek(state.cursor),
-      e = addDays(s, 6);
-    var label = MONTHS[s.getMonth()].slice(0, 3) + " " + s.getDate();
-    label +=
-      " – " +
-      (s.getMonth() === e.getMonth()
-        ? ""
-        : MONTHS[e.getMonth()].slice(0, 3) + " ") +
-      e.getDate() +
-      ", " +
-      e.getFullYear();
-    el.textContent = label;
+    const s = startOfWeek(state.cursor);
+    const e = addDays(s, 6);
+    const crossesMonth = s.getMonth() !== e.getMonth();
+    el.textContent = `${MONTHS[s.getMonth()].slice(0, 3)} ${s.getDate()} – ${crossesMonth ? `${MONTHS[e.getMonth()].slice(0, 3)} ` : ""}${e.getDate()}, ${e.getFullYear()}`;
   } else {
-    el.textContent =
-      MONTHS[state.cursor.getMonth()] + " " + state.cursor.getFullYear();
+    el.textContent = `${MONTHS[state.cursor.getMonth()]} ${state.cursor.getFullYear()}`;
   }
 }
 
 /* ============================================================
    Modal plumbing (focus trap + open/close)
    ============================================================ */
-var modalStack = [];
+let modalStack = [];
 function getFocusable(container) {
-  return Array.prototype.slice
-    .call(
-      container.querySelectorAll(
-        'a[href],button:not([disabled]),textarea,input:not([disabled]),select:not([disabled]),iframe,[tabindex]:not([tabindex="-1"]),[contenteditable="true"]',
-      ),
-    )
-    .filter(function (el) {
-      return el.offsetParent !== null || el === document.activeElement;
-    });
+  return Array.from(
+    container.querySelectorAll(
+      'a[href],button:not([disabled]),textarea,input:not([disabled]),select:not([disabled]),iframe,[tabindex]:not([tabindex="-1"]),[contenteditable="true"]',
+    ),
+  ).filter((el) => el.offsetParent !== null || el === document.activeElement);
 }
 function trapKey(e, modal) {
   if (e.key !== "Tab") return;
-  var f = getFocusable(modal);
+  const f = getFocusable(modal);
   if (!f.length) return;
-  var first = f[0],
-    last = f[f.length - 1];
+  const first = f[0];
+  const last = f[f.length - 1];
   if (e.shiftKey && document.activeElement === first) {
     e.preventDefault();
     last.focus();
@@ -971,28 +896,24 @@ function trapKey(e, modal) {
   }
 }
 function openModal(id) {
-  var modal = byId(id);
+  const modal = byId(id);
   if (!modal) return;
   modal._lastFocus = document.activeElement;
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
-  modal._trap = function (e) {
-    trapKey(e, modal);
-  };
+  modal._trap = (e) => trapKey(e, modal);
   modal.addEventListener("keydown", modal._trap);
   modalStack.push(modal);
-  var f = getFocusable(modal);
+  const f = getFocusable(modal);
   if (f[0]) f[0].focus();
 }
 function closeModal(id) {
-  var modal = byId(id);
+  const modal = byId(id);
   if (!modal) return;
   modal.classList.remove("is-open");
   modal.setAttribute("aria-hidden", "true");
   if (modal._trap) modal.removeEventListener("keydown", modal._trap);
-  modalStack = modalStack.filter(function (m) {
-    return m !== modal;
-  });
+  modalStack = modalStack.filter((m) => m !== modal);
   if (modal._lastFocus && modal._lastFocus.focus) modal._lastFocus.focus();
 }
 
@@ -1000,11 +921,11 @@ function closeModal(id) {
    Record viewer (iframe)
    ============================================================ */
 function openRecord(recordID, title) {
-  var frame = byId("calRecordFrame");
-  var titleEl = byId("calRecordModalTitle");
-  var openTab = byId("calRecordOpenTab");
-  var url = recordViewURL(recordID);
-  if (titleEl) titleEl.textContent = title || "Record #" + recordID;
+  const frame = byId("calRecordFrame");
+  const titleEl = byId("calRecordModalTitle");
+  const openTab = byId("calRecordOpenTab");
+  const url = recordViewURL(recordID);
+  if (titleEl) titleEl.textContent = title || `Record #${recordID}`;
   if (openTab) openTab.href = url;
   if (frame) frame.src = url;
   openModal("calRecordModal");
@@ -1013,10 +934,6 @@ function openRecord(recordID, title) {
 /* ============================================================
    Entry modal — open / populate / conditional fields
    ============================================================ */
-function typeToClass(t) {
-  return TYPE_CLASS[t] || "log";
-}
-
 function applyConditionalFields(type) {
   byId("calCondAction").hidden = type !== "Action Item";
   byId("calCondOoo").hidden = type !== "Out-of-Office";
@@ -1024,17 +941,24 @@ function applyConditionalFields(type) {
 
 function openEntryModal(entry, presetDate) {
   state.editing = entry || null;
-  state.draftLinks = entry
-    ? entry.links.map(function (l) {
-        return Object.assign({}, l);
-      })
-    : [];
+  state.draftLinks = entry ? entry.links.map((l) => ({ ...l })) : [];
   state.draftAssigned = null;
   state.draftCovered = null;
 
   byId("calEntryModalTitle").textContent = entry ? "Edit entry" : "New entry";
   byId("calSaveBtn").textContent = entry ? "Save changes" : "Save entry";
   byId("calDeleteBtn").hidden = !entry;
+
+  const openTab = byId("calEntryOpenTab");
+  if (openTab) {
+    if (entry) {
+      openTab.href = recordViewURL(entry.recordID);
+      openTab.hidden = false;
+    } else {
+      openTab.hidden = true;
+    }
+  }
+
   byId("calEntryMsg").textContent = "";
 
   byId("calEntryRecordID").value = entry ? entry.recordID : "";
@@ -1042,7 +966,11 @@ function openEntryModal(entry, presetDate) {
     entry && entry.date ? ymd(entry.date) : presetDate || ymd(new Date());
   byId("calFldType").value = entry ? entry.type : "";
   byId("calFldTitle").value = entry ? entry.title : "";
-  byId("calFldBody").innerHTML = entry ? entry.body || "" : "";
+  // Ensure the editor starts from clean <p> markup even for entries saved
+  // before normalizeRichText() existed, so re-editing doesn't compound div soup.
+  byId("calFldBody").innerHTML = entry
+    ? normalizeRichText(entry.body || "")
+    : "";
   byId("calFldBody").setAttribute(
     "data-placeholder",
     "Notes, decisions, links…",
@@ -1053,16 +981,18 @@ function openEntryModal(entry, presetDate) {
   byId("calFldEnd").value = entry && entry.endDate ? ymd(entry.endDate) : "";
 
   // People
-  if (entry && entry.assignedTo)
+  if (entry && entry.assignedTo) {
     state.draftAssigned = {
       empUID: entry.assignedTo,
       name: peopleLabel(entry.assignedTo),
     };
-  if (entry && entry.coveredBy)
+  }
+  if (entry && entry.coveredBy) {
     state.draftCovered = {
       empUID: entry.coveredBy,
       name: peopleLabel(entry.coveredBy),
     };
+  }
   renderPeopleSelected("assigned");
   renderPeopleSelected("covered");
 
@@ -1072,7 +1002,7 @@ function openEntryModal(entry, presetDate) {
 }
 
 function renderDraftLinks() {
-  var wrap = byId("calLinkChips");
+  const wrap = byId("calLinkChips");
   if (!wrap) return;
   if (!state.draftLinks.length) {
     wrap.innerHTML =
@@ -1080,27 +1010,12 @@ function renderDraftLinks() {
     return;
   }
   wrap.innerHTML = state.draftLinks
-    .map(function (l, idx) {
-      var label = l.title || "#" + l.recordID;
-      var form = l.formName
-        ? ' <span class="cal-linkChipForm">· ' +
-          escapeHtml(l.formName) +
-          "</span>"
+    .map((l, idx) => {
+      const label = l.title || `#${l.recordID}`;
+      const form = l.formName
+        ? ` <span class="cal-linkChipForm">· ${escapeHtml(l.formName)}</span>`
         : "";
-      return (
-        '<span class="cal-linkChip">' +
-        '<span class="cal-linkChipMain" data-open-link="' +
-        idx +
-        '">' +
-        '<span class="material-symbols-outlined" style="font-size:15px">description</span>' +
-        escapeHtml(label) +
-        "</span>" +
-        form +
-        '<button type="button" data-remove-link="' +
-        idx +
-        '" aria-label="Remove link">' +
-        '<span class="material-symbols-outlined">close</span></button></span>'
-      );
+      return `<span class="cal-linkChip" role="listitem"><span class="cal-linkChipMain" data-open-link="${idx}" role="button" tabindex="0"><span class="material-symbols-outlined" style="font-size:15px" aria-hidden="true">description</span>${escapeHtml(label)}</span>${form}<button type="button" data-remove-link="${idx}" aria-label="Remove link: ${escapeHtml(label)}"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></span>`;
     })
     .join("");
 }
@@ -1109,21 +1024,17 @@ function renderDraftLinks() {
    People picker (orgchart)
    ============================================================ */
 function renderPeopleSelected(role) {
-  var containerId =
+  const containerId =
     role === "assigned" ? "calAssignedSelected" : "calCoveredSelected";
-  var searchId = role === "assigned" ? "calAssignedSearch" : "calCoveredSearch";
-  var person = role === "assigned" ? state.draftAssigned : state.draftCovered;
-  var el = byId(containerId);
-  var search = byId(searchId);
+  const searchId =
+    role === "assigned" ? "calAssignedSearch" : "calCoveredSearch";
+  const person = role === "assigned" ? state.draftAssigned : state.draftCovered;
+  const el = byId(containerId);
+  const search = byId(searchId);
   if (!el) return;
   if (person && person.empUID) {
-    el.innerHTML =
-      '<span class="cal-personChip">' +
-      escapeHtml(person.name || person.empUID) +
-      '<button type="button" data-clear-person="' +
-      role +
-      '" aria-label="Remove">' +
-      '<span class="material-symbols-outlined">close</span></button></span>';
+    const label = person.name || person.empUID;
+    el.innerHTML = `<span class="cal-personChip">${escapeHtml(label)}<button type="button" data-clear-person="${role}" aria-label="Remove ${escapeHtml(label)}"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></span>`;
     if (search) search.style.display = "none";
   } else {
     el.innerHTML = "";
@@ -1131,104 +1042,109 @@ function renderPeopleSelected(role) {
   }
 }
 
+// Reads an orgchart "indicator data" cell out of an employee record's
+// `data` array, matching the shape used by employeeSelector.js:
+//   response[i].data[5] => { data: "555-1234" }  (phone)
+//   response[i].data[6] => { data: "a@b.gov" }   (email)
+function empIndicatorText(emp, indicatorID) {
+  const cell = emp && emp.data ? emp.data[indicatorID] : null;
+  return cell && cell.data ? String(cell.data) : "";
+}
+
 async function searchPeople(term, role) {
-  var listId = role === "assigned" ? "calAssignedResults" : "calCoveredResults";
-  var listEl = byId(listId);
+  const listId =
+    role === "assigned" ? "calAssignedResults" : "calCoveredResults";
+  const searchId =
+    role === "assigned" ? "calAssignedSearch" : "calCoveredSearch";
+  const listEl = byId(listId);
+  const searchEl = byId(searchId);
   if (!listEl) return;
   if (!term || term.length < 2) {
     listEl.hidden = true;
+    if (searchEl) searchEl.setAttribute("aria-expanded", "false");
     return;
   }
   try {
-    var res = await apiGet(
-      "./api/orgchart/employee/search?q=" +
-        encodeURIComponent(term) +
-        "&noLimit=0",
+    // Real endpoint per employeeSelector.js: "./api/?a=employee/search"
+    // (query-string routed action, NOT a REST path segment).
+    const res = await apiGet(
+      `./api/?a=employee/search&q=${encodeURIComponent(term)}`,
     );
-    var rows = Array.isArray(res) ? res : Object.values(res || {});
+    const rows = Array.isArray(res) ? res : Object.values(res || {});
     if (!rows.length) {
-      listEl.innerHTML = '<li aria-disabled="true">No matches</li>';
+      listEl.innerHTML =
+        '<li role="option" aria-disabled="true">No matches</li>';
       listEl.hidden = false;
+      if (searchEl) searchEl.setAttribute("aria-expanded", "true");
       return;
     }
     listEl.innerHTML = rows
+      .filter((p) => !p.deleted)
       .slice(0, 8)
-      .map(function (p) {
-        var name = decodeEntities(
-          p.lastName && p.firstName
-            ? p.firstName + " " + p.lastName
-            : p.name || p.userName || "#" + (p.empUID || ""),
+      .map((p) => {
+        const middle = p.middleName ? ` ${p.middleName}.` : "";
+        const name = decodeEntities(
+          p.lastName || p.firstName
+            ? `${p.lastName || ""}, ${p.firstName || ""}${middle}`
+            : p.userName || `#${p.empUID || ""}`,
         );
-        var uid = p.empUID || p.empUID === 0 ? p.empUID : p.empUID || "";
-        return (
-          '<li role="option" data-empuid="' +
-          escapeHtml(uid) +
-          '" data-name="' +
-          escapeHtml(name) +
-          '" data-role="' +
-          role +
-          '">' +
-          escapeHtml(name) +
-          "<small>" +
-          escapeHtml(p.userName || p.email || "") +
-          "</small></li>"
-        );
+        const email = empIndicatorText(p, 6);
+        const uid = p.empUID ?? "";
+        return `<li role="option" tabindex="-1" data-empuid="${escapeHtml(uid)}" data-name="${escapeHtml(name)}" data-role="${role}">${escapeHtml(name)}<small>${escapeHtml(p.userName || email || "")}</small></li>`;
       })
       .join("");
     listEl.hidden = false;
+    if (searchEl) searchEl.setAttribute("aria-expanded", "true");
   } catch (e) {
-    listEl.innerHTML = '<li aria-disabled="true">Search unavailable</li>';
+    listEl.innerHTML =
+      '<li role="option" aria-disabled="true">Search unavailable</li>';
     listEl.hidden = false;
     logDebug("people search failed:", e.message);
   }
 }
 
-// Import an employee into the local orgchart so their empUID resolves later.
-async function importEmployee(userName) {
-  if (!userName) return;
-  try {
-    await apiPost(
-      "./api/orgchart/employee/import/_" + encodeURIComponent(userName),
-      { CSRFToken: CSRF },
-    );
-  } catch (e) {
-    logDebug("employee import skipped:", e.message);
-  }
+// NOTE: there is no confirmed "import employee" endpoint in the LEAF
+// source reviewed so far (only ./api/?a=employee/search is verified). The
+// empUID returned by that search is already usable directly as an
+// indicator value, so no separate import step is required.
+async function importEmployee() {
+  // Intentionally does nothing until a real import endpoint is confirmed.
 }
 
 function pickPerson(role, empUID, name, userName) {
   peopleCache[empUID] = name;
-  if (role === "assigned")
-    state.draftAssigned = { empUID: empUID, name: name, userName: userName };
-  else state.draftCovered = { empUID: empUID, name: name, userName: userName };
+  if (role === "assigned") state.draftAssigned = { empUID, name, userName };
+  else state.draftCovered = { empUID, name, userName };
   renderPeopleSelected(role);
-  var listId = role === "assigned" ? "calAssignedResults" : "calCoveredResults";
+  const listId =
+    role === "assigned" ? "calAssignedResults" : "calCoveredResults";
+  const searchId =
+    role === "assigned" ? "calAssignedSearch" : "calCoveredSearch";
   if (byId(listId)) byId(listId).hidden = true;
+  if (byId(searchId)) byId(searchId).setAttribute("aria-expanded", "false");
   if (userName) importEmployee(userName);
 }
 
 /* ============================================================
    Link picker — search across ALL forms
    ============================================================ */
-var linkFormFilterReady = false;
+let linkFormFilterReady = false;
 async function ensureLinkFormFilter() {
   if (linkFormFilterReady) return;
-  var sel = byId("calLinkFormFilter");
+  const sel = byId("calLinkFormFilter");
   if (!sel) return;
   try {
-    var cats = await apiGet("./api/workflow/categoriesUnabridged");
-    var arr = (Array.isArray(cats) ? cats : Object.values(cats || {})).filter(
-      function (c) {
-        return c && (c.categoryName || c.name);
-      },
+    const cats = await apiGet("./api/workflow/categoriesUnabridged");
+    const arr = (Array.isArray(cats) ? cats : Object.values(cats || {})).filter(
+      (c) => c && (c.categoryName || c.name),
     );
-    arr.sort(function (a, b) {
-      return String(a.categoryName || a.name).localeCompare(
+    arr.sort((a, b) =>
+      String(a.categoryName || a.name).localeCompare(
         String(b.categoryName || b.name),
-      );
-    });
-    arr.forEach(function (c) {
-      var o = document.createElement("option");
+      ),
+    );
+    arr.forEach((c) => {
+      const o = document.createElement("option");
       o.value = c.categoryID || c.id;
       o.textContent = c.categoryName || c.name;
       sel.appendChild(o);
@@ -1239,24 +1155,25 @@ async function ensureLinkFormFilter() {
   }
 }
 
-var linkSearchRun = debounce(function () {
-  var term = byId("calLinkSearch").value.trim();
-  var formFilter = byId("calLinkFormFilter").value;
+const linkSearchRun = debounce(() => {
+  const term = byId("calLinkSearch").value.trim();
+  const formFilter = byId("calLinkFormFilter").value;
   runLinkSearch(term, formFilter);
 }, 250);
 
 async function runLinkSearch(term, formFilter) {
-  var out = byId("calLinkResults");
+  const out = byId("calLinkResults");
   if (!out) return;
   if (!term || term.length < 2) {
     out.innerHTML =
       '<p class="cal-linkHint">Type at least 2 characters to search across all forms.</p>';
     return;
   }
+  const myToken = ++linkSearchToken;
   out.innerHTML = '<p class="cal-linkHint">Searching…</p>';
   try {
-    var q = new LeafFormQuery();
-    q.addTerm("title", "LIKE", "%" + term + "%");
+    const q = new LeafFormQuery();
+    q.addTerm("title", "LIKE", `*${term}*`);
     q.addTerm("deleted", "=", 0);
     if (formFilter) q.addTerm("categoryID", "=", formFilter);
     q.join("categoryName");
@@ -1264,12 +1181,18 @@ async function runLinkSearch(term, formFilter) {
     q.setExtraParams(
       "&x-filterData=recordID,title,categoryID,categoryName,categoryNames",
     );
-    var res = await q.execute();
-    var rows = Object.keys(res || {}).map(function (rid) {
-      var r = res[rid];
+    q.onProgress((count) => {
+      if (myToken !== linkSearchToken) return; // a newer search superseded this one
+      out.innerHTML = `<p class="cal-linkHint">Searching… ${count} matched so far</p>`;
+    });
+    const res = await q.execute();
+    if (myToken !== linkSearchToken) return; // stale response — a newer search is in flight
+
+    const rows = Object.keys(res || {}).map((rid) => {
+      const r = res[rid];
       return {
         recordID: rid,
-        title: decodeEntities(r.title || "#" + rid),
+        title: decodeEntities(r.title || `#${rid}`),
         categoryID: r.categoryID || "",
         formName:
           r.categoryName ||
@@ -1278,70 +1201,32 @@ async function runLinkSearch(term, formFilter) {
       };
     });
     if (!rows.length) {
-      out.innerHTML =
-        '<p class="cal-linkHint">No records match “' +
-        escapeHtml(term) +
-        "”.</p>";
+      out.innerHTML = `<p class="cal-linkHint">No records match "${escapeHtml(term)}".</p>`;
       return;
     }
-    var linkedIds = {};
-    state.draftLinks.forEach(function (l) {
+    const linkedIds = {};
+    state.draftLinks.forEach((l) => {
       linkedIds[l.recordID] = true;
     });
     out.innerHTML = rows
-      .map(function (r) {
-        var isLinked = !!linkedIds[r.recordID];
-        return (
-          '<div class="cal-linkResult' +
-          (isLinked ? " is-linked" : "") +
-          '" ' +
-          'data-record="' +
-          escapeHtml(r.recordID) +
-          '" data-cat="' +
-          escapeHtml(r.categoryID) +
-          '" ' +
-          'data-title="' +
-          escapeHtml(r.title) +
-          '" data-form="' +
-          escapeHtml(r.formName) +
-          '">' +
-          '<div class="cal-linkResultMain"><div class="cal-linkResultTitle">' +
-          escapeHtml(r.title) +
-          "</div>" +
-          '<div class="cal-linkResultMeta">' +
-          escapeHtml(r.formName || "Form") +
-          " · #" +
-          escapeHtml(r.recordID) +
-          "</div></div>" +
-          '<span class="cal-linkResultAdd">' +
-          (isLinked ? "✓ Linked" : "+ Add") +
-          "</span></div>"
-        );
+      .map((r) => {
+        const isLinked = !!linkedIds[r.recordID];
+        return `<div class="cal-linkResult${isLinked ? " is-linked" : ""}" role="button" tabindex="0" data-record="${escapeHtml(r.recordID)}" data-cat="${escapeHtml(r.categoryID)}" data-title="${escapeHtml(r.title)}" data-form="${escapeHtml(r.formName)}"><div class="cal-linkResultMain"><div class="cal-linkResultTitle">${escapeHtml(r.title)}</div><div class="cal-linkResultMeta">${escapeHtml(r.formName || "Form")} · #${escapeHtml(r.recordID)}</div></div><span class="cal-linkResultAdd">${isLinked ? "✓ Linked" : "+ Add"}</span></div>`;
       })
       .join("");
   } catch (e) {
-    out.innerHTML =
-      '<p class="cal-linkHint">Search failed. ' +
-      escapeHtml(e.message) +
-      "</p>";
+    if (myToken !== linkSearchToken) return;
+    out.innerHTML = `<p class="cal-linkHint">Search failed. ${escapeHtml(e.message)}</p>`;
   }
 }
 
 function toggleDraftLink(recordID, categoryID, title, formName) {
-  var idx = state.draftLinks.findIndex(function (l) {
-    return l.recordID === recordID;
-  });
+  const idx = state.draftLinks.findIndex((l) => l.recordID === recordID);
   if (idx >= 0) state.draftLinks.splice(idx, 1);
-  else
-    state.draftLinks.push({
-      recordID: recordID,
-      categoryID: categoryID,
-      title: title,
-      formName: formName,
-    });
+  else state.draftLinks.push({ recordID, categoryID, title, formName });
   renderDraftLinks();
   // reflect in the open search list
-  var term = byId("calLinkSearch").value.trim();
+  const term = byId("calLinkSearch").value.trim();
   runLinkSearch(term, byId("calLinkFormFilter").value);
 }
 
@@ -1349,13 +1234,13 @@ function toggleDraftLink(recordID, categoryID, title, formName) {
    Save / delete
    ============================================================ */
 async function saveEntry() {
-  var msg = byId("calEntryMsg");
+  const msg = byId("calEntryMsg");
   msg.textContent = "";
-  var I = CONFIG.indicators;
+  const I = CONFIG.indicators;
 
-  var type = byId("calFldType").value;
-  var date = byId("calFldDate").value;
-  var title = byId("calFldTitle").value.trim();
+  const type = byId("calFldType").value;
+  const date = byId("calFldDate").value;
+  const title = byId("calFldTitle").value.trim();
 
   if (!date) {
     msg.textContent = "Pick a date.";
@@ -1373,20 +1258,21 @@ async function saveEntry() {
     return;
   }
 
-  var saveBtn = byId("calSaveBtn");
+  const saveBtn = byId("calSaveBtn");
   saveBtn.disabled = true;
   saveBtn.textContent = "Saving…";
 
   // Build indicator payload
-  var values = {};
+  const values = {};
   values[I.entryDate] = date;
   values[I.entryType] = type;
   values[I.title] = title;
-  values[I.body] = byId("calFldBody").innerHTML.trim();
+  values[I.body] = normalizeRichText(byId("calFldBody").innerHTML.trim());
   values[I.linked] = JSON.stringify(
-    state.draftLinks.map(function (l) {
-      return { recordID: l.recordID, categoryID: l.categoryID || "" };
-    }),
+    state.draftLinks.map((l) => ({
+      recordID: l.recordID,
+      categoryID: l.categoryID || "",
+    })),
   );
 
   if (type === "Action Item") {
@@ -1409,8 +1295,8 @@ async function saveEntry() {
   }
 
   try {
-    var recordID = byId("calEntryRecordID").value;
-    var isNew = !recordID;
+    let recordID = byId("calEntryRecordID").value;
+    const isNew = !recordID;
     if (isNew) {
       recordID = await createRecord();
     }
@@ -1423,7 +1309,7 @@ async function saveEntry() {
     await loadEntries();
     render();
   } catch (e) {
-    msg.textContent = "Save failed: " + e.message;
+    msg.textContent = `Save failed: ${e.message}`;
     logDebug("save error", e);
   } finally {
     saveBtn.disabled = false;
@@ -1432,12 +1318,12 @@ async function saveEntry() {
 }
 
 async function deleteEntry() {
-  var recordID = byId("calEntryRecordID").value;
+  const recordID = byId("calEntryRecordID").value;
   if (!recordID) return;
   if (!window.confirm("Delete this entry? This can't be undone.")) return;
   try {
     // LEAF soft-delete endpoint
-    await apiPost("./api/form/" + encodeURIComponent(recordID) + "/delete", {
+    await apiPost(`./api/form/${encodeURIComponent(recordID)}/delete`, {
       CSRFToken: CSRF,
     });
     closeModal("calEntryModal");
@@ -1445,7 +1331,7 @@ async function deleteEntry() {
     await loadEntries();
     render();
   } catch (e) {
-    byId("calEntryMsg").textContent = "Delete failed: " + e.message;
+    byId("calEntryMsg").textContent = `Delete failed: ${e.message}`;
   }
 }
 
@@ -1453,29 +1339,24 @@ async function deleteEntry() {
    Day peek popover ("+N more")
    ============================================================ */
 function openDayPeek(dateKey, anchorEl) {
-  var peek = byId("calDayPeek");
+  const peek = byId("calDayPeek");
   if (!peek) return;
-  var d = parseYMD(dateKey);
-  var list = entriesForDay(dateKey);
-  peek.innerHTML =
-    '<div class="cal-dayPeekHead">' +
-    escapeHtml(fmtLongDate(d)) +
-    '<button type="button" data-close-peek aria-label="Close"><span class="material-symbols-outlined">close</span></button></div>' +
-    list
-      .map(function (e) {
-        return chipHTML(e);
-      })
-      .join("");
+  const d = parseYMD(dateKey);
+  const list = entriesForDay(dateKey);
+  peek.innerHTML = `<div class="cal-dayPeekHead">${escapeHtml(fmtLongDate(d))}<button type="button" data-close-peek aria-label="Close"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></div>${list.map((e) => chipHTML(e)).join("")}`;
   peek.hidden = false;
-  var r = anchorEl.getBoundingClientRect();
-  var top = window.scrollY + r.bottom + 4;
-  var left = window.scrollX + r.left;
+  const r = anchorEl.getBoundingClientRect();
+  const top = window.scrollY + r.bottom + 4;
+  let left = window.scrollX + r.left;
   left = Math.min(left, window.scrollX + window.innerWidth - 320);
-  peek.style.top = top + "px";
-  peek.style.left = Math.max(8, left) + "px";
+  peek.style.top = `${top}px`;
+  peek.style.left = `${Math.max(8, left)}px`;
+  // Move focus to the close button so keyboard/AT users land somewhere sensible
+  const closeBtn = peek.querySelector("[data-close-peek]");
+  if (closeBtn) closeBtn.focus();
 }
 function closeDayPeek() {
-  var p = byId("calDayPeek");
+  const p = byId("calDayPeek");
   if (p) p.hidden = true;
 }
 
@@ -1484,21 +1365,17 @@ function closeDayPeek() {
    ============================================================ */
 function wireControls() {
   // Navigation
-  byId("calPrevBtn").addEventListener("click", function () {
-    navigate(-1);
-  });
-  byId("calNextBtn").addEventListener("click", function () {
-    navigate(1);
-  });
-  byId("calTodayBtn").addEventListener("click", function () {
+  byId("calPrevBtn").addEventListener("click", () => navigate(-1));
+  byId("calNextBtn").addEventListener("click", () => navigate(1));
+  byId("calTodayBtn").addEventListener("click", () => {
     state.cursor = startOfDay(new Date());
     render();
   });
 
   // View toggle
-  document.querySelectorAll(".cal-viewBtn").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      document.querySelectorAll(".cal-viewBtn").forEach(function (b) {
+  document.querySelectorAll(".cal-viewBtn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".cal-viewBtn").forEach((b) => {
         b.classList.remove("is-active");
         b.setAttribute("aria-selected", "false");
       });
@@ -1510,26 +1387,26 @@ function wireControls() {
   });
 
   // Filters
-  byId("calFilterType").addEventListener("change", function () {
+  byId("calFilterType").addEventListener("change", function onChange() {
     state.filters.type = this.value;
     render();
   });
-  byId("calFilterAuthor").addEventListener("change", function () {
+  byId("calFilterAuthor").addEventListener("change", function onChange() {
     state.filters.author = this.value;
     render();
   });
-  byId("calShowClosed").addEventListener("change", function () {
+  byId("calShowClosed").addEventListener("change", function onChange() {
     state.filters.showClosed = this.checked;
     render();
   });
   byId("calFilterSearch").addEventListener(
     "input",
-    debounce(function () {
+    debounce(() => {
       state.filters.search = byId("calFilterSearch").value.trim();
       render();
     }, 200),
   );
-  byId("calClearFilters").addEventListener("click", function () {
+  byId("calClearFilters").addEventListener("click", () => {
     state.filters = { type: "", author: "", search: "", showClosed: false };
     byId("calFilterType").value = "";
     byId("calFilterAuthor").value = "";
@@ -1539,34 +1416,34 @@ function wireControls() {
   });
 
   // Add
-  byId("calAddBtn").addEventListener("click", function () {
-    openEntryModal(null);
-  });
+  byId("calAddBtn").addEventListener("click", () => openEntryModal(null));
 
   // Delegated clicks across views
   document.addEventListener("click", onDelegatedClick);
 
-  // Day cell keyboard
-  document.addEventListener("keydown", function (e) {
+  // Day cell / chip keyboard activation + Escape handling
+  document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       if (!byId("calDayPeek").hidden) {
         closeDayPeek();
         return;
       }
       if (modalStack.length) closeModal(modalStack[modalStack.length - 1].id);
+      return;
     }
-    var cell = e.target.closest && e.target.closest(".cal-dayCell");
-    if (cell && (e.key === "Enter" || e.key === " ")) {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const cell = e.target.closest && e.target.closest(".cal-dayCell");
+    if (cell && e.target === cell) {
       e.preventDefault();
       openEntryModal(null, cell.getAttribute("data-day"));
     }
   });
 
   // Modal close buttons / backdrops
-  document.querySelectorAll("[data-close]").forEach(function (el) {
-    el.addEventListener("click", function () {
-      var which = el.getAttribute("data-close");
-      var map = {
+  document.querySelectorAll("[data-close]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const which = el.getAttribute("data-close");
+      const map = {
         entry: "calEntryModal",
         link: "calLinkModal",
         record: "calRecordModal",
@@ -1577,22 +1454,33 @@ function wireControls() {
   });
 
   // Entry form
-  byId("calEntryForm").addEventListener("submit", function (e) {
+  byId("calEntryForm").addEventListener("submit", (e) => {
     e.preventDefault();
     saveEntry();
   });
   byId("calDeleteBtn").addEventListener("click", deleteEntry);
-  byId("calFldType").addEventListener("change", function () {
+  byId("calFldType").addEventListener("change", function onChange() {
     applyConditionalFields(this.value);
   });
 
   // Rich text toolbar
-  byId("calFldBodyToolbar").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-cmd]");
+  byId("calFldBodyToolbar").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-cmd]");
     if (!b) return;
     e.preventDefault();
     byId("calFldBody").focus();
     document.execCommand(b.getAttribute("data-cmd"), false, null);
+  });
+
+  // Nudge execCommand toward <p> paragraphs instead of its default bare
+  // <div> line-wrapping (normalizeRichText still does the full cleanup
+  // on save — this just reduces how much cleanup is needed).
+  byId("calFldBody").addEventListener("focus", () => {
+    try {
+      document.execCommand("defaultParagraphSeparator", false, "p");
+    } catch (e) {
+      /* unsupported in some browsers — normalizeRichText() still cleans up on save */
+    }
   });
 
   // People pickers
@@ -1600,31 +1488,33 @@ function wireControls() {
   wirePeople("covered", "calCoveredSearch", "calCoveredResults");
 
   // Link picker
-  byId("calLinkAddBtn").addEventListener("click", function () {
+  byId("calLinkAddBtn").addEventListener("click", () => {
     ensureLinkFormFilter();
     byId("calLinkSearch").value = "";
     byId("calLinkResults").innerHTML =
       '<p class="cal-linkHint">Type at least 2 characters to search across all forms.</p>';
     openModal("calLinkModal");
-    setTimeout(function () {
-      byId("calLinkSearch").focus();
-    }, 50);
+    setTimeout(() => byId("calLinkSearch").focus(), 50);
   });
   byId("calLinkSearch").addEventListener("input", linkSearchRun);
   byId("calLinkFormFilter").addEventListener("change", linkSearchRun);
 
   // Jump to top
-  var jump = byId("calJumpTop");
-  window.addEventListener("scroll", function () {
-    jump.hidden = window.scrollY < 400;
-  });
-  jump.addEventListener("click", function () {
+  const jump = byId("calJumpTop");
+  window.addEventListener(
+    "scroll",
+    () => {
+      jump.hidden = window.scrollY < 400;
+    },
+    { passive: true },
+  );
+  jump.addEventListener("click", () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
   // Close peek on outside click
-  document.addEventListener("click", function (e) {
-    var peek = byId("calDayPeek");
+  document.addEventListener("click", (e) => {
+    const peek = byId("calDayPeek");
     if (peek.hidden) return;
     if (!peek.contains(e.target) && !e.target.closest("[data-more]"))
       closeDayPeek();
@@ -1632,21 +1522,18 @@ function wireControls() {
 }
 
 function wirePeople(role, searchId, listId) {
-  var search = byId(searchId);
-  var list = byId(listId);
+  const search = byId(searchId);
+  const list = byId(listId);
   if (!search) return;
   search.addEventListener(
     "input",
-    debounce(function () {
-      searchPeople(search.value.trim(), role);
-    }, 250),
+    debounce(() => searchPeople(search.value.trim(), role), 250),
   );
-  list.addEventListener("click", function (e) {
-    var li = e.target.closest("li[data-empuid]");
+  list.addEventListener("click", (e) => {
+    const li = e.target.closest("li[data-empuid]");
     if (!li) return;
-    var uname = li.querySelector("small")
-      ? li.querySelector("small").textContent
-      : "";
+    const small = li.querySelector("small");
+    const uname = small ? small.textContent : "";
     pickPerson(
       role,
       li.getAttribute("data-empuid"),
@@ -1654,28 +1541,34 @@ function wirePeople(role, searchId, listId) {
       uname,
     );
     search.value = "";
+    search.focus();
   });
 }
 
 function onDelegatedClick(e) {
+  // OOO band (month view multi-day span)
+  const oooBand = e.target.closest(".cal-oooBand");
+  if (oooBand) {
+    const rid = oooBand.getAttribute("data-record");
+    const entry = state.entries.find((x) => x.recordID === rid);
+    if (entry) openEntryModal(entry);
+    return;
+  }
+
   // Open a record chip / card
-  var recEl = e.target.closest("[data-record]");
+  const recEl = e.target.closest("[data-record]");
   if (
     recEl &&
     !e.target.closest("[data-remove-link],[data-open-link],[data-close]")
   ) {
-    var rid = recEl.getAttribute("data-record");
-    var entry = state.entries.find(function (x) {
-      return x.recordID === rid;
-    });
-    if (entry) {
-      openEntryModal(entry);
-    }
+    const rid = recEl.getAttribute("data-record");
+    const entry = state.entries.find((x) => x.recordID === rid);
+    if (entry) openEntryModal(entry);
     return;
   }
 
   // "+N more"
-  var more = e.target.closest("[data-more]");
+  const more = e.target.closest("[data-more]");
   if (more) {
     e.stopPropagation();
     openDayPeek(more.getAttribute("data-more"), more);
@@ -1689,47 +1582,47 @@ function onDelegatedClick(e) {
   }
 
   // Empty day cell / week column body → new entry for that day
-  var body = e.target.closest(".cal-weekColBody");
+  const body = e.target.closest(".cal-weekColBody");
   if (body && !e.target.closest("[data-record]")) {
     openEntryModal(null, body.getAttribute("data-day"));
     return;
   }
-  var cell = e.target.closest(".cal-dayCell");
+  const cell = e.target.closest(".cal-dayCell");
   if (cell && e.target === cell) {
     openEntryModal(null, cell.getAttribute("data-day"));
     return;
   }
-  var chips = e.target.closest(".cal-dayChips");
+  const chips = e.target.closest(".cal-dayChips");
   if (cell && !chips && !e.target.closest("[data-record],[data-more]")) {
     openEntryModal(null, cell.getAttribute("data-day"));
     return;
   }
 
   // Draft link chip: open record
-  var openLink = e.target.closest("[data-open-link]");
+  const openLink = e.target.closest("[data-open-link]");
   if (openLink) {
-    var l = state.draftLinks[+openLink.getAttribute("data-open-link")];
+    const l = state.draftLinks[+openLink.getAttribute("data-open-link")];
     if (l) openRecord(l.recordID, l.title);
     return;
   }
   // Draft link chip: remove
-  var rmLink = e.target.closest("[data-remove-link]");
+  const rmLink = e.target.closest("[data-remove-link]");
   if (rmLink) {
     state.draftLinks.splice(+rmLink.getAttribute("data-remove-link"), 1);
     renderDraftLinks();
     return;
   }
   // Clear a picked person
-  var clearP = e.target.closest("[data-clear-person]");
+  const clearP = e.target.closest("[data-clear-person]");
   if (clearP) {
-    var role = clearP.getAttribute("data-clear-person");
+    const role = clearP.getAttribute("data-clear-person");
     if (role === "assigned") state.draftAssigned = null;
     else state.draftCovered = null;
     renderPeopleSelected(role);
     return;
   }
   // Link search result add/remove
-  var lr = e.target.closest(".cal-linkResult");
+  const lr = e.target.closest(".cal-linkResult");
   if (lr) {
     toggleDraftLink(
       lr.getAttribute("data-record"),
@@ -1737,7 +1630,6 @@ function onDelegatedClick(e) {
       lr.getAttribute("data-title"),
       lr.getAttribute("data-form"),
     );
-    return;
   }
 }
 
@@ -1771,11 +1663,22 @@ async function main() {
     return;
   }
 
+  const hasAnyIndicator = Object.values(CONFIG.indicators).some(
+    (v) => v && v !== "REPLACE_ME",
+  );
+  if (!hasAnyIndicator) {
+    setStatus(
+      "Calendar not configured yet — set CONFIG.indicators in calendar.js.",
+      true,
+    );
+    return;
+  }
+
   try {
     await loadEntries();
     render();
   } catch (e) {
-    setStatus("Could not load entries. " + e.message, true);
+    setStatus(`Could not load entries. ${e.message}`, true);
     logDebug("load failed", e);
   }
 }

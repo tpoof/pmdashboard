@@ -1,5 +1,5 @@
 /* ============================================================
-   Team Continuity Calendar — styling
+   Team Command Center — styling
    Palette + spacing intentionally aligned with project_v19.css
    so it sits alongside the Project Dashboard as one product.
 
@@ -33,17 +33,23 @@
   --cal-accent-strong: #1d4ed8;
   --cal-focus: #0b5cab;
 
-  /* Entry-type colors: hue carries meaning, kept low-saturation for density */
+  /* Entry-type colors: hue carries meaning, kept low-saturation for density.
+     Text-on-soft colors below are chosen to meet WCAG AA (4.5:1) against
+     their *-soft background. */
   --cal-meeting: #2563eb;
   --cal-meeting-soft: #e7efff;
-  --cal-action: #b26a00;
+  --cal-meeting-text: #1a3f8f;
+  --cal-action: #8a5800;
   --cal-action-soft: #fdf0dc;
-  --cal-ooo: #7c3aed;
+  --cal-action-text: #6b4400;
+  --cal-ooo: #6b3fa0;
   --cal-ooo-soft: #f0e9fe;
-  --cal-log: #3f7d58;
+  --cal-ooo-text: #4b2c8f;
+  --cal-log: #276945;
   --cal-log-soft: #e4f2ea;
+  --cal-log-text: #1f5236;
 
-  --cal-danger: #c0392b;
+  --cal-danger: #a8302a;
   --cal-today: #fff7e6;
   --cal-today-ring: #f0b429;
 
@@ -63,7 +69,7 @@
   max-width: 1400px;
   color: var(--cal-text);
   font-family: var(--cal-font);
-  background: var(--cal-bg);
+  background: transparent;
 }
 
 .cal-sr {
@@ -78,14 +84,53 @@
   border: 0;
 }
 
+/* Self-hosted skip link — this page no longer depends on launchpad.css
+   for any layout/positioning, only for its font/color variables, so its
+   own skip-link affordance is defined here instead of reusing .lp-skip. */
+.cal-skip {
+  position: absolute;
+  left: 16px;
+  top: -80px;
+  padding: 8px 14px;
+  background: var(--cal-surface);
+  border: 2px solid var(--cal-accent);
+  color: var(--cal-accent-strong);
+  border-radius: var(--cal-radius-sm);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  z-index: 2000;
+  transition: top 0.15s ease;
+}
+.cal-skip:focus {
+  top: 16px;
+  outline: 3px solid var(--cal-focus);
+  outline-offset: 2px;
+}
+
 /* ── Header ───────────────────────────────────────────── */
 .cal-header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: var(--cal-space-4);
   flex-wrap: wrap;
   margin-bottom: var(--cal-space-4);
+}
+.cal-headerMain {
+  display: flex;
+  align-items: center;
+  gap: var(--cal-space-3);
+  min-width: 0;
+}
+.cal-logo {
+  height: 52px;
+  width: auto;
+  flex-shrink: 0;
+  align-self: center;
+}
+.cal-headerText {
+  min-width: 0;
 }
 .cal-title {
   margin: 0;
@@ -99,7 +144,9 @@
   margin: 6px 0 0;
   color: var(--cal-muted);
   font-size: 15px;
-  max-width: 60ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Buttons ──────────────────────────────────────────── */
@@ -123,13 +170,26 @@
 .cal-primaryBtn {
   background: var(--cal-accent);
   border: 1px solid var(--cal-accent-strong);
-  color: #fff;
+  color: #fff !important;
   font-weight: 700;
   padding: 10px 16px;
   font-size: 15px;
 }
+.cal-primaryBtn,
+.cal-primaryBtn span {
+  color: #fff !important;
+}
 .cal-primaryBtn:hover {
   background: var(--cal-accent-strong);
+}
+.cal-primaryBtn:focus-visible,
+.cal-ghostBtn:focus-visible,
+.cal-dangerBtn:focus-visible,
+.cal-todayBtn:focus-visible,
+.cal-iconBtn:focus-visible,
+.cal-viewBtn:focus-visible {
+  outline: 3px solid var(--cal-focus);
+  outline-offset: 2px;
 }
 .cal-primaryBtn .material-symbols-outlined {
   font-size: 20px;
@@ -203,6 +263,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--cal-space-2);
+  flex-wrap: wrap;
 }
 .cal-rangeLabel {
   margin: 0 0 0 6px;
@@ -210,6 +271,19 @@
   font-size: 20px;
   font-weight: 700;
   min-width: 12ch;
+}
+
+.cal-viewToggleGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cal-space-2);
+}
+.cal-toggleLabel {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cal-muted);
 }
 
 .cal-viewToggle {
@@ -288,13 +362,23 @@
   color: var(--cal-text);
   padding-bottom: 8px;
 }
+.cal-checkField input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 2px;
+}
 
 /* ── Legend ───────────────────────────────────────────── */
+.cal-legendRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cal-space-3);
+  flex-wrap: wrap;
+  margin-top: var(--cal-space-3);
+}
 .cal-legend {
   display: flex;
   gap: var(--cal-space-4);
   flex-wrap: wrap;
-  margin-bottom: var(--cal-space-3);
   font-size: 13px;
   color: var(--cal-muted);
 }
@@ -389,7 +473,7 @@
   background: #fbfcfe;
 }
 .cal-dayCell.is-outside .cal-dayNum {
-  color: #b4bdc8;
+  color: #6b7684;
 }
 .cal-dayCell.is-today .cal-dayNum {
   background: var(--cal-today-ring);
@@ -419,6 +503,50 @@
   overflow: hidden;
 }
 
+/* Reserves vertical space in the cell for the OOO band overlay drawn in
+   renderOooBands(); the band itself is absolutely positioned relative
+   to .cal-monthGrid, not this slot, but the slot keeps chip layout from
+   colliding with it. Only takes up space on days that actually have an
+   OOO span (renderOooBands toggles .has-band). */
+.cal-oooBandSlot {
+  height: 0;
+  flex-shrink: 0;
+}
+.cal-oooBandSlot.has-band {
+  height: 22px;
+}
+.cal-monthGrid {
+  position: relative;
+}
+.cal-oooBand {
+  position: absolute;
+  z-index: 5;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cal-ooo-text);
+  background: var(--cal-ooo-soft);
+  border: 1px solid var(--cal-ooo);
+  border-radius: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+.cal-oooBand:hover {
+  filter: brightness(0.97);
+}
+.cal-oooBand:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
+  z-index: 6;
+}
+
 .cal-chip {
   font-size: 12px;
   line-height: 1.25;
@@ -431,31 +559,39 @@
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
 }
 .cal-chip:hover {
   filter: brightness(0.97);
 }
-.cal-chip .cal-chipDot {
-  display: none;
+.cal-chip:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
 }
 .cal-chip.t-meeting {
   background: var(--cal-meeting-soft);
   border-left-color: var(--cal-meeting);
+  color: var(--cal-meeting-text);
 }
 .cal-chip.t-action {
   background: var(--cal-action-soft);
   border-left-color: var(--cal-action);
+  color: var(--cal-action-text);
 }
 .cal-chip.t-ooo {
   background: var(--cal-ooo-soft);
   border-left-color: var(--cal-ooo);
+  color: var(--cal-ooo-text);
 }
 .cal-chip.t-log {
   background: var(--cal-log-soft);
   border-left-color: var(--cal-log);
+  color: var(--cal-log-text);
 }
 .cal-chip.is-done {
-  opacity: 0.55;
+  opacity: 0.7;
   text-decoration: line-through;
 }
 .cal-chip.is-carried {
@@ -465,29 +601,21 @@
 .cal-moreLink {
   font-size: 12px;
   font-weight: 700;
-  color: var(--cal-accent);
+  color: var(--cal-accent-strong);
   background: none;
   border: 0;
   padding: 2px 6px;
   cursor: pointer;
   text-align: left;
   border-radius: 6px;
+  font-family: inherit;
 }
 .cal-moreLink:hover {
   background: var(--cal-accent-soft);
 }
-
-/* OOO span band across a cell */
-.cal-oooBand {
-  font-size: 11px;
-  font-weight: 700;
-  color: #4b2c8f;
-  background: var(--cal-ooo-soft);
-  border-radius: 6px;
-  padding: 2px 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.cal-moreLink:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
 }
 
 /* ── Week view ────────────────────────────────────────── */
@@ -545,9 +673,16 @@
   padding: 8px;
   background: var(--cal-surface);
   cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
 }
 .cal-weekCard:hover {
   box-shadow: var(--cal-shadow-sm);
+}
+.cal-weekCard:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
 }
 .cal-weekCard.t-meeting {
   border-left-color: var(--cal-meeting);
@@ -585,8 +720,6 @@
   flex-direction: column;
   gap: var(--cal-space-4);
 }
-.cal-agendaDay {
-}
 .cal-agendaDayHead {
   font-family: var(--cal-display);
   font-size: 15px;
@@ -599,7 +732,7 @@
   gap: 10px;
 }
 .cal-agendaDayHead.is-today {
-  color: var(--cal-accent);
+  color: var(--cal-accent-strong);
 }
 .cal-agendaCount {
   font-size: 12px;
@@ -621,9 +754,16 @@
   background: var(--cal-surface);
   cursor: pointer;
   align-items: flex-start;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
 }
 .cal-agendaItem:hover {
   box-shadow: var(--cal-shadow-sm);
+}
+.cal-agendaItem:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
 }
 .cal-agendaItem.t-meeting {
   border-left-color: var(--cal-meeting);
@@ -652,6 +792,7 @@
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
 }
 .cal-agendaBadge {
   font-size: 11px;
@@ -665,24 +806,24 @@
 }
 .cal-agendaBadge.t-meeting {
   background: var(--cal-meeting-soft);
-  color: #1a3f8f;
+  color: var(--cal-meeting-text);
 }
 .cal-agendaBadge.t-action {
   background: var(--cal-action-soft);
-  color: #7a4700;
+  color: var(--cal-action-text);
 }
 .cal-agendaBadge.t-ooo {
   background: var(--cal-ooo-soft);
-  color: #4b2c8f;
+  color: var(--cal-ooo-text);
 }
 .cal-agendaBadge.t-log {
   background: var(--cal-log-soft);
-  color: #275c3c;
+  color: var(--cal-log-text);
 }
 .cal-linkCountPill {
   font-size: 12px;
   font-weight: 700;
-  color: var(--cal-accent);
+  color: var(--cal-accent-strong);
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -694,7 +835,7 @@
 }
 .cal-emptyState .material-symbols-outlined {
   font-size: 40px;
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
 /* ── Modals ───────────────────────────────────────────── */
@@ -825,6 +966,10 @@
 .cal-rtBtn:hover {
   background: var(--cal-surface-alt);
 }
+.cal-rtBtn:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
+}
 .cal-rtArea {
   min-height: 110px;
   border: 1px solid var(--cal-border-strong);
@@ -842,7 +987,7 @@
 }
 .cal-rtArea:empty::before {
   content: attr(data-placeholder);
-  color: #97a1ad;
+  color: #6b7684;
 }
 
 /* People picker */
@@ -860,7 +1005,7 @@
   align-items: center;
   gap: 5px;
   background: var(--cal-accent-soft);
-  color: #1a3f8f;
+  color: var(--cal-meeting-text);
   border-radius: 999px;
   padding: 3px 6px 3px 10px;
   font-size: 13px;
@@ -870,9 +1015,14 @@
   border: 0;
   background: none;
   cursor: pointer;
-  color: #1a3f8f;
+  color: inherit;
   display: inline-flex;
-  padding: 0;
+  padding: 2px;
+  border-radius: 50%;
+}
+.cal-personChip button:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
 }
 .cal-personChip .material-symbols-outlined {
   font-size: 16px;
@@ -930,11 +1080,15 @@
 }
 .cal-linkChip .cal-linkChipMain {
   cursor: pointer;
-  color: var(--cal-accent);
+  color: var(--cal-accent-strong);
   font-weight: 600;
   display: inline-flex;
   gap: 5px;
   align-items: center;
+}
+.cal-linkChip .cal-linkChipMain:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
 }
 .cal-linkChip .cal-linkChipForm {
   color: var(--cal-muted);
@@ -946,7 +1100,12 @@
   cursor: pointer;
   color: var(--cal-muted);
   display: inline-flex;
-  padding: 0;
+  padding: 2px;
+  border-radius: 50%;
+}
+.cal-linkChip button:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
 }
 .cal-linkChip .material-symbols-outlined {
   font-size: 16px;
@@ -957,9 +1116,10 @@
   display: flex;
   gap: 10px;
   padding: 16px 20px 8px;
+  flex-wrap: wrap;
 }
 .cal-linkSearchRow .cal-input {
-  flex: 1;
+  flex: 1 1 200px;
 }
 .cal-linkResults {
   padding: 8px 12px 16px;
@@ -980,10 +1140,18 @@
   border-radius: var(--cal-radius-sm);
   cursor: pointer;
   border: 1px solid transparent;
+  width: 100%;
+  background: none;
+  font-family: inherit;
+  text-align: left;
 }
 .cal-linkResult:hover {
   background: var(--cal-surface-alt);
   border-color: var(--cal-border);
+}
+.cal-linkResult:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
 }
 .cal-linkResultMain {
   min-width: 0;
@@ -1002,11 +1170,11 @@
 .cal-linkResultAdd {
   font-size: 13px;
   font-weight: 700;
-  color: var(--cal-accent);
+  color: var(--cal-accent-strong);
   white-space: nowrap;
 }
 .cal-linkResult.is-linked .cal-linkResultAdd {
-  color: var(--cal-log);
+  color: var(--cal-log-text);
 }
 
 /* Form actions */
@@ -1020,6 +1188,7 @@
   align-items: center;
   gap: 10px;
   padding-top: 4px;
+  flex-wrap: wrap;
 }
 .cal-actionsSpacer {
   flex: 1;
@@ -1042,6 +1211,7 @@
   border-radius: var(--cal-radius-md);
   box-shadow: var(--cal-shadow-md);
   width: 300px;
+  max-width: calc(100vw - 16px);
   max-height: 340px;
   overflow-y: auto;
   padding: 12px;
@@ -1057,11 +1227,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }
 .cal-dayPeekHead button {
   border: 0;
   background: none;
   cursor: pointer;
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 50%;
+}
+.cal-dayPeekHead button:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
 }
 .cal-dayPeek .cal-chip {
   white-space: normal;
@@ -1086,6 +1264,10 @@
   align-items: center;
   justify-content: center;
 }
+.cal-jumpTop:focus-visible {
+  outline: 3px solid var(--cal-focus);
+  outline-offset: 2px;
+}
 .cal-jumpTop[hidden] {
   display: none;
 }
@@ -1095,23 +1277,36 @@
   .cal-formRow--split {
     grid-template-columns: 1fr;
   }
-  .cal-monthGrid {
-    grid-auto-rows: minmax(92px, 1fr);
-  }
   .cal-dayCell {
-    min-height: 92px;
+    min-height: 76px;
   }
   .cal-weekBoard {
     grid-template-columns: repeat(7, minmax(120px, 1fr));
     overflow-x: auto;
   }
+  .cal-linkSearchRow {
+    flex-direction: column;
+  }
+  .cal-linkSearchRow .cal-select {
+    width: 100%;
+  }
 }
 @media (max-width: 560px) {
   .cal-wrap {
     margin: var(--cal-space-4) auto;
+    padding-left: var(--cal-space-3);
+    padding-right: var(--cal-space-3);
   }
   .cal-title {
     font-size: 24px;
+  }
+  .cal-logo {
+    height: 40px;
+  }
+  .cal-subtitle {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
   .cal-toolbar {
     align-items: flex-start;
@@ -1125,6 +1320,21 @@
   }
   .cal-chip {
     font-size: 11px;
+  }
+  .cal-filterRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cal-select,
+  .cal-input {
+    min-width: 0;
+    width: 100%;
+  }
+  .cal-modalPanel {
+    max-width: 100%;
+  }
+  .cal-modalPanel--lg {
+    height: 92vh;
   }
 }
 
