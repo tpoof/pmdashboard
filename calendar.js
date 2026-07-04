@@ -28,6 +28,8 @@ const CONFIG = {
     dueDate: "8", // Date       — action-item due date
     endDate: "9", // Date       — OOO range end
     coveredBy: "10", // Orgchart employee (empUID) — OOO coverage
+    opsScrumNotes: "14", // Textarea / rich text — Ops Daily Scrum notes
+    devScrumNotes: "15", // Textarea / rich text — Dev Daily Scrum notes
   },
 
   // How many chips fit in a month cell before "+N more"
@@ -50,12 +52,19 @@ const DEBUG = pageConfig.debug === true;
 const CSRF = String(pageConfig.csrfToken || "").trim();
 const CURRENT_USER = String(pageConfig.userID || "").trim();
 
-const TYPES = ["Meeting Notes", "Action Item", "Out-of-Office", "General Log"];
+const TYPES = [
+  "Meeting Notes",
+  "Action Item",
+  "Out-of-Office",
+  "General Log",
+  "Daily Scrum",
+];
 const TYPE_CLASS = {
   "Meeting Notes": "meeting",
   "Action Item": "action",
   "Out-of-Office": "ooo",
   "General Log": "log",
+  "Daily Scrum": "scrum",
 };
 
 /* ============================================================
@@ -67,7 +76,13 @@ const state = {
   entries: [], // normalized entry view-models
   entriesByDate: {}, // 'YYYY-MM-DD' -> [entry]
   authors: {}, // userID -> display name
-  filters: { type: "", author: "", search: "", showClosed: false },
+  filters: {
+    type: "",
+    author: "",
+    assignee: "",
+    search: "",
+    showClosed: false,
+  },
   editing: null, // entry being edited (or null for new)
   draftLinks: [], // [{recordID, categoryID, title, formName}]
   draftAssigned: null, // {empUID, name}
@@ -239,6 +254,20 @@ function wireDateInput(inputId, errorId) {
     input.classList.toggle("is-invalid", !valid);
     if (error) error.hidden = valid;
   });
+
+  // LEAF's native date picker (jQuery UI Datepicker) — already loaded
+  // globally on this page. Typing MM/DD/YYYY directly still works; this
+  // just adds the calendar popup as a faster alternative, same as LEAF's
+  // own date-format indicator fields.
+  if (window.$ && window.$.fn && window.$.fn.datepicker) {
+    window.$(input).datepicker({
+      dateFormat: "mm/dd/yy",
+      onSelect: function () {
+        input.classList.remove("is-invalid");
+        if (error) error.hidden = true;
+      },
+    });
+  }
 }
 
 function getDateFieldValue(inputId) {
@@ -500,6 +529,8 @@ function normalizeEntry(recordID, rec) {
     endDate: parseYMD(indVal(series, I.endDate)),
     assignedTo: indVal(series, I.assignedTo),
     coveredBy: indVal(series, I.coveredBy),
+    opsScrumNotes: indVal(series, I.opsScrumNotes),
+    devScrumNotes: indVal(series, I.devScrumNotes),
     links: safeParseLinks(indVal(series, I.linked)),
     author: rec.userID || rec.initiatorName || "",
     authorName: rec.initiatorName || rec.userID || "",
@@ -528,6 +559,8 @@ async function loadEntries() {
     I.dueDate,
     I.endDate,
     I.coveredBy,
+    I.opsScrumNotes,
+    I.devScrumNotes,
   ].filter((x) => x && x !== "REPLACE_ME");
 
   const q = new LeafFormQuery();
@@ -559,7 +592,9 @@ async function loadEntries() {
   state.entries = entries;
   indexEntries();
   buildAuthorFilter();
+  buildAssigneeFilter();
   await resolveLinkTitles();
+  await resolveAuthorAndAssigneeNames();
   logDebug("Loaded entries:", entries.length);
   setStatus("");
 }
@@ -655,6 +690,78 @@ function buildAuthorFilter() {
   sel.value = keep;
 }
 
+function buildAssigneeFilter() {
+  const sel = byId("calFilterAssignee");
+  if (!sel) return;
+  const seen = {};
+  state.entries.forEach((e) => {
+    if (e.type === "Action Item" && e.assignedTo && !seen[e.assignedTo]) {
+      seen[e.assignedTo] = peopleLabel(e.assignedTo);
+    }
+  });
+  const keep = sel.value;
+  sel.innerHTML = '<option value="">Anyone</option>';
+  Object.keys(seen)
+    .sort((a, b) => String(seen[a]).localeCompare(String(seen[b])))
+    .forEach((empUID) => {
+      const o = document.createElement("option");
+      o.value = empUID;
+      o.textContent = seen[empUID];
+      sel.appendChild(o);
+    });
+  sel.value = keep;
+}
+
+// Best-effort name resolution for author/assignee filters: tries LEAF's
+// employee API for any ID we don't already have a name for, and quietly
+// leaves the raw ID in place if the lookup isn't available in this
+// environment — this can only improve what's shown, never break it.
+async function resolveAuthorAndAssigneeNames() {
+  if (!ORGCHART_PATH) return; // no orgchart configured on this page — skip
+
+  const ids = new Set();
+  state.entries.forEach((e) => {
+    if (e.author) ids.add(e.author);
+    if (e.type === "Action Item" && e.assignedTo) ids.add(e.assignedTo);
+  });
+
+  const unresolved = Array.from(ids).filter((id) => !peopleCache[id]);
+  if (!unresolved.length) return;
+
+  await Promise.all(
+    unresolved.map(async (id) => {
+      try {
+        const res = await apiGet(
+          `${ORGCHART_PATH}/api/employee/${encodeURIComponent(id)}`,
+        );
+        const emp = res && res.employee;
+        if (emp && (emp.firstName || emp.lastName)) {
+          const name = `${emp.firstName || ""} ${emp.lastName || ""}`.trim();
+          if (name) peopleCache[id] = name;
+        }
+      } catch (e) {
+        // Lookup unavailable for this ID — leave it showing the raw ID.
+        logDebug("name lookup failed for", id, e.message);
+      }
+    }),
+  );
+
+  // Re-render with any newly-resolved names, and refresh anything already
+  // displaying the raw ID (author filter options, assignee filter options).
+  buildAuthorFilterFromCache();
+  buildAssigneeFilter();
+}
+
+// Re-applies resolved names onto the author filter's existing option set
+// without rebuilding the underlying seen-IDs list.
+function buildAuthorFilterFromCache() {
+  const sel = byId("calFilterAuthor");
+  if (!sel) return;
+  Array.from(sel.options).forEach((o) => {
+    if (o.value && peopleCache[o.value]) o.textContent = peopleCache[o.value];
+  });
+}
+
 // Resolve titles for all linked records in one batched query, so chips show live names
 async function resolveLinkTitles() {
   const ids = {};
@@ -712,6 +819,8 @@ function passesFilter(e) {
   const f = state.filters;
   if (f.type && e.type !== f.type) return false;
   if (f.author && e.author !== f.author) return false;
+  if (f.assignee && (e.type !== "Action Item" || e.assignedTo !== f.assignee))
+    return false;
   if (
     !f.showClosed &&
     e.type === "Action Item" &&
@@ -777,6 +886,7 @@ function entriesForDay(dateKey) {
   const list = (state.entriesByDate[dateKey] || []).filter(passesFilter);
   // Stable order: type priority then title
   const order = {
+    "Daily Scrum": -1,
     "Out-of-Office": 0,
     "Meeting Notes": 1,
     "Action Item": 2,
@@ -1012,7 +1122,11 @@ function renderWeek() {
           badge && (e._dueMarker || e._carriedForward)
             ? `<div class="cal-weekCardDue">${escapeHtml(badge.label)}</div>`
             : "";
-        html += `<div class="cal-weekCard t-${e.typeClass}${overdue}" data-record="${escapeHtml(e.recordID)}" role="button" tabindex="0" title="${escapeHtml(`${e.type}: ${e.title}`)}"><button type="button" class="cal-cardEditBtn" data-edit-record="${escapeHtml(e.recordID)}" title="Edit entry" aria-label="Edit entry"><span class="material-symbols-outlined" aria-hidden="true">edit</span></button><div class="cal-weekCardType">${escapeHtml(e.type)}${marker}</div><div class="cal-weekCardTitle">${escapeHtml(e.title)}</div>${meta ? `<div class="cal-weekCardMeta">${meta}</div>` : ""}${dueMeta}</div>`;
+        const isScrum = e.type === "Daily Scrum";
+        const typeLabel = isScrum
+          ? ""
+          : `<div class="cal-weekCardType">${escapeHtml(e.type)}${marker}</div>`;
+        html += `<div class="cal-weekCard t-${e.typeClass}${overdue}${isScrum ? " cal-weekCard--minimal" : ""}" data-record="${escapeHtml(e.recordID)}" role="button" tabindex="0" title="${escapeHtml(`${e.type}: ${e.title}`)}"><button type="button" class="cal-cardEditBtn" data-edit-record="${escapeHtml(e.recordID)}" title="Edit entry" aria-label="Edit entry"><span class="material-symbols-outlined" aria-hidden="true">edit</span></button>${typeLabel}<div class="cal-weekCardTitle">${escapeHtml(e.title)}</div>${meta ? `<div class="cal-weekCardMeta">${meta}</div>` : ""}${dueMeta}</div>`;
       });
     }
     html += "</div></div>";
@@ -1131,15 +1245,27 @@ function openRecord(recordID, title) {
 function applyConditionalFields(type) {
   byId("calCondAction").hidden = type !== "Action Item";
   byId("calCondOoo").hidden = type !== "Out-of-Office";
+  byId("calCondScrum").hidden = type !== "Daily Scrum";
+}
+
+// Auto-fills Title as "MM/DD/YYYY • Daily Scrum" for Daily Scrum entries,
+// re-running as the date changes, but only until the person edits Title
+// themselves (see state.scrumTitleAuto, set false on real keystrokes).
+function maybeAutoFillScrumTitle() {
+  if (byId("calFldType").value !== "Daily Scrum") return;
+  if (!state.scrumTitleAuto) return;
+  const dateText = byId("calFldDate").value.trim();
+  if (!dateText) return;
+  byId("calFldTitle").value = `${dateText} • Daily Scrum`;
 }
 
 /* ------------------------------------------------------------
    Details field — Trumbowyg (LEAF's native advanced formatting
    editor, already loaded globally by LEAF's page shell).
    ------------------------------------------------------------ */
-let bodyEditorReady = false;
+const richTextFieldsReady = {}; // fieldId -> bool
 
-function initBodyEditor() {
+function initRichTextField(fieldId) {
   if (
     typeof window.$ === "undefined" ||
     !window.$.fn ||
@@ -1150,7 +1276,8 @@ function initBodyEditor() {
     // form still works.
     return;
   }
-  window.$("#calFldBody").trumbowyg({
+  if (!byId(fieldId)) return;
+  window.$(`#${fieldId}`).trumbowyg({
     btns: [
       "bold",
       "italic",
@@ -1165,22 +1292,36 @@ function initBodyEditor() {
       "fullscreen",
     ],
   });
-  bodyEditorReady = true;
+  richTextFieldsReady[fieldId] = true;
+}
+
+function setRichTextValue(fieldId, html) {
+  if (richTextFieldsReady[fieldId]) {
+    window.$(`#${fieldId}`).trumbowyg("html", html || "");
+  } else if (byId(fieldId)) {
+    byId(fieldId).value = html || "";
+  }
+}
+
+function getRichTextValue(fieldId) {
+  if (richTextFieldsReady[fieldId]) {
+    return window.$(`#${fieldId}`).trumbowyg("html").trim();
+  }
+  return byId(fieldId) ? byId(fieldId).value.trim() : "";
+}
+
+function initBodyEditor() {
+  initRichTextField("calFldBody");
+  initRichTextField("calFldOpsScrum");
+  initRichTextField("calFldDevScrum");
 }
 
 function setBodyEditorValue(html) {
-  if (bodyEditorReady) {
-    window.$("#calFldBody").trumbowyg("html", html || "");
-  } else {
-    byId("calFldBody").value = html || "";
-  }
+  setRichTextValue("calFldBody", html);
 }
 
 function getBodyEditorValue() {
-  if (bodyEditorReady) {
-    return window.$("#calFldBody").trumbowyg("html").trim();
-  }
-  return byId("calFldBody").value.trim();
+  return getRichTextValue("calFldBody");
 }
 
 function openEntryModal(entry, presetDate, mode) {
@@ -1227,6 +1368,21 @@ function openEntryModal(entry, presetDate, mode) {
     "calFldEnd",
     entry && entry.endDate ? ymd(entry.endDate) : "",
   );
+  setRichTextValue(
+    "calFldOpsScrum",
+    entry ? normalizeRichText(entry.opsScrumNotes || "") : "",
+  );
+  setRichTextValue(
+    "calFldDevScrum",
+    entry ? normalizeRichText(entry.devScrumNotes || "") : "",
+  );
+  byId("calScrumDupe").hidden = true;
+
+  // Title is auto-generated for brand-new Daily Scrum entries (date •
+  // Daily Scrum) but stays freely editable — only overwrite it
+  // automatically until the person actually types in the field
+  // themselves, and never for an entry that already exists.
+  state.scrumTitleAuto = !entry;
 
   // People
   if (entry && entry.assignedTo) {
@@ -1332,6 +1488,13 @@ function renderReadOnlyEntry(entry) {
     ? `<div class="cal-roDetails">${normalizeRichText(entry.body)}</div>`
     : '<p class="cal-roEmpty">No details added.</p>';
 
+  const opsScrumHtml = entry.opsScrumNotes
+    ? `<div class="cal-roDetails">${normalizeRichText(entry.opsScrumNotes)}</div>`
+    : '<p class="cal-roEmpty">No notes added.</p>';
+  const devScrumHtml = entry.devScrumNotes
+    ? `<div class="cal-roDetails">${normalizeRichText(entry.devScrumNotes)}</div>`
+    : '<p class="cal-roEmpty">No notes added.</p>';
+
   const linksHtml =
     entry.links && entry.links.length
       ? `<div class="cal-linkChips">${entry.links
@@ -1342,13 +1505,27 @@ function renderReadOnlyEntry(entry) {
           .join("")}</div>`
       : '<p class="cal-roEmpty">No records linked.</p>';
 
-  wrap.innerHTML = `
-    <div class="cal-roHead">${pill}</div>
-    <div class="cal-roRows">${rows.join("")}</div>
+  const bodySectionsHtml =
+    entry.type === "Daily Scrum"
+      ? `
+    <div class="cal-roSection">
+      <h3 class="cal-roHeading">Ops Daily Scrum Notes</h3>
+      ${opsScrumHtml}
+    </div>
+    <div class="cal-roSection">
+      <h3 class="cal-roHeading">Dev Daily Scrum Notes</h3>
+      ${devScrumHtml}
+    </div>`
+      : `
     <div class="cal-roSection">
       <h3 class="cal-roHeading">Details</h3>
       ${detailsHtml}
-    </div>
+    </div>`;
+
+  wrap.innerHTML = `
+    <div class="cal-roHead">${pill}</div>
+    <div class="cal-roRows">${rows.join("")}</div>
+    ${bodySectionsHtml}
     <div class="cal-roSection">
       <h3 class="cal-roHeading">Linked records</h3>
       ${linksHtml}
@@ -1504,6 +1681,17 @@ function onEmployeeChosen(role, empSel) {
    Link picker — search across ALL forms
    ============================================================ */
 let linkFormFilterReady = false;
+// Category names hidden from this internal calendar entirely — never
+// shown as a filter option and never returned in search results.
+const HIDDEN_CATEGORY_NAMES = ["feedback"];
+function isHiddenCategoryName(name) {
+  return HIDDEN_CATEGORY_NAMES.includes(
+    String(name || "")
+      .trim()
+      .toLowerCase(),
+  );
+}
+
 async function ensureLinkFormFilter() {
   if (linkFormFilterReady) return;
   const sel = byId("calLinkFormFilter");
@@ -1511,7 +1699,10 @@ async function ensureLinkFormFilter() {
   try {
     const cats = await apiGet("./api/workflow/categoriesUnabridged");
     const arr = (Array.isArray(cats) ? cats : Object.values(cats || {})).filter(
-      (c) => c && (c.categoryName || c.name),
+      (c) =>
+        c &&
+        (c.categoryName || c.name) &&
+        !isHiddenCategoryName(c.categoryName || c.name),
     );
     arr.sort((a, b) =>
       String(a.categoryName || a.name).localeCompare(
@@ -1588,18 +1779,22 @@ async function runLinkSearch(term, formFilter) {
       });
     });
 
-    const rows = Object.keys(merged).map((rid) => {
-      const r = merged[rid];
-      return {
-        recordID: rid,
-        title: decodeEntities(r.title || `#${rid}`),
-        categoryID: r.categoryID || "",
-        formName:
-          r.categoryName ||
-          (Array.isArray(r.categoryNames) ? r.categoryNames.join(", ") : "") ||
-          "",
-      };
-    });
+    const rows = Object.keys(merged)
+      .map((rid) => {
+        const r = merged[rid];
+        return {
+          recordID: rid,
+          title: decodeEntities(r.title || `#${rid}`),
+          categoryID: r.categoryID || "",
+          formName:
+            r.categoryName ||
+            (Array.isArray(r.categoryNames)
+              ? r.categoryNames.join(", ")
+              : "") ||
+            "",
+        };
+      })
+      .filter((r) => !isHiddenCategoryName(r.formName));
     if (!rows.length) {
       out.innerHTML = `<p class="cal-linkHint">No records match "${escapeHtml(term)}".</p>`;
       return;
@@ -1669,6 +1864,26 @@ async function saveEntry() {
 
   const date = getDateFieldValue("calFldDate");
 
+  // Daily Scrum: hard-block a second entry on the same date — point at
+  // the existing one instead of allowing a duplicate.
+  if (type === "Daily Scrum" && date) {
+    const recordID = byId("calEntryRecordID").value;
+    const dupe = state.entries.find(
+      (e) =>
+        e.type === "Daily Scrum" &&
+        e.dateKey === date &&
+        e.recordID !== recordID,
+    );
+    if (dupe) {
+      const dupeBanner = byId("calScrumDupe");
+      dupeBanner.hidden = false;
+      byId("calScrumDupeOpen").onclick = () => openEntryModal(dupe);
+      msg.textContent = "";
+      dupeBanner.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+  }
+
   const saveBtn = byId("calSaveBtn");
   saveBtn.disabled = true;
   saveBtn.textContent = "Saving…";
@@ -1704,6 +1919,17 @@ async function saveEntry() {
     values[I.endDate] = "";
     values[I.coveredBy] = "";
   }
+  if (type === "Daily Scrum") {
+    values[I.opsScrumNotes] = normalizeRichText(
+      getRichTextValue("calFldOpsScrum"),
+    );
+    values[I.devScrumNotes] = normalizeRichText(
+      getRichTextValue("calFldDevScrum"),
+    );
+  } else {
+    values[I.opsScrumNotes] = "";
+    values[I.devScrumNotes] = "";
+  }
 
   try {
     let recordID = byId("calEntryRecordID").value;
@@ -1733,10 +1959,20 @@ async function deleteEntry() {
   if (!recordID) return;
   if (!window.confirm("Delete this entry? This can't be undone.")) return;
   try {
-    // LEAF soft-delete endpoint
-    await apiPost(`./api/form/${encodeURIComponent(recordID)}/delete`, {
-      CSRFToken: CSRF,
-    });
+    // LEAF's real endpoint for removing a record is "cancel", not
+    // "delete" — confirmed from LEAF's own print_form.tpl. It returns
+    // the literal value 1 on success, or an error string otherwise.
+    const res = await apiPost(
+      `./api/form/${encodeURIComponent(recordID)}/cancel`,
+      {
+        CSRFToken: CSRF,
+      },
+    );
+    if (String(res).trim() !== "1") {
+      throw new Error(
+        typeof res === "string" ? res : "Request was not cancelled",
+      );
+    }
     closeModal("calEntryModal");
     announce("Entry deleted.");
     await loadEntries();
@@ -1807,6 +2043,10 @@ function wireControls() {
     state.filters.author = this.value;
     render();
   });
+  byId("calFilterAssignee").addEventListener("change", function onChange() {
+    state.filters.assignee = this.value;
+    render();
+  });
   byId("calShowClosed").addEventListener("change", function onChange() {
     state.filters.showClosed = this.checked;
     render();
@@ -1819,9 +2059,16 @@ function wireControls() {
     }, 200),
   );
   byId("calClearFilters").addEventListener("click", () => {
-    state.filters = { type: "", author: "", search: "", showClosed: false };
+    state.filters = {
+      type: "",
+      author: "",
+      assignee: "",
+      search: "",
+      showClosed: false,
+    };
     byId("calFilterType").value = "";
     byId("calFilterAuthor").value = "";
+    byId("calFilterAssignee").value = "";
     byId("calFilterSearch").value = "";
     byId("calShowClosed").checked = false;
     syncLegendActive();
@@ -1895,7 +2142,22 @@ function wireControls() {
   byId("calDeleteBtn").addEventListener("click", deleteEntry);
   byId("calFldType").addEventListener("change", function onChange() {
     applyConditionalFields(this.value);
+    maybeAutoFillScrumTitle();
+    byId("calScrumDupe").hidden = true;
   });
+
+  // Daily Scrum title auto-fill: "MM/DD/YYYY • Daily Scrum", regenerated
+  // as the date changes, but only until the person types in Title
+  // themselves (real keystrokes fire 'input'; our own programmatic
+  // fills below don't, so this only trips on genuine manual edits).
+  byId("calFldTitle").addEventListener("input", () => {
+    state.scrumTitleAuto = false;
+  });
+  byId("calFldDate").addEventListener("input", () => {
+    maybeAutoFillScrumTitle();
+    byId("calScrumDupe").hidden = true;
+  });
+  byId("calFldDate").addEventListener("change", maybeAutoFillScrumTitle);
 
   // Rich text editor — LEAF's native Trumbowyg (jQuery + Trumbowyg are
   // already loaded globally by LEAF's page shell, so we just init here).

@@ -48,6 +48,9 @@
   --cal-log: #276945;
   --cal-log-soft: #e4f2ea;
   --cal-log-text: #1f5236;
+  --cal-scrum: #0e7c86;
+  --cal-scrum-soft: #e0f4f5;
+  --cal-scrum-text: #0a565d;
 
   --cal-danger: #a8302a;
   --cal-today: #fff7e6;
@@ -428,6 +431,9 @@
 .cal-t-log {
   background: var(--cal-log);
 }
+.cal-t-scrum {
+  background: var(--cal-scrum);
+}
 
 /* ── Status ───────────────────────────────────────────── */
 .cal-status {
@@ -627,6 +633,11 @@
   border-left-color: var(--cal-log);
   color: var(--cal-log-text);
 }
+.cal-chip.t-scrum {
+  background: var(--cal-scrum-soft);
+  border-left-color: var(--cal-scrum);
+  color: var(--cal-scrum-text);
+}
 .cal-chip.is-done {
   opacity: 0.7;
   text-decoration: line-through;
@@ -747,6 +758,9 @@
 .cal-weekCard.t-log {
   border-left-color: var(--cal-log);
 }
+.cal-weekCard.t-scrum {
+  border-left-color: var(--cal-scrum);
+}
 .cal-weekCard.is-overdue {
   border-color: var(--cal-danger);
   border-left-color: var(--cal-danger);
@@ -773,6 +787,13 @@
   font-weight: 700;
   color: var(--cal-danger);
   margin-top: 2px;
+}
+.cal-weekCard--minimal {
+  padding: 6px 8px;
+}
+.cal-weekCard--minimal .cal-weekCardTitle {
+  margin: 0;
+  font-size: 13px;
 }
 
 /* Hover-only edit pencil on cards/chips — click opens straight into edit
@@ -875,6 +896,9 @@
 .cal-agendaItem.t-log {
   border-left-color: var(--cal-log);
 }
+.cal-agendaItem.t-scrum {
+  border-left-color: var(--cal-scrum);
+}
 .cal-agendaBody {
   flex: 1;
   min-width: 0;
@@ -917,6 +941,10 @@
 .cal-agendaBadge.t-log {
   background: var(--cal-log-soft);
   color: var(--cal-log-text);
+}
+.cal-agendaBadge.t-scrum {
+  background: var(--cal-scrum-soft);
+  color: var(--cal-scrum-text);
 }
 .cal-linkCountPill {
   font-size: 12px;
@@ -977,6 +1005,13 @@
 .cal-modalPanel--wide {
   width: 80vw;
   max-width: 80vw;
+}
+
+/* jQuery UI Datepicker (LEAF's native date picker) renders its popup
+   directly on <body>, outside our modal, so it needs a z-index above
+   our modal (1300) to not get hidden behind it. */
+#ui-datepicker-div {
+  z-index: 1400 !important;
 }
 .cal-modalHead {
   display: flex;
@@ -1045,6 +1080,22 @@
 .cal-input.cal-dateInput.is-invalid {
   border-color: var(--cal-danger);
 }
+.cal-dateFieldWrap {
+  position: relative;
+}
+.cal-dateFieldWrap .cal-input.cal-dateInput {
+  padding-left: 32px;
+  cursor: pointer;
+}
+.cal-dateFieldIcon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px !important;
+  color: var(--cal-muted);
+  pointer-events: none;
+}
 .cal-field .cal-input,
 .cal-field .cal-select {
   width: 100%;
@@ -1061,6 +1112,25 @@
 }
 .cal-condGroup[hidden] {
   display: none;
+}
+.cal-scrumDupe {
+  background: var(--cal-danger-soft, #fdecec);
+  border: 1px solid var(--cal-danger);
+  color: var(--cal-danger);
+  border-radius: var(--cal-radius-sm);
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: var(--cal-space-3);
+}
+.cal-linkLikeBtn {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 /* Read-only entry view (default when opening an existing entry) */
@@ -1101,6 +1171,10 @@
 .cal-roPill.t-log {
   background: var(--cal-log-soft);
   color: var(--cal-log-text);
+}
+.cal-roPill.t-scrum {
+  background: var(--cal-scrum-soft);
+  color: var(--cal-scrum-text);
 }
 .cal-roRows {
   display: flex;

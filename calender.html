@@ -114,12 +114,19 @@
                 <option value="Action Item">Action Items</option>
                 <option value="Out-of-Office">Out-of-Office</option>
                 <option value="General Log">General Log</option>
+                <option value="Daily Scrum">Daily Scrum</option>
               </select>
             </label>
             <label class="cal-filterField">
               <span class="cal-filterLabel">Author</span>
               <select id="calFilterAuthor" class="cal-select">
                 <option value="">Everyone</option>
+              </select>
+            </label>
+            <label class="cal-filterField">
+              <span class="cal-filterLabel">Assigned to</span>
+              <select id="calFilterAssignee" class="cal-select">
+                <option value="">Anyone</option>
               </select>
             </label>
             <label class="cal-filterField cal-filterSearch">
@@ -262,6 +269,14 @@
               >
                 <span class="cal-swatch cal-t-log"></span>General Log
               </button>
+              <button
+                type="button"
+                class="cal-legendItem"
+                data-legend-type="Daily Scrum"
+                title="Click to filter the calendar to Daily Scrum"
+              >
+                <span class="cal-swatch cal-t-scrum"></span>Daily Scrum
+              </button>
             </div>
           </div>
         </div>
@@ -316,16 +331,23 @@
             <div class="cal-formRow cal-formRow--split">
               <label class="cal-field">
                 <span class="cal-label">Date</span>
-                <input
-                  type="text"
-                  id="calFldDate"
-                  class="cal-input cal-dateInput"
-                  placeholder="MM/DD/YYYY"
-                  inputmode="numeric"
-                  autocomplete="off"
-                  maxlength="10"
-                  aria-describedby="calFldDate_error"
-                />
+                <div class="cal-dateFieldWrap">
+                  <span
+                    class="material-symbols-outlined cal-dateFieldIcon"
+                    aria-hidden="true"
+                    >calendar_month</span
+                  >
+                  <input
+                    type="text"
+                    id="calFldDate"
+                    class="cal-input cal-dateInput"
+                    placeholder="MM/DD/YYYY"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    maxlength="10"
+                    aria-describedby="calFldDate_error"
+                  />
+                </div>
                 <span class="cal-dateError" id="calFldDate_error" hidden
                   >Please use MM/DD/YYYY format.</span
                 >
@@ -338,6 +360,7 @@
                   <option value="Action Item">Action Item</option>
                   <option value="Out-of-Office">Out-of-Office</option>
                   <option value="General Log">General Log</option>
+                  <option value="Daily Scrum">Daily Scrum</option>
                 </select>
               </label>
             </div>
@@ -377,16 +400,23 @@
                 </label>
                 <label class="cal-field">
                   <span class="cal-label">Due date</span>
-                  <input
-                    type="text"
-                    id="calFldDue"
-                    class="cal-input cal-dateInput"
-                    placeholder="MM/DD/YYYY"
-                    inputmode="numeric"
-                    autocomplete="off"
-                    maxlength="10"
-                    aria-describedby="calFldDue_error"
-                  />
+                  <div class="cal-dateFieldWrap">
+                    <span
+                      class="material-symbols-outlined cal-dateFieldIcon"
+                      aria-hidden="true"
+                      >calendar_month</span
+                    >
+                    <input
+                      type="text"
+                      id="calFldDue"
+                      class="cal-input cal-dateInput"
+                      placeholder="MM/DD/YYYY"
+                      inputmode="numeric"
+                      autocomplete="off"
+                      maxlength="10"
+                      aria-describedby="calFldDue_error"
+                    />
+                  </div>
                   <span class="cal-dateError" id="calFldDue_error" hidden
                     >Please use MM/DD/YYYY format.</span
                   >
@@ -409,16 +439,23 @@
               <div class="cal-formRow cal-formRow--split">
                 <label class="cal-field">
                   <span class="cal-label">End date</span>
-                  <input
-                    type="text"
-                    id="calFldEnd"
-                    class="cal-input cal-dateInput"
-                    placeholder="MM/DD/YYYY — leave blank for single day"
-                    inputmode="numeric"
-                    autocomplete="off"
-                    maxlength="10"
-                    aria-describedby="calFldEnd_error"
-                  />
+                  <div class="cal-dateFieldWrap">
+                    <span
+                      class="material-symbols-outlined cal-dateFieldIcon"
+                      aria-hidden="true"
+                      >calendar_month</span
+                    >
+                    <input
+                      type="text"
+                      id="calFldEnd"
+                      class="cal-input cal-dateInput"
+                      placeholder="MM/DD/YYYY — leave blank for single day"
+                      inputmode="numeric"
+                      autocomplete="off"
+                      maxlength="10"
+                      aria-describedby="calFldEnd_error"
+                    />
+                  </div>
                   <span class="cal-dateError" id="calFldEnd_error" hidden
                     >Please use MM/DD/YYYY format.</span
                   >
@@ -434,6 +471,43 @@
                   ></div>
                 </div>
               </div>
+            </div>
+
+            <!-- Daily Scrum-only fields -->
+            <div class="cal-condGroup" id="calCondScrum" hidden>
+              <div class="cal-scrumDupe" id="calScrumDupe" hidden>
+                Daily Scrum already logged for this date —
+                <button
+                  type="button"
+                  class="cal-linkLikeBtn"
+                  id="calScrumDupeOpen"
+                >
+                  open it
+                </button>
+                instead of creating a new one.
+              </div>
+              <label class="cal-field">
+                <span class="cal-label" id="calOpsScrumLabel"
+                  >Ops Daily Scrum Notes</span
+                >
+                <div class="cal-rtWrap">
+                  <textarea
+                    id="calFldOpsScrum"
+                    aria-labelledby="calOpsScrumLabel"
+                  ></textarea>
+                </div>
+              </label>
+              <label class="cal-field">
+                <span class="cal-label" id="calDevScrumLabel"
+                  >Dev Daily Scrum Notes</span
+                >
+                <div class="cal-rtWrap">
+                  <textarea
+                    id="calFldDevScrum"
+                    aria-labelledby="calDevScrumLabel"
+                  ></textarea>
+                </div>
+              </label>
             </div>
 
             <!-- Linked records -->
