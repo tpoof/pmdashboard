@@ -72,3 +72,14 @@
         if (rid && token) {
           // Existing record: update immediately.
           sendTitleUpdate(rid, token, newTitle);
+        } else {
+          // New/unsaved record: stash for after redirect.
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+            title: newTitle,
+            timestamp: Date.now()
+          }));
+        }
+      });
+    });
+  })();
+</script>
