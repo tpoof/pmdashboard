@@ -7,13 +7,20 @@
         return;
       }
 
-      var resolvedRecordID = (typeof recordID !== "undefined") ? recordID : null;
-      var resolvedToken = (typeof CSRFToken !== "undefined")
+      var resolvedRecordID = (typeof recordID !== "undefined" && recordID)
+        ? recordID
+        : $('input[name="recordID"]').val();
+
+      var resolvedToken = (typeof CSRFToken !== "undefined" && CSRFToken)
         ? CSRFToken
         : $('input[name="CSRFToken"]').val();
 
       if (!resolvedRecordID || !resolvedToken) {
-        console.error("Unable to update title: missing recordID or CSRFToken.");
+        console.error(
+          "Title auto-update skipped: missing recordID or CSRFToken.",
+          "recordID:", resolvedRecordID,
+          "CSRFToken:", resolvedToken
+        );
         return;
       }
 
@@ -30,7 +37,7 @@
           $("#title").val(updatedTitle);
         },
         error: function (xhr, status, err) {
-          console.error("Failed to update title:", status, err, xhr.responseText);
+          console.error("Title auto-update failed:", status, err, xhr.responseText);
         }
       });
     });
