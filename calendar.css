@@ -453,6 +453,13 @@
 .cal-view[hidden] {
   display: none;
 }
+.cal-form[hidden],
+.cal-modalActions[hidden],
+.cal-readOnly[hidden],
+.cal-dangerBtn[hidden],
+.cal-iconBtn[hidden] {
+  display: none;
+}
 
 /* ── Month view ───────────────────────────────────────── */
 .cal-weekHead {
@@ -544,6 +551,8 @@
 }
 .cal-oooBand {
   position: absolute;
+  left: 2px;
+  right: 2px;
   z-index: 5;
   height: 20px;
   display: flex;
