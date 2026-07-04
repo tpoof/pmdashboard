@@ -1,35 +1,30 @@
 <script>
-  $(document).ready(function () {
-    $(document).on("change", "#3", function () {
-      var newTitle = $(this).val().trim();
+  (function () {
+    var STORAGE_KEY = "leaf_pending_title_sync";
+    var STALE_MS = 5 * 60 * 1000; // 5 minutes
 
-      if (newTitle === "") {
-        return;
+    function getRecordID() {
+      if (typeof recordID !== "undefined" && recordID) {
+        return recordID;
       }
+      var val = $('input[name="recordID"]').val();
+      return val ? val : null;
+    }
 
-      var resolvedRecordID = (typeof recordID !== "undefined" && recordID)
-        ? recordID
-        : $('input[name="recordID"]').val();
-
-      var resolvedToken = (typeof CSRFToken !== "undefined" && CSRFToken)
-        ? CSRFToken
-        : $('input[name="CSRFToken"]').val();
-
-      if (!resolvedRecordID || !resolvedToken) {
-        console.error(
-          "Title auto-update skipped: missing recordID or CSRFToken.",
-          "recordID:", resolvedRecordID,
-          "CSRFToken:", resolvedToken
-        );
-        return;
+    function getCSRFToken() {
+      if (typeof CSRFToken !== "undefined" && CSRFToken) {
+        return CSRFToken;
       }
+      return $('input[name="CSRFToken"]').val();
+    }
 
+    function sendTitleUpdate(rid, token, newTitle) {
       $.ajax({
         type: "POST",
-        url: "./api/form/" + resolvedRecordID + "/title",
+        url: "./api/form/" + rid + "/title",
         data: {
           title: newTitle,
-          CSRFToken: resolvedToken,
+          CSRFToken: token,
         },
         success: function (res) {
           var updatedTitle = (typeof res === "string" && res.trim() !== "") ? res : newTitle;
@@ -40,6 +35,40 @@
           console.error("Title auto-update failed:", status, err, xhr.responseText);
         }
       });
-    });
-  });
-</script>
+    }
+
+    $(document).ready(function () {
+      // Handle case: page just loaded after a new-record redirect,
+      // and there's a pending title waiting to be applied.
+      var pending = null;
+      try {
+        pending = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
+      } catch (e) {
+        pending = null;
+      }
+
+      if (pending && pending.title) {
+        var rid = getRecordID();
+        var token = getCSRFToken();
+        var isFresh = (Date.now() - pending.timestamp) < STALE_MS;
+
+        if (rid && token && isFresh) {
+          sendTitleUpdate(rid, token, pending.title);
+        }
+        // Clear regardless, so it never fires twice or leaks into a later record.
+        sessionStorage.removeItem(STORAGE_KEY);
+      }
+
+      // Handle indicator #3 changes going forward.
+      $(document).on("change", "#3", function () {
+        var newTitle = $(this).val().trim();
+        if (newTitle === "") {
+          return;
+        }
+
+        var rid = getRecordID();
+        var token = getCSRFToken();
+
+        if (rid && token) {
+          // Existing record: update immediately.
+          sendTitleUpdate(rid, token, newTitle);
