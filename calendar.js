@@ -1354,10 +1354,6 @@ function openEntryModal(entry, presetDate, mode) {
   );
   byId("calFldType").value = entry ? entry.type : "";
   byId("calFldTitle").value = entry ? entry.title : "";
-  // Ensure the editor starts from clean <p> markup even for entries saved
-  // before normalizeRichText() existed, so re-editing doesn't compound div soup.
-  const bodyHtml = entry ? normalizeRichText(entry.body || "") : "";
-  setBodyEditorValue(bodyHtml);
 
   byId("calFldStatus").value = entry && entry.status ? entry.status : "Open";
   setDateFieldValue(
@@ -1367,14 +1363,6 @@ function openEntryModal(entry, presetDate, mode) {
   setDateFieldValue(
     "calFldEnd",
     entry && entry.endDate ? ymd(entry.endDate) : "",
-  );
-  setRichTextValue(
-    "calFldOpsScrum",
-    entry ? normalizeRichText(entry.opsScrumNotes || "") : "",
-  );
-  setRichTextValue(
-    "calFldDevScrum",
-    entry ? normalizeRichText(entry.devScrumNotes || "") : "",
   );
   byId("calScrumDupe").hidden = true;
 
@@ -1421,7 +1409,25 @@ function setEntryModalMode(mode, entry) {
   byId("calEntryReadOnly").hidden = !isView;
   byId("calReadOnlyActions").hidden = !isView;
   byId("calEditFormActions").hidden = isView;
-  if (isView) renderReadOnlyEntry(entry);
+  if (isView) {
+    renderReadOnlyEntry(entry);
+  } else {
+    // Trumbowyg fields only accept typed input reliably once their
+    // container is actually visible — populating them while the form
+    // sits behind the read-only view (display:none) can leave the
+    // editable area non-interactive even after it's shown again. So we
+    // set their content here, right as the form becomes visible,
+    // rather than unconditionally on every modal open.
+    setBodyEditorValue(entry ? normalizeRichText(entry.body || "") : "");
+    setRichTextValue(
+      "calFldOpsScrum",
+      entry ? normalizeRichText(entry.opsScrumNotes || "") : "",
+    );
+    setRichTextValue(
+      "calFldDevScrum",
+      entry ? normalizeRichText(entry.devScrumNotes || "") : "",
+    );
+  }
 }
 
 function switchToEditMode() {
