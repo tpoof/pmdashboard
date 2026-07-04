@@ -110,11 +110,11 @@
               <span class="cal-filterLabel">Type</span>
               <select id="calFilterType" class="cal-select">
                 <option value="">All types</option>
+                <option value="Daily Scrum">Daily Scrum</option>
                 <option value="Meeting Notes">Meeting Notes</option>
                 <option value="Action Item">Action Items</option>
                 <option value="Out-of-Office">Out-of-Office</option>
                 <option value="General Log">General Log</option>
-                <option value="Daily Scrum">Daily Scrum</option>
               </select>
             </label>
             <label class="cal-filterField">
@@ -240,6 +240,14 @@
               <button
                 type="button"
                 class="cal-legendItem"
+                data-legend-type="Daily Scrum"
+                title="Click to filter the calendar to Daily Scrum"
+              >
+                <span class="cal-swatch cal-t-scrum"></span>Daily Scrum
+              </button>
+              <button
+                type="button"
+                class="cal-legendItem"
                 data-legend-type="Meeting Notes"
                 title="Click to filter the calendar to Meeting Notes"
               >
@@ -268,14 +276,6 @@
                 title="Click to filter the calendar to General Log"
               >
                 <span class="cal-swatch cal-t-log"></span>General Log
-              </button>
-              <button
-                type="button"
-                class="cal-legendItem"
-                data-legend-type="Daily Scrum"
-                title="Click to filter the calendar to Daily Scrum"
-              >
-                <span class="cal-swatch cal-t-scrum"></span>Daily Scrum
               </button>
             </div>
           </div>
@@ -356,11 +356,11 @@
                 <span class="cal-label">Type</span>
                 <select id="calFldType" class="cal-select">
                   <option value="">Choose…</option>
+                  <option value="Daily Scrum">Daily Scrum</option>
                   <option value="Meeting Notes">Meeting Notes</option>
                   <option value="Action Item">Action Item</option>
                   <option value="Out-of-Office">Out-of-Office</option>
                   <option value="General Log">General Log</option>
-                  <option value="Daily Scrum">Daily Scrum</option>
                 </select>
               </label>
             </div>
@@ -376,7 +376,7 @@
               />
             </label>
 
-            <label class="cal-field">
+            <label class="cal-field" id="calFldBodyField">
               <span class="cal-label" id="calFldBodyLabel">Details</span>
               <div class="cal-rtWrap">
                 <textarea

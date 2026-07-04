@@ -53,11 +53,11 @@ const CSRF = String(pageConfig.csrfToken || "").trim();
 const CURRENT_USER = String(pageConfig.userID || "").trim();
 
 const TYPES = [
+  "Daily Scrum",
   "Meeting Notes",
   "Action Item",
   "Out-of-Office",
   "General Log",
-  "Daily Scrum",
 ];
 const TYPE_CLASS = {
   "Meeting Notes": "meeting",
@@ -831,10 +831,31 @@ function passesFilter(e) {
     return false;
   }
   if (f.search) {
-    const hay = `${e.title} ${stripHtml(e.body)}`.toLowerCase();
-    if (!hay.includes(f.search.toLowerCase())) return false;
+    if (!entrySearchHaystack(e).includes(f.search.toLowerCase())) return false;
   }
   return true;
+}
+
+// Builds the full searchable text for an entry: title, details, Daily
+// Scrum notes, status, type, assigned-to/covered-by names, and any
+// linked record titles — except records linked from the (internal-only,
+// hidden) Feedback form, which never surface in search either.
+function entrySearchHaystack(e) {
+  const parts = [
+    e.title,
+    stripHtml(e.body),
+    stripHtml(e.opsScrumNotes),
+    stripHtml(e.devScrumNotes),
+    e.status,
+    e.type,
+    e.assignedTo ? peopleLabel(e.assignedTo) : "",
+    e.coveredBy ? peopleLabel(e.coveredBy) : "",
+  ];
+  (e.links || []).forEach((l) => {
+    if (isHiddenCategoryName(l.formName)) return;
+    parts.push(l.title);
+  });
+  return parts.filter(Boolean).join(" ").toLowerCase();
 }
 
 function stripHtml(html) {
@@ -1246,6 +1267,7 @@ function applyConditionalFields(type) {
   byId("calCondAction").hidden = type !== "Action Item";
   byId("calCondOoo").hidden = type !== "Out-of-Office";
   byId("calCondScrum").hidden = type !== "Daily Scrum";
+  byId("calFldBodyField").hidden = type === "Daily Scrum";
 }
 
 // Auto-fills Title as "MM/DD/YYYY • Daily Scrum" for Daily Scrum entries,
@@ -1266,6 +1288,7 @@ function maybeAutoFillScrumTitle() {
 const richTextFieldsReady = {}; // fieldId -> bool
 
 function initRichTextField(fieldId) {
+  if (richTextFieldsReady[fieldId]) return; // already initialized — don't re-init
   if (
     typeof window.$ === "undefined" ||
     !window.$.fn ||
@@ -1390,8 +1413,13 @@ function openEntryModal(entry, presetDate, mode) {
 
   applyConditionalFields(entry ? entry.type : "");
   renderDraftLinks();
-  setEntryModalMode(effectiveMode, entry);
   openModal("calEntryModal");
+  setEntryModalMode(effectiveMode, entry);
+  // openModal() already tried to focus the first focusable element, but
+  // that happened before setEntryModalMode() revealed the right section
+  // (form vs. read-only) — re-focus now that it's correct.
+  const focusable = getFocusable(byId("calEntryModal"));
+  if (focusable[0]) focusable[0].focus();
 }
 
 // Toggles the entry modal between "view" (clean, read-only summary) and
@@ -1412,12 +1440,13 @@ function setEntryModalMode(mode, entry) {
   if (isView) {
     renderReadOnlyEntry(entry);
   } else {
-    // Trumbowyg fields only accept typed input reliably once their
-    // container is actually visible — populating them while the form
-    // sits behind the read-only view (display:none) can leave the
-    // editable area non-interactive even after it's shown again. So we
-    // set their content here, right as the form becomes visible,
-    // rather than unconditionally on every modal open.
+    // Trumbowyg must be built while its textarea is actually visible —
+    // building it inside a display:none modal leaves the editable area
+    // permanently non-interactive even after the modal opens later. This
+    // is only called once the modal itself is already open (see call
+    // order in openEntryModal/switchToEditMode), and is safe to call
+    // repeatedly — initRichTextField() no-ops after the first real init.
+    initBodyEditor();
     setBodyEditorValue(entry ? normalizeRichText(entry.body || "") : "");
     setRichTextValue(
       "calFldOpsScrum",
@@ -2165,9 +2194,12 @@ function wireControls() {
   });
   byId("calFldDate").addEventListener("change", maybeAutoFillScrumTitle);
 
-  // Rich text editor — LEAF's native Trumbowyg (jQuery + Trumbowyg are
-  // already loaded globally by LEAF's page shell, so we just init here).
-  initBodyEditor();
+  // NOTE: Trumbowyg is intentionally NOT initialized here. Building it
+  // while the modal is still display:none (page load, before it's ever
+  // opened) leaves the editable area permanently non-interactive even
+  // after the modal becomes visible later. It's initialized lazily
+  // instead, in setEntryModalMode(), the first time the edit form is
+  // genuinely on-screen — see initBodyEditor() call there.
 
   // MM/DD/YYYY date fields — auto-format + validate as-you-type
   wireDateInput("calFldDate", "calFldDate_error");

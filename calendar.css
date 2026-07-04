@@ -48,9 +48,9 @@
   --cal-log: #276945;
   --cal-log-soft: #e4f2ea;
   --cal-log-text: #1f5236;
-  --cal-scrum: #0e7c86;
-  --cal-scrum-soft: #e0f4f5;
-  --cal-scrum-text: #0a565d;
+  --cal-scrum: #6b7280;
+  --cal-scrum-soft: #eceef1;
+  --cal-scrum-text: #40464e;
 
   --cal-danger: #a8302a;
   --cal-today: #fff7e6;
@@ -464,7 +464,8 @@
 .cal-readOnly[hidden],
 .cal-dangerBtn[hidden],
 .cal-iconBtn[hidden],
-.cal-dateError[hidden] {
+.cal-dateError[hidden],
+.cal-field[hidden] {
   display: none;
 }
 
