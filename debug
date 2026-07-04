@@ -3,45 +3,36 @@
     $(document).on("change", "#3", function () {
       var newTitle = $(this).val().trim();
 
-      console.log("=== Indicator #3 change fired ===");
-      console.log("newTitle:", newTitle);
-      console.log("typeof recordID:", typeof recordID, "value:", (typeof recordID !== 'undefined' ? recordID : 'N/A'));
-      console.log("typeof CSRFToken:", typeof CSRFToken, "value:", (typeof CSRFToken !== 'undefined' ? CSRFToken : 'N/A'));
-
-      var hiddenTokens = [];
-      $('input[name="CSRFToken"]').each(function() { hiddenTokens.push($(this).val()); });
-      console.log("hidden CSRFToken inputs found on page:", hiddenTokens);
-
-      console.log("current window.location.href:", window.location.href);
-
-      if (newTitle !== "") {
-        var resolvedRecordID = (typeof recordID !== 'undefined') ? recordID : null;
-        var resolvedToken = (typeof CSRFToken !== 'undefined') ? CSRFToken : (hiddenTokens[0] || null);
-        var url = "./api/form/" + resolvedRecordID + "/title";
-
-        console.log("Resolved recordID:", resolvedRecordID);
-        console.log("Resolved CSRFToken:", resolvedToken);
-        console.log("Final URL about to be called:", url);
-
-        $.ajax({
-          type: "POST",
-          url: url,
-          data: {
-            title: newTitle,
-            CSRFToken: resolvedToken,
-          },
-          success: function (res) {
-            console.log("SUCCESS response:", res);
-          },
-          error: function (xhr, status, err) {
-            console.log("ERROR status:", xhr.status);
-            console.log("ERROR response text:", xhr.responseText);
-            console.log("ERROR details:", status, err);
-          }
-        });
-      } else {
-        console.log("newTitle was empty, AJAX not sent.");
+      if (newTitle === "") {
+        return;
       }
+
+      var resolvedRecordID = (typeof recordID !== "undefined") ? recordID : null;
+      var resolvedToken = (typeof CSRFToken !== "undefined")
+        ? CSRFToken
+        : $('input[name="CSRFToken"]').val();
+
+      if (!resolvedRecordID || !resolvedToken) {
+        console.error("Unable to update title: missing recordID or CSRFToken.");
+        return;
+      }
+
+      $.ajax({
+        type: "POST",
+        url: "./api/form/" + resolvedRecordID + "/title",
+        data: {
+          title: newTitle,
+          CSRFToken: resolvedToken,
+        },
+        success: function (res) {
+          var updatedTitle = (typeof res === "string" && res.trim() !== "") ? res : newTitle;
+          $("#requestTitle").text(updatedTitle);
+          $("#title").val(updatedTitle);
+        },
+        error: function (xhr, status, err) {
+          console.error("Failed to update title:", status, err, xhr.responseText);
+        }
+      });
     });
   });
 </script>
