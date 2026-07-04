@@ -229,19 +229,38 @@
           <div class="cal-legendRow">
             <span class="cal-toggleLabel" id="calLegendLabel">Legend:</span>
             <div class="cal-legend" aria-labelledby="calLegendLabel">
-              <span class="cal-legendItem"
-                ><span class="cal-swatch cal-t-meeting"></span>Meeting
-                Notes</span
+              <button
+                type="button"
+                class="cal-legendItem"
+                data-legend-type="Meeting Notes"
+                title="Click to filter the calendar to Meeting Notes"
               >
-              <span class="cal-legendItem"
-                ><span class="cal-swatch cal-t-action"></span>Action Item</span
+                <span class="cal-swatch cal-t-meeting"></span>Meeting Notes
+              </button>
+              <button
+                type="button"
+                class="cal-legendItem"
+                data-legend-type="Action Item"
+                title="Click to filter the calendar to Action Items"
               >
-              <span class="cal-legendItem"
-                ><span class="cal-swatch cal-t-ooo"></span>Out-of-Office</span
+                <span class="cal-swatch cal-t-action"></span>Action Item
+              </button>
+              <button
+                type="button"
+                class="cal-legendItem"
+                data-legend-type="Out-of-Office"
+                title="Click to filter the calendar to Out-of-Office"
               >
-              <span class="cal-legendItem"
-                ><span class="cal-swatch cal-t-log"></span>General Log</span
+                <span class="cal-swatch cal-t-ooo"></span>Out-of-Office
+              </button>
+              <button
+                type="button"
+                class="cal-legendItem"
+                data-legend-type="General Log"
+                title="Click to filter the calendar to General Log"
               >
+                <span class="cal-swatch cal-t-log"></span>General Log
+              </button>
             </div>
           </div>
         </div>
@@ -434,7 +453,7 @@
 
             <div class="cal-formMsg" id="calEntryMsg" role="alert"></div>
 
-            <div class="cal-modalActions">
+            <div class="cal-modalActions" id="calEditFormActions">
               <button
                 type="button"
                 class="cal-dangerBtn"
@@ -452,6 +471,23 @@
               </button>
             </div>
           </form>
+
+          <!-- Read-only summary — shown by default when opening an
+               existing entry from the calendar; Edit switches to the form
+               above without re-fetching data. -->
+          <div id="calEntryReadOnly" class="cal-readOnly" hidden></div>
+          <div class="cal-modalActions" id="calReadOnlyActions" hidden>
+            <button type="button" class="cal-ghostBtn" data-close="entry">
+              Close
+            </button>
+            <span class="cal-actionsSpacer"></span>
+            <button type="button" class="cal-primaryBtn" id="calEditBtn">
+              <span class="material-symbols-outlined" aria-hidden="true"
+                >edit</span
+              >
+              Edit
+            </button>
+          </div>
         </div>
       </div>
 
@@ -469,9 +505,7 @@
         <div class="cal-modalBackdrop" data-close="link"></div>
         <div class="cal-modalPanel cal-modalPanel--sm" role="document">
           <div class="cal-modalHead">
-            <h2 class="cal-modalTitle" id="calLinkModalTitle">
-              Attach a record
-            </h2>
+            <h2 class="cal-modalTitle" id="calLinkModalTitle">Select record</h2>
             <button
               type="button"
               class="cal-iconBtn"
@@ -483,6 +517,11 @@
               >
             </button>
           </div>
+          <p class="cal-modalDesc">
+            Link this entry to a record elsewhere in LEAF. Linking doesn't move
+            or change that record — it just adds a quick shortcut so you can
+            jump to it from here.
+          </p>
           <div class="cal-linkSearchRow">
             <label class="lp-skip-like cal-sr" for="calLinkSearch"
               >Search records by title</label

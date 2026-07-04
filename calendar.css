@@ -257,7 +257,8 @@
   justify-content: space-between;
   gap: var(--cal-space-4);
   flex-wrap: wrap;
-  margin-bottom: var(--cal-space-3);
+  padding-top: var(--cal-space-3);
+  margin-bottom: var(--cal-space-2);
 }
 .cal-navGroup {
   display: inline-flex;
@@ -386,6 +387,28 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  border: 1px solid transparent;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--cal-muted);
+  padding: 3px 8px 3px 6px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.cal-legendItem:hover {
+  background: var(--cal-surface-alt);
+  color: var(--cal-text);
+}
+.cal-legendItem:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
+}
+.cal-legendItem.is-active {
+  border-color: var(--cal-border-strong);
+  background: var(--cal-accent-soft);
+  color: var(--cal-text);
+  font-weight: 700;
 }
 .cal-swatch {
   width: 12px;
@@ -408,10 +431,11 @@
 
 /* ── Status ───────────────────────────────────────────── */
 .cal-status {
-  min-height: 20px;
   font-size: 14px;
   color: var(--cal-muted);
-  margin-bottom: var(--cal-space-2);
+}
+.cal-status:empty {
+  display: none;
 }
 .cal-status.is-error {
   color: var(--cal-danger);
@@ -548,6 +572,8 @@
 }
 
 .cal-chip {
+  position: relative;
+  display: block;
   font-size: 12px;
   line-height: 1.25;
   padding: 3px 6px;
@@ -562,6 +588,7 @@
   font-family: inherit;
   text-align: left;
   width: 100%;
+  box-sizing: border-box;
 }
 .cal-chip:hover {
   filter: brightness(0.97);
@@ -597,6 +624,17 @@
 .cal-chip.is-carried {
   border-left-style: dashed;
 }
+.cal-chip.is-overdue {
+  border-left-color: var(--cal-danger);
+  background: var(--cal-danger-soft, #fdecec);
+  color: var(--cal-danger);
+}
+.cal-chipDue {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
 
 .cal-moreLink {
   font-size: 12px;
@@ -622,7 +660,9 @@
 .cal-weekBoard {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  min-height: 480px;
+  align-items: start;
+  position: relative;
+  min-height: 200px;
 }
 .cal-weekCol {
   border-right: 1px solid var(--cal-border);
@@ -667,6 +707,7 @@
   background: var(--cal-surface-alt);
 }
 .cal-weekCard {
+  position: relative;
   border: 1px solid var(--cal-border);
   border-left-width: 4px;
   border-radius: 8px;
@@ -696,6 +737,11 @@
 .cal-weekCard.t-log {
   border-left-color: var(--cal-log);
 }
+.cal-weekCard.is-overdue {
+  border-color: var(--cal-danger);
+  border-left-color: var(--cal-danger);
+  background: var(--cal-danger-soft, #fdecec);
+}
 .cal-weekCardType {
   font-size: 11px;
   font-weight: 800;
@@ -711,6 +757,48 @@
 .cal-weekCardMeta {
   font-size: 12px;
   color: var(--cal-muted);
+}
+.cal-weekCardDue {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cal-danger);
+  margin-top: 2px;
+}
+
+/* Hover-only edit pencil on cards/chips — click opens straight into edit
+   mode; clicking the rest of the card opens read-only view (default). */
+.cal-cardEditBtn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--cal-border-strong);
+  background: var(--cal-surface);
+  color: var(--cal-muted);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+}
+.cal-cardEditBtn .material-symbols-outlined {
+  font-size: 14px !important;
+}
+.cal-weekCard:hover .cal-cardEditBtn,
+.cal-chip:hover .cal-cardEditBtn,
+.cal-cardEditBtn:focus-visible {
+  display: inline-flex;
+}
+.cal-cardEditBtn--chip {
+  top: 1px;
+  right: 1px;
+  width: 18px;
+  height: 18px;
+}
+.cal-cardEditBtn--chip .material-symbols-outlined {
+  font-size: 12px !important;
 }
 
 /* ── Agenda view ──────────────────────────────────────── */
@@ -903,6 +991,13 @@
   font-size: 20px;
   font-weight: 800;
 }
+.cal-modalDesc {
+  margin: 0;
+  padding: 12px 20px 0;
+  font-size: 13px;
+  color: var(--cal-muted);
+  line-height: 1.5;
+}
 
 /* ── Form ─────────────────────────────────────────────── */
 .cal-form {
@@ -946,6 +1041,93 @@
   background: var(--cal-surface-alt);
 }
 .cal-condGroup[hidden] {
+  display: none;
+}
+
+/* Read-only entry view (default when opening an existing entry) */
+.cal-readOnly {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cal-space-4);
+}
+.cal-roHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cal-roPill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.cal-roPill.t-meeting {
+  background: var(--cal-meeting-soft);
+  color: var(--cal-meeting-text);
+}
+.cal-roPill.t-action {
+  background: var(--cal-action-soft);
+  color: var(--cal-action-text);
+}
+.cal-roPill.t-ooo {
+  background: var(--cal-ooo-soft);
+  color: var(--cal-ooo-text);
+}
+.cal-roPill.t-log {
+  background: var(--cal-log-soft);
+  color: var(--cal-log-text);
+}
+.cal-roRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cal-roRow {
+  display: flex;
+  gap: 10px;
+  font-size: 14px;
+}
+.cal-roLabel {
+  min-width: 110px;
+  font-weight: 700;
+  color: var(--cal-muted);
+  flex-shrink: 0;
+}
+.cal-roValue {
+  color: var(--cal-text);
+}
+.cal-roValue.is-overdue {
+  color: var(--cal-danger);
+  font-weight: 700;
+}
+.cal-roSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cal-roDetails {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--cal-text);
+}
+.cal-roDetails p {
+  margin: 0 0 10px;
+}
+.cal-roDetails p:last-child {
+  margin-bottom: 0;
+}
+.cal-roEmpty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--cal-muted);
+  font-style: italic;
+}
+.cal-linkChip--ro button {
   display: none;
 }
 

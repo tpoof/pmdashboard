@@ -471,37 +471,74 @@ async function loadEntries() {
   setStatus("");
 }
 
+function isMultiDayOoo(e) {
+  return e.type === "Out-of-Office" && !!e.endDate && e.endDate > e.date;
+}
+
 function indexEntries() {
   const map = {};
-  // Carry-forward: open/in-progress action items also appear on "today" until closed
   const todayKey = ymd(new Date());
   state.entries.forEach((e) => {
     (map[e.dateKey] = map[e.dateKey] || []).push(e);
 
-    // OOO ranges: also index each day between date..endDate (used by week
-    // view; month view renders OOO as a spanning band instead)
-    if (e.type === "Out-of-Office" && e.endDate && e.endDate > e.date) {
-      let cur = addDays(e.date, 1);
-      while (cur <= e.endDate) {
-        const k = ymd(cur);
-        const clone = { ...e, _spanDay: true, dateKey: k };
-        (map[k] = map[k] || []).push(clone);
-        cur = addDays(cur, 1);
-      }
-    }
+    // Multi-day OOO spans are rendered as a single spanning band (see
+    // packOooLanes / renderWeek / renderMonth) — no per-day clones needed.
 
-    // Carry-forward open action items onto today (if the entry is in the past)
     const isOpenAction =
       e.type === "Action Item" &&
       (e.status === "Open" ||
         e.status === "In Progress" ||
         e.status === "Carried Forward");
-    if (isOpenAction && e.dateKey && e.dateKey < todayKey) {
+    if (!isOpenAction) return;
+
+    if (e.dueDate) {
+      const dueKey = ymd(e.dueDate);
+      // (2) Due-date marker — surfaced on the due date itself, distinct
+      // from wherever it was originally logged, so it's visible ahead of time.
+      if (dueKey !== e.dateKey) {
+        const dueMarker = { ...e, _dueMarker: true, dateKey: dueKey };
+        (map[dueKey] = map[dueKey] || []).push(dueMarker);
+      }
+      // (3) Carry forward to today once overdue, unless today already
+      // shows it via the logged date or the due-date marker above.
+      if (dueKey < todayKey && e.dateKey !== todayKey && dueKey !== todayKey) {
+        const cf = { ...e, _carriedForward: true, dateKey: todayKey };
+        (map[todayKey] = map[todayKey] || []).push(cf);
+      }
+    } else if (e.dateKey < todayKey) {
+      // No due date set — fall back to simple carry-forward-to-today.
       const cf = { ...e, _carriedForward: true, dateKey: todayKey };
       (map[todayKey] = map[todayKey] || []).push(cf);
     }
   });
   state.entriesByDate = map;
+}
+
+// Days between two YMD-normalized Date objects (positive = b is after a)
+function daysBetween(a, b) {
+  return Math.round((b - a) / 86400000);
+}
+
+// Due-date badge text + overdue flag for a given entry, used by both the
+// week card and month chip renderers.
+function dueBadge(e) {
+  if (!e.dueDate) return null;
+  const todayKey = ymd(new Date());
+  const dueKey = ymd(e.dueDate);
+  const diff = daysBetween(parseYMD(todayKey), parseYMD(dueKey));
+  const overdue = dueKey < todayKey;
+  let label;
+  if (overdue) {
+    const days = Math.abs(diff);
+    label = `${days} day${days === 1 ? "" : "s"} overdue`;
+  } else if (diff === 0) {
+    label = "Due today";
+  } else if (diff === 1) {
+    label = "Due tomorrow";
+  } else {
+    label = `Due in ${diff} days`;
+  }
+  return { label, overdue };
 }
 
 function buildAuthorFilter() {
@@ -661,7 +698,6 @@ function entriesForDay(dateKey) {
    Rendering — shared chip / helpers
    ============================================================ */
 function chipLabel(e) {
-  if (e._spanDay && e.type === "Out-of-Office") return `${e.title} (out)`;
   return e.title;
 }
 
@@ -669,8 +705,56 @@ function chipHTML(e) {
   let cls = `cal-chip t-${e.typeClass}`;
   if (e.type === "Action Item" && e.status === "Done") cls += " is-done";
   if (e._carriedForward) cls += " is-carried";
-  const prefix = e._carriedForward ? "↺ " : "";
-  return `<button type="button" class="${cls}" data-record="${escapeHtml(e.recordID)}" title="${escapeHtml(`${e.type}: ${e.title}`)}">${escapeHtml(prefix)}${escapeHtml(chipLabel(e))}</button>`;
+  const badge = e.type === "Action Item" ? dueBadge(e) : null;
+  if (badge && badge.overdue) cls += " is-overdue";
+  const prefix = e._carriedForward ? "↺ " : e._dueMarker ? "⏰ " : "";
+  const badgeHtml =
+    badge && (e._dueMarker || e._carriedForward)
+      ? `<span class="cal-chipDue">${escapeHtml(badge.label)}</span>`
+      : "";
+  return `<span class="${cls}" data-record="${escapeHtml(e.recordID)}" role="button" tabindex="0" title="${escapeHtml(`${e.type}: ${e.title}`)}"><button type="button" class="cal-cardEditBtn cal-cardEditBtn--chip" data-edit-record="${escapeHtml(e.recordID)}" title="Edit entry" aria-label="Edit entry"><span class="material-symbols-outlined" aria-hidden="true">edit</span></button>${escapeHtml(prefix)}${escapeHtml(chipLabel(e))}${badgeHtml}</span>`;
+}
+
+// Lane-packs Out-of-Office ranges that fall within [rangeStart, rangeEnd]
+// (inclusive, both Date objects normalized to midnight) so that only
+// genuinely overlapping ranges get separate rows/lanes — non-overlapping
+// OOO entries share a lane. Returns an array of lanes, each lane an array
+// of { entry, colStart, colEnd } segments clipped to the range.
+function packOooLanes(entries, rangeStart, rangeEnd) {
+  const segments = entries
+    .map((e) => {
+      const spanStart = e.date;
+      const spanEnd = e.endDate && e.endDate > e.date ? e.endDate : e.date;
+      if (spanEnd < rangeStart || spanStart > rangeEnd) return null;
+      const segStart = spanStart > rangeStart ? spanStart : rangeStart;
+      const segEnd = spanEnd < rangeEnd ? spanEnd : rangeEnd;
+      return {
+        entry: e,
+        colStart: Math.round((segStart - rangeStart) / 86400000),
+        colEnd: Math.round((segEnd - rangeStart) / 86400000),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.colStart - b.colStart);
+
+  const lanes = [];
+  const laneEnds = [];
+  segments.forEach((seg) => {
+    let placed = false;
+    for (let i = 0; i < lanes.length; i++) {
+      if (seg.colStart > laneEnds[i]) {
+        lanes[i].push(seg);
+        laneEnds[i] = seg.colEnd;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      lanes.push([seg]);
+      laneEnds.push(seg.colEnd);
+    }
+  });
+  return lanes;
 }
 
 /* ── Month view ──────────────────────────────────────────── */
@@ -707,43 +791,31 @@ function renderMonth() {
   const totalWeeks = totalDays / 7;
 
   const oooEntries = state.entries.filter(
-    (e) => e.type === "Out-of-Office" && passesFilter(e),
+    (e) => isMultiDayOoo(e) && passesFilter(e),
   );
 
-  // First pass: figure out how many OOO band rows each week needs, and
-  // the absolute grid-row line number where each week's content starts.
-  const weekBands = []; // weekBands[w] = [{entry, colStart, colEnd}, ...]
+  // First pass: figure out how many OOO band lanes each week needs (only
+  // genuinely overlapping ranges get separate lanes), and the absolute
+  // grid-row line number where each week's content starts.
+  const weekBands = []; // weekBands[w] = lanes[] = [{entry, colStart, colEnd}, ...][]
   const weekRowStart = []; // weekRowStart[w] = grid-row line where week w's day-number row begins
   let cursorRow = 1;
   for (let w = 0; w < totalWeeks; w++) {
     const rowStart = addDays(gridStart, w * 7);
     const rowEnd = addDays(rowStart, 6);
-    const bands = oooEntries
-      .map((e) => {
-        const spanStart = e.date;
-        const spanEnd = e.endDate && e.endDate > e.date ? e.endDate : e.date;
-        if (spanEnd < rowStart || spanStart > rowEnd) return null;
-        const segStart = spanStart > rowStart ? spanStart : rowStart;
-        const segEnd = spanEnd < rowEnd ? spanEnd : rowEnd;
-        return {
-          entry: e,
-          colStart: Math.round((segStart - rowStart) / 86400000),
-          colEnd: Math.round((segEnd - rowStart) / 86400000),
-        };
-      })
-      .filter(Boolean);
-    weekBands.push(bands);
+    const lanes = packOooLanes(oooEntries, rowStart, rowEnd);
+    weekBands.push(lanes);
     weekRowStart.push(cursorRow);
-    cursorRow += 1 + bands.length + 1; // day-number row + band rows + chip row
+    cursorRow += 1 + lanes.length + 1; // day-number row + lane rows + chip row
   }
   const totalRows = cursorRow - 1;
 
   // Build the grid-template-rows track list to match: auto for day-number
-  // rows, a fixed 22px for each band row, 1fr (min 96px) for chip rows.
+  // rows, a fixed 22px for each lane row, 1fr (min 96px) for chip rows.
   const rowTracks = [];
   for (let w = 0; w < totalWeeks; w++) {
     rowTracks.push("auto"); // day numbers
-    weekBands[w].forEach(() => rowTracks.push("22px")); // one per band
+    weekBands[w].forEach(() => rowTracks.push("22px")); // one per lane
     rowTracks.push("minmax(96px, 1fr)"); // chip content
   }
   grid.style.gridTemplateColumns = "repeat(7, 1fr)";
@@ -753,8 +825,8 @@ function renderMonth() {
   for (let w = 0; w < totalWeeks; w++) {
     const rowStart = addDays(gridStart, w * 7);
     const dayNumRow = weekRowStart[w];
-    const bands = weekBands[w];
-    const chipRow = dayNumRow + 1 + bands.length;
+    const lanes = weekBands[w];
+    const chipRow = dayNumRow + 1 + lanes.length;
 
     // Day-number row
     for (let d = 0; d < 7; d++) {
@@ -763,26 +835,27 @@ function renderMonth() {
       html += `<div class="cal-dayNumCell${outside ? " is-outside" : ""}${isTodayDate(day) ? " is-today" : ""}" style="grid-column:${d + 1};grid-row:${dayNumRow}"><span class="cal-dayNum">${day.getDate()}</span></div>`;
     }
 
-    // OOO band rows for this week
-    bands.forEach((b, bandIdx) => {
-      const gridRow = dayNumRow + 1 + bandIdx;
-      const spanStartLabel = fmtLongDate(b.entry.date);
-      const spanEndLabel =
-        b.entry.endDate && b.entry.endDate > b.entry.date
-          ? ` through ${fmtLongDate(b.entry.endDate)}`
-          : "";
-      html += `<button type="button" class="cal-oooBand" style="grid-column:${b.colStart + 1} / span ${b.colEnd - b.colStart + 1};grid-row:${gridRow}" data-record="${escapeHtml(b.entry.recordID)}" title="${escapeHtml(`${b.entry.type}: ${b.entry.title}`)}" aria-label="${escapeHtml(b.entry.title)}, Out-of-Office, ${escapeHtml(spanStartLabel)}${escapeHtml(spanEndLabel)}">${escapeHtml(b.entry.title)}</button>`;
+    // OOO band lanes for this week — genuinely overlapping ranges get
+    // separate lanes; non-overlapping ranges share a lane.
+    lanes.forEach((lane, laneIdx) => {
+      const gridRow = dayNumRow + 1 + laneIdx;
+      lane.forEach((b) => {
+        const spanStartLabel = fmtLongDate(b.entry.date);
+        const spanEndLabel =
+          b.entry.endDate && b.entry.endDate > b.entry.date
+            ? ` through ${fmtLongDate(b.entry.endDate)}`
+            : "";
+        html += `<button type="button" class="cal-oooBand" style="grid-column:${b.colStart + 1} / span ${b.colEnd - b.colStart + 1};grid-row:${gridRow}" data-record="${escapeHtml(b.entry.recordID)}" title="${escapeHtml(`${b.entry.type}: ${b.entry.title}`)}" aria-label="${escapeHtml(b.entry.title)}, Out-of-Office, ${escapeHtml(spanStartLabel)}${escapeHtml(spanEndLabel)}">${escapeHtml(b.entry.title)}</button>`;
+      });
     });
 
     // Chip content row — always the last row for this week, below every
-    // band row above it, so it can never be visually covered.
+    // lane row above it, so it can never be visually covered.
     for (let d = 0; d < 7; d++) {
       const day = addDays(rowStart, d);
       const key = ymd(day);
       const outside = day.getMonth() !== state.cursor.getMonth();
-      const list = entriesForDay(key).filter(
-        (e) => !(e.type === "Out-of-Office" && (e._spanDay || e.endDate)),
-      );
+      const list = entriesForDay(key).filter((e) => !isMultiDayOoo(e));
       const limit = CONFIG.monthCellChipLimit;
       const shown = list.slice(0, limit);
       const extra = list.length - shown.length;
@@ -806,13 +879,32 @@ function renderWeek() {
   const board = byId("calWeekBoard");
   if (!board) return;
   const start = startOfWeek(state.cursor);
+  const end = addDays(start, 6);
+
+  const oooEntries = state.entries.filter(
+    (e) => isMultiDayOoo(e) && passesFilter(e),
+  );
+  const lanes = packOooLanes(oooEntries, start, end);
+
   let html = "";
+  lanes.forEach((lane, laneIdx) => {
+    lane.forEach((b) => {
+      const spanStartLabel = fmtLongDate(b.entry.date);
+      const spanEndLabel =
+        b.entry.endDate && b.entry.endDate > b.entry.date
+          ? ` through ${fmtLongDate(b.entry.endDate)}`
+          : "";
+      html += `<button type="button" class="cal-oooBand" style="grid-column:${b.colStart + 1} / span ${b.colEnd - b.colStart + 1};grid-row:${laneIdx + 1}" data-record="${escapeHtml(b.entry.recordID)}" title="${escapeHtml(`${b.entry.type}: ${b.entry.title}`)}" aria-label="${escapeHtml(b.entry.title)}, Out-of-Office, ${escapeHtml(spanStartLabel)}${escapeHtml(spanEndLabel)}">${escapeHtml(b.entry.title)}</button>`;
+    });
+  });
+
+  const laneCount = lanes.length;
   for (let i = 0; i < 7; i++) {
     const day = addDays(start, i);
     const key = ymd(day);
-    const list = entriesForDay(key);
+    const list = entriesForDay(key).filter((e) => !isMultiDayOoo(e));
     const today = isTodayDate(day);
-    html += '<div class="cal-weekCol">';
+    html += `<div class="cal-weekCol" style="grid-column:${i + 1};grid-row:${laneCount + 1}">`;
     html += `<div class="cal-weekColHead${today ? " is-today" : ""}"><div class="cal-weekDow">${DOW_SHORT[day.getDay()]}</div><div class="cal-weekDate">${day.getDate()}</div></div>`;
     html += `<div class="cal-weekColBody" data-day="${key}">`;
     if (!list.length) {
@@ -820,11 +912,20 @@ function renderWeek() {
     } else {
       list.forEach((e) => {
         const meta = weekCardMeta(e);
-        html += `<div class="cal-weekCard t-${e.typeClass}" data-record="${escapeHtml(e.recordID)}"><div class="cal-weekCardType">${escapeHtml(e.type)}${e._carriedForward ? " ↺" : ""}</div><div class="cal-weekCardTitle">${escapeHtml(e.title)}</div>${meta ? `<div class="cal-weekCardMeta">${meta}</div>` : ""}</div>`;
+        const badge = e.type === "Action Item" ? dueBadge(e) : null;
+        const overdue = badge && badge.overdue ? " is-overdue" : "";
+        const marker = e._carriedForward ? " ↺" : e._dueMarker ? " ⏰" : "";
+        const dueMeta =
+          badge && (e._dueMarker || e._carriedForward)
+            ? `<div class="cal-weekCardDue">${escapeHtml(badge.label)}</div>`
+            : "";
+        html += `<div class="cal-weekCard t-${e.typeClass}${overdue}" data-record="${escapeHtml(e.recordID)}" role="button" tabindex="0" title="${escapeHtml(`${e.type}: ${e.title}`)}"><button type="button" class="cal-cardEditBtn" data-edit-record="${escapeHtml(e.recordID)}" title="Edit entry" aria-label="Edit entry"><span class="material-symbols-outlined" aria-hidden="true">edit</span></button><div class="cal-weekCardType">${escapeHtml(e.type)}${marker}</div><div class="cal-weekCardTitle">${escapeHtml(e.title)}</div>${meta ? `<div class="cal-weekCardMeta">${meta}</div>` : ""}${dueMeta}</div>`;
       });
     }
     html += "</div></div>";
   }
+
+  board.style.gridTemplateRows = `${"22px ".repeat(laneCount)}auto`.trim();
   board.innerHTML = html;
 }
 
@@ -989,13 +1090,14 @@ function getBodyEditorValue() {
   return byId("calFldBody").value.trim();
 }
 
-function openEntryModal(entry, presetDate) {
+function openEntryModal(entry, presetDate, mode) {
   state.editing = entry || null;
   state.draftLinks = entry ? entry.links.map((l) => ({ ...l })) : [];
   state.draftAssigned = null;
   state.draftCovered = null;
 
-  byId("calEntryModalTitle").textContent = entry ? "Edit entry" : "New entry";
+  const effectiveMode = mode || (entry ? "view" : "edit");
+
   byId("calSaveBtn").textContent = entry ? "Save changes" : "Save entry";
   byId("calDeleteBtn").hidden = !entry;
 
@@ -1043,7 +1145,117 @@ function openEntryModal(entry, presetDate) {
 
   applyConditionalFields(entry ? entry.type : "");
   renderDraftLinks();
+  setEntryModalMode(effectiveMode, entry);
   openModal("calEntryModal");
+}
+
+// Toggles the entry modal between "view" (clean, read-only summary) and
+// "edit" (the full form) without re-fetching data — both are populated
+// from the same entry object already loaded above.
+function setEntryModalMode(mode, entry) {
+  state.entryModalMode = mode;
+  const isView = mode === "view" && !!entry;
+  byId("calEntryModalTitle").textContent = isView
+    ? entry.title || "Entry"
+    : entry
+      ? "Edit entry"
+      : "New entry";
+  byId("calEntryForm").hidden = isView;
+  byId("calEntryReadOnly").hidden = !isView;
+  byId("calReadOnlyActions").hidden = !isView;
+  byId("calEditFormActions").hidden = isView;
+  if (isView) renderReadOnlyEntry(entry);
+}
+
+function switchToEditMode() {
+  if (state.editing) setEntryModalMode("edit", state.editing);
+}
+
+function syncLegendActive() {
+  document.querySelectorAll("[data-legend-type]").forEach((btn) => {
+    btn.classList.toggle(
+      "is-active",
+      !!state.filters.type &&
+        btn.getAttribute("data-legend-type") === state.filters.type,
+    );
+  });
+}
+
+// Builds the clean, non-editable summary shown when an entry is opened
+// by clicking its card (the new default), before the person opts into Edit.
+function renderReadOnlyEntry(entry) {
+  const wrap = byId("calEntryReadOnly");
+  if (!wrap) return;
+
+  const pill = `<span class="cal-roPill t-${entry.typeClass}">${escapeHtml(entry.type)}</span>`;
+
+  let dateLine = escapeHtml(fmtLongDate(entry.date));
+  if (
+    entry.type === "Out-of-Office" &&
+    entry.endDate &&
+    entry.endDate > entry.date
+  ) {
+    dateLine += ` – ${escapeHtml(fmtLongDate(entry.endDate))}`;
+  }
+
+  const rows = [];
+  rows.push(
+    `<div class="cal-roRow"><span class="cal-roLabel">Date</span><span class="cal-roValue">${dateLine}</span></div>`,
+  );
+
+  if (entry.type === "Action Item") {
+    const badge = dueBadge(entry);
+    rows.push(
+      `<div class="cal-roRow"><span class="cal-roLabel">Status</span><span class="cal-roValue">${escapeHtml(entry.status || "Open")}</span></div>`,
+    );
+    if (entry.dueDate) {
+      const overdueCls = badge && badge.overdue ? " is-overdue" : "";
+      rows.push(
+        `<div class="cal-roRow"><span class="cal-roLabel">Due date</span><span class="cal-roValue${overdueCls}">${escapeHtml(fmtLongDate(entry.dueDate))}${badge && entry.status !== "Done" ? ` · ${escapeHtml(badge.label)}` : ""}</span></div>`,
+      );
+    }
+    if (entry.assignedTo) {
+      rows.push(
+        `<div class="cal-roRow"><span class="cal-roLabel">Assigned to</span><span class="cal-roValue">${escapeHtml(peopleLabel(entry.assignedTo))}</span></div>`,
+      );
+    }
+  }
+
+  if (entry.type === "Out-of-Office" && entry.coveredBy) {
+    rows.push(
+      `<div class="cal-roRow"><span class="cal-roLabel">Covered by</span><span class="cal-roValue">${escapeHtml(peopleLabel(entry.coveredBy))}</span></div>`,
+    );
+  }
+
+  const detailsHtml = entry.body
+    ? `<div class="cal-roDetails">${normalizeRichText(entry.body)}</div>`
+    : '<p class="cal-roEmpty">No details added.</p>';
+
+  const linksHtml =
+    entry.links && entry.links.length
+      ? `<div class="cal-linkChips">${entry.links
+          .map((l, idx) => {
+            const label = l.title || `#${l.recordID}`;
+            const form = l.formName
+              ? ` <span class="cal-linkChipForm">· ${escapeHtml(l.formName)}</span>`
+              : "";
+            return `<span class="cal-linkChip cal-linkChip--ro" role="listitem"><span class="cal-linkChipMain" data-open-link="${idx}" role="button" tabindex="0"><span class="material-symbols-outlined" style="font-size:15px" aria-hidden="true">description</span>${escapeHtml(label)}</span>${form}</span>`;
+          })
+          .join("")}</div>`
+      : '<p class="cal-roEmpty">No records linked.</p>';
+
+  wrap.innerHTML = `
+    <div class="cal-roHead">${pill}</div>
+    <div class="cal-roRows">${rows.join("")}</div>
+    <div class="cal-roSection">
+      <span class="cal-label">Details</span>
+      ${detailsHtml}
+    </div>
+    <div class="cal-roSection">
+      <span class="cal-label">Linked records</span>
+      ${linksHtml}
+    </div>
+  `;
 }
 
 function renderDraftLinks() {
@@ -1424,6 +1636,7 @@ function wireControls() {
   // Filters
   byId("calFilterType").addEventListener("change", function onChange() {
     state.filters.type = this.value;
+    syncLegendActive();
     render();
   });
   byId("calFilterAuthor").addEventListener("change", function onChange() {
@@ -1447,8 +1660,23 @@ function wireControls() {
     byId("calFilterAuthor").value = "";
     byId("calFilterSearch").value = "";
     byId("calShowClosed").checked = false;
+    syncLegendActive();
     render();
   });
+
+  // Legend — click a type to filter the calendar to just that type
+  document.querySelectorAll("[data-legend-type]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const type = btn.getAttribute("data-legend-type");
+      state.filters.type = state.filters.type === type ? "" : type;
+      byId("calFilterType").value = state.filters.type;
+      syncLegendActive();
+      render();
+    });
+  });
+
+  // Edit button inside the read-only entry view
+  byId("calEditBtn").addEventListener("click", switchToEditMode);
 
   // Add
   byId("calAddBtn").addEventListener("click", () => openEntryModal(null));
@@ -1471,6 +1699,13 @@ function wireControls() {
     if (cell && e.target === cell) {
       e.preventDefault();
       openEntryModal(null, cell.getAttribute("data-day"));
+      return;
+    }
+    const card =
+      e.target.closest && e.target.closest('[role="button"][data-record]');
+    if (card && e.target === card) {
+      e.preventDefault();
+      card.click();
     }
   });
 
@@ -1565,7 +1800,17 @@ function wirePeople(role, searchId, listId) {
 }
 
 function onDelegatedClick(e) {
-  // OOO band (month view multi-day span)
+  // Edit pencil on a card — opens straight into edit mode
+  const editBtn = e.target.closest("[data-edit-record]");
+  if (editBtn) {
+    e.stopPropagation();
+    const rid = editBtn.getAttribute("data-edit-record");
+    const entry = state.entries.find((x) => x.recordID === rid);
+    if (entry) openEntryModal(entry, null, "edit");
+    return;
+  }
+
+  // OOO band (spanning pill, week or month view)
   const oooBand = e.target.closest(".cal-oooBand");
   if (oooBand) {
     const rid = oooBand.getAttribute("data-record");
@@ -1574,11 +1819,13 @@ function onDelegatedClick(e) {
     return;
   }
 
-  // Open a record chip / card
+  // Open a record chip / card — defaults to read-only view
   const recEl = e.target.closest("[data-record]");
   if (
     recEl &&
-    !e.target.closest("[data-remove-link],[data-open-link],[data-close]")
+    !e.target.closest(
+      "[data-remove-link],[data-open-link],[data-close],.cal-linkResult",
+    )
   ) {
     const rid = recEl.getAttribute("data-record");
     const entry = state.entries.find((x) => x.recordID === rid);
