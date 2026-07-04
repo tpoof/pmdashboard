@@ -162,6 +162,99 @@ function addDays(d, n) {
   x.setDate(x.getDate() + n);
   return x;
 }
+
+/* ------------------------------------------------------------
+   MM/DD/YYYY date fields — LEAF's native date format. Fields are
+   plain text inputs (not <input type="date">, which renders per the
+   browser's locale rather than LEAF's convention); we auto-insert
+   slashes as the person types and validate/convert to our internal
+   YYYY-MM-DD on the way in and out.
+   ------------------------------------------------------------ */
+const MDY_RE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+
+// Converts a YYYY-MM-DD internal date string (or Date) to MM/DD/YYYY for display.
+function ymdToMdy(input) {
+  if (!input) return "";
+  const d = input instanceof Date ? input : parseYMD(input);
+  if (!d) return "";
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${mm}/${dd}/${d.getFullYear()}`;
+}
+
+// Converts a typed MM/DD/YYYY string to our internal YYYY-MM-DD, or null
+// if it's empty/malformed/not a real calendar date.
+function mdyToYmd(str) {
+  const trimmed = String(str || "").trim();
+  if (!trimmed) return "";
+  const m = trimmed.match(MDY_RE);
+  if (!m) return null;
+  const mm = +m[1];
+  const dd = +m[2];
+  const yyyy = +m[3];
+  if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+  const d = new Date(yyyy, mm - 1, dd);
+  // Reject "Feb 31" etc. rolling over into another month
+  if (d.getMonth() !== mm - 1 || d.getDate() !== dd) return null;
+  return ymd(d);
+}
+
+// As-you-type formatting: auto-inserts "/" after MM and DD, digits only.
+function autoFormatMdy(raw) {
+  const digits = String(raw || "")
+    .replace(/\D/g, "")
+    .slice(0, 8);
+  const mm = digits.slice(0, 2);
+  const dd = digits.slice(2, 4);
+  const yyyy = digits.slice(4, 8);
+  if (digits.length <= 2) return mm;
+  if (digits.length <= 4) return `${mm}/${dd}`;
+  return `${mm}/${dd}/${yyyy}`;
+}
+
+// Wires a text input for MM/DD/YYYY entry: auto-formats as-you-type and
+// shows/hides an inline error on blur (matching LEAF's own validation UX).
+function wireDateInput(inputId, errorId) {
+  const input = byId(inputId);
+  const error = byId(errorId);
+  if (!input) return;
+  input.addEventListener("input", () => {
+    const pos = input.selectionStart;
+    const before = input.value;
+    input.value = autoFormatMdy(input.value);
+    // Keep the caret roughly in place after auto-inserting a slash
+    if (pos !== null && input.value.length >= before.length) {
+      input.setSelectionRange(input.value.length, input.value.length);
+    }
+    input.classList.remove("is-invalid");
+    if (error) error.hidden = true;
+  });
+  input.addEventListener("blur", () => {
+    if (!input.value.trim()) {
+      input.classList.remove("is-invalid");
+      if (error) error.hidden = true;
+      return;
+    }
+    const valid = mdyToYmd(input.value) !== null;
+    input.classList.toggle("is-invalid", !valid);
+    if (error) error.hidden = valid;
+  });
+}
+
+function getDateFieldValue(inputId) {
+  const input = byId(inputId);
+  if (!input) return "";
+  const val = mdyToYmd(input.value);
+  return val === null ? "" : val;
+}
+
+function setDateFieldValue(inputId, ymdValue) {
+  const input = byId(inputId);
+  if (!input) return;
+  input.value = ymdToMdy(ymdValue);
+  input.classList.remove("is-invalid");
+}
+
 function sameDay(a, b) {
   return a && b && ymd(a) === ymd(b);
 }
@@ -1114,8 +1207,10 @@ function openEntryModal(entry, presetDate, mode) {
   byId("calEntryMsg").textContent = "";
 
   byId("calEntryRecordID").value = entry ? entry.recordID : "";
-  byId("calFldDate").value =
-    entry && entry.date ? ymd(entry.date) : presetDate || ymd(new Date());
+  setDateFieldValue(
+    "calFldDate",
+    entry && entry.date ? ymd(entry.date) : presetDate || ymd(new Date()),
+  );
   byId("calFldType").value = entry ? entry.type : "";
   byId("calFldTitle").value = entry ? entry.title : "";
   // Ensure the editor starts from clean <p> markup even for entries saved
@@ -1124,8 +1219,14 @@ function openEntryModal(entry, presetDate, mode) {
   setBodyEditorValue(bodyHtml);
 
   byId("calFldStatus").value = entry && entry.status ? entry.status : "Open";
-  byId("calFldDue").value = entry && entry.dueDate ? ymd(entry.dueDate) : "";
-  byId("calFldEnd").value = entry && entry.endDate ? ymd(entry.endDate) : "";
+  setDateFieldValue(
+    "calFldDue",
+    entry && entry.dueDate ? ymd(entry.dueDate) : "",
+  );
+  setDateFieldValue(
+    "calFldEnd",
+    entry && entry.endDate ? ymd(entry.endDate) : "",
+  );
 
   // People
   if (entry && entry.assignedTo) {
@@ -1235,11 +1336,8 @@ function renderReadOnlyEntry(entry) {
     entry.links && entry.links.length
       ? `<div class="cal-linkChips">${entry.links
           .map((l, idx) => {
-            const label = l.title || `#${l.recordID}`;
-            const form = l.formName
-              ? ` <span class="cal-linkChipForm">· ${escapeHtml(l.formName)}</span>`
-              : "";
-            return `<span class="cal-linkChip cal-linkChip--ro" role="listitem"><span class="cal-linkChipMain" data-open-link="${idx}" role="button" tabindex="0"><span class="material-symbols-outlined" style="font-size:15px" aria-hidden="true">description</span>${escapeHtml(label)}</span>${form}</span>`;
+            const label = linkChipLabel(l);
+            return `<span class="cal-linkChip cal-linkChip--ro" role="listitem"><span class="cal-linkChipMain" data-open-link="${idx}" role="button" tabindex="0"><span class="material-symbols-outlined" style="font-size:15px" aria-hidden="true">description</span>${escapeHtml(label)}</span></span>`;
           })
           .join("")}</div>`
       : '<p class="cal-roEmpty">No records linked.</p>';
@@ -1248,14 +1346,21 @@ function renderReadOnlyEntry(entry) {
     <div class="cal-roHead">${pill}</div>
     <div class="cal-roRows">${rows.join("")}</div>
     <div class="cal-roSection">
-      <span class="cal-label">Details</span>
+      <h3 class="cal-roHeading">Details</h3>
       ${detailsHtml}
     </div>
     <div class="cal-roSection">
-      <span class="cal-label">Linked records</span>
+      <h3 class="cal-roHeading">Linked records</h3>
       ${linksHtml}
     </div>
   `;
+}
+
+// Consistent linked-record label everywhere: "#123 · Record Title" — no
+// form name, since the record number + title is enough context here.
+function linkChipLabel(l) {
+  const title = l.title || `Record #${l.recordID}`;
+  return `#${l.recordID} · ${title}`;
 }
 
 function renderDraftLinks() {
@@ -1268,104 +1373,38 @@ function renderDraftLinks() {
   }
   wrap.innerHTML = state.draftLinks
     .map((l, idx) => {
-      const label = l.title || `#${l.recordID}`;
-      const form = l.formName
-        ? ` <span class="cal-linkChipForm">· ${escapeHtml(l.formName)}</span>`
-        : "";
-      return `<span class="cal-linkChip" role="listitem"><span class="cal-linkChipMain" data-open-link="${idx}" role="button" tabindex="0"><span class="material-symbols-outlined" style="font-size:15px" aria-hidden="true">description</span>${escapeHtml(label)}</span>${form}<button type="button" data-remove-link="${idx}" aria-label="Remove link: ${escapeHtml(label)}"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></span>`;
+      const label = linkChipLabel(l);
+      return `<span class="cal-linkChip" role="listitem"><span class="cal-linkChipMain" data-open-link="${idx}" role="button" tabindex="0"><span class="material-symbols-outlined" style="font-size:15px" aria-hidden="true">description</span>${escapeHtml(label)}</span><button type="button" data-remove-link="${idx}" aria-label="Remove link: ${escapeHtml(label)}"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></span>`;
     })
     .join("");
 }
 
 /* ============================================================
-   People picker (orgchart)
+   People picker (orgchart) — LEAF's native nationalEmployeeSelector
+   widget, loaded on demand from the orgchart app (the same mechanism
+   LEAF's own indicator fields use — see empSel_<id>_input/_result).
    ============================================================ */
+const ORGCHART_PATH = String(pageConfig.orgchartPath || "")
+  .trim()
+  .replace(/\/$/, "");
+
 function renderPeopleSelected(role) {
   const containerId =
     role === "assigned" ? "calAssignedSelected" : "calCoveredSelected";
-  const searchId =
-    role === "assigned" ? "calAssignedSearch" : "calCoveredSearch";
+  const selectorId =
+    role === "assigned" ? "empSel_calAssigned" : "empSel_calCovered";
   const person = role === "assigned" ? state.draftAssigned : state.draftCovered;
   const el = byId(containerId);
-  const search = byId(searchId);
+  const selectorEl = byId(selectorId);
   if (!el) return;
   if (person && person.empUID) {
     const label = person.name || person.empUID;
     el.innerHTML = `<span class="cal-personChip">${escapeHtml(label)}<button type="button" data-clear-person="${role}" aria-label="Remove ${escapeHtml(label)}"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></span>`;
-    if (search) search.style.display = "none";
+    if (selectorEl) selectorEl.style.display = "none";
   } else {
     el.innerHTML = "";
-    if (search) search.style.display = "";
+    if (selectorEl) selectorEl.style.display = "";
   }
-}
-
-// Reads an orgchart "indicator data" cell out of an employee record's
-// `data` array, matching the shape used by employeeSelector.js:
-//   response[i].data[5] => { data: "555-1234" }  (phone)
-//   response[i].data[6] => { data: "a@b.gov" }   (email)
-function empIndicatorText(emp, indicatorID) {
-  const cell = emp && emp.data ? emp.data[indicatorID] : null;
-  return cell && cell.data ? String(cell.data) : "";
-}
-
-async function searchPeople(term, role) {
-  const listId =
-    role === "assigned" ? "calAssignedResults" : "calCoveredResults";
-  const searchId =
-    role === "assigned" ? "calAssignedSearch" : "calCoveredSearch";
-  const listEl = byId(listId);
-  const searchEl = byId(searchId);
-  if (!listEl) return;
-  if (!term || term.length < 2) {
-    listEl.hidden = true;
-    if (searchEl) searchEl.setAttribute("aria-expanded", "false");
-    return;
-  }
-  try {
-    // Real endpoint per employeeSelector.js: "./api/?a=employee/search"
-    // (query-string routed action, NOT a REST path segment).
-    const res = await apiGet(
-      `./api/?a=employee/search&q=${encodeURIComponent(term)}`,
-    );
-    const rows = Array.isArray(res) ? res : Object.values(res || {});
-    if (!rows.length) {
-      listEl.innerHTML =
-        '<li role="option" aria-disabled="true">No matches</li>';
-      listEl.hidden = false;
-      if (searchEl) searchEl.setAttribute("aria-expanded", "true");
-      return;
-    }
-    listEl.innerHTML = rows
-      .filter((p) => !p.deleted)
-      .slice(0, 8)
-      .map((p) => {
-        const middle = p.middleName ? ` ${p.middleName}.` : "";
-        const name = decodeEntities(
-          p.lastName || p.firstName
-            ? `${p.lastName || ""}, ${p.firstName || ""}${middle}`
-            : p.userName || `#${p.empUID || ""}`,
-        );
-        const email = empIndicatorText(p, 6);
-        const uid = p.empUID ?? "";
-        return `<li role="option" tabindex="-1" data-empuid="${escapeHtml(uid)}" data-name="${escapeHtml(name)}" data-role="${role}">${escapeHtml(name)}<small>${escapeHtml(p.userName || email || "")}</small></li>`;
-      })
-      .join("");
-    listEl.hidden = false;
-    if (searchEl) searchEl.setAttribute("aria-expanded", "true");
-  } catch (e) {
-    listEl.innerHTML =
-      '<li role="option" aria-disabled="true">Search unavailable</li>';
-    listEl.hidden = false;
-    logDebug("people search failed:", e.message);
-  }
-}
-
-// NOTE: there is no confirmed "import employee" endpoint in the LEAF
-// source reviewed so far (only ./api/?a=employee/search is verified). The
-// empUID returned by that search is already usable directly as an
-// indicator value, so no separate import step is required.
-async function importEmployee() {
-  // Intentionally does nothing until a real import endpoint is confirmed.
 }
 
 function pickPerson(role, empUID, name, userName) {
@@ -1373,13 +1412,92 @@ function pickPerson(role, empUID, name, userName) {
   if (role === "assigned") state.draftAssigned = { empUID, name, userName };
   else state.draftCovered = { empUID, name, userName };
   renderPeopleSelected(role);
-  const listId =
-    role === "assigned" ? "calAssignedResults" : "calCoveredResults";
-  const searchId =
-    role === "assigned" ? "calAssignedSearch" : "calCoveredSearch";
-  if (byId(listId)) byId(listId).hidden = true;
-  if (byId(searchId)) byId(searchId).setAttribute("aria-expanded", "false");
-  if (userName) importEmployee(userName);
+}
+
+function clearPerson(role) {
+  if (role === "assigned") state.draftAssigned = null;
+  else state.draftCovered = null;
+  renderPeopleSelected(role);
+  const empSel = employeeSelectors[role];
+  if (empSel) {
+    const input = document.querySelector(
+      `#empSel_cal${role === "assigned" ? "Assigned" : "Covered"} input.employeeSelectorInput`,
+    );
+    if (input) input.value = "";
+  }
+}
+
+// Lazy-loads nationalEmployeeSelector.js + its stylesheet from the
+// orgchart app, matching LEAF's own "load once, reuse" pattern for
+// indicator fields of this type.
+let employeeSelectorLoad = null;
+function loadNationalEmployeeSelector() {
+  if (employeeSelectorLoad) return employeeSelectorLoad;
+  employeeSelectorLoad = new Promise((resolve, reject) => {
+    if (!ORGCHART_PATH) {
+      reject(new Error("orgchartPath is not configured on this page"));
+      return;
+    }
+    if (typeof window.nationalEmployeeSelector !== "undefined") {
+      resolve();
+      return;
+    }
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = `${ORGCHART_PATH}/css/employeeSelector.css`;
+    document.head.appendChild(link);
+    const script = document.createElement("script");
+    script.src = `${ORGCHART_PATH}/js/nationalEmployeeSelector.js`;
+    script.onload = () => resolve();
+    script.onerror = () =>
+      reject(new Error("Failed to load nationalEmployeeSelector.js"));
+    document.head.appendChild(script);
+  });
+  return employeeSelectorLoad;
+}
+
+const employeeSelectors = {}; // role -> nationalEmployeeSelector instance
+
+async function initEmployeeSelector(role) {
+  if (employeeSelectors[role]) return employeeSelectors[role];
+  try {
+    await loadNationalEmployeeSelector();
+  } catch (e) {
+    logDebug("employee selector failed to load:", e.message);
+    return null;
+  }
+  const containerId =
+    role === "assigned" ? "empSel_calAssigned" : "empSel_calCovered";
+  if (!byId(containerId)) return null;
+  const empSel = new window.nationalEmployeeSelector(containerId);
+  empSel.apiPath = `${ORGCHART_PATH}/api/`;
+  empSel.rootPath = `${ORGCHART_PATH}/`;
+  empSel.setSelectHandler(() => onEmployeeChosen(role, empSel));
+  empSel.setResultHandler(() => onEmployeeChosen(role, empSel));
+  empSel.initialize();
+  employeeSelectors[role] = empSel;
+  return empSel;
+}
+
+// Mirrors LEAF's own importFromNational(): resolves the chosen national
+// employee into a local empUID we can save on the indicator.
+function onEmployeeChosen(role, empSel) {
+  const selection = empSel.selection;
+  if (!selection) return;
+  const data = empSel.selectionData && empSel.selectionData[selection];
+  const userName = data ? data.userName : null;
+  if (!userName) return;
+  apiPost(`${ORGCHART_PATH}/api/employee/import/_${userName}`, {
+    CSRFToken: CSRF,
+  })
+    .then((res) => {
+      const empUID = String(res).trim();
+      const name = data
+        ? `${data.lastName || ""}, ${data.firstName || ""}${data.middleName ? ` ${data.middleName}` : ""}`.trim()
+        : userName;
+      pickPerson(role, empUID, name, userName);
+    })
+    .catch((e) => logDebug("employee import failed:", e.message));
 }
 
 /* ============================================================
@@ -1423,30 +1541,55 @@ async function runLinkSearch(term, formFilter) {
   if (!out) return;
   if (!term || term.length < 2) {
     out.innerHTML =
-      '<p class="cal-linkHint">Type at least 2 characters to search across all forms.</p>';
+      '<p class="cal-linkHint">Type at least 2 characters to search across all forms, or enter a record number.</p>';
     return;
   }
   const myToken = ++linkSearchToken;
   out.innerHTML = '<p class="cal-linkHint">Searching…</p>';
   try {
-    const q = new LeafFormQuery();
-    q.addTerm("title", "LIKE", `*${term}*`);
-    q.addTerm("deleted", "=", 0);
-    if (formFilter) q.addTerm("categoryID", "=", formFilter);
-    q.join("categoryName");
-    q.setLimit(40);
-    q.setExtraParams(
-      "&x-filterData=recordID,title,categoryID,categoryName,categoryNames",
-    );
-    q.onProgress((count) => {
-      if (myToken !== linkSearchToken) return; // a newer search superseded this one
+    const isNumeric = /^\d+$/.test(term.trim());
+    const filterData =
+      "&x-filterData=recordID,title,categoryID,categoryName,categoryNames";
+
+    const titleQuery = new LeafFormQuery();
+    titleQuery.addTerm("title", "LIKE", `*${term}*`);
+    titleQuery.addTerm("deleted", "=", 0);
+    if (formFilter) titleQuery.addTerm("categoryID", "=", formFilter);
+    titleQuery.join("categoryName");
+    titleQuery.setLimit(40);
+    titleQuery.setExtraParams(filterData);
+    titleQuery.onProgress((count) => {
+      if (myToken !== linkSearchToken) return;
       out.innerHTML = `<p class="cal-linkHint">Searching… ${count} matched so far</p>`;
     });
-    const res = await q.execute();
+
+    const queries = [titleQuery.execute()];
+
+    // If the typed term looks like a record number, also look it up by
+    // exact recordID (LeafFormQuery only supports exact match there, not
+    // LIKE) and merge the two result sets, deduped by recordID.
+    if (isNumeric) {
+      const idQuery = new LeafFormQuery();
+      idQuery.addTerm("recordID", "=", term.trim());
+      idQuery.addTerm("deleted", "=", 0);
+      if (formFilter) idQuery.addTerm("categoryID", "=", formFilter);
+      idQuery.join("categoryName");
+      idQuery.setExtraParams(filterData);
+      queries.push(idQuery.execute());
+    }
+
+    const results = await Promise.all(queries);
     if (myToken !== linkSearchToken) return; // stale response — a newer search is in flight
 
-    const rows = Object.keys(res || {}).map((rid) => {
-      const r = res[rid];
+    const merged = {};
+    results.forEach((res) => {
+      Object.keys(res || {}).forEach((rid) => {
+        merged[rid] = res[rid];
+      });
+    });
+
+    const rows = Object.keys(merged).map((rid) => {
+      const r = merged[rid];
       return {
         recordID: rid,
         title: decodeEntities(r.title || `#${rid}`),
@@ -1496,7 +1639,6 @@ async function saveEntry() {
   const I = CONFIG.indicators;
 
   const type = byId("calFldType").value;
-  const date = byId("calFldDate").value;
   const title = byId("calFldTitle").value.trim();
 
   if (!title) {
@@ -1504,6 +1646,28 @@ async function saveEntry() {
     byId("calFldTitle").focus();
     return;
   }
+
+  // Validate any date fields that have text in them (all are optional, but
+  // if something's typed it needs to be a real MM/DD/YYYY date).
+  const dateFields = [
+    ["calFldDate", "calFldDate_error"],
+    ["calFldDue", "calFldDue_error"],
+    ["calFldEnd", "calFldEnd_error"],
+  ];
+  for (const [inputId, errorId] of dateFields) {
+    const input = byId(inputId);
+    if (!input || !input.value.trim()) continue;
+    if (mdyToYmd(input.value) === null) {
+      input.classList.add("is-invalid");
+      const err = byId(errorId);
+      if (err) err.hidden = false;
+      msg.textContent = "Fix the date field highlighted in red (MM/DD/YYYY).";
+      input.focus();
+      return;
+    }
+  }
+
+  const date = getDateFieldValue("calFldDate");
 
   const saveBtn = byId("calSaveBtn");
   saveBtn.disabled = true;
@@ -1524,7 +1688,7 @@ async function saveEntry() {
 
   if (type === "Action Item") {
     values[I.status] = byId("calFldStatus").value;
-    values[I.dueDate] = byId("calFldDue").value || "";
+    values[I.dueDate] = getDateFieldValue("calFldDue");
     values[I.assignedTo] = state.draftAssigned
       ? state.draftAssigned.empUID
       : "";
@@ -1534,7 +1698,7 @@ async function saveEntry() {
     values[I.assignedTo] = "";
   }
   if (type === "Out-of-Office") {
-    values[I.endDate] = byId("calFldEnd").value || "";
+    values[I.endDate] = getDateFieldValue("calFldEnd");
     values[I.coveredBy] = state.draftCovered ? state.draftCovered.empUID : "";
   } else {
     values[I.endDate] = "";
@@ -1737,9 +1901,15 @@ function wireControls() {
   // already loaded globally by LEAF's page shell, so we just init here).
   initBodyEditor();
 
-  // People pickers
-  wirePeople("assigned", "calAssignedSearch", "calAssignedResults");
-  wirePeople("covered", "calCoveredSearch", "calCoveredResults");
+  // MM/DD/YYYY date fields — auto-format + validate as-you-type
+  wireDateInput("calFldDate", "calFldDate_error");
+  wireDateInput("calFldDue", "calFldDue_error");
+  wireDateInput("calFldEnd", "calFldEnd_error");
+
+  // People pickers — LEAF's native orgchart employee selector, loaded
+  // on demand from the orgchart app.
+  initEmployeeSelector("assigned");
+  initEmployeeSelector("covered");
 
   // Link picker
   byId("calLinkAddBtn").addEventListener("click", () => {
@@ -1772,30 +1942,6 @@ function wireControls() {
     if (peek.hidden) return;
     if (!peek.contains(e.target) && !e.target.closest("[data-more]"))
       closeDayPeek();
-  });
-}
-
-function wirePeople(role, searchId, listId) {
-  const search = byId(searchId);
-  const list = byId(listId);
-  if (!search) return;
-  search.addEventListener(
-    "input",
-    debounce(() => searchPeople(search.value.trim(), role), 250),
-  );
-  list.addEventListener("click", (e) => {
-    const li = e.target.closest("li[data-empuid]");
-    if (!li) return;
-    const small = li.querySelector("small");
-    const uname = small ? small.textContent : "";
-    pickPerson(
-      role,
-      li.getAttribute("data-empuid"),
-      li.getAttribute("data-name"),
-      uname,
-    );
-    search.value = "";
-    search.focus();
   });
 }
 
@@ -1881,10 +2027,7 @@ function onDelegatedClick(e) {
   // Clear a picked person
   const clearP = e.target.closest("[data-clear-person]");
   if (clearP) {
-    const role = clearP.getAttribute("data-clear-person");
-    if (role === "assigned") state.draftAssigned = null;
-    else state.draftCovered = null;
-    renderPeopleSelected(role);
+    clearPerson(clearP.getAttribute("data-clear-person"));
     return;
   }
   // Link search result add/remove

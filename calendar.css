@@ -457,7 +457,8 @@
 .cal-modalActions[hidden],
 .cal-readOnly[hidden],
 .cal-dangerBtn[hidden],
-.cal-iconBtn[hidden] {
+.cal-iconBtn[hidden],
+.cal-dateError[hidden] {
   display: none;
 }
 
@@ -1035,6 +1036,15 @@
   color: var(--cal-muted);
   font-size: 12px;
 }
+.cal-dateError {
+  display: block;
+  color: var(--cal-danger);
+  font-size: 12px;
+  margin-top: 2px;
+}
+.cal-input.cal-dateInput.is-invalid {
+  border-color: var(--cal-danger);
+}
 .cal-field .cal-input,
 .cal-field .cal-select {
   width: 100%;
@@ -1055,10 +1065,11 @@
 
 /* Read-only entry view (default when opening an existing entry) */
 .cal-readOnly {
-  padding: 20px;
+  padding: 24px 28px 28px;
   display: flex;
   flex-direction: column;
-  gap: var(--cal-space-4);
+  gap: 22px;
+  box-sizing: border-box;
 }
 .cal-roHead {
   display: flex;
@@ -1072,7 +1083,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
 }
 .cal-roPill.t-meeting {
@@ -1094,15 +1105,15 @@
 .cal-roRows {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 .cal-roRow {
   display: flex;
-  gap: 10px;
+  gap: 16px;
   font-size: 14px;
 }
 .cal-roLabel {
-  min-width: 110px;
+  min-width: 120px;
   font-weight: 700;
   color: var(--cal-muted);
   flex-shrink: 0;
@@ -1117,11 +1128,21 @@
 .cal-roSection {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+  padding-top: 4px;
+  border-top: 1px solid var(--cal-border);
+}
+.cal-roHeading {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--cal-text);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 .cal-roDetails {
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--cal-text);
 }
 .cal-roDetails p {
@@ -1136,8 +1157,13 @@
   color: var(--cal-muted);
   font-style: italic;
 }
-.cal-linkChip--ro button {
-  display: none;
+.cal-linkChip--ro {
+  cursor: pointer;
+}
+.cal-linkChip--ro .cal-linkChipMain:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 /* Rich text (Trumbowyg — LEAF's native advanced formatting editor) */
@@ -1189,6 +1215,12 @@
 }
 .cal-personChip .material-symbols-outlined {
   font-size: 16px;
+}
+/* Container for LEAF's native nationalEmployeeSelector widget — the
+   widget supplies its own input/results styling via employeeSelector.css,
+   we just give it consistent spacing within our form. */
+.cal-empSelector {
+  min-height: 38px;
 }
 .cal-peopleResults {
   position: absolute;
@@ -1366,6 +1398,9 @@
   gap: 10px;
   padding-top: 4px;
   flex-wrap: wrap;
+}
+#calReadOnlyActions {
+  padding: 16px 28px 24px;
 }
 .cal-actionsSpacer {
   flex: 1;

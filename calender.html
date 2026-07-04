@@ -46,15 +46,16 @@
   <body>
     <!-- ============================================================
          CONFIG HANDOFF
-         calendar.js reads window.leafCalendar for csrfToken / userID.
-         Smarty values are escaped exactly like ideas.html's pattern so a
-         quote or dash inside either value can never break the JS string
-         or leak into the page as literal text.
+         calendar.js reads window.leafCalendar for csrfToken / userID /
+         orgchartPath. Smarty values are escaped exactly like ideas.html's
+         pattern so a quote or dash inside any value can never break the
+         JS string or leak into the page as literal text.
          ============================================================ -->
     <script>
       window.leafCalendar = {
         csrfToken: '<!--{$CSRFToken|unescape|escape:"quotes"}-->',
         userID: '<!--{$userID|unescape|escape:"quotes"}-->',
+        orgchartPath: '<!--{$orgchartPath|unescape|escape:"quotes"}-->',
         debug: false, // set true to print diagnostics + discover indicator IDs
       };
     </script>
@@ -315,7 +316,19 @@
             <div class="cal-formRow cal-formRow--split">
               <label class="cal-field">
                 <span class="cal-label">Date</span>
-                <input type="date" id="calFldDate" class="cal-input" />
+                <input
+                  type="text"
+                  id="calFldDate"
+                  class="cal-input cal-dateInput"
+                  placeholder="MM/DD/YYYY"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  maxlength="10"
+                  aria-describedby="calFldDate_error"
+                />
+                <span class="cal-dateError" id="calFldDate_error" hidden
+                  >Please use MM/DD/YYYY format.</span
+                >
               </label>
               <label class="cal-field">
                 <span class="cal-label">Type</span>
@@ -364,31 +377,30 @@
                 </label>
                 <label class="cal-field">
                   <span class="cal-label">Due date</span>
-                  <input type="date" id="calFldDue" class="cal-input" />
+                  <input
+                    type="text"
+                    id="calFldDue"
+                    class="cal-input cal-dateInput"
+                    placeholder="MM/DD/YYYY"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    maxlength="10"
+                    aria-describedby="calFldDue_error"
+                  />
+                  <span class="cal-dateError" id="calFldDue_error" hidden
+                    >Please use MM/DD/YYYY format.</span
+                  >
                 </label>
               </div>
               <div class="cal-field cal-peoplePicker" data-role="assigned">
                 <span class="cal-label" id="calAssignedLabel">Assigned to</span>
                 <div class="cal-peopleSelected" id="calAssignedSelected"></div>
-                <input
-                  type="text"
-                  id="calAssignedSearch"
-                  class="cal-input"
-                  placeholder="Search people…"
-                  autocomplete="off"
-                  aria-labelledby="calAssignedLabel"
-                  role="combobox"
-                  aria-expanded="false"
-                  aria-controls="calAssignedResults"
-                  aria-autocomplete="list"
-                />
-                <ul
-                  class="cal-peopleResults"
-                  id="calAssignedResults"
-                  role="listbox"
-                  aria-label="Matching people"
-                  hidden
-                ></ul>
+                <div
+                  id="empSel_calAssigned"
+                  class="cal-empSelector"
+                  data-role="assigned"
+                  aria-label="Search for user to add as Assigned to"
+                ></div>
               </div>
             </div>
 
@@ -396,36 +408,30 @@
             <div class="cal-condGroup" id="calCondOoo" hidden>
               <div class="cal-formRow cal-formRow--split">
                 <label class="cal-field">
-                  <span class="cal-label"
-                    >End date
-                    <span class="cal-hint"
-                      >(leave blank for single day)</span
-                    ></span
+                  <span class="cal-label">End date</span>
+                  <input
+                    type="text"
+                    id="calFldEnd"
+                    class="cal-input cal-dateInput"
+                    placeholder="MM/DD/YYYY — leave blank for single day"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    maxlength="10"
+                    aria-describedby="calFldEnd_error"
+                  />
+                  <span class="cal-dateError" id="calFldEnd_error" hidden
+                    >Please use MM/DD/YYYY format.</span
                   >
-                  <input type="date" id="calFldEnd" class="cal-input" />
                 </label>
                 <div class="cal-field cal-peoplePicker" data-role="covered">
                   <span class="cal-label" id="calCoveredLabel">Covered by</span>
                   <div class="cal-peopleSelected" id="calCoveredSelected"></div>
-                  <input
-                    type="text"
-                    id="calCoveredSearch"
-                    class="cal-input"
-                    placeholder="Search people…"
-                    autocomplete="off"
-                    aria-labelledby="calCoveredLabel"
-                    role="combobox"
-                    aria-expanded="false"
-                    aria-controls="calCoveredResults"
-                    aria-autocomplete="list"
-                  />
-                  <ul
-                    class="cal-peopleResults"
-                    id="calCoveredResults"
-                    role="listbox"
-                    aria-label="Matching people"
-                    hidden
-                  ></ul>
+                  <div
+                    id="empSel_calCovered"
+                    class="cal-empSelector"
+                    data-role="covered"
+                    aria-label="Search for user to add as Covered by"
+                  ></div>
                 </div>
               </div>
             </div>
@@ -524,13 +530,13 @@
           </p>
           <div class="cal-linkSearchRow">
             <label class="lp-skip-like cal-sr" for="calLinkSearch"
-              >Search records by title</label
+              >Search records by title or record number</label
             >
             <input
               type="search"
               id="calLinkSearch"
               class="cal-input"
-              placeholder="Search records by title…"
+              placeholder="Search by title or record number…"
               autocomplete="off"
             />
             <label class="lp-skip-like cal-sr" for="calLinkFormFilter"
