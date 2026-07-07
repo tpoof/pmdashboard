@@ -51,6 +51,10 @@
   --cal-scrum: #6b7280;
   --cal-scrum-soft: #eceef1;
   --cal-scrum-text: #40464e;
+  /* Outlook-origin entries (outlook-sync.js) — matches Outlook's own brand blue */
+  --cal-outlook: #0364b8;
+  --cal-outlook-soft: #e6f1fb;
+  --cal-outlook-text: #024a8c;
 
   --cal-danger: #a8302a;
   --cal-today: #fff7e6;
@@ -706,6 +710,11 @@
   background: var(--cal-log-soft);
   border-left-color: var(--cal-log);
   color: var(--cal-log-text);
+}
+.cal-chip.t-outlook {
+  background: var(--cal-outlook-soft);
+  border-left-color: var(--cal-outlook);
+  color: var(--cal-outlook-text);
 }
 .cal-chip.t-scrum {
   background: var(--cal-scrum-soft);

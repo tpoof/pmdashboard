@@ -1687,6 +1687,13 @@
     byId("calEntryReadOnly").hidden = !isView;
     byId("calReadOnlyActions").hidden = !isView;
     byId("calEditFormActions").hidden = isView;
+
+    // Outlook-origin entries are display-only in LEAF — editing them
+    // happens in Outlook itself, so hide the Edit button when viewing one.
+    const isOutlookEntry = !!(entry && entry.type === "Outlook Event");
+    const editBtn = byId("calEditBtn");
+    if (editBtn) editBtn.hidden = isView && isOutlookEntry;
+
     if (isView) {
       renderReadOnlyEntry(entry);
     } else {
@@ -2333,6 +2340,24 @@
       if (isNew) await submitRecord(recordID);
       await syncRecordTitle(recordID, title);
 
+      // Outlook sync hook (outlook-sync.js), additive/optional — if that
+      // script hasn't loaded or the user isn't signed into Outlook yet,
+      // this is a silent no-op and never blocks the LEAF save itself.
+      if (
+        window.LeafCalendarOutlookSync &&
+        typeof window.LeafCalendarOutlookSync.onEntrySaved === "function"
+      ) {
+        window.LeafCalendarOutlookSync.onEntrySaved({
+          recordID: String(recordID),
+          title,
+          date: getDateFieldValue("calFldDate"),
+          dueDate: getDateFieldValue("calFldDue"),
+          endDate: getDateFieldValue("calFldEnd"),
+          type: byId("calFldType") ? byId("calFldType").value : "",
+          body: getBodyEditorValue(),
+        }).catch((e) => logDebug("Outlook push skipped/failed:", e.message));
+      }
+
       closeModal("calEntryModal");
       announce(isNew ? "Entry created." : "Entry saved.");
       setStatus("Reloading…");
@@ -2748,6 +2773,31 @@
     } catch (e) {
       setStatus(`Could not load entries. ${e.message}`, true);
       logDebug("load failed", e);
+    }
+
+    // Outlook sync init hook (outlook-sync.js), additive/optional. Exposes
+    // the pieces outlook-sync.js needs to merge external events into this
+    // page's own render pipeline without duplicating month/week/day-peek
+    // logic. If outlook-sync.js isn't present, this is a silent no-op.
+    if (
+      window.LeafCalendarOutlookSync &&
+      typeof window.LeafCalendarOutlookSync.init === "function"
+    ) {
+      window.LeafCalendarOutlookSync.init({
+        // Merge Outlook-origin entries into this page's own state/render.
+        mergeEntries(outlookEntries) {
+          const nonOutlook = state.entries.filter(
+            (e) => e.type !== "Outlook Event",
+          );
+          state.entries = nonOutlook.concat(outlookEntries);
+          indexEntries();
+          render();
+        },
+        // Re-fetch LEAF's own entries (used after a manual "Sync Outlook"
+        // click, so LEAF-side changes made elsewhere show up too).
+        reloadLeafEntries: loadEntries,
+        render,
+      });
     }
   }
 

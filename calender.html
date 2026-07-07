@@ -96,6 +96,18 @@
                 </p>
               </div>
             </div>
+            <button
+              type="button"
+              class="cal-ghostBtn"
+              id="calSyncOutlookBtn"
+              hidden
+              title="Sync with the LEAF@va.gov shared Outlook calendar"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true"
+                >sync</span
+              >
+              <span>Sync Outlook</span>
+            </button>
             <button type="button" class="cal-primaryBtn" id="calAddBtn">
               <span class="material-symbols-outlined" aria-hidden="true"
                 >add</span
@@ -759,6 +771,16 @@
       </button>
     </div>
     <!-- /#cal-root -->
+
+    <!-- MSAL Browser — public client auth against Entra ID, no client
+         secret required (safe for a static/frontend-only page). -->
+    <script src="https://alcdn.msauth.net/browser/3.18.0/js/msal-browser.min.js"></script>
+
+    <!-- Outlook sync (additive module — see CONFIG block at top of file
+         for the Client ID / Tenant ID placeholders your Entra admin will
+         fill in). Loaded before calendar.js so its window hooks exist by
+         the time calendar.js's main() runs. -->
+    <script src="./files/outlook-sync.js"></script>
 
     <!-- LeafFormQuery is provided globally by LEAF. When testing standalone,
          you'll need to stub it or run this inside a LEAF page. -->
