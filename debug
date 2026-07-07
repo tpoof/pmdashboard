@@ -51,7 +51,7 @@
     ></div>
 
     <script>
-      var BASE_URL = "https://leaf.va.gov/platform/projects/";
+      var BASE_URL = "https://leaf.va.gov/platform/calendar/";
       var shouldStop = false;
       var jobCount = 0;
 

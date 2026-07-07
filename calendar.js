@@ -86,6 +86,58 @@
     });
   }
 
+  // Diagnostic only (gated behind DEBUG): on every click anywhere within a
+  // rich-text field's wrapper bounds, logs what element the browser
+  // actually considers topmost at that exact point. Tab-to-focus works by
+  // jumping straight to the element regardless of what's visually on top
+  // of it — a real click has to land on whatever's topmost at that pixel.
+  // If something else is overlapping the editor, this will show it by name
+  // instead of us having to guess at a CSS stacking fix blind.
+  if (DEBUG) {
+    document.addEventListener(
+      "click",
+      (e) => {
+        ["calFldBody", "calFldOpsScrum", "calFldDevScrum"].forEach(
+          (fieldId) => {
+            const field = document.getElementById(fieldId);
+            if (!field) return;
+            const rtWrap = field.closest(".cal-rtWrap");
+            if (!rtWrap) return;
+            const rect = rtWrap.getBoundingClientRect();
+            const withinBounds =
+              e.clientX >= rect.left &&
+              e.clientX <= rect.right &&
+              e.clientY >= rect.top &&
+              e.clientY <= rect.bottom;
+            if (!withinBounds) return; // click wasn't anywhere near this field
+            const topEl = document.elementFromPoint(e.clientX, e.clientY);
+            const editorEl = rtWrap.querySelector(".trumbowyg-editor");
+            console.log(
+              `[Calendar][click-diag:${fieldId}] click within rt wrapper bounds`,
+              {
+                clickTarget: e.target,
+                clickTargetTag: e.target.tagName,
+                clickTargetClass: e.target.className,
+                topElementAtPoint: topEl,
+                topElementTag: topEl ? topEl.tagName : null,
+                topElementClass: topEl ? topEl.className : null,
+                editorEl,
+                isEditorTopmost: !!(
+                  editorEl &&
+                  (topEl === editorEl || editorEl.contains(topEl))
+                ),
+                clientX: e.clientX,
+                clientY: e.clientY,
+                wrapRect: rect,
+              },
+            );
+          },
+        );
+      },
+      true, // capture phase — see the click before anything else can react to or stop it
+    );
+  }
+
   // calendar.html escapes CSRF/userID server-side via |unescape|escape:"quotes"
   // (same convention as ideas.html), so no client-side comment-stripping
   // workaround is needed here.
