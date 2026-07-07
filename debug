@@ -67,17 +67,40 @@
         return null;
       }
 
+      var CSRF_STORAGE_KEY = "leaf_bulk_title_updater_csrf";
+
       function initCSRF() {
         var found = detectCSRFToken();
-        var statusEl = $("#csrfStatus");
+        var statusMsg = $("#csrfStatus");
+
         if (found) {
           $("#csrfToken").val(found);
-          statusEl.text("✓ auto-detected").css("color", "green");
+          statusMsg.text("✓ auto-detected").css("color", "green");
         } else {
-          statusEl
-            .text("not found — paste manually")
-            .css("color", "#b30000");
+          // Fall back to whatever was last pasted in this browser session
+          var remembered = sessionStorage.getItem(CSRF_STORAGE_KEY);
+          if (remembered) {
+            $("#csrfToken").val(remembered);
+            statusMsg
+              .text("✓ restored from last paste this session")
+              .css("color", "#b8860b");
+          } else {
+            statusMsg
+              .text("not found — paste manually")
+              .css("color", "#b30000");
+          }
         }
+
+        // Remember whatever ends up in the field (auto-detected, restored,
+        // or manually typed) so a page reload doesn't require re-pasting.
+        $("#csrfToken").on("input", function () {
+          var val = $(this).val().trim();
+          if (val) {
+            sessionStorage.setItem(CSRF_STORAGE_KEY, val);
+          } else {
+            sessionStorage.removeItem(CSRF_STORAGE_KEY);
+          }
+        });
       }
 
       function getCSRFToken() {
@@ -295,9 +318,8 @@
         );
       }
 
-      // Pre-load the two jobs
-      addJob("form_9b302", "9");
-      addJob("form_55445", "3");
+      // Pre-load the default job
+      addJob("form_34212", "3");
 
       // Attempt CSRF auto-detection as soon as the page loads
       $(document).ready(initCSRF);
