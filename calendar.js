@@ -1402,15 +1402,28 @@
     }
 
     // Post-build check: is the resulting editable region actually editable?
-    const editorEl = document.querySelector(
-      `#${fieldId} ~ .trumbowyg-box .trumbowyg-editor`,
-    );
+    // Trumbowyg wraps the original field inside .trumbowyg-box (as a
+    // parent, not a following sibling) — the earlier `~` selector could
+    // never match, which is why it always reported "not found" regardless
+    // of whether the build actually worked.
+    const wrapEl = field.closest(".trumbowyg-box") || field.parentElement;
+    const editorEl = wrapEl ? wrapEl.querySelector(".trumbowyg-editor") : null;
+    let focusWorked = null;
+    if (editorEl) {
+      try {
+        editorEl.focus();
+        focusWorked = document.activeElement === editorEl;
+      } catch (e) {
+        focusWorked = false;
+      }
+    }
     logDebug(`[rt:${fieldId}] post-build check`, {
       editorFound: !!editorEl,
       contentEditableAttr: editorEl
         ? editorEl.getAttribute("contenteditable")
         : null,
       editorRect: editorEl ? editorEl.getBoundingClientRect() : null,
+      focusActuallyLanded: focusWorked,
     });
   }
 
