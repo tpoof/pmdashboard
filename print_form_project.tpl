@@ -527,37 +527,53 @@
     }
 
     function loadProjectKeyTitleMap() {
+        console.log('[pk-title-debug] loadProjectKeyTitleMap() called. LeafFormQuery defined?', typeof LeafFormQuery !== 'undefined');
+
         function fetchMap() {
+            console.log('[pk-title-debug] fetchMap() running, building LeafFormQuery...');
             let query = new LeafFormQuery();
             query.addTerm('deleted', '=', '0');
             query.getData([2, 3]); // 2 = Project Key, 3 = Project Name
             query.setExtraParams('&x-filterData=recordID');
             query.execute().then(function(result) {
-                Object.keys(result || {}).forEach(function(recordID) {
+                console.log('[pk-title-debug] query.execute() resolved. Raw result:', result);
+                let recordIDs = Object.keys(result || {});
+                console.log('[pk-title-debug] number of project records returned:', recordIDs.length);
+                recordIDs.forEach(function(recordID) {
                     let row = result[recordID];
                     let s1 = row.s1 || row;
                     let key = normalizeProjectKey(s1['id2']);
                     let title = s1['id3'];
+                    console.log('[pk-title-debug] record', recordID, 'raw s1:', s1, '-> key:', key, 'title:', title);
                     if (key && title && projectKeyToTitle[key] === undefined) {
                         projectKeyToTitle[key] = String(title).trim();
                     }
                 });
+                console.log('[pk-title-debug] final projectKeyToTitle map:', projectKeyToTitle);
                 // Re-apply to whatever indicator 8 elements are already on the page
-                $('[id^="xhrIndicator_8_"]').each(function() {
+                let indicator8Els = $('[id^="xhrIndicator_8_"]');
+                console.log('[pk-title-debug] re-applying to', indicator8Els.length, 'already-rendered indicator 8 element(s)');
+                indicator8Els.each(function() {
                     applyProjectKeyTitle($(this));
                 });
-            }).catch(function() {
-                console.log('There was an error loading the project key/title map!');
+            }).catch(function(err) {
+                console.log('[pk-title-debug] There was an error loading the project key/title map!', err);
             });
         }
 
         if (typeof LeafFormQuery === 'undefined') {
+            console.log('[pk-title-debug] LeafFormQuery not found, attempting to load js/formQuery.js...');
             $.ajax({
                 type: 'GET',
                 url: 'js/formQuery.js',
                 dataType: 'script',
-                success: fetchMap,
-                error: function() { console.log('There was an error getting formQuery.js!'); }
+                success: function() {
+                    console.log('[pk-title-debug] js/formQuery.js loaded successfully.');
+                    fetchMap();
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.log('[pk-title-debug] There was an error getting formQuery.js!', textStatus, errorThrown);
+                }
             });
         } else {
             fetchMap();
@@ -565,12 +581,18 @@
     }
 
     function applyProjectKeyTitle(xhrIndicator) {
-        let rawKey = normalizeProjectKey(xhrIndicator.text());
-        if (rawKey && projectKeyToTitle[rawKey] !== undefined) {
+        let rawText = xhrIndicator.text();
+        let rawKey = normalizeProjectKey(rawText);
+        let match = projectKeyToTitle[rawKey];
+        console.log('[pk-title-debug] applyProjectKeyTitle() raw text:', JSON.stringify(rawText), '-> normalized key:', JSON.stringify(rawKey), '-> match found?', match !== undefined, match);
+        if (rawKey && match !== undefined) {
             if (xhrIndicator.find('.pm-projectTitleSuffix').length === 0) {
                 xhrIndicator.append(
-                    $('<span class="pm-projectTitleSuffix"></span>').text(' — ' + projectKeyToTitle[rawKey])
+                    $('<span class="pm-projectTitleSuffix"></span>').text(' — ' + match)
                 );
+                console.log('[pk-title-debug] appended title suffix for key', rawKey);
+            } else {
+                console.log('[pk-title-debug] suffix already present, skipping append for key', rawKey);
             }
         }
     }
