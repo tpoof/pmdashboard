@@ -632,8 +632,17 @@
         let match = lookupMap[rawKey];
         console.log(`[${debugTag}] raw text:`, JSON.stringify(rawText), '-> normalized key:', JSON.stringify(rawKey), '-> match found?', match !== undefined, match);
         if (rawKey && match !== undefined) {
-            if (xhrIndicator.find('.pm-keyLabelSuffix').length === 0) {
-                xhrIndicator.append(
+            // Prefer appending inside the inner styled content element
+            // (e.g. <span class="printResponse" id="data_8_1">) so the
+            // suffix sits as a sibling of the actual text and correctly
+            // inherits its font. Fall back to the outer container if that
+            // inner element isn't found.
+            let contentEl = xhrIndicator.find('.printResponse, [id^="data_"]').first();
+            if (contentEl.length === 0) {
+                contentEl = xhrIndicator;
+            }
+            if (contentEl.find('.pm-keyLabelSuffix').length === 0) {
+                contentEl.append(
                     $('<span class="pm-keyLabelSuffix"></span>')
                         .css({
                             'font-family': 'inherit',
@@ -643,7 +652,7 @@
                         })
                         .text(' — ' + match)
                 );
-                console.log(`[${debugTag}] appended suffix for key`, rawKey);
+                console.log(`[${debugTag}] appended suffix for key`, rawKey, 'into', contentEl.attr('id') || contentEl.attr('class'));
             } else {
                 console.log(`[${debugTag}] suffix already present, skipping append for key`, rawKey);
             }
