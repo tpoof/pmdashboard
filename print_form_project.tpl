@@ -512,6 +512,69 @@
         });
     }
 
+    // ── Project Key -> Project Title lookup (for Task indicator 8 printout) ────
+    // indicatorID 8 = Task's "Project Key" (plain text, string-matched to the
+    // Project form's indicatorID 2). This map lets the printout show
+    // "KEY — Project Title" instead of just the raw key.
+    var projectKeyToTitle = {};
+
+    function normalizeProjectKey(val) {
+        return String(val || '')
+            .replace(/\u00A0/g, ' ')
+            .trim()
+            .replace(/\s+/g, ' ')
+            .toUpperCase();
+    }
+
+    function loadProjectKeyTitleMap() {
+        function fetchMap() {
+            let query = new LeafFormQuery();
+            query.addTerm('deleted', '=', '0');
+            query.getData([2, 3]); // 2 = Project Key, 3 = Project Name
+            query.setExtraParams('&x-filterData=recordID');
+            query.execute().then(function(result) {
+                Object.keys(result || {}).forEach(function(recordID) {
+                    let row = result[recordID];
+                    let s1 = row.s1 || row;
+                    let key = normalizeProjectKey(s1['id2']);
+                    let title = s1['id3'];
+                    if (key && title && projectKeyToTitle[key] === undefined) {
+                        projectKeyToTitle[key] = String(title).trim();
+                    }
+                });
+                // Re-apply to whatever indicator 8 elements are already on the page
+                $('[id^="xhrIndicator_8_"]').each(function() {
+                    applyProjectKeyTitle($(this));
+                });
+            }).catch(function() {
+                console.log('There was an error loading the project key/title map!');
+            });
+        }
+
+        if (typeof LeafFormQuery === 'undefined') {
+            $.ajax({
+                type: 'GET',
+                url: 'js/formQuery.js',
+                dataType: 'script',
+                success: fetchMap,
+                error: function() { console.log('There was an error getting formQuery.js!'); }
+            });
+        } else {
+            fetchMap();
+        }
+    }
+
+    function applyProjectKeyTitle(xhrIndicator) {
+        let rawKey = normalizeProjectKey(xhrIndicator.text());
+        if (rawKey && projectKeyToTitle[rawKey] !== undefined) {
+            if (xhrIndicator.find('.pm-projectTitleSuffix').length === 0) {
+                xhrIndicator.append(
+                    $('<span class="pm-projectTitleSuffix"></span>').text(' — ' + projectKeyToTitle[rawKey])
+                );
+            }
+        }
+    }
+
     function getIndicator(indicatorID, series) {
         $.ajax({
             type: 'GET',
@@ -525,6 +588,9 @@
                 }
                 let xhrIndicator = $(`#xhrIndicator_${indicatorID}_${series}`);
                 xhrIndicator.empty().html(response);
+                if (parseInt(indicatorID) === 8) {
+                    applyProjectKeyTitle(xhrIndicator);
+                }
                 xhrIndicator.fadeOut(250, function() {
                     xhrIndicator.fadeIn(250);
                 });
@@ -1947,6 +2013,8 @@
 
     $(function() {
         $('#progressBar').progressbar({max: 100});
+
+        loadProjectKeyTitleMap();
 
         form = new LeafForm('formContainer');
         print = new printer();

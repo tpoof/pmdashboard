@@ -1227,8 +1227,8 @@ body {
 }
 
 .pm-colName {
-  width: 115px;
-  max-width: 115px;
+  width: 145px;
+  max-width: 145px;
   white-space: nowrap;
 }
 
@@ -1242,8 +1242,8 @@ body {
 }
 
 .pm-colDesc {
-  width: 145px;
-  min-width: 145px;
+  width: 115px;
+  min-width: 115px;
   white-space: normal;
 }
 
@@ -3437,17 +3437,17 @@ canvas.pm-chartClickable {
 /* 3. Project Name (2): fixed width, single-line ellipsis, no drawer */
 #pmProjectsTableWrap .pm-table th:nth-child(2),
 #pmProjectsTableWrap .pm-table td:nth-child(2) {
-  width: 115px !important;
-  min-width: 115px !important;
-  max-width: 115px !important;
+  width: 145px !important;
+  min-width: 145px !important;
+  max-width: 145px !important;
 }
 
 /* 4. Description (3): fixed width, truncated preview + expand drawer */
 #pmProjectsTableWrap .pm-table th:nth-child(3),
 #pmProjectsTableWrap .pm-table td:nth-child(3) {
-  width: 145px !important;
-  min-width: 145px !important;
-  max-width: 145px !important;
+  width: 115px !important;
+  min-width: 115px !important;
+  max-width: 115px !important;
 }
 
 /* 5. Owner (4): fit to content */
