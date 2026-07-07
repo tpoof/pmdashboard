@@ -761,8 +761,13 @@
     await Promise.all(
       unresolved.map(async (id) => {
         try {
+          // `id` here is a LEAF login username (e.g. "oitauslumags"), not a
+          // numeric empUID — LEAF's orgchart API expects usernames with an
+          // underscore prefix (same convention used by the employee-import
+          // endpoint elsewhere on this page: /api/employee/import/_<user>).
+          // Querying it unprefixed is what was causing the 400s.
           const res = await apiGet(
-            `${ORGCHART_PATH}/api/employee/${encodeURIComponent(id)}`,
+            `${ORGCHART_PATH}/api/employee/_${encodeURIComponent(id)}`,
           );
           const emp = res && res.employee;
           if (emp && (emp.firstName || emp.lastName)) {
@@ -1337,6 +1342,7 @@
   // the edit form becomes visible costs a little overhead but guarantees
   // every entry into edit mode gets a clean, working editor.
   function initRichTextField(fieldId) {
+    const field = byId(fieldId);
     if (
       typeof window.$ === "undefined" ||
       !window.$.fn ||
@@ -1345,20 +1351,67 @@
       // Trumbowyg isn't available (e.g. running this page outside LEAF's
       // shell for local testing) — fall back to a plain textarea so the
       // form still works.
+      logDebug(`[rt:${fieldId}] jQuery/Trumbowyg not available at init time`, {
+        hasJQuery: typeof window.$ !== "undefined",
+        hasTrumbowygPlugin: !!(
+          window.$ &&
+          window.$.fn &&
+          window.$.fn.trumbowyg
+        ),
+      });
       return;
     }
-    if (!byId(fieldId)) return;
+    if (!field) {
+      logDebug(`[rt:${fieldId}] field element not found in DOM`);
+      return;
+    }
+
+    // Diagnostics: capture visibility/geometry right before (re)building,
+    // to catch a repeat of "built while hidden/zero-size" if it recurs.
+    const rect = field.getBoundingClientRect();
+    const modalEl = field.closest(".cal-modal");
+    logDebug(`[rt:${fieldId}] initRichTextField() called`, {
+      wasAlreadyReady: !!richTextFieldsReady[fieldId],
+      fieldOffsetParentIsNull: field.offsetParent === null,
+      rectWidth: rect.width,
+      rectHeight: rect.height,
+      modalHasIsOpenClass: modalEl
+        ? modalEl.classList.contains("is-open")
+        : null,
+      fieldHiddenAttr: field.hidden,
+      formHiddenAttr: byId("calEntryForm") ? byId("calEntryForm").hidden : null,
+    });
+
     const $field = window.$(`#${fieldId}`);
     if (richTextFieldsReady[fieldId]) {
       try {
         $field.trumbowyg("destroy");
+        logDebug(`[rt:${fieldId}] destroy() succeeded`);
       } catch (e) {
-        logDebug("trumbowyg destroy failed for", fieldId, e.message);
+        logDebug(`[rt:${fieldId}] destroy() THREW:`, e.message);
       }
       richTextFieldsReady[fieldId] = false;
     }
-    $field.trumbowyg({ btns: TRUMBOWYG_BTNS });
-    richTextFieldsReady[fieldId] = true;
+    try {
+      $field.trumbowyg({ btns: TRUMBOWYG_BTNS });
+      richTextFieldsReady[fieldId] = true;
+    } catch (e) {
+      logDebug(`[rt:${fieldId}] trumbowyg() build THREW:`, e.message);
+      richTextFieldsReady[fieldId] = false;
+      return;
+    }
+
+    // Post-build check: is the resulting editable region actually editable?
+    const editorEl = document.querySelector(
+      `#${fieldId} ~ .trumbowyg-box .trumbowyg-editor`,
+    );
+    logDebug(`[rt:${fieldId}] post-build check`, {
+      editorFound: !!editorEl,
+      contentEditableAttr: editorEl
+        ? editorEl.getAttribute("contenteditable")
+        : null,
+      editorRect: editorEl ? editorEl.getBoundingClientRect() : null,
+    });
   }
 
   function setRichTextValue(fieldId, html) {
