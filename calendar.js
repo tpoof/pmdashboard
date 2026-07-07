@@ -827,7 +827,7 @@
     const seen = {};
     state.entries.forEach((e) => {
       if (e.author && !seen[e.author])
-        seen[e.author] = e.authorName || e.author;
+        seen[e.author] = peopleCache[e.author] || e.authorName || e.author;
     });
     state.authors = seen;
     const options = Object.keys(seen)
