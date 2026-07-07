@@ -56,7 +56,7 @@
         csrfToken: '<!--{$CSRFToken|unescape|escape:"quotes"}-->',
         userID: '<!--{$userID|unescape|escape:"quotes"}-->',
         orgchartPath: '<!--{$orgchartPath|unescape|escape:"quotes"}-->',
-        debug: true, // set true to print diagnostics + discover indicator IDs
+        debug: false, // set true to print diagnostics + discover indicator IDs
       };
     </script>
 
@@ -425,7 +425,7 @@
                 id="calFldTitle"
                 class="cal-input"
                 maxlength="200"
-                placeholder="e.g. Weekly sync — release blockers"
+                placeholder="e.g. MM/DD/YY - Sprint Planning"
               />
             </label>
 

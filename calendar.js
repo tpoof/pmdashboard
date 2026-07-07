@@ -93,6 +93,21 @@
   // of it — a real click has to land on whatever's topmost at that pixel.
   // If something else is overlapping the editor, this will show it by name
   // instead of us having to guess at a CSS stacking fix blind.
+  //
+  // Logged as one flat string (not a console object) so a plain
+  // copy-paste of the console captures everything — no expanding
+  // collapsed objects required.
+  function describeEl(el) {
+    if (!el) return "null";
+    const tag = el.tagName || "?";
+    const cls =
+      typeof el.className === "string" && el.className.trim()
+        ? `.${el.className.trim().replace(/\s+/g, ".")}`
+        : "";
+    const id = el.id ? `#${el.id}` : "";
+    return `${tag}${id}${cls}`;
+  }
+
   if (DEBUG) {
     document.addEventListener(
       "click",
@@ -112,24 +127,15 @@
             if (!withinBounds) return; // click wasn't anywhere near this field
             const topEl = document.elementFromPoint(e.clientX, e.clientY);
             const editorEl = rtWrap.querySelector(".trumbowyg-editor");
+            const isEditorTopmost = !!(
+              editorEl &&
+              (topEl === editorEl || editorEl.contains(topEl))
+            );
             console.log(
-              `[Calendar][click-diag:${fieldId}] click within rt wrapper bounds`,
-              {
-                clickTarget: e.target,
-                clickTargetTag: e.target.tagName,
-                clickTargetClass: e.target.className,
-                topElementAtPoint: topEl,
-                topElementTag: topEl ? topEl.tagName : null,
-                topElementClass: topEl ? topEl.className : null,
-                editorEl,
-                isEditorTopmost: !!(
-                  editorEl &&
-                  (topEl === editorEl || editorEl.contains(topEl))
-                ),
-                clientX: e.clientX,
-                clientY: e.clientY,
-                wrapRect: rect,
-              },
+              `[Calendar][click-diag:${fieldId}] target=${describeEl(e.target)} ` +
+                `topmostAtPoint=${describeEl(topEl)} editor=${describeEl(editorEl)} ` +
+                `isEditorTopmost=${isEditorTopmost} x=${Math.round(e.clientX)} y=${Math.round(e.clientY)} ` +
+                `wrapRect=(${Math.round(rect.left)},${Math.round(rect.top)},${Math.round(rect.width)}x${Math.round(rect.height)})`,
             );
           },
         );
@@ -517,6 +523,23 @@
         "submit skipped/failed (record may already be live):",
         e.message,
       );
+    }
+  }
+
+  // Keeps LEAF's own native record title (used elsewhere in generic
+  // record lists/print-views) in sync with this entry's Title field.
+  // Best-effort/silent by design: this runs after the calendar's own save
+  // has already succeeded, so a failure here shouldn't surface as a save
+  // error — it's a nice-to-have sync, not part of the calendar's own data.
+  async function syncRecordTitle(recordID, title) {
+    if (!recordID || !title) return;
+    try {
+      await apiPost(`./api/form/${encodeURIComponent(recordID)}/title`, {
+        title,
+        CSRFToken: CSRF,
+      });
+    } catch (e) {
+      logDebug("record title sync skipped/failed:", e.message);
     }
   }
 
@@ -2298,6 +2321,7 @@
       }
       await writeIndicators(recordID, values);
       if (isNew) await submitRecord(recordID);
+      await syncRecordTitle(recordID, title);
 
       closeModal("calEntryModal");
       announce(isNew ? "Entry created." : "Entry saved.");

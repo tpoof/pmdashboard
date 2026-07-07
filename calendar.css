@@ -755,7 +755,6 @@
 .cal-weekBoard {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  align-items: start;
   position: relative;
   min-height: 200px;
 }
@@ -796,6 +795,7 @@
   flex-direction: column;
   gap: 6px;
   cursor: pointer;
+  flex: 1;
   min-height: 90px;
 }
 .cal-weekColBody:hover {
