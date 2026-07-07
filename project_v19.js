@@ -2857,8 +2857,8 @@
       <table class="pm-table">
         <colgroup>
           <col style="width:1%"><!-- Key -->
-          <col style="width:1%"><!-- Name -->
-          <col style="width:180px;max-width:200px"><!-- Description -->
+          <col style="width:145px"><!-- Name -->
+          <col style="width:115px"><!-- Description -->
           <col style="width:1%"><!-- Owner -->
           <col style="width:1%"><!-- OKR -->
           <col style="width:1%"><!-- Start -->
