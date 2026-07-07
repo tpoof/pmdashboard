@@ -827,7 +827,7 @@
     const seen = {};
     state.entries.forEach((e) => {
       if (e.author && !seen[e.author])
-        seen[e.author] = peopleCache[e.author] || e.authorName || e.author;
+        seen[e.author] = e.authorName || e.author;
     });
     state.authors = seen;
     const options = Object.keys(seen)
@@ -1397,6 +1397,39 @@
   /* ============================================================
    Record viewer (iframe)
    ============================================================ */
+  // Suppresses LEAF's own page chrome (header/footer/skip-link) inside the
+  // record printview iframe, and collapses the top gap that chrome would
+  // otherwise leave behind. Same-origin (same LEAF site), so we can reach
+  // into the iframe's own document — same pattern used by this project's
+  // other dashboards (see suppressIframeHeader() in project_v17/18/19.js).
+  // Selectors match main.tpl's actual markup (<header id="header">,
+  // <footer id="footer">) rather than guessing at possible class names.
+  function suppressRecordFrameHeader(frame) {
+    try {
+      const doc =
+        frame.contentDocument ||
+        (frame.contentWindow && frame.contentWindow.document);
+      if (!doc || !doc.head) return;
+      if (doc.getElementById("cal-record-frame-header-suppress")) return;
+
+      const style = doc.createElement("style");
+      style.id = "cal-record-frame-header-suppress";
+      style.textContent = [
+        "#header, footer#footer, #nav-skip-link {",
+        "  display: none !important;",
+        "}",
+        "body, main#body, #content, #bodyarea {",
+        "  margin-top: 0 !important;",
+        "  padding-top: 0 !important;",
+        "}",
+      ].join("\n");
+      doc.head.appendChild(style);
+    } catch (e) {
+      // Cross-origin or otherwise inaccessible — leave the frame as-is.
+      logDebug("record frame header suppression skipped:", e.message);
+    }
+  }
+
   function openRecord(recordID, title) {
     const frame = byId("calRecordFrame");
     const titleEl = byId("calRecordModalTitle");
@@ -1404,7 +1437,16 @@
     const url = recordViewURL(recordID);
     if (titleEl) titleEl.textContent = title || `Record #${recordID}`;
     if (openTab) openTab.href = url;
-    if (frame) frame.src = url;
+    if (frame) {
+      // Re-runs on every navigation inside the iframe, since a fresh
+      // document (new load event) wipes out the previously injected style.
+      if (frame._headerSuppressionHandler) {
+        frame.removeEventListener("load", frame._headerSuppressionHandler);
+      }
+      frame._headerSuppressionHandler = () => suppressRecordFrameHeader(frame);
+      frame.addEventListener("load", frame._headerSuppressionHandler);
+      frame.src = url;
+    }
     openModal("calRecordModal");
   }
 
