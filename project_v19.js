@@ -2760,19 +2760,10 @@
 
     return `<tr id="${rowId}" class="pm-projectRow">
       <td class="pm-colKey">${pkLink}</td>
-      <td class="pm-colName pm-editableCell" data-ind="${PROJECT_IND.projectName}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="Double-click to edit">
-        <div class="pm-descCellInner">
+      <td class="pm-colName pm-editableCell" data-ind="${PROJECT_IND.projectName}" data-record-id="${rid}" data-form-type="project" tabindex="0" title="${safeAttr(projectNameText)}">
+        <div class="pm-nameCellInner">
           ${p.customerOverviewUrl ? `<a href="${safeAttr(p.customerOverviewUrl)}" class="pm-customerOverviewGlobe" target="_blank" rel="noopener noreferrer" title="Open customer hub" aria-label="Open customer hub for ${safeAttr(projectNameText)}"><span class="material-icons" aria-hidden="true">language</span></a>` : ""}
-          <span class="pm-descTruncated">${safe(projectNameText)}</span>
-          <button type="button"
-            class="pm-projDescToggle"
-            data-subrow="${subRowId}"
-            aria-expanded="false"
-            aria-controls="${subRowId}"
-            aria-label="Expand project details"
-            title="Expand details">
-            <span class="material-icons pm-projDescChevron" aria-hidden="true">expand_more</span>
-          </button>
+          <span class="pm-nameTruncated">${safe(projectNameText)}</span>
         </div>
       </td>
       ${descCell}

@@ -1227,9 +1227,9 @@ body {
 }
 
 .pm-colName {
-  width: auto;
-  max-width: 180px;
-  white-space: normal;
+  width: 115px;
+  max-width: 115px;
+  white-space: nowrap;
 }
 
 .pm-colName .pm-wrapCol {
@@ -1242,8 +1242,8 @@ body {
 }
 
 .pm-colDesc {
-  width: 200px;
-  min-width: 140px;
+  width: 145px;
+  min-width: 145px;
   white-space: normal;
 }
 
@@ -3434,20 +3434,20 @@ canvas.pm-chartClickable {
   max-width: 90px !important;
 }
 
-/* 3. Project Name (2): truncate at fixed width */
+/* 3. Project Name (2): fixed width, single-line ellipsis, no drawer */
 #pmProjectsTableWrap .pm-table th:nth-child(2),
 #pmProjectsTableWrap .pm-table td:nth-child(2) {
-  width: 130px !important;
-  min-width: 130px !important;
-  max-width: 130px !important;
+  width: 115px !important;
+  min-width: 115px !important;
+  max-width: 115px !important;
 }
 
-/* 4. Description (3): wider to show truncated preview */
+/* 4. Description (3): fixed width, truncated preview + expand drawer */
 #pmProjectsTableWrap .pm-table th:nth-child(3),
 #pmProjectsTableWrap .pm-table td:nth-child(3) {
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
+  width: 145px !important;
+  min-width: 145px !important;
+  max-width: 145px !important;
 }
 
 /* 5. Owner (4): fit to content */
@@ -3507,6 +3507,23 @@ canvas.pm-chartClickable {
   white-space: normal !important;
   overflow: visible !important;
   text-overflow: clip !important;
+}
+
+/* Project Name cell: plain truncated text, no chevron/drawer */
+.pm-nameCellInner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pm-nameTruncated {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
 }
 
 /* Description cell inner layout: truncated text + chevron */
