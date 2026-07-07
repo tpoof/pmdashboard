@@ -868,14 +868,24 @@
       unresolved.map(async (id) => {
         try {
           // `id` here is a LEAF login username (e.g. "oitauslumags"), not a
-          // numeric empUID — LEAF's orgchart API expects usernames with an
-          // underscore prefix (same convention used by the employee-import
-          // endpoint elsewhere on this page: /api/employee/import/_<user>).
-          // Querying it unprefixed is what was causing the 400s.
+          // numeric empUID. There is no GET /api/employee/_<username> route —
+          // that underscore-prefix convention only applies to the import
+          // endpoint (/api/employee/import/_<user>), which is a stateful
+          // write operation we don't need just to display a name. Instead,
+          // resolve usernames via the national directory search, which LEAF
+          // itself uses for username lookups (see project_v17/18/19.js and
+          // subindicators.tpl for the same q=userName: pattern).
           const res = await apiGet(
-            `${ORGCHART_PATH}/api/employee/_${encodeURIComponent(id)}`,
+            `${ORGCHART_PATH}/api/national/employee/search?q=userName:${encodeURIComponent(id)}&noLimit=0&domain=`,
           );
-          const emp = res && res.employee;
+          // Response shape: an array of employee matches, or an object
+          // keyed by empUID — normalize to a single best match.
+          const match = Array.isArray(res)
+            ? res[0]
+            : res && typeof res === "object"
+              ? Object.values(res)[0]
+              : null;
+          const emp = (match && match.employee) || match;
           if (emp && (emp.firstName || emp.lastName)) {
             const name = `${emp.firstName || ""} ${emp.lastName || ""}`.trim();
             if (name) peopleCache[id] = name;
