@@ -55,6 +55,37 @@
   const pageConfig = window.leafCalendar || {};
   const DEBUG = pageConfig.debug === true;
 
+  // Diagnostic only (gated behind DEBUG): watches for LEAF's own
+  // trumbowyg.min.js / trumbowyg.min.css ever being inserted into the
+  // page a second time after our own script has started running — which
+  // would mean LEAF's page shell is reloading its rich-text library out
+  // from under an editor we've already built. Logs a timestamp every time
+  // this is observed, so it can be lined up against exactly when typing
+  // breaks, instead of inferring it from the Network tab separately.
+  if (DEBUG && typeof MutationObserver !== "undefined") {
+    let trumbowygScriptSeenCount = 0;
+    const trumbowygReloadObserver = new MutationObserver((mutations) => {
+      mutations.forEach((m) => {
+        m.addedNodes.forEach((node) => {
+          if (node.nodeType !== 1) return; // only element nodes
+          const src = (node.src || node.href || "").toString();
+          if (/trumbowyg\.min\.(js|css)/i.test(src)) {
+            trumbowygScriptSeenCount += 1;
+            logDebug(
+              `[trumbowyg-reload-watch] ${node.tagName} for ${src} inserted into the page ` +
+                `(occurrence #${trumbowygScriptSeenCount} since this page load) at ${new Date().toISOString()}`,
+            );
+          }
+        });
+      });
+    });
+    trumbowygReloadObserver.observe(document.head, { childList: true });
+    trumbowygReloadObserver.observe(document.body || document.documentElement, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
   // calendar.html escapes CSRF/userID server-side via |unescape|escape:"quotes"
   // (same convention as ideas.html), so no client-side comment-stripping
   // workaround is needed here.
@@ -1318,6 +1349,7 @@
    editor, already loaded globally by LEAF's page shell).
    ------------------------------------------------------------ */
   const richTextFieldsReady = {}; // fieldId -> bool
+  const trumbowygPinnedFn = {}; // fieldId -> the trumbowyg plugin fn captured at first build
 
   const TRUMBOWYG_BTNS = [
     "bold",
@@ -1380,12 +1412,30 @@
         : null,
       fieldHiddenAttr: field.hidden,
       formHiddenAttr: byId("calEntryForm") ? byId("calEntryForm").hidden : null,
+      trumbowygFnChangedSinceFirstBuild:
+        trumbowygPinnedFn[fieldId] &&
+        trumbowygPinnedFn[fieldId] !== window.$.fn.trumbowyg,
     });
+
+    // Pin the plugin function we actually build with, the first time, and
+    // reuse that exact reference from then on — window.$.fn.trumbowyg is
+    // looked up fresh by jQuery every time you call $field.trumbowyg(...),
+    // so if LEAF's page shell reloads trumbowyg.min.js mid-session (we've
+    // observed it re-requesting that file around record load/submit) and
+    // that reload redefines window.$.fn.trumbowyg, any call after that
+    // point would run the NEW plugin code against an editor the OLD code
+    // built — a mismatch that could plausibly explain typing breaking
+    // partway through. Calling the pinned reference directly sidesteps
+    // that risk entirely for this field's lifetime.
+    if (!trumbowygPinnedFn[fieldId]) {
+      trumbowygPinnedFn[fieldId] = window.$.fn.trumbowyg;
+    }
+    const pinnedFn = trumbowygPinnedFn[fieldId];
 
     const $field = window.$(`#${fieldId}`);
     if (richTextFieldsReady[fieldId]) {
       try {
-        $field.trumbowyg("destroy");
+        pinnedFn.call($field, "destroy");
         logDebug(`[rt:${fieldId}] destroy() succeeded`);
       } catch (e) {
         logDebug(`[rt:${fieldId}] destroy() THREW:`, e.message);
@@ -1393,7 +1443,7 @@
       richTextFieldsReady[fieldId] = false;
     }
     try {
-      $field.trumbowyg({ btns: TRUMBOWYG_BTNS });
+      pinnedFn.call($field, { btns: TRUMBOWYG_BTNS });
       richTextFieldsReady[fieldId] = true;
     } catch (e) {
       logDebug(`[rt:${fieldId}] trumbowyg() build THREW:`, e.message);
@@ -1428,16 +1478,22 @@
   }
 
   function setRichTextValue(fieldId, html) {
-    if (richTextFieldsReady[fieldId]) {
-      window.$(`#${fieldId}`).trumbowyg("html", html || "");
+    if (richTextFieldsReady[fieldId] && trumbowygPinnedFn[fieldId]) {
+      trumbowygPinnedFn[fieldId].call(
+        window.$(`#${fieldId}`),
+        "html",
+        html || "",
+      );
     } else if (byId(fieldId)) {
       byId(fieldId).value = html || "";
     }
   }
 
   function getRichTextValue(fieldId) {
-    if (richTextFieldsReady[fieldId]) {
-      return window.$(`#${fieldId}`).trumbowyg("html").trim();
+    if (richTextFieldsReady[fieldId] && trumbowygPinnedFn[fieldId]) {
+      return trumbowygPinnedFn[fieldId]
+        .call(window.$(`#${fieldId}`), "html")
+        .trim();
     }
     return byId(fieldId) ? byId(fieldId).value.trim() : "";
   }
