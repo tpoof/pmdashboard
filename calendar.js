@@ -825,9 +825,11 @@
     const seen = {};
     state.entries.forEach((e) => {
       if (e.author && !seen[e.author])
-        seen[e.author] = e.authorName || e.author;
+        seen[e.author] = peopleCache[e.author] || e.authorName || e.author;
     });
     state.authors = seen;
+    console.log("[TEMP DIAG] peopleCache:", { ...peopleCache });
+    console.log("[TEMP DIAG] seen (author -> label):", { ...seen });
     const options = Object.keys(seen)
       .sort((a, b) => String(seen[a]).localeCompare(String(seen[b])))
       .map((uid) => ({ value: uid, label: seen[uid] }));
