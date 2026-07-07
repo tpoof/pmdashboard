@@ -580,8 +580,24 @@
         }
     }
 
+    function extractCleanIndicatorText(xhrIndicator) {
+        // The server response for a text indicator can include a trailing
+        // <script> block (e.g. enableUserContentLinks). Clone the node,
+        // strip out script/style, then take the first non-empty line of
+        // what's left as the actual field value.
+        let clone = xhrIndicator.clone();
+        clone.find('script, style').remove();
+        let cleanText = clone.text();
+        let firstLine = cleanText.split('\n').map(function(line) {
+            return line.trim();
+        }).find(function(line) {
+            return line.length > 0;
+        }) || '';
+        return firstLine;
+    }
+
     function applyProjectKeyTitle(xhrIndicator) {
-        let rawText = xhrIndicator.text();
+        let rawText = extractCleanIndicatorText(xhrIndicator);
         let rawKey = normalizeProjectKey(rawText);
         let match = projectKeyToTitle[rawKey];
         console.log('[pk-title-debug] applyProjectKeyTitle() raw text:', JSON.stringify(rawText), '-> normalized key:', JSON.stringify(rawKey), '-> match found?', match !== undefined, match);

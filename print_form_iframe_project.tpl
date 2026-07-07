@@ -390,8 +390,28 @@ function loadProjectKeyTitleMap() {
     }
 }
 
+function extractCleanIndicatorText(xhrIndicator) {
+    // The server response for a text indicator can include a trailing
+    // <script> block (e.g. enableUserContentLinks). Clone the node,
+    // strip out script/style, then take the first non-empty line of
+    // what's left as the actual field value.
+    var clone = xhrIndicator.clone();
+    clone.find('script, style').remove();
+    var cleanText = clone.text();
+    var lines = cleanText.split('\n');
+    var firstLine = '';
+    for (var i = 0; i < lines.length; i++) {
+        var trimmed = lines[i].trim();
+        if (trimmed.length > 0) {
+            firstLine = trimmed;
+            break;
+        }
+    }
+    return firstLine;
+}
+
 function applyProjectKeyTitle(xhrIndicator) {
-    var rawText = xhrIndicator.text();
+    var rawText = extractCleanIndicatorText(xhrIndicator);
     var rawKey = normalizeProjectKey(rawText);
     var match = projectKeyToTitle[rawKey];
     console.log('[pk-title-debug] applyProjectKeyTitle() raw text:', JSON.stringify(rawText), '-> normalized key:', JSON.stringify(rawKey), '-> match found?', match !== undefined, match);

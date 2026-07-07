@@ -1644,6 +1644,118 @@
   color: #fff !important;
 }
 
+/* ── Feedback widget ─────────────────────────────────────
+   Fixed bottom-left, mirrors .cal-jumpTop's fixed-circle
+   treatment (bottom-right) so the two never collide. */
+.cal-feedbackBtn {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 1200;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid var(--cal-accent-strong);
+  background: var(--cal-accent);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: var(--cal-shadow-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.cal-feedbackBtn:hover {
+  background: var(--cal-accent-strong);
+}
+.cal-feedbackBtn:focus-visible {
+  outline: 3px solid var(--cal-focus);
+  outline-offset: 2px;
+}
+.cal-feedbackBtn .material-symbols-outlined {
+  color: #fff !important;
+}
+
+.cal-feedbackModal {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 0 0 84px 20px;
+}
+.cal-feedbackModal[hidden] {
+  display: none;
+}
+.cal-feedbackInner {
+  position: relative;
+  background: var(--cal-surface);
+  border: 1px solid var(--cal-border);
+  border-radius: var(--cal-radius-lg);
+  box-shadow: var(--cal-shadow-lg);
+  width: 320px;
+  max-width: calc(100vw - 40px);
+  padding: var(--cal-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cal-space-3);
+}
+.cal-feedbackHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cal-feedbackTitle {
+  margin: 0;
+  font-family: var(--cal-display);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--cal-text);
+}
+.cal-feedbackClose {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 50%;
+  color: var(--cal-muted);
+}
+.cal-feedbackClose:hover {
+  color: var(--cal-text);
+}
+.cal-feedbackClose:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
+}
+.cal-feedbackTextarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 90px;
+  padding: var(--cal-space-2) var(--cal-space-3);
+  border: 1px solid var(--cal-border);
+  border-radius: var(--cal-radius-sm);
+  font-family: var(--cal-font);
+  font-size: 13px;
+  color: var(--cal-text);
+}
+.cal-feedbackTextarea:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
+}
+.cal-feedbackFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cal-feedbackStatus {
+  font-size: 12px;
+  color: var(--cal-muted);
+  flex: 1;
+}
+
 /* ── Responsive ───────────────────────────────────────── */
 @media (max-width: 860px) {
   .cal-formRow--split {

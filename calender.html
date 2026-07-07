@@ -769,6 +769,71 @@
           >arrow_upward</span
         >
       </button>
+
+      <!-- ============================================================
+           FEEDBACK WIDGET
+           Fixed bottom-left button + lightweight dialog. Submits to a
+           dedicated LEAF form (form_bd945) rather than the calendar's own
+           record type — see wireFeedbackWidget() in calendar.js.
+           ============================================================ -->
+      <button
+        type="button"
+        class="cal-feedbackBtn"
+        id="calFeedbackBtn"
+        aria-label="Submit feedback"
+        aria-haspopup="dialog"
+        data-tooltip="Submit your feedback"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true"
+          >add_reaction</span
+        >
+      </button>
+
+      <div
+        id="calFeedbackModal"
+        class="cal-feedbackModal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="calFeedbackModalTitle"
+        hidden
+      >
+        <div class="cal-feedbackInner">
+          <div class="cal-feedbackHeader">
+            <h2 class="cal-feedbackTitle" id="calFeedbackModalTitle">
+              Submit your feedback
+            </h2>
+            <button
+              type="button"
+              class="cal-feedbackClose"
+              id="calFeedbackClose"
+              aria-label="Close feedback"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true"
+                >close</span
+              >
+            </button>
+          </div>
+          <textarea
+            id="calFeedbackText"
+            class="cal-feedbackTextarea"
+            placeholder="Share your thoughts..."
+            rows="5"
+            aria-label="Your feedback"
+          ></textarea>
+          <div class="cal-feedbackFooter">
+            <span
+              class="cal-feedbackStatus"
+              id="calFeedbackStatus"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            ></span>
+            <button type="button" class="cal-primaryBtn" id="calFeedbackSubmit">
+              Submit
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
     <!-- /#cal-root -->
 

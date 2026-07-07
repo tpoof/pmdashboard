@@ -544,6 +544,113 @@
   }
 
   /* ============================================================
+   Feedback widget
+   Fixed bottom-left button + lightweight dialog. Independent of
+   the calendar's own record type (CONFIG.categoryID) — feedback
+   goes to its own dedicated form (form_bd945), indicator 13,
+   workflow step 1. Reuses apiPost/CSRF already in scope rather
+   than a separate CSRF-cascade fetch.
+   ============================================================ */
+  const FEEDBACK_FORM_ID = "form_bd945";
+  const FEEDBACK_INDICATOR_ID = "13";
+  const FEEDBACK_STEP_ID = "1";
+
+  function wireFeedbackWidget() {
+    const btn = byId("calFeedbackBtn");
+    const modal = byId("calFeedbackModal");
+    if (!btn || !modal) return;
+
+    const textarea = byId("calFeedbackText");
+    const statusEl = byId("calFeedbackStatus");
+    const submitBtn = byId("calFeedbackSubmit");
+    const closeBtn = byId("calFeedbackClose");
+    let lastFocus = null;
+
+    function openFeedback() {
+      lastFocus = document.activeElement;
+      modal.hidden = false;
+      statusEl.textContent = "";
+      textarea.focus();
+      document.addEventListener("keydown", onKeydown);
+    }
+
+    function closeFeedback() {
+      modal.hidden = true;
+      textarea.value = "";
+      statusEl.textContent = "";
+      document.removeEventListener("keydown", onKeydown);
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+
+    function onKeydown(e) {
+      if (e.key === "Escape") closeFeedback();
+    }
+
+    btn.addEventListener("click", openFeedback);
+    closeBtn.addEventListener("click", closeFeedback);
+    document.addEventListener("click", (e) => {
+      if (
+        !modal.hidden &&
+        !modal.contains(e.target) &&
+        e.target !== btn &&
+        !btn.contains(e.target)
+      ) {
+        closeFeedback();
+      }
+    });
+
+    submitBtn.addEventListener("click", async () => {
+      const text = textarea.value.trim();
+      if (!text) {
+        statusEl.textContent = "Please enter some feedback first.";
+        textarea.focus();
+        return;
+      }
+
+      submitBtn.disabled = true;
+      statusEl.textContent = "Submitting...";
+
+      try {
+        // Step 1: create the record on the feedback form
+        const createRes = await apiPost("./api/form/new", {
+          CSRFToken: CSRF,
+          title: "Calendar Feedback",
+          [`num${FEEDBACK_FORM_ID}`]: "on",
+        });
+        const newRecordID = parseInt(
+          String(createRes).trim().replace(/^"|"$/g, ""),
+          10,
+        );
+        if (!newRecordID || newRecordID <= 0) {
+          throw new Error(`Record creation returned no ID: ${createRes}`);
+        }
+
+        // Step 2: write the feedback text to the designated indicator
+        await apiPost(`./api/form/${encodeURIComponent(newRecordID)}`, {
+          recordID: newRecordID,
+          CSRFToken: CSRF,
+          [FEEDBACK_INDICATOR_ID]: text,
+        });
+
+        // Step 3: submit the record into the workflow
+        await apiPost(`./api/form/${encodeURIComponent(newRecordID)}/submit`, {
+          CSRFToken: CSRF,
+          stepID: FEEDBACK_STEP_ID,
+        });
+
+        statusEl.textContent = "Thank you for your feedback!";
+        textarea.value = "";
+        setTimeout(closeFeedback, 2000);
+      } catch (e) {
+        logDebug("feedback submission failed:", e.message);
+        statusEl.textContent = "Submission failed. Please try again.";
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  }
+
+  /* ============================================================
    Diagnostics — discover indicator IDs / categories
    Runs when window.leafCalendar.debug = true
    ============================================================ */
@@ -2782,6 +2889,7 @@
    ============================================================ */
   async function main() {
     wireControls();
+    wireFeedbackWidget();
     render(); // paints the empty grid immediately
 
     if (DEBUG) {
