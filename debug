@@ -1,85 +1,306 @@
-<script>
-  (function () {
-    var STORAGE_KEY = "leaf_pending_title_sync";
-    var STALE_MS = 5 * 60 * 1000; // 5 minutes
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>LEAF Bulk Title Updater</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body>
+    <h2>LEAF Bulk Title Updater</h2>
 
-    function getRecordID() {
-      if (typeof recordID !== "undefined" && recordID) {
-        return recordID;
-      }
-      var val = $('input[name="recordID"]').val();
-      return val ? val : null;
-    }
+    <p>
+      <label
+        >CSRFToken:
+        <input
+          type="text"
+          id="csrfToken"
+          size="70"
+          placeholder="Auto-detecting from session..."
+      /></label>
+      <span id="csrfStatus" style="margin-left: 8px; font-family: monospace;"></span>
+    </p>
 
-    function getCSRFToken() {
-      if (typeof CSRFToken !== "undefined" && CSRFToken) {
-        return CSRFToken;
-      }
-      return $('input[name="CSRFToken"]').val();
-    }
+    <table border="1" cellpadding="4">
+      <tr>
+        <th>Job</th>
+        <th>Category ID</th>
+        <th>Indicator ID</th>
+        <th></th>
+      </tr>
+      <tbody id="jobs-container"></tbody>
+    </table>
+    <br />
+    <button onclick="addJob()">+ Add Job</button>
+    <br /><br />
 
-    function sendTitleUpdate(rid, token, newTitle) {
-      $.ajax({
-        type: "POST",
-        url: "./api/form/" + rid + "/title",
-        data: {
-          title: newTitle,
-          CSRFToken: token,
-        },
-        success: function (res) {
-          var updatedTitle = (typeof res === "string" && res.trim() !== "") ? res : newTitle;
-          $("#requestTitle").text(updatedTitle);
-          $("#title").val(updatedTitle);
-        },
-        error: function (xhr, status, err) {
-          console.error("Title auto-update failed:", status, err, xhr.responseText);
+    <button onclick="startUpdate()">Run All Jobs</button>
+    <button onclick="stopUpdate()">Stop</button>
+
+    <p id="status">Ready.</p>
+
+    <div
+      id="log"
+      style="
+        height: 400px;
+        overflow-y: scroll;
+        border: 1px solid #ccc;
+        padding: 8px;
+        font-family: monospace;
+        font-size: 12px;
+      "
+    ></div>
+
+    <script>
+      var BASE_URL = "https://leaf.va.gov/platform/projects/";
+      var shouldStop = false;
+      var jobCount = 0;
+
+      // Try to auto-detect the CSRF token from the page's own session context
+      // (works when this file is served/opened from the same origin as LEAF).
+      function detectCSRFToken() {
+        if (typeof window.CSRFToken !== "undefined" && window.CSRFToken) {
+          return window.CSRFToken;
         }
-      });
-    }
-
-    $(document).ready(function () {
-      // Handle case: page just loaded after a new-record redirect,
-      // and there's a pending title waiting to be applied.
-      var pending = null;
-      try {
-        pending = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
-      } catch (e) {
-        pending = null;
-      }
-
-      if (pending && pending.title) {
-        var rid = getRecordID();
-        var token = getCSRFToken();
-        var isFresh = (Date.now() - pending.timestamp) < STALE_MS;
-
-        if (rid && token && isFresh) {
-          sendTitleUpdate(rid, token, pending.title);
+        if (typeof CSRFToken !== "undefined" && CSRFToken) {
+          return CSRFToken;
         }
-        // Clear regardless, so it never fires twice or leaks into a later record.
-        sessionStorage.removeItem(STORAGE_KEY);
+        return null;
       }
 
-      // Handle indicator #3 changes going forward.
-      $(document).on("change", "#3", function () {
-        var newTitle = $(this).val().trim();
-        if (newTitle === "") {
+      function initCSRF() {
+        var found = detectCSRFToken();
+        var statusEl = $("#csrfStatus");
+        if (found) {
+          $("#csrfToken").val(found);
+          statusEl.text("✓ auto-detected").css("color", "green");
+        } else {
+          statusEl
+            .text("not found — paste manually")
+            .css("color", "#b30000");
+        }
+      }
+
+      function getCSRFToken() {
+        // Always prefer whatever is currently in the input (covers manual
+        // override or a refreshed token), falling back to live detection.
+        var fromField = $("#csrfToken").val().trim();
+        if (fromField) return fromField;
+        return detectCSRFToken();
+      }
+
+      function addJob(categoryID, indicatorID) {
+        jobCount++;
+        var num = jobCount;
+        var row =
+          '<tr id="job-' +
+          num +
+          '">' +
+          "<td>Job " +
+          num +
+          "</td>" +
+          '<td><input type="text" class="job-category" value="' +
+          (categoryID || "") +
+          '" size="20" /></td>' +
+          '<td><input type="text" class="job-indicator" value="' +
+          (indicatorID || "") +
+          '" size="6" /></td>' +
+          "<td><button onclick=\"$('#job-" +
+          num +
+          "').remove()\">Remove</button></td>" +
+          "</tr>";
+        $("#jobs-container").append(row);
+      }
+
+      function log(msg) {
+        $("#log").append("<div>" + msg + "</div>");
+        var el = document.getElementById("log");
+        el.scrollTop = el.scrollHeight;
+      }
+
+      function stopUpdate() {
+        shouldStop = true;
+        log("Stop requested.");
+      }
+
+      async function startUpdate() {
+        shouldStop = false;
+        $("#log").empty();
+
+        var CSRFToken = getCSRFToken();
+        if (!CSRFToken) {
+          alert(
+            "Could not auto-detect your CSRFToken and none was entered manually. " +
+              "Make sure you're logged into LEAF in this browser, then reload this page.",
+          );
           return;
         }
 
-        var rid = getRecordID();
-        var token = getCSRFToken();
+        var jobs = [];
+        $("#jobs-container tr").each(function () {
+          var cat = $(this).find(".job-category").val().trim();
+          var ind = $(this).find(".job-indicator").val().trim();
+          if (ind !== "") jobs.push({ categoryID: cat, indicatorID: ind });
+        });
 
-        if (rid && token) {
-          // Existing record: update immediately.
-          sendTitleUpdate(rid, token, newTitle);
-        } else {
-          // New/unsaved record: stash for after redirect.
-          sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-            title: newTitle,
-            timestamp: Date.now()
-          }));
+        if (jobs.length === 0) {
+          alert("Please add at least one job.");
+          return;
         }
-      });
-    });
-  })();
-</script>
+
+        var totalUpdated = 0,
+          totalSkipped = 0,
+          totalErrors = 0;
+
+        for (var j = 0; j < jobs.length; j++) {
+          if (shouldStop) break;
+
+          var job = jobs[j];
+          log(
+            "--- Job " +
+              (j + 1) +
+              ": Category=" +
+              (job.categoryID || "ALL") +
+              " Indicator=" +
+              job.indicatorID +
+              " ---",
+          );
+
+          var terms = [{ id: "deleted", operator: "=", match: "0" }];
+          if (job.categoryID !== "") {
+            terms.push({
+              id: "categoryID",
+              operator: "=",
+              match: job.categoryID,
+              gate: "AND",
+            });
+          }
+
+          var records;
+          try {
+            records = await $.ajax({
+              type: "GET",
+              url: BASE_URL + "api/form/query",
+              data: {
+                q: JSON.stringify({ terms: terms }),
+                "x-filterData": "recordID",
+              },
+              dataType: "json",
+            });
+          } catch (e) {
+            log("ERROR fetching records: " + e.statusText);
+            continue;
+          }
+
+          var recordIDs = Object.keys(records);
+          log("Found " + recordIDs.length + " records.");
+
+          var updated = 0,
+            skipped = 0,
+            errors = 0;
+
+          for (var i = 0; i < recordIDs.length; i++) {
+            if (shouldStop) break;
+
+            var recordID = recordIDs[i];
+            $("#status").text(
+              "Job " +
+                (j + 1) +
+                " — " +
+                (i + 1) +
+                "/" +
+                recordIDs.length +
+                " (Record #" +
+                recordID +
+                ")",
+            );
+
+            try {
+              var titleValue = await $.ajax({
+                type: "GET",
+                url:
+                  BASE_URL +
+                  "ajaxIndex.php?a=getprintindicator&recordID=" +
+                  recordID +
+                  "&indicatorID=" +
+                  job.indicatorID +
+                  "&series=1",
+                dataType: "text",
+              });
+
+              // Parse response as HTML so the browser handles all tags and scripts
+              var parser = new DOMParser();
+              var doc = parser.parseFromString(titleValue, "text/html");
+              // Remove all script elements
+              doc.querySelectorAll("script").forEach(function (s) {
+                s.remove();
+              });
+              // Get plain text only
+              titleValue = (
+                doc.body.innerText ||
+                doc.body.textContent ||
+                ""
+              ).trim();
+
+              if (!titleValue) {
+                log("#" + recordID + " — skipped (empty)");
+                skipped++;
+              } else {
+                await $.ajax({
+                  type: "POST",
+                  url: BASE_URL + "api/form/" + recordID + "/title",
+                  data: { title: titleValue, CSRFToken: getCSRFToken() },
+                });
+                log("#" + recordID + ' — updated: "' + titleValue + '"');
+                updated++;
+              }
+            } catch (e) {
+              log("#" + recordID + " — ERROR: " + (e.statusText || e));
+              errors++;
+            }
+
+            await new Promise((r) => setTimeout(r, 150));
+          }
+
+          totalUpdated += updated;
+          totalSkipped += skipped;
+          totalErrors += errors;
+          log(
+            "Job " +
+              (j + 1) +
+              " done — Updated: " +
+              updated +
+              " | Skipped: " +
+              skipped +
+              " | Errors: " +
+              errors,
+          );
+        }
+
+        $("#status").text(
+          "Done. Updated: " +
+            totalUpdated +
+            " | Skipped: " +
+            totalSkipped +
+            " | Errors: " +
+            totalErrors,
+        );
+        log(
+          "=== COMPLETE — Updated: " +
+            totalUpdated +
+            " | Skipped: " +
+            totalSkipped +
+            " | Errors: " +
+            totalErrors +
+            " ===",
+        );
+      }
+
+      // Pre-load the two jobs
+      addJob("form_9b302", "9");
+      addJob("form_55445", "3");
+
+      // Attempt CSRF auto-detection as soon as the page loads
+      $(document).ready(initCSRF);
+    </script>
+  </body>
+</html>
