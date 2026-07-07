@@ -828,8 +828,6 @@
         seen[e.author] = peopleCache[e.author] || e.authorName || e.author;
     });
     state.authors = seen;
-    console.log("[TEMP DIAG] peopleCache:", JSON.stringify(peopleCache));
-    console.log("[TEMP DIAG] seen (author -> label):", JSON.stringify(seen));
     const options = Object.keys(seen)
       .sort((a, b) => String(seen[a]).localeCompare(String(seen[b])))
       .map((uid) => ({ value: uid, label: seen[uid] }));
