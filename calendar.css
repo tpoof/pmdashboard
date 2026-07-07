@@ -371,6 +371,79 @@
   outline-offset: 2px;
 }
 
+/* Multi-select filter dropdowns (Type / Author / Assigned to) */
+.cal-msSelect {
+  position: relative;
+}
+.cal-msBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 150px;
+  font-family: var(--cal-font);
+  font-size: 14px;
+  color: var(--cal-text);
+  background: var(--cal-surface);
+  border: 1px solid var(--cal-border-strong);
+  border-radius: var(--cal-radius-sm);
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.cal-msBtn:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 1px;
+}
+.cal-msBtn .material-symbols-outlined {
+  font-size: 18px !important;
+  color: var(--cal-muted);
+}
+.cal-msBtnLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cal-msPanel {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 200px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--cal-surface);
+  border: 1px solid var(--cal-border-strong);
+  border-radius: var(--cal-radius-sm);
+  box-shadow: var(--cal-shadow-md);
+  padding: 6px;
+}
+.cal-msPanel[hidden] {
+  display: none;
+}
+.cal-msOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cal-msOption:hover {
+  background: var(--cal-surface-alt);
+}
+.cal-msOption input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--cal-focus);
+  outline-offset: 2px;
+}
+.cal-msEmpty {
+  font-size: 13px;
+  color: var(--cal-muted);
+  padding: 6px 8px;
+  font-style: italic;
+}
+
 /* ── Legend ───────────────────────────────────────────── */
 .cal-legendRow {
   display: flex;

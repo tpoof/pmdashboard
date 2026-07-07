@@ -106,29 +106,82 @@
 
           <!-- Filter row -->
           <div class="cal-filterRow">
-            <label class="cal-filterField">
-              <span class="cal-filterLabel">Type</span>
-              <select id="calFilterType" class="cal-select">
-                <option value="">All types</option>
-                <option value="Daily Scrum">Daily Scrum</option>
-                <option value="Meeting Notes">Meeting Notes</option>
-                <option value="Action Item">Action Items</option>
-                <option value="Out-of-Office">Out-of-Office</option>
-                <option value="General Log">General Log</option>
-              </select>
-            </label>
-            <label class="cal-filterField">
-              <span class="cal-filterLabel">Author</span>
-              <select id="calFilterAuthor" class="cal-select">
-                <option value="">Everyone</option>
-              </select>
-            </label>
-            <label class="cal-filterField">
-              <span class="cal-filterLabel">Assigned to</span>
-              <select id="calFilterAssignee" class="cal-select">
-                <option value="">Anyone</option>
-              </select>
-            </label>
+            <div class="cal-filterField">
+              <span class="cal-filterLabel" id="calFilterTypeLabel">Type</span>
+              <div class="cal-msSelect" id="calFilterTypeMS">
+                <button
+                  type="button"
+                  class="cal-msBtn"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-labelledby="calFilterTypeLabel"
+                >
+                  <span class="cal-msBtnLabel">All types</span>
+                  <span class="material-symbols-outlined" aria-hidden="true"
+                    >expand_more</span
+                  >
+                </button>
+                <div
+                  class="cal-msPanel"
+                  role="listbox"
+                  aria-multiselectable="true"
+                  aria-label="Type"
+                  hidden
+                ></div>
+              </div>
+            </div>
+            <div class="cal-filterField">
+              <span class="cal-filterLabel" id="calFilterAuthorLabel"
+                >Author</span
+              >
+              <div class="cal-msSelect" id="calFilterAuthorMS">
+                <button
+                  type="button"
+                  class="cal-msBtn"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-labelledby="calFilterAuthorLabel"
+                >
+                  <span class="cal-msBtnLabel">Everyone</span>
+                  <span class="material-symbols-outlined" aria-hidden="true"
+                    >expand_more</span
+                  >
+                </button>
+                <div
+                  class="cal-msPanel"
+                  role="listbox"
+                  aria-multiselectable="true"
+                  aria-label="Author"
+                  hidden
+                ></div>
+              </div>
+            </div>
+            <div class="cal-filterField">
+              <span class="cal-filterLabel" id="calFilterAssigneeLabel"
+                >Assigned to</span
+              >
+              <div class="cal-msSelect" id="calFilterAssigneeMS">
+                <button
+                  type="button"
+                  class="cal-msBtn"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-labelledby="calFilterAssigneeLabel"
+                >
+                  <span class="cal-msBtnLabel">Anyone</span>
+                  <span class="material-symbols-outlined" aria-hidden="true"
+                    >expand_more</span
+                  >
+                </button>
+                <div
+                  class="cal-msPanel"
+                  role="listbox"
+                  aria-multiselectable="true"
+                  aria-label="Assigned to"
+                  hidden
+                ></div>
+              </div>
+            </div>
             <label class="cal-filterField cal-filterSearch">
               <span class="cal-filterLabel">Search</span>
               <input
