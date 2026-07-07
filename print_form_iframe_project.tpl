@@ -322,13 +322,14 @@ function getIndicatorLog(indicatorID, series) {
     });
 }
 
-// ── Project Key -> Project Title lookup (for Task indicator 8 printout) ────
-// indicatorID 8 = Task's "Project Key" (plain text, string-matched to the
-// Project form's indicatorID 2). This map lets the printout show
-// "KEY — Project Title" instead of just the raw key.
+// ── Key -> Label lookups for print indicators ──────────────────────────────
+// indicatorID 8  = Task's "Project Key" (string-matched to Project form id 2)
+// indicatorID 30 = Task's "OKR Key" / Primary Objective (string-matched to
+//                  the OKR form's id 23), displayed as "OKR Key — Objective"
 var projectKeyToTitle = {};
+var okrKeyToObjective = {};
 
-function normalizeProjectKey(val) {
+function normalizeLookupKey(val) {
     return String(val || '')
         .replace(/\u00A0/g, ' ')
         .trim()
@@ -336,58 +337,88 @@ function normalizeProjectKey(val) {
         .toUpperCase();
 }
 
-function loadProjectKeyTitleMap() {
-    console.log('[pk-title-debug] loadProjectKeyTitleMap() called. LeafFormQuery defined?', typeof LeafFormQuery !== 'undefined');
+function ensureLeafFormQuery(onReady, debugTag) {
+    if (typeof LeafFormQuery !== 'undefined') {
+        onReady();
+        return;
+    }
+    console.log('[' + debugTag + '] LeafFormQuery not found, attempting to load js/formQuery.js...');
+    $.ajax({
+        type: 'GET',
+        url: 'js/formQuery.js',
+        dataType: 'script',
+        success: function() {
+            console.log('[' + debugTag + '] js/formQuery.js loaded successfully.');
+            onReady();
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            console.log('[' + debugTag + '] There was an error getting formQuery.js!', textStatus, errorThrown);
+        }
+    });
+}
+
+// Generic loader: queries a form for [keyIndicatorID, labelIndicatorID],
+// populates targetMap, then re-applies to any matching indicator elements
+// already rendered on the page.
+function loadKeyLabelMap(config) {
+    var keyIndicatorID = config.keyIndicatorID;
+    var labelIndicatorID = config.labelIndicatorID;
+    var targetMap = config.targetMap;
+    var appliesToIndicatorID = config.appliesToIndicatorID;
+    var debugTag = config.debugTag;
+    console.log('[' + debugTag + '] loadKeyLabelMap() called. LeafFormQuery defined?', typeof LeafFormQuery !== 'undefined');
 
     function fetchMap() {
-        console.log('[pk-title-debug] fetchMap() running, building LeafFormQuery...');
+        console.log('[' + debugTag + '] fetchMap() running, building LeafFormQuery...');
         var query = new LeafFormQuery();
         query.addTerm('deleted', '=', '0');
-        query.getData([2, 3]); // 2 = Project Key, 3 = Project Name
+        query.getData([keyIndicatorID, labelIndicatorID]);
         query.setExtraParams('&x-filterData=recordID');
         query.execute().then(function(result) {
-            console.log('[pk-title-debug] query.execute() resolved. Raw result:', result);
+            console.log('[' + debugTag + '] query.execute() resolved. Raw result:', result);
             var recordIDs = Object.keys(result || {});
-            console.log('[pk-title-debug] number of project records returned:', recordIDs.length);
+            console.log('[' + debugTag + '] number of records returned:', recordIDs.length);
             recordIDs.forEach(function(recordID) {
                 var row = result[recordID];
                 var s1 = row.s1 || row;
-                var key = normalizeProjectKey(s1['id2']);
-                var title = s1['id3'];
-                console.log('[pk-title-debug] record', recordID, 'raw s1:', s1, '-> key:', key, 'title:', title);
-                if (key && title && projectKeyToTitle[key] === undefined) {
-                    projectKeyToTitle[key] = String(title).trim();
+                var key = normalizeLookupKey(s1['id' + keyIndicatorID]);
+                var label = s1['id' + labelIndicatorID];
+                if (key && label && targetMap[key] === undefined) {
+                    targetMap[key] = String(label).trim();
                 }
             });
-            console.log('[pk-title-debug] final projectKeyToTitle map:', projectKeyToTitle);
-            // Re-apply to whatever indicator 8 elements are already on the page
-            var indicator8Els = $('[id^="xhrIndicator_8_"]');
-            console.log('[pk-title-debug] re-applying to', indicator8Els.length, 'already-rendered indicator 8 element(s)');
-            indicator8Els.each(function() {
-                applyProjectKeyTitle($(this));
+            console.log('[' + debugTag + '] final map:', targetMap);
+            var els = $('[id^="xhrIndicator_' + appliesToIndicatorID + '_"]');
+            console.log('[' + debugTag + '] re-applying to', els.length, 'already-rendered element(s)');
+            els.each(function() {
+                applyKeyLabelSuffix($(this), targetMap, debugTag);
             });
         }).catch(function(err) {
-            console.log('[pk-title-debug] There was an error loading the project key/title map!', err);
+            console.log('[' + debugTag + '] There was an error loading the map!', err);
         });
     }
 
-    if (typeof LeafFormQuery === 'undefined') {
-        console.log('[pk-title-debug] LeafFormQuery not found, attempting to load js/formQuery.js...');
-        $.ajax({
-            type: 'GET',
-            url: 'js/formQuery.js',
-            dataType: 'script',
-            success: function() {
-                console.log('[pk-title-debug] js/formQuery.js loaded successfully.');
-                fetchMap();
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
-                console.log('[pk-title-debug] There was an error getting formQuery.js!', textStatus, errorThrown);
-            }
-        });
-    } else {
-        fetchMap();
-    }
+    ensureLeafFormQuery(fetchMap, debugTag);
+}
+
+function loadProjectKeyTitleMap() {
+    loadKeyLabelMap({
+        keyIndicatorID: 2,
+        labelIndicatorID: 3,
+        targetMap: projectKeyToTitle,
+        appliesToIndicatorID: 8,
+        debugTag: 'pk-title-debug'
+    });
+}
+
+function loadOkrKeyObjectiveMap() {
+    loadKeyLabelMap({
+        keyIndicatorID: 23,
+        labelIndicatorID: 24,
+        targetMap: okrKeyToObjective,
+        appliesToIndicatorID: 30,
+        debugTag: 'okr-title-debug'
+    });
 }
 
 function extractCleanIndicatorText(xhrIndicator) {
@@ -410,19 +441,29 @@ function extractCleanIndicatorText(xhrIndicator) {
     return firstLine;
 }
 
-function applyProjectKeyTitle(xhrIndicator) {
+// Appends " — Label" after an indicator's raw key text, matched against
+// the given lookup map. Font styling is set to inherit so the suffix
+// matches whatever font the field itself uses (e.g. monospace).
+function applyKeyLabelSuffix(xhrIndicator, lookupMap, debugTag) {
     var rawText = extractCleanIndicatorText(xhrIndicator);
-    var rawKey = normalizeProjectKey(rawText);
-    var match = projectKeyToTitle[rawKey];
-    console.log('[pk-title-debug] applyProjectKeyTitle() raw text:', JSON.stringify(rawText), '-> normalized key:', JSON.stringify(rawKey), '-> match found?', match !== undefined, match);
+    var rawKey = normalizeLookupKey(rawText);
+    var match = lookupMap[rawKey];
+    console.log('[' + debugTag + '] raw text:', JSON.stringify(rawText), '-> normalized key:', JSON.stringify(rawKey), '-> match found?', match !== undefined, match);
     if (rawKey && match !== undefined) {
-        if (xhrIndicator.find('.pm-projectTitleSuffix').length === 0) {
+        if (xhrIndicator.find('.pm-keyLabelSuffix').length === 0) {
             xhrIndicator.append(
-                $('<span class="pm-projectTitleSuffix"></span>').text(' — ' + match)
+                $('<span class="pm-keyLabelSuffix"></span>')
+                    .css({
+                        'font-family': 'inherit',
+                        'font-size': 'inherit',
+                        'font-weight': 'inherit',
+                        'font-style': 'inherit'
+                    })
+                    .text(' — ' + match)
             );
-            console.log('[pk-title-debug] appended title suffix for key', rawKey);
+            console.log('[' + debugTag + '] appended suffix for key', rawKey);
         } else {
-            console.log('[pk-title-debug] suffix already present, skipping append for key', rawKey);
+            console.log('[' + debugTag + '] suffix already present, skipping append for key', rawKey);
         }
     }
 }
@@ -440,7 +481,9 @@ function getIndicator(indicatorID, series) {
             var xhrIndicator = $("#xhrIndicator_" + indicatorID + "_" + series);
             xhrIndicator.empty().html(response);
             if (parseInt(indicatorID) === 8) {
-                applyProjectKeyTitle(xhrIndicator);
+                applyKeyLabelSuffix(xhrIndicator, projectKeyToTitle, 'pk-title-debug');
+            } else if (parseInt(indicatorID) === 30) {
+                applyKeyLabelSuffix(xhrIndicator, okrKeyToObjective, 'okr-title-debug');
             }
             xhrIndicator.fadeOut(250, function() {
                 xhrIndicator.fadeIn(250);
@@ -523,6 +566,7 @@ var lastScreenSize = null;
 
 $(function() {
     loadProjectKeyTitleMap();
+    loadOkrKeyObjectiveMap();
 
     form = new LeafForm('formContainer');
     form.setRecordID(<!--{$recordID}-->);
