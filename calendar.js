@@ -432,12 +432,12 @@
    LEAF API helpers
    ============================================================ */
   function recordViewURL(recordID) {
-    const base = CONFIG.recordViewBase || "";
-    if (!base || base.indexOf("REPLACE_ME") === 0) {
-      // Relative fallback — works when the app is served from the site root
-      return `index.php?a=printview&recordID=${encodeURIComponent(recordID)}`;
-    }
-    return `${base}${encodeURIComponent(recordID)}`;
+    // Always relative — guarantees the iframe is same-origin with whatever
+    // host actually served this page (prod, preprod, etc.), which is
+    // required for suppressRecordFrameHeader() to reach into the iframe's
+    // document at all. CONFIG.recordViewBase is intentionally unused here;
+    // left in CONFIG in case something else still references it.
+    return `index.php?a=printview&recordID=${encodeURIComponent(recordID)}`;
   }
 
   function encodeBody(obj) {
@@ -638,9 +638,7 @@
     const og = series && series[`id${indicatorID}_orgchart`];
     if (!og) return "";
     if (og.lastName || og.firstName) {
-      return `${og.lastName || ""}, ${og.firstName || ""}${og.middleName ? ` ${og.middleName}` : ""}`
-        .trim()
-        .replace(/^,\s*/, "");
+      return `${og.firstName || ""} ${og.lastName || ""}`.trim();
     }
     return og.userName ? String(og.userName).trim() : "";
   }
@@ -2102,7 +2100,7 @@
       .then((res) => {
         const empUID = String(res).trim();
         const name = data
-          ? `${data.lastName || ""}, ${data.firstName || ""}${data.middleName ? ` ${data.middleName}` : ""}`.trim()
+          ? `${data.firstName || ""} ${data.lastName || ""}`.trim()
           : userName;
         pickPerson(role, empUID, name, userName);
       })
