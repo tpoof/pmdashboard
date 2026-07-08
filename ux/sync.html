@@ -1,795 +1,784 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>HCD Weekly Sync</title>
-    <link rel="stylesheet" href="/platform/designs/files/smarty_styles.css" />
-    <style>
-      body.smarty.page-hcdsync {
-        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
-        background: var(--bg);
-        margin: 0;
-        padding: var(--space-6);
-        color: var(--text);
-      }
-      .page-hcdsync h1 {
-        font-size: 19px;
-        margin: 0 0 4px;
-        color: var(--text);
-      }
-      .page-hcdsync .sub {
-        color: var(--muted);
-        font-size: 13px;
-        margin-bottom: 22px;
-      }
+<link rel="stylesheet" href="/platform/designs/files/smarty_styles.css" />
+<style>
+  .page-hcdsync {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: var(--space-6);
+  }
+  .page-hcdsync h1 {
+    font-size: 19px;
+    margin: 0 0 4px;
+    color: var(--text);
+  }
+  .page-hcdsync .sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 22px;
+  }
 
-      .page-hcdsync .section {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        box-shadow: var(--shadow-sm);
-        padding: var(--space-4) var(--space-6);
-        margin-bottom: var(--space-4);
-      }
+  .page-hcdsync .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-4) var(--space-6);
+    margin-bottom: var(--space-4);
+  }
 
-      /* Collapsed submit trigger */
-      .page-hcdsync #logToggleBtn {
-        background: var(--accent);
-        color: #fff;
-        border: none;
-        border-radius: var(--radius-sm);
-        padding: 10px 16px;
-        font-size: 13.5px;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      .page-hcdsync #logToggleBtn:hover {
-        background: var(--accent-strong);
-      }
+  /* Collapsed submit trigger */
+  .page-hcdsync #logToggleBtn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 10px 16px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .page-hcdsync #logToggleBtn:hover {
+    background: var(--accent-strong);
+  }
 
-      /* Submit form */
-      .page-hcdsync #logForm {
-        margin-top: var(--space-4);
-        display: none;
-      }
-      .page-hcdsync #logForm.open {
-        display: block;
-      }
-      .page-hcdsync .field-row {
-        margin-bottom: var(--space-3);
-      }
-      .page-hcdsync .field-row label {
-        display: block;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--muted);
-        margin-bottom: 4px;
-      }
-      .page-hcdsync .field-row input[type="text"],
-      .page-hcdsync .field-row input[type="date"],
-      .page-hcdsync .field-row select,
-      .page-hcdsync .field-row textarea {
-        width: 100%;
-        box-sizing: border-box;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        padding: 8px 10px;
-        font-size: 13.5px;
-        font-family: inherit;
-        color: var(--text);
-        background: var(--surface);
-      }
-      .page-hcdsync .field-row input:focus,
-      .page-hcdsync .field-row select:focus,
-      .page-hcdsync .field-row textarea:focus {
-        outline: 2px solid var(--accent);
-        outline-offset: 1px;
-        border-color: var(--accent);
-      }
-      .page-hcdsync .field-row textarea {
-        min-height: 56px;
-        resize: vertical;
-      }
-      .page-hcdsync .grid-2 {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: var(--space-4);
-      }
-      .page-hcdsync #submitBtn {
-        background: #22a35d;
-        color: #fff;
-        border: none;
-        border-radius: var(--radius-sm);
-        padding: 9px 18px;
-        font-size: 13.5px;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      .page-hcdsync #submitBtn:disabled {
-        opacity: 0.6;
-        cursor: default;
-      }
-      .page-hcdsync #submitStatus {
-        font-size: 12.5px;
-        margin-left: 10px;
-        color: var(--muted);
-      }
+  /* Submit form */
+  .page-hcdsync #logForm {
+    margin-top: var(--space-4);
+    display: none;
+  }
+  .page-hcdsync #logForm.open {
+    display: block;
+  }
+  .page-hcdsync .field-row {
+    margin-bottom: var(--space-3);
+  }
+  .page-hcdsync .field-row label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .page-hcdsync .field-row input[type="text"],
+  .page-hcdsync .field-row input[type="date"],
+  .page-hcdsync .field-row select,
+  .page-hcdsync .field-row textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    font-size: 13.5px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--surface);
+  }
+  .page-hcdsync .field-row input:focus,
+  .page-hcdsync .field-row select:focus,
+  .page-hcdsync .field-row textarea:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+  }
+  .page-hcdsync .field-row textarea {
+    min-height: 56px;
+    resize: vertical;
+  }
+  .page-hcdsync .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+  .page-hcdsync #submitBtn {
+    background: #22a35d;
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 9px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .page-hcdsync #submitBtn:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  .page-hcdsync #submitStatus {
+    font-size: 12.5px;
+    margin-left: 10px;
+    color: var(--muted);
+  }
 
-      /* Search */
-      .page-hcdsync #searchInput {
-        width: 100%;
-        box-sizing: border-box;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        padding: 10px 14px;
-        font-size: 13.5px;
-        color: var(--text);
-        background: var(--surface);
-      }
-      .page-hcdsync #searchInput:focus {
-        outline: 2px solid var(--accent);
-        outline-offset: 1px;
-        border-color: var(--accent);
-      }
+  /* Search */
+  .page-hcdsync #searchInput {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13.5px;
+    color: var(--text);
+    background: var(--surface);
+  }
+  .page-hcdsync #searchInput:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+  }
 
-      /* Heatmap */
-      .page-hcdsync .heatmap {
-        display: flex;
-        gap: 6px;
-        margin: var(--space-4) 0 4px;
-        flex-wrap: wrap;
-      }
-      .page-hcdsync .heat-cell {
-        flex: 0 0 auto;
-        text-align: center;
-        width: 52px;
-      }
-      .page-hcdsync .heat-block {
-        height: 32px;
-        border-radius: var(--radius-sm);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-        color: #fff;
-        font-weight: 700;
-        cursor: pointer;
-        border: 2px solid transparent;
-      }
-      .page-hcdsync .heat-block.selected {
-        border-color: var(--text);
-        box-shadow: 0 0 0 2px #fff inset;
-      }
-      .page-hcdsync .heat-label {
-        font-size: 9.5px;
-        color: var(--muted);
-        margin-top: 3px;
-      }
-      .page-hcdsync .ontrack {
-        background: #22a35d;
-      }
-      .page-hcdsync .atrisk {
-        background: #e0a800;
-      }
-      .page-hcdsync .blocked {
-        background: var(--danger);
-      }
-      .page-hcdsync .nostatus {
-        background: #c7cad1;
-      }
+  /* Heatmap */
+  .page-hcdsync .heatmap {
+    display: flex;
+    gap: 6px;
+    margin: var(--space-4) 0 4px;
+    flex-wrap: wrap;
+  }
+  .page-hcdsync .heat-cell {
+    flex: 0 0 auto;
+    text-align: center;
+    width: 52px;
+  }
+  .page-hcdsync .heat-block {
+    height: 32px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    border: 2px solid transparent;
+  }
+  .page-hcdsync .heat-block.selected {
+    border-color: var(--text);
+    box-shadow: 0 0 0 2px #fff inset;
+  }
+  .page-hcdsync .heat-label {
+    font-size: 9.5px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .page-hcdsync .ontrack {
+    background: #22a35d;
+  }
+  .page-hcdsync .atrisk {
+    background: #e0a800;
+  }
+  .page-hcdsync .blocked {
+    background: var(--danger);
+  }
+  .page-hcdsync .nostatus {
+    background: #c7cad1;
+  }
 
-      /* Table */
-      .page-hcdsync table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-        margin-top: var(--space-3);
-      }
-      .page-hcdsync th {
-        text-align: left;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.02em;
-        color: var(--muted);
-        border-bottom: 1px solid var(--border);
-        padding: 8px 10px;
-        white-space: nowrap;
-      }
-      .page-hcdsync td {
-        padding: 10px;
-        border-bottom: 1px solid var(--border);
-        vertical-align: top;
-        color: var(--text);
-      }
-      .page-hcdsync tr.row-hidden {
-        display: none;
-      }
-      .page-hcdsync tr.row-selected {
-        background: var(--surface-alt);
-      }
-      .page-hcdsync .pill {
-        display: inline-block;
-        padding: 2px 9px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 700;
-        color: #fff;
-        white-space: nowrap;
-      }
-      .page-hcdsync .flag {
-        display: inline-block;
-        font-size: 10.5px;
-        font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 12px;
-        margin-left: 6px;
-        white-space: nowrap;
-      }
-      .page-hcdsync .flag-blocked {
-        background: #fdecec;
-        color: var(--danger);
-      }
-      .page-hcdsync .flag-atrisk {
-        background: #fff6e0;
-        color: #8a6300;
-      }
-      .page-hcdsync .empty-state {
-        color: var(--muted);
-        font-size: 13px;
-        padding: 20px 0;
-        text-align: center;
-      }
-    </style>
-  </head>
-  <body class="smarty page-hcdsync">
-    <h1>HCD Weekly Sync</h1>
-    <div class="sub">
-      Weekly log for HCD Specialist 1:1s — updated by the specialist, reviewed
-      by the Design Lead.
-    </div>
+  /* Table */
+  .page-hcdsync table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: var(--space-3);
+  }
+  .page-hcdsync th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 10px;
+    white-space: nowrap;
+  }
+  .page-hcdsync td {
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    color: var(--text);
+  }
+  .page-hcdsync tr.row-hidden {
+    display: none;
+  }
+  .page-hcdsync tr.row-selected {
+    background: var(--surface-alt);
+  }
+  .page-hcdsync .pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .page-hcdsync .flag {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 6px;
+    white-space: nowrap;
+  }
+  .page-hcdsync .flag-blocked {
+    background: #fdecec;
+    color: var(--danger);
+  }
+  .page-hcdsync .flag-atrisk {
+    background: #fff6e0;
+    color: #8a6300;
+  }
+  .page-hcdsync .empty-state {
+    color: var(--muted);
+    font-size: 13px;
+    padding: 20px 0;
+    text-align: center;
+  }
+</style>
 
-    <!-- SUBMIT SECTION -->
-    <div class="section">
-      <button type="button" id="logToggleBtn">+ Log this week's sync</button>
+<div class="page-hcdsync">
+  <h1>HCD Weekly Sync</h1>
+  <div class="sub">
+    Weekly log for HCD Specialist 1:1s — updated by the specialist, reviewed by
+    the Design Lead.
+  </div>
 
-      <form id="logForm">
-        <div class="grid-2">
-          <div class="field-row">
-            <label for="f_weekOf">Week Of</label>
-            <input type="date" id="f_weekOf" name="weekOf" />
-          </div>
-          <div class="field-row">
-            <label for="f_status">Dev Story Status</label>
-            <select id="f_status" name="status">
-              <option value="On Track">On Track</option>
-              <option value="At Risk">At Risk</option>
-              <option value="Blocked">Blocked</option>
-            </select>
-          </div>
-        </div>
+  <!-- SUBMIT SECTION -->
+  <div class="section">
+    <button type="button" id="logToggleBtn">+ Log this week's sync</button>
 
+    <form id="logForm">
+      <div class="grid-2">
         <div class="field-row">
-          <label for="f_devStory">Current Dev Story</label>
-          <input
-            type="text"
-            id="f_devStory"
-            name="devStory"
-            placeholder="e.g., Redesign onboarding flow (Sprint 14)"
-          />
+          <label for="f_weekOf">Week Of</label>
+          <input type="date" id="f_weekOf" name="weekOf" />
         </div>
-
         <div class="field-row">
-          <label for="f_nextSprints">Next 2 Sprints Planned</label>
-          <textarea
-            id="f_nextSprints"
-            name="nextSprints"
-            placeholder="Sprint 15: ... &#10;Sprint 16: ..."
-          ></textarea>
+          <label for="f_status">Dev Story Status</label>
+          <select id="f_status" name="status">
+            <option value="On Track">On Track</option>
+            <option value="At Risk">At Risk</option>
+            <option value="Blocked">Blocked</option>
+          </select>
         </div>
-
-        <div class="field-row">
-          <label for="f_ops">Ops Stories This Week</label>
-          <textarea id="f_ops" name="ops"></textarea>
-        </div>
-
-        <div class="grid-2">
-          <div class="field-row">
-            <label for="f_questions">Clarifying Questions</label>
-            <textarea id="f_questions" name="questions"></textarea>
-          </div>
-          <div class="field-row">
-            <label for="f_blockers">Blockers / Risks</label>
-            <textarea id="f_blockers" name="blockers"></textarea>
-          </div>
-        </div>
-
-        <div class="field-row">
-          <label for="f_notes"
-            >Design Lead Notes
-            <span style="font-weight: 400; color: var(--muted)"
-              >(optional, filled during sync)</span
-            ></label
-          >
-          <textarea id="f_notes" name="notes"></textarea>
-        </div>
-
-        <button type="button" id="submitBtn">Submit Entry</button>
-        <span id="submitStatus"></span>
-      </form>
-    </div>
-
-    <!-- SEARCH -->
-    <div class="section">
-      <input
-        type="text"
-        id="searchInput"
-        placeholder="Search dev stories, ops, questions, notes, or a date (e.g. Jun, 6/22)..."
-      />
-    </div>
-
-    <!-- HEATMAP + TABLE -->
-    <div class="section">
-      <div id="heatmapWrap" class="heatmap"></div>
-
-      <table id="syncTable">
-        <thead>
-          <tr>
-            <th>Week Of</th>
-            <th>Dev Story</th>
-            <th>Status</th>
-            <th>Next 2 Sprints</th>
-            <th>Ops</th>
-            <th>Questions</th>
-            <th>Blockers</th>
-            <th>Design Lead Notes</th>
-          </tr>
-        </thead>
-        <tbody id="syncTableBody"></tbody>
-      </table>
-      <div id="emptyState" class="empty-state" style="display: none">
-        No entries yet.
       </div>
-    </div>
 
-    <script>
-      (function () {
-        /* ============================================================
+      <div class="field-row">
+        <label for="f_devStory">Current Dev Story</label>
+        <input
+          type="text"
+          id="f_devStory"
+          name="devStory"
+          placeholder="e.g., Redesign onboarding flow (Sprint 14)"
+        />
+      </div>
+
+      <div class="field-row">
+        <label for="f_nextSprints">Next 2 Sprints Planned</label>
+        <textarea
+          id="f_nextSprints"
+          name="nextSprints"
+          placeholder="Sprint 15: ... &#10;Sprint 16: ..."
+        ></textarea>
+      </div>
+
+      <div class="field-row">
+        <label for="f_ops">Ops Stories This Week</label>
+        <textarea id="f_ops" name="ops"></textarea>
+      </div>
+
+      <div class="grid-2">
+        <div class="field-row">
+          <label for="f_questions">Clarifying Questions</label>
+          <textarea id="f_questions" name="questions"></textarea>
+        </div>
+        <div class="field-row">
+          <label for="f_blockers">Blockers / Risks</label>
+          <textarea id="f_blockers" name="blockers"></textarea>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <label for="f_notes"
+          >Design Lead Notes
+          <span style="font-weight: 400; color: var(--muted)"
+            >(optional, filled during sync)</span
+          ></label
+        >
+        <textarea id="f_notes" name="notes"></textarea>
+      </div>
+
+      <button type="button" id="submitBtn">Submit Entry</button>
+      <span id="submitStatus"></span>
+    </form>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="section">
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Search dev stories, ops, questions, notes, or a date (e.g. Jun, 6/22)..."
+    />
+  </div>
+
+  <!-- HEATMAP + TABLE -->
+  <div class="section">
+    <div id="heatmapWrap" class="heatmap"></div>
+
+    <table id="syncTable">
+      <thead>
+        <tr>
+          <th>Week Of</th>
+          <th>Dev Story</th>
+          <th>Status</th>
+          <th>Next 2 Sprints</th>
+          <th>Ops</th>
+          <th>Questions</th>
+          <th>Blockers</th>
+          <th>Design Lead Notes</th>
+        </tr>
+      </thead>
+      <tbody id="syncTableBody"></tbody>
+    </table>
+    <div id="emptyState" class="empty-state" style="display: none">
+      No entries yet.
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      /* ============================================================
      CONFIG — fill these in after creating the LEAF form
      ============================================================ */
-        var FORM_CATEGORY_ID = "REPLACE_WITH_CATEGORY_ID"; // e.g. numeric ID shown in Form Editor URL
-        var SUBMIT_STEP_ID = null; // set if form requires explicit /submit step; else leave null
+      var FORM_CATEGORY_ID = "form_ac61e"; // HCD Weekly Sync form category
+      var SUBMIT_STEP_ID = null; // set if form requires explicit /submit step; else leave null
 
-        var INDICATORS = {
-          weekOf: "REPLACE_ID",
-          devStory: "REPLACE_ID",
-          status: "REPLACE_ID",
-          nextSprints: "REPLACE_ID",
-          ops: "REPLACE_ID",
-          questions: "REPLACE_ID",
-          blockers: "REPLACE_ID",
-          notes: "REPLACE_ID",
-        };
+      var INDICATORS = {
+        weekOf: "26",
+        devStory: "27",
+        status: "28",
+        nextSprints: "29",
+        ops: "30",
+        questions: "31",
+        blockers: "32",
+        notes: "33",
+      };
 
-        var STATUS_ORDER = { "On Track": 0, "At Risk": 1, Blocked: 2 };
-        var STATUS_CLASS = {
-          "On Track": "ontrack",
-          "At Risk": "atrisk",
-          Blocked: "blocked",
-        };
+      var STATUS_ORDER = { "On Track": 0, "At Risk": 1, Blocked: 2 };
+      var STATUS_CLASS = {
+        "On Track": "ontrack",
+        "At Risk": "atrisk",
+        Blocked: "blocked",
+      };
 
-        /* ============================================================
+      /* ============================================================
      CSRF helper (mirrors pattern used elsewhere in this app)
      ============================================================ */
-        function fetchCSRFFromAPI() {
-          var pmEnv = document.getElementById("pmEnv");
-          if (pmEnv && pmEnv.dataset && pmEnv.dataset.csrf) {
-            return Promise.resolve(pmEnv.dataset.csrf);
-          }
-          return fetch("./api/me/csrfToken", { credentials: "include" })
-            .then(function (r) {
-              return r.json();
-            })
-            .then(function (j) {
-              return j.CSRFToken || j.csrf || "";
-            });
+      function fetchCSRFFromAPI() {
+        var pmEnv = document.getElementById("pmEnv");
+        if (pmEnv && pmEnv.dataset && pmEnv.dataset.csrf) {
+          return Promise.resolve(pmEnv.dataset.csrf);
         }
+        return fetch("./api/me/csrfToken", { credentials: "include" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (j) {
+            return j.CSRFToken || j.csrf || "";
+          });
+      }
 
-        function encodeFormBody(obj) {
-          return Object.keys(obj)
-            .map(function (k) {
-              return (
-                encodeURIComponent(k) +
-                "=" +
-                encodeURIComponent(obj[k] == null ? "" : obj[k])
-              );
-            })
-            .join("&");
-        }
+      function encodeFormBody(obj) {
+        return Object.keys(obj)
+          .map(function (k) {
+            return (
+              encodeURIComponent(k) +
+              "=" +
+              encodeURIComponent(obj[k] == null ? "" : obj[k])
+            );
+          })
+          .join("&");
+      }
 
-        /* ============================================================
+      /* ============================================================
      Toggle submit form
      ============================================================ */
-        var logForm = document.getElementById("logForm");
-        var logToggleBtn = document.getElementById("logToggleBtn");
-        logToggleBtn.addEventListener("click", function () {
-          logForm.classList.toggle("open");
-          if (
-            logForm.classList.contains("open") &&
-            !document.getElementById("f_weekOf").value
-          ) {
-            document.getElementById("f_weekOf").value = getCurrentWeekISO();
-          }
-        });
-
-        function getCurrentWeekISO() {
-          var d = new Date();
-          return d.toISOString().slice(0, 10);
+      var logForm = document.getElementById("logForm");
+      var logToggleBtn = document.getElementById("logToggleBtn");
+      logToggleBtn.addEventListener("click", function () {
+        logForm.classList.toggle("open");
+        if (
+          logForm.classList.contains("open") &&
+          !document.getElementById("f_weekOf").value
+        ) {
+          document.getElementById("f_weekOf").value = getCurrentWeekISO();
         }
+      });
 
-        /* ============================================================
+      function getCurrentWeekISO() {
+        var d = new Date();
+        return d.toISOString().slice(0, 10);
+      }
+
+      /* ============================================================
      Submit new entry
      ============================================================ */
-        document
-          .getElementById("submitBtn")
-          .addEventListener("click", function () {
-            var btn = this;
-            var statusEl = document.getElementById("submitStatus");
-            var payload = {
-              weekOf: document.getElementById("f_weekOf").value,
-              devStory: document.getElementById("f_devStory").value.trim(),
-              status: document.getElementById("f_status").value,
-              nextSprints: document
-                .getElementById("f_nextSprints")
-                .value.trim(),
-              ops: document.getElementById("f_ops").value.trim(),
-              questions: document.getElementById("f_questions").value.trim(),
-              blockers: document.getElementById("f_blockers").value.trim(),
-              notes: document.getElementById("f_notes").value.trim(),
-            };
-
-            if (!payload.weekOf || !payload.devStory) {
-              statusEl.textContent =
-                "Week Of and Current Dev Story are required.";
-              return;
-            }
-
-            btn.disabled = true;
-            statusEl.textContent = "Saving...";
-
-            fetchCSRFFromAPI()
-              .then(function (token) {
-                return fetch("./api/form/new", {
-                  method: "POST",
-                  credentials: "include",
-                  headers: {
-                    "content-type":
-                      "application/x-www-form-urlencoded; charset=UTF-8",
-                    "x-requested-with": "XMLHttpRequest",
-                    "x-csrf-token": token,
-                  },
-                  body: encodeFormBody({
-                    CSRFToken: token,
-                    categoryID: FORM_CATEGORY_ID,
-                  }),
-                })
-                  .then(function (r) {
-                    return r.json();
-                  })
-                  .then(function (newRec) {
-                    var recordID = newRec.recordID || newRec.id;
-                    var writeBody = {
-                      CSRFToken: token,
-                      recordID: recordID,
-                      series: 1,
-                    };
-                    writeBody[INDICATORS.weekOf] = payload.weekOf;
-                    writeBody[INDICATORS.devStory] = payload.devStory;
-                    writeBody[INDICATORS.status] = payload.status;
-                    writeBody[INDICATORS.nextSprints] = payload.nextSprints;
-                    writeBody[INDICATORS.ops] = payload.ops;
-                    writeBody[INDICATORS.questions] = payload.questions;
-                    writeBody[INDICATORS.blockers] = payload.blockers;
-                    writeBody[INDICATORS.notes] = payload.notes;
-
-                    return fetch("./api/form/" + encodeURIComponent(recordID), {
-                      method: "POST",
-                      credentials: "include",
-                      headers: {
-                        "content-type":
-                          "application/x-www-form-urlencoded; charset=UTF-8",
-                        "x-requested-with": "XMLHttpRequest",
-                        "x-csrf-token": token,
-                      },
-                      body: encodeFormBody(writeBody),
-                    }).then(function () {
-                      if (!SUBMIT_STEP_ID) {
-                        return;
-                      }
-                      return fetch(
-                        "./api/form/" +
-                          encodeURIComponent(recordID) +
-                          "/submit",
-                        {
-                          method: "POST",
-                          credentials: "include",
-                          headers: {
-                            "content-type":
-                              "application/x-www-form-urlencoded; charset=UTF-8",
-                            "x-requested-with": "XMLHttpRequest",
-                            "x-csrf-token": token,
-                          },
-                          body: encodeFormBody({ CSRFToken: token }),
-                        },
-                      );
-                    });
-                  });
-              })
-              .then(function () {
-                statusEl.textContent = "Saved.";
-                logForm.reset();
-                logForm.classList.remove("open");
-                loadEntries();
-              })
-              .catch(function (e) {
-                console.warn("Submit failed", e);
-                statusEl.textContent = "Save failed — please try again.";
-              })
-              .finally(function () {
-                btn.disabled = false;
-                setTimeout(function () {
-                  statusEl.textContent = "";
-                }, 3000);
-              });
-          });
-
-        /* ============================================================
-     Load + render entries
-     ============================================================ */
-        var allEntries = [];
-
-        function loadEntries() {
-          var indicatorList = Object.values(INDICATORS).join(",");
-          fetch(
-            "./api/form/query?categoryID=" +
-              encodeURIComponent(FORM_CATEGORY_ID) +
-              "&indicators=" +
-              encodeURIComponent(indicatorList),
-            { credentials: "include" },
-          )
-            .then(function (r) {
-              return r.json();
-            })
-            .then(function (rows) {
-              allEntries = (rows || []).map(normalizeRow).filter(function (e) {
-                return e.weekOf;
-              });
-              allEntries.sort(function (a, b) {
-                return a.weekOf < b.weekOf ? 1 : -1;
-              }); // newest first
-              computeStreaks(allEntries);
-              renderHeatmap(allEntries);
-              renderTable(allEntries);
-            })
-            .catch(function (e) {
-              console.warn("Load failed", e);
-              document.getElementById("emptyState").style.display = "block";
-              document.getElementById("emptyState").textContent =
-                "Could not load entries.";
-            });
-        }
-
-        function normalizeRow(row) {
-          return {
-            recordID: row.recordID,
-            weekOf: row[INDICATORS.weekOf] || "",
-            devStory: row[INDICATORS.devStory] || "",
-            status: row[INDICATORS.status] || "",
-            nextSprints: row[INDICATORS.nextSprints] || "",
-            ops: row[INDICATORS.ops] || "",
-            questions: row[INDICATORS.questions] || "",
-            blockers: row[INDICATORS.blockers] || "",
-            notes: row[INDICATORS.notes] || "",
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          var btn = this;
+          var statusEl = document.getElementById("submitStatus");
+          var payload = {
+            weekOf: document.getElementById("f_weekOf").value,
+            devStory: document.getElementById("f_devStory").value.trim(),
+            status: document.getElementById("f_status").value,
+            nextSprints: document.getElementById("f_nextSprints").value.trim(),
+            ops: document.getElementById("f_ops").value.trim(),
+            questions: document.getElementById("f_questions").value.trim(),
+            blockers: document.getElementById("f_blockers").value.trim(),
+            notes: document.getElementById("f_notes").value.trim(),
           };
-        }
 
-        /* Streak logic: consecutive weeks (newest-first array) with the same
-     non-"On Track" status. Resets when status changes. */
-        function computeStreaks(entriesDescending) {
-          var chronological = entriesDescending.slice().reverse(); // oldest first
-          var streak = 0,
-            lastStatus = null;
-          chronological.forEach(function (e) {
-            if (
-              e.status === lastStatus &&
-              (e.status === "Blocked" || e.status === "At Risk")
-            ) {
-              streak += 1;
-            } else {
-              streak = e.status === "Blocked" || e.status === "At Risk" ? 1 : 0;
-            }
-            e._streak = streak;
-            lastStatus = e.status;
-          });
-        }
-
-        var selectedRecordID = null;
-
-        function renderHeatmap(entries) {
-          var wrap = document.getElementById("heatmapWrap");
-          wrap.innerHTML = "";
-          // show oldest-to-newest left-to-right
-          var ordered = entries.slice().reverse();
-          ordered.forEach(function (e) {
-            var cell = document.createElement("div");
-            cell.className = "heat-cell";
-
-            var block = document.createElement("div");
-            block.className =
-              "heat-block " + (STATUS_CLASS[e.status] || "nostatus");
-            block.textContent =
-              e.status === "Blocked"
-                ? "✕"
-                : e.status === "At Risk"
-                  ? "!"
-                  : e.status === "On Track"
-                    ? "✓"
-                    : "?";
-            block.title = e.weekOf + " — " + (e.status || "No status");
-            block.addEventListener("click", function () {
-              selectedRecordID = e.recordID;
-              renderHeatmap(entries);
-              renderTable(entries);
-              var row = document.querySelector(
-                'tr[data-record-id="' + e.recordID + '"]',
-              );
-              if (row) {
-                row.scrollIntoView({ behavior: "smooth", block: "center" });
-              }
-            });
-            if (selectedRecordID === e.recordID) {
-              block.classList.add("selected");
-            }
-
-            var label = document.createElement("div");
-            label.className = "heat-label";
-            label.textContent = formatShortDate(e.weekOf);
-
-            cell.appendChild(block);
-            cell.appendChild(label);
-            wrap.appendChild(cell);
-          });
-        }
-
-        function formatShortDate(iso) {
-          if (!iso) {
-            return "";
-          }
-          var d = new Date(iso + "T00:00:00");
-          if (isNaN(d)) {
-            return iso;
-          }
-          return d.toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-          });
-        }
-
-        function renderTable(entries) {
-          var body = document.getElementById("syncTableBody");
-          var empty = document.getElementById("emptyState");
-          body.innerHTML = "";
-
-          if (!entries.length) {
-            empty.style.display = "block";
-            empty.textContent = "No entries yet.";
+          if (!payload.weekOf || !payload.devStory) {
+            statusEl.textContent =
+              "Week Of and Current Dev Story are required.";
             return;
           }
-          empty.style.display = "none";
 
-          entries.forEach(function (e) {
-            var tr = document.createElement("tr");
-            tr.setAttribute("data-record-id", e.recordID);
-            tr.dataset.searchBlob = [
-              e.weekOf,
-              e.devStory,
-              e.status,
-              e.nextSprints,
-              e.ops,
-              e.questions,
-              e.blockers,
-              e.notes,
-            ]
-              .join(" ")
-              .toLowerCase();
+          btn.disabled = true;
+          statusEl.textContent = "Saving...";
 
-            if (selectedRecordID === e.recordID) {
-              tr.classList.add("row-selected");
-            }
+          fetchCSRFFromAPI()
+            .then(function (token) {
+              return fetch("./api/form/new", {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                  "content-type":
+                    "application/x-www-form-urlencoded; charset=UTF-8",
+                  "x-requested-with": "XMLHttpRequest",
+                  "x-csrf-token": token,
+                },
+                body: encodeFormBody({
+                  CSRFToken: token,
+                  categoryID: FORM_CATEGORY_ID,
+                }),
+              })
+                .then(function (r) {
+                  return r.json();
+                })
+                .then(function (newRec) {
+                  var recordID = newRec.recordID || newRec.id;
+                  var writeBody = {
+                    CSRFToken: token,
+                    recordID: recordID,
+                    series: 1,
+                  };
+                  writeBody[INDICATORS.weekOf] = payload.weekOf;
+                  writeBody[INDICATORS.devStory] = payload.devStory;
+                  writeBody[INDICATORS.status] = payload.status;
+                  writeBody[INDICATORS.nextSprints] = payload.nextSprints;
+                  writeBody[INDICATORS.ops] = payload.ops;
+                  writeBody[INDICATORS.questions] = payload.questions;
+                  writeBody[INDICATORS.blockers] = payload.blockers;
+                  writeBody[INDICATORS.notes] = payload.notes;
 
-            var statusCell =
-              '<span class="pill ' +
-              (STATUS_CLASS[e.status] || "nostatus") +
-              '">' +
-              (e.status || "—") +
-              "</span>";
-            if (e._streak >= 2 && e.status === "Blocked") {
-              statusCell +=
-                '<span class="flag flag-blocked">Blocked ' +
-                e._streak +
-                " wks</span>";
-            } else if (e._streak >= 2 && e.status === "At Risk") {
-              statusCell +=
-                '<span class="flag flag-atrisk">At Risk ' +
-                e._streak +
-                " wks</span>";
-            }
+                  return fetch("./api/form/" + encodeURIComponent(recordID), {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                      "content-type":
+                        "application/x-www-form-urlencoded; charset=UTF-8",
+                      "x-requested-with": "XMLHttpRequest",
+                      "x-csrf-token": token,
+                    },
+                    body: encodeFormBody(writeBody),
+                  }).then(function () {
+                    if (!SUBMIT_STEP_ID) {
+                      return;
+                    }
+                    return fetch(
+                      "./api/form/" + encodeURIComponent(recordID) + "/submit",
+                      {
+                        method: "POST",
+                        credentials: "include",
+                        headers: {
+                          "content-type":
+                            "application/x-www-form-urlencoded; charset=UTF-8",
+                          "x-requested-with": "XMLHttpRequest",
+                          "x-csrf-token": token,
+                        },
+                        body: encodeFormBody({ CSRFToken: token }),
+                      },
+                    );
+                  });
+                });
+            })
+            .then(function () {
+              statusEl.textContent = "Saved.";
+              logForm.reset();
+              logForm.classList.remove("open");
+              loadEntries();
+            })
+            .catch(function (e) {
+              console.warn("Submit failed", e);
+              statusEl.textContent = "Save failed — please try again.";
+            })
+            .finally(function () {
+              btn.disabled = false;
+              setTimeout(function () {
+                statusEl.textContent = "";
+              }, 3000);
+            });
+        });
 
-            tr.innerHTML =
-              "<td>" +
-              escapeHtml(formatShortDate(e.weekOf)) +
-              "</td>" +
-              "<td>" +
-              escapeHtml(e.devStory) +
-              "</td>" +
-              "<td>" +
-              statusCell +
-              "</td>" +
-              "<td>" +
-              escapeHtml(e.nextSprints) +
-              "</td>" +
-              "<td>" +
-              escapeHtml(e.ops) +
-              "</td>" +
-              "<td>" +
-              escapeHtml(e.questions) +
-              "</td>" +
-              "<td>" +
-              escapeHtml(e.blockers) +
-              "</td>" +
-              "<td>" +
-              escapeHtml(e.notes) +
-              "</td>";
+      /* ============================================================
+     Load + render entries
+     ============================================================ */
+      var allEntries = [];
 
-            body.appendChild(tr);
+      function loadEntries() {
+        var indicatorList = Object.values(INDICATORS).join(",");
+        fetch(
+          "./api/form/query?categoryID=" +
+            encodeURIComponent(FORM_CATEGORY_ID) +
+            "&indicators=" +
+            encodeURIComponent(indicatorList),
+          { credentials: "include" },
+        )
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (rows) {
+            allEntries = (rows || []).map(normalizeRow).filter(function (e) {
+              return e.weekOf;
+            });
+            allEntries.sort(function (a, b) {
+              return a.weekOf < b.weekOf ? 1 : -1;
+            }); // newest first
+            computeStreaks(allEntries);
+            renderHeatmap(allEntries);
+            renderTable(allEntries);
+          })
+          .catch(function (e) {
+            console.warn("Load failed", e);
+            document.getElementById("emptyState").style.display = "block";
+            document.getElementById("emptyState").textContent =
+              "Could not load entries.";
           });
-        }
+      }
 
-        function escapeHtml(s) {
-          return String(s || "").replace(/[&<>"']/g, function (c) {
-            return {
-              "&": "&amp;",
-              "<": "&lt;",
-              ">": "&gt;",
-              '"': "&quot;",
-              "'": "&#39;",
-            }[c];
+      function normalizeRow(row) {
+        return {
+          recordID: row.recordID,
+          weekOf: row[INDICATORS.weekOf] || "",
+          devStory: row[INDICATORS.devStory] || "",
+          status: row[INDICATORS.status] || "",
+          nextSprints: row[INDICATORS.nextSprints] || "",
+          ops: row[INDICATORS.ops] || "",
+          questions: row[INDICATORS.questions] || "",
+          blockers: row[INDICATORS.blockers] || "",
+          notes: row[INDICATORS.notes] || "",
+        };
+      }
+
+      /* Streak logic: consecutive weeks (newest-first array) with the same
+     non-"On Track" status. Resets when status changes. */
+      function computeStreaks(entriesDescending) {
+        var chronological = entriesDescending.slice().reverse(); // oldest first
+        var streak = 0,
+          lastStatus = null;
+        chronological.forEach(function (e) {
+          if (
+            e.status === lastStatus &&
+            (e.status === "Blocked" || e.status === "At Risk")
+          ) {
+            streak += 1;
+          } else {
+            streak = e.status === "Blocked" || e.status === "At Risk" ? 1 : 0;
+          }
+          e._streak = streak;
+          lastStatus = e.status;
+        });
+      }
+
+      var selectedRecordID = null;
+
+      function renderHeatmap(entries) {
+        var wrap = document.getElementById("heatmapWrap");
+        wrap.innerHTML = "";
+        // show oldest-to-newest left-to-right
+        var ordered = entries.slice().reverse();
+        ordered.forEach(function (e) {
+          var cell = document.createElement("div");
+          cell.className = "heat-cell";
+
+          var block = document.createElement("div");
+          block.className =
+            "heat-block " + (STATUS_CLASS[e.status] || "nostatus");
+          block.textContent =
+            e.status === "Blocked"
+              ? "✕"
+              : e.status === "At Risk"
+                ? "!"
+                : e.status === "On Track"
+                  ? "✓"
+                  : "?";
+          block.title = e.weekOf + " — " + (e.status || "No status");
+          block.addEventListener("click", function () {
+            selectedRecordID = e.recordID;
+            renderHeatmap(entries);
+            renderTable(entries);
+            var row = document.querySelector(
+              'tr[data-record-id="' + e.recordID + '"]',
+            );
+            if (row) {
+              row.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
           });
-        }
+          if (selectedRecordID === e.recordID) {
+            block.classList.add("selected");
+          }
 
-        /* ============================================================
+          var label = document.createElement("div");
+          label.className = "heat-label";
+          label.textContent = formatShortDate(e.weekOf);
+
+          cell.appendChild(block);
+          cell.appendChild(label);
+          wrap.appendChild(cell);
+        });
+      }
+
+      function formatShortDate(iso) {
+        if (!iso) {
+          return "";
+        }
+        var d = new Date(iso + "T00:00:00");
+        if (isNaN(d)) {
+          return iso;
+        }
+        return d.toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+        });
+      }
+
+      function renderTable(entries) {
+        var body = document.getElementById("syncTableBody");
+        var empty = document.getElementById("emptyState");
+        body.innerHTML = "";
+
+        if (!entries.length) {
+          empty.style.display = "block";
+          empty.textContent = "No entries yet.";
+          return;
+        }
+        empty.style.display = "none";
+
+        entries.forEach(function (e) {
+          var tr = document.createElement("tr");
+          tr.setAttribute("data-record-id", e.recordID);
+          tr.dataset.searchBlob = [
+            e.weekOf,
+            e.devStory,
+            e.status,
+            e.nextSprints,
+            e.ops,
+            e.questions,
+            e.blockers,
+            e.notes,
+          ]
+            .join(" ")
+            .toLowerCase();
+
+          if (selectedRecordID === e.recordID) {
+            tr.classList.add("row-selected");
+          }
+
+          var statusCell =
+            '<span class="pill ' +
+            (STATUS_CLASS[e.status] || "nostatus") +
+            '">' +
+            (e.status || "—") +
+            "</span>";
+          if (e._streak >= 2 && e.status === "Blocked") {
+            statusCell +=
+              '<span class="flag flag-blocked">Blocked ' +
+              e._streak +
+              " wks</span>";
+          } else if (e._streak >= 2 && e.status === "At Risk") {
+            statusCell +=
+              '<span class="flag flag-atrisk">At Risk ' +
+              e._streak +
+              " wks</span>";
+          }
+
+          tr.innerHTML =
+            "<td>" +
+            escapeHtml(formatShortDate(e.weekOf)) +
+            "</td>" +
+            "<td>" +
+            escapeHtml(e.devStory) +
+            "</td>" +
+            "<td>" +
+            statusCell +
+            "</td>" +
+            "<td>" +
+            escapeHtml(e.nextSprints) +
+            "</td>" +
+            "<td>" +
+            escapeHtml(e.ops) +
+            "</td>" +
+            "<td>" +
+            escapeHtml(e.questions) +
+            "</td>" +
+            "<td>" +
+            escapeHtml(e.blockers) +
+            "</td>" +
+            "<td>" +
+            escapeHtml(e.notes) +
+            "</td>";
+
+          body.appendChild(tr);
+        });
+      }
+
+      function escapeHtml(s) {
+        return String(s || "").replace(/[&<>"']/g, function (c) {
+          return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+          }[c];
+        });
+      }
+
+      /* ============================================================
      Search — client-side, matches text fields + date strings
      ============================================================ */
-        document
-          .getElementById("searchInput")
-          .addEventListener("input", function () {
-            var q = this.value.trim().toLowerCase();
-            var rows = document.querySelectorAll("#syncTableBody tr");
-            rows.forEach(function (row) {
-              var blob = row.dataset.searchBlob || "";
-              var shortDate = row.children[0]
-                ? row.children[0].textContent.toLowerCase()
-                : "";
-              var match =
-                !q || blob.indexOf(q) !== -1 || shortDate.indexOf(q) !== -1;
-              row.classList.toggle("row-hidden", !match);
-            });
+      document
+        .getElementById("searchInput")
+        .addEventListener("input", function () {
+          var q = this.value.trim().toLowerCase();
+          var rows = document.querySelectorAll("#syncTableBody tr");
+          rows.forEach(function (row) {
+            var blob = row.dataset.searchBlob || "";
+            var shortDate = row.children[0]
+              ? row.children[0].textContent.toLowerCase()
+              : "";
+            var match =
+              !q || blob.indexOf(q) !== -1 || shortDate.indexOf(q) !== -1;
+            row.classList.toggle("row-hidden", !match);
           });
+        });
 
-        /* ============================================================
+      /* ============================================================
      Init
      ============================================================ */
-        loadEntries();
-      })();
-    </script>
-  </body>
-</html>
+      loadEntries();
+    })();
+  </script>
+</div>
