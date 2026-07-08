@@ -5,6 +5,23 @@
     background: var(--bg);
     color: var(--text);
     padding: var(--space-6);
+    margin: 24px;
+    border-radius: var(--radius-md);
+  }
+  .page-hcdsync .visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .page-hcdsync :focus-visible {
+    outline: 3px solid #2563eb;
+    outline-offset: 2px;
   }
   .page-hcdsync h1 {
     font-size: 19px;
@@ -219,6 +236,13 @@
     font-weight: 700;
     cursor: pointer;
     border: 2px solid transparent;
+    width: 100%;
+    font-family: inherit;
+    padding: 0;
+  }
+  .page-hcdsync .heat-block:focus-visible {
+    outline: 3px solid #1e293b;
+    outline-offset: 2px;
   }
   .page-hcdsync .heat-block.selected {
     border-color: var(--text);
@@ -320,11 +344,16 @@
 
   <!-- SUBMIT SECTION -->
   <div class="section">
-    <button type="button" id="logToggleBtn">
-      <span id="logToggleIcon">＋</span> Log this week's sync
+    <button
+      type="button"
+      id="logToggleBtn"
+      aria-expanded="false"
+      aria-controls="logForm"
+    >
+      <span id="logToggleIcon" aria-hidden="true">＋</span> Log this week's sync
     </button>
 
-    <form id="logForm">
+    <form id="logForm" aria-label="Log this week's sync entry">
       <div class="form-panel-title">📝 New Weekly Sync Entry</div>
       <div class="grid-2">
         <div class="field-row">
@@ -389,13 +418,16 @@
       <div class="form-actions">
         <button type="button" id="cancelBtn">Cancel</button>
         <button type="button" id="submitBtn">Submit Entry</button>
-        <span id="submitStatus"></span>
+        <span id="submitStatus" role="status" aria-live="polite"></span>
       </div>
     </form>
   </div>
 
   <!-- SEARCH -->
   <div class="section">
+    <label for="searchInput" class="visually-hidden"
+      >Search weekly sync entries</label
+    >
     <input
       type="text"
       id="searchInput"
@@ -405,19 +437,27 @@
 
   <!-- HEATMAP + TABLE -->
   <div class="section">
-    <div id="heatmapWrap" class="heatmap"></div>
+    <div
+      id="heatmapWrap"
+      class="heatmap"
+      role="group"
+      aria-label="Weekly status trend"
+    ></div>
 
     <table id="syncTable">
+      <caption class="visually-hidden">
+        Weekly sync history
+      </caption>
       <thead>
         <tr>
-          <th>Week Of</th>
-          <th>Dev Story</th>
-          <th>Status</th>
-          <th>Next 2 Sprints</th>
-          <th>Ops</th>
-          <th>Questions</th>
-          <th>Blockers</th>
-          <th>Design Lead Notes</th>
+          <th scope="col">Week Of</th>
+          <th scope="col">Dev Story</th>
+          <th scope="col">Status</th>
+          <th scope="col">Next 2 Sprints</th>
+          <th scope="col">Ops</th>
+          <th scope="col">Questions</th>
+          <th scope="col">Blockers</th>
+          <th scope="col">Design Lead Notes</th>
         </tr>
       </thead>
       <tbody id="syncTableBody"></tbody>
@@ -433,7 +473,12 @@
      CONFIG — fill these in after creating the LEAF form
      ============================================================ */
       var FORM_CATEGORY_ID = "form_ac61e"; // HCD Weekly Sync form category
-      var SUBMIT_STEP_ID = null; // set if form requires explicit /submit step; else leave null
+      var FORM_CATEGORY_SUFFIX = FORM_CATEGORY_ID.replace("form_", ""); // used for numform_<suffix> field
+      var SUBMIT_STEP_ID = null; // set to a stepID string if this form requires an explicit /submit step
+      var START_REQUEST_URL =
+        "report.php?a=LEAF_Start_Request&id=" +
+        encodeURIComponent(FORM_CATEGORY_ID) +
+        "&title=HCD+Weekly+Sync";
 
       var INDICATORS = {
         weekOf: "26",
@@ -454,19 +499,73 @@
       };
 
       /* ============================================================
-     CSRF helper (mirrors pattern used elsewhere in this app)
+     CSRF helper — matches LEAF's actual token retrieval pattern:
+     1) look for a CSRFToken input/meta already in this page's DOM
+     2) otherwise fetch a LEAF_Start_Request URL for this form and
+        extract the token from the returned HTML (not JSON)
      ============================================================ */
-      function fetchCSRFFromAPI() {
-        var pmEnv = document.getElementById("pmEnv");
-        if (pmEnv && pmEnv.dataset && pmEnv.dataset.csrf) {
-          return Promise.resolve(pmEnv.dataset.csrf);
+      var cachedCSRFToken = null;
+      var cachedCSRFField = "CSRFToken";
+
+      function extractCSRFTokenFromHTML(html) {
+        var src = String(html || "");
+        if (!src) {
+          return { token: "", field: "" };
         }
-        return fetch("./api/me/csrfToken", { credentials: "include" })
+
+        var inputMatch = src.match(
+          /name=["'](CSRFToken|csrf_token|csrfToken)["'][^>]*value=["']([^"']+)["']/i,
+        );
+        if (inputMatch && inputMatch[2]) {
+          return { token: inputMatch[2], field: inputMatch[1] };
+        }
+
+        var metaMatch = src.match(
+          /<meta[^>]*name=["']csrf-token["'][^>]*content=["']([^"']+)["']/i,
+        );
+        if (metaMatch && metaMatch[1]) {
+          return { token: metaMatch[1], field: "CSRFToken" };
+        }
+
+        var jsMatch = src.match(/CSRFToken\s*[:=]\s*["']([^"']+)["']/i);
+        if (jsMatch && jsMatch[1]) {
+          return { token: jsMatch[1], field: "CSRFToken" };
+        }
+
+        return { token: "", field: "" };
+      }
+
+      function fetchCSRFFromAPI() {
+        if (cachedCSRFToken) {
+          return Promise.resolve(cachedCSRFToken);
+        }
+
+        // 1) Check current page DOM first (cheapest, most reliable when embedded in LEAF shell)
+        var localMatch = extractCSRFTokenFromHTML(
+          document.documentElement.innerHTML,
+        );
+        if (localMatch.token) {
+          cachedCSRFToken = localMatch.token;
+          cachedCSRFField = localMatch.field || "CSRFToken";
+          return Promise.resolve(cachedCSRFToken);
+        }
+
+        // 2) Fallback: fetch the form's start-request page and extract token from HTML
+        return fetch(START_REQUEST_URL, { credentials: "include" })
           .then(function (r) {
-            return r.json();
+            if (!r.ok) {
+              throw new Error("CSRF fetch HTTP " + r.status);
+            }
+            return r.text();
           })
-          .then(function (j) {
-            return j.CSRFToken || j.csrf || "";
+          .then(function (html) {
+            var match = extractCSRFTokenFromHTML(html);
+            if (!match.token) {
+              throw new Error("CSRF token not found in start-request response");
+            }
+            cachedCSRFToken = match.token;
+            cachedCSRFField = match.field || "CSRFToken";
+            return cachedCSRFToken;
           });
       }
 
@@ -492,6 +591,7 @@
       function setToggleOpenState(isOpen) {
         logForm.classList.toggle("open", isOpen);
         logToggleBtn.classList.toggle("is-open", isOpen);
+        logToggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
         logToggleIcon.textContent = isOpen ? "✕" : "＋";
         logToggleBtn.lastChild.textContent = isOpen
           ? " Close"
@@ -547,30 +647,41 @@
 
           fetchCSRFFromAPI()
             .then(function (token) {
+              var fd = new FormData();
+              fd.append(cachedCSRFField, token);
+              fd.append("numform_" + FORM_CATEGORY_SUFFIX, "1");
+
               return fetch("./api/form/new", {
                 method: "POST",
                 credentials: "include",
                 headers: {
-                  "content-type":
-                    "application/x-www-form-urlencoded; charset=UTF-8",
                   "x-requested-with": "XMLHttpRequest",
                   "x-csrf-token": token,
                 },
-                body: encodeFormBody({
-                  CSRFToken: token,
-                  categoryID: FORM_CATEGORY_ID,
-                }),
+                body: fd,
               })
                 .then(function (r) {
-                  return r.json();
+                  if (!r.ok) {
+                    throw new Error("Create record failed HTTP " + r.status);
+                  }
+                  return r.text();
                 })
-                .then(function (newRec) {
-                  var recordID = newRec.recordID || newRec.id;
-                  var writeBody = {
-                    CSRFToken: token,
-                    recordID: recordID,
-                    series: 1,
-                  };
+                .then(function (text) {
+                  var recordID;
+                  try {
+                    recordID = JSON.parse(text);
+                  } catch (e) {
+                    recordID = text;
+                  }
+                  recordID = String(recordID || "")
+                    .trim()
+                    .replace(/^"|"$/g, "");
+                  if (!recordID || isNaN(parseInt(recordID, 10))) {
+                    throw new Error("Invalid record ID returned: " + text);
+                  }
+
+                  var writeBody = {};
+                  writeBody[cachedCSRFField] = token;
                   writeBody[INDICATORS.weekOf] = payload.weekOf;
                   writeBody[INDICATORS.devStory] = payload.devStory;
                   writeBody[INDICATORS.status] = payload.status;
@@ -590,10 +701,18 @@
                       "x-csrf-token": token,
                     },
                     body: encodeFormBody(writeBody),
-                  }).then(function () {
+                  }).then(function (writeResp) {
+                    if (!writeResp.ok) {
+                      throw new Error(
+                        "Write data failed HTTP " + writeResp.status,
+                      );
+                    }
                     if (!SUBMIT_STEP_ID) {
                       return;
                     }
+                    var submitBody = {};
+                    submitBody[cachedCSRFField] = token;
+                    submitBody.stepID = SUBMIT_STEP_ID;
                     return fetch(
                       "./api/form/" + encodeURIComponent(recordID) + "/submit",
                       {
@@ -605,7 +724,7 @@
                           "x-requested-with": "XMLHttpRequest",
                           "x-csrf-token": token,
                         },
-                        body: encodeFormBody({ CSRFToken: token }),
+                        body: encodeFormBody(submitBody),
                       },
                     );
                   });
@@ -630,26 +749,84 @@
         });
 
       /* ============================================================
-     Load + render entries
+     Load + render entries — uses LEAF's global LeafFormQuery class
      ============================================================ */
       var allEntries = [];
+      var indicatorIDList = [
+        INDICATORS.weekOf,
+        INDICATORS.devStory,
+        INDICATORS.status,
+        INDICATORS.nextSprints,
+        INDICATORS.ops,
+        INDICATORS.questions,
+        INDICATORS.blockers,
+        INDICATORS.notes,
+      ];
+
+      function extractIndicatorValue(row, indicatorID) {
+        if (!row) {
+          return "";
+        }
+        var key = "id" + String(indicatorID);
+        if (row.s1 && row.s1[key] != null) {
+          return String(row.s1[key]);
+        }
+        var stepKeys = Object.keys(row).filter(function (k) {
+          return /^s\d+$/.test(k);
+        });
+        for (var i = 0; i < stepKeys.length; i++) {
+          var step = row[stepKeys[i]];
+          if (step && step[key] != null) {
+            return String(step[key]);
+          }
+        }
+        if (row[key] != null) {
+          return String(row[key]);
+        }
+        if (row.data && row.data[key] != null) {
+          return String(row.data[key]);
+        }
+        return "";
+      }
 
       function loadEntries() {
-        var indicatorList = Object.values(INDICATORS).join(",");
-        fetch(
-          "./api/form/query?categoryID=" +
-            encodeURIComponent(FORM_CATEGORY_ID) +
-            "&indicators=" +
-            encodeURIComponent(indicatorList),
-          { credentials: "include" },
-        )
-          .then(function (r) {
-            return r.json();
-          })
-          .then(function (rows) {
-            allEntries = (rows || []).map(normalizeRow).filter(function (e) {
-              return e.weekOf;
-            });
+        if (typeof LeafFormQuery === "undefined") {
+          console.warn("LeafFormQuery is not available on this page.");
+          document.getElementById("emptyState").style.display = "block";
+          document.getElementById("emptyState").textContent =
+            "Could not load entries (query library unavailable).";
+          return;
+        }
+
+        var query = new LeafFormQuery();
+        query.addTerm("categoryID", "=", FORM_CATEGORY_ID);
+        query.getData(indicatorIDList);
+
+        query
+          .execute()
+          .then(function (results) {
+            allEntries = Object.keys(results || {})
+              .map(function (recordID) {
+                var row = results[recordID];
+                return {
+                  recordID: recordID,
+                  weekOf: extractIndicatorValue(row, INDICATORS.weekOf),
+                  devStory: extractIndicatorValue(row, INDICATORS.devStory),
+                  status: extractIndicatorValue(row, INDICATORS.status),
+                  nextSprints: extractIndicatorValue(
+                    row,
+                    INDICATORS.nextSprints,
+                  ),
+                  ops: extractIndicatorValue(row, INDICATORS.ops),
+                  questions: extractIndicatorValue(row, INDICATORS.questions),
+                  blockers: extractIndicatorValue(row, INDICATORS.blockers),
+                  notes: extractIndicatorValue(row, INDICATORS.notes),
+                };
+              })
+              .filter(function (e) {
+                return e.weekOf;
+              });
+
             allEntries.sort(function (a, b) {
               return a.weekOf < b.weekOf ? 1 : -1;
             }); // newest first
@@ -663,20 +840,6 @@
             document.getElementById("emptyState").textContent =
               "Could not load entries.";
           });
-      }
-
-      function normalizeRow(row) {
-        return {
-          recordID: row.recordID,
-          weekOf: row[INDICATORS.weekOf] || "",
-          devStory: row[INDICATORS.devStory] || "",
-          status: row[INDICATORS.status] || "",
-          nextSprints: row[INDICATORS.nextSprints] || "",
-          ops: row[INDICATORS.ops] || "",
-          questions: row[INDICATORS.questions] || "",
-          blockers: row[INDICATORS.blockers] || "",
-          notes: row[INDICATORS.notes] || "",
-        };
       }
 
       /* Streak logic: consecutive weeks (newest-first array) with the same
@@ -710,7 +873,8 @@
           var cell = document.createElement("div");
           cell.className = "heat-cell";
 
-          var block = document.createElement("div");
+          var block = document.createElement("button");
+          block.type = "button";
           block.className =
             "heat-block " + (STATUS_CLASS[e.status] || "nostatus");
           block.textContent =
@@ -722,6 +886,14 @@
                   ? "✓"
                   : "?";
           block.title = e.weekOf + " — " + (e.status || "No status");
+          block.setAttribute(
+            "aria-label",
+            formatShortDate(e.weekOf) + ": " + (e.status || "No status"),
+          );
+          block.setAttribute(
+            "aria-pressed",
+            selectedRecordID === e.recordID ? "true" : "false",
+          );
           block.addEventListener("click", function () {
             selectedRecordID = e.recordID;
             renderHeatmap(entries);
