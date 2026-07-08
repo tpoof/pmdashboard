@@ -36,7 +36,7 @@
 
   .page-hcdsync .section {
     background: var(--surface);
-    border: 1px solid #d0d5dd;
+    border: none;
     border-radius: 10px;
     box-shadow:
       0 1px 3px rgba(0, 0, 0, 0.08),
@@ -87,6 +87,9 @@
   }
   .page-hcdsync #logToggleBtn.is-open:hover {
     background: #334155;
+  }
+  .page-hcdsync #logToggleIcon {
+    color: #fff !important;
   }
 
   /* Submit form panel */
@@ -443,17 +446,16 @@
 
   <!-- SUBMIT SECTION -->
   <div class="section">
-    <div class="section-title">Log Sync</div>
     <button
       type="button"
       id="logToggleBtn"
       aria-expanded="false"
       aria-controls="logForm"
     >
-      <span id="logToggleIcon" aria-hidden="true">＋</span> Log this week's sync
+      <span id="logToggleIcon" aria-hidden="true">＋</span> Log Sync
     </button>
 
-    <form id="logForm" aria-label="Log this week's sync entry">
+    <form id="logForm" aria-label="Log Sync entry">
       <div class="form-panel-title">📝 New Weekly Sync Entry</div>
       <div class="grid-2">
         <div class="field-row">
@@ -525,7 +527,6 @@
 
   <!-- SEARCH -->
   <div class="section">
-    <div class="section-title">Search</div>
     <div class="search-wrap">
       <svg
         class="search-icon"
@@ -627,26 +628,67 @@
           return { token: "", field: "" };
         }
 
+        function isPlausibleToken(v) {
+          if (!v) {
+            return false;
+          }
+          var s = String(v).trim();
+          // Reject placeholders/junk: too short, all dots, or template-looking values
+          if (s.length < 8) {
+            return false;
+          }
+          if (/^\.+$/.test(s)) {
+            return false;
+          }
+          if (/[{}<>]/.test(s)) {
+            return false;
+          }
+          return true;
+        }
+
         var inputMatch = src.match(
           /name=["'](CSRFToken|csrf_token|csrfToken)["'][^>]*value=["']([^"']+)["']/i,
         );
-        if (inputMatch && inputMatch[2]) {
+        if (inputMatch && isPlausibleToken(inputMatch[2])) {
           return { token: inputMatch[2], field: inputMatch[1] };
         }
 
         var metaMatch = src.match(
           /<meta[^>]*name=["']csrf-token["'][^>]*content=["']([^"']+)["']/i,
         );
-        if (metaMatch && metaMatch[1]) {
+        if (metaMatch && isPlausibleToken(metaMatch[1])) {
           return { token: metaMatch[1], field: "CSRFToken" };
         }
 
-        var jsMatch = src.match(/CSRFToken\s*[:=]\s*["']([^"']+)["']/i);
-        if (jsMatch && jsMatch[1]) {
+        var jsMatch = src.match(/\bCSRFToken\s*=\s*["']([^"']+)["']/);
+        if (jsMatch && isPlausibleToken(jsMatch[1])) {
           return { token: jsMatch[1], field: "CSRFToken" };
         }
 
         return { token: "", field: "" };
+      }
+
+      /* Scans inline scripts for `new LeafWorkflow(containerID, "TOKEN")` or similar
+     constructor calls that pass a real CSRF token as an argument. */
+      function findTokenInConstructorCalls() {
+        var scripts = document.getElementsByTagName("script");
+        var patterns = [
+          /new\s+LeafWorkflow\s*\(\s*['"][^'"]*['"]\s*,\s*['"]([^'"]+)['"]/,
+          /new\s+LeafForm\s*\(\s*['"][^'"]*['"][^)]*?['"]([a-f0-9]{16,})['"]/i,
+          /portalAPI\.setCSRFToken\s*\(\s*['"]?([a-zA-Z0-9_\-\.]{8,})['"]?\s*\)/,
+          /setCSRFToken\s*\(\s*['"]([^'"]+)['"]/,
+        ];
+        var found = [];
+        for (var i = 0; i < scripts.length; i++) {
+          var text = scripts[i].textContent || "";
+          for (var p = 0; p < patterns.length; p++) {
+            var m = text.match(patterns[p]);
+            if (m && m[1] && m[1].length >= 8 && !/^\.+$/.test(m[1])) {
+              found.push({ pattern: patterns[p].toString(), value: m[1] });
+            }
+          }
+        }
+        return found;
       }
 
       function getCSRFTokenFromPage() {
@@ -688,7 +730,25 @@
           return input.value;
         }
 
-        // 5) Last resort: regex-scan the page HTML
+        // 5) data-csrf / data-csrf-token attributes anywhere in the DOM
+        var dataEl = document.querySelector("[data-csrf], [data-csrf-token]");
+        if (dataEl) {
+          var dataVal =
+            dataEl.getAttribute("data-csrf") ||
+            dataEl.getAttribute("data-csrf-token");
+          if (dataVal) {
+            return dataVal;
+          }
+        }
+
+        // 6) Scan inline scripts for constructor calls that pass a real token
+        //    (e.g. new LeafWorkflow(containerID, "TOKEN"), portalAPI.setCSRFToken(...))
+        var constructorHits = findTokenInConstructorCalls();
+        if (constructorHits.length) {
+          return constructorHits[0].value;
+        }
+
+        // 7) Last resort: regex-scan the page HTML
         var match = extractCSRFTokenFromHTML(
           document.documentElement.innerHTML,
         );
@@ -840,7 +900,7 @@
         }
         lines.push("");
 
-        // 6) DOM inputs / meta tags
+        // 6) DOM inputs / meta tags / data attributes
         lines.push("-- DOM scan --");
         var inputEl =
           document.getElementById("CSRFToken") ||
@@ -858,9 +918,35 @@
               ? "found, content=" + String(metaEl.content).slice(0, 60)
               : "(not found)"),
         );
+        var dataEl2 = document.querySelector("[data-csrf], [data-csrf-token]");
+        lines.push(
+          "[data-csrf] / [data-csrf-token]: " +
+            (dataEl2
+              ? "found, value=" +
+                String(
+                  dataEl2.getAttribute("data-csrf") ||
+                    dataEl2.getAttribute("data-csrf-token"),
+                ).slice(0, 60)
+              : "(not found)"),
+        );
         lines.push("");
 
-        // 7) Resolved result from our actual lookup function
+        // 7) Constructor call scan (new LeafWorkflow(...), portalAPI.setCSRFToken(...), etc.)
+        lines.push("-- Inline script constructor-call scan --");
+        var hits = findTokenInConstructorCalls();
+        if (hits.length) {
+          hits.forEach(function (h) {
+            lines.push("  match via " + h.pattern + ":");
+            lines.push("    value: " + h.value.slice(0, 60));
+          });
+        } else {
+          lines.push(
+            "  (no LeafWorkflow/LeafForm/setCSRFToken calls with a real-looking token found)",
+          );
+        }
+        lines.push("");
+
+        // 8) Resolved result from our actual lookup function
         lines.push("-- Result from getCSRFTokenFromPage() --");
         var resolved = getCSRFTokenFromPage();
         lines.push(
@@ -929,9 +1015,7 @@
         logToggleBtn.classList.toggle("is-open", isOpen);
         logToggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
         logToggleIcon.textContent = isOpen ? "✕" : "＋";
-        logToggleBtn.lastChild.textContent = isOpen
-          ? " Close"
-          : " Log this week's sync";
+        logToggleBtn.lastChild.textContent = isOpen ? " Close" : " Log Sync";
       }
 
       logToggleBtn.addEventListener("click", function () {
