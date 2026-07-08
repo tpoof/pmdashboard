@@ -475,10 +475,6 @@
       var FORM_CATEGORY_ID = "form_ac61e"; // HCD Weekly Sync form category
       var FORM_CATEGORY_SUFFIX = FORM_CATEGORY_ID.replace("form_", ""); // used for numform_<suffix> field
       var SUBMIT_STEP_ID = null; // set to a stepID string if this form requires an explicit /submit step
-      var START_REQUEST_URL =
-        "report.php?a=LEAF_Start_Request&id=" +
-        encodeURIComponent(FORM_CATEGORY_ID) +
-        "&title=HCD+Weekly+Sync";
 
       var INDICATORS = {
         weekOf: "26",
@@ -499,10 +495,12 @@
       };
 
       /* ============================================================
-     CSRF helper — matches LEAF's actual token retrieval pattern:
-     1) look for a CSRFToken input/meta already in this page's DOM
-     2) otherwise fetch a LEAF_Start_Request URL for this form and
-        extract the token from the returned HTML (not JSON)
+     CSRF helper — LEAF pages declare the token directly as a global
+     JS variable in the page's own <script> (e.g. `var CSRFToken = '...';`
+     in form.tpl/view_reports.tpl/etc.), or as a hidden input
+     (id/name="CSRFToken"). Since this fragment is inserted into that
+     same page, we check those sources directly rather than guessing
+     an API URL.
      ============================================================ */
       var cachedCSRFToken = null;
       var cachedCSRFField = "CSRFToken";
@@ -535,38 +533,54 @@
         return { token: "", field: "" };
       }
 
+      function getCSRFTokenFromPage() {
+        // 1) Bare global reference — catches var/let/const CSRFToken declared
+        //    elsewhere in this same page's script scope (most common LEAF pattern)
+        try {
+          if (typeof CSRFToken !== "undefined" && CSRFToken) {
+            return String(CSRFToken);
+          }
+        } catch (e) {
+          /* not defined, fall through */
+        }
+
+        // 2) window.CSRFToken (in case declared with `var` at true global scope)
+        if (window.CSRFToken) {
+          return String(window.CSRFToken);
+        }
+
+        // 3) Hidden input LEAF commonly renders: <input id/name="CSRFToken" value="...">
+        var input =
+          document.getElementById("CSRFToken") ||
+          document.querySelector('input[name="CSRFToken"]');
+        if (input && input.value) {
+          return input.value;
+        }
+
+        // 4) Last resort: regex-scan the page HTML
+        var match = extractCSRFTokenFromHTML(
+          document.documentElement.innerHTML,
+        );
+        return match.token || "";
+      }
+
       function fetchCSRFFromAPI() {
         if (cachedCSRFToken) {
           return Promise.resolve(cachedCSRFToken);
         }
 
-        // 1) Check current page DOM first (cheapest, most reliable when embedded in LEAF shell)
-        var localMatch = extractCSRFTokenFromHTML(
-          document.documentElement.innerHTML,
-        );
-        if (localMatch.token) {
-          cachedCSRFToken = localMatch.token;
-          cachedCSRFField = localMatch.field || "CSRFToken";
+        var token = getCSRFTokenFromPage();
+        if (token) {
+          cachedCSRFToken = token;
           return Promise.resolve(cachedCSRFToken);
         }
 
-        // 2) Fallback: fetch the form's start-request page and extract token from HTML
-        return fetch(START_REQUEST_URL, { credentials: "include" })
-          .then(function (r) {
-            if (!r.ok) {
-              throw new Error("CSRF fetch HTTP " + r.status);
-            }
-            return r.text();
-          })
-          .then(function (html) {
-            var match = extractCSRFTokenFromHTML(html);
-            if (!match.token) {
-              throw new Error("CSRF token not found in start-request response");
-            }
-            cachedCSRFToken = match.token;
-            cachedCSRFField = match.field || "CSRFToken";
-            return cachedCSRFToken;
-          });
+        return Promise.reject(
+          new Error(
+            "Could not find a CSRF token on this page. This page needs to be loaded " +
+              "within the LEAF app shell (it relies on the CSRFToken variable LEAF renders on the page).",
+          ),
+        );
       }
 
       function encodeFormBody(obj) {
