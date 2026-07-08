@@ -36,17 +36,29 @@
 
   .page-hcdsync .section {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
+    border: 1px solid #d0d5dd;
+    border-radius: 10px;
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.08),
+      0 1px 2px rgba(0, 0, 0, 0.04);
     padding: var(--space-4) var(--space-6);
-    margin-bottom: var(--space-4);
+    margin-bottom: 22px;
+  }
+  .page-hcdsync .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0 0 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e5e7eb;
   }
 
   /* Collapsed submit trigger */
   .page-hcdsync #logToggleBtn {
     background: #2563eb;
-    color: #fff;
+    color: #fff !important;
     border: none;
     border-radius: 8px;
     padding: 11px 20px;
@@ -150,7 +162,7 @@
   }
   .page-hcdsync #submitBtn {
     background: #22a35d;
-    color: #fff;
+    color: #fff !important;
     border: none;
     border-radius: 8px;
     padding: 10px 20px;
@@ -169,8 +181,8 @@
   }
   .page-hcdsync #cancelBtn {
     background: #fff;
-    color: #475569;
-    border: 1px solid var(--border);
+    color: #475569 !important;
+    border: 1px solid #d0d5dd;
     border-radius: 8px;
     padding: 10px 18px;
     font-size: 13.5px;
@@ -194,12 +206,26 @@
   }
 
   /* Search */
+  .page-hcdsync .search-wrap {
+    position: relative;
+    margin-top: 8px;
+  }
+  .page-hcdsync .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: #9ca3af;
+    pointer-events: none;
+  }
   .page-hcdsync #searchInput {
     width: 100%;
     box-sizing: border-box;
-    border: 1px solid var(--border);
+    border: 1px solid #d0d5dd;
     border-radius: 8px;
-    padding: 11px 16px;
+    padding: 11px 16px 11px 40px;
     font-size: 13.5px;
     color: var(--text);
     background: var(--surface);
@@ -333,17 +359,91 @@
     padding: 20px 0;
     text-align: center;
   }
+
+  /* Debug panel */
+  .page-hcdsync .debug-panel {
+    background: #1e1e2e;
+    border: 1px solid #3a3a4d;
+  }
+  .page-hcdsync #debugToggleBtn {
+    background: #3a3a4d;
+    color: #fff !important;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .page-hcdsync #debugToggleBtn:hover {
+    background: #4a4a63;
+  }
+  .page-hcdsync .debug-body {
+    display: none;
+    margin-top: 12px;
+  }
+  .page-hcdsync .debug-body.open {
+    display: block;
+  }
+  .page-hcdsync .debug-hint {
+    color: #a0a0b8;
+    font-size: 12px;
+    margin: 0 0 8px;
+  }
+  .page-hcdsync #debugOutput {
+    background: #12121c;
+    color: #7ee787;
+    font-size: 12px;
+    padding: 12px;
+    border-radius: 6px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .page-hcdsync #debugCopyBtn {
+    margin-top: 8px;
+    background: #2563eb;
+    color: #fff !important;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .page-hcdsync #debugCopyBtn:hover {
+    background: #1d4ed8;
+  }
 </style>
 
 <div class="page-hcdsync">
-  <h1>HCD Weekly Sync</h1>
-  <div class="sub">
-    Weekly log for HCD Specialist 1:1s — updated by the specialist, reviewed by
-    the Design Lead.
+  <h1>LEAF UX/HCD Sync</h1>
+
+  <!-- DEBUG PANEL -->
+  <div class="section debug-panel">
+    <button
+      type="button"
+      id="debugToggleBtn"
+      aria-expanded="false"
+      aria-controls="debugBody"
+    >
+      🐞 Debug: CSRF Token Diagnostics
+    </button>
+    <div id="debugBody" class="debug-body">
+      <p class="debug-hint">
+        This scans the current page for anything that looks like a CSRF token so
+        we can find the right source. Click "Copy" and paste the results back.
+      </p>
+      <pre id="debugOutput">Running scan...</pre>
+      <button type="button" id="debugCopyBtn">Copy results</button>
+    </div>
   </div>
 
   <!-- SUBMIT SECTION -->
   <div class="section">
+    <div class="section-title">Log Sync</div>
     <button
       type="button"
       id="logToggleBtn"
@@ -425,18 +525,34 @@
 
   <!-- SEARCH -->
   <div class="section">
-    <label for="searchInput" class="visually-hidden"
-      >Search weekly sync entries</label
-    >
-    <input
-      type="text"
-      id="searchInput"
-      placeholder="Search dev stories, ops, questions, notes, or a date (e.g. Jun, 6/22)..."
-    />
+    <div class="section-title">Search</div>
+    <div class="search-wrap">
+      <svg
+        class="search-icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <label for="searchInput" class="visually-hidden"
+        >Search weekly sync entries</label
+      >
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search dev stories, ops, questions, notes, or a date (e.g. Jun, 6/22)..."
+      />
+    </div>
   </div>
 
   <!-- HEATMAP + TABLE -->
   <div class="section">
+    <div class="section-title">Sync History</div>
     <div
       id="heatmapWrap"
       class="heatmap"
@@ -534,8 +650,23 @@
       }
 
       function getCSRFTokenFromPage() {
-        // 1) Bare global reference — catches var/let/const CSRFToken declared
-        //    elsewhere in this same page's script scope (most common LEAF pattern)
+        // 1) Config object convention used elsewhere in this codebase (idea portal
+        //    uses window.leafIdeaPortal.csrfToken, injected server-side by the host
+        //    Smarty template). Check a couple of plausible names for this page.
+        var configCandidates = [
+          "leafHCDSync",
+          "leafSyncPortal",
+          "leafIdeaPortal",
+        ];
+        for (var c = 0; c < configCandidates.length; c++) {
+          var cfg = window[configCandidates[c]];
+          if (cfg && cfg.csrfToken) {
+            return String(cfg.csrfToken);
+          }
+        }
+
+        // 2) Bare global reference — catches var/let/const CSRFToken declared
+        //    elsewhere in this same page's script scope (form.tpl/view_reports.tpl pattern)
         try {
           if (typeof CSRFToken !== "undefined" && CSRFToken) {
             return String(CSRFToken);
@@ -544,12 +675,12 @@
           /* not defined, fall through */
         }
 
-        // 2) window.CSRFToken (in case declared with `var` at true global scope)
+        // 3) window.CSRFToken (in case declared with `var` at true global scope)
         if (window.CSRFToken) {
           return String(window.CSRFToken);
         }
 
-        // 3) Hidden input LEAF commonly renders: <input id/name="CSRFToken" value="...">
+        // 4) Hidden input LEAF commonly renders: <input id/name="CSRFToken" value="...">
         var input =
           document.getElementById("CSRFToken") ||
           document.querySelector('input[name="CSRFToken"]');
@@ -557,7 +688,7 @@
           return input.value;
         }
 
-        // 4) Last resort: regex-scan the page HTML
+        // 5) Last resort: regex-scan the page HTML
         var match = extractCSRFTokenFromHTML(
           document.documentElement.innerHTML,
         );
@@ -593,6 +724,197 @@
             );
           })
           .join("&");
+      }
+
+      /* ============================================================
+     Debug panel — scans this page for anything that could plausibly
+     be a CSRF token source, so we can identify the correct one.
+     ============================================================ */
+      function runCSRFDiagnostics() {
+        var lines = [];
+        lines.push("=== CSRF Diagnostic Scan ===");
+        lines.push("Page URL: " + window.location.href);
+        lines.push("");
+
+        // 1) Bare global CSRFToken
+        try {
+          lines.push("typeof CSRFToken: " + typeof CSRFToken);
+          if (typeof CSRFToken !== "undefined") {
+            lines.push("  value: " + String(CSRFToken).slice(0, 60));
+          }
+        } catch (e) {
+          lines.push("typeof CSRFToken: (ReferenceError checking it)");
+        }
+        lines.push("");
+
+        // 2) window.CSRFToken
+        lines.push(
+          "window.CSRFToken: " +
+            (window.CSRFToken
+              ? String(window.CSRFToken).slice(0, 60)
+              : "(not set)"),
+        );
+        lines.push("");
+
+        // 3) Known config object candidates
+        ["leafHCDSync", "leafSyncPortal", "leafIdeaPortal"].forEach(
+          function (name) {
+            var obj = window[name];
+            lines.push(
+              "window." +
+                name +
+                ": " +
+                (obj ? JSON.stringify(obj) : "(not set)"),
+            );
+          },
+        );
+        lines.push("");
+
+        // 4) Any window property whose name contains "csrf" (case-insensitive)
+        lines.push("-- window keys matching /csrf/i --");
+        var csrfKeys = [];
+        try {
+          for (var key in window) {
+            if (/csrf/i.test(key)) {
+              csrfKeys.push(key);
+            }
+          }
+        } catch (e) {
+          lines.push("  (error enumerating window keys: " + e.message + ")");
+        }
+        if (csrfKeys.length) {
+          csrfKeys.forEach(function (k) {
+            var v;
+            try {
+              v = window[k];
+            } catch (e) {
+              v = "(unreadable)";
+            }
+            lines.push(
+              "  window." +
+                k +
+                " = " +
+                (typeof v === "object" ? JSON.stringify(v) : String(v)).slice(
+                  0,
+                  100,
+                ),
+            );
+          });
+        } else {
+          lines.push("  (none found)");
+        }
+        lines.push("");
+
+        // 5) Any window property whose name contains "leaf" (naming convention seen elsewhere)
+        lines.push("-- window keys matching /^leaf/i --");
+        var leafKeys = [];
+        try {
+          for (var key2 in window) {
+            if (/^leaf/i.test(key2)) {
+              leafKeys.push(key2);
+            }
+          }
+        } catch (e) {
+          lines.push("  (error enumerating window keys: " + e.message + ")");
+        }
+        if (leafKeys.length) {
+          leafKeys.forEach(function (k) {
+            var v;
+            try {
+              v = window[k];
+            } catch (e) {
+              v = "(unreadable)";
+            }
+            lines.push(
+              "  window." +
+                k +
+                " = " +
+                (typeof v === "object" ? JSON.stringify(v) : String(v)).slice(
+                  0,
+                  200,
+                ),
+            );
+          });
+        } else {
+          lines.push("  (none found)");
+        }
+        lines.push("");
+
+        // 6) DOM inputs / meta tags
+        lines.push("-- DOM scan --");
+        var inputEl =
+          document.getElementById("CSRFToken") ||
+          document.querySelector('input[name="CSRFToken"]');
+        lines.push(
+          "input#CSRFToken or input[name=CSRFToken]: " +
+            (inputEl
+              ? "found, value=" + String(inputEl.value).slice(0, 60)
+              : "(not found)"),
+        );
+        var metaEl = document.querySelector('meta[name="csrf-token"]');
+        lines.push(
+          "meta[name=csrf-token]: " +
+            (metaEl
+              ? "found, content=" + String(metaEl.content).slice(0, 60)
+              : "(not found)"),
+        );
+        lines.push("");
+
+        // 7) Resolved result from our actual lookup function
+        lines.push("-- Result from getCSRFTokenFromPage() --");
+        var resolved = getCSRFTokenFromPage();
+        lines.push(
+          resolved
+            ? "FOUND: " + resolved.slice(0, 60)
+            : "NOT FOUND — no token could be located.",
+        );
+
+        return lines.join("\n");
+      }
+
+      var debugToggleBtn = document.getElementById("debugToggleBtn");
+      var debugBody = document.getElementById("debugBody");
+      var debugOutput = document.getElementById("debugOutput");
+
+      debugToggleBtn.addEventListener("click", function () {
+        var willOpen = !debugBody.classList.contains("open");
+        debugBody.classList.toggle("open", willOpen);
+        debugToggleBtn.setAttribute(
+          "aria-expanded",
+          willOpen ? "true" : "false",
+        );
+      });
+
+      document
+        .getElementById("debugCopyBtn")
+        .addEventListener("click", function () {
+          var btn = this;
+          var text = debugOutput.textContent;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard
+              .writeText(text)
+              .then(function () {
+                var original = btn.textContent;
+                btn.textContent = "Copied!";
+                setTimeout(function () {
+                  btn.textContent = original;
+                }, 1500);
+              })
+              .catch(function () {
+                console.log(text);
+              });
+          } else {
+            console.log(text);
+          }
+        });
+
+      // Run scan on load and log to console too
+      try {
+        var diagnosticsText = runCSRFDiagnostics();
+        debugOutput.textContent = diagnosticsText;
+        console.log(diagnosticsText);
+      } catch (e) {
+        debugOutput.textContent = "Diagnostic scan failed: " + e.message;
       }
 
       /* ============================================================
