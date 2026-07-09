@@ -660,6 +660,12 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         });
     }
 
+    /* Imported legacy vote baseline (indicator 23) and live voter count —
+       populated once pvFetchVoteCount() resolves, and reused by the admin
+       voters panel (_pvRenderVotes) for its summary line. */
+    var _pvImportedVotes = 0;
+    var _pvLiveVoteCount = 0;
+
     /* ── Live vote count pill (all users) ── */
     function pvFetchVoteCount() {
         var ideaKey = String(recordID);
@@ -671,6 +677,17 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
             joins: [],
             getData: ['2']
         };
+
+        function renderCombined() {
+            var count = _pvImportedVotes + _pvLiveVoteCount;
+            var countEl = document.getElementById('pv-votes-count');
+            if (countEl) { countEl.textContent = count + ' ' + (count === 1 ? 'vote' : 'votes'); }
+            /* Keep admin sidebar label in sync */
+            var lbl = document.getElementById('btn-votes-label');
+            if (lbl) { lbl.textContent = 'Votes (' + count + ')'; }
+            window._pvVoteCount = count;
+        }
+
         $.ajax({
             type: 'GET',
             url: './api/form/query',
@@ -682,16 +699,30 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
                 $.each(res, function(_, vote) {
                     if (String((vote.s1 && vote.s1['id2']) || '') === ideaKey) { count++; }
                 });
-                var countEl = document.getElementById('pv-votes-count');
-                if (countEl) { countEl.textContent = count + ' ' + (count === 1 ? 'vote' : 'votes'); }
-                /* Keep admin sidebar label in sync */
-                var lbl = document.getElementById('btn-votes-label');
-                if (lbl) { lbl.textContent = 'Votes (' + count + ')'; }
-                window._pvVoteCount = count;
+                _pvLiveVoteCount = count;
+                renderCombined();
             },
             error: function() {
                 var countEl = document.getElementById('pv-votes-count');
                 if (countEl) { countEl.textContent = '—'; }
+            }
+        });
+
+        /* Imported legacy vote baseline (indicator 23) — same field the
+           portal's tables/detail modal seed their totals from. */
+        $.ajax({
+            type: 'GET',
+            url: 'ajaxIndex.php?a=getprintindicator&recordID=' + encodeURIComponent(recordID) + '&indicatorID=23&series=1',
+            dataType: 'text',
+            cache: false,
+            success: function(html) {
+                var n = parseInt(extractCleanValue(html, 23), 10);
+                _pvImportedVotes = isNaN(n) ? 0 : n;
+                renderCombined();
+            },
+            error: function() {
+                _pvImportedVotes = 0;
+                renderCombined();
             }
         });
     }
@@ -1487,8 +1518,16 @@ function pvOpenEdit(indicatorID) {
     }
 
     function _pvRenderVotes(fc) {
+        /* Context line: imported legacy total vs. live (email-tracked)
+           voters — always shown, even when one of the two is zero, since
+           the whole point of the import is that legacy counts often
+           exist with no individual voters recorded yet. */
+        var summary = '<div style="padding:10px 10px 0;font-size:13px;color:#475569;">'
+            + 'Imported legacy votes: ' + _pvImportedVotes + ' &middot; Live voters: ' + _pvAllVoters.length
+            + '</div>';
+
         if (_pvAllVoters.length === 0) {
-            fc.innerHTML = '<div style="padding:16px;font-size:15px;color:#64748b;font-style:italic;">No votes recorded for this idea.</div>';
+            fc.innerHTML = summary + '<div style="padding:16px;font-size:15px;color:#64748b;font-style:italic;">No live voters recorded for this idea.</div>';
             return;
         }
         var total    = _pvAllVoters.length;
@@ -1505,7 +1544,7 @@ function pvOpenEdit(indicatorID) {
         } else if (_pvShowAll && total > PV_VOTE_CAP) {
             footer = '<div class="pv-votes-footer"><button type="button" class="pv-votes-showall" onclick="_pvShowAll=false;_pvRenderVotes(document.getElementById(\'formcontent\'));">Show fewer</button></div>';
         }
-        fc.innerHTML = '<div class="pv-votes-table-wrap"><table style="width:100%;border-collapse:collapse;font-size:14px;"><thead><tr style="background:#f8fafc;position:sticky;top:0;"><th style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;width:32px;">#</th><th style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Voter</th></tr></thead><tbody>' + rows + '</tbody></table></div>' + footer;
+        fc.innerHTML = summary + '<div class="pv-votes-table-wrap"><table style="width:100%;border-collapse:collapse;font-size:14px;"><thead><tr style="background:#f8fafc;position:sticky;top:0;"><th style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;width:32px;">#</th><th style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Voter</th></tr></thead><tbody>' + rows + '</tbody></table></div>' + footer;
     }
 
     function openContentForPrint(){
