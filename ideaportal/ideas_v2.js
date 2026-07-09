@@ -23,6 +23,7 @@ const IDEA_FIELDS = {
   status: 12,
   other_category: 13,
   date_submitted: 15,
+  imported_votes: 23,
 };
 
 const VOTE_FIELDS = {
@@ -39,6 +40,7 @@ const IDEA_INDICATORS = {
   attachment: `id${IDEA_FIELDS.attachment}`,
   status: `id${IDEA_FIELDS.status}`,
   other_category: `id${IDEA_FIELDS.other_category}`,
+  imported_votes: `id${IDEA_FIELDS.imported_votes}`,
 };
 
 const VOTE_INDICATORS = {
@@ -51,6 +53,7 @@ const IDEA_GETDATA = [
   String(IDEA_FIELDS.category),
   String(IDEA_FIELDS.title),
   String(IDEA_FIELDS.status),
+  String(IDEA_FIELDS.imported_votes),
 ];
 
 // Fields to retrieve for vote records
@@ -1550,6 +1553,19 @@ async function loadIdeasAndVotes() {
     const [ideasData] = await Promise.all([fetchIdeasData(), fetchVotesData()]);
 
     ideasRaw = ideasData;
+
+    // Seed voteCounts with each idea's one-time imported legacy total
+    // (indicator 23) so it's preserved on top of live vote records.
+    // Blank/zero/non-numeric values are treated as 0 — no adjustment.
+    ideasRaw.forEach((idea) => {
+      const key = String(idea.recordID);
+      const imported = parseInt(idea?.s1?.[IDEA_INDICATORS.imported_votes], 10);
+      const importedBase = isNaN(imported) ? 0 : imported;
+      if (importedBase > 0) {
+        voteCounts[key] = importedBase + (voteCounts[key] || 0);
+      }
+    });
+
     ideas = buildIdeasViewModelList(ideasRaw, true);
 
     implementedCount = ideas.filter((i) => i.status === "Completed").length;
