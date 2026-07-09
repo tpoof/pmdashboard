@@ -1710,10 +1710,37 @@ async function loadIdeasAndVotes() {
     // Seed voteCounts with each idea's one-time imported legacy total
     // (indicator 23) so it's preserved on top of live vote records.
     // Blank/zero/non-numeric values are treated as 0 — no adjustment.
+    //
+    // Numeric-type indicators don't always come back under the same
+    // "id<N>" key shape used by text/dropdown fields, so try a few
+    // plausible shapes rather than assuming one.
+    let loggedImportDebug = false;
     ideasRaw.forEach((idea) => {
       const key = String(idea.recordID);
-      const imported = parseInt(idea?.s1?.[IDEA_INDICATORS.imported_votes], 10);
-      const importedBase = isNaN(imported) ? 0 : imported;
+      const fieldNum = String(IDEA_FIELDS.imported_votes); // "23"
+      const candidates = [
+        idea?.s1?.[IDEA_INDICATORS.imported_votes], // s1.id23
+        idea?.s1?.[fieldNum], // s1["23"]
+        idea?.[IDEA_INDICATORS.imported_votes], // top-level id23
+        idea?.[fieldNum], // top-level "23"
+      ];
+      let importedBase = 0;
+      for (const candidate of candidates) {
+        const n = parseInt(candidate, 10);
+        if (!isNaN(n)) {
+          importedBase = n;
+          break;
+        }
+      }
+      if (!loggedImportDebug) {
+        loggedImportDebug = true;
+        console.log(
+          "[ImportedVotes] debug — first idea record shape:",
+          idea,
+          "resolved importedBase:",
+          importedBase,
+        );
+      }
       if (importedBase > 0) {
         voteCounts[key] = importedBase + (voteCounts[key] || 0);
       }
