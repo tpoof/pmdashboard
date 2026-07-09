@@ -696,12 +696,22 @@ function renderAttachmentsHTML(html) {
   return out;
 }
 
-function buildDetailSkeleton(recordID, title, votes, isVoted, statusLabel) {
+function buildDetailSkeleton(
+  recordID,
+  title,
+  votes,
+  isVoted,
+  statusLabel,
+  isOwn = false,
+) {
   const isVotedClass = isVoted ? " is-voted" : "";
-  const voteDisabled = isVoted ? "disabled" : "";
-  const voteAriaLabel = isVoted
-    ? "You already voted"
-    : `Vote for idea #${escapeHtml(recordID)}`;
+  const isOwnClass = isOwn ? " is-own" : "";
+  const voteDisabled = isVoted || isOwn ? "disabled" : "";
+  const voteAriaLabel = isOwn
+    ? "You can't vote on your own idea"
+    : isVoted
+      ? "You already voted"
+      : `Vote for idea #${escapeHtml(recordID)}`;
   const votesText = `${escapeHtml(String(votes))} ${votes === 1 ? "vote" : "votes"}`;
   return `<div class="ip-detail" id="ipDetailRoot">
 
@@ -759,12 +769,13 @@ function buildDetailSkeleton(recordID, title, votes, isVoted, statusLabel) {
     <div class="ip-detail__actions" role="group" aria-label="Idea actions">
       <span class="ip-detail__meta-label">Actions</span>
       <button type="button"
-        class="ip-upvote${isVotedClass}"
+        class="ip-upvote${isVotedClass}${isOwnClass}"
         data-detail-vote="${escapeHtml(recordID)}"
         aria-label="${voteAriaLabel}"
+        title="${isOwn ? "You can't vote on your own idea" : ""}"
         ${voteDisabled}>
         <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
-        ${isVoted ? "Voted" : "Vote"}
+        ${isOwn ? "Your idea" : isVoted ? "Voted" : "Vote"}
       </button>
       <button type="button"
         class="ip-share"
@@ -810,6 +821,13 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
   const votes = vm?.votes ?? voteCounts[ridStr] ?? 0;
   const isVoted = userVotes[ridStr] === true;
   const statusLabel = vm?.status || "";
+  const isOwn =
+    vm?.isOwn === true ||
+    Boolean(
+      userID &&
+      ideaOwnerMap[ridStr] &&
+      String(ideaOwnerMap[ridStr]) === String(userID),
+    );
 
   if (header) header.textContent = title || "Idea Details";
   if (openBtn) {
@@ -824,6 +842,7 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
     votes,
     isVoted,
     statusLabel,
+    isOwn,
   );
 
   // Wire the vote button inside the modal
@@ -1006,6 +1025,9 @@ function buildIdeaViewModel(idea) {
   const status = normalizeStatusLabel(sanitizeLeafValue(statusRaw));
   const votes = voteCounts[recordID] || 0;
   const isVoted = userVotes[recordID] === true;
+  const isOwn = Boolean(
+    userID && idea.userID && String(idea.userID) === String(userID),
+  );
   return {
     recordID,
     title,
@@ -1014,6 +1036,7 @@ function buildIdeaViewModel(idea) {
     status,
     votes,
     isVoted,
+    isOwn,
     created_date: idea.created_date || "",
     recordLink: `${RECORD_VIEW_URL}${recordID}`,
   };
@@ -1143,11 +1166,20 @@ function buildIdeaRow(idea) {
 
   const votes = idea.votes || 0;
   const isVoted = idea.isVoted === true;
+  const isOwn = idea.isOwn === true;
   const recordLink = idea.recordLink || `${RECORD_VIEW_URL}${recordID}`;
   const labelTitle = title || `Idea ${recordID}`;
-  const voteLabel = isVoted
-    ? `Already voted for ${labelTitle}`
-    : `Vote for ${labelTitle}`;
+  const voteDisabled = isVoted || isOwn;
+  const voteLabel = isOwn
+    ? `You submitted ${labelTitle} — voting on your own idea isn't allowed`
+    : isVoted
+      ? `Already voted for ${labelTitle}`
+      : `Vote for ${labelTitle}`;
+  const voteTitle = isOwn
+    ? "You can't vote on your own idea"
+    : isVoted
+      ? "Already voted"
+      : "Vote for this idea";
 
   return `
     <tr data-record-id="${recordID}">
@@ -1163,12 +1195,12 @@ function buildIdeaRow(idea) {
       <td data-label="Status">${statusMarkup}</td>
       <td class="ip-votes" data-label="Votes">${votes}</td>
       <td class="ip-actionsCell" data-label="Actions">
-        <button class="ip-upvote${isVoted ? " is-voted" : ""}"
+        <button class="ip-upvote${isVoted ? " is-voted" : ""}${isOwn ? " is-own" : ""}"
           data-record-id="${recordID}"
-          ${isVoted ? "disabled" : ""}
+          ${voteDisabled ? "disabled" : ""}
           aria-label="${voteLabel}"
-          aria-disabled="${isVoted}"
-          title="${isVoted ? "Already voted" : "Vote for this idea"}">
+          aria-disabled="${voteDisabled}"
+          title="${voteTitle}">
           <span class="material-symbols-outlined" style="font-variation-settings:${ICON_FILL}" aria-hidden="true">thumb_up</span>
         </button>
         <button class="ip-share"
@@ -1374,9 +1406,10 @@ function setVoteButtonsDisabled(isDisabled) {
       btn.disabled = true;
       btn.setAttribute("aria-disabled", "true");
     } else if (btn.dataset.loadingDisabled === "true") {
-      const voted = btn.classList.contains("is-voted");
-      btn.disabled = voted;
-      btn.setAttribute("aria-disabled", voted ? "true" : "false");
+      const staysDisabled =
+        btn.classList.contains("is-voted") || btn.classList.contains("is-own");
+      btn.disabled = staysDisabled;
+      btn.setAttribute("aria-disabled", staysDisabled ? "true" : "false");
       delete btn.dataset.loadingDisabled;
     }
   });
@@ -1460,6 +1493,14 @@ async function IdeaVotes(recordID) {
   if (votingInProgress) return;
   if (userVotes[key]) {
     showToast("You already voted on this idea.", true);
+    return;
+  }
+  if (
+    userID &&
+    ideaOwnerMap[key] &&
+    String(ideaOwnerMap[key]) === String(userID)
+  ) {
+    showToast("You can't vote on your own idea.", true);
     return;
   }
 
@@ -2033,7 +2074,9 @@ async function loadCategoryOptions() {
     );
     const html = await res.text();
     const doc = new DOMParser().parseFromString(html, "text/html");
-    const sel = doc.querySelector("select#8");
+    // Attribute selector, not #8 — a bare numeric ID isn't a valid CSS
+    // selector token and throws ("select#8" is invalid syntax).
+    const sel = doc.querySelector('select[id="8"]');
     if (!sel || !sel.options.length) throw new Error("no options");
     const options = Array.from(sel.options)
       .map((o) => o.value)
@@ -2066,7 +2109,7 @@ async function loadImpactOptions() {
     );
     const html = await res.text();
     const doc = new DOMParser().parseFromString(html, "text/html");
-    const sel = doc.querySelector("select#9");
+    const sel = doc.querySelector('select[id="9"]');
     if (!sel || !sel.options.length) throw new Error("no options");
     populateSelect(
       document.getElementById("inpImpact"),
@@ -2449,17 +2492,21 @@ function openVotedModal() {
   const searchInput = document.getElementById("ipVotedSearchInput");
   if (!modal) return;
 
-  // Build the full row data — reset sort/search to defaults each open
+  // Build the full row data — reset sort/search to defaults each open.
+  // Votes for ideas that are no longer available (deleted) are dropped
+  // rather than shown as an "Idea not available" placeholder.
   const votedIDs = Object.keys(userVotes).filter((k) => userVotes[k] === true);
-  votedModalState.allRows = votedIDs.map((id) => ({
-    id,
-    idea: ideasVMById[id] || null,
-  }));
+  votedModalState.allRows = votedIDs
+    .map((id) => ({
+      id,
+      idea: ideasVMById[id] || null,
+    }))
+    .filter((row) => row.idea !== null);
   votedModalState.sort = { key: "id", dir: "asc" };
   votedModalState.search = "";
 
   if (searchInput) searchInput.value = "";
-  if (searchWrap) searchWrap.hidden = !votedIDs.length;
+  if (searchWrap) searchWrap.hidden = !votedModalState.allRows.length;
 
   renderVotedTable();
 

@@ -145,6 +145,8 @@
 .pv-upvote.is-voted { background: #e8e8e8; color: #666; border-color: #ccc; cursor: default; opacity: 1; }
 .pv-upvote.is-voted .material-symbols-outlined { color: #666 !important; }
 .pv-upvote.is-voted:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
+.pv-upvote.is-own { background: #f8fafc; color: #94a3b8; border-color: #e2e8f0; cursor: not-allowed; opacity: 1; }
+.pv-upvote.is-own .material-symbols-outlined { color: #94a3b8 !important; }
 .pv-upvote:disabled { opacity: 0.65; }
 .pv-upvote:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
 .pv-upvote .material-symbols-outlined { font-size: 0.9rem; line-height: 1; font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 24, 'GRAD' 0; }
@@ -384,10 +386,16 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
             dataType: 'html',
             cache: false,
             success: function(html) {
-                var doc = new DOMParser().parseFromString(html, 'text/html');
-                var sel = doc.querySelector('select#8');
-                if (sel && sel.options.length) {
-                    categoryOptionsList = Array.prototype.map.call(sel.options, function(o) { return o.value; }).filter(Boolean);
+                try {
+                    var doc = new DOMParser().parseFromString(html, 'text/html');
+                    /* Use an attribute selector, not #8 — a bare numeric ID
+                       is not a valid CSS selector token and throws. */
+                    var sel = doc.querySelector('select[id="8"]');
+                    if (sel && sel.options.length) {
+                        categoryOptionsList = Array.prototype.map.call(sel.options, function(o) { return o.value; }).filter(Boolean);
+                    }
+                } catch (e) {
+                    console.warn('[fetchCategoryOptionsList] could not parse category options:', e);
                 }
                 if (lastCategoryRaw !== null) {
                     var el = document.getElementById('pv-value-8');
@@ -663,7 +671,7 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
     /* Imported legacy vote baseline (indicator 23) and live voter count —
        populated once pvFetchVoteCount() resolves, and reused by the admin
        voters panel (_pvRenderVotes) for its summary line. */
-    var _pvImportedVotes = 0;
+    window._pvImportedVotes = 0;
     var _pvLiveVoteCount = 0;
 
     /* ── Live vote count pill (all users) ── */
@@ -679,7 +687,7 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         };
 
         function renderCombined() {
-            var count = _pvImportedVotes + _pvLiveVoteCount;
+            var count = window._pvImportedVotes + _pvLiveVoteCount;
             var countEl = document.getElementById('pv-votes-count');
             if (countEl) { countEl.textContent = count + ' ' + (count === 1 ? 'vote' : 'votes'); }
             /* Keep admin sidebar label in sync */
@@ -717,11 +725,11 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
             cache: false,
             success: function(html) {
                 var n = parseInt(extractCleanValue(html, 23), 10);
-                _pvImportedVotes = isNaN(n) ? 0 : n;
+                window._pvImportedVotes = isNaN(n) ? 0 : n;
                 renderCombined();
             },
             error: function() {
-                _pvImportedVotes = 0;
+                window._pvImportedVotes = 0;
                 renderCombined();
             }
         });
@@ -857,8 +865,51 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         });
     }
 
+    /* Authors can't vote for their own idea — check the record's
+       submitter against the current viewer and disable the button. */
+    var _pvIsOwnIdea = false;
+
+    function pvCheckIsOwn() {
+        if (!PV_USER_ID) { return; }
+        var q = {
+            terms: [
+                { id: 'categoryID', operator: '=', match: 'form_ae642', gate: 'AND' },
+                { id: 'recordID',   operator: '=', match: PV_RECORD_ID, gate: 'AND' }
+            ],
+            joins: [],
+            getData: []
+        };
+        $.ajax({
+            type: 'GET',
+            url: './api/form/query',
+            data: { q: JSON.stringify(q), 'x-filterData': 'recordID,userID' },
+            dataType: 'json',
+            cache: false,
+            success: function(res) {
+                var rec = Object.values(res || {})[0];
+                var ownerID = rec && rec.userID;
+                if (ownerID && String(ownerID) === String(PV_USER_ID)) {
+                    _pvIsOwnIdea = true;
+                    pvSetOwnIdea();
+                }
+            },
+            error: function() { /* silently fail — vote button stays enabled */ }
+        });
+    }
+
+    function pvSetOwnIdea() {
+        var btn = document.getElementById('pv-vote-btn');
+        if (!btn) { return; }
+        btn.disabled = true;
+        btn.classList.add('is-own');
+        btn.setAttribute('aria-disabled', 'true');
+        btn.setAttribute('aria-label', "You can't vote on your own idea");
+        btn.title = "You can't vote on your own idea";
+    }
+
     function pvIdeaVotes() {
         if (_pvVotingInProgress) { return; }
+        if (_pvIsOwnIdea) { pvShowToast("You can't vote on your own idea.", true); return; }
         var btn = document.getElementById('pv-vote-btn');
         if (btn && btn.disabled) { pvShowToast('You already voted on this idea.', true); return; }
         _pvVotingInProgress = true;
@@ -923,6 +974,7 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         if (voteBtn)  { voteBtn.addEventListener('click',  pvIdeaVotes); }
         if (shareBtn) { shareBtn.addEventListener('click', pvShare); }
         pvResolveEmail().then(function() { pvCheckVoted(); });
+        pvCheckIsOwn();
     });
 
 }());
@@ -1523,7 +1575,7 @@ function pvOpenEdit(indicatorID) {
            the whole point of the import is that legacy counts often
            exist with no individual voters recorded yet. */
         var summary = '<div style="padding:10px 10px 0;font-size:13px;color:#475569;">'
-            + 'Imported legacy votes: ' + _pvImportedVotes + ' &middot; Live voters: ' + _pvAllVoters.length
+            + 'Imported legacy votes: ' + window._pvImportedVotes + ' &middot; Live voters: ' + _pvAllVoters.length
             + '</div>';
 
         if (_pvAllVoters.length === 0) {
