@@ -425,6 +425,15 @@ function updateMyActivity(myCount, votedCount) {
   if (votesEl) votesEl.textContent = votedCount;
 }
 
+// Count of the user's votes that still point at an available (non-deleted)
+// idea — mirrors the filtering used to build the "Ideas I've voted for"
+// list, so the sidebar count and the list it summarizes always agree.
+function getAvailableVotedCount() {
+  return Object.keys(userVotes).filter(
+    (id) => userVotes[id] === true && ideasVMById[id] != null,
+  ).length;
+}
+
 /* ─────────────────────────────────────────────────────────────
    Status messages
 ───────────────────────────────────────────────────────────── */
@@ -1536,10 +1545,7 @@ async function IdeaVotes(recordID) {
       const totalVotes = Object.values(voteCounts).reduce((s, n) => s + n, 0);
       renderStatsStrip(ideas.length, implementedCount, totalVotes);
       showToast("Thanks for voting!");
-      updateMyActivity(
-        myIdeasCache.length,
-        Object.values(userVotes).filter(Boolean).length,
-      );
+      updateMyActivity(myIdeasCache.length, getAvailableVotedCount());
     } else {
       throw new Error(`Unexpected response: ${response}`);
     }
@@ -1711,10 +1717,7 @@ async function fetchUserSubmissions() {
     myIdeasCache = buildIdeasViewModelList(userIdeas, false);
     renderMyIdeas();
     setStatus("my", "", "");
-    updateMyActivity(
-      myIdeasCache.length,
-      Object.values(userVotes).filter(Boolean).length,
-    );
+    updateMyActivity(myIdeasCache.length, getAvailableVotedCount());
   } catch (err) {
     console.error("fetchUserSubmissions error:", err);
     renderTableMessage(ui.myResults, "Error loading your ideas.", {
