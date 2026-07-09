@@ -1861,13 +1861,7 @@
            and leaf_breadcrumb.js is blocklisted from re-execution. -->
       <script>
         if (!document.getElementById("lpSwapHost")) {
-          window.LEAF_BREADCRUMB = [
-            {
-              label: "Resources",
-              href: "/platform/designs/report.php?a=find_site",
-            },
-            { label: "Idea Portal" },
-          ];
+          window.LEAF_BREADCRUMB = ["resources", { label: "Idea Portal" }];
         }
       </script>
 
