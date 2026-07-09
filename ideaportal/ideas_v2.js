@@ -94,6 +94,10 @@ let ideasById = {};
 let ideasVMById = {};
 let ideaOwnerMap = {};
 let voteCounts = {};
+// Known valid category labels (populated from the live indicator-8 select,
+// or CATEGORY_FALLBACK). Used to split multi-select values that come back
+// concatenated with no delimiter (e.g. legacy-imported records).
+let categoryOptionsList = [];
 
 const portalConfig = window.leafIdeaPortal || {};
 
@@ -119,6 +123,63 @@ function escapeHtml(value) {
 function truncateTitle(title, max = 100) {
   if (!title) return "";
   return title.length <= max ? title : `${title.substring(0, max).trimEnd()}…`;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Multi-select category parsing
+   Handles both delimited values (comma/semicolon/newline — the
+   normal case for values entered through the app) and legacy
+   imported values that come back as selected labels concatenated
+   with no delimiter at all, by greedily matching against the
+   known category option list (longest labels first).
+───────────────────────────────────────────────────────────── */
+
+function parseCategoryValue(raw) {
+  const str = String(raw || "").trim();
+  if (!str) return [];
+
+  // Normal case — an explicit delimiter is present.
+  if (/[,;\n]/.test(str)) {
+    return str
+      .split(/[,;\n]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  // No delimiter — try to greedily split using known category labels.
+  const known = (categoryOptionsList || [])
+    .filter(Boolean)
+    .slice()
+    .sort((a, b) => b.length - a.length);
+
+  if (known.length) {
+    const out = [];
+    let remaining = str;
+    let guard = 0;
+    while (remaining.length && guard < 50) {
+      guard++;
+      const match = known.find((label) =>
+        remaining.toLowerCase().startsWith(label.toLowerCase()),
+      );
+      if (!match) break;
+      out.push(match);
+      remaining = remaining.slice(match.length);
+    }
+    // Only trust the greedy split if it consumed the whole string —
+    // otherwise fall back to treating it as a single value below.
+    if (out.length && !remaining.trim()) return out;
+  }
+
+  return [str];
+}
+
+function renderCategoryPills(categories) {
+  const list = Array.isArray(categories) ? categories : [categories];
+  const clean = list.map((c) => String(c || "").trim()).filter(Boolean);
+  if (!clean.length) return "";
+  return `<span class="ip-cat-pills">${clean
+    .map((c) => `<span class="ip-cat-pill">${escapeHtml(c)}</span>`)
+    .join("")}</span>`;
 }
 
 function debounce(fn, delay) {
@@ -299,8 +360,14 @@ function buildCategorySidebar(ideaList) {
   const counts = {};
   let total = 0;
   (ideaList || []).forEach((idea) => {
-    const cat = (idea.category || "").trim() || "Uncategorized";
-    counts[cat] = (counts[cat] || 0) + 1;
+    const cats = (
+      idea.categories && idea.categories.length
+        ? idea.categories
+        : [(idea.category || "").trim() || "Uncategorized"]
+    ).filter(Boolean);
+    cats.forEach((cat) => {
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
     total++;
   });
 
@@ -546,7 +613,17 @@ function extractCleanValue(html, indicatorID) {
   const tmp = document.createElement("div");
   tmp.innerHTML = html;
   const span = tmp.querySelector(`[id^="data_${indicatorID}_"]`);
-  if (span) return (span.textContent || "").trim();
+  if (span) {
+    // Strip any nested blocks belonging to a *different* indicator
+    // (e.g. a sub-question's "if other, specify" prompt that the
+    // server sometimes inlines into a parent field's markup) so it
+    // doesn't bleed into this field's text.
+    const clone = span.cloneNode(true);
+    clone
+      .querySelectorAll(`[id^="data_"]:not([id^="data_${indicatorID}_"])`)
+      .forEach((el) => el.remove());
+    return (clone.textContent || "").trim();
+  }
   tmp
     .querySelectorAll("script, input, button, textarea, select")
     .forEach((el) => el.remove());
@@ -678,6 +755,8 @@ async function populateDetailField(recordID, indicatorID, opts = {}) {
     }
     if (!value) {
       el.innerHTML = `<span class="ip-detail__empty">Not provided</span>`;
+    } else if (opts.renderHtml) {
+      el.innerHTML = opts.renderHtml(value);
     } else el.textContent = value;
     if (opts.onValue) opts.onValue(value);
   } catch {
@@ -755,8 +834,12 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
     populateDetailField(ridStr, 6),
     populateDetailField(ridStr, 7),
     populateDetailField(ridStr, 8, {
+      renderHtml(val) {
+        return renderCategoryPills(parseCategoryValue(val));
+      },
       onValue(val) {
-        if (val.trim().toLowerCase() === "other") {
+        const cats = parseCategoryValue(val).map((c) => c.toLowerCase());
+        if (cats.includes("other")) {
           const subq = document.getElementById("ip-dv-subq-13");
           if (subq) subq.removeAttribute("hidden");
           populateDetailField(ridStr, 13);
@@ -853,9 +936,11 @@ function buildIdeaViewModel(idea) {
   const title = sanitizeLeafValue(
     getIdeaField(idea, IDEA_INDICATORS.title, "title"),
   );
-  const category = sanitizeLeafValue(
+  const categoryRaw = sanitizeLeafValue(
     getIdeaField(idea, IDEA_INDICATORS.category, "category"),
   );
+  const categories = parseCategoryValue(categoryRaw);
+  const category = categories.join(", ");
   const statusRaw = getIdeaField(idea, IDEA_INDICATORS.status, "status");
   const status = normalizeStatusLabel(sanitizeLeafValue(statusRaw));
   const votes = voteCounts[recordID] || 0;
@@ -864,6 +949,7 @@ function buildIdeaViewModel(idea) {
     recordID,
     title,
     category,
+    categories,
     status,
     votes,
     isVoted,
@@ -985,7 +1071,9 @@ function buildIdeaRow(idea) {
   // CSS handles truncation via text-overflow:ellipsis on .ip-col-title;
   // render the full title so the tooltip always matches the visible text.
   const titleDisplay = title;
-  const category = escapeHtml(idea.category || "");
+  const category = renderCategoryPills(
+    idea.categories && idea.categories.length ? idea.categories : idea.category,
+  );
 
   // Show "Draft" when status is empty (not-submitted records)
   const statusLabel = idea.status || "Draft";
@@ -1051,9 +1139,13 @@ function getIdeaSearchText(idea) {
 function filterIdeasList(list, query) {
   let filtered = list;
   if (state.categoryFilter && state.categoryFilter !== "all") {
-    filtered = filtered.filter(
-      (i) => (i.category || "").trim() === state.categoryFilter,
-    );
+    filtered = filtered.filter((i) => {
+      const cats =
+        i.categories && i.categories.length
+          ? i.categories
+          : [(i.category || "").trim() || "Uncategorized"];
+      return cats.includes(state.categoryFilter);
+    });
   }
   if (query) {
     const q = query.toLowerCase();
@@ -1846,19 +1938,26 @@ async function loadCategoryOptions() {
     const doc = new DOMParser().parseFromString(html, "text/html");
     const sel = doc.querySelector("select#8");
     if (!sel || !sel.options.length) throw new Error("no options");
-    populateSelect(
-      document.getElementById("inpCategory"),
-      Array.from(sel.options)
-        .map((o) => o.value)
-        .filter(Boolean),
-      false,
-    );
+    const options = Array.from(sel.options)
+      .map((o) => o.value)
+      .filter(Boolean);
+    categoryOptionsList = options;
+    populateSelect(document.getElementById("inpCategory"), options, false);
   } catch {
+    categoryOptionsList = CATEGORY_FALLBACK.slice();
     populateSelect(
       document.getElementById("inpCategory"),
       CATEGORY_FALLBACK,
       true,
     );
+  }
+  // Re-derive categories now that the known-label list is available —
+  // covers the case where ideas rendered before this fetch resolved.
+  if (ideasRaw.length) {
+    ideas = buildIdeasViewModelList(ideasRaw, true);
+    buildCategorySidebar(ideas);
+    renderAllIdeas();
+    renderTop10Ideas();
   }
 }
 
@@ -2101,7 +2200,9 @@ function buildVotedRow(id, idea) {
   }
   const titleFull = escapeHtml(idea.title || `Idea ${id}`);
   const titleDisplay = escapeHtml(truncateTitle(idea.title || `Idea ${id}`));
-  const category = escapeHtml(idea.category || "");
+  const category = renderCategoryPills(
+    idea.categories && idea.categories.length ? idea.categories : idea.category,
+  );
   const statusLabel = idea.status || "Draft";
   const statusBadgeClass = getStatusBadgeClass(statusLabel);
   const votes = idea.votes || 0;
