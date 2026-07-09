@@ -1145,6 +1145,7 @@
         color: var(--ip-navy);
       }
       .ip-field input[type="text"],
+      .ip-field input[type="url"],
       .ip-field select,
       .ip-textarea {
         width: 100%;
@@ -1186,6 +1187,28 @@
       .was-validated .ip-field select:invalid {
         border-color: var(--ip-red);
         box-shadow: 0 0 0 3px rgba(213, 67, 9, 0.1);
+      }
+      /* ── Radio group (implemented-on-LEAF question) ── */
+      .ip-radioGroup {
+        display: flex;
+        gap: 18px;
+        margin-top: 2px;
+      }
+      .ip-radioOption {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: "Source Sans 3", sans-serif;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--ip-text);
+        cursor: pointer;
+      }
+      .ip-radioOption input[type="radio"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--ip-blue);
+        cursor: pointer;
       }
       .ip-fileInput {
         font-size: 0.9rem;
@@ -1466,6 +1489,17 @@
         color: #64748b;
         font-style: italic;
         font-size: 0.95rem;
+      }
+      .ip-detail__link {
+        color: var(--ip-blue, #005ea2);
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        word-break: break-word;
+      }
+      .ip-detail__link:hover,
+      .ip-detail__link:focus {
+        color: #004a82;
       }
       .ip-detail__loading {
         color: #94a3b8;
@@ -2504,6 +2538,56 @@
                 ></textarea>
                 <div class="ip-error" id="errBenefit">
                   Briefly describe the benefit of your idea.
+                </div>
+              </div>
+              <div class="ip-field">
+                <span class="ip-label" id="lblImplemented"
+                  >Have you implemented this idea on your LEAF site?</span
+                >
+                <div
+                  class="ip-radioGroup"
+                  role="radiogroup"
+                  aria-labelledby="lblImplemented"
+                >
+                  <label class="ip-radioOption">
+                    <input
+                      type="radio"
+                      name="inpImplemented"
+                      id="inpImplementedYes"
+                      value="Yes"
+                    />
+                    Yes
+                  </label>
+                  <label class="ip-radioOption">
+                    <input
+                      type="radio"
+                      name="inpImplemented"
+                      id="inpImplementedNo"
+                      value="No"
+                      checked
+                    />
+                    No
+                  </label>
+                </div>
+                <div
+                  id="implementedUrlWrapper"
+                  style="display: none; margin-top: 0.5rem"
+                  aria-live="polite"
+                >
+                  <label for="inpImplementedUrl"
+                    >Please provide the LEAF site's URL this is implemented
+                    in:</label
+                  >
+                  <input
+                    type="url"
+                    id="inpImplementedUrl"
+                    maxlength="500"
+                    placeholder="https://…"
+                    aria-describedby="errImplementedUrl"
+                  />
+                  <div class="ip-error" id="errImplementedUrl">
+                    Please provide the URL where this is implemented.
+                  </div>
                 </div>
               </div>
               <div class="ip-field">

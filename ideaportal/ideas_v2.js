@@ -24,6 +24,8 @@ const IDEA_FIELDS = {
   other_category: 13,
   date_submitted: 15,
   imported_votes: 23,
+  implemented: 21,
+  implemented_url: 22,
 };
 
 const VOTE_FIELDS = {
@@ -41,6 +43,8 @@ const IDEA_INDICATORS = {
   status: `id${IDEA_FIELDS.status}`,
   other_category: `id${IDEA_FIELDS.other_category}`,
   imported_votes: `id${IDEA_FIELDS.imported_votes}`,
+  implemented: `id${IDEA_FIELDS.implemented}`,
+  implemented_url: `id${IDEA_FIELDS.implemented_url}`,
 };
 
 const VOTE_INDICATORS = {
@@ -609,10 +613,28 @@ async function fetchIndicator(recordID, indicatorID) {
   return res.text();
 }
 
+// Known sub-question prompt text that LEAF sometimes inlines directly
+// (as plain text, with no distinguishing markup) into a parent field's
+// print value. Keyed by the parent indicatorID; each value is cut at
+// the first case-insensitive occurrence of the marker.
+const BLEED_MARKERS = {
+  8: "if other",
+  21: "please provide",
+};
+
+function stripKnownBleed(text, indicatorID) {
+  const marker = BLEED_MARKERS[indicatorID];
+  if (!marker) return text;
+  const idx = text.toLowerCase().indexOf(marker);
+  if (idx === -1) return text;
+  return text.slice(0, idx).trim();
+}
+
 function extractCleanValue(html, indicatorID) {
   const tmp = document.createElement("div");
   tmp.innerHTML = html;
   const span = tmp.querySelector(`[id^="data_${indicatorID}_"]`);
+  let raw;
   if (span) {
     // Strip any nested blocks belonging to a *different* indicator
     // (e.g. a sub-question's "if other, specify" prompt that the
@@ -622,12 +644,14 @@ function extractCleanValue(html, indicatorID) {
     clone
       .querySelectorAll(`[id^="data_"]:not([id^="data_${indicatorID}_"])`)
       .forEach((el) => el.remove());
-    return (clone.textContent || "").trim();
+    raw = (clone.textContent || "").trim();
+  } else {
+    tmp
+      .querySelectorAll("script, input, button, textarea, select")
+      .forEach((el) => el.remove());
+    raw = (tmp.textContent || "").trim();
   }
-  tmp
-    .querySelectorAll("script, input, button, textarea, select")
-    .forEach((el) => el.remove());
-  return (tmp.textContent || "").trim();
+  return stripKnownBleed(raw, indicatorID);
 }
 
 function renderAttachmentsHTML(html) {
@@ -716,6 +740,16 @@ function buildDetailSkeleton(recordID, title, votes, isVoted, statusLabel) {
         <div class="ip-detail__card-body" id="ip-dv-9"><span class="ip-detail__loading">Loading\u2026</span></div>
       </section>
     </div>
+    <section class="ip-detail__card" aria-labelledby="ip-dl-21">
+      <span class="ip-detail__card-label" id="ip-dl-21">Have you implemented this idea on your LEAF site?</span>
+      <div class="ip-detail__card-body" id="ip-dv-21"><span class="ip-detail__loading">Loading\u2026</span></div>
+      <div id="ip-dv-subq-22" hidden>
+        <div class="ip-detail__sub-card" aria-labelledby="ip-dl-22">
+          <span class="ip-detail__card-label" id="ip-dl-22">LEAF site URL</span>
+          <div class="ip-detail__card-body" id="ip-dv-22"></div>
+        </div>
+      </div>
+    </section>
     <section class="ip-detail__card" aria-labelledby="ip-dl-10">
       <span class="ip-detail__card-label" id="ip-dl-10">Attachments</span>
       <div id="ip-dv-10" aria-live="polite"><span class="ip-detail__loading">Loading\u2026</span></div>
@@ -840,13 +874,40 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
       onValue(val) {
         const cats = parseCategoryValue(val).map((c) => c.toLowerCase());
         if (cats.includes("other")) {
-          const subq = document.getElementById("ip-dv-subq-13");
-          if (subq) subq.removeAttribute("hidden");
-          populateDetailField(ridStr, 13);
+          // Only reveal the sub-card if something was actually typed
+          // into 13 — an empty answer stays fully hidden.
+          populateDetailField(ridStr, 13, {
+            onValue(subVal) {
+              if (subVal && subVal.trim()) {
+                const subq = document.getElementById("ip-dv-subq-13");
+                if (subq) subq.removeAttribute("hidden");
+              }
+            },
+          });
         }
       },
     }),
     populateDetailField(ridStr, 9),
+    populateDetailField(ridStr, 21, {
+      onValue(val) {
+        if (val.trim().toLowerCase() === "yes") {
+          // Only reveal the sub-card if a URL was actually provided —
+          // an empty answer stays fully hidden.
+          populateDetailField(ridStr, 22, {
+            renderHtml(url) {
+              const href = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+              return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" class="ip-detail__link">${escapeHtml(url)}</a>`;
+            },
+            onValue(subVal) {
+              if (subVal && subVal.trim()) {
+                const subq = document.getElementById("ip-dv-subq-22");
+                if (subq) subq.removeAttribute("hidden");
+              }
+            },
+          });
+        }
+      },
+    }),
     populateDetailField(ridStr, 10, { isAttachment: true }),
   ]);
 }
@@ -1820,6 +1881,10 @@ async function NewIdea(advanceOnSuccess) {
   const categoryValue = val("inpCategory");
   const impactValue = val("inpImpact");
   const otherCatValue = val("inpOtherCategory");
+  const implementedValue =
+    document.querySelector('input[name="inpImplemented"]:checked')?.value ||
+    "No";
+  const implementedUrlValue = val("inpImplementedUrl");
 
   if (submitBtn) submitBtn.disabled = true;
   if (saveBtn) saveBtn.disabled = true;
@@ -1840,9 +1905,13 @@ async function NewIdea(advanceOnSuccess) {
       [IDEA_FIELDS.benefit]: benefitValue,
       [IDEA_FIELDS.category]: categoryValue,
       [IDEA_FIELDS.impact]: impactValue,
+      [IDEA_FIELDS.implemented]: implementedValue,
     };
     if (categoryValue === "Other" && otherCatValue) {
       payload[IDEA_FIELDS.other_category] = otherCatValue;
+    }
+    if (implementedValue === "Yes" && implementedUrlValue) {
+      payload[IDEA_FIELDS.implemented_url] = implementedUrlValue;
     }
     // Approach A — include date in the initial create POST
     if (todayStr) {
@@ -1872,6 +1941,7 @@ async function NewIdea(advanceOnSuccess) {
 
       form?.reset();
       form?.classList.remove("was-validated");
+      resetImplementedField();
       if (fileInputEl) fileInputEl.value = "";
       const fileList = document.getElementById("fileList");
       if (fileList) fileList.innerHTML = "";
@@ -2006,6 +2076,43 @@ function bindCategoryChange() {
       otherInput.removeAttribute("aria-invalid");
     }
   });
+}
+
+function bindImplementedChange() {
+  const radios = document.querySelectorAll('input[name="inpImplemented"]');
+  const urlWrapper = document.getElementById("implementedUrlWrapper");
+  const urlInput = document.getElementById("inpImplementedUrl");
+  if (!radios.length || !urlWrapper || !urlInput) return;
+
+  radios.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      const isYes = radio.checked && radio.value === "Yes";
+      const anyYesChecked = document.querySelector(
+        'input[name="inpImplemented"][value="Yes"]:checked',
+      );
+      urlWrapper.style.display = anyYesChecked ? "" : "none";
+      urlInput.required = !!anyYesChecked;
+      if (anyYesChecked) {
+        urlInput.focus();
+      } else {
+        urlInput.value = "";
+        urlInput.removeAttribute("aria-invalid");
+      }
+    });
+  });
+}
+
+function resetImplementedField() {
+  const noRadio = document.getElementById("inpImplementedNo");
+  const urlWrapper = document.getElementById("implementedUrlWrapper");
+  const urlInput = document.getElementById("inpImplementedUrl");
+  if (noRadio) noRadio.checked = true;
+  if (urlWrapper) urlWrapper.style.display = "none";
+  if (urlInput) {
+    urlInput.required = false;
+    urlInput.value = "";
+    urlInput.removeAttribute("aria-invalid");
+  }
 }
 
 function initValidation() {
@@ -2422,6 +2529,7 @@ function initPortal() {
   bindMySearch();
   bindFileInput();
   bindCategoryChange();
+  bindImplementedChange();
   loadCategoryOptions();
   loadImpactOptions();
   initValidation();

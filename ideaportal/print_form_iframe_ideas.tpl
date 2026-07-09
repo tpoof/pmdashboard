@@ -197,6 +197,25 @@
     color: #64748b;
 }
 
+/* ── Category pills (matches the portal's table/modal pill style) ── */
+.ip-cat-pills {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.ip-cat-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    font-family: 'Public Sans', sans-serif;
+    white-space: nowrap;
+    background: #eaf1fd;
+    color: #16548c;
+}
+
 /* ── No-data state ──────────────────────────────────── */
 .pv-empty {
     font-size: 15px;
@@ -531,6 +550,36 @@
 
     </div><!-- /.pv-two-col -->
 
+    <!-- ── indicatorID 21: Implemented on LEAF site? (+ 22: URL, if Yes) ── -->
+    <section class="pv-card" aria-labelledby="pv-label-21">
+        <span class="pv-card-label" id="pv-label-21">
+            Have you implemented this idea on your LEAF site?
+            <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
+            <button type="button" class="pv-edit-btn noprint" data-ind="21" onclick="pvOpenEdit(21)" aria-label="Edit implemented status">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
+                Edit
+            </button>
+            <!--{/if}-->
+        </span>
+        <div class="pv-card-body" id="pv-value-21" aria-live="polite"><span class="pv-empty">Loading&hellip;</span></div>
+
+        <!-- Sub-question: indicatorID 22 (only shown if implemented = Yes) -->
+        <div id="pv-subq-22" hidden>
+            <div class="pv-sub-card" aria-labelledby="pv-label-22">
+                <span class="pv-card-label" id="pv-label-22">
+                    LEAF site URL
+                    <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
+                    <button type="button" class="pv-edit-btn noprint" data-ind="22" onclick="pvOpenEdit(22)" aria-label="Edit LEAF site URL">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
+                        Edit
+                    </button>
+                    <!--{/if}-->
+                </span>
+                <div class="pv-card-body" id="pv-value-22" aria-live="polite"></div>
+            </div>
+        </div>
+    </section>
+
     <!-- ── indicatorID 10: Attachments ───────────────────────────────── -->
     <section class="pv-card" aria-labelledby="pv-label-10">
         <span class="pv-card-label" id="pv-label-10">
@@ -563,23 +612,104 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
      *   target  : DOM id to write the text/HTML value into
      *   onValue : optional callback(rawText) fired once data arrives
      */
+    var categoryOptionsList = [];
+    var lastCategoryRaw = null;
+
+    /* Fetch the known category labels (used to split legacy multi-select
+       values that come back concatenated with no delimiter), same source
+       the "Add Idea" form uses. Re-renders the category pills once loaded
+       if the field already rendered with the un-split fallback. */
+    function fetchCategoryOptionsList() {
+        $.ajax({
+            type: 'GET',
+            url: 'ajaxIndex.php?a=getindicator&indicatorID=8&series=1&recordID=0',
+            dataType: 'html',
+            cache: false,
+            success: function(html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var sel = doc.querySelector('select#8');
+                if (sel && sel.options.length) {
+                    categoryOptionsList = Array.prototype.map.call(sel.options, function(o) { return o.value; }).filter(Boolean);
+                }
+                if (lastCategoryRaw !== null) {
+                    var el = document.getElementById('pv-value-8');
+                    if (el) { renderCategoryPills(el, lastCategoryRaw); }
+                }
+            }
+        });
+    }
+
+    /* Split a category value into individual labels. Handles both
+       delimited values and legacy-imported values concatenated with no
+       delimiter, by greedily matching against categoryOptionsList. */
+    function parseCategoryValue(raw) {
+        var str = String(raw || '').trim();
+        if (!str) { return []; }
+        if (/[,;\n]/.test(str)) {
+            return str.split(/[,;\n]+/).map(function(s) { return s.trim(); }).filter(Boolean);
+        }
+        var known = categoryOptionsList.slice().sort(function(a, b) { return b.length - a.length; });
+        if (known.length) {
+            var out = [];
+            var remaining = str;
+            var guard = 0;
+            while (remaining.length && guard < 50) {
+                guard++;
+                var match = null;
+                for (var i = 0; i < known.length; i++) {
+                    if (remaining.toLowerCase().indexOf(known[i].toLowerCase()) === 0) { match = known[i]; break; }
+                }
+                if (!match) { break; }
+                out.push(match);
+                remaining = remaining.slice(match.length);
+            }
+            if (out.length && !remaining.trim()) { return out; }
+        }
+        return [str];
+    }
+
+    /* Render category pills matching the .ip-cat-pill style used across
+       the ideas portal's tables and detail modal. */
+    function renderCategoryPills(el, raw) {
+        var cats = parseCategoryValue(raw);
+        if (!cats.length) {
+            el.innerHTML = '<span class="pv-empty">Not provided</span>';
+            return;
+        }
+        var out = '<span class="ip-cat-pills">';
+        cats.forEach(function(c) {
+            var span = document.createElement('span');
+            span.textContent = c;
+            out += '<span class="ip-cat-pill">' + span.innerHTML + '</span>';
+        });
+        out += '</span>';
+        el.innerHTML = out;
+    }
+
     var fields = [
         { id: 5,  target: 'pv-value-5'  },
         { id: 6,  target: 'pv-value-6'  },
         { id: 7,  target: 'pv-value-7'  },
-        { id: 8,  target: 'pv-value-8',
+        { id: 8,  target: 'pv-value-8', isPills: true,
           onValue: function(text) {
               /* Show the category pill in the meta row */
               var pill = document.getElementById('pv-category-pill');
-              if (pill && text.trim() !== '') {
-                  pill.textContent = text.trim();
+              var cats = parseCategoryValue(text);
+              if (pill && cats.length) {
+                  pill.textContent = cats.join(', ');
                   pill.removeAttribute('hidden');
               }
-              /* If the user chose "Other", reveal the sub-question slot */
-              if (text.trim().toLowerCase() === 'other') {
-                  var subq = document.getElementById('pv-subq-13');
-                  if (subq) { subq.removeAttribute('hidden'); }
-                  loadIndicator(13);
+              /* If "Other" is among the selections, reveal the sub-question —
+                 but only once we know something was actually typed into 13. */
+              if (cats.map(function(c) { return c.toLowerCase(); }).indexOf('other') !== -1) {
+                  loadIndicator(13, { target: 'pv-value-13',
+                      onValue: function(subText) {
+                          if (subText && subText.trim()) {
+                              var subq = document.getElementById('pv-subq-13');
+                              if (subq) { subq.removeAttribute('hidden'); }
+                          }
+                      }
+                  });
               }
           }
         },
@@ -593,24 +723,68 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
               }
           }
         },
+        { id: 21, target: 'pv-value-21',
+          onValue: function(text) {
+              if (text.trim().toLowerCase() === 'yes') {
+                  /* Only reveal the sub-card if a URL was actually
+                     provided — an empty answer stays fully hidden. */
+                  loadIndicator(22, { target: 'pv-value-22', isLink: true,
+                      onValue: function(subText) {
+                          if (subText && subText.trim()) {
+                              var subq = document.getElementById('pv-subq-22');
+                              if (subq) { subq.removeAttribute('hidden'); }
+                          }
+                      }
+                  });
+              }
+          }
+        },
+        { id: 22, target: 'pv-value-22', isLink: true },
         { id: 10, target: 'pv-value-10', isAttachment: true }
     ];
 
     /* ── Extract the clean value from LEAF's indicator response ─────── */
     /* LEAF appends htmlPrint markup (inputs, scripts) after the value span.
        We only want the text inside data_N_1, not the whole response.      */
+    /* Known sub-question prompt text that LEAF sometimes inlines directly
+       (as plain text, with no distinguishing markup) into a parent
+       field's print value. Keyed by the parent indicatorID; each value
+       is cut at the first case-insensitive occurrence of the marker. */
+    var BLEED_MARKERS = {
+        8:  'if other',
+        21: 'please provide'
+    };
+
+    function stripKnownBleed(text, indicatorID) {
+        var marker = BLEED_MARKERS[indicatorID];
+        if (!marker) { return text; }
+        var idx = text.toLowerCase().indexOf(marker);
+        if (idx === -1) { return text; }
+        return text.slice(0, idx).trim();
+    }
+
     function extractCleanValue(html, indicatorID) {
         var tmp = document.createElement('div');
         tmp.innerHTML = html;
         /* Try to find the canonical data span first */
         var span = tmp.querySelector('[id^="data_' + indicatorID + '_"]');
+        var raw;
         if (span) {
-            return (span.textContent || span.innerText || '').trim();
+            /* Strip any nested blocks belonging to a *different* indicator
+               (e.g. a sub-question's prompt the server sometimes inlines
+               into a parent field's markup) so it doesn't bleed into this
+               field's text. */
+            var clone = span.cloneNode(true);
+            var foreign = clone.querySelectorAll('[id^="data_"]:not([id^="data_' + indicatorID + '_"])');
+            foreign.forEach(function(el2) { el2.remove(); });
+            raw = (clone.textContent || clone.innerText || '').trim();
+        } else {
+            /* Fallback: strip all script/input/button elements then read text */
+            var scripts = tmp.querySelectorAll('script, input, button, textarea, select');
+            scripts.forEach(function(s) { s.remove(); });
+            raw = (tmp.textContent || tmp.innerText || '').trim();
         }
-        /* Fallback: strip all script/input/button elements then read text */
-        var scripts = tmp.querySelectorAll('script, input, button, textarea, select');
-        scripts.forEach(function(s) { s.remove(); });
-        return (tmp.textContent || tmp.innerText || '').trim();
+        return stripKnownBleed(raw, indicatorID);
     }
 
     /* ── Render a plain-text field (clean value only) ────────────────── */
@@ -622,6 +796,25 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
             /* Safely set as text — no raw HTML from LEAF leaks through */
             el.textContent = value;
         }
+    }
+
+    /* ── Render a URL value as a clickable, safe link ─────────────────── */
+    function renderLink(el, html, indicatorID) {
+        var value = extractCleanValue(html, indicatorID);
+        if (value === '' || value === 'N/A') {
+            el.innerHTML = '<span class="pv-empty">Not provided</span>';
+            return;
+        }
+        var href = value;
+        if (!/^https?:\/\//i.test(href)) { href = 'https://' + href; }
+        var a = document.createElement('a');
+        a.href = href;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.className = 'pv-file-link';
+        a.textContent = value;
+        el.innerHTML = '';
+        el.appendChild(a);
     }
 
     /* ── Extract readable text (used by onValue callbacks) ──────────── */
@@ -698,7 +891,13 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
 
     /* ── Core: fetch one indicator via LEAF's AJAX endpoint ─────────── */
     function loadIndicator(indicatorID, cfg) {
-        /* cfg is optional (for the on-demand indicator 13 load) */
+        /* cfg is optional (for on-demand loads like indicator 13 or 22) —
+           look it up from the fields array first so isLink/onValue carry over */
+        if (!cfg) {
+            for (var fi = 0; fi < fields.length; fi++) {
+                if (fields[fi].id === indicatorID) { cfg = fields[fi]; break; }
+            }
+        }
         cfg = cfg || { target: 'pv-value-' + indicatorID, isAttachment: false };
 
         var el = document.getElementById(cfg.target || 'pv-value-' + indicatorID);
@@ -715,6 +914,18 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
             success: function(html) {
                 if (cfg.isAttachment) {
                     renderAttachments(el, html);
+                } else if (cfg.isLink) {
+                    renderLink(el, html, indicatorID);
+                    if (typeof cfg.onValue === 'function') {
+                        cfg.onValue(extractText(html, indicatorID));
+                    }
+                } else if (cfg.isPills) {
+                    var pillsValue = extractText(html, indicatorID);
+                    lastCategoryRaw = pillsValue;
+                    renderCategoryPills(el, pillsValue);
+                    if (typeof cfg.onValue === 'function') {
+                        cfg.onValue(pillsValue);
+                    }
                 } else {
                     renderText(el, html, indicatorID);
                     if (typeof cfg.onValue === 'function') {
@@ -729,8 +940,12 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
     }
 
     /* ── Kick off all field loads on DOM ready ───────────────────────── */
+    /* Skip 22 (LEAF site URL) — it's only loaded on demand once 21's
+       onValue callback confirms the answer was "Yes". */
     $(function() {
+        fetchCategoryOptionsList();
         fields.forEach(function(cfg) {
+            if (cfg.id === 22) { return; }
             loadIndicator(cfg.id, cfg);
         });
     });
