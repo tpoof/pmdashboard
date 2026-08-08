@@ -12,6 +12,162 @@
 <!--{if $empMembership['groupID'][226]}--><div class="pv-layout-row"><!--{/if}-->
 <div id="public-view">
 <a href="#pv-main" class="pv-skip-link">Skip to main content</a>
+
+<!--{if $is_admin}-->
+<!-- ── Built-in debugger (admin-only) ──
+     Registered as the very first thing in this template so its error
+     listeners are live before any later inline <script> block runs —
+     including a raw parse-time SyntaxError in a later block, which still
+     fires a window 'error' event in every modern browser. This exists
+     specifically to chase down the intermittent "Unexpected token '<'"
+     at the Data-loader script's closing tag and the resulting
+     "pvShowToast is not defined" on the Submit button, without relying
+     on someone having DevTools open at the right moment. -->
+<style>
+#pvDebugPanel { position: fixed; bottom: 0; right: 0; z-index: 100000; width: 380px; max-width: 100vw; max-height: 60vh; display: flex; flex-direction: column; background: #0f172a; color: #e2e8f0; font-family: 'Menlo', 'Consolas', monospace; font-size: 12px; border-top-left-radius: 10px; box-shadow: 0 -2px 24px rgba(0,0,0,0.35); }
+#pvDebugPanel.is-collapsed { max-height: none; }
+#pvDebugPanel.is-collapsed #pvDebugBody { display: none; }
+#pvDebugHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; background: #1e293b; border-top-left-radius: 10px; cursor: pointer; user-select: none; }
+#pvDebugHeader strong { font-size: 12px; font-weight: 700; }
+#pvDebugBadge { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: #475569; font-size: 10px; font-weight: 700; }
+#pvDebugBadge.has-errors { background: #dc2626; }
+#pvDebugBody { overflow-y: auto; padding: 8px 10px 10px; }
+#pvDebugPanel section { margin-bottom: 10px; }
+#pvDebugPanel h4 { margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
+#pvDebugPanel .pv-dbg-row { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; border-bottom: 1px dotted #334155; }
+#pvDebugPanel .pv-dbg-row:last-child { border-bottom: none; }
+#pvDebugPanel .pv-dbg-key { color: #94a3b8; }
+#pvDebugPanel .pv-dbg-val { font-weight: 700; }
+#pvDebugPanel .pv-dbg-val.ok { color: #4ade80; }
+#pvDebugPanel .pv-dbg-val.bad { color: #f87171; }
+#pvDebugPanel .pv-dbg-log { max-height: 160px; overflow-y: auto; background: #020617; border-radius: 6px; padding: 6px; }
+#pvDebugPanel .pv-dbg-log-entry { padding: 4px 0; border-bottom: 1px solid #1e293b; word-break: break-word; white-space: pre-wrap; }
+#pvDebugPanel .pv-dbg-log-entry:last-child { border-bottom: none; }
+#pvDebugPanel .pv-dbg-log-empty { color: #64748b; font-style: italic; }
+#pvDebugPanel button.pv-dbg-btn { background: #334155; color: #e2e8f0; border: none; border-radius: 6px; padding: 5px 9px; font-size: 11px; font-family: inherit; cursor: pointer; margin: 2px 4px 0 0; }
+#pvDebugPanel button.pv-dbg-btn:hover { background: #475569; }
+#pvDebugToggle { background: none; border: none; color: #e2e8f0; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 4px; }
+</style>
+<div id="pvDebugPanel" role="region" aria-label="Debug panel (admin only)">
+    <div id="pvDebugHeader" onclick="window._pvDebug && window._pvDebug.toggle()">
+        <strong>🐞 Debug Panel</strong>
+        <span id="pvDebugBadge">0</span>
+        <button type="button" id="pvDebugToggle" aria-label="Toggle debug panel">▾</button>
+    </div>
+    <div id="pvDebugBody">
+        <section>
+            <h4>Captured JS errors</h4>
+            <div class="pv-dbg-log" id="pvDebugLog"><div class="pv-dbg-log-empty">No errors captured yet.</div></div>
+        </section>
+        <section>
+            <h4>Live diagnostics</h4>
+            <div id="pvDebugDiagnostics"></div>
+            <button type="button" class="pv-dbg-btn" onclick="window._pvDebug && window._pvDebug.runDiagnostics()">Re-run diagnostics</button>
+            <button type="button" class="pv-dbg-btn" onclick="window._pvDebug && window._pvDebug.testToast()">Test toast only</button>
+            <button type="button" class="pv-dbg-btn" onclick="window._pvDebug && window._pvDebug.clearLog()">Clear log</button>
+        </section>
+    </div>
+</div>
+<script>
+(function() {
+    var errors = [];
+
+    function fmtErr(e) {
+        var src = e.filename ? e.filename.split('/').pop() : '(unknown file)';
+        return '[' + new Date().toLocaleTimeString() + '] ' + (e.message || String(e.error || e.reason || 'Unknown error'))
+            + '\n  at ' + src + ':' + (e.lineno || '?') + ':' + (e.colno || '?');
+    }
+
+    function renderLog() {
+        var log = document.getElementById('pvDebugLog');
+        var badge = document.getElementById('pvDebugBadge');
+        if (!log || !badge) { return; }
+        if (errors.length === 0) {
+            log.innerHTML = '<div class="pv-dbg-log-empty">No errors captured yet.</div>';
+        } else {
+            log.innerHTML = errors.map(function(e) {
+                var div = document.createElement('div');
+                div.className = 'pv-dbg-log-entry';
+                div.textContent = e;
+                return div.outerHTML;
+            }).join('');
+        }
+        badge.textContent = String(errors.length);
+        badge.classList.toggle('has-errors', errors.length > 0);
+    }
+
+    window.addEventListener('error', function(e) {
+        errors.push(fmtErr(e));
+        renderLog();
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+        errors.push('[' + new Date().toLocaleTimeString() + '] Unhandled promise rejection: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)));
+        renderLog();
+    });
+
+    function row(key, ok, valText) {
+        return '<div class="pv-dbg-row"><span class="pv-dbg-key">' + key + '</span><span class="pv-dbg-val ' + (ok ? 'ok' : 'bad') + '">' + valText + '</span></div>';
+    }
+
+    function runDiagnostics() {
+        var out = document.getElementById('pvDebugDiagnostics');
+        if (!out) { return; }
+        var checks = [
+            ['pvShowToast defined',      typeof window.pvShowToast === 'function'],
+            ['pvSubmitDraft defined',    typeof pvSubmitDraft === 'function'],
+            ['doSubmit defined',         typeof doSubmit === 'function'],
+            ['pvOpenEdit defined',       typeof pvOpenEdit === 'function'],
+            ['recordID defined',         typeof recordID !== 'undefined'],
+            ['CSRFToken present',        typeof CSRFToken === 'string' && CSRFToken.length > 0],
+            ['form (LeafForm) ready',    typeof form !== 'undefined' && !!form],
+            ['workflow ready',           typeof workflow !== 'undefined' && !!workflow],
+            ['jQuery ($) loaded',        typeof window.$ === 'function'],
+            ['Submit button in DOM',     !!document.querySelector('.pv-submit-btn')],
+            ['Cancel button in DOM',     !!document.querySelector('.pv-cancel-btn')],
+            ['#toolbar226 in DOM',       !!document.getElementById('toolbar226')],
+            ['#adminTools in DOM',       !!document.getElementById('adminTools')],
+            ['#tools226 in DOM',         !!document.getElementById('tools226')],
+        ];
+        out.innerHTML = checks.map(function(c) {
+            return row(c[0], c[1], c[1] ? 'OK' : 'MISSING');
+        }).join('');
+    }
+
+    function testToast() {
+        if (typeof window.pvShowToast === 'function') {
+            window.pvShowToast('Debug panel: toast pipeline is working.');
+        } else {
+            alert('pvShowToast is not defined — the toast/vote/unvote script block failed to load or parse. Check the error log above.');
+        }
+    }
+
+    function clearLog() {
+        errors = [];
+        renderLog();
+    }
+
+    function toggle() {
+        var panel = document.getElementById('pvDebugPanel');
+        if (panel) { panel.classList.toggle('is-collapsed'); }
+    }
+
+    window._pvDebug = {
+        runDiagnostics: runDiagnostics,
+        testToast: testToast,
+        clearLog: clearLog,
+        toggle: toggle
+    };
+
+    // Run once immediately, and again after the page has had a chance to
+    // fully load (so form/workflow/pvShowToast etc. have had time to
+    // initialize — a false "MISSING" right at parse time isn't useful).
+    document.addEventListener('DOMContentLoaded', runDiagnostics);
+    window.addEventListener('load', function() { setTimeout(runDiagnostics, 500); });
+    runDiagnostics();
+}());
+</script>
+<!--{/if}-->
+
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,1,0" />
 
 <style>
