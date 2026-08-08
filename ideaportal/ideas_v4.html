@@ -1115,6 +1115,26 @@
         width: 0.9rem;
         height: 0.9rem;
       }
+      /* ── Edit-draft button (compact, icon-only, inline with Vote/Share) ──
+         Same 32px-tall row-action sizing as .ip-submitDraftBtn/.ip-upvote/
+         .ip-share, but square and icon-only since there's nothing to
+         submit yet on a fresh draft — this just continues editing it. */
+      .ip-editDraftBtn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border-radius: var(--ip-r);
+        box-sizing: border-box;
+        margin-right: 4px;
+        flex-shrink: 0;
+      }
+      .ip-editDraftBtn .ip-icon {
+        width: 0.9rem;
+        height: 0.9rem;
+      }
 
       /* ── Vote button ── */
       .ip-upvote {
@@ -1546,25 +1566,35 @@
       /* "Currently attached: filename" hint shown when editing a draft
          that already has an uploaded image — see openDraftForEditing()
          in ideas_v3.js. Purely informational; the file input itself
-         stays additive (new upload replaces, blank keeps existing). */
+         stays additive (new upload replaces, blank keeps existing). Sits
+         inline to the left of the field's own label via .ip-labelRow
+         rather than as its own full-width line below it. */
+      .ip-labelRow {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px 10px;
+        margin-bottom: 4px;
+      }
+      .ip-labelRow .ip-label {
+        margin-bottom: 0;
+      }
       .ip-currentAttachment {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: var(--ip-muted);
         background: var(--ip-blue-lt);
         border: 1px solid var(--ip-blue-10);
         border-radius: var(--ip-r);
-        padding: 8px 10px;
-        margin-bottom: 6px;
-        display: flex;
-        align-items: flex-start;
-        gap: 6px;
+        padding: 3px 10px 3px 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
       }
       .ip-currentAttachment .ip-icon {
-        width: 1rem;
-        height: 1rem;
+        width: 0.9rem;
+        height: 0.9rem;
         color: var(--ip-blue);
         flex-shrink: 0;
-        margin-top: 1px;
       }
       .ip-actions {
         padding: 14px 24px;
@@ -1649,6 +1679,10 @@
         gap: 8px;
         align-items: center;
         flex-shrink: 0;
+      }
+      .ip-recordModal__openTab .ip-icon {
+        width: 0.9rem;
+        height: 0.9rem;
       }
       .ip-recordModal__body {
         flex: 1;
@@ -1998,13 +2032,15 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 30px;
+        gap: 5px;
         height: 30px;
-        border-radius: 50%;
+        padding: 0 12px;
+        border-radius: 15px;
         border: none;
         background: rgba(61, 47, 15, 0.1);
         cursor: pointer;
-        padding: 0;
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 0.85rem;
       }
       .ip-toast__close:hover {
         background: rgba(61, 47, 15, 0.18);
@@ -2383,7 +2419,7 @@
                     d="M513.5-254.5Q528-269 528-290t-14.5-35.5Q499-340 478-340t-35.5 14.5Q428-311 428-290t14.5 35.5Q457-240 478-240t35.5-14.5ZM442-394h74q0-33 7.5-52t42.5-52q26-26 41-49.5t15-56.5q0-56-41-86t-97-30q-57 0-92.5 30T342-618l66 26q5-18 22.5-39t53.5-21q32 0 48 17.5t16 38.5q0 20-12 37.5T506-526q-44 39-54 59t-10 73Zm38 314q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"
                   />
                 </svg>
-                How it works
+                How It Works
               </button>
             </div>
           </div>
@@ -3014,7 +3050,7 @@
                   d="M423.5-103.5Q400-127 400-160h160q0 33-23.5 56.5T480-80q-33 0-56.5-23.5ZM320-200v-80h320v80H320Zm10-120q-69-41-109.5-110T180-580q0-125 87.5-212.5T480-880q125 0 212.5 87.5T780-580q0 81-40.5 150T630-320H330Z"
                 />
               </svg>
-              Add Idea
+              Share Your Idea
             </h3>
             <button
               type="button"
@@ -3163,34 +3199,36 @@
                 </div>
               </div>
               <div class="ip-field">
-                <label for="fileInput" class="ip-label"
-                  >Upload Images (e.g. Concepts/Screenshots To Support Your
-                  Idea)</label
-                >
-                <!-- Shown only when editing an existing draft that already
-                     has an attachment (populated by openDraftForEditing()
-                     in ideas_v3.js). Uploading a new file replaces the
-                     existing attachment; leaving the file input blank
-                     keeps it as-is — nothing is deleted silently. -->
-                <p
-                  class="ip-currentAttachment"
-                  id="currentAttachmentHint"
-                  role="status"
-                  hidden
-                >
-                  <svg
-                    class="ip-icon"
-                    viewBox="0 -960 960 960"
-                    fill="currentColor"
-                    aria-hidden="true"
-                    focusable="false"
+                <div class="ip-labelRow">
+                  <!-- Shown only when editing an existing draft that already
+                       has an attachment (populated by openDraftForEditing()
+                       in ideas_v3.js). Uploading a new file replaces the
+                       existing attachment; leaving the file input blank
+                       keeps it as-is — nothing is deleted silently. -->
+                  <span
+                    class="ip-currentAttachment"
+                    id="currentAttachmentHint"
+                    role="status"
+                    hidden
                   >
-                    <path
-                      d="M720-330q0 104-73 177T470-80q-104 0-177-73t-73-177v-370q0-75 52.5-127.5T400-880q75 0 127.5 52.5T580-700v350q0 46-32 78t-78 32q-46 0-78-32t-32-78v-370h80v370q0 13 8.5 21.5T470-320q13 0 21.5-8.5T500-350v-350q-1-42-29.5-71T400-800q-42 0-71 29t-29 71v370q-1 71 49 120.5T470-160q70 0 119-49.5T640-330v-390h80v390Z"
-                    />
-                  </svg>
-                  <span></span>
-                </p>
+                    <svg
+                      class="ip-icon"
+                      viewBox="0 -960 960 960"
+                      fill="currentColor"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <path
+                        d="M720-330q0 104-73 177T470-80q-104 0-177-73t-73-177v-370q0-75 52.5-127.5T400-880q75 0 127.5 52.5T580-700v350q0 46-32 78t-78 32q-46 0-78-32t-32-78v-370h80v370q0 13 8.5 21.5T470-320q13 0 21.5-8.5T500-350v-350q-1-42-29.5-71T400-800q-42 0-71 29t-29 71v370q-1 71 49 120.5T470-160q70 0 119-49.5T640-330v-390h80v390Z"
+                      />
+                    </svg>
+                    <span id="currentAttachmentText"></span>
+                  </span>
+                  <label for="fileInput" class="ip-label"
+                    >Upload Images (e.g. Concepts/Screenshots To Support Your
+                    Idea)</label
+                  >
+                </div>
                 <input
                   id="fileInput"
                   name="fileInput"
@@ -3267,6 +3305,17 @@
                 id="ipRecordModalOpenTabBtn"
                 aria-label="Open in new tab"
               >
+                <svg
+                  class="ip-icon"
+                  viewBox="0 -960 960 960"
+                  fill="currentColor"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"
+                  />
+                </svg>
                 Open in new tab
               </button>
               <button

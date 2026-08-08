@@ -250,6 +250,9 @@ const ICON_SVG = {
     '<path d="M508.5-291.5Q520-303 520-320t-11.5-28.5Q497-360 480-360t-28.5 11.5Q440-337 440-320t11.5 28.5Q463-280 480-280t28.5-11.5ZM440-440h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/>',
   close:
     '<path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>',
+  edit: '<path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>',
+  open_in_new:
+    '<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>',
 };
 
 function iconSvg(name, opts = {}) {
@@ -484,6 +487,7 @@ function showToast(msg, isError = false) {
     <span class="ip-toast__msg">${escapeHtml(msg || "")}</span>
     <button type="button" class="ip-toast__close" aria-label="Dismiss notification">
       ${iconSvg("close")}
+      Close
     </button>`;
   toast.classList.toggle("is-error", isError);
   toast.classList.add("is-visible");
@@ -1070,19 +1074,21 @@ function buildDetailSkeleton(
     hasVoteRecordId,
   );
   const votesText = `${escapeHtml(String(votes))} ${votes === 1 ? "vote" : "votes"}`;
-  // "Submit" / "Retry Submit" action — only shown for the submitter's own
-  // record when it still needs a submit action (fresh draft, or a
-  // previously-attempted submission whose workflow step failed). Reuses
-  // the existing edit-form + NewIdea(true) submit path rather than a
-  // separate submit-as-is endpoint.
+  // "Retry Submit" — shown for the submitter's own record when a
+  // previously-attempted submission's workflow step failed. True drafts
+  // (isDraft) no longer reach this modal at all — clicking a draft's
+  // title now opens the edit form directly (see bindRecordModal()) — but
+  // the isDraft guard stays here defensively in case some other path
+  // still opens this modal for one; a read-only preview isn't the right
+  // place to offer submitting an unedited draft either way.
   const submitBtnHtml =
-    isOwn && needsSubmit
+    isOwn && needsSubmit && !isDraft
       ? `<button type="button"
         class="ip-btn ip-btn--primary"
         data-detail-submit-draft="${escapeHtml(recordID)}"
-        aria-label="${isDraft ? `Continue editing and submit idea #${escapeHtml(recordID)}` : `Retry submitting idea #${escapeHtml(recordID)} — a previous submission didn't fully complete`}">
+        aria-label="Retry submitting idea #${escapeHtml(recordID)} — a previous submission didn't fully complete">
         ${iconSvg("send")}
-        ${isDraft ? "Submit" : "Retry Submit"}
+        Retry Submit
       </button>`
       : "";
   return `<div class="ip-detail" id="ipDetailRoot">
@@ -1359,7 +1365,18 @@ function bindRecordModal() {
         votedModal.setAttribute("aria-hidden", "true");
         delete votedModal.dataset.focusTrap;
       }
-      if (recordID) openIdeaDetailModal(recordID, title, href);
+      if (!recordID) return;
+
+      // True drafts (never submitted) skip the read-only record modal
+      // entirely and go straight to the editable form — there's nothing
+      // useful to preview read-only for something that was never
+      // submitted, and the extra hop just delayed getting to Edit.
+      if (ideasVMById[recordID]?.isDraft) {
+        openDraftForEditing(recordID);
+        return;
+      }
+
+      openIdeaDetailModal(recordID, title, href);
       return;
     }
   });
@@ -1643,17 +1660,25 @@ function buildIdeaRow(idea) {
         Share
       </button>`;
 
-  // Submit action — shown for the current user's own drafts, AND for
-  // records that were marked submitted (date_submitted written) but
-  // whose workflow /apply step failed earlier in this session.
+  // Draft rows get a compact Edit button (nothing to submit yet — the
+  // idea is finished being drafted via the same edit form this opens).
+  // Retry Submit is a different situation (already attempted; the
+  // workflow /apply step failed) and keeps the original one-click retry.
   const submitBtnHtml =
     isOwn && needsSubmit
-      ? `<button class="ip-btn ip-btn--primary ip-submitDraftBtn"
-          data-submit-draft-id="${recordID}"
-          aria-label="${isDraft ? `Continue editing and submit ${labelTitle}` : `Retry submitting ${labelTitle} — a previous submission didn't fully complete`}">
-          ${iconSvg("send")}
-          ${isDraft ? "Submit" : "Retry Submit"}
-        </button>`
+      ? isDraft
+        ? `<button class="ip-btn ip-btn--ghost ip-btn--icon ip-editDraftBtn"
+            data-submit-draft-id="${recordID}"
+            aria-label="Continue editing draft: ${labelTitle}"
+            title="Continue editing draft">
+            ${iconSvg("edit")}
+          </button>`
+        : `<button class="ip-btn ip-btn--primary ip-submitDraftBtn"
+            data-submit-draft-id="${recordID}"
+            aria-label="Retry submitting ${labelTitle} — a previous submission didn't fully complete">
+            ${iconSvg("send")}
+            Retry Submit
+          </button>`
       : "";
 
   // Draft rows show ONLY the Submit action — no Vote, no Share. A draft
@@ -2698,7 +2723,7 @@ function setIdeaModalMode(isEditing) {
   const submitBtn = document.getElementById("submitButton");
   const saveBtn = document.getElementById("saveDraftButton");
   if (titleEl) {
-    const labelText = isEditing ? "Continue Your Idea" : "Add Idea";
+    const labelText = isEditing ? "Continue Your Idea" : "Share Your Idea";
     const icon = titleEl.querySelector(".ip-icon");
     titleEl.innerHTML = "";
     if (icon) titleEl.appendChild(icon);
@@ -2802,13 +2827,16 @@ async function openDraftForEditing(recordID) {
 
     editingDraftAttachmentLabel = extractAttachmentLabel(attachHtml);
     const attachHint = document.getElementById("currentAttachmentHint");
+    const attachHintText = document.getElementById("currentAttachmentText");
     if (attachHint) {
       if (editingDraftAttachmentLabel) {
         attachHint.hidden = false;
-        attachHint.textContent = `Currently attached: ${editingDraftAttachmentLabel}. Uploading a new file will replace it; leaving this blank keeps the current attachment.`;
+        if (attachHintText) {
+          attachHintText.textContent = `Currently attached: ${editingDraftAttachmentLabel}. Uploading a new file will replace it; leaving this blank keeps the current attachment.`;
+        }
       } else {
         attachHint.hidden = true;
-        attachHint.textContent = "";
+        if (attachHintText) attachHintText.textContent = "";
       }
     }
   } catch (err) {
@@ -2934,7 +2962,8 @@ async function NewIdea(advanceOnSuccess) {
       const attachHint = document.getElementById("currentAttachmentHint");
       if (attachHint) {
         attachHint.hidden = true;
-        attachHint.textContent = "";
+        const attachHintText = document.getElementById("currentAttachmentText");
+        if (attachHintText) attachHintText.textContent = "";
       }
       editingDraftRecordID = null;
       editingDraftAttachmentLabel = "";

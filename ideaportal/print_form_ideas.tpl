@@ -195,7 +195,7 @@
 #pvToast:not(.is-error) .pv-toast__icon .material-symbols-outlined { color: #92720a !important; }
 #pvToast.is-error .pv-toast__icon .material-symbols-outlined { color: #d54309 !important; }
 #pvToast.is-error { border-left-color: #d54309; }
-#pvToast .pv-toast__close { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; border: none; background: rgba(61, 47, 15, 0.1); cursor: pointer; padding: 0; }
+#pvToast .pv-toast__close { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 30px; padding: 0 12px; border-radius: 15px; border: none; background: rgba(61, 47, 15, 0.1); cursor: pointer; font-family: 'Public Sans', 'Source Sans 3', sans-serif; font-weight: 700; font-size: 0.85rem; }
 #pvToast .pv-toast__close:hover { background: rgba(61, 47, 15, 0.18); }
 #pvToast .pv-toast__close:focus-visible { outline: 3px solid #3d2f0f; outline-offset: 2px; }
 #pvToast .pv-toast__close .material-symbols-outlined { font-size: 1.1rem; }
@@ -253,7 +253,7 @@
             <span id="pv-value-5" aria-live="polite"><span class="pv-empty">Loading&hellip;</span></span>
             <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
             <button type="button" class="pv-edit-btn noprint" data-ind="5" onclick="pvOpenEdit(5)" aria-label="Edit title">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
+                <svg class="pv-edit-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
                 Edit
             </button>
             <!--{/if}-->
@@ -282,7 +282,7 @@
             Detailed Summary
             <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
             <button type="button" class="pv-edit-btn noprint" data-ind="6" onclick="pvOpenEdit(6)" aria-label="Edit detailed summary">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
+                <svg class="pv-edit-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
                 Edit
             </button>
             <!--{/if}-->
@@ -299,7 +299,7 @@
                 Benefit
                 <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
                 <button type="button" class="pv-edit-btn noprint" data-ind="7" onclick="pvOpenEdit(7)" aria-label="Edit benefit">
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
+                    <svg class="pv-edit-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
                     Edit
                 </button>
                 <!--{/if}-->
@@ -313,7 +313,7 @@
                 Category
                 <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
                 <button type="button" class="pv-edit-btn noprint" data-ind="8" onclick="pvOpenEdit(8)" aria-label="Edit category">
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
+                    <svg class="pv-edit-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
                     Edit
                 </button>
                 <!--{/if}-->
@@ -327,7 +327,7 @@
                         Please specify category
                         <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
                         <button type="button" class="pv-edit-btn noprint" data-ind="13" onclick="pvOpenEdit(13)" aria-label="Edit category specification">
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
+                            <svg class="pv-edit-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
                             Edit
                         </button>
                         <!--{/if}-->
@@ -342,7 +342,7 @@
                 Impact
                 <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
                 <button type="button" class="pv-edit-btn noprint" data-ind="9" onclick="pvOpenEdit(9)" aria-label="Edit impact">
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
+                    <svg class="pv-edit-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
                     Edit
                 </button>
                 <!--{/if}-->
@@ -358,7 +358,7 @@
             Have you implemented this idea on your LEAF site?
             <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
             <button type="button" class="pv-edit-btn noprint" data-ind="21" onclick="pvOpenEdit(21)" aria-label="Edit implemented status">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
+                <svg class="pv-edit-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
                 Edit
             </button>
             <!--{/if}-->
@@ -372,7 +372,7 @@
                     LEAF site URL
                     <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
                     <button type="button" class="pv-edit-btn noprint" data-ind="22" onclick="pvOpenEdit(22)" aria-label="Edit LEAF site URL">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
+                        <svg class="pv-edit-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
                         Edit
                     </button>
                     <!--{/if}-->
@@ -388,7 +388,7 @@
             Attachments
             <!--{if $canWrite && ($is_admin || $submitted == 0)}-->
             <button type="button" class="pv-edit-btn noprint" data-ind="10" onclick="pvOpenEdit(10)" aria-label="Edit attachments">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
+                <svg class="pv-edit-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
                 Edit
             </button>
             <!--{/if}-->
@@ -902,7 +902,7 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         toast.innerHTML =
             '<span class="pv-toast__icon" aria-hidden="true"><span class="material-symbols-outlined">' + iconName + '</span></span>' +
             '<span class="pv-toast__msg">' + pvEscapeHtml(msg) + '</span>' +
-            '<button type="button" class="pv-toast__close" aria-label="Dismiss notification"><span class="material-symbols-outlined">close</span></button>';
+            '<button type="button" class="pv-toast__close" aria-label="Dismiss notification"><span class="material-symbols-outlined">close</span>Close</button>';
         toast.classList.toggle('is-error', !!isError);
         toast.classList.add('is-visible');
         var closeBtn = toast.querySelector('.pv-toast__close');
