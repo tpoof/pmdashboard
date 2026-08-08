@@ -27,5 +27,3 @@ font-family: "Source Sans 3", "Public Sans", sans-serif; (used in .ip-detail__ti
 3. Go through the file section by section (hero, stats strip, sidebar, tabs, table, badges, buttons, forms, modals, toast, detail view, credit badge) and confirm every single font-family occurrence is updated — there are roughly 30+ instances total, including ones inside @media query overrides (e.g. .ip-detail__title at 1.2rem in the 560px breakpoint).
 
 4. After editing, search the file for any remaining instances of the strings "Public Sans" or "Source Sans 3" to confirm none were missed, and confirm no font-weight declarations remain paired with the newly-named font families (since weight is now baked into the family name itself).
-
-Leave everything else in the file untouched — this pass is only about the two text typefaces, not the Material Symbols icon font.
