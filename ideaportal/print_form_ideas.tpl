@@ -75,6 +75,14 @@
 </div>
 <script>
 (function() {
+    // Direct reference to this script's own <script> element, captured
+    // immediately since document.currentScript is only valid during
+    // synchronous top-level execution. Used below to positively exclude
+    // this script from the "find the other script" search — content-based
+    // matching doesn't work here since any marker string I search for is
+    // necessarily also *written*, as a string literal, inside this very
+    // script, which was the actual bug in the first version of this.
+    var pvDebugSelfScript = document.currentScript;
     var errors = [];
 
     function fmtErr(e) {
@@ -145,18 +153,24 @@
     // stores its raw text in the DOM (HTML parsing and JS execution are
     // separate steps) — so this pulls the ACTUAL live source straight
     // from the page, bypassing any cache/encoding/transcription
-    // uncertainty entirely. Finds the Data-loader block specifically by
-    // a unique string it contains.
+    // uncertainty entirely. Identifies the target by explicitly excluding
+    // this debugger's own <script> node (via document.currentScript,
+    // captured at the top of this file) rather than by searching for a
+    // marker string — any marker chosen would necessarily also appear as
+    // a string literal inside this very search code, which is exactly
+    // what caused this to match itself in the first version.
     function showScriptSource() {
         var out = document.getElementById('pvDebugScriptSource');
         if (!out) { return; }
         var scripts = Array.prototype.slice.call(document.querySelectorAll('script:not([src])'));
-        var target = scripts.find(function(s) { return s.textContent.indexOf('function pvOpenEdit(') !== -1; });
+        var others = scripts.filter(function(s) { return s !== pvDebugSelfScript; });
+        var target = others[0];
         if (!target) {
-            out.innerHTML = '<div class="pv-dbg-log-empty">Could not find the Data-loader script tag in the DOM.</div>';
+            out.innerHTML = '<div class="pv-dbg-log-empty">Could not find another script tag in the DOM.</div>';
             return;
         }
         var text = target.textContent;
+        var firstLine = text.trim().split('\n')[0].slice(0, 70);
         // Flag any non-ASCII character (code > 126) with its position and
         // code point — the most likely form of silent corruption from an
         // encoding mismatch somewhere in a deployment pipeline.
@@ -173,6 +187,7 @@
               }).join('') + '</div>'
             : '<div class="pv-dbg-log-empty">No non-ASCII characters found.</div>';
         out.innerHTML = '<div class="pv-dbg-row"><span class="pv-dbg-key">Script length</span><span class="pv-dbg-val ok">' + text.length + ' chars</span></div>'
+            + '<div class="pv-dbg-row"><span class="pv-dbg-key">Starts with</span><span class="pv-dbg-val ok">' + firstLine.replace(/</g, '&lt;') + '</span></div>'
             + '<h4 style="margin-top:8px;">Non-ASCII characters (possible encoding corruption)</h4>' + flaggedHtml
             + '<h4 style="margin-top:8px;">Full live source (copy this)</h4>'
             + '<textarea readonly style="width:100%;height:140px;background:#020617;color:#e2e8f0;font-family:inherit;font-size:11px;border:1px solid #334155;border-radius:6px;padding:6px;box-sizing:border-box;" onclick="this.select()">' + text.replace(/</g, '&lt;') + '</textarea>';
