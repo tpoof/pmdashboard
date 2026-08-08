@@ -115,6 +115,24 @@
           );
         pointer-events: none;
       }
+      .ip-hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        /* Same contrast-fix scrim as before (see .ip-hero-inner history),
+           now sized to the entire hero rather than just the centered
+           text box. Percentage stops scale to this element's own
+           computed radius, so the falloff shape is preserved
+           automatically at the larger size. */
+        background: radial-gradient(
+          ellipse at center,
+          rgba(0, 0, 0, 0.28) 0%,
+          rgba(0, 0, 0, 0.16) 70%,
+          rgba(0, 0, 0, 0) 100%
+        );
+      }
       .ip-leaf-deco {
         position: absolute;
         opacity: 0.12;
@@ -151,16 +169,6 @@
         margin: 0 auto;
         padding: 28px 24px;
         border-radius: 16px;
-        /* Scrim: darkens the text-containing area only, confirmed via
-           contrast-ratio math to bring solid white text to ~4.8-5:1
-           against the gradient's lightest point (previously ~2.5-2.9:1
-           and failing AA even at full white opacity). */
-        background: radial-gradient(
-          ellipse at center,
-          rgba(0, 0, 0, 0.28) 0%,
-          rgba(0, 0, 0, 0.16) 70%,
-          rgba(0, 0, 0, 0) 100%
-        );
       }
 
       .ip-hero-badge {
@@ -1103,9 +1111,9 @@
         box-sizing: border-box;
         margin-right: 4px;
       }
-      .ip-submitDraftBtn .material-symbols-outlined {
-        font-size: 0.9rem;
-        line-height: 1;
+      .ip-submitDraftBtn .ip-icon {
+        width: 0.9rem;
+        height: 0.9rem;
       }
 
       /* ── Vote button ── */
@@ -1551,8 +1559,9 @@
         align-items: flex-start;
         gap: 6px;
       }
-      .ip-currentAttachment .material-symbols-outlined {
-        font-size: 1rem;
+      .ip-currentAttachment .ip-icon {
+        width: 1rem;
+        height: 1rem;
         color: var(--ip-blue);
         flex-shrink: 0;
         margin-top: 1px;
@@ -2004,8 +2013,9 @@
         outline: 3px solid #3d2f0f;
         outline-offset: 2px;
       }
-      .ip-toast__close .material-symbols-outlined {
-        font-size: 1.1rem;
+      .ip-toast__close .ip-icon {
+        width: 1.1rem;
+        height: 1.1rem;
       }
       /* Error state keeps the same cream base for consistency, but swaps
          the accent border/icon color to red so a failure is still
@@ -3313,9 +3323,17 @@
                 id="ipVotedSearchBtn"
                 aria-label="Search"
               >
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  >search</span
+                <svg
+                  class="ip-icon"
+                  viewBox="0 -960 960 960"
+                  fill="currentColor"
+                  aria-hidden="true"
+                  focusable="false"
                 >
+                  <path
+                    d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"
+                  />
+                </svg>
               </button>
             </div>
           </div>

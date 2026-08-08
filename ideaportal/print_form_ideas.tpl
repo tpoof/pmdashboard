@@ -1161,6 +1161,13 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         pvCheckIsOwn();
     });
 
+    // pvShowToast/pvHideToast live in this IIFE's private scope, but the
+    // Submit button (pvSubmitDraft, defined later in the page's own
+    // global <script> block, outside any IIFE) needs to reach them too —
+    // expose them on window rather than duplicating the toast logic.
+    window.pvShowToast = pvShowToast;
+    window.pvHideToast = pvHideToast;
+
 }());
 
 /* ── Edit handler ── */

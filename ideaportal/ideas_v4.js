@@ -1150,14 +1150,14 @@ function buildDetailSkeleton(
         aria-label="${escapeHtml(voteState.ariaLabel)}"
         title="${escapeHtml(voteState.title)}"
         ${voteState.disabled ? "disabled" : ""}>
-        <span class="material-symbols-outlined" aria-hidden="true">${voteState.icon}</span>${voteState.label ? ` ${voteState.label}` : ""}
+        ${iconSvg(voteState.icon)}${voteState.label ? ` ${voteState.label}` : ""}
       </button>
       <button type="button"
         class="ip-share"
         data-record-link="${escapeHtml(RECORD_VIEW_URL + recordID)}"
         aria-label="Copy link to idea #${escapeHtml(recordID)}"
         title="Copy shareable link">
-        <span class="material-symbols-outlined" aria-hidden="true">share</span>
+        ${iconSvg("share")}
         Share
       </button>`
       }
@@ -2699,13 +2699,13 @@ function setIdeaModalMode(isEditing) {
   const saveBtn = document.getElementById("saveDraftButton");
   if (titleEl) {
     const labelText = isEditing ? "Continue Your Idea" : "Add Idea";
-    const icon = titleEl.querySelector(".material-symbols-outlined");
+    const icon = titleEl.querySelector(".ip-icon");
     titleEl.innerHTML = "";
     if (icon) titleEl.appendChild(icon);
     titleEl.appendChild(document.createTextNode(labelText));
   }
   if (submitBtn) {
-    const label = submitBtn.querySelector(".material-symbols-outlined");
+    const label = submitBtn.querySelector(".ip-icon");
     submitBtn.innerHTML = "";
     if (label) submitBtn.appendChild(label);
     submitBtn.appendChild(document.createTextNode(" Submit Idea"));
