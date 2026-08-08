@@ -32,10 +32,14 @@
 
 /* ── Record ID row ── */
 .pv-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-.pv-cancel-row { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+.pv-cancel-row { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 6px; }
 .pv-cancel-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; font-size: 13px; font-weight: 600; color: #b91c1c; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; line-height: 1.4; }
 .pv-cancel-btn:hover, .pv-cancel-btn:focus { background: #b91c1c; color: #fff; outline: none; }
 .pv-cancel-btn:focus-visible { outline: 3px solid #b91c1c; outline-offset: 2px; }
+.pv-submit-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; font-size: 13px; font-weight: 600; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 6px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; line-height: 1.4; }
+.pv-submit-btn:hover, .pv-submit-btn:focus { background: #166534; color: #fff; outline: none; }
+.pv-submit-btn:focus-visible { outline: 3px solid #166534; outline-offset: 2px; }
+.pv-submit-btn:disabled { opacity: 0.65; cursor: default; }
 .pv-id-badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 12px; background: #1f1f1f; color: #fff; border-radius: 4px; font-size: 22px; font-weight: 700; letter-spacing: 0.01em; line-height: 1.25; flex-shrink: 0; }
 
 /* ── Info row: Status · Votes ── */
@@ -155,9 +159,47 @@
 .pv-share:hover .material-symbols-outlined { color: #fff !important; }
 .pv-share:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
 .pv-share .material-symbols-outlined { font-size: 0.9rem; line-height: 1; font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 24, 'GRAD' 0; }
-#pvToast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(12px); background: #1e293b; color: #fff; font-size: 14px; font-weight: 600; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease; z-index: 9999; white-space: nowrap; }
-#pvToast.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
-#pvToast.is-error { background: #b91c1c; }
+/* ── Toast → sticky top banner ──
+   Ported from ideas_v4.html's .ip-toast so vote/share/submit
+   confirmations look and behave the same across the whole portal
+   instead of print_form's own smaller bottom-pill toast. Manual-dismiss
+   only (no auto-hide timer) per WCAG 2.2.1/2.2.3. */
+#pvToast {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    transform: translateY(-100%);
+    background: #fdf8ee;
+    border-bottom: 1px solid #e8dfc8;
+    border-left: 6px solid #b57f0a;
+    padding: 14px 20px;
+    border-radius: 0 0 10px 10px;
+    font-family: 'Public Sans', 'Source Sans 3', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    z-index: 9999;
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    max-width: 100%;
+    pointer-events: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+#pvToast, #pvToast * { color: #3d2f0f !important; }
+#pvToast .pv-toast__msg { white-space: normal; line-height: 1.4; max-width: 900px; }
+#pvToast .pv-toast__icon { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+#pvToast .pv-toast__icon .material-symbols-outlined { font-size: 1.3rem; }
+#pvToast:not(.is-error) .pv-toast__icon .material-symbols-outlined { color: #92720a !important; }
+#pvToast.is-error .pv-toast__icon .material-symbols-outlined { color: #d54309 !important; }
+#pvToast.is-error { border-left-color: #d54309; }
+#pvToast .pv-toast__close { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; border: none; background: rgba(61, 47, 15, 0.1); cursor: pointer; padding: 0; }
+#pvToast .pv-toast__close:hover { background: rgba(61, 47, 15, 0.18); }
+#pvToast .pv-toast__close:focus-visible { outline: 3px solid #3d2f0f; outline-offset: 2px; }
+#pvToast .pv-toast__close .material-symbols-outlined { font-size: 1.1rem; }
+#pvToast.is-visible { transform: translateY(0); pointer-events: auto; }
 </style>
 
 <!-- ── Back nav ── -->
@@ -171,8 +213,27 @@
 <!-- ── Main ── -->
 <main class="pv-main" id="pv-main" tabindex="-1">
 
-    <!-- ── Row 0: Cancel button (right-aligned, own row) ── -->
-    <!--{if $submitted == 0 || $is_admin}-->
+    <!-- ── Row 0: Submit + Cancel buttons (right-aligned, own row) ── -->
+    <!--{if $submitted == 0}-->
+    <div class="pv-cancel-row noprint">
+        <button type="button"
+                class="pv-submit-btn"
+                onclick="pvSubmitDraft(this)"
+                aria-label="Submit this idea"
+                title="Submit this idea">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false" style="width:14px;height:14px;flex-shrink:0"><path d="M3 8h9M8 3.5L12.5 8 8 12.5"/></svg>
+            Submit
+        </button>
+        <button type="button"
+                class="pv-cancel-btn"
+                onclick="cancelRequest()"
+                aria-label="Cancel this request"
+                title="Cancel Request">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false" style="width:14px;height:14px;flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5"/></svg>
+            Cancel Request
+        </button>
+    </div>
+    <!--{elseif $is_admin}-->
     <div class="pv-cancel-row noprint">
         <button type="button"
                 class="pv-cancel-btn"
@@ -362,11 +423,19 @@
 </main>
 
 <!-- Toast -->
-<div id="pvToast" role="status" aria-live="polite" aria-atomic="true"></div>
+<div id="pvToast" role="alert" aria-live="polite"></div>
 
 <!-- ── Data loader ── -->
 <script>
 var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{else}-->false<!--{/if}-->;
+// True only for a record that has never been submitted (a real draft).
+// Used to force the status pill to "Draft" rather than trusting
+// indicator 12, which writeDraftStatus() in ideas_v4.js intentionally
+// blanks on every draft save — a blank field here was rendering as the
+// form's configured default option text ("Submitted") instead of
+// nothing, which incorrectly told the idea's author their unsubmitted
+// draft had already been submitted.
+var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}-->;
 
 (function() {
     var recordID  = <!--{$recordID|strip_tags|escape:'javascript'}-->;
@@ -494,11 +563,22 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         { id: 10, target: 'pv-value-10', isAttachment: true },
         { id: 12, target: null,
           onValue: function(text) {
-              var val = text.trim();
-              if (!val || val === 'N/A') { return; }
               var pill = document.getElementById('pv-status-pill');
               var item = document.getElementById('pv-status-item');
               var sep  = document.getElementById('pv-info-sep');
+
+              var val;
+              if (pvIsTrueDraft) {
+                  // Ground truth: $submitted == 0 means this record has
+                  // never been submitted, full stop — always show
+                  // "Draft" here regardless of whatever indicator 12
+                  // happens to contain.
+                  val = 'Draft';
+              } else {
+                  val = text.trim();
+                  if (!val || val === 'N/A') { return; }
+              }
+
               if (pill) { pill.textContent = val; }
               if (item) { item.removeAttribute('hidden'); }
               if (sep)  { sep.removeAttribute('hidden'); }
@@ -759,10 +839,15 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
     var PV_FORM_KEY      = '57e89';
     var PV_VOTE_IND_IDEA = 2;
     var PV_VOTE_IND_USER = 3;
-    var _pvToastTimer       = null;
     var _pvVotingInProgress = false;
     var _pvResolvedEmail    = '';
     var _pvEmailResolved    = false;
+    // recordID of the current user's own vote record for this idea (the
+    // vote FORM record's own recordID, distinct from PV_RECORD_ID which
+    // it points at). Required to target a specific vote record when
+    // un-voting. Populated by pvCheckVoted() on load and immediately on
+    // a fresh vote via pvIdeaVotes().
+    var _pvMyVoteRecordID   = null;
 
     function pvIsRealEmail(str) {
         return typeof str === 'string' && str.includes('@') && !str.includes('<!--');
@@ -795,14 +880,33 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         });
     }
 
+    function pvEscapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str == null ? '' : String(str);
+        return div.innerHTML;
+    }
+
+    /* Sticky top banner, matching ideas_v4.html's .ip-toast: icon +
+       message + manual-dismiss close button, no auto-hide timer (per
+       WCAG 2.2.1/2.2.3 — the previous 4s auto-hide here has been
+       dropped to match). */
+    function pvHideToast() {
+        var toast = document.getElementById('pvToast');
+        if (toast) { toast.classList.remove('is-visible'); }
+    }
+
     function pvShowToast(msg, isError) {
         var toast = document.getElementById('pvToast');
         if (!toast) { return; }
-        toast.textContent = msg || '';
+        var iconName = isError ? 'error' : 'check_circle';
+        toast.innerHTML =
+            '<span class="pv-toast__icon" aria-hidden="true"><span class="material-symbols-outlined">' + iconName + '</span></span>' +
+            '<span class="pv-toast__msg">' + pvEscapeHtml(msg) + '</span>' +
+            '<button type="button" class="pv-toast__close" aria-label="Dismiss notification"><span class="material-symbols-outlined">close</span></button>';
         toast.classList.toggle('is-error', !!isError);
         toast.classList.add('is-visible');
-        if (_pvToastTimer) { clearTimeout(_pvToastTimer); }
-        _pvToastTimer = setTimeout(function() { toast.classList.remove('is-visible'); }, 4000);
+        var closeBtn = toast.querySelector('.pv-toast__close');
+        if (closeBtn) { closeBtn.addEventListener('click', pvHideToast, { once: true }); }
     }
 
     function pvCopyFallback(text) {
@@ -823,11 +927,31 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
     function pvSetVoted(isVoted) {
         var btn = document.getElementById('pv-vote-btn');
         if (!btn) { return; }
-        btn.disabled = isVoted;
-        btn.setAttribute('aria-disabled', isVoted ? 'true' : 'false');
+
+        if (_pvIsOwnIdea) { return; } // pvSetOwnIdea owns this state — never overwrite it here
+
+        // Voted, but we couldn't resolve which vote record is ours (e.g.
+        // a query hiccup) — same "unavailable" fallback as the table/
+        // record-modal use, rather than silently allowing an unvote
+        // click that has nothing to target.
+        var unavailable = isVoted && !_pvMyVoteRecordID;
+
         btn.classList.toggle('is-voted', isVoted);
-        btn.setAttribute('aria-label', isVoted ? "You've already voted for this idea" : 'Vote for this idea');
-        btn.title = isVoted ? "You've already voted for this idea" : 'Vote for this idea';
+        btn.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>'
+            + (isVoted ? 'Voted' : 'Vote for this idea');
+
+        if (unavailable) {
+            btn.disabled = true;
+            btn.setAttribute('aria-disabled', 'true');
+            btn.setAttribute('aria-label', "Vote recorded, but could not be loaded for removal — refresh and try again");
+            btn.title = 'Vote record not found — refresh and try again';
+            return;
+        }
+
+        btn.disabled = false;
+        btn.setAttribute('aria-disabled', 'false');
+        btn.setAttribute('aria-label', isVoted ? 'Remove your vote for this idea' : 'Vote for this idea');
+        btn.title = isVoted ? 'Click to remove your vote' : 'Vote for this idea';
     }
 
     function pvCheckVoted() {
@@ -856,6 +980,8 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
                     var voter      = String((vote.s1 && vote.s1['id' + PV_VOTE_IND_USER]) || '').toLowerCase();
                     if (linkedIdea === ideaKey && (voter === emailKey || voter === userKey)) {
                         hasVoted = true;
+                        var voteRecId = vote.recordID != null ? vote.recordID : (vote.recordId != null ? vote.recordId : vote.id);
+                        _pvMyVoteRecordID = (voteRecId !== undefined && voteRecId !== null && voteRecId !== '') ? String(voteRecId) : null;
                         return false;
                     }
                 });
@@ -910,8 +1036,16 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
     function pvIdeaVotes() {
         if (_pvVotingInProgress) { return; }
         if (_pvIsOwnIdea) { pvShowToast("You can't vote on your own idea.", true); return; }
+
         var btn = document.getElementById('pv-vote-btn');
+        // Already voted → this click means "remove my vote", one click,
+        // no confirmation (matching the table/record-modal behavior).
+        if (btn && btn.classList.contains('is-voted')) {
+            pvUnvoteIdea();
+            return;
+        }
         if (btn && btn.disabled) { pvShowToast('You already voted on this idea.', true); return; }
+
         _pvVotingInProgress = true;
         pvSetVoted(true);
 
@@ -933,7 +1067,10 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
             .then(function(text) {
                 var newID = parseFloat(text.replace(/^"|"$/g, ''));
                 if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
+                    _pvMyVoteRecordID = String(newID);
+                    pvSetVoted(true); // re-render now that we have a vote record ID (enables unvote)
                     pvShowToast('Thanks for voting!');
+                    if (typeof window._pvInvalidateVotesPanel === 'function') { window._pvInvalidateVotesPanel(); }
                     /* Refresh votes pill after successful vote */
                     if (typeof window._pvFetchVoteCount === 'function') { window._pvFetchVoteCount(); }
                 } else {
@@ -953,6 +1090,53 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         } else {
             pvResolveEmail().then(function(identity) { doSubmit(identity); });
         }
+    }
+
+    /* ── Un-vote ──
+       Uses the same real LEAF soft-delete route as ideas_v4.js
+       (POST ./api/form/{recordID}/cancel → Form::cancelRecord()) rather
+       than the earlier deleted=1 POST body param, which returned HTTP
+       200 without actually persisting anything since `deleted` is a
+       system-managed timestamp column, not a writable indicator.
+       suppressNotification=1 avoids cancelRecord() emailing "prior
+       approvers" that don't apply to a workflow-less vote record. */
+    function pvUnvoteIdea() {
+        if (_pvVotingInProgress) { return; }
+        if (!_pvMyVoteRecordID) {
+            pvShowToast("Couldn't find your vote record to remove it. Try refreshing the page.", true);
+            return;
+        }
+
+        _pvVotingInProgress = true;
+        var voteRecordID = _pvMyVoteRecordID;
+        pvSetVoted(false);
+
+        var body = new URLSearchParams({ CSRFToken: CSRFToken, suppressNotification: '1' });
+        fetch('./api/form/' + encodeURIComponent(voteRecordID) + '/cancel', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            body: body.toString()
+        })
+        .then(function(res) {
+            if (!res.ok) { throw new Error('HTTP ' + res.status); }
+            return res.text();
+        })
+        .then(function(text) {
+            text = text.trim();
+            if (text !== '1' && text !== '"1"') { throw new Error('Delete request was not accepted: ' + text); }
+            _pvMyVoteRecordID = null;
+            if (typeof window._pvInvalidateVotesPanel === 'function') { window._pvInvalidateVotesPanel(); }
+            pvShowToast('Your vote has been removed.');
+            if (typeof window._pvFetchVoteCount === 'function') { window._pvFetchVoteCount(); }
+        })
+        .catch(function(err) {
+            console.error('[pvUnvoteIdea] error:', err);
+            _pvMyVoteRecordID = voteRecordID; // roll back
+            pvSetVoted(true);
+            pvShowToast("Couldn't remove your vote. Please try again — if this keeps happening, let us know.", true);
+        })
+        .finally(function() { _pvVotingInProgress = false; });
     }
 
     function pvShare() {
@@ -1230,6 +1414,61 @@ function pvOpenEdit(indicatorID) {
                 }
             },
             error: function(res) { console.log(res); }
+        });
+    }
+
+    // Powers the standalone "Submit" button next to Cancel Request
+    // (visible immediately for any true draft, unlike the native
+    // submitControl UI above which only renders once getsubmitcontrol
+    // has loaded at 100% form completeness). Calls the same real submit
+    // endpoint as doSubmit(), but reports back through pvShowToast()
+    // since that's guaranteed to exist regardless of whether the native
+    // submit-control markup has rendered yet.
+    function pvSubmitDraft(btn) {
+        if (btn) { btn.disabled = true; }
+        pvShowToast('Submitting your idea...');
+
+        $.ajax({
+            type: 'POST',
+            url: './api/form/' + recordID + '/submit',
+            data: { CSRFToken: '<!--{$CSRFToken}-->' },
+            success: function(response) {
+                if (response?.errors?.length === 0) {
+                    pvShowToast('Your idea has been submitted successfully.');
+
+                    var pill = document.getElementById('pv-status-pill');
+                    var item = document.getElementById('pv-status-item');
+                    var sep  = document.getElementById('pv-info-sep');
+                    if (pill) { pill.textContent = 'Submitted'; }
+                    if (item) { item.removeAttribute('hidden'); }
+                    if (sep)  { sep.removeAttribute('hidden'); }
+
+                    if (btn) { btn.style.display = 'none'; }
+
+                    // Mirror doSubmit()'s side effects for the native
+                    // submit-control UI and workflow panel, where present.
+                    $('#submitStatus').text('Request submmited');
+                    $('#submitControl').empty().html('Submitted');
+                    $('#submitContent').hide('blind', 500);
+                    $('#comments').css({'display': "block"});
+                    $('#notes').css({'display': "block"});
+                    const isAdmin = '<!--{$is_admin}-->';
+                    if (isAdmin !== "1") { $('#btn_cancelRequest').hide(); }
+                    if (typeof workflow !== 'undefined' && workflow) {
+                        workflow.setExtraParams('masquerade=nonAdmin');
+                        workflow.getWorkflow(recordID);
+                    }
+                } else {
+                    const errors = (response && response.errors && response.errors.length) ? response.errors.join(' ') : 'This idea could not be submitted.';
+                    pvShowToast(errors, true);
+                    if (btn) { btn.disabled = false; }
+                }
+            },
+            error: function(res) {
+                console.log(res);
+                pvShowToast('Error submitting your idea. Please try again.', true);
+                if (btn) { btn.disabled = false; }
+            }
         });
     }
 
@@ -1533,14 +1772,7 @@ function pvOpenEdit(indicatorID) {
     var _pvShowAll       = false;
     var PV_VOTE_CAP      = 20;
 
-    function toggleVotes(ideaRecordID) {
-        var btn = document.getElementById('btn-votes');
-        var fc  = document.getElementById('formcontent');
-        if (!btn || !fc) { return; }
-        _pvVotesExpanded = !_pvVotesExpanded;
-        btn.setAttribute('aria-expanded', _pvVotesExpanded ? 'true' : 'false');
-        if (!_pvVotesExpanded) { fc.innerHTML = ''; return; }
-        if (_pvVotesLoaded) { _pvRenderVotes(fc); return; }
+    function _pvFetchVotesList(fc, ideaRecordID) {
         fc.innerHTML = '<div style="padding:16px;font-size:15px;color:#475569;">Loading votes&hellip;</div>';
         var q = {
             terms: [
@@ -1568,6 +1800,29 @@ function pvOpenEdit(indicatorID) {
             error: function() { fc.innerHTML = '<div style="padding:16px;color:#b91c1c;">Could not load votes.</div>'; }
         });
     }
+
+    function toggleVotes(ideaRecordID) {
+        var btn = document.getElementById('btn-votes');
+        var fc  = document.getElementById('formcontent');
+        if (!btn || !fc) { return; }
+        _pvVotesExpanded = !_pvVotesExpanded;
+        btn.setAttribute('aria-expanded', _pvVotesExpanded ? 'true' : 'false');
+        if (!_pvVotesExpanded) { fc.innerHTML = ''; return; }
+        if (_pvVotesLoaded) { _pvRenderVotes(fc); return; }
+        _pvFetchVotesList(fc, ideaRecordID);
+    }
+
+    // Called from outside this IIFE (the vote/unvote handlers below) so a
+    // vote or unvote invalidates this panel's cached voter list. If the
+    // panel happens to be open right now, refetch immediately rather than
+    // waiting for the next toggle.
+    window._pvInvalidateVotesPanel = function() {
+        _pvVotesLoaded = false;
+        if (_pvVotesExpanded) {
+            var fc = document.getElementById('formcontent');
+            if (fc) { _pvFetchVotesList(fc, recordID); }
+        }
+    };
 
     function _pvRenderVotes(fc) {
         /* Context line: imported legacy total vs. live (email-tracked)
