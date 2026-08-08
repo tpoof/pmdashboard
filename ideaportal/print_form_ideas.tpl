@@ -162,18 +162,28 @@
     function showScriptSource() {
         var out = document.getElementById('pvDebugScriptSource');
         if (!out) { return; }
+        out.innerHTML = '';
         var scripts = Array.prototype.slice.call(document.querySelectorAll('script:not([src])'));
         var selfIndex = scripts.indexOf(pvDebugSelfScript);
         var target = selfIndex !== -1 ? scripts[selfIndex + 1] : null;
         if (!target) {
-            out.innerHTML = '<div class="pv-dbg-log-empty">Could not find another script tag in the DOM.</div>';
+            var empty = document.createElement('div');
+            empty.className = 'pv-dbg-log-empty';
+            empty.textContent = 'Could not find another script tag in the DOM.';
+            out.appendChild(empty);
             return;
         }
         var text = target.textContent;
         var firstLine = text.trim().split('\n')[0].slice(0, 70);
-        // Flag any non-ASCII character (code > 126) with its position and
-        // code point — the most likely form of silent corruption from an
-        // encoding mismatch somewhere in a deployment pipeline.
+
+        // Structurally, a single <script> element's own textContent can
+        // never legitimately contain a literal "</script" substring — the
+        // browser's parser terminates raw-text scanning at the first such
+        // sequence, by construction. If one shows up here anyway, that's a
+        // strong signal the captured node isn't what we think it is,
+        // rather than evidence of a real defect in the page itself.
+        var hasEmbeddedCloseTag = /<\/script/i.test(text);
+
         var flagged = [];
         for (var i = 0; i < text.length; i++) {
             var code = text.charCodeAt(i);
@@ -181,16 +191,68 @@
                 flagged.push('pos ' + i + ': "' + text[i] + '" (U+' + code.toString(16).toUpperCase().padStart(4, '0') + ')');
             }
         }
-        var flaggedHtml = flagged.length
-            ? '<div class="pv-dbg-log" style="margin-top:6px;max-height:100px;">' + flagged.map(function(f) {
-                var d = document.createElement('div'); d.className = 'pv-dbg-log-entry'; d.textContent = f; return d.outerHTML;
-              }).join('') + '</div>'
-            : '<div class="pv-dbg-log-empty">No non-ASCII characters found.</div>';
-        out.innerHTML = '<div class="pv-dbg-row"><span class="pv-dbg-key">Script length</span><span class="pv-dbg-val ok">' + text.length + ' chars</span></div>'
-            + '<div class="pv-dbg-row"><span class="pv-dbg-key">Starts with</span><span class="pv-dbg-val ok">' + firstLine.replace(/</g, '&lt;') + '</span></div>'
-            + '<h4 style="margin-top:8px;">Non-ASCII characters (possible encoding corruption)</h4>' + flaggedHtml
-            + '<h4 style="margin-top:8px;">Full live source (copy this)</h4>'
-            + '<textarea readonly style="width:100%;height:140px;background:#020617;color:#e2e8f0;font-family:inherit;font-size:11px;border:1px solid #334155;border-radius:6px;padding:6px;box-sizing:border-box;" onclick="this.select()">' + text.replace(/</g, '&lt;') + '</textarea>';
+
+        function row2(label, value, cls) {
+            var div = document.createElement('div');
+            div.className = 'pv-dbg-row';
+            var k = document.createElement('span');
+            k.className = 'pv-dbg-key';
+            k.textContent = label;
+            var v = document.createElement('span');
+            v.className = 'pv-dbg-val ' + (cls || 'ok');
+            v.textContent = value;
+            div.appendChild(k);
+            div.appendChild(v);
+            return div;
+        }
+
+        out.appendChild(row2('Script length', text.length + ' chars'));
+        out.appendChild(row2('Starts with', firstLine));
+        if (hasEmbeddedCloseTag) {
+            out.appendChild(row2('⚠ Contains literal "</script" mid-text', 'Wrong node likely captured — see note below', 'bad'));
+        }
+
+        var h1 = document.createElement('h4');
+        h1.style.marginTop = '8px';
+        h1.textContent = 'Non-ASCII characters (possible encoding corruption)';
+        out.appendChild(h1);
+        if (flagged.length) {
+            var log = document.createElement('div');
+            log.className = 'pv-dbg-log';
+            log.style.marginTop = '6px';
+            log.style.maxHeight = '100px';
+            flagged.forEach(function(f) {
+                var d = document.createElement('div');
+                d.className = 'pv-dbg-log-entry';
+                d.textContent = f;
+                log.appendChild(d);
+            });
+            out.appendChild(log);
+        } else {
+            var noneEl = document.createElement('div');
+            noneEl.className = 'pv-dbg-log-empty';
+            noneEl.textContent = 'No non-ASCII characters found.';
+            out.appendChild(noneEl);
+        }
+
+        var h2 = document.createElement('h4');
+        h2.style.marginTop = '8px';
+        h2.textContent = 'Full live source (click to select all, then copy)';
+        out.appendChild(h2);
+
+        // .value on a textarea is a raw string assignment — never parsed
+        // as HTML, so nothing here can be misread as an entity (unlike
+        // the previous innerHTML-based version, which silently decoded
+        // any "&word;"-shaped substring in the source — e.g. turning a
+        // real &quot; in the code into a bare " — and made the dump look
+        // like it contained corruption that was actually just an
+        // artifact of how it was being displayed).
+        var ta = document.createElement('textarea');
+        ta.readOnly = true;
+        ta.style.cssText = 'width:100%;height:140px;background:#020617;color:#e2e8f0;font-family:inherit;font-size:11px;border:1px solid #334155;border-radius:6px;padding:6px;box-sizing:border-box;';
+        ta.value = text;
+        ta.addEventListener('click', function() { ta.select(); });
+        out.appendChild(ta);
     }
 
     function testToast() {
