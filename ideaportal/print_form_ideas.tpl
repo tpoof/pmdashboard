@@ -163,8 +163,8 @@
         var out = document.getElementById('pvDebugScriptSource');
         if (!out) { return; }
         var scripts = Array.prototype.slice.call(document.querySelectorAll('script:not([src])'));
-        var others = scripts.filter(function(s) { return s !== pvDebugSelfScript; });
-        var target = others[0];
+        var selfIndex = scripts.indexOf(pvDebugSelfScript);
+        var target = selfIndex !== -1 ? scripts[selfIndex + 1] : null;
         if (!target) {
             out.innerHTML = '<div class="pv-dbg-log-empty">Could not find another script tag in the DOM.</div>';
             return;
