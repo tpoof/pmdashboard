@@ -66,6 +66,11 @@
             <button type="button" class="pv-dbg-btn" onclick="window._pvDebug && window._pvDebug.testToast()">Test toast only</button>
             <button type="button" class="pv-dbg-btn" onclick="window._pvDebug && window._pvDebug.clearLog()">Clear log</button>
         </section>
+        <section>
+            <h4>Live script source (bypasses cache/encoding guesswork)</h4>
+            <button type="button" class="pv-dbg-btn" onclick="window._pvDebug && window._pvDebug.showScriptSource()">Show Data-loader script source</button>
+            <div id="pvDebugScriptSource" style="margin-top:6px;"></div>
+        </section>
     </div>
 </div>
 <script>
@@ -113,10 +118,13 @@
         var out = document.getElementById('pvDebugDiagnostics');
         if (!out) { return; }
         var checks = [
+            ['pvCanEdit defined',        typeof pvCanEdit !== 'undefined'],
+            ['pvIsTrueDraft defined',    typeof pvIsTrueDraft !== 'undefined'],
+            ['_pvFields exposed',        typeof window._pvFields !== 'undefined'],
             ['pvShowToast defined',      typeof window.pvShowToast === 'function'],
+            ['pvOpenEdit defined',       typeof pvOpenEdit === 'function'],
             ['pvSubmitDraft defined',    typeof pvSubmitDraft === 'function'],
             ['doSubmit defined',         typeof doSubmit === 'function'],
-            ['pvOpenEdit defined',       typeof pvOpenEdit === 'function'],
             ['recordID defined',         typeof recordID !== 'undefined'],
             ['CSRFToken present',        typeof CSRFToken === 'string' && CSRFToken.length > 0],
             ['form (LeafForm) ready',    typeof form !== 'undefined' && !!form],
@@ -131,6 +139,43 @@
         out.innerHTML = checks.map(function(c) {
             return row(c[0], c[1], c[1] ? 'OK' : 'MISSING');
         }).join('');
+    }
+
+    // Even when a <script> tag fails to parse as JS, the browser still
+    // stores its raw text in the DOM (HTML parsing and JS execution are
+    // separate steps) — so this pulls the ACTUAL live source straight
+    // from the page, bypassing any cache/encoding/transcription
+    // uncertainty entirely. Finds the Data-loader block specifically by
+    // a unique string it contains.
+    function showScriptSource() {
+        var out = document.getElementById('pvDebugScriptSource');
+        if (!out) { return; }
+        var scripts = Array.prototype.slice.call(document.querySelectorAll('script:not([src])'));
+        var target = scripts.find(function(s) { return s.textContent.indexOf('pvOpenEdit') !== -1; });
+        if (!target) {
+            out.innerHTML = '<div class="pv-dbg-log-empty">Could not find the Data-loader script tag in the DOM.</div>';
+            return;
+        }
+        var text = target.textContent;
+        // Flag any non-ASCII character (code > 126) with its position and
+        // code point — the most likely form of silent corruption from an
+        // encoding mismatch somewhere in a deployment pipeline.
+        var flagged = [];
+        for (var i = 0; i < text.length; i++) {
+            var code = text.charCodeAt(i);
+            if (code > 126) {
+                flagged.push('pos ' + i + ': "' + text[i] + '" (U+' + code.toString(16).toUpperCase().padStart(4, '0') + ')');
+            }
+        }
+        var flaggedHtml = flagged.length
+            ? '<div class="pv-dbg-log" style="margin-top:6px;max-height:100px;">' + flagged.map(function(f) {
+                var d = document.createElement('div'); d.className = 'pv-dbg-log-entry'; d.textContent = f; return d.outerHTML;
+              }).join('') + '</div>'
+            : '<div class="pv-dbg-log-empty">No non-ASCII characters found.</div>';
+        out.innerHTML = '<div class="pv-dbg-row"><span class="pv-dbg-key">Script length</span><span class="pv-dbg-val ok">' + text.length + ' chars</span></div>'
+            + '<h4 style="margin-top:8px;">Non-ASCII characters (possible encoding corruption)</h4>' + flaggedHtml
+            + '<h4 style="margin-top:8px;">Full live source (copy this)</h4>'
+            + '<textarea readonly style="width:100%;height:140px;background:#020617;color:#e2e8f0;font-family:inherit;font-size:11px;border:1px solid #334155;border-radius:6px;padding:6px;box-sizing:border-box;" onclick="this.select()">' + text.replace(/</g, '&lt;') + '</textarea>';
     }
 
     function testToast() {
@@ -155,7 +200,8 @@
         runDiagnostics: runDiagnostics,
         testToast: testToast,
         clearLog: clearLog,
-        toggle: toggle
+        toggle: toggle,
+        showScriptSource: showScriptSource
     };
 
     // Run once immediately, and again after the page has had a chance to
