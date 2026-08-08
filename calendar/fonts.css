@@ -1,0 +1,66 @@
+/* ============================================================
+   Self-hosted replacement for:
+   https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap
+
+   HOW TO FINISH SETUP:
+   1. Go to https://gwfh.mranftl.com/fonts/public-sans?subsets=latin
+      -> select weights 400, 600, 700, 800 -> download the "modern" (woff2) zip.
+   2. Go to https://gwfh.mranftl.com/fonts/source-sans-3?subsets=latin
+      -> select the full variable weight range (200-900), both normal and italic
+         -> download the woff2 zip.
+   3. Upload all the resulting .woff2 files into ./files/fonts/
+      keeping the filenames below (rename if the tool gives different names).
+   4. In the page <head>, replace the Google Fonts <link> with:
+        <link rel="stylesheet" href="./files/fonts.css" />
+      and delete the two fonts.googleapis.com / fonts.gstatic.com
+      preconnect <link> tags — they're no longer needed once nothing loads
+      from Google's font CDN.
+   ============================================================ */
+
+/* ---------- Public Sans ---------- */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/public-sans-v400-latin-regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/public-sans-v600-latin-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/public-sans-v700-latin-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('./fonts/public-sans-v800-latin-800.woff2') format('woff2');
+}
+
+/* ---------- Source Sans 3 (variable, normal) ---------- */
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url('./fonts/source-sans-3-latin-normal-variable.woff2') format('woff2-variations');
+}
+
+/* ---------- Source Sans 3 (variable, italic) ---------- */
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url('./fonts/source-sans-3-latin-italic-variable.woff2') format('woff2-variations');
+}

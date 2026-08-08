@@ -1,0 +1,29 @@
+I need you to update idea.html to remove the Google Fonts dependency for text typefaces and replace it with LEAF's local font families. Please make these exact changes throughout the file:
+
+1. Remove these tags from <head>:
+
+html
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap"
+  rel="stylesheet"
+/>
+
+(Keep the Material Symbols Google Fonts link for now — that's being handled separately.)
+
+2. Replace every font-family declaration in the <style> block as follows:
+
+Current	Replace with
+font-family: "Public Sans", sans-serif; when paired with font-weight: 800	font-family: 'PublicSans-Bold', sans-serif; (remove the font-weight: 800 line)
+font-family: "Public Sans", sans-serif; when paired with font-weight: 700	font-family: 'PublicSans-Bold', sans-serif; (remove the font-weight: 700 line)
+font-family: "Public Sans", sans-serif; when paired with font-weight: 600	font-family: 'PublicSans-Medium', sans-serif; (remove the font-weight: 600 line)
+font-family: "Public Sans", sans-serif; when paired with font-weight: 400 or no weight specified	font-family: 'PublicSans-Regular', sans-serif; (remove the font-weight: 400 line if present)
+font-family: "Source Sans 3", sans-serif; when paired with font-weight: 700	font-family: 'Source Sans Pro Web-Bold', sans-serif; (remove the font-weight: 700 line)
+font-family: "Source Sans 3", sans-serif; when paired with font-weight: 600	font-family: 'Source Sans Pro Web-Bold', sans-serif; (remove the font-weight: 600 line — closest available match)
+font-family: "Source Sans 3", sans-serif; all other cases (400/normal weight, including the italic tagline)	font-family: 'Source Sans Pro Web', sans-serif; (remove any font-weight: 400 line; leave font-style: italic as-is where present)
+font-family: "Source Sans 3", "Public Sans", sans-serif; (used in .ip-detail__title and .ip-detail__card-body)	font-family: 'Source Sans Pro Web', 'PublicSans-Regular', sans-serif;
+
+3. Go through the file section by section (hero, stats strip, sidebar, tabs, table, badges, buttons, forms, modals, toast, detail view, credit badge) and confirm every single font-family occurrence is updated — there are roughly 30+ instances total, including ones inside @media query overrides (e.g. .ip-detail__title at 1.2rem in the 560px breakpoint).
+
+4. After editing, search the file for any remaining instances of the strings "Public Sans" or "Source Sans 3" to confirm none were missed, and confirm no font-weight declarations remain paired with the newly-named font families (since weight is now baked into the family name itself).

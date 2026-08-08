@@ -1,0 +1,39 @@
+Here's a resume prompt for your other chat, accounting for the emoji_events → award_star swap and your confirmed path pattern:
+
+Prompt to resume in your other chat:
+
+I need you to replace all Material Symbols icon font references in idea.html with local SVG files. All 14 icons have been uploaded to the file manager at the path pattern ./files/iconname.svg (e.g. ./files/search.svg, ./files/lightbulb.svg).
+
+Icon name mapping (note one substitution — emoji_events was replaced with award_star since it doesn't exist in the Material Symbols set):
+
+Old Material Symbols name	Local file path
+help	./files/help.svg
+lightbulb	./files/lightbulb.svg
+task_alt	./files/task_alt.svg
+how_to_vote	./files/how_to_vote.svg
+format_list_bulleted	./files/format_list_bulleted.svg
+emoji_events → award_star	./files/award_star.svg
+person	./files/person.svg
+search	./files/search.svg
+save	./files/save.svg
+send	./files/send.svg
+attach_file	./files/attach_file.svg
+editor_choice	./files/editor_choice.svg
+fact_check	./files/fact_check.svg
+arrow_forward	./files/arrow_forward.svg
+
+Important implementation consideration before you start: this file's CSS extensively recolors icons dynamically via color (e.g. white on hover, red on the "un-vote" state, blue on primary buttons, !important overrides in ~10+ places) and resizes them via font-size on the parent. A plain <img src="..."> tag cannot be recolored with CSS color/currentColor — the color is baked into the SVG file. Before doing a blanket find-and-replace, check each of the 14 SVG files:
+
+If the downloaded SVGs use fill="currentColor" (or no fill attribute at all, inheriting default black), they can be inlined directly as <svg> markup in the HTML (not <img> tags) and will respond correctly to all the existing CSS color rules — this is the preferred approach and requires minimal CSS changes.
+If the SVGs have a hardcoded fill color baked in, either edit each file's fill attribute to currentColor before uploading, or plan to convert every dynamic-color CSS rule (hover/voted/disabled states, !important color overrides) into a different mechanism like CSS filter or swapping between multiple pre-colored SVG variants — this is significantly more work, so flag it to me if this is the case rather than guessing.
+
+Task steps:
+
+Confirm which case above applies by inspecting the uploaded SVG files.
+Replace every <span class="material-symbols-outlined" aria-hidden="true">iconname</span> (and the few without aria-hidden) with the corresponding inline <svg> markup, preserving all existing classes, aria-hidden, and sizing wrapper elements so the surrounding layout doesn't shift.
+Remove the .material-symbols-outlined CSS rule block and all font-variation-settings declarations tied to it, replacing icon sizing with width/height on the inlined <svg> (matching the current font-size values used per instance — e.g. 20px in tabs, 22px in stat icons, 0.9rem in buttons).
+Remove the Material Symbols Google Fonts <link> tag from <head> (family=Material+Symbols+Filled...) — no longer needed once all icons are inlined.
+Double check the two icons that appear more than once (task_alt, arrow_forward) are correctly inlined at each occurrence, not just the first.
+After editing, search the file for the string material-symbols-outlined to confirm zero remaining references.
+
+Let me know before starting which fill-color case applies, since it changes the scope of the CSS rework.

@@ -1,0 +1,56 @@
+/* ============================================================
+   Self-hosted replacement for:
+   https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,1,0
+
+   Classic "Material Icons" is intentionally NOT included here —
+   it's been dropped in favor of using material-symbols-outlined
+   everywhere (including the former material-icons "lock" and
+   "close" glyphs, which are valid Material Symbols names too).
+
+   HOW TO FINISH SETUP:
+   1. Get the variable woff2 for "Material Symbols Outlined" from:
+      https://github.com/google/material-design-icons
+      (fonts/variablefont/MaterialSymbolsOutlined[FILL,GRAD,opsz,wght].woff2)
+      -- or generate a subset via
+      https://gwfh.mranftl.com is NOT applicable here since Material
+      Symbols isn't in that catalog; use the Google Fonts icon repo
+      or https://fonts.google.com/icons (download the variable font
+      file directly from the "Get font" option there).
+   2. Upload the resulting .woff2 to ./files/fonts/ with the filename
+      below (rename if needed).
+   3. In the page <head>, replace the Material Symbols Outlined
+      Google Fonts <link> with:
+        <link rel="stylesheet" href="./files/material-symbols.css" />
+   4. Delete this line entirely (classic Material Icons, no longer used):
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+   5. In the access-request markup, change the two leftover
+      material-icons usages to material-symbols-outlined:
+        class="cal-ar-icon material-icons"  -> class="cal-ar-icon material-symbols-outlined"
+        class="material-icons"              -> class="material-symbols-outlined"
+      (glyph names "lock" and "close" are unchanged - both exist
+      in Material Symbols too.)
+   ============================================================ */
+
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: block;
+  src: url('./fonts/material-symbols-outlined-variable.woff2') format('woff2-variations');
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
