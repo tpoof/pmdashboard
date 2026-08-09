@@ -1,5 +1,3 @@
-<!-- line 1852/2839 hid nav/breadcrumb -->
-
 <!doctype html>
 <html lang="en">
   <head>
@@ -14,27 +12,14 @@
     <link rel="stylesheet" href="/platform/designs/files/launchpad.css" />
 
     <style>
-      /* Material Symbols icon font has been fully replaced with inline
-         SVG markup throughout this file — every icon now renders via a
-         literal <svg> element instead of a font glyph. Icons inherit
-         color via `fill="currentColor"` on each SVG (baked into the
-         source files), so every existing dynamic-color CSS rule (hover
-         states, the un-vote red state, disabled states, primary-button
-         white icons, etc.) continues to work unchanged: those rules
-         already targeted color via `color`/`!important` on a wrapping
-         element or the icon itself, and `currentColor` responds to that
-         exactly the same way a font glyph did. Sizing is now controlled
-         via width/height directly on each <svg> (or a .ip-icon wrapper
-         class — see below) rather than font-size, matched to whatever
-         each instance's previous font-size value was.
+      /* Icons render as inline <svg fill="currentColor"> elements, sized
+         via width/height on the .ip-icon class (or overridden per
+         instance) and colored via the wrapping element's `color`.
 
-         Icon attribution: SVG path data throughout this file is sourced
-         from Google's Material Symbols icon set
-         (https://fonts.google.com/icons), licensed under the Apache
-         License, Version 2.0
-         (https://www.apache.org/licenses/LICENSE-2.0). No changes were
-         made to the path data itself beyond extracting it from the font
-         glyphs into standalone inline <svg> markup.
+         Icon attribution: SVG path data is sourced from Google's
+         Material Symbols icon set (https://fonts.google.com/icons),
+         licensed under the Apache License, Version 2.0
+         (https://www.apache.org/licenses/LICENSE-2.0).
       */
       .ip-icon {
         display: inline-block;
@@ -78,22 +63,8 @@
       }
 
       /* ── Hero banner ──
-         Contrast fix: computed actual contrast ratios rather than
-         eyeballing. The tagline/description previously used
-         semi-transparent white (rgba(255,255,255,0.75) and 0.85) over a
-         gradient background — against the lightest point of that
-         gradient (#5aaa47), those resolved to ~2.3:1 and ~2.5:1, both
-         well under the WCAG AA 4.5:1 minimum for normal-size text. Even
-         solid white at 100% opacity only reaches ~2.9:1 against that
-         same lightest gradient stop, so raising opacity alone isn't
-         enough. Fix applies two changes together: (1) text is now solid,
-         non-transparent white, and (2) a subtle dark radial scrim sits
-         behind the text content block (.ip-hero-inner) — a ~25-30%
-         black overlay confirmed via contrast-ratio calculation to bring
-         solid white text to ~4.8-5:1 against the same worst-case
-         background point, clearing AA with margin. The scrim is scoped
-         to just the text-containing area so the decorative leaf
-         graphics and overall gradient identity are otherwise unchanged. */
+         Dark scrim behind the text (via .ip-hero-inner/::after below)
+         ensures white text meets WCAG AA contrast against the gradient. */
       .ip-hero {
         position: relative;
         overflow: hidden;
@@ -129,11 +100,7 @@
         inset: 0;
         z-index: 1;
         pointer-events: none;
-        /* Same contrast-fix scrim as before (see .ip-hero-inner history),
-           now sized to the entire hero rather than just the centered
-           text box. Percentage stops scale to this element's own
-           computed radius, so the falloff shape is preserved
-           automatically at the larger size. */
+        /* Same contrast scrim as .ip-hero-inner, sized to the full hero. */
         background: radial-gradient(
           ellipse at center,
           rgba(0, 0, 0, 0.28) 0%,
@@ -183,12 +150,8 @@
         display: inline-flex;
         align-items: center;
         gap: 7px;
-        /* Changed from a light (15% white) translucent pill to a dark
-           overlay — the light version put white badge text at only
-           ~2.24:1 contrast against its own background, failing AA for
-           normal-size text. A dark background here (confirmed via
-           contrast-ratio calculation) brings the same white text to
-           >8:1. */
+        /* Dark overlay (not a light pill) so white badge text meets
+           WCAG AA contrast. */
         background: rgba(0, 0, 0, 0.35);
         border: 1px solid rgba(255, 255, 255, 0.25);
         border-radius: 50px;
@@ -292,13 +255,10 @@
       .ip-hero-cta:hover .ip-hero-cta__arrow {
         transform: translateX(3px);
       }
-      /* Persistent "How it works" trigger — sits alongside the primary
-         CTA but visually secondary (outline, not filled), reusing the
-         hero's own token palette so it doesn't compete with "Share Your
-         Idea" for attention. Reachable at any time, not just on first
-         visit — see maybeShowHowItWorksOnFirstVisit() in ideas_v3.js for
-         the automatic first-visit trigger, which opens the same modal
-         this button opens on demand. */
+      /* "How it works" trigger — secondary styling so it doesn't compete
+         with "Share Your Idea". Opens the same modal as the automatic
+         first-visit trigger (maybeShowHowItWorksOnFirstVisit() in
+         ideas_v4.js). */
       .ip-hero-actions {
         display: flex;
         align-items: center;
@@ -513,20 +473,9 @@
         background: var(--ip-blue);
         color: #fff;
       }
-      /* Category sidebar becomes visually inert while the Top 10 tab is
-         active — Top 10 is a fixed top-10-by-votes ranking across all
-         categories, not a filterable list, so clicking a category there
-         has never actually changed what's shown. Previously the sidebar
-         fell back to showing All Ideas' own counts while on this tab,
-         which looked like a live, actionable control even though it
-         wasn't — this state makes that explicit instead.
-         NOTE: uses grayscale + pointer-events:none rather than a blanket
-         opacity reduction — opacity applied to the whole list proportionally
-         degrades the text color's contrast ratio along with it (confirmed
-         via contrast-ratio calculation to drop well below WCAG AA at 50%
-         opacity), whereas grayscale preserves the underlying color's
-         luminance/contrast relationship while still visually reading as
-         "disabled." */
+      /* Category sidebar is inert on the Top 10 tab (a fixed ranking,
+         not filterable). Grayscale + pointer-events:none instead of
+         opacity, which would drop text contrast below WCAG AA. */
       .ip-catList.is-inert {
         filter: grayscale(1);
         pointer-events: none;
@@ -690,17 +639,9 @@
       /* ── Recently added ── */
 
       /* ── Search ──
-         Width reduced from full-panel-width to a more typical contextual
-         search-bar width per feedback — previously .ip-searchWrap simply
-         stretched to fill its container, which put the search button far
-         to the right of the input on wide viewports. .ip-searchInner (the
-         actual bordered input+button unit) is now capped at a reasonable
-         max-width and left-aligned, so the button sits immediately next
-         to the input regardless of how wide the panel is. Falls back to
-         full width below the tablet breakpoint so mobile/narrow layouts
-         are unaffected (a capped max-width on a very narrow screen would
-         just look like unnecessary empty space next to it, not a real
-         constraint). */
+         .ip-searchInner is capped at a max-width and left-aligned so the
+         button sits next to the input rather than stretching full-width.
+         Falls back to full width below the tablet breakpoint. */
       .ip-searchWrap {
         padding: 12px 16px;
         border-bottom: 1px solid var(--ip-blue-10);
@@ -919,14 +860,9 @@
         outline-offset: 2px;
         border-radius: 2px;
       }
-      /* Title-column link — previously only the #ID cell was clickable;
-         the title text itself was plain, non-interactive text. Uses the
-         page's normal text color at rest (rather than link-blue) so the
-         table's visual density doesn't change — every title would
-         otherwise render like a wall of blue links — but still clearly
-         signals interactivity on hover/focus, matching the same
-         underline + focus-ring pattern already used by the ID link so
-         both feel like the same affordance. */
+      /* Title text is clickable like the ID link, but uses inherited
+         (not link-blue) color at rest so the table doesn't read as a
+         wall of blue links. */
       .ip-recordLink--title {
         color: inherit;
         text-decoration: none;
@@ -958,11 +894,8 @@
         text-align: left;
         white-space: nowrap;
       }
-      /* Shown on draft rows where isOwn is false and needsSubmit is also
-         false — practically this should be rare/never in the My Ideas
-         table (a user's own drafts always show Submit), but exists so an
-         empty actions cell never looks visually broken/unintentional if
-         that combination is ever reached. */
+      /* Fallback for a draft row with no available actions (rare/never
+         in practice), so the cell doesn't look visually broken. */
       .ip-actionsEmpty {
         font-size: 0.85rem;
         color: var(--ip-muted);
@@ -1199,12 +1132,9 @@
       .ip-upvote.is-voted .ip-icon {
         color: #666 !important;
       }
-      /* Un-vote affordance: clicking a "Voted" button removes the vote
-         (single click, no separate confirm step, per product decision).
-         Hover/focus states shift toward the red/error palette already
-         used elsewhere in this app (--ip-red) so the destructive nature
-         of the action is signaled before the click, since a single click
-         has no other pre-action confirmation step. */
+      /* Click on a "Voted" button removes the vote (single click, no
+         confirm step) — hover/focus shift to the red/error palette to
+         signal the destructive action before the click. */
       .ip-upvote.is-voted:hover:not(:disabled),
       .ip-upvote.is-voted:focus-visible:not(:disabled) {
         background: #fce8e3;
@@ -1219,12 +1149,9 @@
         outline: 2px solid var(--ip-red);
         outline-offset: 3px;
       }
-      /* Vote exists but its record ID couldn't be resolved for deletion
-         (e.g. only present via the localStorage optimistic-vote cache,
-         not yet confirmed by a live server query). Stays non-interactive
-         and visually distinct from a normal removable vote so users
-         aren't confused by a button that looks clickable but silently
-         does nothing. */
+      /* Vote exists but its record ID couldn't be resolved for deletion.
+         Non-interactive and visually distinct so it doesn't look like a
+         clickable button that silently does nothing. */
       .ip-upvote.is-unavailable {
         cursor: not-allowed;
         opacity: 0.75;
@@ -1403,13 +1330,8 @@
       }
 
       /* ── How It Works modal ──
-         Single static explainer panel (not a multi-step spotlight tour)
-         — the lifecycle content is a linear 3-stage process explained as
-         text, not something anchored to specific UI elements that would
-         need position-tracking logic and would break every time the
-         surrounding layout changes. Reuses the same card/icon visual
-         language already established by .feat/.step elsewhere in this
-         design system rather than introducing new patterns. */
+         Static explainer panel (not a step-by-step tour), reusing the
+         .feat/.step card/icon visual language used elsewhere. */
       .ip-howItWorks__content {
         max-width: 900px;
       }
@@ -1591,11 +1513,9 @@
         color: var(--ip-muted);
       }
       /* "Currently attached: filename" hint shown when editing a draft
-         that already has an uploaded image — see openDraftForEditing()
-         in ideas_v3.js. Purely informational; the file input itself
-         stays additive (new upload replaces, blank keeps existing). Sits
-         inline to the left of the field's own label via .ip-labelRow
-         rather than as its own full-width line below it. */
+         with an existing upload (see openDraftForEditing() in
+         ideas_v4.js). Informational only — new upload replaces, blank
+         keeps the existing file. */
       .ip-labelRow {
         display: flex;
         align-items: center;
@@ -1989,11 +1909,8 @@
       }
 
       /* ── PHI/PII disclaimer banner ──
-         Static (non-dismissible, no auto-hide) inline warning shown at
-         the top of the Share/Continue Your Idea modal body. Reuses the
-         toast's cream-background + amber-left-border warning language
-         for visual consistency, but as a permanent inline notice rather
-         than a transient toast. */
+         Static, non-dismissible notice at the top of the Share/Continue
+         Your Idea modal, reusing the toast's warning styling. */
       .ip-phiNotice {
         display: flex;
         align-items: flex-start;
@@ -2320,7 +2237,8 @@
         }
         .ip-table td.ip-actionsCell .ip-upvote,
         .ip-table td.ip-actionsCell .ip-share,
-        .ip-table td.ip-actionsCell .ip-submitDraftBtn {
+        .ip-table td.ip-actionsCell .ip-submitDraftBtn,
+        .ip-table td.ip-actionsCell .ip-editDraftBtn {
           flex: 1 1 auto;
           justify-content: center;
           margin: 0;
@@ -3109,15 +3027,14 @@
       <!-- /#lp-main -->
 
       <!-- Toast — outside main so aria-hidden on main doesn't suppress it.
-           Content (message + close button) is injected by showToast() in
-           ideas_v3.js; no auto-dismiss timer, manual close only. -->
+           Content injected by showToast() in ideas_v4.js; manual close
+           only, no auto-dismiss timer. -->
       <div id="ipToast" class="ip-toast" role="alert" aria-live="polite"></div>
 
       <!-- Add Idea modal — outside main so focus trap works correctly.
-           Also reused for editing an existing draft (see
-           openDraftForEditing() in ideas_v3.js) — header/button copy
-           swap between "Add Idea" and "Continue Your Idea" via
-           setIdeaModalMode(), but markup and validation are unchanged. -->
+           Also reused for editing a draft (see openDraftForEditing() in
+           ideas_v4.js); setIdeaModalMode() swaps header/button copy
+           between "Add Idea" and "Continue Your Idea". -->
       <div
         class="ip-modal"
         id="addIdeaModal"
@@ -3317,11 +3234,10 @@
               </div>
               <div class="ip-field">
                 <div class="ip-labelRow">
-                  <!-- Shown only when editing an existing draft that already
-                       has an attachment (populated by openDraftForEditing()
-                       in ideas_v3.js). Uploading a new file replaces the
-                       existing attachment; leaving the file input blank
-                       keeps it as-is — nothing is deleted silently. -->
+                  <!-- Shown when editing a draft with an existing
+                       attachment (see openDraftForEditing() in
+                       ideas_v4.js). New upload replaces it; blank keeps
+                       it as-is. -->
                   <span
                     class="ip-currentAttachment"
                     id="currentAttachmentHint"
@@ -3563,14 +3479,10 @@
           </div>
         </div>
       </div>
-      <!-- How It Works modal — onboarding walkthrough (single static
-           explainer panel, not a multi-step tour, per design decision:
-           the lifecycle content is a linear 3-stage process, not
-           something that benefits from being anchored to specific,
-           evolving UI elements). Shown automatically once per browser on
-           first visit (see maybeShowHowItWorksOnFirstVisit() in
-           ideas_v3.js), and reachable anytime afterward via the
-           persistent "How it works" button in the hero. -->
+      <!-- How It Works modal — static explainer, shown automatically once
+           per browser on first visit (see
+           maybeShowHowItWorksOnFirstVisit() in ideas_v4.js), and
+           reachable anytime via the hero's "How it works" button. -->
       <div
         class="ip-modal"
         id="howItWorksModal"
