@@ -159,9 +159,47 @@
 .pv-share:hover .material-symbols-outlined { color: #fff !important; }
 .pv-share:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
 .pv-share .material-symbols-outlined { font-size: 0.9rem; line-height: 1; font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 24, 'GRAD' 0; }
-#pvToast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(12px); background: #1e293b; color: #fff; font-size: 14px; font-weight: 600; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease; z-index: 9999; white-space: nowrap; }
-#pvToast.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
-#pvToast.is-error { background: #b91c1c; }
+/* ── Toast → sticky top banner ──
+   Ported from ideas_v4.html's .ip-toast so vote/share/submit
+   confirmations look and behave the same across the whole portal
+   instead of print_form's own smaller bottom-pill toast. Manual-dismiss
+   only (no auto-hide timer) per WCAG 2.2.1/2.2.3. */
+#pvToast {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    transform: translateY(-100%);
+    background: #fdf8ee;
+    border-bottom: 1px solid #e8dfc8;
+    border-left: 6px solid #b57f0a;
+    padding: 14px 20px;
+    border-radius: 0 0 10px 10px;
+    font-family: 'Public Sans', 'Source Sans 3', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    z-index: 9999;
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    max-width: 100%;
+    pointer-events: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+#pvToast, #pvToast * { color: #3d2f0f !important; }
+#pvToast .pv-toast__msg { white-space: normal; line-height: 1.4; max-width: 900px; }
+#pvToast .pv-toast__icon { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+#pvToast .pv-toast__icon .material-symbols-outlined { font-size: 1.3rem; }
+#pvToast:not(.is-error) .pv-toast__icon .material-symbols-outlined { color: #92720a !important; }
+#pvToast.is-error .pv-toast__icon .material-symbols-outlined { color: #d54309 !important; }
+#pvToast.is-error { border-left-color: #d54309; }
+#pvToast .pv-toast__close { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 30px; padding: 0 12px; border-radius: 15px; border: none; background: rgba(61, 47, 15, 0.1); cursor: pointer; font-family: 'Public Sans', 'Source Sans 3', sans-serif; font-weight: 700; font-size: 0.85rem; }
+#pvToast .pv-toast__close:hover { background: rgba(61, 47, 15, 0.18); }
+#pvToast .pv-toast__close:focus-visible { outline: 3px solid #3d2f0f; outline-offset: 2px; }
+#pvToast .pv-toast__close .material-symbols-outlined { font-size: 1.1rem; }
+#pvToast.is-visible { transform: translateY(0); pointer-events: auto; }
 </style>
 
 <!-- ── Back nav ── -->
@@ -385,7 +423,7 @@
 </main>
 
 <!-- Toast -->
-<div id="pvToast" role="status" aria-live="polite" aria-atomic="true"></div>
+<div id="pvToast" role="alert" aria-live="polite"></div>
 
 <!-- ── Data loader ── -->
 <script>
@@ -786,7 +824,6 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
     var PV_FORM_KEY      = '57e89';
     var PV_VOTE_IND_IDEA = 2;
     var PV_VOTE_IND_USER = 3;
-    var _pvToastTimer       = null;
     var _pvVotingInProgress = false;
     var _pvResolvedEmail    = '';
     var _pvEmailResolved    = false;
@@ -822,14 +859,33 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         });
     }
 
+    function pvEscapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str == null ? '' : String(str);
+        return div.innerHTML;
+    }
+
+    /* Sticky top banner, matching ideas_v4.html's .ip-toast: icon +
+       message + manual-dismiss close button, no auto-hide timer (per
+       WCAG 2.2.1/2.2.3 — the previous 4s auto-hide here has been
+       dropped to match). */
+    function pvHideToast() {
+        var toast = document.getElementById('pvToast');
+        if (toast) { toast.classList.remove('is-visible'); }
+    }
+
     function pvShowToast(msg, isError) {
         var toast = document.getElementById('pvToast');
         if (!toast) { return; }
-        toast.textContent = msg || '';
         toast.classList.toggle('is-error', !!isError);
+        var iconName = isError ? 'error' : 'check_circle';
+        toast.innerHTML =
+            '<span class="pv-toast__icon" aria-hidden="true"><span class="material-symbols-outlined">' + iconName + '</span></span>' +
+            '<span class="pv-toast__msg">' + pvEscapeHtml(msg) + '</span>' +
+            '<button type="button" class="pv-toast__close" aria-label="Dismiss notification"><span class="material-symbols-outlined">close</span>Close</button>';
         toast.classList.add('is-visible');
-        if (_pvToastTimer) { clearTimeout(_pvToastTimer); }
-        _pvToastTimer = setTimeout(function() { toast.classList.remove('is-visible'); }, 4000);
+        var closeBtn = toast.querySelector('.pv-toast__close');
+        if (closeBtn) { closeBtn.addEventListener('click', pvHideToast, { once: true }); }
     }
 
     function pvCopyFallback(text) {
@@ -1008,11 +1064,12 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         }
     });
 
-    // pvShowToast lives in this IIFE's private scope, but the Submit
-    // button (pvSubmitDraft, defined later in the page's own global
-    // <script> block, outside any IIFE) needs to reach it too — expose
-    // it on window rather than duplicating the toast logic.
+    // pvShowToast/pvHideToast live in this IIFE's private scope, but the
+    // Submit button (pvSubmitDraft, defined later in the page's own
+    // global <script> block, outside any IIFE) needs to reach them too —
+    // expose them on window rather than duplicating the toast logic.
     window.pvShowToast = pvShowToast;
+    window.pvHideToast = pvHideToast;
 
 
 }());
