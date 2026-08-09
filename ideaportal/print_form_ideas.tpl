@@ -13,283 +13,6 @@
 <div id="public-view">
 <a href="#pv-main" class="pv-skip-link">Skip to main content</a>
 
-<!--{if $is_admin}-->
-<!-- ── Built-in debugger (admin-only) ──
-     Registered as the very first thing in this template so its error
-     listeners are live before any later inline <script> block runs —
-     including a raw parse-time SyntaxError in a later block, which still
-     fires a window 'error' event in every modern browser. This exists
-     specifically to chase down the intermittent "Unexpected token '<'"
-     at the Data-loader script's closing tag and the resulting
-     "pvShowToast is not defined" on the Submit button, without relying
-     on someone having DevTools open at the right moment. -->
-<style>
-#pvDebugPanel { position: fixed; bottom: 0; right: 0; z-index: 100000; width: 380px; max-width: 100vw; max-height: 60vh; display: flex; flex-direction: column; background: #0f172a; color: #e2e8f0; font-family: 'Menlo', 'Consolas', monospace; font-size: 12px; border-top-left-radius: 10px; box-shadow: 0 -2px 24px rgba(0,0,0,0.35); }
-#pvDebugPanel.is-collapsed { max-height: none; }
-#pvDebugPanel.is-collapsed #pvDebugBody { display: none; }
-#pvDebugHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; background: #1e293b; border-top-left-radius: 10px; cursor: pointer; user-select: none; }
-#pvDebugHeader strong { font-size: 12px; font-weight: 700; }
-#pvDebugBadge { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: #475569; font-size: 10px; font-weight: 700; }
-#pvDebugBadge.has-errors { background: #dc2626; }
-#pvDebugBody { overflow-y: auto; padding: 8px 10px 10px; }
-#pvDebugPanel section { margin-bottom: 10px; }
-#pvDebugPanel h4 { margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
-#pvDebugPanel .pv-dbg-row { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; border-bottom: 1px dotted #334155; }
-#pvDebugPanel .pv-dbg-row:last-child { border-bottom: none; }
-#pvDebugPanel .pv-dbg-key { color: #94a3b8; }
-#pvDebugPanel .pv-dbg-val { font-weight: 700; }
-#pvDebugPanel .pv-dbg-val.ok { color: #4ade80; }
-#pvDebugPanel .pv-dbg-val.bad { color: #f87171; }
-#pvDebugPanel .pv-dbg-log { max-height: 160px; overflow-y: auto; background: #020617; border-radius: 6px; padding: 6px; }
-#pvDebugPanel .pv-dbg-log-entry { padding: 4px 0; border-bottom: 1px solid #1e293b; word-break: break-word; white-space: pre-wrap; }
-#pvDebugPanel .pv-dbg-log-entry:last-child { border-bottom: none; }
-#pvDebugPanel .pv-dbg-log-empty { color: #64748b; font-style: italic; }
-#pvDebugPanel button.pv-dbg-btn { background: #334155; color: #e2e8f0; border: none; border-radius: 6px; padding: 5px 9px; font-size: 11px; font-family: inherit; cursor: pointer; margin: 2px 4px 0 0; }
-#pvDebugPanel button.pv-dbg-btn:hover { background: #475569; }
-#pvDebugToggle { background: none; border: none; color: #e2e8f0; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 4px; }
-</style>
-<div id="pvDebugPanel" role="region" aria-label="Debug panel (admin only)">
-    <div id="pvDebugHeader" onclick="window._pvDebug && window._pvDebug.toggle()">
-        <strong>🐞 Debug Panel</strong>
-        <span id="pvDebugBadge">0</span>
-        <button type="button" id="pvDebugToggle" aria-label="Toggle debug panel">▾</button>
-    </div>
-    <div id="pvDebugBody">
-        <section>
-            <h4>Captured JS errors</h4>
-            <div class="pv-dbg-log" id="pvDebugLog"><div class="pv-dbg-log-empty">No errors captured yet.</div></div>
-        </section>
-        <section>
-            <h4>Live diagnostics</h4>
-            <div id="pvDebugDiagnostics"></div>
-            <button type="button" class="pv-dbg-btn" onclick="window._pvDebug && window._pvDebug.runDiagnostics()">Re-run diagnostics</button>
-            <button type="button" class="pv-dbg-btn" onclick="window._pvDebug && window._pvDebug.testToast()">Test toast only</button>
-            <button type="button" class="pv-dbg-btn" onclick="window._pvDebug && window._pvDebug.clearLog()">Clear log</button>
-        </section>
-        <section>
-            <h4>Live script source (bypasses cache/encoding guesswork)</h4>
-            <button type="button" class="pv-dbg-btn" onclick="window._pvDebug && window._pvDebug.showScriptSource()">Show Data-loader script source</button>
-            <div id="pvDebugScriptSource" style="margin-top:6px;"></div>
-        </section>
-    </div>
-</div>
-<script>
-(function() {
-    // Direct reference to this script's own <script> element, captured
-    // immediately since document.currentScript is only valid during
-    // synchronous top-level execution. Used below to positively exclude
-    // this script from the "find the other script" search — content-based
-    // matching doesn't work here since any marker string I search for is
-    // necessarily also *written*, as a string literal, inside this very
-    // script, which was the actual bug in the first version of this.
-    var pvDebugSelfScript = document.currentScript;
-    var errors = [];
-
-    function fmtErr(e) {
-        var src = e.filename ? e.filename.split('/').pop() : '(unknown file)';
-        return '[' + new Date().toLocaleTimeString() + '] ' + (e.message || String(e.error || e.reason || 'Unknown error'))
-            + '\n  at ' + src + ':' + (e.lineno || '?') + ':' + (e.colno || '?');
-    }
-
-    function renderLog() {
-        var log = document.getElementById('pvDebugLog');
-        var badge = document.getElementById('pvDebugBadge');
-        if (!log || !badge) { return; }
-        if (errors.length === 0) {
-            log.innerHTML = '<div class="pv-dbg-log-empty">No errors captured yet.</div>';
-        } else {
-            log.innerHTML = errors.map(function(e) {
-                var div = document.createElement('div');
-                div.className = 'pv-dbg-log-entry';
-                div.textContent = e;
-                return div.outerHTML;
-            }).join('');
-        }
-        badge.textContent = String(errors.length);
-        badge.classList.toggle('has-errors', errors.length > 0);
-    }
-
-    window.addEventListener('error', function(e) {
-        errors.push(fmtErr(e));
-        renderLog();
-    });
-    window.addEventListener('unhandledrejection', function(e) {
-        errors.push('[' + new Date().toLocaleTimeString() + '] Unhandled promise rejection: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)));
-        renderLog();
-    });
-
-    function row(key, ok, valText) {
-        return '<div class="pv-dbg-row"><span class="pv-dbg-key">' + key + '</span><span class="pv-dbg-val ' + (ok ? 'ok' : 'bad') + '">' + valText + '</span></div>';
-    }
-
-    function runDiagnostics() {
-        var out = document.getElementById('pvDebugDiagnostics');
-        if (!out) { return; }
-        var checks = [
-            ['pvCanEdit defined',        typeof pvCanEdit !== 'undefined'],
-            ['pvIsTrueDraft defined',    typeof pvIsTrueDraft !== 'undefined'],
-            ['_pvFields exposed',        typeof window._pvFields !== 'undefined'],
-            ['pvShowToast defined',      typeof window.pvShowToast === 'function'],
-            ['pvOpenEdit defined',       typeof pvOpenEdit === 'function'],
-            ['pvSubmitDraft defined',    typeof pvSubmitDraft === 'function'],
-            ['doSubmit defined',         typeof doSubmit === 'function'],
-            ['recordID defined',         typeof recordID !== 'undefined'],
-            ['CSRFToken present',        typeof CSRFToken === 'string' && CSRFToken.length > 0],
-            ['form (LeafForm) ready',    typeof form !== 'undefined' && !!form],
-            ['workflow ready',           typeof workflow !== 'undefined' && !!workflow],
-            ['jQuery ($) loaded',        typeof window.$ === 'function'],
-            ['Submit button in DOM',     !!document.querySelector('.pv-submit-btn')],
-            ['Cancel button in DOM',     !!document.querySelector('.pv-cancel-btn')],
-            ['#toolbar226 in DOM',       !!document.getElementById('toolbar226')],
-            ['#adminTools in DOM',       !!document.getElementById('adminTools')],
-            ['#tools226 in DOM',         !!document.getElementById('tools226')],
-        ];
-        out.innerHTML = checks.map(function(c) {
-            return row(c[0], c[1], c[1] ? 'OK' : 'MISSING');
-        }).join('');
-    }
-
-    // Even when a <script> tag fails to parse as JS, the browser still
-    // stores its raw text in the DOM (HTML parsing and JS execution are
-    // separate steps) — so this pulls the ACTUAL live source straight
-    // from the page, bypassing any cache/encoding/transcription
-    // uncertainty entirely. Identifies the target by explicitly excluding
-    // this debugger's own <script> node (via document.currentScript,
-    // captured at the top of this file) rather than by searching for a
-    // marker string — any marker chosen would necessarily also appear as
-    // a string literal inside this very search code, which is exactly
-    // what caused this to match itself in the first version.
-    function showScriptSource() {
-        var out = document.getElementById('pvDebugScriptSource');
-        if (!out) { return; }
-        out.innerHTML = '';
-        var scripts = Array.prototype.slice.call(document.querySelectorAll('script:not([src])'));
-        var selfIndex = scripts.indexOf(pvDebugSelfScript);
-        var target = selfIndex !== -1 ? scripts[selfIndex + 1] : null;
-        if (!target) {
-            var empty = document.createElement('div');
-            empty.className = 'pv-dbg-log-empty';
-            empty.textContent = 'Could not find another script tag in the DOM.';
-            out.appendChild(empty);
-            return;
-        }
-        var text = target.textContent;
-        var firstLine = text.trim().split('\n')[0].slice(0, 70);
-
-        // Structurally, a single <script> element's own textContent can
-        // never legitimately contain a literal "</script" substring — the
-        // browser's parser terminates raw-text scanning at the first such
-        // sequence, by construction. If one shows up here anyway, that's a
-        // strong signal the captured node isn't what we think it is,
-        // rather than evidence of a real defect in the page itself.
-        var hasEmbeddedCloseTag = /<\/script/i.test(text);
-
-        var flagged = [];
-        for (var i = 0; i < text.length; i++) {
-            var code = text.charCodeAt(i);
-            if (code > 126) {
-                flagged.push('pos ' + i + ': "' + text[i] + '" (U+' + code.toString(16).toUpperCase().padStart(4, '0') + ')');
-            }
-        }
-
-        function row2(label, value, cls) {
-            var div = document.createElement('div');
-            div.className = 'pv-dbg-row';
-            var k = document.createElement('span');
-            k.className = 'pv-dbg-key';
-            k.textContent = label;
-            var v = document.createElement('span');
-            v.className = 'pv-dbg-val ' + (cls || 'ok');
-            v.textContent = value;
-            div.appendChild(k);
-            div.appendChild(v);
-            return div;
-        }
-
-        out.appendChild(row2('Script length', text.length + ' chars'));
-        out.appendChild(row2('Starts with', firstLine));
-        if (hasEmbeddedCloseTag) {
-            out.appendChild(row2('⚠ Contains literal "</script" mid-text', 'Wrong node likely captured — see note below', 'bad'));
-        }
-
-        var h1 = document.createElement('h4');
-        h1.style.marginTop = '8px';
-        h1.textContent = 'Non-ASCII characters (possible encoding corruption)';
-        out.appendChild(h1);
-        if (flagged.length) {
-            var log = document.createElement('div');
-            log.className = 'pv-dbg-log';
-            log.style.marginTop = '6px';
-            log.style.maxHeight = '100px';
-            flagged.forEach(function(f) {
-                var d = document.createElement('div');
-                d.className = 'pv-dbg-log-entry';
-                d.textContent = f;
-                log.appendChild(d);
-            });
-            out.appendChild(log);
-        } else {
-            var noneEl = document.createElement('div');
-            noneEl.className = 'pv-dbg-log-empty';
-            noneEl.textContent = 'No non-ASCII characters found.';
-            out.appendChild(noneEl);
-        }
-
-        var h2 = document.createElement('h4');
-        h2.style.marginTop = '8px';
-        h2.textContent = 'Full live source (click to select all, then copy)';
-        out.appendChild(h2);
-
-        // .value on a textarea is a raw string assignment — never parsed
-        // as HTML, so nothing here can be misread as an entity (unlike
-        // the previous innerHTML-based version, which silently decoded
-        // any "&word;"-shaped substring in the source — e.g. turning a
-        // real &quot; in the code into a bare " — and made the dump look
-        // like it contained corruption that was actually just an
-        // artifact of how it was being displayed).
-        var ta = document.createElement('textarea');
-        ta.readOnly = true;
-        ta.style.cssText = 'width:100%;height:140px;background:#020617;color:#e2e8f0;font-family:inherit;font-size:11px;border:1px solid #334155;border-radius:6px;padding:6px;box-sizing:border-box;';
-        ta.value = text;
-        ta.addEventListener('click', function() { ta.select(); });
-        out.appendChild(ta);
-    }
-
-    function testToast() {
-        if (typeof window.pvShowToast === 'function') {
-            window.pvShowToast('Debug panel: toast pipeline is working.');
-        } else {
-            alert('pvShowToast is not defined — the toast/vote/unvote script block failed to load or parse. Check the error log above.');
-        }
-    }
-
-    function clearLog() {
-        errors = [];
-        renderLog();
-    }
-
-    function toggle() {
-        var panel = document.getElementById('pvDebugPanel');
-        if (panel) { panel.classList.toggle('is-collapsed'); }
-    }
-
-    window._pvDebug = {
-        runDiagnostics: runDiagnostics,
-        testToast: testToast,
-        clearLog: clearLog,
-        toggle: toggle,
-        showScriptSource: showScriptSource
-    };
-
-    // Run once immediately, and again after the page has had a chance to
-    // fully load (so form/workflow/pvShowToast etc. have had time to
-    // initialize — a false "MISSING" right at parse time isn't useful).
-    document.addEventListener('DOMContentLoaded', runDiagnostics);
-    window.addEventListener('load', function() { setTimeout(runDiagnostics, 500); });
-    runDiagnostics();
-}());
-</script>
-<!--{/if}-->
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,1,0" />
 
@@ -1095,14 +818,18 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
     }
 
     $(function() {
-        fetchCategoryOptionsList();
-        /* Skip 22 (LEAF site URL) — only loaded on demand once 21's
-           onValue callback confirms the answer was "Yes". */
-        fields.forEach(function(cfg) {
-            if (cfg.id === 22) { return; }
-            loadIndicator(cfg.id, cfg);
-        });
-        pvFetchVoteCount();
+        try {
+            fetchCategoryOptionsList();
+            /* Skip 22 (LEAF site URL) — only loaded on demand once 21's
+               onValue callback confirms the answer was "Yes". */
+            fields.forEach(function(cfg) {
+                if (cfg.id === 22) { return; }
+                loadIndicator(cfg.id, cfg);
+            });
+            pvFetchVoteCount();
+        } catch (e) {
+            console.error('[print_form_ideas] Data loader init failed — fields will stay on "Loading...". Error:', e);
+        }
     });
 
     window._pvLoadIndicator  = loadIndicator;
@@ -1432,12 +1159,16 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
     }
 
     $(function() {
-        var voteBtn  = document.getElementById('pv-vote-btn');
-        var shareBtn = document.getElementById('pv-share-btn');
-        if (voteBtn)  { voteBtn.addEventListener('click',  pvIdeaVotes); }
-        if (shareBtn) { shareBtn.addEventListener('click', pvShare); }
-        pvResolveEmail().then(function() { pvCheckVoted(); });
-        pvCheckIsOwn();
+        try {
+            var voteBtn  = document.getElementById('pv-vote-btn');
+            var shareBtn = document.getElementById('pv-share-btn');
+            if (voteBtn)  { voteBtn.addEventListener('click',  pvIdeaVotes); }
+            if (shareBtn) { shareBtn.addEventListener('click', pvShare); }
+            pvResolveEmail().then(function() { pvCheckVoted(); });
+            pvCheckIsOwn();
+        } catch (e) {
+            console.error('[print_form_ideas] Vote/share init failed:', e);
+        }
     });
 
     // pvShowToast/pvHideToast live in this IIFE's private scope, but the
@@ -1670,9 +1401,9 @@ function pvOpenEdit(indicatorID) {
 
     var currIndicatorID;
     var currSeries;
-    var recordID  = <!--{$recordID|strip_tags}-->;
-    var serviceID = <!--{$serviceID|strip_tags}-->;
-    var CSRFToken = '<!--{$CSRFToken}-->';
+    var recordID  = <!--{$recordID|strip_tags|escape:'javascript'}-->;
+    var serviceID = <!--{$serviceID|strip_tags|escape:'javascript'}-->;
+    var CSRFToken = '<!--{$CSRFToken|escape:'javascript'}-->';
     var formPrintConditions = {};
 
     function doSubmit(recordID) {
@@ -1688,7 +1419,7 @@ function pvOpenEdit(indicatorID) {
                     $('#submitContent').hide('blind', 500);
                     $('#comments').css({'display': "block"});
                     $('#notes').css({'display': "block"});
-                    const isAdmin = '<!--{$is_admin}-->';
+                    const isAdmin = '<!--{$is_admin|escape:'javascript'}-->';
                     if (isAdmin !== "1") { $('#btn_cancelRequest').hide(); }
                     workflow.setExtraParams('masquerade=nonAdmin');
                     workflow.getWorkflow(recordID);
@@ -1738,7 +1469,7 @@ function pvOpenEdit(indicatorID) {
                     $('#submitContent').hide('blind', 500);
                     $('#comments').css({'display': "block"});
                     $('#notes').css({'display': "block"});
-                    const isAdmin = '<!--{$is_admin}-->';
+                    const isAdmin = '<!--{$is_admin|escape:'javascript'}-->';
                     if (isAdmin !== "1") { $('#btn_cancelRequest').hide(); }
                     if (typeof workflow !== 'undefined' && workflow) {
                         workflow.setExtraParams('masquerade=nonAdmin');
@@ -2627,7 +2358,7 @@ function pvOpenEdit(indicatorID) {
     }
 
     function cancelRequest() {
-        const admin       = '<!--{$is_admin}-->';
+        const admin       = '<!--{$is_admin|escape:'javascript'}-->';
         const submitted   = '<!--{$submitted}-->';
         const allowCancel = '<!--{$allowCancel}-->';
         const requireComment = admin != '1' && +submitted > 0 && allowCancel == '1';
@@ -3009,37 +2740,41 @@ function pvOpenEdit(indicatorID) {
     document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeTransferModal(); });
 
     $(function() {
-        $('#progressBar').progressbar({max: 100});
-        form  = new LeafForm('formContainer');
-        print = new printer();
-        $('#btn_printForm').on('click', function() { openContentForPrint(); print.printForm(recordID); });
-        form.setRecordID(<!--{$recordID|strip_tags|escape}-->);
-        workflow = new LeafWorkflow('workflowcontent', '<!--{$CSRFToken}-->');
-        <!--{if $submitted > 0}-->
-            workflow.getWorkflow(<!--{$recordID|strip_tags|escape}-->);
-        <!--{/if}-->
-        dialog         = new dialogController('xhrDialog',         'xhr',               'loadIndicator',              'button_save',          'button_cancelchange');
-        dialog_message = new dialogController('genericDialog',      'genericDialogxhr',  'genericDialogloadIndicator', 'genericDialogbutton_save', 'genericDialogbutton_cancelchange');
-        dialog_ok      = new dialogController('ok_xhrDialog',      'ok_xhr',            'ok_loadIndicator',           'confirm_button_ok',    'confirm_button_cancelchange');
-        dialog_confirm = new dialogController('confirm_xhrDialog',  'confirm_xhr',       'confirm_loadIndicator',      'confirm_button_save',  'confirm_button_cancelchange');
-        <!--{if $empMembership['groupID'][226]}-->
-        <!--{if $childCategoryID == ''}-->
-            openContent('ajaxIndex.php?a=printview&recordID=<!--{$recordID|strip_tags}-->');
-        <!--{else}-->
-            openContent('ajaxIndex.php?a=internalonlyview&recordID=<!--{$recordID|strip_tags}-->&childCategoryID=<!--{$childCategoryID|strip_tags}-->');
-        <!--{/if}-->
-        <!--{/if}-->
-        <!--{if $submitted == 0}-->
-            updateProgress();
-        <!--{/if}-->
-        let elParentForm = document.querySelector('[id^="LeafForm"][id$="_record"]');
-        let elFormMenu   = document.getElementById('form-xhr-cancel-save-menu');
-        window.addEventListener('scroll', function() {
-            if (elParentForm && elFormMenu) {
-                let parent_Y = elParentForm.getBoundingClientRect().y;
-                elFormMenu.style.top = parent_Y > 0 ? 0 : (-1 * parent_Y) + "px";
-            }
-        });
+        try {
+            $('#progressBar').progressbar({max: 100});
+            form  = new LeafForm('formContainer');
+            print = new printer();
+            $('#btn_printForm').on('click', function() { openContentForPrint(); print.printForm(recordID); });
+            form.setRecordID(<!--{$recordID|strip_tags|escape}-->);
+            workflow = new LeafWorkflow('workflowcontent', '<!--{$CSRFToken|escape:'javascript'}-->');
+            <!--{if $submitted > 0}-->
+                workflow.getWorkflow(<!--{$recordID|strip_tags|escape}-->);
+            <!--{/if}-->
+            dialog         = new dialogController('xhrDialog',         'xhr',               'loadIndicator',              'button_save',          'button_cancelchange');
+            dialog_message = new dialogController('genericDialog',      'genericDialogxhr',  'genericDialogloadIndicator', 'genericDialogbutton_save', 'genericDialogbutton_cancelchange');
+            dialog_ok      = new dialogController('ok_xhrDialog',      'ok_xhr',            'ok_loadIndicator',           'confirm_button_ok',    'confirm_button_cancelchange');
+            dialog_confirm = new dialogController('confirm_xhrDialog',  'confirm_xhr',       'confirm_loadIndicator',      'confirm_button_save',  'confirm_button_cancelchange');
+            <!--{if $empMembership['groupID'][226]}-->
+            <!--{if $childCategoryID == ''}-->
+                openContent('ajaxIndex.php?a=printview&recordID=<!--{$recordID|strip_tags}-->');
+            <!--{else}-->
+                openContent('ajaxIndex.php?a=internalonlyview&recordID=<!--{$recordID|strip_tags}-->&childCategoryID=<!--{$childCategoryID|strip_tags}-->');
+            <!--{/if}-->
+            <!--{/if}-->
+            <!--{if $submitted == 0}-->
+                updateProgress();
+            <!--{/if}-->
+            let elParentForm = document.querySelector('[id^="LeafForm"][id$="_record"]');
+            let elFormMenu   = document.getElementById('form-xhr-cancel-save-menu');
+            window.addEventListener('scroll', function() {
+                if (elParentForm && elFormMenu) {
+                    let parent_Y = elParentForm.getBoundingClientRect().y;
+                    elFormMenu.style.top = parent_Y > 0 ? 0 : (-1 * parent_Y) + "px";
+                }
+            });
+        } catch (e) {
+            console.error('[print_form_ideas] form/workflow/dialog init failed — Submit, admin tools, and edit buttons may not work. Error:', e);
+        }
     });
 </script>
 
