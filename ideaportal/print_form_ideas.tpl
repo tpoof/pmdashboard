@@ -428,6 +428,14 @@
 <!-- ── Data loader ── -->
 <script>
 var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{else}-->false<!--{/if}-->;
+// True only for a record that has never been submitted (a real draft).
+// Used to force the status pill to "Draft" rather than trusting
+// indicator 12, which writeDraftStatus() in ideas_v4.js intentionally
+// blanks on every draft save — a blank field here was rendering as the
+// form's configured default option text ("Submitted") instead of
+// nothing, which incorrectly told the idea's author their unsubmitted
+// draft had already been submitted.
+var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}-->;
 
 (function() {
     var recordID  = <!--{$recordID|strip_tags|escape:'javascript'}-->;
@@ -555,8 +563,17 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         { id: 10, target: 'pv-value-10', isAttachment: true },
         { id: 12, target: null,
           onValue: function(text) {
-              var val = text.trim();
-              if (!val || val === 'N/A') { return; }
+              var val;
+              if (pvIsTrueDraft) {
+                  // Ground truth: $submitted == 0 means this record has
+                  // never been submitted, full stop — always show
+                  // "Draft" here regardless of whatever indicator 12
+                  // happens to contain.
+                  val = 'Draft';
+              } else {
+                  val = text.trim();
+                  if (!val || val === 'N/A') { return; }
+              }
               var pill = document.getElementById('pv-status-pill');
               var item = document.getElementById('pv-status-item');
               var sep  = document.getElementById('pv-info-sep');
