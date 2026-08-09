@@ -32,8 +32,12 @@
 
 /* ── Record ID row ── */
 .pv-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-.pv-cancel-row { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+.pv-cancel-row { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 6px; }
 .pv-cancel-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; font-size: 13px; font-weight: 600; color: #b91c1c; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; line-height: 1.4; }
+.pv-submit-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; font-size: 13px; font-weight: 600; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 6px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; line-height: 1.4; }
+.pv-submit-btn:hover, .pv-submit-btn:focus { background: #166534; color: #fff; outline: none; }
+.pv-submit-btn:focus-visible { outline: 3px solid #166534; outline-offset: 2px; }
+.pv-submit-btn:disabled { opacity: 0.65; cursor: default; }
 .pv-cancel-btn:hover, .pv-cancel-btn:focus { background: #b91c1c; color: #fff; outline: none; }
 .pv-cancel-btn:focus-visible { outline: 3px solid #b91c1c; outline-offset: 2px; }
 .pv-id-badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 12px; background: #1f1f1f; color: #fff; border-radius: 4px; font-size: 22px; font-weight: 700; letter-spacing: 0.01em; line-height: 1.25; flex-shrink: 0; }
@@ -171,8 +175,27 @@
 <!-- ── Main ── -->
 <main class="pv-main" id="pv-main" tabindex="-1">
 
-    <!-- ── Row 0: Cancel button (right-aligned, own row) ── -->
-    <!--{if $submitted == 0 || $is_admin}-->
+    <!-- ── Row 0: Submit + Cancel buttons (right-aligned, own row) ── -->
+    <!--{if $submitted == 0}-->
+    <div class="pv-cancel-row noprint">
+        <button type="button"
+                class="pv-submit-btn"
+                onclick="pvSubmitDraft(this)"
+                aria-label="Submit this idea"
+                title="Submit this idea">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false" style="width:14px;height:14px;flex-shrink:0"><path d="M3 8h9M8 3.5L12.5 8 8 12.5"/></svg>
+            Submit
+        </button>
+        <button type="button"
+                class="pv-cancel-btn"
+                onclick="cancelRequest()"
+                aria-label="Cancel this request"
+                title="Cancel Request">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false" style="width:14px;height:14px;flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5"/></svg>
+            Cancel Request
+        </button>
+    </div>
+    <!--{elseif $is_admin}-->
     <div class="pv-cancel-row noprint">
         <button type="button"
                 class="pv-cancel-btn"
@@ -985,6 +1008,13 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         }
     });
 
+    // pvShowToast lives in this IIFE's private scope, but the Submit
+    // button (pvSubmitDraft, defined later in the page's own global
+    // <script> block, outside any IIFE) needs to reach it too — expose
+    // it on window rather than duplicating the toast logic.
+    window.pvShowToast = pvShowToast;
+
+
 }());
 
 /* ── Edit handler ── */
@@ -1238,6 +1268,61 @@ function pvOpenEdit(indicatorID) {
                 }
             },
             error: function(res) { console.log(res); }
+        });
+    }
+
+    // Powers the standalone "Submit" button next to Cancel Request
+    // (visible immediately for any true draft, unlike the native
+    // submitControl UI above which only renders once getsubmitcontrol
+    // has loaded at 100% form completeness). Calls the same real submit
+    // endpoint as doSubmit(), but reports back through pvShowToast()
+    // since that's guaranteed to exist regardless of whether the native
+    // submit-control markup has rendered yet.
+    function pvSubmitDraft(btn) {
+        if (btn) { btn.disabled = true; }
+        pvShowToast('Submitting your idea...');
+
+        $.ajax({
+            type: 'POST',
+            url: './api/form/' + recordID + '/submit',
+            data: { CSRFToken: '<!--{$CSRFToken}-->' },
+            success: function(response) {
+                if (response?.errors?.length === 0) {
+                    pvShowToast('Your idea has been submitted successfully.');
+
+                    var pill = document.getElementById('pv-status-pill');
+                    var item = document.getElementById('pv-status-item');
+                    var sep  = document.getElementById('pv-info-sep');
+                    if (pill) { pill.textContent = 'Submitted'; }
+                    if (item) { item.removeAttribute('hidden'); }
+                    if (sep)  { sep.removeAttribute('hidden'); }
+
+                    if (btn) { btn.style.display = 'none'; }
+
+                    // Mirror doSubmit()'s side effects for the native
+                    // submit-control UI and workflow panel, where present.
+                    $('#submitStatus').text('Request submmited');
+                    $('#submitControl').empty().html('Submitted');
+                    $('#submitContent').hide('blind', 500);
+                    $('#comments').css({'display': "block"});
+                    $('#notes').css({'display': "block"});
+                    const isAdmin = '<!--{$is_admin|escape:'javascript'}-->';
+                    if (isAdmin !== "1") { $('#btn_cancelRequest').hide(); }
+                    if (typeof workflow !== 'undefined' && workflow) {
+                        workflow.setExtraParams('masquerade=nonAdmin');
+                        workflow.getWorkflow(recordID);
+                    }
+                } else {
+                    const errors = (response && response.errors && response.errors.length) ? response.errors.join(' ') : 'This idea could not be submitted.';
+                    pvShowToast(errors, true);
+                    if (btn) { btn.disabled = false; }
+                }
+            },
+            error: function(res) {
+                console.log(res);
+                pvShowToast('Error submitting your idea. Please try again.', true);
+                if (btn) { btn.disabled = false; }
+            }
         });
     }
 
