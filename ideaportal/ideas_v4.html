@@ -868,6 +868,9 @@
         text-decoration: none;
         font-weight: inherit;
         display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       .ip-recordLink--title:hover {
         color: var(--ip-blue);
@@ -910,7 +913,7 @@
 
       .ip-table th:nth-child(2),
       .ip-table td:nth-child(2) {
-        width: 24%;
+        width: 30%;
       } /* Title    */
 
       .ip-table th:nth-child(3),
@@ -930,9 +933,8 @@
 
       .ip-table th:nth-child(6),
       .ip-table td:nth-child(6) {
-        width: 29%;
-      } /* Actions  — widened slightly to comfortably fit an added
-           Submit button alongside Vote + Share on draft rows */
+        width: 23%;
+      } /* Actions  */
 
       /* ── Title column ellipsis ── */
       .ip-col-title {
@@ -1300,7 +1302,7 @@
         background: #fff;
         border-radius: var(--ip-r-lg);
         width: 100%;
-        max-width: 720px;
+        max-width: 800px;
         max-height: 90vh;
         overflow-y: auto;
         box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
