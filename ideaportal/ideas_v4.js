@@ -1983,7 +1983,9 @@ function updateVoteDom(recordID, isVoted = true) {
 ───────────────────────────────────────────────────────────── */
 
 function isRealEmail(str) {
-  return typeof str === "string" && str.includes("@") && !str.includes("<!--");
+  return (
+    typeof str === "string" && str.includes("@") && !str.includes("<" + "!--")
+  );
 }
 
 async function resolveVoterEmail() {
