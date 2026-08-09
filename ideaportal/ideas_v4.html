@@ -27,6 +27,14 @@
          via width/height directly on each <svg> (or a .ip-icon wrapper
          class — see below) rather than font-size, matched to whatever
          each instance's previous font-size value was.
+
+         Icon attribution: SVG path data throughout this file is sourced
+         from Google's Material Symbols icon set
+         (https://fonts.google.com/icons), licensed under the Apache
+         License, Version 2.0
+         (https://www.apache.org/licenses/LICENSE-2.0). No changes were
+         made to the path data itself beyond extracting it from the font
+         glyphs into standalone inline <svg> markup.
       */
       .ip-icon {
         display: inline-block;
@@ -747,6 +755,24 @@
         height: 1.1rem;
         color: #fff !important;
       }
+      /* ── Clear search/sort button ──
+         Sits next to .ip-searchInner (a flex sibling in .ip-searchWrap),
+         sized to visually match the ~36px-tall search bar it sits beside. */
+      .ip-clearBtn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        height: 36px;
+        padding: 0 12px;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+        box-sizing: border-box;
+      }
+      .ip-clearBtn .ip-icon {
+        width: 0.9rem;
+        height: 0.9rem;
+      }
       .ip-srOnly {
         position: absolute;
         width: 1px;
@@ -1115,21 +1141,22 @@
         width: 0.9rem;
         height: 0.9rem;
       }
-      /* ── Edit-draft button (compact, icon-only, inline with Vote/Share) ──
+      /* ── Edit-draft button (compact, icon + label, inline with Vote/Share) ──
          Same 32px-tall row-action sizing as .ip-submitDraftBtn/.ip-upvote/
-         .ip-share, but square and icon-only since there's nothing to
-         submit yet on a fresh draft — this just continues editing it. */
+         .ip-share. Auto-width (not square) so the "Edit" label fits
+         alongside the icon — a bare icon here wasn't clearly labeled as
+         an edit action. */
       .ip-editDraftBtn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 32px;
+        gap: 4px;
         height: 32px;
-        padding: 0;
+        padding: 0 12px;
+        font-size: 0.8rem;
         border-radius: var(--ip-r);
         box-sizing: border-box;
         margin-right: 4px;
-        flex-shrink: 0;
       }
       .ip-editDraftBtn .ip-icon {
         width: 0.9rem;
@@ -1961,7 +1988,38 @@
         }
       }
 
-      /* ── Toast → sticky top banner ──
+      /* ── PHI/PII disclaimer banner ──
+         Static (non-dismissible, no auto-hide) inline warning shown at
+         the top of the Share/Continue Your Idea modal body. Reuses the
+         toast's cream-background + amber-left-border warning language
+         for visual consistency, but as a permanent inline notice rather
+         than a transient toast. */
+      .ip-phiNotice {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        background: #fdf8ee;
+        border: 1px solid #e8dfc8;
+        border-left: 4px solid var(--ip-amber);
+        border-radius: var(--ip-r);
+        padding: 10px 14px;
+        margin-bottom: 16px;
+        font-size: 0.85rem;
+        line-height: 1.45;
+        color: #3d2f0f;
+      }
+      .ip-phiNotice .ip-icon {
+        flex-shrink: 0;
+        width: 1.1rem;
+        height: 1.1rem;
+        color: var(--ip-amber);
+        margin-top: 1px;
+      }
+      .ip-phiNotice strong {
+        font-weight: 700;
+      }
+
+
          Background changed from solid green/red to a neutral cream base
          per feedback — the hero banner below it is green, so a solid
          green toast blended in and was easy to miss. Cream provides
@@ -2659,6 +2717,26 @@
                         </svg>
                       </button>
                     </div>
+                    <button
+                      type="button"
+                      id="clearAllBtn"
+                      class="ip-btn ip-btn--ghost ip-clearBtn"
+                      aria-label="Clear search and sorting"
+                      title="Clear search and sorting"
+                    >
+                      <svg
+                        class="ip-icon"
+                        viewBox="0 -960 960 960"
+                        fill="currentColor"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path
+                          d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+                        />
+                      </svg>
+                      Clear
+                    </button>
                   </div>
                   <div
                     class="ip-status"
@@ -2880,6 +2958,26 @@
                         </svg>
                       </button>
                     </div>
+                    <button
+                      type="button"
+                      id="clearMyBtn"
+                      class="ip-btn ip-btn--ghost ip-clearBtn"
+                      aria-label="Clear search and sorting"
+                      title="Clear search and sorting"
+                    >
+                      <svg
+                        class="ip-icon"
+                        viewBox="0 -960 960 960"
+                        fill="currentColor"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path
+                          d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+                        />
+                      </svg>
+                      Clear
+                    </button>
                   </div>
                   <div
                     class="ip-status"
@@ -3062,6 +3160,25 @@
             </button>
           </div>
           <div class="ip-modal__body">
+            <div class="ip-phiNotice" role="note">
+              <svg
+                class="ip-icon"
+                viewBox="0 -960 960 960"
+                fill="currentColor"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M508.5-291.5Q520-303 520-320t-11.5-28.5Q497-360 480-360t-28.5 11.5Q440-337 440-320t11.5 28.5Q463-280 480-280t28.5-11.5ZM440-440h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"
+                />
+              </svg>
+              <span
+                ><strong>Please do not include PHI or PII</strong> — do not
+                enter patient names, dates of birth, SSNs, medical record
+                numbers, or other protected health/personal information anywhere
+                in this form. Describe your idea in general terms.</span
+              >
+            </div>
             <form id="ideaForm" class="ip-form needs-validation" novalidate>
               <div class="ip-field">
                 <label for="inpTitle" class="ip-label">Idea Title</label>

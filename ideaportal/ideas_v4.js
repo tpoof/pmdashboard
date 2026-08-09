@@ -1371,7 +1371,17 @@ function bindRecordModal() {
       // entirely and go straight to the editable form — there's nothing
       // useful to preview read-only for something that was never
       // submitted, and the extra hop just delayed getting to Edit.
-      if (ideasVMById[recordID]?.isDraft) {
+      //
+      // ideasVMById is only populated from the public All Ideas list, so
+      // a draft that isn't public yet won't be found there — fall back
+      // to myIdeasCache (which always has .isDraft set correctly for the
+      // current user's own records) so drafts clicked from My Ideas are
+      // detected too.
+      const isDraftRecord =
+        ideasVMById[recordID]?.isDraft ??
+        myIdeasCache.find((i) => String(i.recordID) === String(recordID))
+          ?.isDraft;
+      if (isDraftRecord) {
         openDraftForEditing(recordID);
         return;
       }
@@ -1667,11 +1677,12 @@ function buildIdeaRow(idea) {
   const submitBtnHtml =
     isOwn && needsSubmit
       ? isDraft
-        ? `<button class="ip-btn ip-btn--ghost ip-btn--icon ip-editDraftBtn"
+        ? `<button class="ip-btn ip-btn--ghost ip-editDraftBtn"
             data-submit-draft-id="${recordID}"
             aria-label="Continue editing draft: ${labelTitle}"
             title="Continue editing draft">
             ${iconSvg("edit")}
+            Edit
           </button>`
         : `<button class="ip-btn ip-btn--primary ip-submitDraftBtn"
             data-submit-draft-id="${recordID}"
@@ -1983,9 +1994,7 @@ function updateVoteDom(recordID, isVoted = true) {
 ───────────────────────────────────────────────────────────── */
 
 function isRealEmail(str) {
-  return (
-    typeof str === "string" && str.includes("@") && !str.includes("<" + "!--")
-  );
+  return typeof str === "string" && str.includes("@") && !str.includes("<!--");
 }
 
 async function resolveVoterEmail() {
@@ -3334,6 +3343,24 @@ function bindSearch() {
   );
 }
 
+// Clears the All Ideas search box, sort, and pagination back to their
+// initial state and re-renders — a single control to undo any
+// combination of search/sort/paging without hunting down each one.
+function bindClearAll() {
+  const btn = document.getElementById("clearAllBtn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    if (ui.searchInput) ui.searchInput.value = "";
+    state.search = "";
+    sortState.tblIdeas = { key: "", dir: "asc" };
+    applySortClasses("tblIdeas");
+    state.pagination.all.page = 1;
+    state.pagination.all.showAll = false;
+    renderAllIdeas();
+    ui.searchInput?.focus();
+  });
+}
+
 function bindFileInput() {
   const fileInput = document.getElementById("fileInput");
   const fileList = document.getElementById("fileList");
@@ -3363,6 +3390,23 @@ function bindMySearch() {
   }, SEARCH_DEBOUNCE_MS);
   input.addEventListener("input", handler);
   btn?.addEventListener("click", handler);
+}
+
+// Clears the My Ideas search box, sort, and pagination back to their
+// initial state and re-renders.
+function bindClearMy() {
+  const clearBtn = document.getElementById("clearMyBtn");
+  const input = document.getElementById("mySearchInput");
+  if (!clearBtn) return;
+  clearBtn.addEventListener("click", () => {
+    if (input) input.value = "";
+    sortState.tblMyIdeas = { key: "", dir: "asc" };
+    applySortClasses("tblMyIdeas");
+    state.pagination.my.page = 1;
+    state.pagination.my.showAll = false;
+    renderMyIdeas();
+    input?.focus();
+  });
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -3644,6 +3688,8 @@ function initPortal() {
   bindDelegatedEvents();
   bindSearch();
   bindMySearch();
+  bindClearAll();
+  bindClearMy();
   bindFileInput();
   bindCategoryChange();
   bindImplementedChange();
