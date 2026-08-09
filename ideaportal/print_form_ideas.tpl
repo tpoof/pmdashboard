@@ -1274,55 +1274,146 @@ function pvOpenEdit(indicatorID) {
     // Powers the standalone "Submit" button next to Cancel Request
     // (visible immediately for any true draft, unlike the native
     // submitControl UI above which only renders once getsubmitcontrol
-    // has loaded at 100% form completeness). Calls the same real submit
-    // endpoint as doSubmit(), but reports back through pvShowToast()
-    // since that's guaranteed to exist regardless of whether the native
-    // submit-control markup has rendered yet.
+    // has loaded at 100% form completeness). Reports back through
+    // pvShowToast() since that's guaranteed to exist regardless of
+    // whether the native submit-control markup has rendered yet.
+    //
+    // Mirrors ideas_v4.js's NewIdea() advanceOnSuccess path exactly:
+    // LEAF's internal $submitted flag is NOT what the portal's own
+    // tables key off of. writeDateSubmitted() (indicator 15) and
+    // writeSubmittedStatus() (indicator 12 = "Submitted") are what the
+    // My Ideas / All Ideas tables actually read — without them the
+    // record can look permanently stuck as a draft even though LEAF's
+    // native submit succeeded. See writeSubmittedStatus()'s comment in
+    // ideas_v4.js for the full history of why indicator 12 matters here.
+
+    function pvTodayLocalYMD() {
+        var d = new Date();
+        var yyyy = d.getFullYear();
+        var mm = String(d.getMonth() + 1).padStart(2, '0');
+        var dd = String(d.getDate()).padStart(2, '0');
+        return yyyy + '-' + mm + '-' + dd;
+    }
+
+    function pvWriteDateSubmitted(recID, dateStr) {
+        var body = new URLSearchParams({ CSRFToken: CSRFToken, recordID: String(recID), series: '1', '15': dateStr });
+        return fetch('./api/form/' + recID, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            body: body.toString()
+        }).then(function(res) { return res.ok; }).catch(function(err) {
+            console.warn('[pvSubmitDraft] writeDateSubmitted failed:', err);
+            return false;
+        });
+    }
+
+    function pvWriteSubmittedStatus(recID) {
+        var body = new URLSearchParams({ CSRFToken: CSRFToken, recordID: String(recID), series: '1', '12': 'Submitted' });
+        return fetch('./api/form/' + recID, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            body: body.toString()
+        }).then(function(res) { return res.ok; }).catch(function(err) {
+            console.warn('[pvSubmitDraft] writeSubmittedStatus failed:', err);
+            return false;
+        });
+    }
+
+    function pvAdvanceWorkflow(recID) {
+        return fetch('./api/form/' + recID + '/submit', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ CSRFToken: CSRFToken })
+        }).then(function(submitRes) {
+            if (!submitRes.ok) { console.warn('[pvSubmitDraft] submit failed (' + submitRes.status + ')'); return false; }
+            return fetch('./api/formWorkflow/' + recID + '/currentStep', { credentials: 'same-origin' })
+                .then(function(stepRes) { return stepRes.text(); })
+                .then(function(stepText) {
+                    var stepData = null;
+                    try { stepData = JSON.parse(stepText); } catch (e) { stepData = null; }
+                    var firstStep = null;
+                    if (Array.isArray(stepData)) {
+                        firstStep = stepData[0] || null;
+                    } else if (stepData && typeof stepData === 'object') {
+                        var keys = Object.keys(stepData);
+                        firstStep = keys.length ? stepData[keys[0]] : null;
+                    }
+                    var depID = (firstStep && (firstStep.dependencyID ?? firstStep.id)) ?? null;
+                    var actionType = (firstStep && firstStep.dependencyActions && firstStep.dependencyActions[0] && firstStep.dependencyActions[0].actionType)
+                        || (firstStep && firstStep.actions && firstStep.actions[0] && firstStep.actions[0].actionType)
+                        || 'submit';
+                    var applyBody = new URLSearchParams({ CSRFToken: CSRFToken, actionType: actionType });
+                    if (depID !== null && depID !== undefined) { applyBody.set('dependencyID', String(depID)); }
+                    return fetch('./api/formWorkflow/' + recID + '/apply', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: applyBody
+                    });
+                })
+                .then(function(applyRes) {
+                    if (!applyRes.ok) { console.warn('[pvSubmitDraft] apply failed (' + applyRes.status + ') — record may still be draft'); return false; }
+                    return true;
+                });
+        }).catch(function(err) {
+            console.warn('[pvSubmitDraft] advanceWorkflow failed:', err);
+            return false;
+        });
+    }
+
     function pvSubmitDraft(btn) {
         if (btn) { btn.disabled = true; }
         pvShowToast('Submitting your idea...');
 
-        $.ajax({
-            type: 'POST',
-            url: './api/form/' + recordID + '/submit',
-            data: { CSRFToken: '<!--{$CSRFToken}-->' },
-            success: function(response) {
-                if (response?.errors?.length === 0) {
-                    pvShowToast('Your idea has been submitted successfully.');
+        var dateStr = pvTodayLocalYMD();
+        pvWriteDateSubmitted(recordID, dateStr).then(function(dateWritten) {
+            return pvWriteSubmittedStatus(recordID).then(function() {
+                return pvAdvanceWorkflow(recordID).then(function(workflowAdvanced) {
+                    return { dateWritten: dateWritten, workflowAdvanced: workflowAdvanced };
+                });
+            });
+        }).then(function(result) {
+            var pill = document.getElementById('pv-status-pill');
+            var item = document.getElementById('pv-status-item');
+            var sep  = document.getElementById('pv-info-sep');
 
-                    var pill = document.getElementById('pv-status-pill');
-                    var item = document.getElementById('pv-status-item');
-                    var sep  = document.getElementById('pv-info-sep');
-                    if (pill) { pill.textContent = 'Submitted'; }
-                    if (item) { item.removeAttribute('hidden'); }
-                    if (sep)  { sep.removeAttribute('hidden'); }
+            if (result.dateWritten && result.workflowAdvanced) {
+                pvShowToast('Your idea has been submitted successfully.');
+                if (pill) { pill.textContent = 'Submitted'; }
+                if (item) { item.removeAttribute('hidden'); }
+                if (sep)  { sep.removeAttribute('hidden'); }
+                if (btn)  { btn.style.display = 'none'; }
 
-                    if (btn) { btn.style.display = 'none'; }
-
-                    // Mirror doSubmit()'s side effects for the native
-                    // submit-control UI and workflow panel, where present.
-                    $('#submitStatus').text('Request submmited');
-                    $('#submitControl').empty().html('Submitted');
-                    $('#submitContent').hide('blind', 500);
-                    $('#comments').css({'display': "block"});
-                    $('#notes').css({'display': "block"});
-                    const isAdmin = '<!--{$is_admin|escape:'javascript'}-->';
-                    if (isAdmin !== "1") { $('#btn_cancelRequest').hide(); }
-                    if (typeof workflow !== 'undefined' && workflow) {
-                        workflow.setExtraParams('masquerade=nonAdmin');
-                        workflow.getWorkflow(recordID);
-                    }
-                } else {
-                    const errors = (response && response.errors && response.errors.length) ? response.errors.join(' ') : 'This idea could not be submitted.';
-                    pvShowToast(errors, true);
-                    if (btn) { btn.disabled = false; }
+                // Mirror doSubmit()'s side effects for the native
+                // submit-control UI and workflow panel, where present.
+                $('#submitStatus').text('Request submmited');
+                $('#submitControl').empty().html('Submitted');
+                $('#submitContent').hide('blind', 500);
+                $('#comments').css({'display': "block"});
+                $('#notes').css({'display': "block"});
+                const isAdmin = '<!--{$is_admin|escape:'javascript'}-->';
+                if (isAdmin !== "1") { $('#btn_cancelRequest').hide(); }
+                if (typeof workflow !== 'undefined' && workflow) {
+                    workflow.setExtraParams('masquerade=nonAdmin');
+                    workflow.getWorkflow(recordID);
                 }
-            },
-            error: function(res) {
-                console.log(res);
-                pvShowToast('Error submitting your idea. Please try again.', true);
+            } else if (result.dateWritten && !result.workflowAdvanced) {
+                pvShowToast("Your idea was recorded as submitted, but a workflow step didn't complete. You can try submitting again — no data was lost.", true);
+                if (pill) { pill.textContent = 'Submitted'; }
+                if (item) { item.removeAttribute('hidden'); }
+                if (sep)  { sep.removeAttribute('hidden'); }
+                if (btn)  { btn.disabled = false; }
+            } else {
+                pvShowToast('Your idea could not be submitted. Please try again.', true);
                 if (btn) { btn.disabled = false; }
             }
+        }).catch(function(err) {
+            console.error('[pvSubmitDraft] error:', err);
+            pvShowToast('Error submitting your idea. Please try again.', true);
+            if (btn) { btn.disabled = false; }
         });
     }
 
