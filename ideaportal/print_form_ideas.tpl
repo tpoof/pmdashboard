@@ -842,6 +842,12 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
     var PV_VOTE_IND_IDEA = 2;
     var PV_VOTE_IND_USER = 3;
     var _pvVotingInProgress = false;
+    // recordID of the current user's own vote record for this idea (the
+    // vote FORM record's own recordID, distinct from PV_RECORD_ID which
+    // it points at). Required to target a specific vote record when
+    // un-voting. Populated by pvCheckVoted() on load and immediately on
+    // a fresh vote via pvIdeaVotes().
+    var _pvMyVoteRecordID   = null;
     var _pvResolvedEmail    = '';
     var _pvEmailResolved    = false;
 
@@ -923,11 +929,31 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
     function pvSetVoted(isVoted) {
         var btn = document.getElementById('pv-vote-btn');
         if (!btn) { return; }
-        btn.disabled = isVoted;
-        btn.setAttribute('aria-disabled', isVoted ? 'true' : 'false');
+
+        if (_pvIsOwnIdea) { return; } // pvSetOwnIdea owns this state — never overwrite it here
+
+        // Voted, but we couldn't resolve which vote record is ours (e.g.
+        // a query hiccup) — same "unavailable" fallback as the table/
+        // record-modal use, rather than silently allowing an unvote
+        // click that has nothing to target.
+        var unavailable = isVoted && !_pvMyVoteRecordID;
+
         btn.classList.toggle('is-voted', isVoted);
-        btn.setAttribute('aria-label', isVoted ? "You've already voted for this idea" : 'Vote for this idea');
-        btn.title = isVoted ? "You've already voted for this idea" : 'Vote for this idea';
+        btn.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>'
+            + (isVoted ? 'Voted' : 'Vote for this idea');
+
+        if (unavailable) {
+            btn.disabled = true;
+            btn.setAttribute('aria-disabled', 'true');
+            btn.setAttribute('aria-label', "Vote recorded, but could not be loaded for removal — refresh and try again");
+            btn.title = 'Vote record not found — refresh and try again';
+            return;
+        }
+
+        btn.disabled = false;
+        btn.setAttribute('aria-disabled', 'false');
+        btn.setAttribute('aria-label', isVoted ? 'Remove your vote for this idea' : 'Vote for this idea');
+        btn.title = isVoted ? 'Click to remove your vote' : 'Vote for this idea';
     }
 
     function pvCheckVoted() {
@@ -956,6 +982,8 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
                     var voter      = String((vote.s1 && vote.s1['id' + PV_VOTE_IND_USER]) || '').toLowerCase();
                     if (linkedIdea === ideaKey && (voter === emailKey || voter === userKey)) {
                         hasVoted = true;
+                        var voteRecId = vote.recordID != null ? vote.recordID : (vote.recordId != null ? vote.recordId : vote.id);
+                        _pvMyVoteRecordID = (voteRecId !== undefined && voteRecId !== null && voteRecId !== '') ? String(voteRecId) : null;
                         return false;
                     }
                 });
@@ -1011,6 +1039,14 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         if (_pvVotingInProgress) { return; }
         if (_pvIsOwnIdea) { pvShowToast("You can't vote on your own idea.", true); return; }
         var btn = document.getElementById('pv-vote-btn');
+
+        // Already voted → this click means "remove my vote", one click,
+        // no confirmation (matching the table/record-modal behavior).
+        if (btn && btn.classList.contains('is-voted')) {
+            pvUnvoteIdea();
+            return;
+        }
+
         if (btn && btn.disabled) { pvShowToast('You already voted on this idea.', true); return; }
         _pvVotingInProgress = true;
         pvSetVoted(true);
@@ -1034,8 +1070,11 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
                 var newID = parseFloat(text.replace(/^"|"$/g, ''));
                 if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
                     pvShowToast('Thanks for voting!');
+                    _pvMyVoteRecordID = String(newID);
+                    pvSetVoted(true); // re-render now that we have a vote record ID (enables unvote)
                     /* Refresh votes pill after successful vote */
                     if (typeof window._pvFetchVoteCount === 'function') { window._pvFetchVoteCount(); }
+                    if (typeof window._pvInvalidateVotesPanel === 'function') { window._pvInvalidateVotesPanel(); }
                 } else {
                     throw new Error('Unexpected response: ' + text);
                 }
@@ -1054,6 +1093,54 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
             pvResolveEmail().then(function(identity) { doSubmit(identity); });
         }
     }
+
+    /* ── Un-vote ──
+       Uses the same real LEAF soft-delete route as ideas_v4.js
+       (POST ./api/form/{recordID}/cancel → Form::cancelRecord()) rather
+       than the earlier deleted=1 POST body param, which returned HTTP
+       200 without actually persisting anything since `deleted` is a
+       system-managed timestamp column, not a writable indicator.
+       suppressNotification=1 avoids cancelRecord() emailing "prior
+       approvers" that don't apply to a workflow-less vote record. */
+    function pvUnvoteIdea() {
+        if (_pvVotingInProgress) { return; }
+        if (!_pvMyVoteRecordID) {
+            pvShowToast("Couldn't find your vote record to remove it. Try refreshing the page.", true);
+            return;
+        }
+
+        _pvVotingInProgress = true;
+        var voteRecordID = _pvMyVoteRecordID;
+        pvSetVoted(false);
+
+        var body = new URLSearchParams({ CSRFToken: CSRFToken, suppressNotification: '1' });
+        fetch('./api/form/' + encodeURIComponent(voteRecordID) + '/cancel', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            body: body.toString()
+        })
+        .then(function(res) {
+            if (!res.ok) { throw new Error('HTTP ' + res.status); }
+            return res.text();
+        })
+        .then(function(text) {
+            text = text.trim();
+            if (text !== '1' && text !== '"1"') { throw new Error('Delete request was not accepted: ' + text); }
+            _pvMyVoteRecordID = null;
+            if (typeof window._pvInvalidateVotesPanel === 'function') { window._pvInvalidateVotesPanel(); }
+            pvShowToast('Your vote has been removed.');
+            if (typeof window._pvFetchVoteCount === 'function') { window._pvFetchVoteCount(); }
+        })
+        .catch(function(err) {
+            console.error('[pvUnvoteIdea] error:', err);
+            _pvMyVoteRecordID = voteRecordID; // roll back
+            pvSetVoted(true);
+            pvShowToast("Couldn't remove your vote. Please try again — if this keeps happening, let us know.", true);
+        })
+        .finally(function() { _pvVotingInProgress = false; });
+    }
+
 
     function pvShare() {
         var btn  = document.getElementById('pv-share-btn');
@@ -1791,14 +1878,7 @@ function pvOpenEdit(indicatorID) {
     var _pvShowAll       = false;
     var PV_VOTE_CAP      = 20;
 
-    function toggleVotes(ideaRecordID) {
-        var btn = document.getElementById('btn-votes');
-        var fc  = document.getElementById('formcontent');
-        if (!btn || !fc) { return; }
-        _pvVotesExpanded = !_pvVotesExpanded;
-        btn.setAttribute('aria-expanded', _pvVotesExpanded ? 'true' : 'false');
-        if (!_pvVotesExpanded) { fc.innerHTML = ''; return; }
-        if (_pvVotesLoaded) { _pvRenderVotes(fc); return; }
+    function _pvFetchVotesList(fc, ideaRecordID) {
         fc.innerHTML = '<div style="padding:16px;font-size:15px;color:#475569;">Loading votes&hellip;</div>';
         var q = {
             terms: [
@@ -1856,6 +1936,31 @@ function pvOpenEdit(indicatorID) {
         }
         fc.innerHTML = summary + '<div class="pv-votes-table-wrap"><table style="width:100%;border-collapse:collapse;font-size:14px;"><thead><tr style="background:#f8fafc;position:sticky;top:0;"><th style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;width:32px;">#</th><th style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Voter</th></tr></thead><tbody>' + rows + '</tbody></table></div>' + footer;
     }
+
+    function toggleVotes(ideaRecordID) {
+        var btn = document.getElementById('btn-votes');
+        var fc  = document.getElementById('formcontent');
+        if (!btn || !fc) { return; }
+        _pvVotesExpanded = !_pvVotesExpanded;
+        btn.setAttribute('aria-expanded', _pvVotesExpanded ? 'true' : 'false');
+        if (!_pvVotesExpanded) { fc.innerHTML = ''; return; }
+        if (_pvVotesLoaded) { _pvRenderVotes(fc); return; }
+        _pvFetchVotesList(fc, ideaRecordID);
+    }
+
+    // Called from outside this IIFE (the vote/unvote handlers below) so a
+    // vote or unvote invalidates this panel's cached voter list. If the
+    // panel happens to be open right now, refetch immediately rather than
+    // waiting for the next toggle.
+    window._pvInvalidateVotesPanel = function() {
+        _pvVotesLoaded = false;
+        if (_pvVotesExpanded) {
+            var fc = document.getElementById('formcontent');
+            if (fc) { _pvFetchVotesList(fc, recordID); }
+        }
+    };
+
+
 
     function openContentForPrint(){
         $('#formcontent').empty().html('');
