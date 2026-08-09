@@ -9,7 +9,7 @@
 
 <!-- Public view for all users -->
 
-<!--{if $empMembership['groupID'][226]}--><div class="pv-layout-row"><!--{/if}-->
+<!--{if $empMembership['groupID'][12]}--><div class="pv-layout-row"><!--{/if}-->
 <div id="public-view">
 <a href="#pv-main" class="pv-skip-link">Skip to main content</a>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,1,0" />
@@ -21,8 +21,8 @@
 #public-view { font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif; color: #0f172a; padding: 0 0 64px; }
 .pv-layout-row { display: flex; align-items: flex-start; min-height: 100vh; }
 .pv-layout-row #public-view { flex: 1 1 0; min-width: 0; padding-bottom: 64px; }
-.pv-layout-row #toolbar226 { flex: 0 0 220px; width: 220px; align-self: flex-start; }
-@media (max-width: 700px) { .pv-layout-row { flex-direction: column; } .pv-layout-row #toolbar226 { position: static; width: 100%; max-height: none; } }
+.pv-layout-row #toolbar12 { flex: 0 0 220px; width: 220px; align-self: flex-start; }
+@media (max-width: 700px) { .pv-layout-row { flex-direction: column; } .pv-layout-row #toolbar12 { position: static; width: 100%; max-height: none; } }
 .pv-topbar { border-bottom: 1px solid #cfd7e3; padding: 10px 20px; }
 .pv-back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; color: #005ea2; text-decoration: none; border-radius: 6px; padding: 4px 2px; }
 .pv-back-link:hover, .pv-back-link:focus { color: #004a82; text-decoration: underline; }
@@ -1200,9 +1200,9 @@ function pvOpenEdit(indicatorID) {
 
 </div>
 
-<!-- Group 226 toolbar -->
-<!--{if $empMembership['groupID'][226]}-->
-<div id="toolbar226" class="toolbar_right toolbar noprint">
+<!-- Group 12 toolbar -->
+<!--{if $empMembership['groupID'][12]}-->
+<div id="toolbar12" class="toolbar_right toolbar noprint">
 
     <div class="pm-transfer-wrap">
         <button type="button" class="tools pm-transfer-btn" onclick="transferToPMDashboard()" title="Transfer to LEAF Projects">
@@ -1210,7 +1210,7 @@ function pvOpenEdit(indicatorID) {
         </button>
     </div>
 
-    <div id="tools226" class="tools">
+    <div id="tools12" class="tools">
         <h1>Idea Tools</h1>
         <!--{if $submitted == 0}-->
             <button type="button" class="tools" onclick="window.location='?a=view&amp;recordID=<!--{$recordID|strip_tags}-->'">
@@ -1353,9 +1353,9 @@ function pvOpenEdit(indicatorID) {
 
 </div>
 <!--{/if}-->
-<!--{if $empMembership['groupID'][226]}--></div><!--{/if}-->
+<!--{if $empMembership['groupID'][12]}--></div><!--{/if}-->
 
-<!--{if $empMembership['groupID'][226]}-->
+<!--{if $empMembership['groupID'][12]}-->
 <div class="pv-internal-banner noprint" role="note" aria-label="Internal view notice">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false" style="width:15px;height:15px;flex-shrink:0;"><path d="M8 1L1 14h14L8 1z"/><path d="M8 6v4M8 11.5v.5"/></svg>
     LEAF TEAM — INTERNAL VIEW ONLY
@@ -2845,7 +2845,7 @@ function pvOpenEdit(indicatorID) {
             dialog_message = new dialogController('genericDialog',      'genericDialogxhr',  'genericDialogloadIndicator', 'genericDialogbutton_save', 'genericDialogbutton_cancelchange');
             dialog_ok      = new dialogController('ok_xhrDialog',      'ok_xhr',            'ok_loadIndicator',           'confirm_button_ok',    'confirm_button_cancelchange');
             dialog_confirm = new dialogController('confirm_xhrDialog',  'confirm_xhr',       'confirm_loadIndicator',      'confirm_button_save',  'confirm_button_cancelchange');
-            <!--{if $empMembership['groupID'][226]}-->
+            <!--{if $empMembership['groupID'][12]}-->
             <!--{if $childCategoryID == ''}-->
                 openContent('ajaxIndex.php?a=printview&recordID=<!--{$recordID|strip_tags}-->');
             <!--{else}-->
