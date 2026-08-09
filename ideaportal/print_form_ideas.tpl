@@ -383,7 +383,7 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
         $.ajax({
             type: 'GET',
             url: 'ajaxIndex.php?a=getindicator&indicatorID=8&series=1&recordID=0',
-            dataType: 'html',
+            dataType: 'text',
             cache: false,
             success: function(html) {
                 try {
