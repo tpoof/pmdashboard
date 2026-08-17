@@ -1,0 +1,430 @@
+/* ============================================================
+   LEAF Universal Nav  |  leaf_nav.css
+   ─────────────────────────────────────────────────────────────
+   Lives at /platform/designs/files/leaf_nav.css — every page
+   should point here directly so there's exactly one copy to
+   edit. Pair with leaf_nav.js, which injects the nav HTML and
+   self-injects this stylesheet if a page forgets to link it.
+   ============================================================ */
+
+/* ── Nav palette ── */
+:root {
+  --nav-accent: #005ea2;
+  --nav-hl: #1a4480;
+  --nav-hover-bg: #eff6fb;
+  --nav-border: #aacdec;
+  --nav-panel-bg: #fff;
+  --nav-panel-bd: #d9e8f6;
+  --nav-muted: #3d4551;
+  --nav-text: #1b1b1b;
+  --nav-ico-bg: #eff6fb;
+  --nav-r: 5px;
+  --nav-r-lg: 8px;
+}
+
+/* ── Skip navigation link (WCAG 2.4.1) ──
+   Visually hidden until focused; first Tab stop on every page. */
+.lp-skip-link {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  text-decoration: none;
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--nav-hl);
+  border-radius: var(--nav-r);
+  z-index: 9999;
+}
+.lp-skip-link:focus {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  width: auto;
+  height: auto;
+  clip: auto;
+  white-space: normal;
+  padding: 10px 16px;
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+
+/* ── Screen-reader-only utility (WCAG 1.3.1, 2.4.4) ──
+   Used for "(opens in new tab)" text on external links. */
+.lp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Nav shell ── */
+.lp-nav {
+  position: sticky;
+  top: 0;
+  z-index: 300;
+  background: rgba(255, 255, 255, 0.97);
+  border-bottom: 1px solid transparent;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    border-color 0.25s,
+    box-shadow 0.25s;
+}
+.lp-nav.scrolled {
+  border-color: var(--nav-border);
+  box-shadow: 0 2px 16px rgba(0, 10, 60, 0.1);
+}
+.lp-nav-in {
+  padding: 0 24px 0 90px; /* left: 90px matches LEAF global header content offset */
+  height: 52px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.lp-nav-links {
+  display: flex;
+  list-style: none;
+  gap: 2px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Dropdown trigger ── */
+.dd-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 13px;
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--nav-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--nav-r);
+  transition:
+    color 0.15s,
+    background 0.15s;
+  white-space: nowrap;
+}
+.dd-trigger:hover,
+.dd-item.open .dd-trigger {
+  color: var(--nav-accent);
+  background: var(--nav-hover-bg);
+}
+.dd-trigger:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+/* Active section indicator */
+.dd-trigger[aria-current="true"] {
+  color: var(--nav-accent);
+  font-weight: 700;
+}
+.dd-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 1px;
+  transition: transform 0.25s ease;
+  transform-origin: center;
+}
+.dd-chevron .material-symbols-outlined {
+  font-size: 1.25rem; /* 20px — matches nav text scale */
+  line-height: 1;
+  display: flex;
+}
+.dd-item.open .dd-chevron {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown item + panel ── */
+.dd-item {
+  position: relative;
+}
+.dd-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--nav-panel-bg);
+  border: 1px solid var(--nav-panel-bd);
+  border-radius: var(--nav-r-lg);
+  box-shadow: 0 8px 32px rgba(0, 10, 60, 0.14);
+  min-width: 260px;
+  padding: 8px;
+  z-index: 400;
+}
+.dd-panel[hidden] {
+  display: none;
+}
+.dd-list {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+}
+
+.dd-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--nav-r);
+  text-decoration: none;
+  color: var(--nav-text);
+  transition: background 0.15s;
+}
+.dd-link:hover {
+  background: #eff6fb;
+}
+.dd-link:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+
+.dd-link-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--nav-r);
+  flex-shrink: 0;
+  background: var(--nav-ico-bg);
+  color: var(--nav-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.dd-link-ico .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+.dd-link-text strong {
+  display: block;
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--nav-hl);
+  margin-bottom: 2px;
+}
+.dd-link-text span {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--nav-muted);
+  line-height: 1.4;
+}
+
+.dd-divider {
+  border: none;
+  border-top: 1px solid var(--nav-panel-bd);
+  margin: 6px 0;
+}
+
+/* ── Mobile menu toggle (hamburger ↔ X) ── */
+.lp-nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  border-radius: var(--nav-r);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.lp-nav-toggle:hover {
+  background: var(--nav-hover-bg);
+}
+.lp-nav-toggle:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+.lp-nav-toggle-icon {
+  position: relative;
+  width: 20px;
+  height: 14px;
+  display: inline-block;
+}
+.lp-nav-toggle-icon span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--nav-hl);
+  border-radius: 1px;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    top 0.2s ease;
+}
+.lp-nav-toggle-icon span:nth-child(1) {
+  top: 0;
+}
+.lp-nav-toggle-icon span:nth-child(2) {
+  top: 6px;
+}
+.lp-nav-toggle-icon span:nth-child(3) {
+  top: 12px;
+}
+.lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(1) {
+  top: 6px;
+  transform: rotate(45deg);
+}
+.lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(2) {
+  opacity: 0;
+}
+.lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(3) {
+  top: 6px;
+  transform: rotate(-45deg);
+}
+
+/* ── Mobile panel (accordion) ── */
+.lp-mobile-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--nav-panel-bg);
+  border-bottom: 1px solid var(--nav-panel-bd);
+  box-shadow: 0 8px 24px rgba(0, 10, 60, 0.12);
+  max-height: calc(100vh - 52px);
+  overflow-y: auto;
+  padding: 4px 8px;
+}
+.lp-mobile-panel[hidden] {
+  display: none;
+}
+.lp-accordion {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.acc-item + .acc-item {
+  border-top: 1px solid var(--nav-panel-bd);
+}
+.acc-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px;
+  min-height: 44px;
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--nav-text);
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+.acc-trigger:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+.acc-item.open .acc-trigger .dd-chevron {
+  transform: rotate(180deg);
+}
+.acc-panel[hidden] {
+  display: none;
+}
+.acc-panel .dd-list {
+  padding: 0 0 8px;
+}
+.acc-panel .dd-link {
+  padding: 10px 12px 10px 16px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .lp-nav-in {
+    padding-left: 16px; /* tighter on mobile — hamburger layout, header alignment less relevant */
+  }
+  .lp-nav-links {
+    display: none;
+  }
+  .lp-nav-toggle {
+    display: inline-flex;
+  }
+}
+@media (min-width: 641px) {
+  .lp-nav-toggle,
+  .lp-mobile-panel {
+    display: none !important;
+  }
+}
+
+/* ── Jump to top ──
+   Injected by leaf_nav.js into every page that loads the nav.
+   Uses #leaf-jump-top (nav-namespaced ID) so it never collides
+   with any page-level .lp-jump styles.
+   z-index: 200 sits below the nav (300) and dropdown panels (400)
+   but above normal page content. */
+#leaf-jump-top {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--nav-border);
+  color: var(--nav-accent);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+#leaf-jump-top.lp-jump-vis {
+  opacity: 1;
+  pointer-events: auto;
+}
+#leaf-jump-top:hover {
+  background: var(--nav-hover-bg);
+}
+#leaf-jump-top:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 3px;
+}
+#leaf-jump-top .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
+/* ── Reduced motion (Section 508 502.2.2 / WCAG 2.3.3) ──
+   Disable all transitions and animations for users who prefer
+   reduced motion at the OS level. */
+@media (prefers-reduced-motion: reduce) {
+  .lp-nav,
+  .dd-trigger,
+  .dd-chevron,
+  .dd-link,
+  .lp-nav-toggle-icon span,
+  .lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(1),
+  .lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(3),
+  #leaf-jump-top {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -1,0 +1,81 @@
+/* ============================================================
+   LEAF Universal Breadcrumb  |  leaf_breadcrumb.css
+   ─────────────────────────────────────────────────────────────
+   Lives at /platform/designs/files/leaf_breadcrumb.css.
+   Pair with leaf_breadcrumb.js (load it AFTER leaf_nav.js).
+   Reuses leaf_nav.css's --nav-* color tokens so the breadcrumb
+   always matches the nav bar's palette — no separate colors to
+   keep in sync. Falls back to literal values if leaf_nav.css
+   isn't loaded for some reason.
+
+   Placement mirrors the nav bar:
+   • sticky below the nav (top: 52px = nav height)
+   • full-width with the same 90px left offset as .lp-nav-in
+   • same background + blur as .lp-nav so it reads as one system
+   ============================================================ */
+
+.lp-breadcrumb {
+  position: sticky;
+  top: 52px; /* sits flush below the 52px nav bar */
+  z-index: 299; /* one below .lp-nav's z-index: 300 */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 24px 10px 103px; /* 90px (.lp-nav-in) + 13px (.dd-trigger padding) = aligns with nav button text */
+  background: rgba(
+    239,
+    246,
+    251,
+    0.97
+  ); /* --nav-hover-bg tint — distinguishes from nav without competing */
+  border-bottom: 1px solid var(--nav-panel-bd, #d9e8f6);
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--nav-muted, #3d4551);
+}
+
+.lp-breadcrumb a {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-style: normal;
+  color: var(--nav-accent, #005ea2);
+  text-decoration: underline;
+}
+.lp-breadcrumb a:hover {
+  color: var(--nav-hl, #1a4480);
+}
+.lp-breadcrumb a:focus-visible {
+  outline: 3px solid var(--nav-accent, #005ea2);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.lp-bc-sep {
+  color: var(--nav-muted, #3d4551);
+  font-style: italic;
+  user-select: none;
+}
+
+.lp-bc-current {
+  color: var(--nav-muted, #3d4551);
+  font-style: italic;
+}
+
+/* Intermediate section label with no href (e.g. "About LEAF") —
+   muted non-italic text so it reads as a structural label,
+   not an active link or the current page. */
+.lp-bc-section {
+  color: var(--nav-muted, #3d4551);
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .lp-breadcrumb {
+    padding-left: 16px; /* matches .lp-nav-in mobile padding */
+  }
+}
+
+/* ── Reduced motion (WCAG 2.3.3 / Section 508 502.2.2) ──
+   No transitions or animations on this element — nothing to suppress. */
