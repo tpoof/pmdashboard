@@ -813,6 +813,19 @@
           query.execute();
         });
         leafSearch.init();
+
+        /* Workaround: LeafFormSearch (external widget, not part of this
+           repo) can stamp its search input's value with the literal
+           string "undefined" when it reads an unset default. Clear it
+           if that happens — patches the symptom since we can't fix the
+           widget's own source. */
+        const leafSearchInput = $id("searchContainer")?.querySelector(
+          'input[type="text"], input[type="search"]',
+        );
+        if (leafSearchInput && leafSearchInput.value === "undefined") {
+          leafSearchInput.value = "";
+        }
+
         $(`#${leafSearch.getPrefixID()}advancedSearchButton`).css(
           "display",
           "none",

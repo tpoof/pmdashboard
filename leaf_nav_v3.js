@@ -149,21 +149,21 @@
           title: "Community of Practice",
           desc: "Connect with LEAF users VA-wide",
           href: "/platform/CoP",
-          external: true,
+          iframe: true,
         },
         {
           icon: "lightbulb",
           title: "Suggest an Idea",
           desc: "Submit an idea to improve LEAF",
           href: "https://leaf.va.gov/platform/ideas",
-          external: true,
+          iframe: true,
         },
         {
           icon: "privacy_tip",
           title: "Privacy & Compliance",
           desc: "LEAF privacy and compliance resources",
           href: "https://leaf.va.gov/platform/privacy/report.php?a=resources",
-          external: true,
+          iframe: true,
         },
       ],
     },
@@ -182,7 +182,7 @@
           title: "Help Library",
           desc: "Guides and documentation",
           href: "https://leaf.va.gov/platform/help_library/report.php?a=homepage",
-          external: true,
+          iframe: true,
         },
         {
           icon: "quiz",
@@ -238,13 +238,7 @@
   function buildRouteMap() {
     NAV_SECTIONS.forEach(function (section) {
       section.items.forEach(function (item) {
-        if (
-          item.divider ||
-          !item.href ||
-          item.href === "#" ||
-          item.hidden ||
-          item.external
-        )
+        if (item.divider || !item.href || item.href === "#" || item.hidden)
           return;
         var key = hrefToHashKey(item.href);
         if (key) {
@@ -252,6 +246,7 @@
             href: item.href,
             title: item.title,
             section: section.label,
+            iframe: !!item.iframe,
           };
         }
       });
@@ -298,28 +293,14 @@
   ───────────────────────────────────────────────────────────── */
   function linkHTML(item) {
     if (item.divider) return '<hr class="dd-divider" aria-hidden="true">';
-    /* external items (full separate LEAF apps — CoP, Ideas, Help Library,
-       Privacy & Compliance) render as a plain <a href> with
-       data-nav-external so wireLinkIntercept() lets the browser navigate
-       normally instead of fetching+splicing them into the swap host —
-       they aren't lightweight content pages and break when spliced in. */
-    if (item.external) {
-      return `
-      <li>
-        <a class="dd-link" href="${item.href}" data-nav-external>
-          <span class="dd-link-ico">
-            <span class="material-symbols-outlined" aria-hidden="true">${item.icon}</span>
-          </span>
-          <span class="dd-link-text">
-            <strong>${item.title}</strong>
-            <span>${item.desc}</span>
-          </span>
-        </a>
-      </li>`;
-    }
     /* Use <button data-href> instead of <a href> so the browser status
        bar never previews the destination URL on hover. Navigation is
-       handled by wireLinkIntercept() which reads data-href. */
+       handled by wireLinkIntercept() which reads data-href. Applies to
+       iframe items too (CoP, Ideas, Help Library, Privacy & Compliance)
+       — they're still hash-routed so the shell (nav/breadcrumb) stays
+       visible; loadView() mounts them in an <iframe> instead of
+       fetching+splicing their HTML, since they're full separate LEAF
+       apps rather than lightweight content pages. */
     return `
       <li>
         <button class="dd-link" data-href="${item.href}">
@@ -1598,7 +1579,7 @@
   function buildErrorSuggestedLinksHTML() {
     var items = NAV_SECTIONS.map(function (section) {
       return section.items.find(function (item) {
-        return item.href && item.href !== "#" && !item.hidden && !item.external;
+        return item.href && item.href !== "#" && !item.hidden;
       });
     }).filter(Boolean);
 
@@ -1781,6 +1762,48 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
+     MOUNT IFRAME
+     For full separate LEAF apps (route.iframe === true). Skips
+     fetch/DOMParser/chrome-suppression/script-splicing entirely —
+     the embedded page loads and runs as its own real document, so
+     none of the base-href or script-re-execution bugs that broke
+     the splice approach apply here.
+  ───────────────────────────────────────────────────────────── */
+  function mountIframe(route) {
+    var host = _swapHost;
+    if (!host) {
+      console.error("[LP] mountIframe: swap host not found");
+      return;
+    }
+
+    /* Remove any <base> left over from a previous non-iframe route —
+       iframe content doesn't use it, and it must not leak into the
+       launchpad's own relative paths. */
+    var existingBase = document.getElementById("lp-route-base");
+    if (existingBase) existingBase.remove();
+    window.__lpRouteHref = route.href;
+    window.__lpRouteSearch =
+      route.href.indexOf("?") > -1 ? "?" + route.href.split("?")[1] : "";
+
+    var bc = document.createElement("div");
+    bc.innerHTML = buildBreadcrumbHTML(route);
+
+    var frame = document.createElement("iframe");
+    frame.className = "lp-swap-iframe";
+    frame.src = route.href;
+    frame.title = route.title || "Embedded page";
+    frame.style.cssText = "width:100%;min-height:75vh;border:0;display:block;";
+
+    host.innerHTML = "";
+    host.appendChild(bc.firstElementChild);
+    host.appendChild(frame);
+
+    document.title = route.title ? route.title + " – LEAF Launchpad" : document.title;
+    announce((route.title || "Page") + " loaded");
+    host.focus();
+  }
+
+  /* ─────────────────────────────────────────────────────────────
      MOUNT CONTENT
   ───────────────────────────────────────────────────────────── */
   function mountContent(el, sourceDoc, route, depScriptSrcs) {
@@ -1959,8 +1982,24 @@
     _currentLoadUrl = url;
 
     showSwapView();
-    showSwapLoading();
     updateNavCurrent(route.section);
+
+    /* Full separate LEAF apps (CoP, Ideas, Help Library, Privacy &
+       Compliance) can't survive being fetched+spliced into this
+       document — wrong document, wrong scripts, wrong DOM. Mount them
+       in an iframe instead: same hash-routed shell (nav/breadcrumb
+       stay visible, back-to-launchpad still works), but the embedded
+       page runs in its own real document. */
+    if (route.iframe) {
+      mountIframe(route);
+      _currentLoadUrl = null;
+      var iframeHost = getSwapHost();
+      if (iframeHost) iframeHost.scrollTop = 0;
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    showSwapLoading();
 
     fetch(url, {
       credentials: "include",
