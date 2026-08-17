@@ -149,18 +149,21 @@
           title: "Community of Practice",
           desc: "Connect with LEAF users VA-wide",
           href: "/platform/CoP",
+          external: true,
         },
         {
           icon: "lightbulb",
           title: "Suggest an Idea",
           desc: "Submit an idea to improve LEAF",
           href: "https://leaf.va.gov/platform/ideas",
+          external: true,
         },
         {
           icon: "privacy_tip",
           title: "Privacy & Compliance",
           desc: "LEAF privacy and compliance resources",
-          href: "https://leaf.va.gov/platform/privacy/resources.php?a=resources",
+          href: "https://leaf.va.gov/platform/privacy/report.php?a=resources",
+          external: true,
         },
       ],
     },
@@ -179,6 +182,7 @@
           title: "Help Library",
           desc: "Guides and documentation",
           href: "https://leaf.va.gov/platform/help_library/report.php?a=homepage",
+          external: true,
         },
         {
           icon: "quiz",
@@ -234,7 +238,13 @@
   function buildRouteMap() {
     NAV_SECTIONS.forEach(function (section) {
       section.items.forEach(function (item) {
-        if (item.divider || !item.href || item.href === "#" || item.hidden)
+        if (
+          item.divider ||
+          !item.href ||
+          item.href === "#" ||
+          item.hidden ||
+          item.external
+        )
           return;
         var key = hrefToHashKey(item.href);
         if (key) {
@@ -288,6 +298,25 @@
   ───────────────────────────────────────────────────────────── */
   function linkHTML(item) {
     if (item.divider) return '<hr class="dd-divider" aria-hidden="true">';
+    /* external items (full separate LEAF apps — CoP, Ideas, Help Library,
+       Privacy & Compliance) render as a plain <a href> with
+       data-nav-external so wireLinkIntercept() lets the browser navigate
+       normally instead of fetching+splicing them into the swap host —
+       they aren't lightweight content pages and break when spliced in. */
+    if (item.external) {
+      return `
+      <li>
+        <a class="dd-link" href="${item.href}" data-nav-external>
+          <span class="dd-link-ico">
+            <span class="material-symbols-outlined" aria-hidden="true">${item.icon}</span>
+          </span>
+          <span class="dd-link-text">
+            <strong>${item.title}</strong>
+            <span>${item.desc}</span>
+          </span>
+        </a>
+      </li>`;
+    }
     /* Use <button data-href> instead of <a href> so the browser status
        bar never previews the destination URL on hover. Navigation is
        handled by wireLinkIntercept() which reads data-href. */
@@ -1569,7 +1598,7 @@
   function buildErrorSuggestedLinksHTML() {
     var items = NAV_SECTIONS.map(function (section) {
       return section.items.find(function (item) {
-        return item.href && item.href !== "#" && !item.hidden;
+        return item.href && item.href !== "#" && !item.hidden && !item.external;
       });
     }).filter(Boolean);
 

@@ -52,7 +52,7 @@
     /* ── Privacy & Compliance ── */
     "privacy-compliance": {
       label: "Privacy & Compliance",
-      href: "https://leaf.va.gov/platform/privacy/resources.php?a=resources",
+      href: "https://leaf.va.gov/platform/privacy/report.php?a=resources",
     },
 
     /* ── Knowledge Center ── */
