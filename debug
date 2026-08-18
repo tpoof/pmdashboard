@@ -1,1 +1,42 @@
-getComputedStyle(document.documentElement).getPropertyValue('--space-2')
+(function () {
+  var out = {};
+  out.styleSheets = Array.from(document.styleSheets).map(function (s) {
+    try {
+      return {
+        href: s.href,
+        disabled: s.disabled,
+        rules: s.cssRules ? s.cssRules.length : null,
+      };
+    } catch (e) {
+      return { href: s.href, error: e.message };
+    }
+  });
+  out.spaceVar = getComputedStyle(document.documentElement).getPropertyValue(
+    "--space-2",
+  );
+  out.htmlClass = document.documentElement.className;
+  out.htmlId = document.documentElement.id;
+  out.htmlInlineStyle = document.documentElement.getAttribute("style");
+  var v20sheet = Array.from(document.styleSheets).find(function (s) {
+    return s.href && s.href.indexOf("project_v20.css") !== -1;
+  });
+  if (v20sheet) {
+    try {
+      var rootRule = Array.from(v20sheet.cssRules).find(function (r) {
+        return r.selectorText === ":root";
+      });
+      out.rootRuleFound = !!rootRule;
+      out.rootRuleText = rootRule ? rootRule.cssText.slice(0, 300) : null;
+      out.firstFewRuleSelectors = Array.from(v20sheet.cssRules)
+        .slice(0, 5)
+        .map(function (r) {
+          return r.selectorText || r.cssText.slice(0, 40);
+        });
+    } catch (e) {
+      out.rootRuleError = e.message;
+    }
+  } else {
+    out.v20SheetFound = false;
+  }
+  console.log(JSON.stringify(out, null, 2));
+})();
