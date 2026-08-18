@@ -1,0 +1,1054 @@
+<!--{if $empMembership['groupID'][435]}-->
+<!-- READ ONLY group: view access only. Team must also be added here separately, plus to LEAF Team (group 12). -->
+<div class="pm-wrap">
+  <span
+    id="pmEnv"
+    data-csrf="{$CSRFToken}"
+    data-csrf-alt="{$csrf_token}"
+    data-csrf2="{$csrfToken}"
+    data-userid="<!--{$userID|unescape|escape:'html'}-->"
+    data-username="<!--{$name|unescape|escape:'html'}-->"
+    style="display: none"
+  ></span>
+
+  <div
+    id="pmOverdueAlert"
+    class="pm-overdueAlert"
+    role="alert"
+    aria-live="polite"
+    aria-atomic="true"
+    hidden
+  >
+    <div class="pm-overdueAlert-inner">
+      <span class="pm-overdueAlert-icon material-icons" aria-hidden="true"
+        >warning_amber</span
+      >
+      <div class="pm-overdueAlert-body">
+        <p class="pm-overdueAlert-heading" id="pmOverdueAlertHeading"></p>
+        <ul class="pm-overdueAlert-list" id="pmOverdueAlertList"></ul>
+        <p class="pm-overdueAlert-more" id="pmOverdueAlertMore"></p>
+      </div>
+      <button
+        type="button"
+        class="pm-overdueAlert-dismiss"
+        id="pmOverdueAlertDismiss"
+        aria-label="Dismiss overdue tasks alert"
+      >
+        <span class="material-icons" aria-hidden="true">close</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="pm-header">
+    <h1 class="pm-title">LEAF Project Dashboard</h1>
+
+    <!--{if $empMembership['groupID'][12]}-->
+    <!-- LEAF Team group gates visibility of the action buttons. -->
+    <div class="pm-actionsRow pm-actionsRowSpaced">
+      <div class="pm-addMenu">
+        <button
+          type="button"
+          class="pm-primaryBtn pm-addBtn"
+          id="pmAddMenuBtn"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          aria-controls="pmAddMenuList"
+        >
+          Add
+        </button>
+        <div
+          class="pm-addMenuPopover"
+          id="pmAddMenuList"
+          role="menu"
+          aria-label="Add menu"
+          aria-orientation="vertical"
+          hidden
+        >
+          <button
+            type="button"
+            class="pm-menuItem"
+            role="menuitem"
+            data-action="project"
+          >
+            + Project
+          </button>
+          <button
+            type="button"
+            class="pm-menuItem"
+            role="menuitem"
+            data-action="task"
+          >
+            + Task
+          </button>
+          <button
+            type="button"
+            class="pm-menuItem pm-menuItemTip"
+            role="menuitem"
+            data-action="recurringTask"
+            data-tooltip="One-time setup per task. Once created, the dashboard auto-generates a fresh copy each time that task is completed."
+          >
+            + Recurring Task
+          </button>
+          <button
+            type="button"
+            class="pm-menuItem"
+            role="menuitem"
+            data-action="objective"
+          >
+            + Objective
+          </button>
+          <button
+            type="button"
+            class="pm-menuItem"
+            role="menuitem"
+            data-action="keyResult"
+          >
+            + Key Result
+          </button>
+        </div>
+      </div>
+      <div class="pm-inboxWrap">
+        <button
+          type="button"
+          class="pm-primaryBtn pm-inboxBtn"
+          id="pmViewInboxBtn"
+        >
+          View Inbox
+        </button>
+        <span
+          class="pm-inboxBadge"
+          id="pmInboxBadge"
+          hidden
+          aria-label="inbox items"
+          aria-live="polite"
+          >0</span
+        >
+      </div>
+      <button
+        type="button"
+        class="pm-primaryBtn pm-inboxBtn"
+        id="pmReportBuilderBtn"
+      >
+        Report Builder
+      </button>
+      <button
+        type="button"
+        class="pm-primaryBtn pm-helpBtn"
+        id="pmTourBtn"
+        aria-label="First time here? Launch a quick interactive tutorial"
+        data-tooltip="First time here? Launch a quick interactive tutorial"
+      >
+        <span class="material-icons" aria-hidden="true">tour</span>
+      </button>
+    </div>
+    <!--{/if}-->
+
+    <div class="pm-controls">
+      <div class="pm-centerControls">
+        <div class="pm-tabs" role="tablist" aria-label="PM tabs">
+          <button
+            type="button"
+            class="pm-tab"
+            data-tab="projects"
+            aria-selected="false"
+            role="tab"
+            aria-controls="pmTab-projects"
+            id="pmTabBtn-projects"
+            tabindex="-1"
+          >
+            Projects
+          </button>
+          <button
+            type="button"
+            class="pm-tab"
+            data-tab="tasks"
+            aria-selected="false"
+            role="tab"
+            aria-controls="pmTab-tasks"
+            id="pmTabBtn-tasks"
+            tabindex="-1"
+          >
+            Tasks
+          </button>
+          <button
+            type="button"
+            class="pm-tab"
+            data-tab="analytics"
+            aria-selected="false"
+            role="tab"
+            aria-controls="pmTab-analytics"
+            id="pmTabBtn-analytics"
+            tabindex="-1"
+          >
+            Analytics
+          </button>
+        </div>
+
+        <div class="pm-filters">
+          <label class="pm-label" for="pmSearchInput">Search</label>
+          <input id="pmSearchInput" class="pm-input" type="text" value="" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section
+    id="pmTab-projects"
+    class="pm-panel"
+    role="tabpanel"
+    aria-labelledby="pmTabBtn-projects"
+    aria-hidden="true"
+  >
+    <div class="pm-panelHeader">
+      <h2 class="pm-subtitle">Projects</h2>
+    </div>
+    <div class="pm-filterRow">
+      <div class="pm-field pm-filterHeader">
+        <div class="pm-filterHeaderLabel">Filter by</div>
+      </div>
+      <div class="pm-field">
+        <label class="pm-label" for="pmProjectFiscalYearSelectToggle"
+          >Fiscal Year</label
+        >
+        <div
+          id="pmProjectFiscalYearSelect"
+          class="pm-multiSelect"
+          data-filter="projectFiscalYear"
+        ></div>
+      </div>
+      <div class="pm-field">
+        <label class="pm-label" for="pmProjectOwnerSelectToggle">Owner</label>
+        <div
+          id="pmProjectOwnerSelect"
+          class="pm-multiSelect"
+          data-filter="projectOwner"
+        ></div>
+      </div>
+      <div class="pm-field">
+        <label class="pm-label" for="pmProjectStatusSelectToggle">Status</label>
+        <div
+          id="pmProjectStatusSelect"
+          class="pm-multiSelect"
+          data-filter="projectStatus"
+        ></div>
+      </div>
+      <div class="pm-field">
+        <label class="pm-label" for="pmProjectTypeSelectToggle"
+          >Project Type</label
+        >
+        <div
+          id="pmProjectTypeSelect"
+          class="pm-multiSelect"
+          data-filter="projectType"
+        ></div>
+      </div>
+      <div class="pm-field pm-filterHeader pm-activityHeader"></div>
+      <div class="pm-field pm-fieldDateRange">
+        <span class="pm-filterHeaderLabel">Activity</span>
+        <div
+          class="pm-dateRangeBtns"
+          role="group"
+          aria-label="Filter projects by activity date range"
+        >
+          <button
+            type="button"
+            class="pm-ghostBtn pm-projDateRangeBtn"
+            data-days="7"
+            aria-pressed="false"
+          >
+            Last 7 days
+          </button>
+          <button
+            type="button"
+            class="pm-ghostBtn pm-projDateRangeBtn"
+            data-days="14"
+            aria-pressed="false"
+          >
+            Last 14 days
+          </button>
+          <button
+            type="button"
+            class="pm-ghostBtn pm-projDateRangeBtn"
+            data-days="30"
+            aria-pressed="false"
+          >
+            Last 30 days
+          </button>
+        </div>
+      </div>
+      <div class="pm-field pm-fieldInlineBtn">
+        <button
+          type="button"
+          class="pm-ghostBtn pm-clearFiltersBtn"
+          id="pmClearProjectFilters"
+        >
+          Clear all filters
+        </button>
+      </div>
+    </div>
+    <div class="pm-tableShell">
+      <div
+        id="pmProjectsTableWrap"
+        class="pm-tableWrap"
+        tabindex="0"
+        aria-label="Projects table"
+      >
+        <div id="pmProjectsTable"></div>
+      </div>
+    </div>
+    <div
+      id="pmProjectsTablePagination"
+      class="pm-pagination"
+      role="navigation"
+      aria-label="Projects table pagination"
+    ></div>
+  </section>
+
+  <section
+    id="pmTab-tasks"
+    class="pm-panel"
+    role="tabpanel"
+    aria-labelledby="pmTabBtn-tasks"
+    aria-hidden="true"
+  >
+    <div class="pm-panelHeader">
+      <h2 class="pm-subtitle">Tasks</h2>
+    </div>
+
+    <div class="pm-viewRow">
+      <div class="pm-viewBtns" role="tablist" aria-label="Tasks view">
+        <span class="pm-viewLabel" aria-hidden="true">View:</span>
+        <button
+          type="button"
+          id="pmViewTableBtn"
+          class="pm-tab"
+          role="tab"
+          aria-controls="pmTasksTableWrap"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Task Table
+        </button>
+        <button
+          type="button"
+          id="pmViewKanbanBtn"
+          class="pm-tab"
+          role="tab"
+          aria-controls="pmKanbanWrap"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Kanban
+        </button>
+        <button
+          type="button"
+          id="pmViewGanttBtn"
+          class="pm-tab"
+          role="tab"
+          aria-controls="pmGanttWrap"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Gantt
+        </button>
+      </div>
+      <div class="pm-viewToggle">
+        <label class="pm-switch" for="pmDevOnlyToggle">
+          <input type="checkbox" id="pmDevOnlyToggle" class="pm-switchInput" />
+          <span class="pm-switchTrack" aria-hidden="true">
+            <span class="pm-switchThumb"></span>
+          </span>
+          <span class="pm-switchLabel">Dev Only</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="pm-filterRow">
+      <div class="pm-field pm-filterHeader">
+        <div class="pm-filterHeaderLabel">Filter by</div>
+      </div>
+      <div class="pm-field">
+        <label class="pm-label" for="pmProjectKeySelectToggle">Project</label>
+        <div
+          id="pmProjectKeySelect"
+          class="pm-multiSelect"
+          data-filter="projectKey"
+        ></div>
+      </div>
+
+      <div class="pm-field">
+        <label class="pm-label" for="pmStatusSelectToggle">Status</label>
+        <div
+          id="pmStatusSelect"
+          class="pm-multiSelect"
+          data-filter="status"
+        ></div>
+      </div>
+
+      <div class="pm-field">
+        <label class="pm-label" for="pmAssigneeSelectToggle">Assigned To</label>
+        <div
+          id="pmAssigneeSelect"
+          class="pm-multiSelect"
+          data-filter="assignee"
+        ></div>
+      </div>
+
+      <div class="pm-field">
+        <label class="pm-label" for="pmCategorySelectToggle">Category</label>
+        <div
+          id="pmCategorySelect"
+          class="pm-multiSelect"
+          data-filter="category"
+        ></div>
+      </div>
+
+      <div class="pm-field">
+        <label class="pm-label" for="pmPrioritySelectToggle">Priority</label>
+        <div
+          id="pmPrioritySelect"
+          class="pm-multiSelect"
+          data-filter="priority"
+        ></div>
+      </div>
+      <div class="pm-field pm-filterHeader pm-activityHeader"></div>
+      <div class="pm-field pm-fieldDateRange">
+        <span class="pm-filterHeaderLabel">Activity</span>
+        <div
+          class="pm-dateRangeBtns"
+          role="group"
+          aria-label="Filter by activity date range"
+        >
+          <button
+            type="button"
+            class="pm-ghostBtn pm-dateRangeBtn"
+            data-days="7"
+            aria-pressed="false"
+          >
+            Last 7 days
+          </button>
+          <button
+            type="button"
+            class="pm-ghostBtn pm-dateRangeBtn"
+            data-days="14"
+            aria-pressed="false"
+          >
+            Last 14 days
+          </button>
+          <button
+            type="button"
+            class="pm-ghostBtn pm-dateRangeBtn"
+            data-days="30"
+            aria-pressed="false"
+          >
+            Last 30 days
+          </button>
+        </div>
+      </div>
+      <div class="pm-field pm-fieldRecurringToggle">
+        <button
+          type="button"
+          id="pmRecurringFilterBtn"
+          class="pm-ghostBtn pm-recurringFilterBtn"
+          aria-pressed="false"
+          title="Show recurring tasks only"
+        >
+          <span
+            class="material-icons"
+            style="font-size: 16px; vertical-align: middle; margin-right: 4px"
+            >change_circle</span
+          >
+          Recurring
+        </button>
+      </div>
+      <div class="pm-field pm-fieldInlineBtn">
+        <button
+          type="button"
+          class="pm-ghostBtn pm-clearFiltersBtn"
+          id="pmClearFiltersBtn_tasks"
+        >
+          Clear all filters
+        </button>
+      </div>
+    </div>
+
+    <div id="pmProjectHealthSticky" class="pm-healthSticky" hidden>
+      <div class="pm-healthInner"></div>
+    </div>
+
+    <div
+      id="pmTasksTableWrap"
+      role="tabpanel"
+      aria-labelledby="pmViewTableBtn"
+      aria-hidden="true"
+    >
+      <div class="pm-tableShell">
+        <div class="pm-tableWrap" tabindex="0" aria-label="Tasks table">
+          <div id="pmTasksTable"></div>
+        </div>
+      </div>
+      <div
+        id="pmTasksTablePagination"
+        class="pm-pagination"
+        role="navigation"
+        aria-label="Tasks table pagination"
+      ></div>
+    </div>
+
+    <div
+      id="pmKanbanWrap"
+      role="tabpanel"
+      aria-labelledby="pmViewKanbanBtn"
+      aria-hidden="true"
+      style="display: none"
+    >
+      <div class="pm-kanbanHint" id="pmKanbanHint">
+        Drag a task card to a new status column to update the task. Keyboard:
+        focus a card and press Shift+Left/Right to move it.
+      </div>
+      <div class="pm-srOnly" id="pmKanbanStatusMsg" aria-live="polite"></div>
+      <div id="pmKanbanBoard" class="pm-kanban"></div>
+    </div>
+
+    <div
+      id="pmGanttWrap"
+      role="tabpanel"
+      aria-labelledby="pmViewGanttBtn"
+      aria-hidden="true"
+      style="display: none"
+    >
+      <div class="pm-ganttMeta" id="pmGanttMeta"></div>
+      <div id="pmGanttBoard" class="pm-gantt">
+        <div id="pmGanttInner"></div>
+      </div>
+    </div>
+  </section>
+
+  <section
+    id="pmTab-analytics"
+    class="pm-panel"
+    role="tabpanel"
+    aria-labelledby="pmTabBtn-analytics"
+    aria-hidden="true"
+  >
+    <h2 class="pm-subtitle">Analytics</h2>
+    <iframe
+      id="pmAnalyticsReportFrame"
+      src="https://leaf.va.gov/platform/projects/report.php?a=dashboard"
+      class="pm-analyticsFrame"
+      title="Analytics Dashboard"
+      loading="lazy"
+    ></iframe>
+  </section>
+
+  <div
+    id="pmOtherModal"
+    class="pm-modal pm-otherModal"
+    aria-hidden="true"
+    hidden
+  >
+    <div class="pm-modalBackdrop" data-close="1"></div>
+    <div
+      class="pm-otherModalDialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pmOtherModalTitle"
+    >
+      <div class="pm-otherModalHeader">
+        <h2 class="pm-modalTitle" id="pmOtherModalTitle">
+          Select Other Status
+        </h2>
+        <button
+          type="button"
+          class="pm-modalClose"
+          id="pmOtherModalCloseBtn"
+          aria-label="Close"
+        >
+          ✕
+        </button>
+      </div>
+      <div class="pm-otherModalBody">
+        <p class="pm-otherModalText">
+          Please choose why this task is marked as Other.
+        </p>
+        <fieldset class="pm-otherModalFieldset">
+          <legend class="pm-otherModalLegend">Other status type</legend>
+          <label class="pm-otherOption">
+            <input
+              type="radio"
+              name="pmOtherStatus"
+              value="Blocked"
+              class="pm-otherOptionInput"
+            />
+            <span class="pm-otherOptionText">Blocked</span>
+          </label>
+          <label class="pm-otherOption">
+            <input
+              type="radio"
+              name="pmOtherStatus"
+              value="On Hold"
+              class="pm-otherOptionInput"
+            />
+            <span class="pm-otherOptionText">On Hold</span>
+          </label>
+        </fieldset>
+      </div>
+      <div class="pm-otherModalActions">
+        <button type="button" class="pm-ghostBtn" id="pmOtherModalCancelBtn">
+          Cancel
+        </button>
+        <button type="button" class="pm-primaryBtn" id="pmOtherModalConfirmBtn">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pmModal" class="pm-modal" aria-hidden="true" hidden>
+    <div class="pm-modalBackdrop" data-close="1"></div>
+    <div
+      class="pm-modalDialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pmModalTitle"
+    >
+      <div class="pm-modalHeader">
+        <h2 class="pm-modalTitle" id="pmModalTitle">Details</h2>
+        <div class="pm-modalNav" id="pmModalNav" hidden>
+          <button
+            type="button"
+            class="pm-modalNavBtn"
+            id="pmModalPrevBtn"
+            aria-label="Go back"
+            title="Back"
+          >
+            <span class="material-icons" style="font-size: 18px"
+              >chevron_left</span
+            >
+          </button>
+          <span class="pm-modalNavCounter" id="pmModalNavCounter"></span>
+          <button
+            type="button"
+            class="pm-modalNavBtn"
+            id="pmModalNextBtn"
+            aria-label="Go forward"
+            title="Forward"
+          >
+            <span class="material-icons" style="font-size: 18px"
+              >chevron_right</span
+            >
+          </button>
+        </div>
+        <div class="pm-modalActions">
+          <button
+            type="button"
+            class="pm-modalOpenTab"
+            id="pmModalOpenTabBtn"
+            aria-label="Open in new tab"
+          >
+            Open in new tab
+          </button>
+          <button
+            type="button"
+            class="pm-modalClose"
+            id="pmModalCloseBtn"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+      <div class="pm-modalBody">
+        <iframe
+          id="pmModalFrame"
+          class="pm-modalFrame"
+          title="LEAF content"
+        ></iframe>
+      </div>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    class="pm-jumpTop"
+    id="pmJumpTopBtn"
+    aria-label="Back to top"
+    aria-hidden="true"
+    tabindex="-1"
+  >
+    ↑
+  </button>
+
+  <button
+    type="button"
+    class="pm-feedbackBtn"
+    id="pmFeedbackBtn"
+    aria-label="Submit feedback"
+    aria-haspopup="dialog"
+    data-tooltip="Submit your feedback"
+  >
+    <span class="material-icons" aria-hidden="true">add_reaction</span>
+  </button>
+
+  <div
+    id="pmFeedbackModal"
+    class="pm-feedbackModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="pmFeedbackModalTitle"
+    hidden
+  >
+    <div class="pm-feedbackInner">
+      <div class="pm-feedbackHeader">
+        <h2 class="pm-feedbackTitle" id="pmFeedbackModalTitle">
+          Submit your feedback for the LEAF Project Dashboard
+        </h2>
+        <button
+          type="button"
+          class="pm-feedbackClose"
+          id="pmFeedbackClose"
+          aria-label="Close feedback"
+        >
+          ✕
+        </button>
+      </div>
+      <textarea
+        id="pmFeedbackText"
+        class="pm-feedbackTextarea"
+        placeholder="Share your thoughts..."
+        rows="5"
+        aria-label="Your feedback"
+      ></textarea>
+      <div class="pm-feedbackFooter">
+        <span
+          class="pm-feedbackStatus"
+          id="pmFeedbackStatus"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        ></span>
+        <button type="button" class="pm-primaryBtn" id="pmFeedbackSubmit">
+          Submit
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="pmTourOverlay" class="pm-tourOverlay" hidden>
+  <div id="pmTourSpotlight" class="pm-tourSpotlight"></div>
+  <div
+    id="pmTourTooltip"
+    class="pm-tourTooltip"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="pmTourTitle"
+  >
+    <div id="pmTourStepLabel" class="pm-tourStepLabel" aria-live="polite"></div>
+    <div id="pmTourTitle" class="pm-tourTitle"></div>
+    <div id="pmTourBody" class="pm-tourBody"></div>
+    <div class="pm-tourFooter">
+      <button type="button" class="pm-tourSkip" id="pmTourSkip">
+        Skip tour
+      </button>
+      <div class="pm-tourNav">
+        <button type="button" class="pm-tourBack" id="pmTourBack">
+          ← Back
+        </button>
+        <button type="button" class="pm-tourNext" id="pmTourNext">
+          Next →
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Inline cell editor — singleton overlay, positioned by JS -->
+<div
+  id="pmInlineEditor"
+  class="pm-inlineEditor"
+  role="dialog"
+  aria-label="Edit cell value"
+  hidden
+>
+  <div class="pm-inlineEditor-inner">
+    <div id="pmInlineEditorSkeleton" class="pm-inlineEditor-skeleton" hidden>
+      <span class="pm-inlineEditor-skeletonBar"></span>
+      <span
+        class="pm-inlineEditor-skeletonBar pm-inlineEditor-skeletonBar--short"
+      ></span>
+      <span class="pm-inlineEditor-skeletonBar"></span>
+    </div>
+    <!-- populated dynamically by openInlineEditor() -->
+    <div id="pmInlineEditorBody"></div>
+    <p class="pm-inlineEditor-hint" id="pmInlineEditorHint"></p>
+  </div>
+</div>
+
+<!-- Inline editor error popover — repositioned by JS to the offending cell -->
+<div id="pmInlineEditorError" class="pm-inlineEditorError" role="alert" hidden>
+  <span class="material-icons pm-inlineEditorError-icon" aria-hidden="true"
+    >error_outline</span
+  >
+  <span id="pmInlineEditorErrorMsg"></span>
+</div>
+
+<!-- PERF: Ideally move preconnect + font link to <head> in host template -->
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/icon?family=Material+Icons"
+  rel="stylesheet"
+/>
+<link rel="stylesheet" href="./files/project_v20.css" />
+<link rel="stylesheet" href="./files/project_v16_dark.css" />
+
+<script src="./files/chart.js"></script>
+<script src="./files/project_v20.js"></script>
+<!--{else}-->
+<style>
+  #pmAccessRequest {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f6f9;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  #pmAccessRequest .pm-ar-card {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    padding: 40px 48px;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+  }
+  #pmAccessRequest .pm-ar-icon {
+    font-size: 48px;
+    color: #6b7280;
+    margin-bottom: 12px;
+    display: block;
+  }
+  #pmAccessRequest h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 10px;
+  }
+  #pmAccessRequest .pm-ar-desc {
+    font-size: 0.95rem;
+    color: #4b5563;
+    line-height: 1.6;
+    margin: 0 0 28px;
+  }
+  #pmAccessRequest .pm-ar-divider {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 0 0 24px;
+  }
+  #pmAccessRequest .pm-ar-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    margin-bottom: 6px;
+    text-align: left;
+  }
+  #pmAccessRequest .pm-ar-userfield {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-size: 0.95rem;
+    color: #374151;
+    background: #f9fafb;
+    margin-bottom: 20px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+  }
+  #pmAccessRequest .pm-ar-userfield .pm-ar-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #d1d5db;
+    border-top-color: #6b7280;
+    border-radius: 50%;
+    animation: pm-ar-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pm-ar-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  #pmAccessRequest .pm-ar-submit {
+    width: 100%;
+    padding: 11px 20px;
+    background: #1a4480;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  #pmAccessRequest .pm-ar-submit:hover {
+    background: #162e51;
+    color: #fff;
+  }
+  #pmAccessRequest .pm-ar-error {
+    font-size: 0.88rem;
+    color: #dc2626;
+    margin: 10px 0 0;
+    min-height: 20px;
+  }
+  #pmAccessRequest .pm-ar-success {
+    text-align: center;
+  }
+  #pmAccessRequest .pm-ar-success-icon {
+    font-size: 52px;
+    color: #16a34a;
+    display: block;
+    margin-bottom: 12px;
+  }
+  #pmAccessRequest .pm-ar-success h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 10px;
+  }
+  #pmAccessRequest .pm-ar-success p {
+    font-size: 0.95rem;
+    color: #4b5563;
+    line-height: 1.6;
+    margin: 0;
+  }
+</style>
+
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/icon?family=Material+Icons"
+/>
+
+<div id="pmAccessRequest">
+  <div class="pm-ar-card">
+    <div id="pmArForm">
+      <span class="pm-ar-icon material-icons" aria-hidden="true">lock</span>
+      <h1>Access Required</h1>
+      <p class="pm-ar-desc">
+        This dashboard is limited to those who need to know. If this applies to
+        you, submit a request below and your access will be reviewed.
+      </p>
+      <hr class="pm-ar-divider" />
+      <label class="pm-ar-label" for="pmArUserDisplay"
+        >Requesting access as</label
+      >
+      <div class="pm-ar-userfield" id="pmArUserDisplay" aria-live="polite">
+        <span class="pm-ar-spinner" id="pmArSpinner" aria-hidden="true"></span>
+        <span id="pmArUserName">Resolving your account…</span>
+      </div>
+      <a id="pmArSubmitBtn" class="pm-ar-submit" href="#" role="button"
+        >Request Access</a
+      >
+    </div>
+
+    <!-- Success state - not used in Option B but kept for reference -->
+  </div>
+</div>
+
+<span
+  id="pmArEnv"
+  data-userid="<!--{$userID|unescape|escape:'html'}-->"
+  data-username="<!--{$name|unescape|escape:'html'}-->"
+  style="display: none"
+></span>
+
+<script>
+  (function () {
+    var BASE = "/platform/projects";
+    var env = document.getElementById("pmArEnv");
+    var rawUserId = (env && env.getAttribute("data-userid")) || "";
+    var displayName = (env && env.getAttribute("data-username")) || "";
+    var nameEl = document.getElementById("pmArUserName");
+    var spinnerEl = document.getElementById("pmArSpinner");
+    var submitBtn = document.getElementById("pmArSubmitBtn");
+    var resolvedValue = rawUserId || displayName || "";
+
+    if (displayName) {
+      nameEl.textContent = displayName;
+    } else if (rawUserId) {
+      nameEl.textContent = rawUserId;
+    } else {
+      nameEl.textContent = "Current user";
+    }
+
+    spinnerEl.style.display = "none";
+
+    // Build the LEAF native form URL with indicator 104 pre-filled
+    function buildFormUrl() {
+      var url = BASE + "/report.php?a=LEAF_Start_Request&id=form_42704";
+      var fill = encodeURIComponent(resolvedValue || "");
+      if (fill) url += "&104=" + fill;
+      return url;
+    }
+
+    submitBtn.href = buildFormUrl();
+
+    // Best-effort orgchart upgrade — silently improves the pre-fill value
+    var searchTerm = rawUserId || displayName;
+    if (searchTerm) {
+      fetch(
+        BASE +
+          "/api/orgchart?search=" +
+          encodeURIComponent(searchTerm) +
+          "&limit=5",
+        {
+          credentials: "include",
+          headers: { "x-requested-with": "XMLHttpRequest" },
+        },
+      )
+        .then(function (r) {
+          return r.ok ? r.json() : null;
+        })
+        .then(function (data) {
+          if (!data) return;
+          var records = Array.isArray(data) ? data : Object.values(data);
+          var match =
+            records.find(function (rec) {
+              return (
+                String(rec.empUID || "").toLowerCase() ===
+                  String(rawUserId).toLowerCase() ||
+                String(rec.userName || "").toLowerCase() ===
+                  String(rawUserId).toLowerCase()
+              );
+            }) || records[0];
+          if (!match) return;
+          var parts = [match.firstName, match.lastName].filter(Boolean);
+          var fullName = match.name || (parts.length ? parts.join(" ") : "");
+          if (fullName) nameEl.textContent = fullName.trim();
+          var better =
+            match.userName || (match.empUID ? String(match.empUID) : "");
+          if (better) {
+            resolvedValue = better;
+            submitBtn.href = buildFormUrl();
+          }
+        })
+        .catch(function () {});
+    }
+  })();
+</script>
+<!--{/if}-->
