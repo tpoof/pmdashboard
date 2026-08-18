@@ -4691,6 +4691,41 @@
   // END INLINE CELL EDITOR
   // ═══════════════════════════════════════════════════════════════════════════
 
+  // Resizes the Analytics iframe to its embedded content's real height so the
+  // outer page scrolls once, instead of the iframe boxing content in with its
+  // own inner scrollbar. Same-origin with leaf.va.gov, so this works; falls
+  // back to the CSS calc() height (with its own scrollbar) if that ever isn't
+  // true, e.g. a cross-origin redirect.
+  function wireAnalyticsFrameAutoHeight() {
+    var frame = document.getElementById("pmAnalyticsReportFrame");
+    if (!frame) return;
+
+    function resizeToContent() {
+      try {
+        var doc = frame.contentDocument || frame.contentWindow.document;
+        var h = Math.max(
+          doc.body ? doc.body.scrollHeight : 0,
+          doc.documentElement ? doc.documentElement.scrollHeight : 0,
+        );
+        if (h > 0) frame.style.height = h + "px";
+      } catch (e) {
+        // Cross-origin — leave the CSS calc() height in place.
+      }
+    }
+
+    frame.addEventListener("load", function () {
+      resizeToContent();
+      try {
+        var doc = frame.contentDocument || frame.contentWindow.document;
+        if (window.ResizeObserver && doc.body) {
+          new ResizeObserver(resizeToContent).observe(doc.body);
+        }
+      } catch (e) {
+        // Cross-origin — one-time measurement above is the best we get.
+      }
+    });
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // WORKFLOW STEP ALERT ICONS (lazy-fetched per table render)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -7832,6 +7867,7 @@
       wireDismissOverdueAlert();
       wireOtherStatusModal();
       wireInlineCellEditor();
+      wireAnalyticsFrameAutoHeight();
       wireAddButtons();
       fetchAndRenderInboxCount();
       wireRecurringFieldHider();

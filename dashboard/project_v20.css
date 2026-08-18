@@ -244,13 +244,15 @@ body {
 }
 
 /* Offset = wrap top margin (32) + .pm-header incl. nested tabs/search bar
-   (170) + gap to panel (16) + "Analytics" subtitle (18) + breathing room
-   (12), measured directly in-browser since .pm-tabs lives inside .pm-header
-   rather than as a sibling. Not position: sticky, so no extra offset needed. */
+   (170) + gap to panel (16), measured directly in-browser since .pm-tabs
+   lives inside .pm-header rather than as a sibling. No subtitle above the
+   iframe anymore, so no extra terms needed. Not position: sticky, so no
+   extra offset needed there either. JS resizes the iframe to its content's
+   real height on load anyway — this is just the pre-load/fallback height. */
 .pm-analyticsFrame {
   width: 100%;
   min-height: 600px;
-  height: calc(100vh - 248px);
+  height: calc(100vh - 218px);
   border: 0;
   display: block;
 }
