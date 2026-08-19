@@ -168,7 +168,7 @@
         },
         {
           icon: "record_voice_over",
-          title: "Voice of Customer",
+          title: "Voice of the Customer",
           desc: "Share feedback to help shape LEAF",
           href: "/launchpad/report.php?a=lp_voc",
         },
