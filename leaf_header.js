@@ -316,12 +316,21 @@
 
   /* ── Detect whether we're on the launchpad ──
      The router only activates on report.php?a=lp_home.
-     All other pages get the header only — no router, no fetch. */
+     All other pages get the header only — no router, no fetch.
+
+     NOTE: this used to also check for #lp-main, but every lp_*.html
+     page shares that id on its own <main> (it's generic page-shell
+     boilerplate, not a launchpad-only marker) — and by the time this
+     runs, ensureMainContentTarget() has already renamed it to
+     #main-content anyway, so the check was silently dead. Detecting
+     via the page's own URL (same match resolveCurrentRoute() already
+     does for the breadcrumb) is the reliable signal. */
   function isLaunchpad() {
-    /* Check for the swap host placeholder — present only on the launchpad page */
+    /* Native swap host present in the page's own markup — the
+       launchpad page's own marker, checked before buildRouteMap()
+       could have created one via ensureSwapHost(). */
     if (document.getElementById("lpSwapHost")) return true;
-    if (document.getElementById("lp-main")) return true;
-    return false;
+    return resolveCurrentRoute() === "home";
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -1050,6 +1059,14 @@
       }
     }
 
+    /* Wired on every page, not just the launchpad — wireLinkIntercept()
+       itself branches on isLaunchpad() to either hash-route (launchpad)
+       or navigate normally (everywhere else). Without this, nav dropdown
+       links — deliberately <button data-href>, not <a href>, so the
+       status bar never previews them — would have no click handler at
+       all on non-launchpad pages. */
+    wireLinkIntercept();
+
     wire();
     ensureJumpToTop();
 
@@ -1558,7 +1575,13 @@
   var _swapHost = null; /* swap container [data-lp-swap-host] */
 
   function initElementCache() {
-    _lpMain = document.getElementById("lp-main");
+    /* ensureMainContentTarget() (called earlier in inject()) renames
+       the home <main id="lp-main"> to id="main-content" for the skip
+       link, so "lp-main" is already gone by the time this runs. Fall
+       back to the bare tag selector — it's still the same element,
+       just under its new id — so _lpMain never ends up null and
+       showSwapView()/showLaunchpadHome() can actually hide/show it. */
+    _lpMain = document.getElementById("lp-main") || document.querySelector("main");
     _swapHost =
       document.querySelector("[data-lp-swap-host]") ||
       document.getElementById("lpSwapHost");
@@ -1646,6 +1669,11 @@
     host.innerHTML = buildTrailHTML(route);
   }
 
+  /* Tracks the ResizeObserver watching the currently-mounted iframe's
+     content, so a fresh mountIframe() call can disconnect the previous
+     one instead of leaking an observer on a detached document. */
+  var _iframeResizeObserver = null;
+
   /* ─────────────────────────────────────────────────────────────
      MOUNT IFRAME
      For full separate LEAF apps (route.iframe === true). Skips
@@ -1661,6 +1689,11 @@
       return;
     }
 
+    if (_iframeResizeObserver) {
+      _iframeResizeObserver.disconnect();
+      _iframeResizeObserver = null;
+    }
+
     /* Remove any <base> left over from a previous non-iframe route —
        iframe content doesn't use it, and it must not leak into the
        launchpad's own relative paths. */
@@ -1674,7 +1707,42 @@
     frame.className = "lp-swap-iframe";
     frame.src = route.href;
     frame.title = route.title || "Embedded page";
-    frame.style.cssText = "width:100%;min-height:75vh;border:0;display:block;";
+    /* min-height is just the pre-load placeholder — the load handler
+       below grows the frame to its content's real height so the iframe
+       itself never needs to scroll; the outer page scrolls instead. */
+    frame.style.cssText =
+      "width:100%;min-height:75vh;border:0;display:block;overflow:hidden;";
+
+    /* Same-origin embeds (CoP, Ideas, Help Library, Privacy & Compliance —
+       all leaf.va.gov) can be measured directly and resized to fit. A
+       cross-origin embed's document is opaque, so it silently keeps the
+       fixed min-height above instead (still scrolls internally, but no
+       script access exists to do anything about that from this side). */
+    frame.addEventListener("load", function () {
+      var doc;
+      try {
+        doc = frame.contentDocument;
+      } catch (e) {
+        return;
+      }
+      if (!doc || !doc.documentElement) return;
+
+      var fit = function () {
+        var h = Math.max(
+          doc.documentElement.scrollHeight,
+          doc.body ? doc.body.scrollHeight : 0,
+        );
+        if (h > 0) frame.style.height = h + "px";
+      };
+      fit();
+
+      /* Re-fit if the embedded app's own content changes height after
+         load (async data, expanding sections, etc). */
+      if (window.ResizeObserver) {
+        _iframeResizeObserver = new ResizeObserver(fit);
+        _iframeResizeObserver.observe(doc.documentElement);
+      }
+    });
 
     host.innerHTML = "";
     host.appendChild(frame);
@@ -2026,6 +2094,15 @@
       e.preventDefault();
       closeAllDropdowns(null);
 
+      /* Off the launchpad there's no router wired (no hashchange
+         listener, no swap host) — pushing a hash here would just leave
+         a dead #fragment in the URL bar and do nothing. Navigate for
+         real instead, same as clicking any other link. */
+      if (!isLaunchpad()) {
+        window.location.href = href;
+        return;
+      }
+
       /* Derive hash key from href */
       var key = hrefToHashKey(href);
       if (!key) {
@@ -2058,9 +2135,6 @@
     window.addEventListener("hashchange", function () {
       router();
     });
-
-    /* Wire link intercept (replaces Option A panel opener) */
-    wireLinkIntercept();
 
     /* Run router on init to handle deep-linked URLs */
     router();
