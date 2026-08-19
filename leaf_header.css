@@ -1,0 +1,716 @@
+/* ============================================================
+   LEAF Universal Header  |  leaf_header.css
+   ─────────────────────────────────────────────────────────────
+   Lives at /launchpad/files/leaf_header.css. Pair with
+   leaf_header.js, which injects the header HTML and self-injects
+   this stylesheet if a page forgets to link it.
+
+   Merges what used to be leaf_nav_v3.css + leaf_breadcrumb_v3.css
+   into one sheet — the two never shared a selector, so this is a
+   straight combination plus the layout changes needed for
+   branding + breadcrumb to live inside the same sticky .lp-header
+   as the nav (previously two separately-positioned bars).
+   ============================================================ */
+
+/* ── Hide legacy shell chrome ──
+   This header now owns branding, nav, and breadcrumb — LEAF's
+   default header/footer are redundant and hidden site-wide. */
+#header,
+#footer {
+  display: none !important;
+}
+
+/* ── Nav palette ── */
+:root {
+  --nav-accent: #005ea2;
+  --nav-hl: #1a4480;
+  --nav-hover-bg: #eff6fb;
+  --nav-border: #aacdec;
+  --nav-panel-bg: #fff;
+  --nav-panel-bd: #d9e8f6;
+  --nav-muted: #3d4551;
+  --nav-text: #1b1b1b;
+  --nav-ico-bg: #eff6fb;
+  --nav-r: 5px;
+  --nav-r-lg: 8px;
+}
+
+/* ── Skip navigation link (WCAG 2.4.1) ──
+   Visually hidden until focused; first Tab stop on every page. */
+.lp-skip-link {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  text-decoration: none;
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--nav-hl);
+  border-radius: var(--nav-r);
+  z-index: 9999;
+}
+.lp-skip-link:focus {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  width: auto;
+  height: auto;
+  clip: auto;
+  white-space: normal;
+  padding: 10px 16px;
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+
+/* ── Screen-reader-only utility (WCAG 1.3.1, 2.4.4) ──
+   Used for "(opens in new tab)" text on external links. */
+.lp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Header shell ──
+   Owns the sticky position, background, blur, and scroll shadow
+   that used to belong to .lp-nav alone — branding, nav, and
+   breadcrumb now scroll and stick together as one unit. */
+.lp-header {
+  position: sticky;
+  top: 0;
+  z-index: 300;
+  background: rgba(255, 255, 255, 0.97);
+  border-bottom: 1px solid transparent;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    border-color 0.25s,
+    box-shadow 0.25s;
+}
+.lp-header.scrolled {
+  border-color: var(--nav-border);
+  box-shadow: 0 2px 16px rgba(0, 10, 60, 0.1);
+}
+
+/* ── Header bar: branding + nav row ── */
+.lp-header-bar {
+  padding: 0 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* ── Brand / logo ──
+   No padded or bordered container — sits flush at the header's
+   left edge, sized to the bar height, with just enough margin to
+   separate it from the first nav item. */
+.lp-brand {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-right: 20px;
+  line-height: 0;
+}
+.lp-brand-logo {
+  height: 22px;
+  width: auto;
+  display: block;
+}
+.lp-brand-logo path {
+  fill: var(--nav-hl);
+}
+.lp-brand:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ── Nav ──
+   No longer its own sticky/background element — just fills the
+   remaining width of .lp-header-bar next to the brand. */
+.lp-nav {
+  flex: 1;
+  min-width: 0;
+}
+.lp-nav-in {
+  height: 52px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.lp-nav-links {
+  display: flex;
+  list-style: none;
+  gap: 2px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Dropdown trigger ── */
+.dd-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 13px;
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--nav-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--nav-r);
+  transition:
+    color 0.15s,
+    background 0.15s;
+  white-space: nowrap;
+}
+.dd-trigger:hover,
+.dd-item.open .dd-trigger {
+  color: var(--nav-accent);
+  background: var(--nav-hover-bg);
+}
+.dd-trigger:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+/* Active section indicator */
+.dd-trigger[aria-current="true"] {
+  color: var(--nav-accent);
+  font-weight: 700;
+}
+.dd-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 1px;
+  transition: transform 0.25s ease;
+  transform-origin: center;
+}
+.dd-chevron .material-symbols-outlined {
+  font-size: 1.25rem; /* 20px — matches nav text scale */
+  line-height: 1;
+  display: flex;
+}
+.dd-item.open .dd-chevron {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown item + panel ── */
+.dd-item {
+  position: relative;
+}
+.dd-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--nav-panel-bg);
+  border: 1px solid var(--nav-panel-bd);
+  border-radius: var(--nav-r-lg);
+  box-shadow: 0 8px 32px rgba(0, 10, 60, 0.14);
+  min-width: 260px;
+  padding: 8px;
+  z-index: 400;
+}
+.dd-panel[hidden] {
+  display: none;
+}
+.dd-list {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+}
+
+/* .dd-link is a <button>, not <a> — so the browser status bar never
+   shows the destination URL on hover. Reset it to look/behave like
+   the anchor it visually replaces. */
+button.dd-link {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+}
+.dd-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--nav-r);
+  text-decoration: none;
+  color: var(--nav-text);
+  transition: background 0.15s;
+}
+.dd-link:hover {
+  background: #eff6fb;
+}
+.dd-link:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+
+.dd-link-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--nav-r);
+  flex-shrink: 0;
+  background: var(--nav-ico-bg);
+  color: var(--nav-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.dd-link-ico .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+.dd-link-text strong {
+  display: block;
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--nav-hl);
+  margin-bottom: 2px;
+}
+.dd-link-text span {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--nav-muted);
+  line-height: 1.4;
+}
+
+.dd-divider {
+  border: none;
+  border-top: 1px solid var(--nav-panel-bd);
+  margin: 6px 0;
+}
+
+/* ── Mobile menu toggle (hamburger ↔ X) ── */
+.lp-nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  border-radius: var(--nav-r);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.lp-nav-toggle:hover {
+  background: var(--nav-hover-bg);
+}
+.lp-nav-toggle:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+.lp-nav-toggle-icon {
+  position: relative;
+  width: 20px;
+  height: 14px;
+  display: inline-block;
+}
+.lp-nav-toggle-icon span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--nav-hl);
+  border-radius: 1px;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    top 0.2s ease;
+}
+.lp-nav-toggle-icon span:nth-child(1) {
+  top: 0;
+}
+.lp-nav-toggle-icon span:nth-child(2) {
+  top: 6px;
+}
+.lp-nav-toggle-icon span:nth-child(3) {
+  top: 12px;
+}
+.lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(1) {
+  top: 6px;
+  transform: rotate(45deg);
+}
+.lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(2) {
+  opacity: 0;
+}
+.lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(3) {
+  top: 6px;
+  transform: rotate(-45deg);
+}
+
+/* ── Mobile panel (accordion) ── */
+.lp-mobile-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--nav-panel-bg);
+  border-bottom: 1px solid var(--nav-panel-bd);
+  box-shadow: 0 8px 24px rgba(0, 10, 60, 0.12);
+  max-height: calc(100vh - 52px);
+  overflow-y: auto;
+  padding: 4px 8px;
+}
+.lp-mobile-panel[hidden] {
+  display: none;
+}
+.lp-accordion {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.acc-item + .acc-item {
+  border-top: 1px solid var(--nav-panel-bd);
+}
+.acc-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px;
+  min-height: 44px;
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--nav-text);
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+.acc-trigger:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+.acc-item.open .acc-trigger .dd-chevron {
+  transform: rotate(180deg);
+}
+.acc-panel[hidden] {
+  display: none;
+}
+.acc-panel .dd-list {
+  padding: 0 0 8px;
+}
+.acc-panel .dd-link {
+  padding: 10px 12px 10px 16px;
+}
+
+/* ── Internal section (Leadership / LEAF Team) ──
+   Right-aligned group, gated server-side by Smarty conditionals
+   in leaf_header.js's buildInternalNavHTML(). Previously injected
+   via a JS-built <style> tag at runtime — moved here as real CSS
+   now that header + nav share one stylesheet; same rules. */
+.lp-nav-internal {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 4px 10px 4px 8px;
+  background: #eff6fb; /* --nav-hover-bg tint */
+  border: 1px solid #d9e8f6; /* --nav-panel-bd */
+  border-radius: 8px; /* --nav-r-lg */
+  box-shadow: inset 0 1px 2px rgba(0, 10, 60, 0.04); /* very subtle depth */
+}
+
+/* "Internal" text label — visual-only, not a button. aria-hidden
+   in the markup so screen readers skip it (the nav landmark +
+   button labels cover the context). */
+.lp-internal-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #3d4551; /* --nav-muted — meets 4.5:1 on #eff6fb */
+  user-select: none;
+  white-space: nowrap;
+  padding: 0 2px;
+}
+.lp-internal-label-icon {
+  font-size: 13px !important;
+  line-height: 1;
+}
+
+/* Vertical rule between label and buttons */
+.lp-internal-rule {
+  display: inline-block;
+  width: 1px;
+  height: 18px;
+  background: #aacdec; /* --nav-border */
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* Shared button style (Leadership + LEAF Team). Matches .dd-trigger
+   shape exactly: border-radius 5px (--nav-r), no border, transparent
+   background — the container background provides the visual
+   distinction. Font values copied verbatim from .dd-trigger. */
+.lp-internal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 13px; /* matches .dd-trigger padding */
+  border-radius: 5px; /* --nav-r */
+  border: none;
+  background: transparent;
+  color: #3d4551; /* --nav-muted */
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+  line-height: 1.4;
+}
+.lp-internal-btn:hover {
+  background: #ffffff;
+  color: #005ea2;
+  text-decoration: none;
+}
+.lp-internal-btn:focus-visible {
+  outline: 3px solid #005ea2;
+  outline-offset: 2px;
+}
+
+/* LEAF Team dropdown trigger (extends .lp-internal-btn) */
+.dd-item--internal.open .lp-internal-btn--dd {
+  background: #ffffff;
+  color: #005ea2;
+}
+
+/* LEAF Team dropdown panel — positioned relative to
+   dd-item--internal. right:0 aligns the panel's right edge to the
+   button's right edge so it doesn't bleed off screen. */
+.dd-panel--internal {
+  right: 0;
+  left: auto;
+  min-width: 220px;
+  border-top: 3px solid #f59e0b;
+}
+
+/* Loading placeholder row */
+.lp-internal-loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  opacity: 0.55;
+  pointer-events: none;
+}
+.lp-internal-loading .material-symbols-outlined {
+  font-size: 16px !important;
+  animation: lp-spin 1s linear infinite;
+}
+@keyframes lp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Icon FOUT prevention — hide Material Symbols glyphs until the
+   font is ready so the raw icon names never flash as plain text.
+   The transition is only on the ready class so cached fonts snap
+   in instantly; first-load gets a soft fade. */
+#lpNav .material-symbols-outlined {
+  opacity: 0;
+}
+#lpNav.lp-icons-ready .material-symbols-outlined {
+  opacity: 1;
+  transition: opacity 0.15s ease;
+}
+
+/* Mobile: Internal section separator */
+.lp-mobile-internal-sep {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 16px 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #3d4551; /* --nav-muted — visible on white mobile panel */
+  border-top: 1px solid #d9e8f6; /* --nav-panel-bd */
+  margin-top: 4px;
+}
+.lp-mobile-internal-sep .material-symbols-outlined {
+  font-size: 14px !important;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .lp-header-bar {
+    padding-left: 16px; /* tighter on mobile — hamburger layout */
+  }
+  .lp-nav-links {
+    display: none;
+  }
+  .lp-nav-toggle {
+    display: inline-flex;
+  }
+  .lp-nav-internal {
+    display: none !important;
+  }
+}
+@media (min-width: 641px) {
+  .lp-nav-toggle,
+  .lp-mobile-panel {
+    display: none !important;
+  }
+  .lp-internal-mobile-item {
+    display: none !important;
+  }
+}
+
+/* ── Breadcrumb ──
+   Sits directly below the header bar, inside the same sticky
+   .lp-header — no longer its own sticky/z-index layer. Always
+   present in the DOM (see leaf_header.js buildHeaderHTML) and
+   toggled via the native hidden attribute; [hidden] here beats
+   the plain-class display:flex below it. */
+.lp-breadcrumb[hidden] {
+  display: none;
+}
+.lp-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 24px;
+  background: rgba(239, 246, 251, 0.97); /* --nav-hover-bg tint */
+  border-top: 1px solid var(--nav-panel-bd);
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--nav-muted);
+}
+
+.lp-breadcrumb a {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-style: normal;
+  color: var(--nav-accent);
+  text-decoration: underline;
+}
+.lp-breadcrumb a:hover {
+  color: var(--nav-hl);
+}
+.lp-breadcrumb a:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.lp-bc-sep {
+  color: var(--nav-muted);
+  font-style: italic;
+  user-select: none;
+}
+
+.lp-bc-current {
+  color: var(--nav-muted);
+  font-style: italic;
+}
+
+/* Intermediate section label with no href (e.g. "About LEAF") —
+   muted non-italic text so it reads as a structural label, not an
+   active link or the current page. */
+.lp-bc-section {
+  color: var(--nav-muted);
+}
+
+@media (max-width: 640px) {
+  .lp-breadcrumb {
+    padding-left: 16px; /* matches .lp-header-bar mobile padding */
+  }
+}
+
+/* ── Jump to top ──
+   Injected by leaf_header.js into every page that loads it.
+   z-index: 200 sits below the header (300) and dropdown panels
+   (400) but above normal page content. */
+#leaf-jump-top {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--nav-border);
+  color: var(--nav-accent);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+#leaf-jump-top.lp-jump-vis {
+  opacity: 1;
+  pointer-events: auto;
+}
+#leaf-jump-top:hover {
+  background: var(--nav-hover-bg);
+}
+#leaf-jump-top:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 3px;
+}
+#leaf-jump-top .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
+/* ── Reduced motion (Section 508 502.2.2 / WCAG 2.3.3) ──
+   Disable all transitions and animations for users who prefer
+   reduced motion at the OS level. */
+@media (prefers-reduced-motion: reduce) {
+  .lp-header,
+  .dd-trigger,
+  .dd-chevron,
+  .dd-link,
+  .lp-nav-toggle-icon span,
+  .lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(1),
+  .lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(3),
+  #leaf-jump-top {
+    transition: none !important;
+    animation: none !important;
+  }
+}
