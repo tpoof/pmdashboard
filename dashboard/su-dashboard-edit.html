@@ -3329,6 +3329,9 @@
         };
       return null;
     }
+    var DEBUG = /[?&]debug=1\b/.test(window.location.search);
+    var ANCHOR_FIELDS = ["id23", "id24", "id9", "id4"]; // fields mapRecord() uses to detect record type
+
     function loadData(silent) {
       var GET = [
           2, 3, 4, 5, 6, 8, 9, 10, 11, 13, 23, 24, 25, 26, 29, 30, 32, 33, 37,
@@ -3439,6 +3442,93 @@
               " record" +
               (unmapped !== 1 ? "s" : "") +
               " fetched but not displayed (unrecognized record shape).";
+          if (DEBUG) {
+            footTxt += " \u00b7 DEBUG MODE (see console)";
+            window.__LEAF_DEBUG = {
+              rawCount: rawIds.length,
+              mappedCount: DATA.length,
+              krRawCount: Object.keys(krAll).length,
+              krMappedCount: KRS.length,
+              // Look up one record by ID: shows raw API response, which anchor fields came back
+              // null (permission-scrubbed vs genuinely empty), and what mapRecord() produced.
+              lookup: function (rid) {
+                rid = String(rid);
+                var raw = all[rid];
+                if (!raw) {
+                  console.log(
+                    "Record " +
+                      rid +
+                      " was NOT present in the raw API response at all \u2014 record-level permission or it doesn't exist / is deleted.",
+                  );
+                  return { present: false };
+                }
+                var s = raw.s1 || {};
+                var anchorState = {};
+                ANCHOR_FIELDS.forEach(function (f) {
+                  anchorState[f] =
+                    s[f] === undefined
+                      ? "MISSING FROM RESPONSE"
+                      : s[f] === null
+                        ? "null"
+                        : JSON.stringify(s[f]);
+                });
+                var mapped =
+                  DATA.filter(function (r) {
+                    return String(r.rid) === rid;
+                  })[0] || null;
+                var otherFieldsPresent = Object.keys(s).filter(function (k) {
+                  return s[k] !== null && s[k] !== undefined && s[k] !== "";
+                });
+                console.log(
+                  "Record " + rid + " \u2014 raw s1 fields present/non-empty:",
+                  otherFieldsPresent,
+                );
+                console.log(
+                  "Record " +
+                    rid +
+                    " \u2014 anchor field values (used by mapRecord to detect type):",
+                  anchorState,
+                );
+                if (!mapped)
+                  console.log(
+                    "Record " +
+                      rid +
+                      " was fetched but mapRecord() returned null \u2014 all three anchor checks failed, so it was dropped from DATA. If otherFieldsPresent is non-empty above, this points to field-level permission scrubbing on id4/id9/id23/id24 rather than the record being genuinely empty.",
+                  );
+                else
+                  console.log(
+                    "Record " +
+                      rid +
+                      " mapped successfully as type=" +
+                      mapped.type,
+                    mapped,
+                  );
+                return {
+                  present: true,
+                  raw: raw,
+                  anchorState: anchorState,
+                  mapped: mapped,
+                  step: stepMap[rid],
+                };
+              },
+              // Compare against another session's export: pass an array of recordIDs you expect to see.
+              missingFrom: function (expectedIds) {
+                return expectedIds.map(String).filter(function (id) {
+                  return !all[id];
+                });
+              },
+            };
+            console.log(
+              "%cLEAF dashboard debug mode active.",
+              "font-weight:bold",
+            );
+            console.log(
+              "Run window.__LEAF_DEBUG.lookup('1234') with a recordID to see raw vs mapped data.",
+            );
+            console.log(
+              "Run window.__LEAF_DEBUG.missingFrom(['1234','5678']) to check a batch of expected IDs against what actually came back.",
+            );
+          }
           document.getElementById("sv-foot").textContent = footTxt;
         })
         .catch(function (e) {
