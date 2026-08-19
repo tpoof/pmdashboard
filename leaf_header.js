@@ -192,18 +192,18 @@
       label: "Knowledge Center",
       items: [
         {
-          icon: "school",
-          title: "Learn",
-          desc: "Structured courses and training",
-          href: "#",
-          hidden: true,
-        },
-        {
           icon: "menu_book",
           title: "Help Library",
           desc: "Guides and documentation",
           href: "https://leaf.va.gov/platform/help_library/report.php?a=homepage",
           iframe: true,
+        },
+        {
+          icon: "school",
+          title: "Learn",
+          desc: "Training, videos, and resources to get the most out of LEAF",
+          href: "/launchpad/report.php?a=lp_training_placeholder",
+          badge: "Coming Soon",
         },
         {
           icon: "quiz",
@@ -337,6 +337,9 @@
        loadView() mounts them in an <iframe> instead of fetching+
        splicing their HTML, since they're full separate LEAF apps
        rather than lightweight content pages. */
+    var badgeHTML = item.badge
+      ? `<span class="dd-badge">${item.badge}</span>`
+      : "";
     return `
       <li>
         <button class="dd-link" data-href="${item.href}">
@@ -344,7 +347,7 @@
             <span class="material-symbols-outlined" aria-hidden="true">${item.icon}</span>
           </span>
           <span class="dd-link-text">
-            <strong>${item.title}</strong>
+            <strong>${item.title}${badgeHTML}</strong>
             <span>${item.desc}</span>
           </span>
         </button>

@@ -19,15 +19,6 @@
     <link rel="stylesheet" href="./files/launchpad.css" />
 
     <style>
-      /* ── Filled icons — beats launchpad.css FILL:0 regardless of load order ── */
-      .material-symbols-outlined {
-        font-variation-settings:
-          "FILL" 1,
-          "wght" 400,
-          "opsz" 24,
-          "GRAD" 0 !important;
-      }
-
       /* ── Hero visual ── */
       .training-hero-icon {
         width: 110px;
@@ -40,8 +31,9 @@
         margin: 0 auto 1.75rem;
         box-shadow: 0 4px 20px rgba(0, 94, 162, 0.25);
       }
-      .training-hero-icon .material-symbols-outlined {
-        font-size: 3rem;
+      .training-hero-icon svg {
+        width: 3rem;
+        height: 3rem;
         color: #fff;
       }
 
@@ -59,8 +51,9 @@
         border-radius: 999px;
         margin-top: 1.5rem;
       }
-      .training-hero-badge .material-symbols-outlined {
-        font-size: 1rem;
+      .training-hero-badge svg {
+        width: 1rem;
+        height: 1rem;
         color: var(--color-primary, #005ea2);
       }
 
@@ -124,9 +117,10 @@
         outline: 3px solid #fff;
         outline-offset: 3px;
       }
-      .training-cta-btn .material-symbols-outlined {
+      .training-cta-btn svg {
+        width: 1.1rem;
+        height: 1.1rem;
         color: var(--color-primary, #005ea2) !important;
-        font-size: 1.1rem;
       }
 
       /* ── Registration modal ── */
@@ -190,6 +184,10 @@
         outline: 3px solid var(--color-primary, #005ea2);
         outline-offset: 2px;
       }
+      .training-modal-close svg {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
 
       .training-modal-body {
         flex: 1;
@@ -219,7 +217,16 @@
           <div class="wrap">
             <div class="sec-hd ctr">
               <div class="training-hero-icon" aria-hidden="true">
-                <span class="material-symbols-outlined">school</span>
+                <svg
+                  viewBox="0 -960 960 960"
+                  fill="currentColor"
+                  width="1em"
+                  height="1em"
+                >
+                  <path
+                    d="M860-283v-282L479-360 40-600l439-240 441 240v317h-60ZM479-120 189-279v-210l290 159 290-159v210L479-120Z"
+                  />
+                </svg>
               </div>
               <span class="eyebrow">Coming Soon</span>
               <h1 class="sec-h2" id="training-h1">LEAF Learning Center</h1>
@@ -229,9 +236,17 @@
                 the platform, all in one place. We're building it now.
               </p>
               <span class="training-hero-badge">
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  >construction</span
+                <svg
+                  viewBox="0 -960 960 960"
+                  fill="currentColor"
+                  width="1em"
+                  height="1em"
+                  aria-hidden="true"
                 >
+                  <path
+                    d="M768-120 517-371l57-57 251 251-57 57Zm-581 0-57-57 290-290-107-107-23 23-44-44v85l-24 24-122-122 24-24h86l-48-48 131-131q17-17 37-23t44-6q24 0 44 8.5t37 25.5L348-699l48 48-24 24 104 104 122-122q-8-13-12.5-30t-4.5-36q0-53 38.5-91.5T711-841q15 0 25.5 3t17.5 8l-85 85 75 75 85-85q5 8 8.5 19.5T841-709q0 53-38.5 91.5T711-579q-18 0-31-2.5t-24-7.5L187-120Z"
+                  />
+                </svg>
                 In development
               </span>
             </div>
@@ -258,9 +273,17 @@
                 type="button"
                 id="trainingRegisterBtn"
               >
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  >event_available</span
+                <svg
+                  viewBox="0 -960 960 960"
+                  fill="currentColor"
+                  width="1em"
+                  height="1em"
+                  aria-hidden="true"
                 >
+                  <path
+                    d="M433-228 295-365l42-42 96 94 184-184 42 43-226 226ZM180-80q-24 0-42-18t-18-42v-620q0-24 18-42t42-18h65v-60h65v60h340v-60h65v60h65q24 0 42 18t18 42v620q0 24-18 42t-42 18H180Zm0-60h600v-430H180v430Z"
+                  />
+                </svg>
                 Register for Live Training
               </button>
             </div>
@@ -288,9 +311,17 @@
               type="button"
               aria-label="Close training registration dialog"
             >
-              <span class="material-symbols-outlined" aria-hidden="true"
-                >close</span
+              <svg
+                viewBox="0 -960 960 960"
+                fill="currentColor"
+                width="1em"
+                height="1em"
+                aria-hidden="true"
               >
+                <path
+                  d="m249-207-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z"
+                />
+              </svg>
             </button>
           </div>
           <div class="training-modal-body">
@@ -311,9 +342,17 @@
         aria-hidden="true"
         tabindex="-1"
       >
-        <span class="material-symbols-outlined" aria-hidden="true"
-          >arrow_upward</span
+        <svg
+          viewBox="0 -960 960 960"
+          fill="currentColor"
+          width="1em"
+          height="1em"
+          aria-hidden="true"
         >
+          <path
+            d="M450-160v-526L202-438l-42-42 320-320 320 320-42 42-248-248v526h-60Z"
+          />
+        </svg>
       </button>
     </div>
     <!-- /.lp -->

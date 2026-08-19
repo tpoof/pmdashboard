@@ -297,6 +297,25 @@ button.dd-link {
   line-height: 1.4;
 }
 
+/* Small status pill for not-yet-live destinations (e.g. "Coming
+   Soon" on Learn) — sits inline next to the item's title, same
+   visual weight as a status tag rather than overwhelming the link. */
+.dd-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--nav-accent);
+  background: var(--nav-hover-bg);
+  border: 1px solid var(--nav-panel-bd);
+  border-radius: 999px;
+  vertical-align: middle;
+}
+
 .dd-divider {
   border: none;
   border-top: 1px solid var(--nav-panel-bd);
