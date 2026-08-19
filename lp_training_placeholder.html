@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Learning Center — LEAF Launchpad</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0"
+    />
+
+    <link rel="stylesheet" href="./files/launchpad.css" />
+
+    <style>
+      /* ── Filled icons — beats launchpad.css FILL:0 regardless of load order ── */
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 1,
+          "wght" 400,
+          "opsz" 24,
+          "GRAD" 0 !important;
+      }
+
+      /* ── Hero visual ── */
+      .training-hero-icon {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        background: var(--color-primary, #005ea2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.75rem;
+        box-shadow: 0 4px 20px rgba(0, 94, 162, 0.25);
+      }
+      .training-hero-icon .material-symbols-outlined {
+        font-size: 3rem;
+        color: #fff;
+      }
+
+      .training-hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: var(--color-primary-lightest, #e8f0fb);
+        color: var(--color-primary, #005ea2);
+        font-family: "Public Sans", sans-serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        margin-top: 1.5rem;
+      }
+      .training-hero-badge .material-symbols-outlined {
+        font-size: 1rem;
+        color: var(--color-primary, #005ea2);
+      }
+
+      /* ── CTA band ── */
+      .training-cta-band {
+        background: var(--color-primary, #005ea2);
+        color: #fff;
+      }
+      .training-cta-inner {
+        padding: 3.5rem 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1rem;
+      }
+      .training-cta-eyebrow {
+        font-family: "Public Sans", sans-serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.75);
+        margin: 0;
+      }
+      .training-cta-heading {
+        font-family: "Public Sans", sans-serif;
+        font-size: clamp(1.5rem, 3vw, 2.1rem);
+        font-weight: 800;
+        margin: 0;
+        color: #fff;
+      }
+      .training-cta-sub {
+        font-family: "Source Sans 3", sans-serif;
+        font-size: 1.05rem;
+        color: rgba(255, 255, 255, 0.85);
+        margin: 0;
+        max-width: 540px;
+        line-height: 1.6;
+      }
+      .training-cta-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #fff;
+        color: var(--color-primary, #005ea2) !important;
+        font-family: "Public Sans", sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        border: none;
+        border-radius: var(--radius, 6px);
+        padding: 0.85rem 2rem;
+        margin-top: 0.5rem;
+        cursor: pointer;
+        transition: filter 0.2s;
+      }
+      .training-cta-btn:hover {
+        filter: brightness(0.96);
+      }
+      .training-cta-btn:focus-visible {
+        outline: 3px solid #fff;
+        outline-offset: 3px;
+      }
+      .training-cta-btn .material-symbols-outlined {
+        color: var(--color-primary, #005ea2) !important;
+        font-size: 1.1rem;
+      }
+
+      /* ── Registration modal ── */
+      .training-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(27, 27, 27, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        z-index: 1000;
+      }
+      .training-modal-overlay[hidden] {
+        display: none;
+      }
+
+      .training-modal {
+        background: #fff;
+        border-radius: var(--radius, 8px);
+        width: min(720px, 100%);
+        height: min(720px, 90vh);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      .training-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.1rem 1.5rem;
+        border-bottom: 1px solid var(--c-blue10, #d9e8f6);
+        flex-shrink: 0;
+      }
+      .training-modal-header h2 {
+        font-family: "Public Sans", sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--color-text, #1b1b1b);
+        margin: 0;
+      }
+      .training-modal-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--color-text-muted, #5c6670);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+      .training-modal-close:hover {
+        background: var(--color-primary-lightest, #e8f0fb);
+      }
+      .training-modal-close:focus-visible {
+        outline: 3px solid var(--color-primary, #005ea2);
+        outline-offset: 2px;
+      }
+
+      .training-modal-body {
+        flex: 1;
+        min-height: 0;
+      }
+      .training-modal-body iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+      }
+    </style>
+
+    <link rel="stylesheet" href="./files/leaf_header.css" />
+    <script src="./files/leaf_header.js"></script>
+  </head>
+  <body>
+    <div class="lp" id="lp-root">
+      <a class="lp-skip" href="#lp-main">Skip to main content</a>
+      <div id="lp-nav-host"></div>
+
+      <main id="lp-main" tabindex="-1">
+        <!-- ══════════════════════════════════════════
+             HERO
+        ══════════════════════════════════════════ -->
+        <section class="section" aria-labelledby="training-h1">
+          <div class="wrap">
+            <div class="sec-hd ctr">
+              <div class="training-hero-icon" aria-hidden="true">
+                <span class="material-symbols-outlined">school</span>
+              </div>
+              <span class="eyebrow">Coming Soon</span>
+              <h1 class="sec-h2" id="training-h1">LEAF Learning Center</h1>
+              <p class="sec-sub">
+                Your central home for all things LEAF training and learning —
+                courses, guides, and resources to help you get the most out of
+                the platform, all in one place. We're building it now.
+              </p>
+              <span class="training-hero-badge">
+                <span class="material-symbols-outlined" aria-hidden="true"
+                  >construction</span
+                >
+                In development
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════
+             CTA — LIVE TRAINING REGISTRATION
+        ══════════════════════════════════════════ -->
+        <section class="training-cta-band" aria-labelledby="training-cta-h2">
+          <div class="wrap">
+            <div class="training-cta-inner">
+              <p class="training-cta-eyebrow">In the meantime</p>
+              <h2 class="training-cta-heading" id="training-cta-h2">
+                Join a Live Training Session
+              </h2>
+              <p class="training-cta-sub">
+                While the Learning Center is being built, register for a live
+                training session with the LEAF team to get hands-on help and
+                answers to your questions.
+              </p>
+              <button
+                class="training-cta-btn"
+                type="button"
+                id="trainingRegisterBtn"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true"
+                  >event_available</span
+                >
+                Register for Live Training
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- ══════════════════════════════════════════
+           TRAINING REGISTRATION MODAL
+      ══════════════════════════════════════════ -->
+      <div
+        class="training-modal-overlay"
+        id="trainingModalOverlay"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="trainingModalTitle"
+        hidden
+      >
+        <div class="training-modal">
+          <div class="training-modal-header">
+            <h2 id="trainingModalTitle">Training Registration</h2>
+            <button
+              class="training-modal-close"
+              id="trainingModalClose"
+              type="button"
+              aria-label="Close training registration dialog"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true"
+                >close</span
+              >
+            </button>
+          </div>
+          <div class="training-modal-body">
+            <iframe
+              id="trainingModalIframe"
+              title="Training Registration Form"
+              src=""
+            ></iframe>
+          </div>
+        </div>
+      </div>
+
+      <button
+        class="lp-jump"
+        id="lpJump"
+        type="button"
+        aria-label="Back to top"
+        aria-hidden="true"
+        tabindex="-1"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true"
+          >arrow_upward</span
+        >
+      </button>
+    </div>
+    <!-- /.lp -->
+
+    <!-- Breadcrumb data — must be set before leaf_breadcrumb.js loads -->
+    <script>
+      window.LEAF_BREADCRUMB = [
+        { label: "Knowledge Center" },
+        { label: "Learn" },
+      ];
+    </script>
+
+    <script>
+      (() => {
+        "use strict";
+
+        const TRAINING_FORM_URL =
+          "https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=LEAF_Start_Request&id=form_a3df9&title=Training+Registration&iframe=1";
+
+        /* ── Jump to top ── */
+        const initJumpBtn = () => {
+          const btn = document.getElementById("lpJump");
+          if (!btn) return;
+
+          const update = () => {
+            const vis =
+              (window.pageYOffset || document.documentElement.scrollTop) > 120;
+            btn.classList.toggle("vis", vis);
+            btn.setAttribute("aria-hidden", String(!vis));
+            btn.tabIndex = vis ? 0 : -1;
+          };
+
+          btn.addEventListener("click", () =>
+            window.scrollTo({ top: 0, behavior: "smooth" }),
+          );
+          window.addEventListener("scroll", update, { passive: true });
+          window.addEventListener("resize", update);
+          update();
+        };
+
+        /* ── Training registration modal ── */
+        const initTrainingModal = () => {
+          const openBtn = document.getElementById("trainingRegisterBtn");
+          const overlay = document.getElementById("trainingModalOverlay");
+          const closeBtn = document.getElementById("trainingModalClose");
+          const iframe = document.getElementById("trainingModalIframe");
+          const modal = overlay?.querySelector(".training-modal");
+          if (!openBtn || !overlay || !closeBtn || !iframe || !modal) return;
+
+          let lastFocused = null;
+
+          const getFocusable = () =>
+            Array.from(
+              modal.querySelectorAll(
+                'button, [href], iframe, [tabindex]:not([tabindex="-1"])',
+              ),
+            ).filter((el) => !el.hasAttribute("disabled"));
+
+          const trapFocus = (e) => {
+            if (e.key !== "Tab") return;
+            const focusable = getFocusable();
+            if (!focusable.length) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+
+            if (e.shiftKey && document.activeElement === first) {
+              e.preventDefault();
+              last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+              e.preventDefault();
+              first.focus();
+            }
+          };
+
+          const onKeydown = (e) => {
+            if (e.key === "Escape") {
+              closeModal();
+            } else {
+              trapFocus(e);
+            }
+          };
+
+          const openModal = () => {
+            lastFocused = document.activeElement;
+            if (!iframe.src) iframe.src = TRAINING_FORM_URL;
+            overlay.hidden = false;
+            document.body.style.overflow = "hidden";
+            closeBtn.focus();
+            document.addEventListener("keydown", onKeydown);
+          };
+
+          const closeModal = () => {
+            overlay.hidden = true;
+            document.body.style.overflow = "";
+            document.removeEventListener("keydown", onKeydown);
+            if (lastFocused) lastFocused.focus();
+          };
+
+          openBtn.addEventListener("click", openModal);
+          closeBtn.addEventListener("click", closeModal);
+          overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) closeModal();
+          });
+        };
+
+        /* ── Init ── */
+        initJumpBtn();
+        initTrainingModal();
+      })();
+    </script>
+  </body>
+</html>
