@@ -167,11 +167,10 @@
           href: "/launchpad/report.php?a=lp_find_site",
         },
         {
-          icon: "group",
-          title: "Community of Practice",
-          desc: "Connect with LEAF users VA-wide",
-          href: "/platform/CoP",
-          iframe: true,
+          icon: "record_voice_over",
+          title: "Voice of Customer",
+          desc: "Share feedback to help shape LEAF",
+          href: "/launchpad/report.php?a=lp_voc",
         },
         {
           icon: "lightbulb",
@@ -229,15 +228,6 @@
       parent: {
         label: "Our Impact",
         href: "/launchpad/report.php?a=lp_impact",
-      },
-    },
-    {
-      href: "/launchpad/report.php?a=lp_voc",
-      title: "Voice of the Customer",
-      section: "About LEAF",
-      parent: {
-        label: "Roadmap",
-        href: "/launchpad/report.php?a=lp_roadmap",
       },
     },
   ];
