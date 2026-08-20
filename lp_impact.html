@@ -636,13 +636,6 @@
       </div>
     </div>
 
-    <!-- Breadcrumb data — must be set before leaf_breadcrumb.js loads -->
-    <script>
-      window.LEAF_BREADCRUMB = [
-        { label: "About LEAF", href: "/platform/designs" },
-        { label: "Our Impact" },
-      ];
-    </script>
 
     <script>
       (() => {
@@ -727,7 +720,7 @@
           });
         };
 
-        // ── Nav-routed buttons (suppress status bar URL, route via leaf_nav.js) ──
+        // ── Nav-routed buttons (suppress status bar URL, route via leaf_header.js) ──
         const initNavButtons = () => {
           document.querySelectorAll(".btn-nav[data-nav-href]").forEach((el) => {
             const dest = el.getAttribute("data-nav-href");

@@ -626,6 +626,7 @@ button.dd-link {
   gap: 6px;
   padding: 10px 14px;
   font-size: 0.85rem;
+  color: var(--nav-muted);
   opacity: 0.55;
   pointer-events: none;
 }
