@@ -454,17 +454,12 @@
         </button>`;
   }
 
-  /* Renders a parent item (still a real link to its own page) plus a
-     chevron toggle that expands an indented child list beneath it —
-     same shape in both the desktop dd-panel and mobile acc-panel, since
-     both call linkHTML() over the same NAV_SECTIONS data. Click-to-expand
-     (not hover) matches the existing top-level .dd-trigger pattern, and
-     real Tab order into the child link comes for free once expanded —
-     no custom arrow-key handling needed. aria-expanded/aria-controls
-     only, no aria-haspopup, matching the disclosure pattern already used
-     by .dd-trigger elsewhere in this file. */
+  /* Renders a parent item (a real link to its own page) plus its child
+     items as a permanently-visible indented list beneath it — no
+     expand/collapse, no toggle, no user interaction needed to reveal
+     them. Same shape in both the desktop dd-panel and mobile acc-panel,
+     since both call linkHTML() over the same NAV_SECTIONS data. */
   function nestedLinkHTML(item) {
-    var subId = "dd-sub-" + hrefToHashKey(item.href);
     var childItemsHTML = item.children
       .map(function (child) {
         return `<li>${linkRowHTML(child, "dd-link--sub")}</li>`;
@@ -472,18 +467,8 @@
       .join("");
     return `
       <li class="dd-item-nested">
-        <div class="dd-link-row">
-          ${linkRowHTML(item)}
-          <button
-            class="dd-sub-trigger"
-            aria-expanded="false"
-            aria-controls="${subId}"
-            aria-label="Show more under ${item.title}"
-          >
-            <span class="dd-chevron" aria-hidden="true"><span class="material-symbols-outlined">${ICON_SVG.arrow_drop_down}</span></span>
-          </button>
-        </div>
-        <ul class="dd-sub-list" id="${subId}" hidden>
+        ${linkRowHTML(item)}
+        <ul class="dd-sub-list">
           ${childItemsHTML}
         </ul>
       </li>`;
@@ -581,6 +566,7 @@
        since this markup also renders in the mobile accordion below;
        one EventSource updates every matching node. -->
   <span class="lp-internal-btn lp-internal-online">
+    <span class="lp-internal-online-dot" aria-hidden="true"></span>
     Users Online:
     <span class="lp-internal-online-count" aria-live="polite" aria-atomic="true">0</span>
   </span>
@@ -2528,7 +2514,6 @@
         var panel = item.querySelector(".dd-panel");
         if (btn) btn.setAttribute("aria-expanded", "false");
         if (panel) panel.setAttribute("hidden", "");
-        collapseSubTriggers(item);
       });
     };
 
@@ -2567,37 +2552,11 @@
           item.classList.remove("open");
           btn.setAttribute("aria-expanded", "false");
           if (panel) panel.setAttribute("hidden", "");
-          collapseSubTriggers(item);
         } else {
           item.classList.add("open");
           btn.setAttribute("aria-expanded", "true");
           if (panel) panel.removeAttribute("hidden");
         }
-      });
-    });
-
-    /* ── Nested submenu toggle (e.g. Community of Practice under
-       Voice of the Customer) — shared by desktop dd-panel and mobile
-       acc-panel since both render from the same linkHTML() output.
-       Independent per item (no exclusivity needed with only one nested
-       item today); .dd-trigger/.acc-trigger closing above already hides
-       the whole panel these live in, so re-collapsing on close just
-       keeps the next open from starting pre-expanded. */
-    function collapseSubTriggers(scope) {
-      scope.querySelectorAll('.dd-sub-trigger[aria-expanded="true"]').forEach(
-        function (btn) {
-          btn.setAttribute("aria-expanded", "false");
-          var list = document.getElementById(btn.getAttribute("aria-controls"));
-          if (list) list.setAttribute("hidden", "");
-        },
-      );
-    }
-    document.querySelectorAll(".dd-sub-trigger").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var list = document.getElementById(btn.getAttribute("aria-controls"));
-        var isOpen = btn.getAttribute("aria-expanded") === "true";
-        btn.setAttribute("aria-expanded", isOpen ? "false" : "true");
-        if (list) list.toggleAttribute("hidden", isOpen);
       });
     });
 

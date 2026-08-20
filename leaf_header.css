@@ -402,47 +402,10 @@ button.dd-link {
 }
 
 /* ── Nested submenu (e.g. Community of Practice under Voice of the
-   Customer) ── Same shape in the desktop dd-panel and the mobile
-   acc-panel — both render from linkHTML()'s shared nestedLinkHTML()
-   output, so one set of rules covers both. */
-.dd-link-row {
-  display: flex;
-  align-items: stretch;
-}
-.dd-link-row .dd-link {
-  flex: 1;
-  min-width: 0;
-}
-.dd-sub-trigger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  flex-shrink: 0;
-  background: transparent;
-  border: none;
-  border-radius: var(--nav-r);
-  color: var(--nav-muted);
-  cursor: pointer;
-  transition:
-    color 0.15s,
-    background 0.15s;
-}
-.dd-sub-trigger:hover {
-  color: var(--nav-accent);
-  background: var(--nav-hover-bg);
-}
-.dd-sub-trigger:focus-visible {
-  outline: 3px solid var(--nav-accent);
-  outline-offset: -2px;
-}
-.dd-sub-trigger .dd-chevron {
-  transform: rotate(-90deg);
-  transition: transform 0.2s ease;
-}
-.dd-sub-trigger[aria-expanded="true"] .dd-chevron {
-  transform: rotate(0deg);
-}
+   Customer) ── Permanently visible, indented under its parent item —
+   no expand/collapse. Same shape in the desktop dd-panel and the
+   mobile acc-panel — both render from linkHTML()'s shared
+   nestedLinkHTML() output, so one set of rules covers both. */
 .dd-sub-list {
   list-style: none;
   display: grid;
@@ -450,9 +413,6 @@ button.dd-link {
   margin: 2px 0 6px 20px;
   padding: 0 0 0 14px;
   border-left: 2px solid var(--nav-panel-bd);
-}
-.dd-sub-list[hidden] {
-  display: none;
 }
 .dd-link--sub {
   padding: 8px 10px;
@@ -668,17 +628,33 @@ button.dd-link {
   outline-offset: 2px;
 }
 
-/* Users Online badge — same shape/weight as .lp-internal-btn (Coaches/
-   Team/Leadership) but non-interactive (a live status, not a link), so
-   the underline, pointer cursor, and hover "this is clickable" cue are
-   all suppressed — underlining a non-link would be actively misleading. */
+/* Users Online — muted pill/status treatment (not the toolbar-button
+   look Coaches/Team/Leadership use) so it reads as a live stat, not a
+   link. Non-interactive: underline, pointer cursor, and hover "this is
+   clickable" cue are all suppressed. Background/border match the
+   Coming Soon badge's neutral gray (.dd-badge) rather than inventing a
+   new color for the same "informational, not actionable" meaning. */
 .lp-internal-online {
   text-decoration: none;
   cursor: default;
+  gap: 6px;
+  padding: 5px 12px 5px 10px;
+  background: #eef0f2;
+  border: 1px solid #dde1e4;
+  border-radius: 999px;
 }
 .lp-internal-online:hover {
-  background: transparent;
+  background: #eef0f2;
+  border-color: #dde1e4;
   color: #3d4551; /* --nav-muted — no hover state, nothing to activate */
+}
+.lp-internal-online-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2e8b57; /* muted green — live/active indicator */
+  flex-shrink: 0;
 }
 .lp-internal-online-count {
   font-family: 'PublicSans-Bold', sans-serif;
