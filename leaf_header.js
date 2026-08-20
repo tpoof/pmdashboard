@@ -351,7 +351,7 @@
               <strong>${item.title}</strong>
               ${badgeHTML}
             </span>
-            <span>${item.desc}</span>
+            <span class="dd-link-desc">${item.desc}</span>
           </span>
         </button>
       </li>`;
@@ -495,7 +495,7 @@
     </span>
     <span class="dd-link-text">
       <strong>Leadership</strong>
-      <span>Platform leadership dashboard</span>
+      <span class="dd-link-desc">Platform leadership dashboard</span>
     </span>
   </button>
 </li>

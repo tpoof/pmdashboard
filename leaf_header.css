@@ -311,7 +311,7 @@ button.dd-link {
   font-weight: 700;
   color: var(--nav-hl);
 }
-.dd-link-text span {
+.dd-link-desc {
   display: block;
   font-size: 0.8125rem;
   color: var(--nav-muted);
