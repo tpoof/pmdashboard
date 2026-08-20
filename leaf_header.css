@@ -616,10 +616,6 @@ button.dd-link {
   width: 13px;
   height: 13px;
 }
-.lp-internal-btn-ico svg {
-  width: 15px;
-  height: 15px;
-}
 
 /* Vertical rule between label and buttons */
 .lp-internal-rule {
@@ -780,9 +776,21 @@ button.dd-link {
    Shown by showSwapLoading() (fetch+splice routes) and mountIframe()
    (iframe routes, see loadView()/mountIframe() in leaf_header.js) while
    a route's content is still loading. #lpSwapHost needs position:relative
-   so .lp-iframe-loading can center over the still-hidden iframe below it. */
+   so .lp-iframe-loading can center over the still-hidden iframe below it.
+
+   position:relative + a real z-index also gives #lpSwapHost its own
+   stacking context — every fetch+splice route's content lands here, and
+   some of those routes (e.g. Leadership) are real external LEAF pages
+   we don't own or edit. If one of them ships its own positioned element
+   (its own skip link, a sticky bar, anything with an aggressive z-index)
+   that suppressChrome() didn't know to strip, containing it in this
+   stacking context means it can never paint above .lp-header (z-index
+   300) or the dropdown panels (400) no matter what z-index it claims —
+   that comparison only happens within a shared stacking context, and
+   this one tops out at 1. */
 #lpSwapHost {
   position: relative;
+  z-index: 1;
 }
 .lp-swap-loading {
   display: flex;
@@ -913,7 +921,7 @@ button.dd-link {
    as its base and overrides what needs to differ. */
 .modal-box--form {
   background: #fff;
-  width: min(720px, 92vw);
+  width: min(900px, 92vw);
   max-height: 90vh;
   display: flex;
   flex-direction: column;

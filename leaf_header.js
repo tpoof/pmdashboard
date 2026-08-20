@@ -577,7 +577,6 @@
        wireLinkIntercept() to leave this <a> alone entirely so its real
        target="_blank" fires natively instead of being hash-routed. -->
   <a class="lp-internal-btn" href="https://leaf.va.gov/launchpad/report.php?a=Coaches" data-nav-external target="_blank" rel="noopener noreferrer">
-    <span class="material-symbols-outlined lp-internal-btn-ico" aria-hidden="true">${ICON_SVG.co_present}</span>
     Coaches
     <span class="lp-sr-only">(opens in new tab)</span>
   </a>
@@ -1049,6 +1048,14 @@
     ".noprint",
     "#lp-skip-nav",
     "#nav-skip-link",
+    /* USWDS's own skip-link component class — LEAF pages follow USWDS
+       conventions elsewhere (.usa-button, .usa-table, etc.), so a real
+       platform page's native skip link (e.g. Leadership, fetch+spliced
+       rather than iframed — see mountContent()) most likely uses this,
+       not one of the two IDs above. Left un-stripped, it renders inside
+       #lpSwapHost with none of its own site's CSS (that stylesheet was
+       never fetched), which is what was overlapping the header. */
+    ".usa-skipnav",
     "#LeafSession_dialog",
     "#lpInlinePanel",
     "#lpSwapHost",
@@ -2144,6 +2151,22 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
+     MODAL COORDINATION
+     Demo modal (video) and form modal (Request Support, Nominate a
+     Spotlight) are two independent singletons — each is correctly
+     deduplicated against itself (ensure*Modal()'s idempotent check
+     means only one #lpDemoModal and one #lpFormModal can ever exist),
+     but neither knew about the other. Opening one without closing an
+     already-open one left both visible at once — same fixed inset:0
+     z-index:1000 overlay, so they stacked directly on top of each
+     other. Both open*Modal() functions call this first now. Add any
+     future modal's close function here too. */
+  function closeAnyOpenModal() {
+    closeDemoModal();
+    closeFormModal();
+  }
+
+  /* ─────────────────────────────────────────────────────────────
      DEMO MODAL
      Injected once by the header so the "Watch a Demo" item in the
      About LEAF dropdown (desktop dd-panel + mobile acc-panel) can
@@ -2184,6 +2207,7 @@
     var frame = document.getElementById("lpDemoFrame");
     var closeBtn = document.getElementById("lpDemoClose");
     if (!modal || !frame || !closeBtn) return;
+    closeAnyOpenModal();
     demoModalTrigger = trigger || document.activeElement;
     frame.src = frame.getAttribute("data-src");
     modal.removeAttribute("hidden");
@@ -2303,6 +2327,7 @@
     var frame = document.getElementById("lpFormModalFrame");
     var titleEl = document.getElementById("lpFormModalTitle");
     if (!modal || !frame || !titleEl) return;
+    closeAnyOpenModal();
     formModalTrigger = trigger || document.activeElement;
     titleEl.textContent = title;
     frame.title = title || "Form";
