@@ -75,33 +75,19 @@
   "use strict";
 
   /* ── Internal section config ────────────────────────────────────
-     Placeholder group IDs and indicator IDs — swap in real values
-     before promoting to production.
+     Placeholder group IDs — swap in real values before promoting to
+     production.
 
-     LEADERSHIP_GROUP_ID    : Smarty group that can see the Leadership link.
-     LEAF_TEAM_GROUP_ID     : Smarty group that can see the entire LEAF Team
-                              dropdown (and the Internal button itself).
-     LEAF_TEAM_LINK_NAME_INDICATOR_ID : Indicator ID for the link label field
-                              on the /platform/service_requests_launchpad/ form.
-     LEAF_TEAM_LINK_URL_INDICATOR_ID  : Indicator ID for the link URL field
-                              on the same form.
+     LEADERSHIP_GROUP_ID : Smarty group that can see the Leadership link.
+     LEAF_TEAM_GROUP_ID  : Smarty group that can see the Internal section
+                           itself (Coaches, Leadership, Team).
 
      These constants drive the Smarty conditionals embedded in the
-     buildInternalNavHTML() template string and the fetch call in
-     fetchLeafTeamLinks(). Search "REPLACE_ME" to find all touch-points. */
+     buildInternalNavHTML() template string. Search "REPLACE_ME" to find
+     all touch-points. */
 
   var LEADERSHIP_GROUP_ID = "REPLACE_ME_LEADERSHIP_GROUP_ID";
   var LEAF_TEAM_GROUP_ID = "REPLACE_ME_LEAF_TEAM_GROUP_ID";
-  var LEAF_TEAM_LINK_NAME_INDICATOR_ID = 479;
-  var LEAF_TEAM_LINK_URL_INDICATOR_ID = 480;
-
-  /* Base URL for the LEAF form that stores LEAF Team quick-links.
-     Must be absolute — this JS runs on the launchpad URL which is
-     a different origin path, so a relative URL would resolve wrong.
-     window.location.origin gives us the correct host (e.g.
-     https://leaf.va.gov) regardless of which page loads this file. */
-  var LEAF_TEAM_FORM_BASE =
-    window.location.origin + "/platform/service_requests_launchpad";
 
   /* ── Home route — used for the brand logo link and as the
      breadcrumb auto-detect's "hide breadcrumb here" match. ── */
@@ -178,6 +164,15 @@
           title: "Voice of the Customer",
           desc: "Share feedback to help shape LEAF",
           href: "/launchpad/report.php?a=lp_voc",
+          children: [
+            {
+              icon: "diversity_3",
+              title: "Community of Practice",
+              desc: "Connect with LEAF site admins and builders VA-wide",
+              href: "/platform/CoP",
+              iframe: true,
+            },
+          ],
         },
         {
           icon: "lightbulb",
@@ -248,28 +243,41 @@
      still hash-routes. */
   var ROUTE_MAP = {};
 
-  /* Static definition for the Leadership internal link so the router
-     knows about it. LEAF Team links navigate away and are NOT registered. */
+  /* Static definitions for the Internal section's direct links so the
+     router knows about them, same as any other nav destination. */
   var INTERNAL_LEADERSHIP_ROUTE = {
     href: "/platform/projects/report.php?a=leadership",
     title: "Leadership",
     section: "Internal",
   };
+  var INTERNAL_TEAM_ROUTE = {
+    href: "/platform/projects/report.php?a=team",
+    title: "Team",
+    section: "Internal",
+  };
 
   function buildRouteMap() {
+    /* Registers one item into ROUTE_MAP — shared by top-level items and
+       nested children so both hash-route the same way. */
+    function registerItem(item, section) {
+      if (item.divider || !item.href || item.href === "#" || item.hidden)
+        return;
+      var key = hrefToHashKey(item.href);
+      if (key) {
+        ROUTE_MAP[key] = {
+          href: item.href,
+          title: item.title,
+          section: section.label,
+          iframe: !!item.iframe,
+        };
+      }
+    }
     NAV_SECTIONS.forEach(function (section) {
       section.items.forEach(function (item) {
-        if (item.divider || !item.href || item.href === "#" || item.hidden)
-          return;
-        var key = hrefToHashKey(item.href);
-        if (key) {
-          ROUTE_MAP[key] = {
-            href: item.href,
-            title: item.title,
-            section: section.label,
-            iframe: !!item.iframe,
-          };
-        }
+        registerItem(item, section);
+        (item.children || []).forEach(function (child) {
+          registerItem(child, section);
+        });
       });
     });
     /* Register sub-routes (pages nested under a nav item) */
@@ -278,10 +286,14 @@
       if (key) ROUTE_MAP[key] = route;
     });
 
-    /* Register Leadership so the hash router can load it inline */
+    /* Register Leadership and Team so the hash router can load them inline */
     var leadershipKey = hrefToHashKey(INTERNAL_LEADERSHIP_ROUTE.href);
     if (leadershipKey) {
       ROUTE_MAP[leadershipKey] = INTERNAL_LEADERSHIP_ROUTE;
+    }
+    var teamKey = hrefToHashKey(INTERNAL_TEAM_ROUTE.href);
+    if (teamKey) {
+      ROUTE_MAP[teamKey] = INTERNAL_TEAM_ROUTE;
     }
   }
 
@@ -390,6 +402,12 @@
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/></svg>',
     arrow_upward:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z"/></svg>',
+    diversity_3:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M40-160v-160q0-34 23.5-57t56.5-23h131q20 0 38 10t29 27q29 39 71.5 61t90.5 22q49 0 91.5-22t70.5-61q13-17 30.5-27t36.5-10h131q34 0 57 23t23 57v160H640v-91q-35 25-75.5 38T480-200q-43 0-84-13.5T320-252v92H40Zm440-160q-38 0-72-17.5T351-386q-17-25-42.5-39.5T253-440q22-37 93-58.5T480-520q63 0 134 21.5t93 58.5q-29 0-55 14.5T609-386q-22 32-56 49t-73 17ZM160-440q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T280-560q0 50-34.5 85T160-440Zm640 0q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T920-560q0 50-34.5 85T800-440ZM480-560q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T600-680q0 50-34.5 85T480-560Z"/></svg>',
+    co_present:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M840-120v-640H120v320H40v-320q0-33 23.5-56.5T120-840h720q33 0 56.5 23.5T920-760v560q0 33-23.5 56.5T840-120ZM360-400q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-80v-112q0-34 17.5-62.5T104-298q62-31 126-46.5T360-360q66 0 130 15.5T616-298q29 15 46.5 43.5T680-192v112H40Z"/></svg>',
+    account_balance:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M200-280v-280h80v280h-80Zm240 0v-280h80v280h-80ZM80-120v-80h800v80H80Zm600-160v-280h80v280h-80ZM80-640v-80l400-200 400 200v80H80Z"/></svg>',
   };
 
   /* ─────────────────────────────────────────────────────────────
@@ -398,14 +416,21 @@
   ───────────────────────────────────────────────────────────── */
   function linkHTML(item) {
     if (item.divider) return '<hr class="dd-divider" aria-hidden="true">';
-    /* Use <button data-href> instead of <a href> so the browser status
-       bar never previews the destination URL on hover. Navigation is
-       handled by wireLinkIntercept() which reads data-href. Applies to
-       iframe items too (CoP, Ideas, Help Library, Privacy & Compliance)
-       — they're still hash-routed so the header stays visible;
-       loadView() mounts them in an <iframe> instead of fetching+
-       splicing their HTML, since they're full separate LEAF apps
-       rather than lightweight content pages. */
+    if (item.children && item.children.length) return nestedLinkHTML(item);
+    return `<li>${linkRowHTML(item)}</li>`;
+  }
+
+  /* Renders one <button class="dd-link">. Shared by plain items (via
+     linkHTML) and nested parent/child rows (via nestedLinkHTML) so both
+     look and behave identically. Use <button data-href> instead of
+     <a href> so the browser status bar never previews the destination
+     URL on hover — navigation is handled by wireLinkIntercept(), which
+     reads data-href. Applies to iframe items too (CoP, Ideas, Help
+     Library, Privacy & Compliance) — they're still hash-routed so the
+     header stays visible; loadView() mounts them in an <iframe> instead
+     of fetching+splicing their HTML, since they're full separate LEAF
+     apps rather than lightweight content pages. */
+  function linkRowHTML(item, extraClass) {
     var badgeHTML = item.badge
       ? `<span class="dd-badge">${item.badge}</span>`
       : "";
@@ -413,9 +438,9 @@
        the demo modal) instead of navigating — read by wireLinkIntercept()
        before it falls through to href-based routing. */
     var actionAttr = item.action ? ` data-action="${item.action}"` : "";
+    var cls = extraClass ? `dd-link ${extraClass}` : "dd-link";
     return `
-      <li>
-        <button class="dd-link" data-href="${item.href}"${actionAttr}>
+        <button class="${cls}" data-href="${item.href}"${actionAttr}>
           <span class="dd-link-ico">
             <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG[item.icon] || ""}</span>
           </span>
@@ -426,7 +451,41 @@
             </span>
             <span class="dd-link-desc">${item.desc}</span>
           </span>
-        </button>
+        </button>`;
+  }
+
+  /* Renders a parent item (still a real link to its own page) plus a
+     chevron toggle that expands an indented child list beneath it —
+     same shape in both the desktop dd-panel and mobile acc-panel, since
+     both call linkHTML() over the same NAV_SECTIONS data. Click-to-expand
+     (not hover) matches the existing top-level .dd-trigger pattern, and
+     real Tab order into the child link comes for free once expanded —
+     no custom arrow-key handling needed. aria-expanded/aria-controls
+     only, no aria-haspopup, matching the disclosure pattern already used
+     by .dd-trigger elsewhere in this file. */
+  function nestedLinkHTML(item) {
+    var subId = "dd-sub-" + hrefToHashKey(item.href);
+    var childItemsHTML = item.children
+      .map(function (child) {
+        return `<li>${linkRowHTML(child, "dd-link--sub")}</li>`;
+      })
+      .join("");
+    return `
+      <li class="dd-item-nested">
+        <div class="dd-link-row">
+          ${linkRowHTML(item)}
+          <button
+            class="dd-sub-trigger"
+            aria-expanded="false"
+            aria-controls="${subId}"
+            aria-label="Show more under ${item.title}"
+          >
+            <span class="dd-chevron" aria-hidden="true"><span class="material-symbols-outlined">${ICON_SVG.arrow_drop_down}</span></span>
+          </button>
+        </div>
+        <ul class="dd-sub-list" id="${subId}" hidden>
+          ${childItemsHTML}
+        </ul>
       </li>`;
   }
 
@@ -477,14 +536,13 @@
      INTERNAL NAV SECTION
      Right-aligned group rendered as:
 
-       [ 🔒 Internal ]  [ Leadership ]  [ LEAF Team ▾ ]
-                         (direct link)   (dropdown)
+       [ 🔒 ]  [ Coaches ]  [ Leadership ]  [ Team ]
+                (new tab)   (direct link)   (direct link)
 
      Smarty group conditionals gate each element:
-       - Entire group  → LEAF_TEAM_GROUP_ID  (outer wrapper)
-       - Leadership    → LEADERSHIP_GROUP_ID (individual link)
-       - LEAF Team     → LEAF_TEAM_GROUP_ID  (same as outer;
-                         redundant but explicit for clarity)
+       - Entire group → LEAF_TEAM_GROUP_ID  (outer wrapper; also gates
+                         Coaches and Team directly, same group)
+       - Leadership   → LEADERSHIP_GROUP_ID (individual link, tighter)
 
      NOTE: Smarty tags below are processed server-side via the
      PHP/Smarty wrapper. If you see literal "<!--{if" strings in
@@ -492,7 +550,11 @@
      ?leafNavDebug=1 (group 12 members only) for a diagnosis.
   ───────────────────────────────────────────────────────────── */
   function buildInternalNavHTML(leadershipGroupID, leafTeamGroupID) {
-    /* ── Desktop: flat group of items ── */
+    /* ── Desktop: flat group of items ──
+       Order: Coaches (new tab) → Leadership → Team. Coaches and Team
+       are gated only by the outer leafTeamGroupID (same as the section
+       itself) — Leadership keeps its own tighter leadershipGroupID gate,
+       unchanged from before. */
     var desktopInternal =
       `
 <!--{if $empMembership['groupID'][` +
@@ -500,14 +562,25 @@
       `]}-->
 <div class="lp-nav-internal" role="navigation" aria-label="Internal team links">
 
-  <!-- "Internal" label — non-interactive, purely visual -->
-  <span class="lp-internal-label" aria-hidden="true">
+  <!-- Lock icon is the only visible content now — role="img" +
+       aria-label carries the accessible name that the "Internal" text
+       used to provide (that text was aria-hidden anyway, relying on
+       the landmark above; this is a more explicit, direct fix). -->
+  <span class="lp-internal-label" role="img" aria-label="Internal">
     <span class="material-symbols-outlined lp-internal-label-icon" aria-hidden="true">${ICON_SVG.lock}</span>
-    Internal
   </span>
 
   <!-- Vertical rule separating label from buttons -->
   <span class="lp-internal-rule" aria-hidden="true"></span>
+
+  <!-- Coaches: external, opens in a new tab. data-nav-external tells
+       wireLinkIntercept() to leave this <a> alone entirely so its real
+       target="_blank" fires natively instead of being hash-routed. -->
+  <a class="lp-internal-btn" href="https://leaf.va.gov/launchpad/report.php?a=Coaches" data-nav-external target="_blank" rel="noopener noreferrer">
+    <span class="material-symbols-outlined lp-internal-btn-ico" aria-hidden="true">${ICON_SVG.co_present}</span>
+    Coaches
+    <span class="lp-sr-only">(opens in new tab)</span>
+  </a>
 
 <!--{if $empMembership['groupID'][` +
       leadershipGroupID +
@@ -518,27 +591,10 @@
   </button>
 <!--{/if}-->
 
-  <!-- LEAF Team: dropdown trigger + panel -->
-  <div class="dd-item dd-item--internal" id="dd-item-leaf-team" style="position:relative;">
-    <button class="lp-internal-btn lp-internal-btn--dd dd-trigger"
-            aria-expanded="false"
-            aria-controls="dd-leaf-team"
-            aria-haspopup="false">
-      LEAF Team
-      <span class="dd-chevron" aria-hidden="true">
-        <span class="material-symbols-outlined">${ICON_SVG.arrow_drop_down}</span>
-      </span>
-    </button>
-    <div class="dd-panel dd-panel--internal" id="dd-leaf-team" hidden>
-      <ul class="dd-list" id="lpNavLeafTeamLinks" aria-live="polite">
-        <!-- Dynamic links injected by fetchLeafTeamLinks() -->
-        <li class="lp-internal-loading">
-          <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.sync}</span>
-          Loading links…
-        </li>
-      </ul>
-    </div>
-  </div>
+  <!-- Team: direct hash-routed link (replaces the old LEAF Team dropdown) -->
+  <button class="lp-internal-btn" data-href="/platform/projects/report.php?a=team">
+    Team
+  </button>
 
 </div>
 <!--{/if}-->`;
@@ -550,12 +606,25 @@
       leafTeamGroupID +
       `]}-->
 
-<!-- Mobile separator before Internal section -->
-<li class="lp-internal-mobile-item" role="separator" aria-hidden="true">
-  <div class="lp-mobile-internal-sep">
+<!-- Mobile separator before Internal section — lock icon only, same
+     role="img"+aria-label treatment as the desktop version. -->
+<li class="lp-internal-mobile-item" role="separator">
+  <div class="lp-mobile-internal-sep" role="img" aria-label="Internal">
     <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.lock}</span>
-    Internal
   </div>
+</li>
+
+<li class="lp-internal-mobile-item">
+  <a class="dd-link" href="https://leaf.va.gov/launchpad/report.php?a=Coaches" data-nav-external target="_blank" rel="noopener noreferrer">
+    <span class="dd-link-ico">
+      <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.co_present}</span>
+    </span>
+    <span class="dd-link-text">
+      <strong>Coaches</strong>
+      <span class="dd-link-desc">Get help from a LEAF coach</span>
+      <span class="lp-sr-only">(opens in new tab)</span>
+    </span>
+  </a>
 </li>
 
 <!--{if $empMembership['groupID'][` +
@@ -574,21 +643,16 @@
 </li>
 <!--{/if}-->
 
-<li class="lp-internal-mobile-item acc-item acc-item--internal" id="acc-item-leaf-team">
-  <button class="acc-trigger" aria-expanded="false" aria-controls="acc-leaf-team">
-    LEAF Team
-    <span class="dd-chevron" aria-hidden="true">
-      <span class="material-symbols-outlined">${ICON_SVG.arrow_drop_down}</span>
+<li class="lp-internal-mobile-item">
+  <button class="dd-link" data-href="/platform/projects/report.php?a=team">
+    <span class="dd-link-ico">
+      <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
+    </span>
+    <span class="dd-link-text">
+      <strong>Team</strong>
+      <span class="dd-link-desc">Meet the LEAF platform team</span>
     </span>
   </button>
-  <div class="acc-panel" id="acc-leaf-team" hidden>
-    <ul class="dd-list" id="lpNavLeafTeamLinksMobile" aria-live="polite">
-      <li class="lp-internal-loading">
-        <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.sync}</span>
-        Loading links…
-      </li>
-    </ul>
-  </div>
 </li>
 
 <!--{/if}-->`;
@@ -795,148 +859,6 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
-     LEAF TEAM DYNAMIC LINKS
-     Fetches quick-link records from the service_requests_launchpad
-     form. Each record contributes:
-       indicator LEAF_TEAM_LINK_NAME_INDICATOR_ID → link label
-       indicator LEAF_TEAM_LINK_URL_INDICATOR_ID  → link href
-     Populates #lpNavLeafTeamLinks (desktop) and
-     #lpNavLeafTeamLinksMobile (mobile) after nav is in the DOM.
-     Links rendered here use data-nav-external so the launchpad
-     link intercept skips them — they navigate away rather than
-     hash-routing.
-     Silently no-ops if the containers aren't present (user isn't
-     in LEAF_TEAM_GROUP_ID and Smarty never emitted the elements).
-  ───────────────────────────────────────────────────────────── */
-  function fetchLeafTeamLinks() {
-    var desktopHost = document.getElementById("lpNavLeafTeamLinks");
-    var mobileHost = document.getElementById("lpNavLeafTeamLinksMobile");
-    if (!desktopHost && !mobileHost) return;
-
-    /* Build query using the JSON-encoded ?q= format that LEAF's
-       api/form/query endpoint actually expects. The query string
-       param format (?q[0][id]=...) causes 500s — only LeafFormQuery
-       uses that internally. Direct fetch must use encodeURIComponent
-       on a stringified query object, matching CustomerOverview.html
-       and project_v*.js patterns. */
-    var queryObj = {
-      terms: [
-        { id: "categoryID", operator: "=", match: "form_531cc", gate: "AND" },
-        { id: "stepID", operator: "=", match: "notDeleted", gate: "AND" },
-      ],
-      joins: [],
-      sort: {},
-      getData: [
-        String(LEAF_TEAM_LINK_NAME_INDICATOR_ID),
-        String(LEAF_TEAM_LINK_URL_INDICATOR_ID),
-      ],
-    };
-
-    var apiUrl =
-      LEAF_TEAM_FORM_BASE +
-      "/api/form/query?q=" +
-      encodeURIComponent(JSON.stringify(queryObj)) +
-      "&format=json";
-
-    var isDebug = /[?&]leafNavDebug=1/.test(window.location.search);
-
-    if (isDebug) {
-      console.group("[LP Header Debug] fetchLeafTeamLinks");
-      console.log("Fetch URL:", apiUrl);
-      console.log("LEAF_TEAM_FORM_BASE:", LEAF_TEAM_FORM_BASE);
-      console.log("window.location.origin:", window.location.origin);
-      console.log("Query object:", JSON.stringify(queryObj, null, 2));
-      console.log("#lpNavLeafTeamLinks in DOM:", !!desktopHost);
-      console.log("#lpNavLeafTeamLinksMobile in DOM:", !!mobileHost);
-    }
-
-    fetch(apiUrl, {
-      credentials: "same-origin",
-      headers: {
-        Accept: "application/json",
-        "x-requested-with": "XMLHttpRequest",
-      },
-    })
-      .then(function (r) {
-        if (isDebug) {
-          console.log("HTTP status:", r.status, r.statusText);
-          console.log("Response URL (actual):", r.url);
-        }
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      })
-      .then(function (data) {
-        if (isDebug) {
-          console.log("Raw response data:", data);
-          console.log("Record count:", Object.keys(data).length);
-          Object.entries(data).forEach(function (entry) {
-            var id = entry[0],
-              rec = entry[1];
-            console.log(
-              "Record " + id + ":",
-              "name=" +
-                (rec["s1"] &&
-                  rec["s1"]["id" + LEAF_TEAM_LINK_NAME_INDICATOR_ID]),
-              "url=" +
-                (rec["s1"] &&
-                  rec["s1"]["id" + LEAF_TEAM_LINK_URL_INDICATOR_ID]),
-            );
-          });
-          console.groupEnd();
-        }
-
-        var records = Object.values(data);
-
-        var itemsHTML = records
-          .map(function (rec) {
-            var name = rec["s1"]["id" + LEAF_TEAM_LINK_NAME_INDICATOR_ID] || "";
-            var url = rec["s1"]["id" + LEAF_TEAM_LINK_URL_INDICATOR_ID] || "";
-            if (!name || !url) return "";
-            if (!/^https?:\/\//i.test(url)) return "";
-            return (
-              '<li><a class="dd-link" href="' +
-              url +
-              '" data-nav-external target="_blank" rel="noopener noreferrer">' +
-              '<span class="dd-link-text"><strong>' +
-              name +
-              "</strong></span>" +
-              '<span class="lp-sr-only">(opens in new tab)</span>' +
-              "</a></li>"
-            );
-          })
-          .join("");
-
-        function populate(host) {
-          if (!host) return;
-          host.innerHTML =
-            itemsHTML ||
-            '<li class="lp-internal-loading" style="opacity:0.45;">' +
-              '<span class="material-symbols-outlined" aria-hidden="true">' + ICON_SVG.link_off + '</span>' +
-              "No links found</li>";
-        }
-
-        populate(desktopHost);
-        populate(mobileHost);
-      })
-      .catch(function (err) {
-        if (isDebug) {
-          console.error("[LP Header Debug] Fetch failed:", err);
-          console.groupEnd();
-        }
-        console.warn("[LP Header] LEAF Team links fetch failed:", err.message);
-        function clearLoading(host) {
-          if (!host) return;
-          host.innerHTML =
-            '<li class="lp-internal-loading" style="opacity:0.45;">' +
-            '<span class="material-symbols-outlined" aria-hidden="true">' + ICON_SVG.cloud_off + '</span>' +
-            "Links unavailable</li>";
-        }
-        clearLoading(desktopHost);
-        clearLoading(mobileHost);
-      });
-  }
-
-  /* ─────────────────────────────────────────────────────────────
      SMARTY / PHP WRAPPER DEBUG UTILITY
      Only runs when ALL of:
        1. ?leafNavDebug=1 is in the query string
@@ -962,8 +884,6 @@
     var leafTeamResolved =
       LEAF_TEAM_GROUP_ID !== "REPLACE_ME_LEAF_TEAM_GROUP_ID" &&
       /^\d+$/.test(String(LEAF_TEAM_GROUP_ID));
-    var nameIndResolved = Number.isInteger(LEAF_TEAM_LINK_NAME_INDICATOR_ID);
-    var urlIndResolved = Number.isInteger(LEAF_TEAM_LINK_URL_INDICATOR_ID);
 
     /* Console output — always logged when param present, group check aside */
     console.group("[LEAF Header Debug] Smarty/PHP wrapper diagnostics");
@@ -984,26 +904,8 @@
         : "❌ " + LEAF_TEAM_GROUP_ID,
     );
     console.log(
-      "LEAF_TEAM_LINK_NAME_INDICATOR_ID resolved:",
-      nameIndResolved
-        ? "✅ " + LEAF_TEAM_LINK_NAME_INDICATOR_ID
-        : "❌ " + LEAF_TEAM_LINK_NAME_INDICATOR_ID,
-    );
-    console.log(
-      "LEAF_TEAM_LINK_URL_INDICATOR_ID resolved:",
-      urlIndResolved
-        ? "✅ " + LEAF_TEAM_LINK_URL_INDICATOR_ID
-        : "❌ " + LEAF_TEAM_LINK_URL_INDICATOR_ID,
-    );
-    console.log(
       "Current user in LEAF Team group (banner visible):",
       isLeafTeamMember ? "✅ YES" : "❌ NO",
-    );
-    console.log(
-      "#lpNavLeafTeamLinks in DOM:",
-      !!document.getElementById("lpNavLeafTeamLinks")
-        ? "✅ YES"
-        : "❌ NO (Smarty gated it out or group check failed)",
     );
     console.groupEnd();
 
@@ -1023,24 +925,8 @@
         leafTeamResolved ? "✅ " + LEAF_TEAM_GROUP_ID : "❌ still placeholder",
       ],
       [
-        "LEAF_TEAM_LINK_NAME_INDICATOR_ID",
-        nameIndResolved
-          ? "✅ " + LEAF_TEAM_LINK_NAME_INDICATOR_ID
-          : "❌ still placeholder",
-      ],
-      [
-        "LEAF_TEAM_LINK_URL_INDICATOR_ID",
-        urlIndResolved
-          ? "✅ " + LEAF_TEAM_LINK_URL_INDICATOR_ID
-          : "❌ still placeholder",
-      ],
-      [
         "$empMembership evaluated (you see this)",
         "✅ YES — you are in LEAF Team group",
-      ],
-      [
-        "#lpNavLeafTeamLinks in DOM",
-        document.getElementById("lpNavLeafTeamLinks") ? "✅ YES" : "❌ NO",
       ],
     ];
 
@@ -1144,9 +1030,6 @@
        anywhere. */
     ensureDemoModal();
     wireDemoModal();
-
-    /* Populate LEAF Team dynamic links after the header is in the DOM */
-    fetchLeafTeamLinks();
 
     /* Debug panel — only when ?leafNavDebug=1 is present */
     if (/[?&]leafNavDebug=1/.test(window.location.search)) {
@@ -1780,16 +1663,30 @@
     frame.title = route.title || "Embedded page";
     /* min-height is just the pre-load placeholder — the load handler
        below grows the frame to its content's real height so the iframe
-       itself never needs to scroll; the outer page scrolls instead. */
+       itself never needs to scroll; the outer page scrolls instead.
+       visibility:hidden (not display:none) keeps it participating in
+       layout so the spinner below sits where the frame will end up,
+       and so the frame's own load event still fires normally. */
     frame.style.cssText =
-      "width:100%;min-height:75vh;border:0;display:block;overflow:hidden;";
+      "width:100%;min-height:75vh;border:0;display:block;overflow:hidden;visibility:hidden;";
 
-    /* Same-origin embeds (CoP, Ideas, Help Library, Privacy & Compliance —
-       all leaf.va.gov) can be measured directly and resized to fit. A
-       cross-origin embed's document is opaque, so it silently keeps the
-       fixed min-height above instead (still scrolls internally, but no
-       script access exists to do anything about that from this side). */
+    /* Embedded pages (CoP, Ideas, Help Library, Privacy & Compliance) are
+       real, separately-rendered LEAF pages — their native #header/#footer
+       chrome is server-rendered directly into the HTML, so it paints
+       before that page's own client-side script has run to hide it.
+       leaf_header.css's hide rule can't reach across the iframe boundary
+       to stop that. Keeping the frame hidden until "load" (and showing
+       our own spinner in its place) hides that flash from the user
+       instead of trying to prevent it inside a document we don't own. */
+    var spinner = document.createElement("div");
+    spinner.className = "lp-swap-loading lp-iframe-loading";
+    spinner.setAttribute("aria-hidden", "true");
+    spinner.innerHTML = '<span class="lp-swap-spinner"></span>';
+
     frame.addEventListener("load", function () {
+      frame.style.visibility = "visible";
+      if (spinner.parentNode) spinner.remove();
+
       var doc;
       try {
         doc = frame.contentDocument;
@@ -1816,6 +1713,7 @@
     });
 
     host.innerHTML = "";
+    host.appendChild(spinner);
     host.appendChild(frame);
 
     document.title = route.title
@@ -2142,15 +2040,24 @@
         }
       }
 
-      /* Match nav dropdown links, internal buttons, and footer quick-resource links.
+      /* Match nav dropdown links, internal buttons, footer quick-resource
+         links, and any [data-action] trigger — the last covers modal
+         triggers that live in page-specific markup (e.g. lp_home.html's
+         "Request Support" button) rather than nav-generated HTML, so any
+         page can opt into the demo/form modal system with plain data
+         attributes and no JS of its own.
          .dd-link elements are now <button data-href> — no href attribute —
          so the browser status bar never previews the destination URL on hover.
          .lp-internal-btn elements (Leadership) also use data-href.
-         .dd-link[data-nav-external] are <a> tags (LEAF Team links) — left alone. */
-      var link = e.target.closest(".dd-link, .lp-panel-link, .lp-internal-btn");
+         [data-nav-external] marks real <a target="_blank"> tags (e.g.
+         Coaches) that should navigate away natively — left alone. */
+      var link = e.target.closest(
+        ".dd-link, .lp-panel-link, .lp-internal-btn, [data-action]",
+      );
       if (!link) return;
 
-      /* External-flagged <a> links (LEAF Team quick-links) navigate away normally */
+      /* External-flagged <a> links navigate away normally, respecting
+         their own target="_blank" instead of being hash-routed */
       if (link.hasAttribute("data-nav-external")) return;
 
       /* Modifier-key / middle-click → real new tab, no intercept */
@@ -2158,14 +2065,28 @@
         return;
       }
 
-      /* "Watch a Demo" (and any future in-page-action items) opens the
-         demo modal instead of navigating. Its href is deliberately "#"
-         (no route to push), so this must run before the href==="#"
-         early-return just below. */
+      /* "Watch a Demo" opens the cinematic video-only modal instead of
+         navigating. Its href is deliberately "#" (no route to push), so
+         this must run before the href==="#" early-return just below. */
       if (link.dataset.action === "demo-modal") {
         e.preventDefault();
         closeAllDropdowns(null);
         openDemoModal(link);
+        return;
+      }
+
+      /* Generic form modal (Request Support, Nominate a Spotlight, and
+         any future iframe-form trigger) — src/title come from data
+         attributes on the trigger element itself, so no per-form JS is
+         needed anywhere else. */
+      if (link.dataset.action === "form-modal") {
+        e.preventDefault();
+        closeAllDropdowns(null);
+        openFormModal(
+          link.dataset.modalSrc,
+          link.dataset.modalTitle || "",
+          link,
+        );
         return;
       }
 
@@ -2308,6 +2229,105 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
+     FORM MODAL (generic, reusable)
+     Same open/close/focus-trap mechanics as the demo modal above, but
+     with a visible header bar + title instead of the demo modal's
+     cinematic video-only style, and re-populated per use (src/title)
+     instead of one hardcoded video — Request Support (lp_home.html)
+     and Nominate a Spotlight (footer link, this file) both open the
+     same modal element with different content. One shared instance,
+     lazily built on first use.
+  ───────────────────────────────────────────────────────────── */
+  var formModalTrigger = null;
+
+  function ensureFormModal() {
+    if (document.getElementById("lpFormModal")) return;
+    var modal = document.createElement("div");
+    modal.id = "lpFormModal";
+    modal.className = "lp-modal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "lpFormModalTitle");
+    modal.setAttribute("hidden", "");
+    modal.innerHTML =
+      '<div class="modal-box modal-box--form">' +
+      '<div class="modal-hd">' +
+      '<p class="modal-hd-title" id="lpFormModalTitle"></p>' +
+      '<button class="modal-close modal-close--inline" id="lpFormModalClose" aria-label="Close">' +
+      '<span class="material-symbols-outlined" aria-hidden="true">' +
+      ICON_SVG.close +
+      "</span>" +
+      "</button>" +
+      "</div>" +
+      '<div class="modal-frame-wrap">' +
+      '<iframe id="lpFormModalFrame" src="" data-src="" title=""></iframe>' +
+      "</div>" +
+      "</div>";
+    document.body.appendChild(modal);
+
+    /* Wired once, at build time, rather than per-open like the rest of
+       openFormModal() — the modal element only ever gets created once. */
+    var closeBtn = document.getElementById("lpFormModalClose");
+    closeBtn.addEventListener("click", closeFormModal);
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal) closeFormModal();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !modal.hasAttribute("hidden")) {
+        closeFormModal();
+      }
+    });
+    modal.addEventListener("keydown", function (e) {
+      if (e.key !== "Tab" || modal.hasAttribute("hidden")) return;
+      var focusable = getFocusableElements(modal);
+      if (!focusable.length) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
+  }
+
+  function openFormModal(src, title, trigger) {
+    if (!src) {
+      console.warn("[LP] openFormModal called with no src");
+      return;
+    }
+    ensureFormModal();
+    var modal = document.getElementById("lpFormModal");
+    var frame = document.getElementById("lpFormModalFrame");
+    var titleEl = document.getElementById("lpFormModalTitle");
+    if (!modal || !frame || !titleEl) return;
+    formModalTrigger = trigger || document.activeElement;
+    titleEl.textContent = title;
+    frame.title = title || "Form";
+    frame.setAttribute("data-src", src);
+    frame.src = src;
+    modal.removeAttribute("hidden");
+    document.body.style.overflow = "hidden";
+    var closeBtn = document.getElementById("lpFormModalClose");
+    if (closeBtn) closeBtn.focus();
+  }
+
+  function closeFormModal() {
+    var modal = document.getElementById("lpFormModal");
+    var frame = document.getElementById("lpFormModalFrame");
+    if (!modal || !frame || modal.hasAttribute("hidden")) return;
+    frame.src = "";
+    modal.setAttribute("hidden", "");
+    document.body.style.overflow = "";
+    if (formModalTrigger) {
+      formModalTrigger.focus();
+      formModalTrigger = null;
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────────
      FOCUS TRAP HELPERS
   ───────────────────────────────────────────────────────────── */
   function getFocusableElements(container) {
@@ -2414,10 +2434,10 @@
         var panel = item.querySelector(".dd-panel");
         if (btn) btn.setAttribute("aria-expanded", "false");
         if (panel) panel.setAttribute("hidden", "");
+        collapseSubTriggers(item);
       });
     };
 
-    /* Covers both public .dd-trigger buttons and the internal .dd-trigger--internal */
     document.querySelectorAll(".dd-trigger").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var item = btn.closest(".dd-item");
@@ -2453,11 +2473,37 @@
           item.classList.remove("open");
           btn.setAttribute("aria-expanded", "false");
           if (panel) panel.setAttribute("hidden", "");
+          collapseSubTriggers(item);
         } else {
           item.classList.add("open");
           btn.setAttribute("aria-expanded", "true");
           if (panel) panel.removeAttribute("hidden");
         }
+      });
+    });
+
+    /* ── Nested submenu toggle (e.g. Community of Practice under
+       Voice of the Customer) — shared by desktop dd-panel and mobile
+       acc-panel since both render from the same linkHTML() output.
+       Independent per item (no exclusivity needed with only one nested
+       item today); .dd-trigger/.acc-trigger closing above already hides
+       the whole panel these live in, so re-collapsing on close just
+       keeps the next open from starting pre-expanded. */
+    function collapseSubTriggers(scope) {
+      scope.querySelectorAll('.dd-sub-trigger[aria-expanded="true"]').forEach(
+        function (btn) {
+          btn.setAttribute("aria-expanded", "false");
+          var list = document.getElementById(btn.getAttribute("aria-controls"));
+          if (list) list.setAttribute("hidden", "");
+        },
+      );
+    }
+    document.querySelectorAll(".dd-sub-trigger").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var list = document.getElementById(btn.getAttribute("aria-controls"));
+        var isOpen = btn.getAttribute("aria-expanded") === "true";
+        btn.setAttribute("aria-expanded", isOpen ? "false" : "true");
+        if (list) list.toggleAttribute("hidden", isOpen);
       });
     });
 

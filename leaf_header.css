@@ -400,6 +400,63 @@ button.dd-link {
   margin: 6px 0;
 }
 
+/* ── Nested submenu (e.g. Community of Practice under Voice of the
+   Customer) ── Same shape in the desktop dd-panel and the mobile
+   acc-panel — both render from linkHTML()'s shared nestedLinkHTML()
+   output, so one set of rules covers both. */
+.dd-link-row {
+  display: flex;
+  align-items: stretch;
+}
+.dd-link-row .dd-link {
+  flex: 1;
+  min-width: 0;
+}
+.dd-sub-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--nav-r);
+  color: var(--nav-muted);
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.dd-sub-trigger:hover {
+  color: var(--nav-accent);
+  background: var(--nav-hover-bg);
+}
+.dd-sub-trigger:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: -2px;
+}
+.dd-sub-trigger .dd-chevron {
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+}
+.dd-sub-trigger[aria-expanded="true"] .dd-chevron {
+  transform: rotate(0deg);
+}
+.dd-sub-list {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  margin: 2px 0 6px 20px;
+  padding: 0 0 0 14px;
+  border-left: 2px solid var(--nav-panel-bd);
+}
+.dd-sub-list[hidden] {
+  display: none;
+}
+.dd-link--sub {
+  padding: 8px 10px;
+}
+
 /* ── Mobile menu toggle (hamburger ↔ X) ── */
 .lp-nav-toggle {
   display: none;
@@ -535,9 +592,9 @@ button.dd-link {
   box-shadow: inset 0 1px 2px rgba(0, 10, 60, 0.04); /* very subtle depth */
 }
 
-/* "Internal" text label — visual-only, not a button. aria-hidden
-   in the markup so screen readers skip it (the nav landmark +
-   button labels cover the context). */
+/* Lock icon only — no visible "Internal" text. role="img" + aria-label
+   on the markup gives it a real accessible name since there's no text
+   left to provide one. */
 .lp-internal-label {
   display: inline-flex;
   align-items: center;
@@ -558,6 +615,10 @@ button.dd-link {
 .lp-internal-label-icon svg {
   width: 13px;
   height: 13px;
+}
+.lp-internal-btn-ico svg {
+  width: 15px;
+  height: 15px;
 }
 
 /* Vertical rule between label and buttons */
@@ -603,40 +664,6 @@ button.dd-link {
   outline-offset: 2px;
 }
 
-/* LEAF Team dropdown trigger (extends .lp-internal-btn) */
-.dd-item--internal.open .lp-internal-btn--dd {
-  background: #ffffff;
-  color: #005ea2;
-}
-
-/* LEAF Team dropdown panel — positioned relative to
-   dd-item--internal. right:0 aligns the panel's right edge to the
-   button's right edge so it doesn't bleed off screen. */
-.dd-panel--internal {
-  right: 0;
-  left: auto;
-  min-width: 220px;
-  border-top: 3px solid #f59e0b;
-}
-
-/* Loading placeholder row */
-.lp-internal-loading {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
-  font-size: 0.85rem;
-  color: var(--nav-muted);
-  opacity: 0.55;
-  pointer-events: none;
-}
-.lp-internal-loading .material-symbols-outlined {
-  animation: lp-spin 1s linear infinite;
-}
-.lp-internal-loading .material-symbols-outlined svg {
-  width: 16px;
-  height: 16px;
-}
 @keyframes lp-spin {
   to {
     transform: rotate(360deg);
@@ -749,6 +776,34 @@ button.dd-link {
   }
 }
 
+/* ── SPA swap loading state ──
+   Shown by showSwapLoading() (fetch+splice routes) and mountIframe()
+   (iframe routes, see loadView()/mountIframe() in leaf_header.js) while
+   a route's content is still loading. #lpSwapHost needs position:relative
+   so .lp-iframe-loading can center over the still-hidden iframe below it. */
+#lpSwapHost {
+  position: relative;
+}
+.lp-swap-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  padding: 60px 24px;
+}
+.lp-iframe-loading {
+  position: absolute;
+  inset: 0;
+}
+.lp-swap-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--nav-border);
+  border-top-color: var(--nav-accent);
+  border-radius: 50%;
+  animation: lp-spin 0.8s linear infinite;
+}
+
 /* ── Jump to top ──
    Injected by leaf_header.js into every page that loads it.
    z-index: 200 sits below the header (300) and dropdown panels
@@ -849,6 +904,73 @@ button.dd-link {
 .modal-close:focus-visible {
   outline: 3px solid #fff;
   outline-offset: 2px;
+}
+
+/* ── Form modal ──
+   Generic iframe modal (Request Support, Nominate a Spotlight) — a
+   visible white header bar + title, unlike the demo modal's cinematic
+   video-on-black style above. Reuses .lp-modal/.modal-box/.modal-close
+   as its base and overrides what needs to differ. */
+.modal-box--form {
+  background: #fff;
+  width: min(720px, 92vw);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.modal-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--nav-panel-bd);
+  flex-shrink: 0;
+}
+.modal-hd-title {
+  font-family: "PublicSans-Bold", sans-serif;
+  font-size: 1rem;
+  color: var(--nav-text);
+  margin: 0;
+}
+.modal-close--inline {
+  position: static;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  color: var(--nav-muted);
+  flex-shrink: 0;
+}
+.modal-close--inline:hover {
+  background: var(--nav-hover-bg);
+  color: var(--nav-accent);
+}
+.modal-close--inline:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+.modal-close--inline .material-symbols-outlined svg {
+  width: 20px;
+  height: 20px;
+}
+.modal-frame-wrap {
+  flex: 1;
+  min-height: 60vh;
+}
+.modal-frame-wrap iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 60vh;
+  border: 0;
+  display: block;
+}
+@media (max-width: 640px) {
+  .modal-box--form {
+    max-height: 100vh;
+    height: 100vh;
+    width: 100vw;
+    border-radius: 0;
+  }
 }
 
 /* ── SPA swap-error icon ──
