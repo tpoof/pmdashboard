@@ -347,7 +347,10 @@
             <span class="material-symbols-outlined" aria-hidden="true">${item.icon}</span>
           </span>
           <span class="dd-link-text">
-            <strong>${item.title}${badgeHTML}</strong>
+            <span class="dd-link-title-row">
+              <strong>${item.title}</strong>
+              ${badgeHTML}
+            </span>
             <span>${item.desc}</span>
           </span>
         </button>

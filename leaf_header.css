@@ -282,13 +282,34 @@ button.dd-link {
   font-size: 1.1rem;
 }
 
+/* Title row — holds the <strong> label and, when present, the
+   status badge, side by side on one line. Every dd-link uses this
+   wrapper (badge slot just renders empty when there's no badge)
+   so the DOM shape stays uniform across items. */
+.dd-link-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+/* Nowrap by default — desktop dropdown panels have no fixed width
+   and grow to fit their content, so title + badge always have room.
+   The mobile accordion panel is width:100% of the nav (see
+   .lp-mobile-panel), so on narrow phones "Learn" + "Coming Soon"
+   can genuinely run out of room — wrap only there, so the badge
+   drops to its own line under the label instead of overflowing
+   or getting squished. */
+@media (max-width: 640px) {
+  .dd-link-title-row {
+    flex-wrap: wrap;
+  }
+}
+
 .dd-link-text strong {
-  display: block;
   font-family: "Public Sans", sans-serif;
   font-size: 0.875rem;
   font-weight: 700;
   color: var(--nav-hl);
-  margin-bottom: 2px;
 }
 .dd-link-text span {
   display: block;
@@ -299,21 +320,26 @@ button.dd-link {
 
 /* Small status pill for not-yet-live destinations (e.g. "Coming
    Soon" on Learn) — sits inline next to the item's title, same
-   visual weight as a status tag rather than overwhelming the link. */
+   visual weight as a status tag rather than overwhelming the link.
+   Neutral gray, deliberately not the accent/brand color, and both
+   smaller and lighter-weight than the label so it reads as
+   secondary. Text/background contrast: 8.48:1 (WCAG AA requires
+   4.5:1 for normal text — well clear even without invoking the
+   large-text 3:1 exception). */
 .dd-badge {
   display: inline-flex;
   align-items: center;
-  margin-left: 6px;
+  flex-shrink: 0;
   padding: 1px 7px;
   font-size: 0.65rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: var(--nav-accent);
-  background: var(--nav-hover-bg);
-  border: 1px solid var(--nav-panel-bd);
+  color: #3d4551; /* --nav-muted */
+  background: #eef0f2;
+  border: 1px solid #dde1e4;
   border-radius: 999px;
-  vertical-align: middle;
+  white-space: nowrap;
 }
 
 .dd-divider {
