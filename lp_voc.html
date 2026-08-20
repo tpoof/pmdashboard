@@ -534,6 +534,41 @@
       }
     </style>
 
+    <!-- ============================================================
+         CONFIG HANDOFF — window.leafHeaderConfig
+         leaf_header.js reads this for Internal-section gating (Coaches/
+         Team behind isAdmin, Leadership behind isLeadershipGroup) —
+         mirrors calendar.js's window.leafCalendar handoff pattern (see
+         calendar/calender.html). Delimiters are Smarty's own <!--{ }-->
+         convention, so an unprocessed/un-rendered page degrades to
+         inert comments rather than broken markup.
+
+         STATIC PLACEHOLDER — this page isn't Smarty-rendered yet. Both
+         flags default to false below the {if} blocks; since the
+         {if}/{/if} wrapper itself is an inert HTML comment when raw,
+         the override line beneath still runs unconditionally, so both
+         currently evaluate to true here — useful for visually testing
+         the gated Internal-section items without a real server. Once
+         this page is wired up to Smarty, this already renders correctly
+         as-is — no changes needed beyond filling in the real group ID.
+         REPLACE_ME_LEADERSHIP_GROUP_ID needs that real Smarty group ID. -->
+    <script>
+      var lpHeaderIsAdmin = false;
+      <!--{if $is_admin}-->
+      lpHeaderIsAdmin = true;
+      <!--{/if}-->
+
+      var lpHeaderIsLeadershipGroup = false;
+      <!--{if $empMembership['groupID'][REPLACE_ME_LEADERSHIP_GROUP_ID]}-->
+      lpHeaderIsLeadershipGroup = true;
+      <!--{/if}-->
+
+      window.leafHeaderConfig = {
+        isAdmin: lpHeaderIsAdmin,
+        isLeadershipGroup: lpHeaderIsLeadershipGroup,
+      };
+    </script>
+
     <link rel="stylesheet" href="./files/leaf_header.css" />
     <script src="./files/leaf_header.js"></script>
   </head>

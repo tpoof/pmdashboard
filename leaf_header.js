@@ -75,24 +75,29 @@
   "use strict";
 
   /* ── Internal section config ────────────────────────────────────
-     Placeholder group IDs — swap in real values before promoting to
-     production.
+     Server-computed, per-user gating handed off via window.leafHeaderConfig
+     — the same config-handoff pattern calendar.js uses for window.leafCalendar
+     (see calendar/calender.html's "CONFIG HANDOFF" script block). Each of
+     the 7 launchpad HTML pages defines window.leafHeaderConfig in an inline
+     <script> before this file loads; see that block for how isAdmin /
+     isLeadershipGroup are computed.
 
-     LEADERSHIP_GROUP_ID : Smarty group that can see the Leadership link.
-     LEAF_TEAM_GROUP_ID  : Smarty group that can see the Internal section
-                           itself (Coaches, Leadership, Team).
+     isAdmin            : gates Coaches + Team (the outer Internal section).
+     isLeadershipGroup  : gates Leadership specifically (individual link,
+                          tighter than isAdmin).
 
-     These constants drive the Smarty conditionals embedded in the
-     buildInternalNavHTML() template string. Search "REPLACE_ME" to find
-     all touch-points. */
-
-  var LEADERSHIP_GROUP_ID = "REPLACE_ME_LEADERSHIP_GROUP_ID";
-  var LEAF_TEAM_GROUP_ID = "REPLACE_ME_LEAF_TEAM_GROUP_ID";
+     Read once at module init. If a page never sets window.leafHeaderConfig
+     at all (forgot the handoff script, or a page that intentionally
+     doesn't gate anything), both default to false via Boolean(undefined)
+     — the Internal section's gated items just don't render, no throw. */
+  var headerConfig = window.leafHeaderConfig || {};
+  var isAdmin = Boolean(headerConfig.isAdmin);
+  var isLeadershipGroup = Boolean(headerConfig.isLeadershipGroup);
 
   /* ── Announcement banner config ──────────────────────────────────
      Placeholder record/indicator IDs — swap in real values before
-     promoting to production. Also included in the "REPLACE_ME" search
-     convention above.
+     promoting to production. Search "REPLACE_ME" to find these and
+     any other unfilled placeholder in this file.
 
      Sourced from a LEAF form's rawIndicator endpoint:
        GET {ANNOUNCEMENT_ROOT_URL}api/form/{ANNOUNCEMENT_RECORD_ID}
@@ -559,30 +564,42 @@
      INTERNAL NAV SECTION
      Right-aligned group rendered as:
 
-       [ 🔒 ]  [ Coaches ]  [ Leadership ]  [ Team ]
-                (new tab)   (direct link)   (direct link)
+       [ 🔒 ]  [ Coaches ]  [ Team ]  [ Leadership ]  [ Users Online ]
+                (new tab)  (direct link)  (direct link)  (live status)
 
-     Smarty group conditionals gate each element:
-       - Entire group → LEAF_TEAM_GROUP_ID  (outer wrapper; also gates
-                         Coaches and Team directly, same group)
-       - Leadership   → LEADERSHIP_GROUP_ID (individual link, tighter)
+     Gating is plain JS now, driven by window.leafHeaderConfig (read
+     once at module init — see isAdmin/isLeadershipGroup above):
+       - Entire group → isAdmin           (outer gate; also covers
+                         Coaches, Team, and Users Online directly)
+       - Leadership   → isLeadershipGroup (individual link, tighter —
+                         requires isAdmin AND isLeadershipGroup, since
+                         it's still inside the outer-gated group)
 
-     NOTE: Smarty tags below are processed server-side via the
-     PHP/Smarty wrapper. If you see literal "<!--{if" strings in
-     rendered HTML the wrapper is not processing this file — run
-     ?leafNavDebug=1 (group 12 members only) for a diagnosis.
+     No Smarty tags are embedded in this output anymore — isAdmin/
+     isLeadershipGroup are already resolved, real booleans by the time
+     this function runs, so gating is a plain `if` in JS rather than a
+     server-side conditional baked into the generated markup.
   ───────────────────────────────────────────────────────────── */
-  function buildInternalNavHTML(leadershipGroupID, leafTeamGroupID) {
+  function buildInternalNavHTML(isAdminFlag, isLeadershipGroupFlag) {
+    if (!isAdminFlag) {
+      /* Not in the gated group at all — no Internal section, full stop. */
+      return { desktop: "", mobile: "" };
+    }
+
     /* ── Desktop: flat group of items ──
-       Order: Coaches (new tab) → Leadership → Team. Coaches and Team
-       are gated only by the outer leafTeamGroupID (same as the section
-       itself) — Leadership keeps its own tighter leadershipGroupID gate,
-       unchanged from before. */
-    var desktopInternal =
-      `
-<!--{if $empMembership['groupID'][` +
-      leafTeamGroupID +
-      `]}-->
+       Order: Coaches (new tab) → Team → Leadership. Coaches, Team, and
+       Users Online are gated only by isAdminFlag (already checked
+       above) — Leadership keeps its own tighter isLeadershipGroupFlag
+       gate on top of that. */
+    var leadershipDesktop = isLeadershipGroupFlag
+      ? `
+  <!-- Leadership: direct hash-routed link -->
+  <button class="lp-internal-btn" data-href="/platform/projects/report.php?a=leadership">
+    Leadership
+  </button>`
+      : "";
+
+    var desktopInternal = `
 <div class="lp-nav-internal" role="navigation" aria-label="Internal team links">
 
   <!-- Lock icon is the only visible content now — role="img" +
@@ -598,29 +615,22 @@
 
   <!-- Coaches: external, opens in a new tab. data-nav-external tells
        wireLinkIntercept() to leave this <a> alone entirely so its real
-       target="_blank" fires natively instead of being hash-routed. -->
+       target="_blank" fires natively instead of being hash-routed.
+       Text-only — no icon, matching Team/Leadership. -->
   <a class="lp-internal-btn" href="https://leaf.va.gov/launchpad/report.php?a=Coaches" data-nav-external target="_blank" rel="noopener noreferrer">
     Coaches
     <span class="lp-sr-only">(opens in new tab)</span>
   </a>
 
-<!--{if $empMembership['groupID'][` +
-      leadershipGroupID +
-      `]}-->
-  <!-- Leadership: direct hash-routed link -->
-  <button class="lp-internal-btn" data-href="/platform/projects/report.php?a=leadership">
-    Leadership
-  </button>
-<!--{/if}-->
-
   <!-- Team: direct hash-routed link (replaces the old LEAF Team dropdown) -->
   <button class="lp-internal-btn" data-href="/platform/projects/report.php?a=team">
     Team
   </button>
+${leadershipDesktop}
 
   <!-- Users Online: live count via Server-Sent Events (see
-       wireUsersOnlineBadge()). Gated only by the outer leafTeamGroupID,
-       same as Coaches/Team — not a link, so plain <span>, not <button>.
+       wireUsersOnlineBadge()). Gated only by isAdminFlag, same as
+       Coaches/Team — not a link, so plain <span>, not <button>.
        .lp-internal-online-count is a class (not an id) since this same
        markup also renders in the mobile accordion below; one
        EventSource updates every matching node. -->
@@ -629,15 +639,25 @@
     <span class="lp-internal-online-count" aria-live="polite" aria-atomic="true">0</span>
   </span>
 
-</div>
-<!--{/if}-->`;
+</div>`;
 
     /* ── Mobile: appended at bottom of accordion ── */
-    var mobileInternal =
-      `
-<!--{if $empMembership['groupID'][` +
-      leafTeamGroupID +
-      `]}-->
+    var leadershipMobile = isLeadershipGroupFlag
+      ? `
+<li class="lp-internal-mobile-item">
+  <button class="dd-link" data-href="/platform/projects/report.php?a=leadership">
+    <span class="dd-link-ico">
+      <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
+    </span>
+    <span class="dd-link-text">
+      <strong>Leadership</strong>
+      <span class="dd-link-desc">Platform leadership dashboard</span>
+    </span>
+  </button>
+</li>`
+      : "";
+
+    var mobileInternal = `
 
 <!-- Mobile separator before Internal section — lock icon only, same
      role="img"+aria-label treatment as the desktop version. -->
@@ -660,22 +680,6 @@
   </a>
 </li>
 
-<!--{if $empMembership['groupID'][` +
-      leadershipGroupID +
-      `]}-->
-<li class="lp-internal-mobile-item">
-  <button class="dd-link" data-href="/platform/projects/report.php?a=leadership">
-    <span class="dd-link-ico">
-      <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
-    </span>
-    <span class="dd-link-text">
-      <strong>Leadership</strong>
-      <span class="dd-link-desc">Platform leadership dashboard</span>
-    </span>
-  </button>
-</li>
-<!--{/if}-->
-
 <li class="lp-internal-mobile-item">
   <button class="dd-link" data-href="/platform/projects/report.php?a=team">
     <span class="dd-link-ico">
@@ -687,10 +691,11 @@
     </span>
   </button>
 </li>
+${leadershipMobile}
 
 <!-- Users Online: same live count as the desktop badge above (shares
      .lp-internal-online-count), rendered here as a non-interactive
-     status row matching the Coaches/Leadership/Team row shape. -->
+     status row matching the Coaches/Team/Leadership row shape. -->
 <li class="lp-internal-mobile-item lp-internal-online">
   <span class="dd-link">
     <span class="dd-link-ico">
@@ -701,9 +706,7 @@
       <span class="dd-link-desc">Currently active on LEAF: <span class="lp-internal-online-count" aria-live="polite" aria-atomic="true">0</span></span>
     </span>
   </span>
-</li>
-
-<!--{/if}-->`;
+</li>`;
 
     return { desktop: desktopInternal, mobile: mobileInternal };
   }
@@ -737,10 +740,7 @@
   function buildNavHTML() {
     var desktopItems = NAV_SECTIONS.map(desktopSectionHTML).join("");
     var mobileItems = NAV_SECTIONS.map(mobileSectionHTML).join("");
-    var internal = buildInternalNavHTML(
-      LEADERSHIP_GROUP_ID,
-      LEAF_TEAM_GROUP_ID,
-    );
+    var internal = buildInternalNavHTML(isAdmin, isLeadershipGroup);
     return `
 <nav class="lp-nav" id="lpNav" aria-label="Launchpad navigation">
   <div class="lp-nav-in">
@@ -914,75 +914,46 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
-     SMARTY / PHP WRAPPER DEBUG UTILITY
-     Only runs when ALL of:
-       1. ?leafNavDebug=1 is in the query string
-       2. Smarty rendered the LEAF Team group check as true
-          (i.e., the user is in LEAF_TEAM_GROUP_ID / group 12)
-     Renders an amber dismissible banner + console group with:
-       - Whether Smarty processed this file at all
-       - Whether each group constant resolved to a real ID
-       - Whether $empMembership evaluated (banner visible = yes)
+     HEADER CONFIG DEBUG UTILITY
+     Only runs when ?leafNavDebug=1 is in the query string. Renders a
+     console group always, plus an amber dismissible banner gated to
+     isAdmin (the closest equivalent to the old "LEAF Team member"
+     visibility rule), diagnosing window.leafHeaderConfig — the
+     config-handoff object each launchpad page's inline <script> is
+     responsible for setting before this file loads (see the
+     "Internal section config" comment near the top of this file).
   ───────────────────────────────────────────────────────────── */
   function runNavDebug() {
-    /* Only show to LEAF Team members — the LEAF_TEAM_GROUP_ID
-       constant is a Smarty-rendered value. If Smarty didn't run,
-       it will still be the literal placeholder string. */
-    var isLeafTeamMember =
-      LEAF_TEAM_GROUP_ID !== "REPLACE_ME_LEAF_TEAM_GROUP_ID";
+    var configPresent = typeof window.leafHeaderConfig === "object" && window.leafHeaderConfig !== null;
 
-    /* Detect whether Smarty processed this file at all by checking
-       if any constant still holds its literal placeholder. */
-    var smartyRan = LEADERSHIP_GROUP_ID !== "REPLACE_ME_LEADERSHIP_GROUP_ID";
-    var leadershipResolved =
-      smartyRan && /^\d+$/.test(String(LEADERSHIP_GROUP_ID));
-    var leafTeamResolved =
-      LEAF_TEAM_GROUP_ID !== "REPLACE_ME_LEAF_TEAM_GROUP_ID" &&
-      /^\d+$/.test(String(LEAF_TEAM_GROUP_ID));
-
-    /* Console output — always logged when param present, group check aside */
-    console.group("[LEAF Header Debug] Smarty/PHP wrapper diagnostics");
+    /* Console output — always logged when the param is present, admin
+       check aside, since a missing/misconfigured handoff is exactly
+       what a non-admin developer debugging a page would need to see. */
+    console.group("[LEAF Header Debug] window.leafHeaderConfig diagnostics");
     console.log(
-      "Smarty processed this file:",
-      smartyRan ? "✅ YES" : "❌ NO — constants are still placeholder strings",
+      "window.leafHeaderConfig present:",
+      configPresent ? "✅ YES" : "❌ NO — page is missing the config-handoff <script> block (see calendar/calender.html for the reference pattern)",
     );
-    console.log(
-      "LEADERSHIP_GROUP_ID resolved:",
-      leadershipResolved
-        ? "✅ " + LEADERSHIP_GROUP_ID
-        : "❌ " + LEADERSHIP_GROUP_ID,
-    );
-    console.log(
-      "LEAF_TEAM_GROUP_ID resolved:",
-      leafTeamResolved
-        ? "✅ " + LEAF_TEAM_GROUP_ID
-        : "❌ " + LEAF_TEAM_GROUP_ID,
-    );
-    console.log(
-      "Current user in LEAF Team group (banner visible):",
-      isLeafTeamMember ? "✅ YES" : "❌ NO",
-    );
+    console.log("Resolved isAdmin:", isAdmin ? "✅ true" : "❌ false");
+    console.log("Resolved isLeadershipGroup:", isLeadershipGroup ? "✅ true" : "❌ false");
+    if (!configPresent) {
+      console.log(
+        "Note: isAdmin/isLeadershipGroup above default to false via Boolean(undefined) when the config object is missing entirely — that's a silent no-op, not a bug, but it does mean the Internal section is invisible on this page until the handoff script is added.",
+      );
+    }
     console.groupEnd();
 
-    /* Visual banner — only shown to LEAF Team members */
-    if (!isLeafTeamMember) return;
+    /* Visual banner — only shown to admins, so a public/unauthenticated
+       page load doesn't leak internal diagnostic detail. */
+    if (!isAdmin) return;
 
     var rows = [
-      ["Smarty processed this file", smartyRan ? "✅ YES" : "❌ NO"],
       [
-        "LEADERSHIP_GROUP_ID",
-        leadershipResolved
-          ? "✅ " + LEADERSHIP_GROUP_ID
-          : "❌ still placeholder",
+        "window.leafHeaderConfig present",
+        configPresent ? "✅ YES" : "❌ NO — handoff script missing",
       ],
-      [
-        "LEAF_TEAM_GROUP_ID",
-        leafTeamResolved ? "✅ " + LEAF_TEAM_GROUP_ID : "❌ still placeholder",
-      ],
-      [
-        "$empMembership evaluated (you see this)",
-        "✅ YES — you are in LEAF Team group",
-      ],
+      ["isAdmin", isAdmin ? "✅ true" : "❌ false"],
+      ["isLeadershipGroup", isLeadershipGroup ? "✅ true" : "❌ false"],
     ];
 
     var rowHTML = rows
@@ -1023,7 +994,7 @@
       '<div style="display:flex;align-items:flex-start;gap:12px;">' +
       '<span class="material-symbols-outlined lp-debug-icon" aria-hidden="true" style="color:#d97706;flex-shrink:0;margin-top:2px;">' + ICON_SVG.bug_report + '</span>' +
       '<div style="flex:1;">' +
-      '<strong style="display:block;margin-bottom:6px;">LEAF Header — Smarty/PHP Debug <span style="font-weight:400;color:#78716c;">(visible to LEAF Team only · remove ?leafNavDebug=1 to hide)</span></strong>' +
+      '<strong style="display:block;margin-bottom:6px;">LEAF Header — Config Debug <span style="font-weight:400;color:#78716c;">(visible to admins only · remove ?leafNavDebug=1 to hide)</span></strong>' +
       "<table>" +
       rowHTML +
       "</table>" +
@@ -1086,9 +1057,9 @@
     ensureDemoModal();
     wireDemoModal();
 
-    /* Users Online badge (Internal section) — no-ops if Smarty didn't
-       render it for this user (not in LEAF_TEAM_GROUP_ID) or the
-       browser lacks EventSource support. */
+    /* Users Online badge (Internal section) — no-ops if buildInternalNavHTML
+       didn't render it for this user (isAdmin is false) or the browser
+       lacks EventSource support. */
     wireUsersOnlineBadge();
 
     /* Global announcement banner — async; only mounts above the nav
@@ -2427,8 +2398,9 @@
      fallback ($(".badge").remove()) — reimplemented here in plain JS
      to keep this file dependency-light, matching every other feature
      in it. Gated to the same admin/internal audience as Coaches/Team
-     (see buildInternalNavHTML) — if Smarty didn't render the badge for
-     this user, .lp-internal-online simply won't exist and this no-ops.
+     (see buildInternalNavHTML) — if isAdmin was false, the badge was
+     never rendered, .lp-internal-online simply won't exist, and this
+     no-ops.
   ───────────────────────────────────────────────────────────── */
   var USERS_ONLINE_SSE_URL = "/online-users/getonlineusers.php";
 

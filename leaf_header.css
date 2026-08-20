@@ -633,10 +633,19 @@ button.dd-link {
   flex-shrink: 0;
 }
 
-/* Shared button style (Leadership + LEAF Team). Matches .dd-trigger
+/* Shared button style (Coaches, Team, Leadership). Matches .dd-trigger
    shape exactly: border-radius 5px (--nav-r), no border, transparent
    background — the container background provides the visual
-   distinction. Font values copied verbatim from .dd-trigger. */
+   distinction. Font values copied verbatim from .dd-trigger.
+
+   text-decoration: underline — these are real links/nav actions sitting
+   in a flat toolbar row next to the non-interactive Users Online status
+   pill, with no icon and no distinct color until hover, so nothing
+   previously signaled "clickable" at rest. Matches the underline already
+   used for breadcrumb links (.lp-breadcrumb a) elsewhere in this file —
+   this file's existing link-underline convention — rather than
+   introducing a new visual language. Underlining doesn't touch color, so
+   it has no effect on the existing 4.5:1+ contrast ratios below. */
 .lp-internal-btn {
   display: inline-flex;
   align-items: center;
@@ -648,7 +657,7 @@ button.dd-link {
   color: #3d4551; /* --nav-muted */
   font-family: 'PublicSans-Medium', sans-serif;
   font-size: 0.9rem;
-  text-decoration: none;
+  text-decoration: underline;
   white-space: nowrap;
   cursor: pointer;
   transition:
@@ -659,7 +668,7 @@ button.dd-link {
 .lp-internal-btn:hover {
   background: #ffffff;
   color: #005ea2;
-  text-decoration: none;
+  text-decoration: underline;
 }
 .lp-internal-btn:focus-visible {
   outline: 3px solid #005ea2;
@@ -667,9 +676,11 @@ button.dd-link {
 }
 
 /* Users Online badge — same shape/weight as .lp-internal-btn (Coaches/
-   Leadership/Team) but non-interactive (a live status, not a link), so
-   the pointer cursor and hover "this is clickable" cue are suppressed. */
+   Team/Leadership) but non-interactive (a live status, not a link), so
+   the underline, pointer cursor, and hover "this is clickable" cue are
+   all suppressed — underlining a non-link would be actively misleading. */
 .lp-internal-online {
+  text-decoration: none;
   cursor: default;
 }
 .lp-internal-online:hover {
