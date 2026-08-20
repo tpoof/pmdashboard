@@ -3591,6 +3591,96 @@
                 unmappedIds.length +
                 " records that were fetched but not displayed, and why.",
             );
+            console.log(
+              "Run window.__LEAF_DEBUG.probeRecord('1234') on one of those unmapped record IDs to try to discover the submission-status field.",
+            );
+            window.__LEAF_DEBUG.probeRecord = function (rid) {
+              rid = String(rid);
+              var attempts = [
+                {
+                  label: "no getData restriction (undefined)",
+                  q: {
+                    terms: [{ id: "recordID", operator: "=", match: rid }],
+                    joins: [],
+                    sort: {},
+                  },
+                },
+                {
+                  label: "getData:'*'",
+                  q: {
+                    terms: [{ id: "recordID", operator: "=", match: rid }],
+                    joins: [],
+                    sort: {},
+                    getData: "*",
+                  },
+                },
+                {
+                  label: "getData:[] empty array",
+                  q: {
+                    terms: [{ id: "recordID", operator: "=", match: rid }],
+                    joins: [],
+                    sort: {},
+                    getData: [],
+                  },
+                },
+                {
+                  label: "joins:['status'] with existing GET fields",
+                  q: {
+                    terms: [{ id: "recordID", operator: "=", match: rid }],
+                    joins: ["status"],
+                    sort: {},
+                    getData: GET,
+                  },
+                },
+              ];
+              console.log(
+                "Probing record " +
+                  rid +
+                  " with several request shapes to try to surface fields outside the current GET list (which only requests: " +
+                  GET.join(",") +
+                  "). Looking for anything resembling a submission/status/workflow field.",
+              );
+              return Promise.all(
+                attempts.map(function (a) {
+                  return fetch(
+                    ENDPOINT + "?q=" + encodeURIComponent(JSON.stringify(a.q)),
+                    {
+                      credentials: "same-origin",
+                      headers: { Accept: "application/json" },
+                    },
+                  )
+                    .then(function (r) {
+                      return r.json().then(function (j) {
+                        return {
+                          label: a.label,
+                          ok: r.ok,
+                          status: r.status,
+                          json: j,
+                        };
+                      });
+                    })
+                    .catch(function (e) {
+                      return { label: a.label, error: String(e) };
+                    });
+                }),
+              ).then(function (results) {
+                results.forEach(function (res) {
+                  console.log("--- " + res.label + " ---");
+                  if (res.error) {
+                    console.log("Request failed:", res.error);
+                    return;
+                  }
+                  console.log("HTTP " + res.status + ":", res.json);
+                  var rec = res.json && res.json[rid];
+                  if (rec && rec.s1)
+                    console.log("s1 field IDs returned:", Object.keys(rec.s1));
+                });
+                console.log(
+                  "Look through the objects above for a field whose value looks like a status/workflow name (e.g. 'Not Submitted', 'Draft', a stepTitle, or a boolean-ish submitted flag). Its key (e.g. 'id41', 'id60'...) is the field ID you want. Paste the console output back and I can wire it into the query.",
+                );
+                return results;
+              });
+            };
           }
           document.getElementById("sv-foot").textContent = footTxt;
         })
