@@ -3407,11 +3407,16 @@
         collectSteps(0).catch(function () {}),
       ])
         .then(function () {
-          var rawIds = Object.keys(all);
+          var rawIds = Object.keys(all),
+            unmappedIds = [];
           DATA = rawIds
             .map(function (rid) {
               var rec = mapRecord(rid, all[rid] || {});
-              if (rec) rec.step = stepMap[rid] || "";
+              if (rec) {
+                rec.step = stepMap[rid] || "";
+              } else {
+                unmappedIds.push(rid);
+              }
               return rec;
             })
             .filter(Boolean);
@@ -3420,7 +3425,7 @@
               return mapKR(rid, krAll[rid] || {});
             })
             .filter(Boolean);
-          var unmapped = rawIds.length - DATA.length;
+          var unmapped = unmappedIds.length;
           if (!silent) buildOptions();
           render();
           var np = DATA.filter(function (r) {
@@ -3517,6 +3522,59 @@
                   return !all[id];
                 });
               },
+              // Every record that was fetched but failed all three anchor-field checks in mapRecord().
+              // Returns one row per record: which anchor fields were null/missing, and what other
+              // fields on that record WERE populated (so you can eyeball whether it looks like a
+              // scrubbed Project/Task/OKR vs. a genuinely different/blank record).
+              unmappedIds: unmappedIds,
+              listUnmapped: function () {
+                var rows = unmappedIds.map(function (rid) {
+                  var s = (all[rid] || {}).s1 || {};
+                  var anchorState = {};
+                  ANCHOR_FIELDS.forEach(function (f) {
+                    anchorState[f] =
+                      s[f] === undefined
+                        ? "missing"
+                        : s[f] === null
+                          ? "null"
+                          : JSON.stringify(s[f]);
+                  });
+                  var otherFieldsPresent = Object.keys(s).filter(function (k) {
+                    return (
+                      ANCHOR_FIELDS.indexOf(k) === -1 &&
+                      s[k] !== null &&
+                      s[k] !== undefined &&
+                      s[k] !== ""
+                    );
+                  });
+                  return {
+                    rid: rid,
+                    anchorState: anchorState,
+                    otherFieldsPresent: otherFieldsPresent,
+                    otherFieldCount: otherFieldsPresent.length,
+                  };
+                });
+                console.table(
+                  rows.map(function (r) {
+                    return {
+                      rid: r.rid,
+                      id23: r.anchorState.id23,
+                      id24: r.anchorState.id24,
+                      id9: r.anchorState.id9,
+                      id4: r.anchorState.id4,
+                      otherFieldsPopulated: r.otherFieldCount,
+                    };
+                  }),
+                );
+                console.log(
+                  unmappedIds.length +
+                    " unmapped record(s) total. Full detail (incl. which other fields have data) returned below \u2014 inspect return value.",
+                );
+                console.log(
+                  "Rows with otherFieldsPopulated > 0 are records that clearly have data but whose type-detection fields (id4/id9/id23/id24) came back empty \u2014 likely field-level permission scrubbing, not blank records.",
+                );
+                return rows;
+              },
             };
             console.log(
               "%cLEAF dashboard debug mode active.",
@@ -3527,6 +3585,11 @@
             );
             console.log(
               "Run window.__LEAF_DEBUG.missingFrom(['1234','5678']) to check a batch of expected IDs against what actually came back.",
+            );
+            console.log(
+              "Run window.__LEAF_DEBUG.listUnmapped() to see all " +
+                unmappedIds.length +
+                " records that were fetched but not displayed, and why.",
             );
           }
           document.getElementById("sv-foot").textContent = footTxt;
