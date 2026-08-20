@@ -3280,6 +3280,19 @@
         weight: num(s.id113) == null ? 1 : num(s.id113),
       };
     }
+    // Records that were never submitted come back as a bare Task shell: every field null except
+    // the Task-status field (id10), which defaults to "( Not Started )" even for unfilled drafts.
+    // Confirmed via console debug on 2026-08 — see chat history. Treat this exact signature as a
+    // benign draft, not a data-quality problem; anything else that fails mapRecord() is still
+    // flagged separately for review since it doesn't match the known draft pattern.
+    function isUnsubmittedDraftShell(s) {
+      var keys = Object.keys(s || {}).filter(function (k) {
+        return s[k] !== null && s[k] !== undefined && s[k] !== "";
+      });
+      if (keys.length === 0) return true;
+      return keys.length === 1 && keys[0] === "id10";
+    }
+
     function mapRecord(rid, rec) {
       var s = rec.s1 || {};
       if (s.id23 != null && s.id24 != null) {
@@ -3408,7 +3421,9 @@
       ])
         .then(function () {
           var rawIds = Object.keys(all),
-            unmappedIds = [];
+            unmappedIds = [],
+            draftIds = [],
+            reviewIds = [];
           DATA = rawIds
             .map(function (rid) {
               var rec = mapRecord(rid, all[rid] || {});
@@ -3416,6 +3431,9 @@
                 rec.step = stepMap[rid] || "";
               } else {
                 unmappedIds.push(rid);
+                var s1 = (all[rid] || {}).s1 || {};
+                if (isUnsubmittedDraftShell(s1)) draftIds.push(rid);
+                else reviewIds.push(rid);
               }
               return rec;
             })
@@ -3440,13 +3458,20 @@
             " tasks) \u00b7 " +
             KRS.length +
             " key results.";
-          if (unmapped > 0)
+          if (draftIds.length > 0)
             footTxt +=
               " \u00b7 " +
-              unmapped +
+              draftIds.length +
+              " not-submitted draft" +
+              (draftIds.length !== 1 ? "s" : "") +
+              " excluded.";
+          if (reviewIds.length > 0)
+            footTxt +=
+              " \u00b7 " +
+              reviewIds.length +
               " record" +
-              (unmapped !== 1 ? "s" : "") +
-              " fetched but not displayed (unrecognized record shape).";
+              (reviewIds.length !== 1 ? "s" : "") +
+              " fetched but not displayed (unrecognized shape \u2014 needs review).";
           if (DEBUG) {
             footTxt += " \u00b7 DEBUG MODE (see console)";
             window.__LEAF_DEBUG = {
@@ -3522,11 +3547,12 @@
                   return !all[id];
                 });
               },
-              // Every record that was fetched but failed all three anchor-field checks in mapRecord().
-              // Returns one row per record: which anchor fields were null/missing, and what other
-              // fields on that record WERE populated (so you can eyeball whether it looks like a
-              // scrubbed Project/Task/OKR vs. a genuinely different/blank record).
+              // Every record that was fetched but failed all three anchor-field checks in mapRecord(),
+              // split into confirmed not-submitted drafts (matches the known "only id10 default" shell)
+              // vs genuinely unrecognized records that still warrant a look.
               unmappedIds: unmappedIds,
+              draftIds: draftIds,
+              reviewIds: reviewIds,
               listUnmapped: function () {
                 var rows = unmappedIds.map(function (rid) {
                   var s = (all[rid] || {}).s1 || {};
@@ -3549,6 +3575,7 @@
                   });
                   return {
                     rid: rid,
+                    isDraft: isUnsubmittedDraftShell(s),
                     anchorState: anchorState,
                     otherFieldsPresent: otherFieldsPresent,
                     otherFieldCount: otherFieldsPresent.length,
@@ -3558,6 +3585,7 @@
                   rows.map(function (r) {
                     return {
                       rid: r.rid,
+                      isDraft: r.isDraft,
                       id23: r.anchorState.id23,
                       id24: r.anchorState.id24,
                       id9: r.anchorState.id9,
@@ -3567,11 +3595,10 @@
                   }),
                 );
                 console.log(
-                  unmappedIds.length +
-                    " unmapped record(s) total. Full detail (incl. which other fields have data) returned below \u2014 inspect return value.",
-                );
-                console.log(
-                  "Rows with otherFieldsPopulated > 0 are records that clearly have data but whose type-detection fields (id4/id9/id23/id24) came back empty \u2014 likely field-level permission scrubbing, not blank records.",
+                  draftIds.length +
+                    " confirmed not-submitted draft(s), " +
+                    reviewIds.length +
+                    " record(s) that don't match the known draft signature and still warrant review.",
                 );
                 return rows;
               },
@@ -3589,7 +3616,11 @@
             console.log(
               "Run window.__LEAF_DEBUG.listUnmapped() to see all " +
                 unmappedIds.length +
-                " records that were fetched but not displayed, and why.",
+                " excluded records (" +
+                draftIds.length +
+                " confirmed drafts, " +
+                reviewIds.length +
+                " needing review).",
             );
             console.log(
               "Run window.__LEAF_DEBUG.probeRecord('1234') on one of those unmapped record IDs to try to discover the submission-status field.",
