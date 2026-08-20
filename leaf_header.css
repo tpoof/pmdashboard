@@ -136,10 +136,16 @@
 /* ── Header shell ──
    Owns the sticky position, background, blur, and scroll shadow
    that used to belong to .lp-nav alone — branding, nav, and
-   breadcrumb now scroll and stick together as one unit. */
+   breadcrumb now scroll and stick together as one unit.
+
+   top: var(--lp-announcement-h, 0px) — when the announcement banner
+   (see .lp-announcement below) is present, leaf_header.js sets this
+   custom property to the banner's live-measured height so the header
+   sticks directly below it instead of underneath it. Defaults to 0px
+   (header sticks to the very top, as before) when no banner exists. */
 .lp-header {
   position: sticky;
-  top: 0;
+  top: var(--lp-announcement-h, 0px);
   z-index: 300;
   background: rgba(255, 255, 255, 0.97);
   border-bottom: 1px solid transparent;
@@ -660,6 +666,20 @@ button.dd-link {
   outline-offset: 2px;
 }
 
+/* Users Online badge — same shape/weight as .lp-internal-btn (Coaches/
+   Leadership/Team) but non-interactive (a live status, not a link), so
+   the pointer cursor and hover "this is clickable" cue are suppressed. */
+.lp-internal-online {
+  cursor: default;
+}
+.lp-internal-online:hover {
+  background: transparent;
+  color: #3d4551; /* --nav-muted — no hover state, nothing to activate */
+}
+.lp-internal-online-count {
+  font-family: 'PublicSans-Bold', sans-serif;
+}
+
 @keyframes lp-spin {
   to {
     transform: rotate(360deg);
@@ -683,6 +703,94 @@ button.dd-link {
 .lp-mobile-internal-sep .material-symbols-outlined svg {
   width: 14px;
   height: 14px;
+}
+
+/* Mobile Users Online row — reuses .dd-link's layout/icon/text
+   treatment for visual consistency with Coaches/Leadership/Team, but
+   on a non-interactive <span> (no data-href, nothing to activate), so
+   the affordance hover is toned down to a status-row highlight. */
+.lp-internal-mobile-item.lp-internal-online .dd-link {
+  cursor: default;
+}
+
+/* ── Announcement banner ──
+   Sourced from a LEAF indicator record (see leaf_header.js
+   ANNOUNCEMENT_* constants + renderAnnouncementBanner()). Only ever
+   inserted into the DOM when there's real, non-empty content — never
+   left as an empty/hidden placeholder.
+
+   Amber "notice" treatment: same bg/border/text values as the Help
+   Library's --hl-start-bg / --hl-start-border / --hl-start-icon
+   "Start Here" band (help_library.html) — an attention-getting-but-
+   not-alarming pattern already validated elsewhere in LEAF, reused
+   here rather than introducing a new color language for one banner. */
+.lp-announcement {
+  position: sticky;
+  top: 0;
+  z-index: 305; /* above .lp-header (300), below dropdown panels (400) */
+  background: #fffbeb; /* --hl-start-bg */
+  border-bottom: 1px solid #f59e0b; /* --hl-start-border */
+}
+.lp-announcement-in {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 10px 24px;
+}
+.lp-announcement-body {
+  flex: 1;
+  min-width: 0;
+  font-family: 'PublicSans-Regular', sans-serif;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #78350f; /* matches .hl-sh-desc body tone */
+}
+.lp-announcement-body p {
+  margin: 0 0 6px;
+}
+.lp-announcement-body p:last-child {
+  margin-bottom: 0;
+}
+.lp-announcement-body a {
+  color: #92400e; /* --hl-start-icon */
+  text-decoration: underline;
+}
+.lp-announcement-body a:focus-visible {
+  outline: 3px solid #92400e;
+  outline-offset: 2px;
+}
+.lp-announcement-close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--nav-r);
+  background: transparent;
+  color: #92400e; /* --hl-start-icon */
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.lp-announcement-close:hover {
+  background: rgba(146, 64, 14, 0.1);
+}
+.lp-announcement-close:focus-visible {
+  outline: 3px solid #92400e;
+  outline-offset: 2px;
+}
+.lp-announcement-close .material-symbols-outlined svg {
+  width: 1rem;
+  height: 1rem;
+}
+@media (max-width: 640px) {
+  .lp-announcement-in {
+    padding: 10px 16px;
+  }
 }
 
 /* ── Responsive ── */

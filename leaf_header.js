@@ -89,6 +89,29 @@
   var LEADERSHIP_GROUP_ID = "REPLACE_ME_LEADERSHIP_GROUP_ID";
   var LEAF_TEAM_GROUP_ID = "REPLACE_ME_LEAF_TEAM_GROUP_ID";
 
+  /* ── Announcement banner config ──────────────────────────────────
+     Placeholder record/indicator IDs — swap in real values before
+     promoting to production. Also included in the "REPLACE_ME" search
+     convention above.
+
+     Sourced from a LEAF form's rawIndicator endpoint:
+       GET {ANNOUNCEMENT_ROOT_URL}api/form/{ANNOUNCEMENT_RECORD_ID}
+           /rawIndicator/{ANNOUNCEMENT_INDICATOR_ID}/{ANNOUNCEMENT_SERIES}
+
+     ANNOUNCEMENT_ROOT_URL      : base URL of the LEAF site/app hosting
+                                  the announcement record, trailing
+                                  slash included (e.g.
+                                  "https://leaf.va.gov/platform/xyz/").
+     ANNOUNCEMENT_RECORD_ID     : the form record ID.
+     ANNOUNCEMENT_INDICATOR_ID  : the rich-text (Trumbowyg) indicator ID
+                                  whose value is the announcement copy.
+     ANNOUNCEMENT_SERIES        : series number — 1 unless the record
+                                  uses a different series. */
+  var ANNOUNCEMENT_ROOT_URL = "REPLACE_ME_ANNOUNCEMENT_ROOT_URL";
+  var ANNOUNCEMENT_RECORD_ID = "REPLACE_ME_ANNOUNCEMENT_RECORD_ID";
+  var ANNOUNCEMENT_INDICATOR_ID = "REPLACE_ME_ANNOUNCEMENT_INDICATOR_ID";
+  var ANNOUNCEMENT_SERIES = 1;
+
   /* ── Home route — used for the brand logo link and as the
      breadcrumb auto-detect's "hide breadcrumb here" match. ── */
   var HOME_HREF = "/launchpad/report.php?a=lp_home";
@@ -595,6 +618,17 @@
     Team
   </button>
 
+  <!-- Users Online: live count via Server-Sent Events (see
+       wireUsersOnlineBadge()). Gated only by the outer leafTeamGroupID,
+       same as Coaches/Team — not a link, so plain <span>, not <button>.
+       .lp-internal-online-count is a class (not an id) since this same
+       markup also renders in the mobile accordion below; one
+       EventSource updates every matching node. -->
+  <span class="lp-internal-btn lp-internal-online">
+    Users Online:
+    <span class="lp-internal-online-count" aria-live="polite" aria-atomic="true">0</span>
+  </span>
+
 </div>
 <!--{/if}-->`;
 
@@ -652,6 +686,21 @@
       <span class="dd-link-desc">Meet the LEAF platform team</span>
     </span>
   </button>
+</li>
+
+<!-- Users Online: same live count as the desktop badge above (shares
+     .lp-internal-online-count), rendered here as a non-interactive
+     status row matching the Coaches/Leadership/Team row shape. -->
+<li class="lp-internal-mobile-item lp-internal-online">
+  <span class="dd-link">
+    <span class="dd-link-ico">
+      <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
+    </span>
+    <span class="dd-link-text">
+      <strong>Users Online</strong>
+      <span class="dd-link-desc">Currently active on LEAF: <span class="lp-internal-online-count" aria-live="polite" aria-atomic="true">0</span></span>
+    </span>
+  </span>
 </li>
 
 <!--{/if}-->`;
@@ -801,7 +850,14 @@
     if (host) return host;
     host = document.createElement("div");
     host.id = "lp-header-host";
-    document.body.insertBefore(host, document.body.firstChild);
+    /* Insert right after the skip link (not at body.firstChild) so the
+       skip link — inserted moments earlier by ensureSkipLink(), which
+       itself targets body.firstChild — stays the true first child and
+       first Tab stop. Inserting at body.firstChild here would instead
+       land the header (full of focusable nav buttons) ahead of the
+       skip link, defeating its purpose. */
+    var skip = document.getElementById("lp-skip-nav");
+    document.body.insertBefore(host, skip ? skip.nextSibling : document.body.firstChild);
     return host;
   }
 
@@ -1029,6 +1085,16 @@
        anywhere. */
     ensureDemoModal();
     wireDemoModal();
+
+    /* Users Online badge (Internal section) — no-ops if Smarty didn't
+       render it for this user (not in LEAF_TEAM_GROUP_ID) or the
+       browser lacks EventSource support. */
+    wireUsersOnlineBadge();
+
+    /* Global announcement banner — async; only mounts above the nav
+       once/if the sourced indicator resolves to real content. No-ops
+       until ANNOUNCEMENT_* constants are filled in with real values. */
+    initAnnouncementBanner();
 
     /* Debug panel — only when ?leafNavDebug=1 is present */
     if (/[?&]leafNavDebug=1/.test(window.location.search)) {
@@ -2350,6 +2416,221 @@
       formModalTrigger.focus();
       formModalTrigger = null;
     }
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     USERS ONLINE BADGE
+     Ported from the legacy LEAF header's "Users Online" pill (see
+     online-users/getonlineusers.php, a long-lived Server-Sent Events
+     endpoint pushing the live count as plain-text messages). The
+     legacy version depended on jQuery only for its no-EventSource
+     fallback ($(".badge").remove()) — reimplemented here in plain JS
+     to keep this file dependency-light, matching every other feature
+     in it. Gated to the same admin/internal audience as Coaches/Team
+     (see buildInternalNavHTML) — if Smarty didn't render the badge for
+     this user, .lp-internal-online simply won't exist and this no-ops.
+  ───────────────────────────────────────────────────────────── */
+  var USERS_ONLINE_SSE_URL = "/online-users/getonlineusers.php";
+
+  function wireUsersOnlineBadge() {
+    var badges = document.querySelectorAll(".lp-internal-online");
+    if (!badges.length) return;
+
+    if (typeof EventSource === "undefined") {
+      /* No SSE support — drop the badge entirely rather than leaving a
+         count that will never update (plain JS equivalent of the
+         legacy $(".badge").remove() fallback). */
+      badges.forEach(function (el) {
+        el.remove();
+      });
+      return;
+    }
+
+    var source = new EventSource(USERS_ONLINE_SSE_URL);
+    source.onmessage = function (event) {
+      document.querySelectorAll(".lp-internal-online-count").forEach(function (el) {
+        el.textContent = event.data;
+      });
+    };
+    /* No onerror handling needed — EventSource auto-reconnects per
+       spec, and the last known count staying visible in the meantime
+       is the right behavior (better than blanking to 0 or an error
+       state on a transient network blip). */
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     ANNOUNCEMENT BANNER
+     Global, site-wide notice sourced from a LEAF indicator record
+     (see the ANNOUNCEMENT_* constants near the top of this file).
+     Only ever inserted into the DOM when the record resolves to real,
+     non-empty content — never rendered empty or hidden-but-present,
+     so a page with no active announcement pays zero layout cost.
+
+     Dismissal is session-only: the close button just removes the DOM
+     node (removeAnnouncementBanner) — nothing is written to a cookie
+     or storage key, so the banner returns on the next full page load.
+     This project's environment restricts browser storage APIs, so no
+     persistence layer is wired up here — flag if a cross-reload "stay
+     dismissed" behavior turns out to be wanted; it would need a
+     mechanism the environment can actually use (e.g. a server-side
+     per-user flag), not localStorage/cookies.
+  ───────────────────────────────────────────────────────────── */
+  var DOMPURIFY_SRC =
+    "https://leaf.va.gov/app/libs/js/dompurify/dompurify.min.js";
+
+  /* Reuses the exact script reference lp_form_library.html already
+     loads DOMPurify from — a confirmed in-domain dependency — rather
+     than adding a second source for the same library. If some other
+     page already has this exact <script src> in the document (e.g.
+     lp_form_library.html itself), waits on that tag's load instead of
+     injecting a duplicate. */
+  function ensureDompurify() {
+    if (window.DOMPurify) return Promise.resolve();
+    var existing = document.querySelector('script[src="' + DOMPURIFY_SRC + '"]');
+    if (existing) {
+      return new Promise(function (resolve) {
+        if (window.DOMPurify) {
+          resolve();
+          return;
+        }
+        existing.addEventListener("load", function () {
+          resolve();
+        });
+        existing.addEventListener("error", function () {
+          console.warn("[LP] DOMPurify failed to load — announcement banner will not render");
+          resolve();
+        });
+      });
+    }
+    return new Promise(function (resolve) {
+      var s = document.createElement("script");
+      s.src = DOMPURIFY_SRC;
+      s.async = true;
+      s.onload = function () {
+        resolve();
+      };
+      s.onerror = function () {
+        console.warn("[LP] DOMPurify failed to load — announcement banner will not render");
+        resolve();
+      };
+      document.head.appendChild(s);
+    });
+  }
+
+  function buildAnnouncementURL() {
+    return (
+      ANNOUNCEMENT_ROOT_URL +
+      "api/form/" +
+      encodeURIComponent(ANNOUNCEMENT_RECORD_ID) +
+      "/rawIndicator/" +
+      encodeURIComponent(ANNOUNCEMENT_INDICATOR_ID) +
+      "/" +
+      encodeURIComponent(ANNOUNCEMENT_SERIES)
+    );
+  }
+
+  /* Tracks the ResizeObserver watching the banner so the header's
+     top offset (--lp-announcement-h, see leaf_header.css .lp-header)
+     stays in sync if rich-text content reflows (window resize,
+     multi-line wrapping, etc). */
+  var _announcementResizeObserver = null;
+
+  function setAnnouncementHeightVar(px) {
+    document.documentElement.style.setProperty("--lp-announcement-h", px + "px");
+  }
+
+  function removeAnnouncementBanner() {
+    var el = document.getElementById("lpAnnouncement");
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    if (_announcementResizeObserver) {
+      _announcementResizeObserver.disconnect();
+      _announcementResizeObserver = null;
+    }
+    setAnnouncementHeightVar(0);
+  }
+
+  /* sanitizedHTML must already be DOMPurify-sanitized — this function
+     just mounts it, it does not sanitize. */
+  function renderAnnouncementBanner(sanitizedHTML) {
+    if (document.getElementById("lpAnnouncement")) return;
+
+    var banner = document.createElement("div");
+    banner.id = "lpAnnouncement";
+    banner.className = "lp-announcement";
+    banner.setAttribute("role", "region");
+    banner.setAttribute("aria-label", "Site announcement");
+    banner.innerHTML =
+      '<div class="lp-announcement-in">' +
+      '<div class="lp-announcement-body">' +
+      sanitizedHTML +
+      "</div>" +
+      '<button type="button" class="lp-announcement-close" aria-label="Dismiss announcement">' +
+      '<span class="material-symbols-outlined" aria-hidden="true">' +
+      ICON_SVG.close +
+      "</span>" +
+      "</button>" +
+      "</div>";
+
+    /* Inserted immediately before the header element itself (not at
+       body.firstChild) so it lands directly above the nav regardless
+       of exactly where the header ended up mounting — see ensureHost(). */
+    var header = document.getElementById("lpHeader");
+    if (header && header.parentNode) {
+      header.parentNode.insertBefore(banner, header);
+    } else {
+      document.body.insertBefore(banner, document.body.firstChild);
+    }
+
+    var rect = banner.getBoundingClientRect();
+    setAnnouncementHeightVar(rect.height);
+    if (window.ResizeObserver) {
+      _announcementResizeObserver = new ResizeObserver(function () {
+        setAnnouncementHeightVar(banner.getBoundingClientRect().height);
+      });
+      _announcementResizeObserver.observe(banner);
+    }
+
+    var closeBtn = banner.querySelector(".lp-announcement-close");
+    closeBtn.addEventListener("click", removeAnnouncementBanner);
+  }
+
+  function initAnnouncementBanner() {
+    /* Placeholders not yet filled in — skip the fetch entirely rather
+       than requesting a URL built from literal "REPLACE_ME_..." text. */
+    if (
+      ANNOUNCEMENT_ROOT_URL.indexOf("REPLACE_ME") === 0 ||
+      ANNOUNCEMENT_RECORD_ID.indexOf("REPLACE_ME") === 0 ||
+      ANNOUNCEMENT_INDICATOR_ID.indexOf("REPLACE_ME") === 0
+    ) {
+      return;
+    }
+
+    fetch(buildAnnouncementURL())
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        var rec = data && data[ANNOUNCEMENT_INDICATOR_ID];
+        if (!rec) return null;
+        var displayed =
+          typeof rec.displayedValue === "string" ? rec.displayedValue.trim() : "";
+        var raw = displayed || rec.value;
+        return raw && String(raw).trim() ? String(raw) : null;
+      })
+      .then(function (html) {
+        if (!html) return;
+        return ensureDompurify().then(function () {
+          if (!window.DOMPurify) return; /* load failed — already warned */
+          var clean = window.DOMPurify.sanitize(html);
+          var textOnly = clean.replace(/<[^>]*>/g, "").trim();
+          if (!textOnly) return; /* e.g. "<p></p>" — nothing to show */
+          renderAnnouncementBanner(clean);
+        });
+      })
+      .catch(function (err) {
+        console.warn("[LP] Announcement banner not shown:", err.message);
+      });
   }
 
   /* ─────────────────────────────────────────────────────────────
