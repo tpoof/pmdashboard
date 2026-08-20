@@ -437,7 +437,7 @@
 
           const openModal = () => {
             lastFocused = document.activeElement;
-            if (!iframe.src) iframe.src = TRAINING_FORM_URL;
+            if (!iframe.getAttribute("src")) iframe.src = TRAINING_FORM_URL;
             overlay.hidden = false;
             document.body.style.overflow = "hidden";
             closeBtn.focus();
