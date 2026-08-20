@@ -193,12 +193,12 @@
                   >
                   Find a LEAF Site
                 </a>
-                <button class="btn btn-sec" id="lpDemoBtn" type="button">
+                <a class="btn btn-sec" href="#">
                   <span class="material-symbols-outlined" aria-hidden="true"
-                    >play_circle</span
+                    >contact_support</span
                   >
-                  Watch a demo
-                </button>
+                  Request Support
+                </a>
               </div>
             </div>
           </div>
@@ -570,39 +570,6 @@
         </section>
       </main>
       <!-- /#lp-main -->
-
-      <!-- ══════════════════════════════════════════
-           DEMO MODAL
-      ══════════════════════════════════════════ -->
-      <div
-        id="lpDemoModal"
-        class="lp-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="lpDemoTitle"
-        hidden
-      >
-        <div class="modal-box">
-          <p id="lpDemoTitle" class="sr-only">LEAF Platform Demo Video</p>
-          <button
-            class="modal-close"
-            id="lpDemoClose"
-            aria-label="Close demo video"
-          >
-            &times;
-          </button>
-          <div class="modal-vid">
-            <iframe
-              id="lpDemoFrame"
-              src=""
-              data-src="https://dvagov.sharepoint.com/sites/vhaleaf/_layouts/15/embed.aspx?UniqueId=4326d1e5-57b3-4138-92e5-f16bdce8fdb2&embed=%7B%22ust%22%3Afalse%2C%22hv%22%3A%22CopyEmbedCode%22%7D&referrer=StreamWebApp&referrerScenario=EmbedDialog.Create"
-              title="LEAF Platform Demo"
-              allowfullscreen
-              frameborder="0"
-            ></iframe>
-          </div>
-        </div>
-      </div>
     </div>
     <!-- /.lp -->
 
@@ -617,46 +584,6 @@
       document.addEventListener("dragstart", (e) => {
         if (e.target.tagName === "IMG") e.preventDefault();
       });
-
-      /* ── Demo modal ── */
-      (() => {
-        const modal = document.getElementById("lpDemoModal");
-        const frame = document.getElementById("lpDemoFrame");
-        const openBtn = document.getElementById("lpDemoBtn");
-        const closeBtn = document.getElementById("lpDemoClose");
-        if (!modal || !frame || !openBtn || !closeBtn) return;
-
-        const src = frame.getAttribute("data-src");
-
-        const openModal = () => {
-          frame.src = src;
-          modal.removeAttribute("hidden");
-          document.body.style.overflow = "hidden";
-          closeBtn.focus();
-        };
-
-        const closeModal = () => {
-          frame.src = "";
-          modal.setAttribute("hidden", "");
-          document.body.style.overflow = "";
-          openBtn.focus();
-        };
-
-        openBtn.addEventListener("click", openModal);
-        closeBtn.addEventListener("click", closeModal);
-        modal.addEventListener("click", (e) => {
-          if (e.target === modal) closeModal();
-        });
-        document.addEventListener("keydown", (e) => {
-          if (e.key === "Escape" && !modal.hasAttribute("hidden")) closeModal();
-        });
-        modal.addEventListener("keydown", (e) => {
-          if (e.key === "Tab" && !modal.hasAttribute("hidden")) {
-            e.preventDefault();
-            closeBtn.focus();
-          }
-        });
-      })();
 
       /* ── Newsletter form (basic validation) ── */
       (() => {

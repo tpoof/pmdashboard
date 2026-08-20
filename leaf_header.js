@@ -124,6 +124,13 @@
           href: "/launchpad/report.php?a=lp_impact",
         },
         {
+          icon: "play_circle",
+          title: "Watch a Demo",
+          desc: "A short video tour of the LEAF platform",
+          href: "#",
+          action: "demo-modal",
+        },
+        {
           icon: "route",
           title: "Roadmap",
           desc: "What's coming to LEAF",
@@ -340,9 +347,13 @@
     var badgeHTML = item.badge
       ? `<span class="dd-badge">${item.badge}</span>`
       : "";
+    /* data-action flags items that trigger in-page behavior (e.g. opening
+       the demo modal) instead of navigating — read by wireLinkIntercept()
+       before it falls through to href-based routing. */
+    var actionAttr = item.action ? ` data-action="${item.action}"` : "";
     return `
       <li>
-        <button class="dd-link" data-href="${item.href}">
+        <button class="dd-link" data-href="${item.href}"${actionAttr}>
           <span class="dd-link-ico">
             <span class="material-symbols-outlined" aria-hidden="true">${item.icon}</span>
           </span>
@@ -1065,6 +1076,12 @@
 
     wire();
     ensureJumpToTop();
+
+    /* Available on every page, not just the launchpad — the nav's
+       "Watch a Demo" item (About LEAF dropdown) can be clicked from
+       anywhere. */
+    ensureDemoModal();
+    wireDemoModal();
 
     /* Populate LEAF Team dynamic links after the header is in the DOM */
     fetchLeafTeamLinks();
@@ -2083,6 +2100,17 @@
         return;
       }
 
+      /* "Watch a Demo" (and any future in-page-action items) opens the
+         demo modal instead of navigating. Its href is deliberately "#"
+         (no route to push), so this must run before the href==="#"
+         early-return just below. */
+      if (link.dataset.action === "demo-modal") {
+        e.preventDefault();
+        closeAllDropdowns(null);
+        openDemoModal(link);
+        return;
+      }
+
       /* Read href from data-href (buttons) or href attribute (legacy <a> fallback) */
       var href = link.getAttribute("data-href") || link.getAttribute("href");
       if (!href || href === "#") return;
@@ -2134,6 +2162,91 @@
 
     /* Run router on init to handle deep-linked URLs */
     router();
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     DEMO MODAL
+     Injected once by the header so the "Watch a Demo" item in the
+     About LEAF dropdown (desktop dd-panel + mobile acc-panel) can
+     open it from any page — not just lp_home, which used to own
+     this markup and its open/close logic locally. The iframe's
+     data-src is only copied into src on open (and cleared on close)
+     so the embed doesn't load/keep playing in the background.
+  ───────────────────────────────────────────────────────────── */
+  var DEMO_VIDEO_SRC =
+    "https://dvagov.sharepoint.com/sites/vhaleaf/_layouts/15/embed.aspx?UniqueId=4326d1e5-57b3-4138-92e5-f16bdce8fdb2&embed=%7B%22ust%22%3Afalse%2C%22hv%22%3A%22CopyEmbedCode%22%7D&referrer=StreamWebApp&referrerScenario=EmbedDialog.Create";
+
+  var demoModalTrigger = null;
+
+  function ensureDemoModal() {
+    if (document.getElementById("lpDemoModal")) return;
+    var modal = document.createElement("div");
+    modal.id = "lpDemoModal";
+    modal.className = "lp-modal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "lpDemoTitle");
+    modal.setAttribute("hidden", "");
+    modal.innerHTML =
+      '<div class="modal-box">' +
+      '<p id="lpDemoTitle" class="lp-sr-only">LEAF Platform Demo Video</p>' +
+      '<button class="modal-close" id="lpDemoClose" aria-label="Close demo video">&times;</button>' +
+      '<div class="modal-vid">' +
+      '<iframe id="lpDemoFrame" src="" data-src="' +
+      DEMO_VIDEO_SRC +
+      '" title="LEAF Platform Demo" allowfullscreen frameborder="0"></iframe>' +
+      "</div>" +
+      "</div>";
+    document.body.appendChild(modal);
+  }
+
+  function openDemoModal(trigger) {
+    var modal = document.getElementById("lpDemoModal");
+    var frame = document.getElementById("lpDemoFrame");
+    var closeBtn = document.getElementById("lpDemoClose");
+    if (!modal || !frame || !closeBtn) return;
+    demoModalTrigger = trigger || document.activeElement;
+    frame.src = frame.getAttribute("data-src");
+    modal.removeAttribute("hidden");
+    document.body.style.overflow = "hidden";
+    closeBtn.focus();
+  }
+
+  function closeDemoModal() {
+    var modal = document.getElementById("lpDemoModal");
+    var frame = document.getElementById("lpDemoFrame");
+    if (!modal || !frame || modal.hasAttribute("hidden")) return;
+    frame.src = "";
+    modal.setAttribute("hidden", "");
+    document.body.style.overflow = "";
+    if (demoModalTrigger) {
+      demoModalTrigger.focus();
+      demoModalTrigger = null;
+    }
+  }
+
+  function wireDemoModal() {
+    var modal = document.getElementById("lpDemoModal");
+    var closeBtn = document.getElementById("lpDemoClose");
+    if (!modal || !closeBtn) return;
+
+    closeBtn.addEventListener("click", closeDemoModal);
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal) closeDemoModal();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !modal.hasAttribute("hidden")) {
+        closeDemoModal();
+      }
+    });
+    /* Simple focus trap: while open, Tab always returns to the close
+       button — the only focusable element in the modal. */
+    modal.addEventListener("keydown", function (e) {
+      if (e.key === "Tab" && !modal.hasAttribute("hidden")) {
+        e.preventDefault();
+        closeBtn.focus();
+      }
+    });
   }
 
   /* ─────────────────────────────────────────────────────────────
