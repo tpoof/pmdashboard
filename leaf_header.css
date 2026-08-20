@@ -86,9 +86,10 @@
 
 /* ── Defensive baseline ──
    Fetch+spliced routes (Team, Leadership, and any other external page
-   mounted via mountContent()) can bring their own <style>/<link> tags
-   inside the region leaf_header.js extracts — suppressChrome() only
-   strips known chrome selectors, not stylesheets, so a spliced page's
+   mounted via mountContent()) can bring their own style or stylesheet
+   link elements inside the region leaf_header.js extracts —
+   suppressChrome() only strips known chrome selectors, not
+   stylesheets, so a spliced page's
    global reset (e.g. line-height on *) can leak into this document and
    apply to the persistent header too, since it isn't isolated in its
    own stacking/style context. Confirmed via DevTools on the Leadership
@@ -310,8 +311,8 @@
   padding: 0;
 }
 
-/* .dd-link is a <button>, not <a> — so the browser status bar never
-   shows the destination URL on hover. Reset it to look/behave like
+/* .dd-link is a button element, not an anchor — so the browser status
+   bar never shows the destination URL on hover. Reset it to look/behave like
    the anchor it visually replaces. */
 button.dd-link {
   width: 100%;
@@ -356,7 +357,7 @@ button.dd-link {
   height: 1.1rem;
 }
 
-/* Title row — holds the <strong> label and, when present, the
+/* Title row — holds the bold label and, when present, the
    status badge, side by side on one line. Every dd-link uses this
    wrapper (badge slot just renders empty when there's no badge)
    so the DOM shape stays uniform across items. */
@@ -708,8 +709,9 @@ button.dd-link {
 
 /* Mobile Users Online row — reuses .dd-link's layout/icon/text
    treatment for visual consistency with Coaches/Leadership/Team, but
-   on a non-interactive <span> (no data-href, nothing to activate), so
-   the affordance hover is toned down to a status-row highlight. */
+   on a non-interactive span element (no data-href, nothing to
+   activate), so the affordance hover is toned down to a status-row
+   highlight. */
 .lp-internal-mobile-item.lp-internal-online .dd-link {
   cursor: default;
 }
@@ -1098,7 +1100,7 @@ button.dd-link {
 /* Same loadView() error states also reuse launchpad.css's .btn class
    for their action buttons (Back to Launchpad / Try again / Open in a
    new tab) — launchpad.css sizes .btn .material-symbols-outlined via
-   font-size, which doesn't reach these inlined <svg>s either. */
+   font-size, which doesn't reach these inlined SVG icons either. */
 .btn .material-symbols-outlined svg {
   width: 1.15rem;
   height: 1.15rem;

@@ -439,11 +439,19 @@
        before it falls through to href-based routing. */
     var actionAttr = item.action ? ` data-action="${item.action}"` : "";
     var cls = extraClass ? `dd-link ${extraClass}` : "dd-link";
-    return `
-        <button class="${cls}" data-href="${item.href}"${actionAttr}>
+    /* Submenu-level items (dd-link--sub, e.g. Community of Practice
+       under Voice of the Customer) render text-only — an icon crowds
+       the already-indented title/description and breaks symmetry with
+       the rest of the submenu. */
+    var iconHTML =
+      extraClass === "dd-link--sub"
+        ? ""
+        : `
           <span class="dd-link-ico">
             <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG[item.icon] || ""}</span>
-          </span>
+          </span>`;
+    return `
+        <button class="${cls}" data-href="${item.href}"${actionAttr}>${iconHTML}
           <span class="dd-link-text">
             <span class="dd-link-title-row">
               <strong>${item.title}</strong>
