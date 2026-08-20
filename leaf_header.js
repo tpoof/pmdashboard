@@ -1303,7 +1303,11 @@
   var LEAF_UI_DEP_PATTERNS = [
     { name: "jquery-ui", test: /jquery-ui/i },
     { name: "dialogController", test: /dialogController/i },
-    { name: "VAFacilityHelper", test: /VAFacilityHelper/i },
+    /* Matches both VAFacilityHelper.js and lp_find_site.html's actual
+       ./files/visnFacilityHelper.js — "VAFacilityHelper" alone missed
+       the real filename entirely, so this dep was never lazy-loaded
+       and silently raced reExecuteScripts()'s unsafe generic path. */
+    { name: "FacilityHelper", test: /facilityhelper/i },
   ];
 
   /* Scans a document for known dependency <script src> tags and returns
