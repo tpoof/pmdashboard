@@ -84,6 +84,26 @@
   --nav-r-lg: 8px;
 }
 
+/* ── Defensive baseline ──
+   Fetch+spliced routes (Team, Leadership, and any other external page
+   mounted via mountContent()) can bring their own <style>/<link> tags
+   inside the region leaf_header.js extracts — suppressChrome() only
+   strips known chrome selectors, not stylesheets, so a spliced page's
+   global reset (e.g. line-height on *) can leak into this document and
+   apply to the persistent header too, since it isn't isolated in its
+   own stacking/style context. Confirmed via DevTools on the Leadership
+   page: .lp-internal-label was inheriting line-height: 1.65 from a
+   foreign stylesheet, which shifted the lock icon inside it. Pinning
+   line-height back to the browser default here — directly on every
+   header element, not just via inheritance from .lp-header, since a
+   leaked `* { line-height }` rule would otherwise still win — makes
+   the header's own layout immune to it regardless of what a spliced
+   route brings with it. */
+.lp-header,
+.lp-header * {
+  line-height: normal;
+}
+
 /* ── Skip navigation link (WCAG 2.4.1) ──
    Visually hidden until focused; first Tab stop on every page. */
 .lp-skip-link {
@@ -647,6 +667,7 @@ button.dd-link {
   background: #eef0f2;
   border-color: #dde1e4;
   color: #3d4551; /* --nav-muted — no hover state, nothing to activate */
+  text-decoration: none; /* .lp-internal-btn:hover sets underline — override it */
 }
 .lp-internal-online-dot {
   display: inline-block;
