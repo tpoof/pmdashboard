@@ -1,42 +1,10 @@
-(function () {
-  var out = {};
-  out.styleSheets = Array.from(document.styleSheets).map(function (s) {
-    try {
-      return {
-        href: s.href,
-        disabled: s.disabled,
-        rules: s.cssRules ? s.cssRules.length : null,
-      };
-    } catch (e) {
-      return { href: s.href, error: e.message };
-    }
-  });
-  out.spaceVar = getComputedStyle(document.documentElement).getPropertyValue(
-    "--space-2",
-  );
-  out.htmlClass = document.documentElement.className;
-  out.htmlId = document.documentElement.id;
-  out.htmlInlineStyle = document.documentElement.getAttribute("style");
-  var v20sheet = Array.from(document.styleSheets).find(function (s) {
-    return s.href && s.href.indexOf("project_v20.css") !== -1;
-  });
-  if (v20sheet) {
-    try {
-      var rootRule = Array.from(v20sheet.cssRules).find(function (r) {
-        return r.selectorText === ":root";
-      });
-      out.rootRuleFound = !!rootRule;
-      out.rootRuleText = rootRule ? rootRule.cssText.slice(0, 300) : null;
-      out.firstFewRuleSelectors = Array.from(v20sheet.cssRules)
-        .slice(0, 5)
-        .map(function (r) {
-          return r.selectorText || r.cssText.slice(0, 40);
-        });
-    } catch (e) {
-      out.rootRuleError = e.message;
-    }
-  } else {
-    out.v20SheetFound = false;
-  }
-  console.log(JSON.stringify(out, null, 2));
-})();
+We need to know whether LEAF's backend already exposes an API endpoint that returns the current logged-in user's admin status and/or orgchart group memberships — the kind of data that normally backs the Smarty {if $empMembership['groupID'][X]} pattern used in server-rendered templates. This is for gating a button on a static (non-Smarty-rendered) page client-side, similar to how api/form/{recordID}/rawIndicator/{indicatorID}/{series} already exists for indicator data.
+
+Please search the LEAF Developer Example GitHub repo (referenced earlier in this project) for:
+
+Any REST/API route (PHP controller, route definition, or JS API wrapper) that returns the current user's session info — admin flag, employee ID, or empMembership/group data — to the frontend. Look for naming patterns like session, whoami, currentUser, me, empMembership, groupID, permissions, userGroups, orgchart.
+How $empMembership is populated server-side in PHP (likely a controller or session-bootstrap class) — trace where that data originates, since if it's only ever computed inside Smarty's page-render step (not a standalone queryable source), there may be no existing endpoint and one would need to be built.
+Any existing frontend JS (in the repo, similar to LEAFPortalAPI.js or formGrid.js referenced earlier) that already calls such an endpoint — if something in LEAF's own admin app already fetches "is this user an admin" or "is this user in group X" client-side, that's our reference implementation.
+orgchartPath usage — calendar.js/calendar.html pass orgchartPath via the Smarty handoff (window.leafCalendar.orgchartPath); check what that endpoint/path actually does when called (GET request, response shape) since it may be relevant even if it's not a direct permissions check.
+
+Report back: exact endpoint path(s) found (or confirmation that none exist), response shape/example payload, authentication requirements (session cookie, CSRF token, etc.), and whether it's called via fetch, $.ajax, or another pattern elsewhere in the codebase — so we can match the existing convention rather than introducing a new one. If nothing like this exists anywhere in the repo, say so explicitly rather than guessing, since that would mean this endpoint doesn't exist yet and needs to be built by the backend team before we can implement client-side gating.
