@@ -5,11 +5,8 @@
    leaf_header.js, which injects the header HTML and self-injects
    this stylesheet if a page forgets to link it.
 
-   Merges what used to be leaf_nav_v3.css + leaf_breadcrumb_v3.css
-   into one sheet — the two never shared a selector, so this is a
-   straight combination plus the layout changes needed for
-   branding + breadcrumb to live inside the same sticky .lp-header
-   as the nav (previously two separately-positioned bars).
+   Styles branding, nav, and breadcrumb as one sticky .lp-header
+   unit.
    ============================================================ */
 
 /* ── Local fonts (self-hosted, LEAF's own server) ──
@@ -134,9 +131,8 @@
 }
 
 /* ── Header shell ──
-   Owns the sticky position, background, blur, and scroll shadow
-   that used to belong to .lp-nav alone — branding, nav, and
-   breadcrumb now scroll and stick together as one unit.
+   Owns the sticky position, background, blur, and scroll shadow —
+   branding, nav, and breadcrumb scroll and stick together as one unit.
 
    top: var(--lp-announcement-h, 0px) — when the announcement banner
    (see .lp-announcement below) is present, leaf_header.js sets this
@@ -195,8 +191,7 @@
 }
 
 /* ── Nav ──
-   No longer its own sticky/background element — just fills the
-   remaining width of .lp-header-bar next to the brand. */
+   Fills the remaining width of .lp-header-bar next to the brand. */
 .lp-nav {
   flex: 1;
   min-width: 0;
@@ -580,11 +575,9 @@ button.dd-link {
   padding: 10px 12px 10px 16px;
 }
 
-/* ── Internal section (Leadership / LEAF Team) ──
-   Right-aligned group, gated server-side by Smarty conditionals
-   in leaf_header.js's buildInternalNavHTML(). Previously injected
-   via a JS-built <style> tag at runtime — moved here as real CSS
-   now that header + nav share one stylesheet; same rules. */
+/* ── Internal section (Coaches / Team / Leadership) ──
+   Right-aligned group built in leaf_header.js's buildInternalNavHTML()
+   — renders unconditionally for now (see that function's gating note). */
 .lp-nav-internal {
   display: flex;
   align-items: center;
@@ -831,10 +824,9 @@ button.dd-link {
 
 /* ── Breadcrumb ──
    Sits directly below the header bar, inside the same sticky
-   .lp-header — no longer its own sticky/z-index layer. Always
-   present in the DOM (see leaf_header.js buildHeaderHTML) and
-   toggled via the native hidden attribute; [hidden] here beats
-   the plain-class display:flex below it. */
+   .lp-header. Always present in the DOM (see leaf_header.js
+   buildHeaderHTML) and toggled via the native hidden attribute;
+   [hidden] here beats the plain-class display:flex below it. */
 .lp-breadcrumb[hidden] {
   display: none;
 }
@@ -973,9 +965,7 @@ button.dd-link {
 
 /* ── Demo modal ──
    Injected by leaf_header.js into every page that loads it, so the
-   "Watch a Demo" item in the About LEAF dropdown works from any
-   page. Moved here from launchpad.css/lp_home.html, which used to
-   own this markup locally. */
+   "Watch a Demo" item in the About LEAF dropdown works from any page. */
 .lp-modal {
   position: fixed;
   inset: 0;
@@ -1101,9 +1091,9 @@ button.dd-link {
 }
 
 /* ── SPA swap-error icon ──
-   Used by loadView()'s error states (leaf_header.js). Those spans set
-   font-size inline (32px) — harmless leftover for color, but sizing
-   now needs a real rule since font-size no longer sizes an <svg>. */
+   Used by loadView()'s error states (leaf_header.js). Inline font-size
+   on these spans doesn't size the SVG icons inside them, so explicit
+   width/height rules here handle sizing instead. */
 .lp-swap-error-ico svg {
   width: 32px;
   height: 32px;
@@ -1117,19 +1107,6 @@ button.dd-link {
   height: 1.15rem;
 }
 
-/* ── Debug banner icons (runNavDebug(), ?leafNavDebug=1 only) ──
-   No wrapping class existed before conversion — sizing came from an
-   inline font-size on the bug icon and the dismiss button's own
-   font-size for the close icon. Named classes added at the call site
-   so each can be sized independently. */
-.lp-debug-icon svg {
-  width: 20px;
-  height: 20px;
-}
-.lp-debug-close-icon svg {
-  width: 18px;
-  height: 18px;
-}
 .lp-error-suggest-ico svg {
   width: 16px;
   height: 16px;

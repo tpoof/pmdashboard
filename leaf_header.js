@@ -4,13 +4,9 @@
    Lives at /launchpad/files/leaf_header.js — every page should
    point here directly so there's exactly one copy to edit.
 
-   Consolidates what used to be two separate components
-   (leaf_nav_v3.js + leaf_breadcrumb_v3.js) into one cohesive
-   header: branding/logo, nav menu, breadcrumb row, in that
-   order, sharing one sticky shell so they read as one visual
-   unit instead of two stacked bars. Also hides LEAF's legacy
-   #header/#footer chrome (see leaf_header.css) since this
-   component now owns branding.
+   Renders branding/logo, nav menu, and breadcrumb row as one
+   sticky unit. Hides LEAF's native #header/#footer chrome (see
+   leaf_header.css) since this component owns branding.
 
    Self-mounting: auto-injects its own stylesheet and, if the
    host page doesn't already have one, creates the
@@ -73,26 +69,6 @@
 
 (function () {
   "use strict";
-
-  /* ── Internal section config ────────────────────────────────────
-     Server-computed, per-user gating handed off via window.leafHeaderConfig
-     — the same config-handoff pattern calendar.js uses for window.leafCalendar
-     (see calendar/calender.html's "CONFIG HANDOFF" script block). Each of
-     the 7 launchpad HTML pages defines window.leafHeaderConfig in an inline
-     <script> before this file loads; see that block for how isAdmin /
-     isLeadershipGroup are computed.
-
-     isAdmin            : gates Coaches + Team (the outer Internal section).
-     isLeadershipGroup  : gates Leadership specifically (individual link,
-                          tighter than isAdmin).
-
-     Read once at module init. If a page never sets window.leafHeaderConfig
-     at all (forgot the handoff script, or a page that intentionally
-     doesn't gate anything), both default to false via Boolean(undefined)
-     — the Internal section's gated items just don't render, no throw. */
-  var headerConfig = window.leafHeaderConfig || {};
-  var isAdmin = Boolean(headerConfig.isAdmin);
-  var isLeadershipGroup = Boolean(headerConfig.isLeadershipGroup);
 
   /* ── Announcement banner config ──────────────────────────────────
      Placeholder record/indicator IDs — swap in real values before
@@ -352,16 +328,12 @@
   }
 
   /* ── Detect whether we're on the launchpad ──
-     The router only activates on report.php?a=lp_home.
-     All other pages get the header only — no router, no fetch.
-
-     NOTE: this used to also check for #lp-main, but every lp_*.html
-     page shares that id on its own <main> (it's generic page-shell
-     boilerplate, not a launchpad-only marker) — and by the time this
-     runs, ensureMainContentTarget() has already renamed it to
-     #main-content anyway, so the check was silently dead. Detecting
-     via the page's own URL (same match resolveCurrentRoute() already
-     does for the breadcrumb) is the reliable signal. */
+     The router only activates on report.php?a=lp_home. All other
+     pages get the header only — no router, no fetch. Detected via
+     the page's own URL, not a DOM marker like #lp-main — every
+     lp_*.html page shares that id on its own <main> (generic
+     page-shell boilerplate, not launchpad-specific), so it can't
+     reliably distinguish the launchpad page from any other. */
   function isLaunchpad() {
     /* Native swap host present in the page's own markup — the
        launchpad page's own marker, checked before buildRouteMap()
@@ -562,55 +534,28 @@
 
   /* ─────────────────────────────────────────────────────────────
      INTERNAL NAV SECTION
-     Right-aligned group rendered as:
+     Right-aligned group: [ 🔒 ] Coaches (new tab) → Team → Leadership
+     → Users Online (live status). Renders unconditionally — no
+     per-user gating right now.
 
-       [ 🔒 ]  [ Coaches ]  [ Team ]  [ Leadership ]  [ Users Online ]
-                (new tab)  (direct link)  (direct link)  (live status)
-
-     Gating is plain JS now, driven by window.leafHeaderConfig (read
-     once at module init — see isAdmin/isLeadershipGroup above):
-       - Entire group → isAdmin           (outer gate; also covers
-                         Coaches, Team, and Users Online directly)
-       - Leadership   → isLeadershipGroup (individual link, tighter —
-                         requires isAdmin AND isLeadershipGroup, since
-                         it's still inside the outer-gated group)
-
-     No Smarty tags are embedded in this output anymore — isAdmin/
-     isLeadershipGroup are already resolved, real booleans by the time
-     this function runs, so gating is a plain `if` in JS rather than a
-     server-side conditional baked into the generated markup.
+     Real gating was built and tested (admin via window.leafHeaderConfig
+     .isAdmin ← Smarty $empMembership['groupID'][1], Leadership via
+     .isLeadershipGroup ← groupID[52]), but is disabled until these
+     pages are converted to .tpl and $empMembership is confirmed
+     available server-side. Re-enabling it means restoring the
+     window.leafHeaderConfig read + the isAdminFlag/isLeadershipGroupFlag
+     params this function used to take.
   ───────────────────────────────────────────────────────────── */
-  function buildInternalNavHTML(isAdminFlag, isLeadershipGroupFlag) {
-    if (!isAdminFlag) {
-      /* Not in the gated group at all — no Internal section, full stop. */
-      return { desktop: "", mobile: "" };
-    }
-
-    /* ── Desktop: flat group of items ──
-       Order: Coaches (new tab) → Team → Leadership. Coaches, Team, and
-       Users Online are gated only by isAdminFlag (already checked
-       above) — Leadership keeps its own tighter isLeadershipGroupFlag
-       gate on top of that. */
-    var leadershipDesktop = isLeadershipGroupFlag
-      ? `
-  <!-- Leadership: direct hash-routed link -->
-  <button class="lp-internal-btn" data-href="/platform/projects/report.php?a=leadership">
-    Leadership
-  </button>`
-      : "";
-
+  function buildInternalNavHTML() {
     var desktopInternal = `
 <div class="lp-nav-internal" role="navigation" aria-label="Internal team links">
 
-  <!-- Lock icon is the only visible content now — role="img" +
-       aria-label carries the accessible name that the "Internal" text
-       used to provide (that text was aria-hidden anyway, relying on
-       the landmark above; this is a more explicit, direct fix). -->
+  <!-- Lock icon is the only visible content — role="img" + aria-label
+       gives it an accessible name since there's no visible text. -->
   <span class="lp-internal-label" role="img" aria-label="Internal">
     <span class="material-symbols-outlined lp-internal-label-icon" aria-hidden="true">${ICON_SVG.lock}</span>
   </span>
 
-  <!-- Vertical rule separating label from buttons -->
   <span class="lp-internal-rule" aria-hidden="true"></span>
 
   <!-- Coaches: external, opens in a new tab. data-nav-external tells
@@ -622,40 +567,25 @@
     <span class="lp-sr-only">(opens in new tab)</span>
   </a>
 
-  <!-- Team: direct hash-routed link (replaces the old LEAF Team dropdown) -->
   <button class="lp-internal-btn" data-href="/platform/projects/report.php?a=team">
     Team
   </button>
-${leadershipDesktop}
+
+  <button class="lp-internal-btn" data-href="/platform/projects/report.php?a=leadership">
+    Leadership
+  </button>
 
   <!-- Users Online: live count via Server-Sent Events (see
-       wireUsersOnlineBadge()). Gated only by isAdminFlag, same as
-       Coaches/Team — not a link, so plain <span>, not <button>.
-       .lp-internal-online-count is a class (not an id) since this same
-       markup also renders in the mobile accordion below; one
-       EventSource updates every matching node. -->
+       wireUsersOnlineBadge()) — not a link, so plain <span>, not
+       <button>. .lp-internal-online-count is a class (not an id)
+       since this markup also renders in the mobile accordion below;
+       one EventSource updates every matching node. -->
   <span class="lp-internal-btn lp-internal-online">
     Users Online:
     <span class="lp-internal-online-count" aria-live="polite" aria-atomic="true">0</span>
   </span>
 
 </div>`;
-
-    /* ── Mobile: appended at bottom of accordion ── */
-    var leadershipMobile = isLeadershipGroupFlag
-      ? `
-<li class="lp-internal-mobile-item">
-  <button class="dd-link" data-href="/platform/projects/report.php?a=leadership">
-    <span class="dd-link-ico">
-      <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
-    </span>
-    <span class="dd-link-text">
-      <strong>Leadership</strong>
-      <span class="dd-link-desc">Platform leadership dashboard</span>
-    </span>
-  </button>
-</li>`
-      : "";
 
     var mobileInternal = `
 
@@ -691,7 +621,18 @@ ${leadershipDesktop}
     </span>
   </button>
 </li>
-${leadershipMobile}
+
+<li class="lp-internal-mobile-item">
+  <button class="dd-link" data-href="/platform/projects/report.php?a=leadership">
+    <span class="dd-link-ico">
+      <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
+    </span>
+    <span class="dd-link-text">
+      <strong>Leadership</strong>
+      <span class="dd-link-desc">Platform leadership dashboard</span>
+    </span>
+  </button>
+</li>
 
 <!-- Users Online: same live count as the desktop badge above (shares
      .lp-internal-online-count), rendered here as a non-interactive
@@ -740,7 +681,7 @@ ${leadershipMobile}
   function buildNavHTML() {
     var desktopItems = NAV_SECTIONS.map(desktopSectionHTML).join("");
     var mobileItems = NAV_SECTIONS.map(mobileSectionHTML).join("");
-    var internal = buildInternalNavHTML(isAdmin, isLeadershipGroup);
+    var internal = buildInternalNavHTML();
     return `
 <nav class="lp-nav" id="lpNav" aria-label="Launchpad navigation">
   <div class="lp-nav-in">
@@ -824,8 +765,7 @@ ${leadershipMobile}
      SELF-MOUNT: STYLESHEET
   ───────────────────────────────────────────────────────────── */
   /* Hardcoded path — pinned to the header's own CSS filename so
-     this JS always loads its companion stylesheet and never a
-     legacy leaf_nav.css/leaf_breadcrumb.css. */
+     this JS always loads the right stylesheet. */
   var LEAF_HEADER_CSS_HREF = "/launchpad/files/leaf_header.css";
 
   function ensureStylesheet() {
@@ -914,105 +854,6 @@ ${leadershipMobile}
   }
 
   /* ─────────────────────────────────────────────────────────────
-     HEADER CONFIG DEBUG UTILITY
-     Only runs when ?leafNavDebug=1 is in the query string. Renders a
-     console group always, plus an amber dismissible banner gated to
-     isAdmin (the closest equivalent to the old "LEAF Team member"
-     visibility rule), diagnosing window.leafHeaderConfig — the
-     config-handoff object each launchpad page's inline <script> is
-     responsible for setting before this file loads (see the
-     "Internal section config" comment near the top of this file).
-  ───────────────────────────────────────────────────────────── */
-  function runNavDebug() {
-    var configPresent = typeof window.leafHeaderConfig === "object" && window.leafHeaderConfig !== null;
-
-    /* Console output — always logged when the param is present, admin
-       check aside, since a missing/misconfigured handoff is exactly
-       what a non-admin developer debugging a page would need to see. */
-    console.group("[LEAF Header Debug] window.leafHeaderConfig diagnostics");
-    console.log(
-      "window.leafHeaderConfig present:",
-      configPresent ? "✅ YES" : "❌ NO — page is missing the config-handoff <script> block (see calendar/calender.html for the reference pattern)",
-    );
-    console.log("Resolved isAdmin:", isAdmin ? "✅ true" : "❌ false");
-    console.log("Resolved isLeadershipGroup:", isLeadershipGroup ? "✅ true" : "❌ false");
-    if (!configPresent) {
-      console.log(
-        "Note: isAdmin/isLeadershipGroup above default to false via Boolean(undefined) when the config object is missing entirely — that's a silent no-op, not a bug, but it does mean the Internal section is invisible on this page until the handoff script is added.",
-      );
-    }
-    console.groupEnd();
-
-    /* Visual banner — only shown to admins, so a public/unauthenticated
-       page load doesn't leak internal diagnostic detail. */
-    if (!isAdmin) return;
-
-    var rows = [
-      [
-        "window.leafHeaderConfig present",
-        configPresent ? "✅ YES" : "❌ NO — handoff script missing",
-      ],
-      ["isAdmin", isAdmin ? "✅ true" : "❌ false"],
-      ["isLeadershipGroup", isLeadershipGroup ? "✅ true" : "❌ false"],
-    ];
-
-    var rowHTML = rows
-      .map(function (r) {
-        return (
-          "<tr>" +
-          '<td style="padding:3px 10px 3px 0;font-weight:600;white-space:nowrap;">' +
-          r[0] +
-          "</td>" +
-          '<td style="padding:3px 0;">' +
-          r[1] +
-          "</td>" +
-          "</tr>"
-        );
-      })
-      .join("");
-
-    var banner = document.createElement("div");
-    banner.id = "lpNavDebugBanner";
-    banner.setAttribute("role", "region");
-    banner.setAttribute("aria-label", "LEAF Header debug panel");
-    banner.style.cssText = [
-      "position:fixed",
-      "top:0",
-      "left:0",
-      "right:0",
-      "z-index:99999",
-      "background:#fffbeb",
-      "border-bottom:3px solid #f59e0b",
-      "padding:12px 16px",
-      "font-family:monospace",
-      "font-size:13px",
-      "color:#1c1917",
-      "box-shadow:0 2px 8px rgba(0,0,0,.15)",
-    ].join(";");
-
-    banner.innerHTML =
-      '<div style="display:flex;align-items:flex-start;gap:12px;">' +
-      '<span class="material-symbols-outlined lp-debug-icon" aria-hidden="true" style="color:#d97706;flex-shrink:0;margin-top:2px;">' + ICON_SVG.bug_report + '</span>' +
-      '<div style="flex:1;">' +
-      '<strong style="display:block;margin-bottom:6px;">LEAF Header — Config Debug <span style="font-weight:400;color:#78716c;">(visible to admins only · remove ?leafNavDebug=1 to hide)</span></strong>' +
-      "<table>" +
-      rowHTML +
-      "</table>" +
-      "</div>" +
-      "<button onclick=\"document.getElementById('lpNavDebugBanner').remove()\" " +
-      'style="background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:0;color:#78716c;" ' +
-      'aria-label="Dismiss debug banner">' +
-      '<span class="material-symbols-outlined lp-debug-close-icon" aria-hidden="true">' + ICON_SVG.close + '</span>' +
-      "</button>" +
-      "</div>";
-
-    /* Push page content down so banner doesn't overlap header */
-    document.body.style.paddingTop =
-      "calc(" + (document.body.style.paddingTop || "0px") + " + 110px)";
-    document.body.insertBefore(banner, document.body.firstChild);
-  }
-
-  /* ─────────────────────────────────────────────────────────────
      INJECT
   ───────────────────────────────────────────────────────────── */
   function inject() {
@@ -1057,20 +898,12 @@ ${leadershipMobile}
     ensureDemoModal();
     wireDemoModal();
 
-    /* Users Online badge (Internal section) — no-ops if buildInternalNavHTML
-       didn't render it for this user (isAdmin is false) or the browser
-       lacks EventSource support. */
     wireUsersOnlineBadge();
 
     /* Global announcement banner — async; only mounts above the nav
        once/if the sourced indicator resolves to real content. No-ops
        until ANNOUNCEMENT_* constants are filled in with real values. */
     initAnnouncementBanner();
-
-    /* Debug panel — only when ?leafNavDebug=1 is present */
-    if (/[?&]leafNavDebug=1/.test(window.location.search)) {
-      runNavDebug();
-    }
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -1167,9 +1000,10 @@ ${leadershipMobile}
   var _routerSuppressed = false;
 
   /* Scripts that must never re-execute inside a fetched page context.
-     Shell-level scripts (header, and the legacy nav/breadcrumb it
-     replaced) manage the outer document — re-running them injects
-     duplicate elements and undoes router state. */
+     Shell-level scripts (this header, plus any legacy nav/breadcrumb
+     script a fetched page might still reference) manage the outer
+     document — re-running them injects duplicate elements and undoes
+     router state. */
   var SCRIPT_BLOCKLIST = [
     "leaf_header",
     "leaf-header",
@@ -1225,15 +1059,13 @@ ${leadershipMobile}
      generic script loop for anything an inline script calls synchronously;
      that loop appends external <script src> tags to <head> but does not
      await their load/execution before running the next script, so any
-     inline script depending on one can race it (see VAFacilityHelper
-     "is not defined" errors on fetched pages that need it). */
+     inline script depending on one can race it. */
   var LEAF_UI_DEP_PATTERNS = [
     { name: "jquery-ui", test: /jquery-ui/i },
     { name: "dialogController", test: /dialogController/i },
     /* Matches both VAFacilityHelper.js and lp_find_site.html's actual
-       ./files/visnFacilityHelper.js — "VAFacilityHelper" alone missed
-       the real filename entirely, so this dep was never lazy-loaded
-       and silently raced reExecuteScripts()'s unsafe generic path. */
+       ./files/visnFacilityHelper.js — "VAFacilityHelper" alone doesn't
+       match the real filename. */
     { name: "FacilityHelper", test: /facilityhelper/i },
   ];
 
@@ -1277,9 +1109,9 @@ ${leadershipMobile}
   }
 
   function reExecuteScripts(container) {
-    /* NOTE: reExecuteScripts is now called AFTER ensureLeafUIDeps()
-       resolves, so jQuery UI is guaranteed available when inline
-       scripts that call $(...).dialog() run. */
+    /* Runs after ensureLeafUIDeps() resolves, so jQuery UI is
+       guaranteed available when inline scripts that call
+       $(...).dialog() run. */
     var scripts = Array.prototype.slice.call(
       container.querySelectorAll("script"),
     );
@@ -1513,11 +1345,10 @@ ${leadershipMobile}
     var host = getSwapHost();
     if (!host) return;
 
-    /* showSwapLoading() is normally what clears this on the way in —
-       but the "missing route" path (no ROUTE_MAP entry) never calls
-       showSwapLoading(), so the host stayed hidden even though this
-       function wrote content into it. Clear it here unconditionally
-       so showSwapError() is correct no matter what ran before it. */
+    /* showSwapLoading() normally clears the hidden attribute, but the
+       "missing route" path never calls it — clear unconditionally
+       here so this function is correct regardless of what ran before
+       it. */
     host.removeAttribute("hidden");
 
     if (reason === "missing") {
@@ -1677,8 +1508,8 @@ ${leadershipMobile}
      For full separate LEAF apps (route.iframe === true). Skips
      fetch/DOMParser/chrome-suppression/script-splicing entirely —
      the embedded page loads and runs as its own real document, so
-     none of the base-href or script-re-execution bugs that broke
-     the splice approach apply here.
+     the base-href and script-re-execution concerns mountContent()
+     has to handle don't apply here.
   ───────────────────────────────────────────────────────────── */
   function mountIframe(route) {
     var host = _swapHost;
@@ -1780,15 +1611,14 @@ ${leadershipMobile}
     /* ── Base URL injection ───────────────────────────────────────
        Fetched pages (Ideas, Help Library, etc.) make relative API
        calls like ./api/form/query. When their scripts re-execute
-       inside the launchpad document, those relative URLs resolve
-       against the launchpad's own URL instead of the fetched page's
-       origin — causing 404s and empty data.
-
-       Fix: inject a <base href> into <head> pointing to the fetched
-       page's directory BEFORE reExecuteScripts() runs, so all
-       relative fetch/XHR calls inside injected scripts resolve
-       correctly. A <base> inside a <div> is invalid and ignored by
-       browsers — it must be in <head>.
+       inside the launchpad document, those relative URLs would
+       resolve against the launchpad's own URL instead of the fetched
+       page's origin — causing 404s and empty data — so a <base href>
+       pointing to the fetched page's directory is injected into
+       <head> BEFORE reExecuteScripts() runs, so all relative
+       fetch/XHR calls inside injected scripts resolve correctly. A
+       <base> inside a <div> is invalid and ignored by browsers — it
+       must be in <head>.
 
        We remove the previous route's <base> first, then add the new
        one. On return to launchpad home the base is removed entirely
@@ -1989,10 +1819,9 @@ ${leadershipMobile}
            suppression runs. Some LEAF pages (e.g. lp_find_site) load
            helpers like VAFacilityHelper.js from inside the header
            include — suppressChrome() deletes #header/#footer/.noprint
-           wholesale, so if we scanned afterward (as ensureLeafUIDeps
-           used to, via the already-stripped doc) that <script src>
-           would already be gone and the dep would silently never load,
-           leaving content scripts to throw "X is not defined". */
+           wholesale, so scanning after that would miss the dependency
+           entirely and leave content scripts throwing
+           "X is not defined". */
         var depScriptSrcs = collectLeafUIDepSrcs(doc);
 
         /* Suppress chrome elements in the parsed document */
@@ -2134,7 +1963,7 @@ ${leadershipMobile}
         return;
       }
 
-      /* Read href from data-href (buttons) or href attribute (legacy <a> fallback) */
+      /* Read href from data-href (buttons) or href attribute (plain <a> fallback) */
       var href = link.getAttribute("data-href") || link.getAttribute("href");
       if (!href || href === "#") return;
 
@@ -2189,15 +2018,11 @@ ${leadershipMobile}
 
   /* ─────────────────────────────────────────────────────────────
      MODAL COORDINATION
-     Demo modal (video) and form modal (Request Support, Nominate a
-     Spotlight) are two independent singletons — each is correctly
-     deduplicated against itself (ensure*Modal()'s idempotent check
-     means only one #lpDemoModal and one #lpFormModal can ever exist),
-     but neither knew about the other. Opening one without closing an
-     already-open one left both visible at once — same fixed inset:0
-     z-index:1000 overlay, so they stacked directly on top of each
-     other. Both open*Modal() functions call this first now. Add any
-     future modal's close function here too. */
+     Demo modal and form modal are independent singletons that don't
+     know about each other, but share the same fixed inset:0
+     z-index:1000 overlay — opening one without closing the other
+     would stack both visibly. Both open*Modal() functions call this
+     first. Add any future modal's close function here too. */
   function closeAnyOpenModal() {
     closeDemoModal();
     closeFormModal();
@@ -2206,11 +2031,10 @@ ${leadershipMobile}
   /* ─────────────────────────────────────────────────────────────
      DEMO MODAL
      Injected once by the header so the "Watch a Demo" item in the
-     About LEAF dropdown (desktop dd-panel + mobile acc-panel) can
-     open it from any page — not just lp_home, which used to own
-     this markup and its open/close logic locally. The iframe's
-     data-src is only copied into src on open (and cleared on close)
-     so the embed doesn't load/keep playing in the background.
+     About LEAF dropdown (desktop + mobile) can open it from any page.
+     The iframe's data-src is only copied into src on open (and
+     cleared on close) so the embed doesn't load/keep playing in the
+     background.
   ───────────────────────────────────────────────────────────── */
   var DEMO_VIDEO_SRC =
     "https://dvagov.sharepoint.com/sites/vhaleaf/_layouts/15/embed.aspx?UniqueId=4326d1e5-57b3-4138-92e5-f16bdce8fdb2&embed=%7B%22ust%22%3Afalse%2C%22hv%22%3A%22CopyEmbedCode%22%7D&referrer=StreamWebApp&referrerScenario=EmbedDialog.Create";
@@ -2391,16 +2215,9 @@ ${leadershipMobile}
 
   /* ─────────────────────────────────────────────────────────────
      USERS ONLINE BADGE
-     Ported from the legacy LEAF header's "Users Online" pill (see
-     online-users/getonlineusers.php, a long-lived Server-Sent Events
-     endpoint pushing the live count as plain-text messages). The
-     legacy version depended on jQuery only for its no-EventSource
-     fallback ($(".badge").remove()) — reimplemented here in plain JS
-     to keep this file dependency-light, matching every other feature
-     in it. Gated to the same admin/internal audience as Coaches/Team
-     (see buildInternalNavHTML) — if isAdmin was false, the badge was
-     never rendered, .lp-internal-online simply won't exist, and this
-     no-ops.
+     Live count via Server-Sent Events (online-users/getonlineusers.php,
+     which pushes the count as plain-text messages). Plain JS, no jQuery
+     — matches every other feature in this file.
   ───────────────────────────────────────────────────────────── */
   var USERS_ONLINE_SSE_URL = "/online-users/getonlineusers.php";
 
@@ -2410,8 +2227,7 @@ ${leadershipMobile}
 
     if (typeof EventSource === "undefined") {
       /* No SSE support — drop the badge entirely rather than leaving a
-         count that will never update (plain JS equivalent of the
-         legacy $(".badge").remove() fallback). */
+         count that will never update. */
       badges.forEach(function (el) {
         el.remove();
       });
