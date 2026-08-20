@@ -5,18 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Form Library — LEAF Launchpad</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <!-- Material Symbols Outlined — static axes; FILL controlled via CSS only -->
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0"
-    />
-
     <!-- TODO: verify path before production -->
     <link rel="stylesheet" href="./files/launchpad.css" />
 
@@ -26,16 +14,6 @@
     <script src="https://leaf.va.gov/platform/designs/js/LeafPreview.js"></script>
 
     <style>
-      /* Filled icons — !important beats launchpad.css FILL:0 and any
-       leaf_nav.js injected styles regardless of load order */
-      .material-symbols-outlined {
-        font-variation-settings:
-          "FILL" 1,
-          "wght" 400,
-          "opsz" 24,
-          "GRAD" 0 !important;
-      }
-
       /* ── Page shell ── */
       .lfl-page {
         padding: 2rem 1.5rem 4rem;
@@ -56,9 +34,8 @@
       }
 
       .lfl-title {
-        font-family: "Public Sans", sans-serif;
+        font-family: 'PublicSans-Bold', sans-serif;
         font-size: clamp(1.4rem, 3vw, 1.75rem);
-        font-weight: 800;
         color: var(--lp-accent);
         margin: 0;
         line-height: 1.2;
@@ -73,9 +50,8 @@
         border: none;
         border-radius: var(--r-lg);
         padding: 0.6rem 1.2rem;
-        font-family: "Public Sans", sans-serif;
+        font-family: 'PublicSans-Bold', sans-serif;
         font-size: 0.95rem;
-        font-weight: 700;
         text-decoration: none;
         cursor: pointer;
         transition: filter 0.15s;
@@ -88,10 +64,13 @@
         outline: 3px solid var(--lp-accent);
         outline-offset: 3px;
       }
-      .lfl-contribute-btn .material-symbols-outlined {
-        font-size: 1.1rem;
+.lfl-contribute-btn .material-symbols-outlined {
         color: #fff !important;
-      }
+}
+.lfl-contribute-btn .material-symbols-outlined svg {
+        width: 1.1rem;
+        height: 1.1rem;
+}
 
       /* ── Body layout ── */
       .lfl-body {
@@ -117,9 +96,8 @@
       }
 
       .lfl-sidebar-label {
-        font-family: "Public Sans", sans-serif;
+        font-family: 'PublicSans-Bold', sans-serif;
         font-size: 0.75rem;
-        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.06em;
         color: var(--c-muted);
@@ -143,9 +121,8 @@
         border: 1px solid transparent;
         background: transparent;
         color: var(--c-text);
-        font-family: "Source Sans 3", sans-serif;
+        font-family: 'Source Sans Pro Web', sans-serif;
         font-size: 0.9rem;
-        font-weight: 500;
         text-align: left;
         cursor: pointer;
         transition:
@@ -184,9 +161,8 @@
       }
 
       .lfl-search-label {
-        font-family: "Public Sans", sans-serif;
+        font-family: 'PublicSans-Bold', sans-serif;
         font-size: 0.85rem;
-        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         color: var(--c-muted);
@@ -255,12 +231,15 @@
         line-height: 1.5;
       }
 
-      .lfl-info-note .material-symbols-outlined {
+.lfl-info-note .material-symbols-outlined {
         flex-shrink: 0;
-        font-size: 1.15rem !important;
         color: var(--lp-accent);
         margin-top: 1px;
-      }
+}
+.lfl-info-note .material-symbols-outlined svg {
+        width: 1.15rem !important;
+        height: 1.15rem !important;
+}
 
       /* ── Featured row highlight ── */
       .lfl-featured-row {
@@ -374,8 +353,7 @@
               rel="noopener noreferrer"
             >
               <span class="material-symbols-outlined" aria-hidden="true"
-                >add_circle</span
-              >
+                ><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-280h80v-160h160v-80H520v-160h-80v160H280v80h160v160Zm40 200q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg></span>
               Contribute My Form
             </a>
           </div>
@@ -383,8 +361,7 @@
           <!-- Info note -->
           <div class="lfl-info-note" role="note">
             <span class="material-symbols-outlined" aria-hidden="true"
-              >info</span
-            >
+              ><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg></span>
             <span>
               This is a read-only preview of the Form Library. If you're a site
               administrator, you can access this page directly from the
@@ -482,8 +459,7 @@
         tabindex="-1"
       >
         <span class="material-symbols-outlined" aria-hidden="true"
-          >arrow_upward</span
-        >
+          ><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z"/></svg></span>
       </button>
     </div>
     <!-- /.lp -->

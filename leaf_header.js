@@ -331,6 +331,68 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
+     ICON LIBRARY
+     Inline Material Symbols (Filled), sourced once and reused by
+     every render site below — keeps SVG path data out of every
+     template string while still inlining full markup per occurrence
+     (no <use>/sprite references, no network request per icon).
+  ───────────────────────────────────────────────────────────── */
+  var ICON_SVG = {
+    bar_chart:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M640-160v-280h160v280H640Zm-240 0v-640h160v640H400Zm-240 0v-440h160v440H160Z"/></svg>',
+    play_circle:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m380-300 280-180-280-180v360ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg>',
+    route:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M360-120q-66 0-113-47t-47-113v-327q-35-13-57.5-43.5T120-720q0-50 35-85t85-35q50 0 85 35t35 85q0 39-22.5 69.5T280-607v327q0 33 23.5 56.5T360-200q33 0 56.5-23.5T440-280v-400q0-66 47-113t113-47q66 0 113 47t47 113v327q35 13 57.5 43.5T840-240q0 50-35 85t-85 35q-50 0-85-35t-35-85q0-39 22.5-70t57.5-43v-327q0-33-23.5-56.5T600-760q-33 0-56.5 23.5T520-680v400q0 66-47 113t-113 47Z"/></svg>',
+    library_books:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M400-400h160v-80H400v80Zm0-120h320v-80H400v80Zm0-120h320v-80H400v80Zm-80 400q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Z"/></svg>',
+    description:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520h200L520-800v200Z"/></svg>',
+    cable:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-17 0-28.5-11.5T160-160v-40h-40v-160q0-17 11.5-28.5T160-400h40v-280q0-66 47-113t113-47q66 0 113 47t47 113v400q0 33 23.5 56.5T600-200q33 0 56.5-23.5T680-280v-280h-40q-17 0-28.5-11.5T600-600v-160h40v-40q0-17 11.5-28.5T680-840h80q17 0 28.5 11.5T800-800v40h40v160q0 17-11.5 28.5T800-560h-40v280q0 66-47 113t-113 47q-66 0-113-47t-47-113v-400q0-33-23.5-56.5T360-760q-33 0-56.5 23.5T280-680v280h40q17 0 28.5 11.5T360-360v160h-40v40q0 17-11.5 28.5T280-120h-80Z"/></svg>',
+    location_on:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 400Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Z"/></svg>',
+    record_voice_over:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m798-322-62-62q44-41 69-97t25-119q0-63-25-118t-69-96l62-64q56 53 89 125t33 153q0 81-33 153t-89 125ZM670-450l-64-64q18-17 29-38.5t11-47.5q0-26-11-47.5T606-686l64-64q32 29 50 67.5t18 82.5q0 44-18 82.5T670-450Zm-310 10q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-120v-112q0-33 17-62t47-44q51-26 115-44t141-18q77 0 141 18t115 44q30 15 47 44t17 62v112H40Z"/></svg>',
+    lightbulb:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-80q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-200v-80h320v80H320Zm10-120q-69-41-109.5-110T180-580q0-125 87.5-212.5T480-880q125 0 212.5 87.5T780-580q0 81-40.5 150T630-320H330Z"/></svg>',
+    privacy_tip:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Z"/></svg>',
+    menu_book:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M560-564v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-600q-38 0-73 9.5T560-564Zm0 220v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-380q-38 0-73 9t-67 27Zm0-110v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-490q-38 0-73 9.5T560-454Zm-40 176q44-21 88.5-31.5T700-320q36 0 70.5 6t69.5 18v-396q-33-14-68.5-21t-71.5-7q-47 0-93 12t-87 36v394Zm-40 118q-48-38-104-59t-116-21q-42 0-82.5 11T100-198q-21 11-40.5-1T40-234v-482q0-11 5.5-21T62-752q47-23 96.5-35.5T260-800q58 0 113.5 15T480-740q51-30 106.5-45T700-800q52 0 101.5 12.5T898-752q11 5 16.5 15t5.5 21v482q0 23-19.5 35t-40.5 1q-37-20-77.5-31T700-240q-60 0-116 21t-104 59Z"/></svg>',
+    school:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M840-280v-276L480-360 40-600l440-240 440 240v320h-80ZM480-120 200-272v-200l280 152 280-152v200L480-120Z"/></svg>',
+    quiz:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M560-360q17 0 29.5-12.5T602-402q0-17-12.5-29.5T560-444q-17 0-29.5 12.5T518-402q0 17 12.5 29.5T560-360Zm-30-128h60q0-29 6-42.5t28-35.5q30-30 40-48.5t10-43.5q0-45-31.5-73.5T560-760q-41 0-71.5 23T446-676l54 22q9-25 24.5-37.5T560-704q24 0 39 13.5t15 36.5q0 14-8 26.5T578-596q-33 29-40.5 45.5T530-488ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Z"/></svg>',
+    arrow_drop_down:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-360 280-560h400L480-360Z"/></svg>',
+    lock:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm240-200q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z"/></svg>',
+    sync:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M160-160v-80h110l-16-14q-49-49-71.5-106.5T160-478q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z"/></svg>',
+    groups:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M0-240v-63q0-43 44-70t116-27q13 0 25 .5t23 2.5q-14 21-21 44t-7 48v65H0Zm240 0v-65q0-32 17.5-58.5T307-410q32-20 76.5-30t96.5-10q53 0 97.5 10t76.5 30q32 20 49 46.5t17 58.5v65H240Zm540 0v-65q0-26-6.5-49T754-397q11-2 22.5-2.5t23.5-.5q72 0 116 26.5t44 70.5v63H780ZM160-440q-33 0-56.5-23.5T80-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T160-440Zm640 0q-33 0-56.5-23.5T720-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T800-440Zm-320-40q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T600-600q0 50-34.5 85T480-480Z"/></svg>',
+    link_off:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m770-302-60-62q40-11 65-42.5t25-73.5q0-50-35-85t-85-35H520v-80h160q83 0 141.5 58.5T880-480q0 57-29.5 105T770-302ZM634-440l-80-80h86v80h-6ZM792-56 56-792l56-56 736 736-56 56ZM440-280H280q-83 0-141.5-58.5T80-480q0-69 42-123t108-71l74 74h-24q-50 0-85 35t-35 85q0 50 35 85t85 35h160v80ZM320-440v-80h65l79 80H320Z"/></svg>',
+    cloud_off:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M792-56 686-160H260q-92 0-156-64T40-380q0-77 47.5-137T210-594q3-8 6-15.5t6-16.5L56-792l56-56 736 736-56 56Zm72-154L322-751q35-24 74.5-36.5T480-800q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 39-15 72.5T864-210Z"/></svg>',
+    bug_report:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-120q-65 0-120.5-32T272-240H160v-80h84q-3-20-3.5-40t-.5-40h-80v-80h80q0-20 .5-40t3.5-40h-84v-80h112q14-23 31.5-43t40.5-35l-64-66 56-56 86 86q28-9 57-9t57 9l88-86 56 56-66 66q23 15 41.5 34.5T688-640h112v80h-84q3 20 3.5 40t.5 40h80v80h-80q0 20-.5 40t-3.5 40h84v80H688q-32 56-87.5 88T480-120Zm-80-200h160v-80H400v80Zm0-160h160v-80H400v80Z"/></svg>',
+    close:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>',
+    wrong_location:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 400Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q17 0 35 2t35 4l96 96-84 84 113 113 84-84 31 32q4 20 7 40t3 41q0 100-79.5 217.5T480-80Zm195-558-56-56 84-84-84-84 56-56 84 84 84-84 56 56-84 84 84 84-56 56-84-84-84 84Z"/></svg>',
+    home:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M160-120v-480l320-240 320 240v480H560v-280H400v280H160Z"/></svg>',
+    refresh:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>',
+    open_in_new:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/></svg>',
+    arrow_upward:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z"/></svg>',
+  };
+
+  /* ─────────────────────────────────────────────────────────────
      MARKUP BUILDERS
      Shared by desktop dropdowns + mobile accordion
   ───────────────────────────────────────────────────────────── */
@@ -355,7 +417,7 @@
       <li>
         <button class="dd-link" data-href="${item.href}"${actionAttr}>
           <span class="dd-link-ico">
-            <span class="material-symbols-outlined" aria-hidden="true">${item.icon}</span>
+            <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG[item.icon] || ""}</span>
           </span>
           <span class="dd-link-text">
             <span class="dd-link-title-row">
@@ -377,7 +439,7 @@
     return `
       <li class="dd-item" id="dd-item-${i}">
         <button class="dd-trigger" aria-expanded="false" aria-controls="dd-${i}"${currentAttr}>
-          ${section.label} <span class="dd-chevron" aria-hidden="true"><span class="material-symbols-outlined">arrow_drop_down</span></span>
+          ${section.label} <span class="dd-chevron" aria-hidden="true"><span class="material-symbols-outlined">${ICON_SVG.arrow_drop_down}</span></span>
         </button>
         <div class="dd-panel" id="dd-${i}" hidden>
           <ul class="dd-list">
@@ -396,7 +458,7 @@
     return `
       <li class="acc-item" id="acc-item-${i}">
         <button class="acc-trigger" aria-expanded="false" aria-controls="acc-${i}">
-          ${section.label} <span class="dd-chevron" aria-hidden="true"><span class="material-symbols-outlined">arrow_drop_down</span></span>
+          ${section.label} <span class="dd-chevron" aria-hidden="true"><span class="material-symbols-outlined">${ICON_SVG.arrow_drop_down}</span></span>
         </button>
         <div class="acc-panel" id="acc-${i}" hidden>
           <ul class="dd-list">
@@ -440,7 +502,7 @@
 
   <!-- "Internal" label — non-interactive, purely visual -->
   <span class="lp-internal-label" aria-hidden="true">
-    <span class="material-symbols-outlined lp-internal-label-icon" aria-hidden="true">lock</span>
+    <span class="material-symbols-outlined lp-internal-label-icon" aria-hidden="true">${ICON_SVG.lock}</span>
     Internal
   </span>
 
@@ -464,14 +526,14 @@
             aria-haspopup="false">
       LEAF Team
       <span class="dd-chevron" aria-hidden="true">
-        <span class="material-symbols-outlined">arrow_drop_down</span>
+        <span class="material-symbols-outlined">${ICON_SVG.arrow_drop_down}</span>
       </span>
     </button>
     <div class="dd-panel dd-panel--internal" id="dd-leaf-team" hidden>
       <ul class="dd-list" id="lpNavLeafTeamLinks" aria-live="polite">
         <!-- Dynamic links injected by fetchLeafTeamLinks() -->
         <li class="lp-internal-loading">
-          <span class="material-symbols-outlined" aria-hidden="true">sync</span>
+          <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.sync}</span>
           Loading links…
         </li>
       </ul>
@@ -491,7 +553,7 @@
 <!-- Mobile separator before Internal section -->
 <li class="lp-internal-mobile-item" role="separator" aria-hidden="true">
   <div class="lp-mobile-internal-sep">
-    <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+    <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.lock}</span>
     Internal
   </div>
 </li>
@@ -502,7 +564,7 @@
 <li class="lp-internal-mobile-item">
   <button class="dd-link" data-href="/platform/projects/report.php?a=leadership">
     <span class="dd-link-ico">
-      <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+      <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
     </span>
     <span class="dd-link-text">
       <strong>Leadership</strong>
@@ -516,13 +578,13 @@
   <button class="acc-trigger" aria-expanded="false" aria-controls="acc-leaf-team">
     LEAF Team
     <span class="dd-chevron" aria-hidden="true">
-      <span class="material-symbols-outlined">arrow_drop_down</span>
+      <span class="material-symbols-outlined">${ICON_SVG.arrow_drop_down}</span>
     </span>
   </button>
   <div class="acc-panel" id="acc-leaf-team" hidden>
     <ul class="dd-list" id="lpNavLeafTeamLinksMobile" aria-live="polite">
       <li class="lp-internal-loading">
-        <span class="material-symbols-outlined" aria-hidden="true">sync</span>
+        <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.sync}</span>
         Loading links…
       </li>
     </ul>
@@ -849,7 +911,7 @@
           host.innerHTML =
             itemsHTML ||
             '<li class="lp-internal-loading" style="opacity:0.45;">' +
-              '<span class="material-symbols-outlined" aria-hidden="true">link_off</span>' +
+              '<span class="material-symbols-outlined" aria-hidden="true">' + ICON_SVG.link_off + '</span>' +
               "No links found</li>";
         }
 
@@ -866,7 +928,7 @@
           if (!host) return;
           host.innerHTML =
             '<li class="lp-internal-loading" style="opacity:0.45;">' +
-            '<span class="material-symbols-outlined" aria-hidden="true">cloud_off</span>' +
+            '<span class="material-symbols-outlined" aria-hidden="true">' + ICON_SVG.cloud_off + '</span>' +
             "Links unavailable</li>";
         }
         clearLoading(desktopHost);
@@ -1018,7 +1080,7 @@
 
     banner.innerHTML =
       '<div style="display:flex;align-items:flex-start;gap:12px;">' +
-      '<span class="material-symbols-outlined" aria-hidden="true" style="font-size:20px;color:#d97706;flex-shrink:0;margin-top:2px;">bug_report</span>' +
+      '<span class="material-symbols-outlined" aria-hidden="true" style="font-size:20px;color:#d97706;flex-shrink:0;margin-top:2px;">' + ICON_SVG.bug_report + '</span>' +
       '<div style="flex:1;">' +
       '<strong style="display:block;margin-bottom:6px;">LEAF Header — Smarty/PHP Debug <span style="font-weight:400;color:#78716c;">(visible to LEAF Team only · remove ?leafNavDebug=1 to hide)</span></strong>' +
       "<table>" +
@@ -1028,7 +1090,7 @@
       "<button onclick=\"document.getElementById('lpNavDebugBanner').remove()\" " +
       'style="background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:0;color:#78716c;" ' +
       'aria-label="Dismiss debug banner">' +
-      '<span class="material-symbols-outlined" aria-hidden="true">close</span>' +
+      '<span class="material-symbols-outlined" aria-hidden="true">' + ICON_SVG.close + '</span>' +
       "</button>" +
       "</div>";
 
@@ -1085,14 +1147,6 @@
 
     /* Populate LEAF Team dynamic links after the header is in the DOM */
     fetchLeafTeamLinks();
-
-    /* Reveal icons once the Material Symbols font is loaded.
-       fonts.ready resolves immediately when fonts are cached,
-       so repeat visits get no perceptible delay. */
-    document.fonts.ready.then(function () {
-      var nav = document.getElementById("lpNav");
-      if (nav) nav.classList.add("lp-icons-ready");
-    });
 
     /* Debug panel — only when ?leafNavDebug=1 is present */
     if (/[?&]leafNavDebug=1/.test(window.location.search)) {
@@ -1503,7 +1557,7 @@
           item.href +
           '" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #d9e8f6;border-radius:5px;font-size:13px;">' +
           '<span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">' +
-          item.icon +
+          (ICON_SVG[item.icon] || "") +
           "</span>" +
           "<span>" +
           item.title +
@@ -1538,12 +1592,12 @@
     if (reason === "missing") {
       host.innerHTML =
         '<div class="lp-swap-error lp-swap-error--missing" role="alert" style="text-align:center;padding:2rem 1.5rem;">' +
-        '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true" style="font-size:32px;color:#6b7280;">wrong_location</span>' +
+        '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true" style="font-size:32px;color:#6b7280;">' + ICON_SVG.wrong_location + '</span>' +
         '<p class="lp-swap-error-msg" style="font-weight:600;font-size:16px;margin:12px 0 4px;">This page doesn\'t exist</p>' +
         '<p style="font-size:13px;color:#6b7280;margin:0 0 20px;">It may have moved or the link is outdated.</p>' +
         '<div style="display:flex;justify-content:center;margin-bottom:24px;">' +
         '<button class="lp-panel-link btn btn-primary" data-href="report.php?a=lp_home">' +
-        '<span class="material-symbols-outlined" aria-hidden="true">home</span> Back to Launchpad' +
+        '<span class="material-symbols-outlined" aria-hidden="true">' + ICON_SVG.home + '</span> Back to Launchpad' +
         "</button>" +
         "</div>" +
         '<div style="border-top:1px solid #d9e8f6;padding-top:16px;text-align:left;max-width:420px;margin:0 auto;">' +
@@ -1559,19 +1613,19 @@
     /* "fetch" (default/fallback) */
     host.innerHTML =
       '<div class="lp-swap-error lp-swap-error--fetch" role="alert" style="text-align:center;padding:2rem 1.5rem;">' +
-      '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true" style="font-size:32px;color:#b45309;">cloud_off</span>' +
+      '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true" style="font-size:32px;color:#b45309;">' + ICON_SVG.cloud_off + '</span>' +
       '<p class="lp-swap-error-msg" style="font-weight:600;font-size:16px;margin:12px 0 4px;">This page is temporarily unavailable</p>' +
       '<p style="font-size:13px;color:#6b7280;margin:0 0 20px;">We reached the site but couldn\'t load the content. This is usually temporary.</p>' +
       '<div style="display:flex;gap:8px;justify-content:center;">' +
       '<button class="lp-panel-link btn btn-primary" data-href="' +
       url +
       '">' +
-      '<span class="material-symbols-outlined" aria-hidden="true">refresh</span> Try again' +
+      '<span class="material-symbols-outlined" aria-hidden="true">' + ICON_SVG.refresh + '</span> Try again' +
       "</button>" +
       '<a class="lp-swap-error-link btn btn-sec" href="' +
       url +
       '" target="_blank" rel="noopener noreferrer">' +
-      '<span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>' +
+      '<span class="material-symbols-outlined" aria-hidden="true">' + ICON_SVG.open_in_new + '</span>' +
       "Open in a new tab" +
       "</a>" +
       "</div>" +
@@ -2289,7 +2343,7 @@
     btn.setAttribute("aria-hidden", "true");
     btn.tabIndex = -1;
     btn.innerHTML =
-      '<span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>';
+      '<span class="material-symbols-outlined" aria-hidden="true">' + ICON_SVG.arrow_upward + '</span>';
     document.body.appendChild(btn);
 
     function update() {

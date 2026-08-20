@@ -12,6 +12,58 @@
    as the nav (previously two separately-positioned bars).
    ============================================================ */
 
+/* ── Local fonts (self-hosted, LEAF's own server) ──
+   Source: app/libs/css/fonts/ — confirmed live at
+   https://leaf.va.gov/app/libs/css/fonts/public-sans/PublicSans-Bold.woff2
+   (manually verified). Regular/Medium and the Source Sans Pro
+   pair follow the same documented bundle and naming convention
+   but weren't individually spot-checked — flag if any 404s. */
+@font-face {
+  font-family: "PublicSans-Regular";
+  src:
+    url("/app/libs/css/fonts/public-sans/PublicSans-Regular.woff2") format("woff2"),
+    url("/app/libs/css/fonts/public-sans/PublicSans-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "PublicSans-Medium";
+  src:
+    url("/app/libs/css/fonts/public-sans/PublicSans-Medium.woff2") format("woff2"),
+    url("/app/libs/css/fonts/public-sans/PublicSans-Medium.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "PublicSans-Bold";
+  src:
+    url("/app/libs/css/fonts/public-sans/PublicSans-Bold.woff2") format("woff2"),
+    url("/app/libs/css/fonts/public-sans/PublicSans-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Source Sans Pro Web";
+  src:
+    url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-regular-webfont.woff2") format("woff2"),
+    url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-regular-webfont.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Source Sans Pro Web-Bold";
+  src:
+    url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-bold-webfont.woff2") format("woff2"),
+    url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-bold-webfont.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ── Hide legacy shell chrome ──
    This header now owns branding, nav, and breadcrumb — LEAF's
    default header/footer are redundant and hidden site-wide. */
@@ -47,9 +99,8 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   text-decoration: none;
-  font-family: "Public Sans", sans-serif;
+  font-family: 'PublicSans-Bold', sans-serif;
   font-size: 0.9rem;
-  font-weight: 700;
   color: #fff;
   background: var(--nav-hl);
   border-radius: var(--nav-r);
@@ -166,9 +217,8 @@
   align-items: center;
   gap: 5px;
   padding: 7px 13px;
-  font-family: "Public Sans", sans-serif;
+  font-family: 'PublicSans-Medium', sans-serif;
   font-size: 0.9rem;
-  font-weight: 600;
   color: var(--nav-muted);
   background: transparent;
   border: none;
@@ -191,7 +241,7 @@
 /* Active section indicator */
 .dd-trigger[aria-current="true"] {
   color: var(--nav-accent);
-  font-weight: 700;
+  font-family: 'PublicSans-Bold', sans-serif;
 }
 .dd-chevron {
   display: inline-flex;
@@ -202,9 +252,11 @@
   transform-origin: center;
 }
 .dd-chevron .material-symbols-outlined {
-  font-size: 1.25rem; /* 20px — matches nav text scale */
-  line-height: 1;
   display: flex;
+}
+.dd-chevron .material-symbols-outlined svg {
+  width: 1.25rem; /* 20px — matches nav text scale */
+  height: 1.25rem;
 }
 .dd-item.open .dd-chevron {
   transform: rotate(180deg);
@@ -278,8 +330,9 @@ button.dd-link {
   justify-content: center;
   margin-top: 1px;
 }
-.dd-link-ico .material-symbols-outlined {
-  font-size: 1.1rem;
+.dd-link-ico .material-symbols-outlined svg {
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 /* Title row — holds the <strong> label and, when present, the
@@ -306,9 +359,8 @@ button.dd-link {
 }
 
 .dd-link-text strong {
-  font-family: "Public Sans", sans-serif;
+  font-family: 'PublicSans-Bold', sans-serif;
   font-size: 0.875rem;
-  font-weight: 700;
   color: var(--nav-hl);
 }
 .dd-link-desc {
@@ -440,9 +492,8 @@ button.dd-link {
   gap: 8px;
   padding: 12px;
   min-height: 44px;
-  font-family: "Public Sans", sans-serif;
+  font-family: 'PublicSans-Bold', sans-serif;
   font-size: 0.95rem;
-  font-weight: 700;
   color: var(--nav-text);
   background: transparent;
   border: none;
@@ -529,9 +580,8 @@ button.dd-link {
   border: none;
   background: transparent;
   color: #3d4551; /* --nav-muted */
-  font-family: "Public Sans", sans-serif;
+  font-family: 'PublicSans-Medium', sans-serif;
   font-size: 0.9rem;
-  font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
@@ -577,25 +627,16 @@ button.dd-link {
   pointer-events: none;
 }
 .lp-internal-loading .material-symbols-outlined {
-  font-size: 16px !important;
   animation: lp-spin 1s linear infinite;
+}
+.lp-internal-loading .material-symbols-outlined svg {
+  width: 16px;
+  height: 16px;
 }
 @keyframes lp-spin {
   to {
     transform: rotate(360deg);
   }
-}
-
-/* Icon FOUT prevention — hide Material Symbols glyphs until the
-   font is ready so the raw icon names never flash as plain text.
-   The transition is only on the ready class so cached fonts snap
-   in instantly; first-load gets a soft fade. */
-#lpNav .material-symbols-outlined {
-  opacity: 0;
-}
-#lpNav.lp-icons-ready .material-symbols-outlined {
-  opacity: 1;
-  transition: opacity 0.15s ease;
 }
 
 /* Mobile: Internal section separator */
@@ -612,8 +653,9 @@ button.dd-link {
   border-top: 1px solid #d9e8f6; /* --nav-panel-bd */
   margin-top: 4px;
 }
-.lp-mobile-internal-sep .material-symbols-outlined {
-  font-size: 14px !important;
+.lp-mobile-internal-sep .material-symbols-outlined svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* ── Responsive ── */
@@ -658,15 +700,14 @@ button.dd-link {
   padding: 10px 24px;
   background: rgba(239, 246, 251, 0.97); /* --nav-hover-bg tint */
   border-top: 1px solid var(--nav-panel-bd);
-  font-family: "Public Sans", sans-serif;
+  font-family: 'PublicSans-Regular', sans-serif;
   font-size: 0.8125rem;
-  font-weight: 400;
   color: var(--nav-muted);
 }
 
 .lp-breadcrumb a {
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-family: 'PublicSans-Medium', sans-serif;
   font-style: normal;
   color: var(--nav-accent);
   text-decoration: underline;
@@ -739,8 +780,9 @@ button.dd-link {
   outline: 3px solid var(--nav-accent);
   outline-offset: 3px;
 }
-#leaf-jump-top .material-symbols-outlined {
-  font-size: 1.25rem;
+#leaf-jump-top .material-symbols-outlined svg {
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 /* ── Demo modal ──
