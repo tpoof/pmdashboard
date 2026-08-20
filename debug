@@ -1,10 +1,26 @@
-We need to know whether LEAF's backend already exposes an API endpoint that returns the current logged-in user's admin status and/or orgchart group memberships — the kind of data that normally backs the Smarty {if $empMembership['groupID'][X]} pattern used in server-rendered templates. This is for gating a button on a static (non-Smarty-rendered) page client-side, similar to how api/form/{recordID}/rawIndicator/{indicatorID}/{series} already exists for indicator data.
+<!-- calendar_month -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M480-400q-17 0-28.5-11.5T440-440q0-17 11.5-28.5T480-480q17 0 28.5 11.5T520-440q0 17-11.5 28.5T480-400Zm-188.5-11.5Q280-423 280-440t11.5-28.5Q303-480 320-480t28.5 11.5Q360-457 360-440t-11.5 28.5Q337-400 320-400t-28.5-11.5ZM640-400q-17 0-28.5-11.5T600-440q0-17 11.5-28.5T640-480q17 0 28.5 11.5T680-440q0 17-11.5 28.5T640-400ZM480-240q-17 0-28.5-11.5T440-280q0-17 11.5-28.5T480-320q17 0 28.5 11.5T520-280q0 17-11.5 28.5T480-240Zm-188.5-11.5Q280-263 280-280t11.5-28.5Q303-320 320-320t28.5 11.5Q360-297 360-280t-11.5 28.5Q337-240 320-240t-28.5-11.5ZM640-240q-17 0-28.5-11.5T600-280q0-17 11.5-28.5T640-320q17 0 28.5 11.5T680-280q0 17-11.5 28.5T640-240ZM180-80q-24 0-42-18t-18-42v-620q0-24 18-42t42-18h65v-60h65v60h340v-60h65v60h65q24 0 42 18t18 42v620q0 24-18 42t-42 18H180Zm0-60h600v-430H180v430Z"/></svg>
 
-Please search the LEAF Developer Example GitHub repo (referenced earlier in this project) for:
+<!-- thumb_up -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M721-120H254v-512l278-288 33 26q11 8 14.5 18t3.5 23v10l-45 211h322q23 0 41.5 18.5T920-572v82q0 11-2.5 25.5T910-439L794-171q-9 21-29.5 36T721-120ZM194-632v512H80v-512h114Z"/></svg>
 
-Any REST/API route (PHP controller, route definition, or JS API wrapper) that returns the current user's session info — admin flag, employee ID, or empMembership/group data — to the frontend. Look for naming patterns like session, whoami, currentUser, me, empMembership, groupID, permissions, userGroups, orgchart.
-How $empMembership is populated server-side in PHP (likely a controller or session-bootstrap class) — trace where that data originates, since if it's only ever computed inside Smarty's page-render step (not a standalone queryable source), there may be no existing endpoint and one would need to be built.
-Any existing frontend JS (in the repo, similar to LEAFPortalAPI.js or formGrid.js referenced earlier) that already calls such an endpoint — if something in LEAF's own admin app already fetches "is this user an admin" or "is this user in group X" client-side, that's our reference implementation.
-orgchartPath usage — calendar.js/calendar.html pass orgchartPath via the Smarty handoff (window.leafCalendar.orgchartPath); check what that endpoint/path actually does when called (GET request, response shape) since it may be relevant even if it's not a direct permissions check.
+<!-- thumb_down -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M239-840h467v512L428-40l-33-26q-11-8-14.5-18t-3.5-23v-10l45-211H100q-23 0-41.5-18.5T40-388v-82q0-11 2.5-25.5T50-521l116-268q9-21 29.5-36t43.5-15Zm527 512v-512h114v512H766Z"/></svg>
 
-Report back: exact endpoint path(s) found (or confirmation that none exist), response shape/example payload, authentication requirements (session cookie, CSRF token, etc.), and whether it's called via fetch, $.ajax, or another pattern elsewhere in the codebase — so we can match the existing convention rather than introducing a new one. If nothing like this exists anywhere in the repo, say so explicitly rather than guessing, since that would mean this endpoint doesn't exist yet and needs to be built by the backend team before we can implement client-side gating.
+<!-- trending_up -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="m123-240-43-43 292-291 167 167 241-241H653v-60h227v227h-59v-123L538-321 371-488 123-240Z"/></svg>
+
+<!-- analytics -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M284-277h60v-205h-60v205Zm332 0h60v-420h-60v420Zm-166 0h60v-118h-60v118Zm0-205h60v-60h-60v60ZM180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h600q24 0 42 18t18 42v600q0 24-18 42t-42 18H180Z"/></svg>
+
+<!-- search_off -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M136-136q-56-56-56-134t56-134q56-56 134-56t134 56q56 56 56 134t-56 134q-56 56-134 56t-134-56Zm700 16L573-383q-14 11-31.5 21.5T508-344q-5-14-11-28.5T483-399q54-21 91.5-69.5T612-584q0-81-57-138.5T417-780q-82 0-139.5 57.5T220-584q0 17 3.5 35.5T232-517q-13 2-29 6.5T174-500q-7-18-10.5-40t-3.5-44q0-107 75-181.5T417-840q106 0 180.5 75T672-584q0 43-15 85t-41 73l264 262-44 44Zm-635-56 69-69 68 68 23-23-69-69 71-71-23-23-70 70-70-70-23 23 70 70-70 70 24 24Z"/></svg>
+
+<!-- arrow_upward -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M450-160v-526L202-438l-42-42 320-320 320 320-42 42-248-248v526h-60Z"/></svg>
+
+<!-- arrow_downward -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M450-800v526L202-522l-42 42 320 320 320-320-42-42-248 248v-526h-60Z"/></svg>
+
+<!-- unfold_more -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M480-120 300-300l44-44 136 136 136-136 44 44-180 180ZM344-612l-44-44 180-180 180 180-44 44-136-136-136 136Z"/></svg>
