@@ -8,6 +8,15 @@
     <link rel="stylesheet" href="./files/launchpad.css" />
 
     <style>
+      /* Icon sizing for .lp-jump, defined in launchpad.css (out of
+         scope for this edit) — that file still sizes
+         .material-symbols-outlined via font-size, which no longer
+         affects the inlined <svg>. */
+      .lp-jump .material-symbols-outlined svg {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+
       /* ── Stat grid ── */
       .voc-stats {
         display: grid;

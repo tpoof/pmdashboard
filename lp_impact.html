@@ -9,6 +9,32 @@
     <link rel="stylesheet" href="./files/launchpad.css" />
 
     <style>
+      /* Icon sizing for classes defined in launchpad.css (out of scope
+         for this edit) — that file still sizes .material-symbols-outlined
+         via font-size, which no longer affects the inlined <svg>. These
+         restore each icon's pre-conversion size without touching
+         launchpad.css; everything else (color, layout) still cascades
+         correctly from the original rules there. */
+      .feat-ico .material-symbols-outlined svg {
+        width: 1.35rem;
+        height: 1.35rem;
+      }
+      .btn .material-symbols-outlined svg {
+        width: 1.15rem;
+        height: 1.15rem;
+      }
+      .lp-jump .material-symbols-outlined svg {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+      /* .btn-cta has no dedicated icon rule anywhere (not in launchpad.css
+         either) — its icon always just inherited the button's own 1rem
+         text size ambiently, which SVG doesn't do automatically. */
+      .btn-cta .material-symbols-outlined svg {
+        width: 1rem;
+        height: 1rem;
+      }
+
       /* ── Stat card entrance ── */
       @media (prefers-reduced-motion: no-preference) {
         .stat-card {

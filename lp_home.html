@@ -9,6 +9,29 @@
     <link rel="stylesheet" href="./files/launchpad.css" />
 
     <style>
+      /* Icon sizing for classes defined in launchpad.css (out of scope
+         for this edit) — that file still sizes .material-symbols-outlined
+         via font-size, which no longer affects the inlined <svg>. These
+         restore each icon's pre-conversion size without touching
+         launchpad.css; everything else (color, layout) still cascades
+         correctly from the original rules there. */
+      .hero-kicker .material-symbols-outlined svg {
+        width: 1rem;
+        height: 1rem;
+      }
+      .btn .material-symbols-outlined svg {
+        width: 1.15rem;
+        height: 1.15rem;
+      }
+      .feat-ico .material-symbols-outlined svg {
+        width: 1.35rem;
+        height: 1.35rem;
+      }
+      .scale-hd .material-symbols-outlined svg {
+        width: 2rem;
+        height: 2rem;
+      }
+
       .nl-link .material-symbols-outlined {
         color: #fff !important;
       }

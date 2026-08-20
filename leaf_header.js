@@ -1080,7 +1080,7 @@
 
     banner.innerHTML =
       '<div style="display:flex;align-items:flex-start;gap:12px;">' +
-      '<span class="material-symbols-outlined" aria-hidden="true" style="font-size:20px;color:#d97706;flex-shrink:0;margin-top:2px;">' + ICON_SVG.bug_report + '</span>' +
+      '<span class="material-symbols-outlined lp-debug-icon" aria-hidden="true" style="color:#d97706;flex-shrink:0;margin-top:2px;">' + ICON_SVG.bug_report + '</span>' +
       '<div style="flex:1;">' +
       '<strong style="display:block;margin-bottom:6px;">LEAF Header — Smarty/PHP Debug <span style="font-weight:400;color:#78716c;">(visible to LEAF Team only · remove ?leafNavDebug=1 to hide)</span></strong>' +
       "<table>" +
@@ -1090,7 +1090,7 @@
       "<button onclick=\"document.getElementById('lpNavDebugBanner').remove()\" " +
       'style="background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:0;color:#78716c;" ' +
       'aria-label="Dismiss debug banner">' +
-      '<span class="material-symbols-outlined" aria-hidden="true">' + ICON_SVG.close + '</span>' +
+      '<span class="material-symbols-outlined lp-debug-close-icon" aria-hidden="true">' + ICON_SVG.close + '</span>' +
       "</button>" +
       "</div>";
 
@@ -1556,7 +1556,7 @@
           '<button class="dd-link lp-error-suggest-link" data-href="' +
           item.href +
           '" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #d9e8f6;border-radius:5px;font-size:13px;">' +
-          '<span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">' +
+          '<span class="material-symbols-outlined lp-error-suggest-ico" aria-hidden="true">' +
           (ICON_SVG[item.icon] || "") +
           "</span>" +
           "<span>" +
@@ -1592,7 +1592,7 @@
     if (reason === "missing") {
       host.innerHTML =
         '<div class="lp-swap-error lp-swap-error--missing" role="alert" style="text-align:center;padding:2rem 1.5rem;">' +
-        '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true" style="font-size:32px;color:#6b7280;">' + ICON_SVG.wrong_location + '</span>' +
+        '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true" style="color:#6b7280;">' + ICON_SVG.wrong_location + '</span>' +
         '<p class="lp-swap-error-msg" style="font-weight:600;font-size:16px;margin:12px 0 4px;">This page doesn\'t exist</p>' +
         '<p style="font-size:13px;color:#6b7280;margin:0 0 20px;">It may have moved or the link is outdated.</p>' +
         '<div style="display:flex;justify-content:center;margin-bottom:24px;">' +
@@ -1613,7 +1613,7 @@
     /* "fetch" (default/fallback) */
     host.innerHTML =
       '<div class="lp-swap-error lp-swap-error--fetch" role="alert" style="text-align:center;padding:2rem 1.5rem;">' +
-      '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true" style="font-size:32px;color:#b45309;">' + ICON_SVG.cloud_off + '</span>' +
+      '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true" style="color:#b45309;">' + ICON_SVG.cloud_off + '</span>' +
       '<p class="lp-swap-error-msg" style="font-weight:600;font-size:16px;margin:12px 0 4px;">This page is temporarily unavailable</p>' +
       '<p style="font-size:13px;color:#6b7280;margin:0 0 20px;">We reached the site but couldn\'t load the content. This is usually temporary.</p>' +
       '<div style="display:flex;gap:8px;justify-content:center;">' +

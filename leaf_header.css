@@ -553,8 +553,11 @@ button.dd-link {
   padding: 0 2px;
 }
 .lp-internal-label-icon {
-  font-size: 13px !important;
   line-height: 1;
+}
+.lp-internal-label-icon svg {
+  width: 13px;
+  height: 13px;
 }
 
 /* Vertical rule between label and buttons */
@@ -845,6 +848,41 @@ button.dd-link {
 .modal-close:focus-visible {
   outline: 3px solid #fff;
   outline-offset: 2px;
+}
+
+/* ── SPA swap-error icon ──
+   Used by loadView()'s error states (leaf_header.js). Those spans set
+   font-size inline (32px) — harmless leftover for color, but sizing
+   now needs a real rule since font-size no longer sizes an <svg>. */
+.lp-swap-error-ico svg {
+  width: 32px;
+  height: 32px;
+}
+/* Same loadView() error states also reuse launchpad.css's .btn class
+   for their action buttons (Back to Launchpad / Try again / Open in a
+   new tab) — launchpad.css sizes .btn .material-symbols-outlined via
+   font-size, which doesn't reach these inlined <svg>s either. */
+.btn .material-symbols-outlined svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+/* ── Debug banner icons (runNavDebug(), ?leafNavDebug=1 only) ──
+   No wrapping class existed before conversion — sizing came from an
+   inline font-size on the bug icon and the dismiss button's own
+   font-size for the close icon. Named classes added at the call site
+   so each can be sized independently. */
+.lp-debug-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.lp-debug-close-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.lp-error-suggest-ico svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* ── Reduced motion (Section 508 502.2.2 / WCAG 2.3.3) ──
