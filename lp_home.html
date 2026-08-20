@@ -134,33 +134,39 @@
       }
     </style>
 
-    <!-- ============================================================
-         CONFIG HANDOFF — window.leafHeaderConfig
+    <!-- CONFIG HANDOFF: window.leafHeaderConfig for leaf_header.js's
+         Internal-section gating. Full explanation is in the JS comment
+         inside the script block below, not here — an HTML comment
+         can't safely contain the three-character sequence that closes
+         it. -->
+    <script>
+      /* CONFIG HANDOFF — window.leafHeaderConfig
          leaf_header.js reads this for Internal-section gating (Coaches/
          Team behind isAdmin, Leadership behind isLeadershipGroup) —
          mirrors calendar.js's window.leafCalendar handoff pattern (see
-         calendar/calender.html). Delimiters are Smarty's own <!--{ }-->
-         convention, so an unprocessed/un-rendered page degrades to
-         inert comments rather than broken markup.
+         calendar/calender.html).
 
-         STATIC PLACEHOLDER — this page isn't Smarty-rendered yet. Both
-         flags default to false below the {if} blocks; since the
-         {if}/{/if} wrapper itself is an inert HTML comment when raw,
-         the override line beneath still runs unconditionally, so both
-         currently evaluate to true here — useful for visually testing
-         the gated Internal-section items without a real server. Once
-         this page is wired up to Smarty, this already renders correctly
-         as-is — no changes needed beyond filling in the real group ID.
-         REPLACE_ME_LEADERSHIP_GROUP_ID needs that real Smarty group ID. -->
-    <script>
-      var lpHeaderIsAdmin = false;
+         These launchpad pages are deployed on leaf.va.gov as plain
+         .html, not .tpl, so Smarty never processes the if/else pairs
+         below — both branches are permanently inert HTML comments here,
+         and BOTH assignment lines between them run, in source order,
+         every time. Putting the "true" branch first and the "false"
+         branch second means the false assignment always executes last
+         and wins as-deployed — fail-closed by construction, not by a
+         separate default line. If this page is ever converted to a
+         Smarty-processed template, only one branch's assignment survives
+         per real if/else semantics, and that one line is correct on its
+         own either way. Leadership gate uses group ID 52. */
       <!--{if $is_admin}-->
-      lpHeaderIsAdmin = true;
+      var lpHeaderIsAdmin = true;
+      <!--{else}-->
+      var lpHeaderIsAdmin = false;
       <!--{/if}-->
 
+      <!--{if $empMembership['groupID'][52]}-->
+      var lpHeaderIsLeadershipGroup = true;
+      <!--{else}-->
       var lpHeaderIsLeadershipGroup = false;
-      <!--{if $empMembership['groupID'][REPLACE_ME_LEADERSHIP_GROUP_ID]}-->
-      lpHeaderIsLeadershipGroup = true;
       <!--{/if}-->
 
       window.leafHeaderConfig = {
