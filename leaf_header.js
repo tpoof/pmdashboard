@@ -2009,18 +2009,27 @@
       }
 
       /* Match nav dropdown links, internal buttons, footer quick-resource
-         links, and any [data-action] trigger — the last covers modal
-         triggers that live in page-specific markup (e.g. lp_home.html's
-         "Request Support" button) rather than nav-generated HTML, so any
-         page can opt into the demo/form modal system with plain data
-         attributes and no JS of its own.
+         links, breadcrumb links, and any [data-action] trigger — the
+         last covers modal triggers that live in page-specific markup
+         (e.g. lp_home.html's "Request Support" button) rather than
+         nav-generated HTML, so any page can opt into the demo/form
+         modal system with plain data attributes and no JS of its own.
          .dd-link elements are now <button data-href> — no href attribute —
          so the browser status bar never previews the destination URL on hover.
          .lp-internal-btn elements (Leadership) also use data-href.
+         .lp-breadcrumb a elements (parent/Launchpad crumbs) are real
+         <a href> — the data-href fallback below reads their href
+         attribute directly, same as any other real anchor caught here.
+         Without this, breadcrumb clicks fell through entirely (matched
+         neither branch above), triggering a hard page reload instead
+         of a hash-route — which dropped the user out of the SPA, so
+         isLaunchpad() went false and every subsequent nav click
+         (including iframe-mounted ones like Community of Practice)
+         started navigating for real instead of routing.
          [data-nav-external] marks real <a target="_blank"> tags (e.g.
          Coaches) that should navigate away natively — left alone. */
       var link = e.target.closest(
-        ".dd-link, .lp-panel-link, .lp-internal-btn, [data-action]",
+        ".dd-link, .lp-panel-link, .lp-internal-btn, .lp-breadcrumb a, [data-action]",
       );
       if (!link) return;
 
