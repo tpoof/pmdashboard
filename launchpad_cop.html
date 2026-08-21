@@ -200,13 +200,21 @@
       }
 
       .cop-session-topic {
-        font-family: "Public Sans", sans-serif;
+        font-family: "Source Sans 3", sans-serif;
         font-size: 1.05rem;
-        font-weight: 700;
+        font-weight: 400;
         color: var(--color-text, #1b1b1b);
-        line-height: 1.4;
+        line-height: 1.5;
         margin: 0;
         flex: 1;
+      }
+      /* Rich-text (Trumbowyg) content — reset spacing on its own child
+         elements so it doesn't add unexpected gaps inside the card. */
+      .cop-session-topic > :first-child {
+        margin-top: 0;
+      }
+      .cop-session-topic > :last-child {
+        margin-bottom: 0;
       }
 
       .cop-session-links {
@@ -475,7 +483,8 @@
 
       function sessionCardHTML(item) {
         const date = item.s1?.id25 || "";
-        const topic = scrubHTML(item.s1?.id26 || "Untitled Session");
+        // Rich-text (Trumbowyg) field — value is HTML markup, not plain text.
+        const topic = item.s1?.id26 || "Untitled Session";
         const link = item.s1?.id27 || "";
         const file = item.s1?.id35 || "";
 
