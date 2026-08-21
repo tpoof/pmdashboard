@@ -174,7 +174,7 @@
               title: "Community of Practice",
               desc: "Connect with LEAF site admins and builders VA-wide",
               href: "https://leaf.va.gov/platform/CoP/report.php?a=launchpad_homepage",
-              external: true,
+              iframe: true,
             },
           ],
         },
@@ -263,9 +263,13 @@
   function buildRouteMap() {
     /* Registers one item into ROUTE_MAP — shared by top-level items and
        nested children so both hash-route the same way. External items
-       (e.g. Community of Practice) are skipped entirely — they're real
-       <a target="_blank"> links, not internal launchpad routes. */
-    function registerItem(item, section) {
+       (real <a target="_blank"> links, not internal launchpad routes)
+       are skipped entirely. parentItem is only passed for nested
+       children (e.g. Community of Practice under Voice of the
+       Customer) — it fills in route.parent so buildTrailHTML() renders
+       the full 3-level breadcrumb (section > parent > title) instead
+       of just section > title. */
+    function registerItem(item, section, parentItem) {
       if (
         item.divider ||
         !item.href ||
@@ -282,13 +286,19 @@
           section: section.label,
           iframe: !!item.iframe,
         };
+        if (parentItem) {
+          ROUTE_MAP[key].parent = {
+            label: parentItem.title,
+            href: parentItem.href,
+          };
+        }
       }
     }
     NAV_SECTIONS.forEach(function (section) {
       section.items.forEach(function (item) {
         registerItem(item, section);
         (item.children || []).forEach(function (child) {
-          registerItem(child, section);
+          registerItem(child, section, item);
         });
       });
     });
@@ -458,12 +468,15 @@
           <span class="dd-link-ico">
             <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG[item.icon] || ""}</span>
           </span>`;
-    /* True external links (e.g. Community of Practice) render as a
-       real <a target="_blank"> instead of the <button data-href>
-       every other item uses — same data-nav-external/rel/sr-only
-       pattern already used for Coaches (see buildInternalNavHTML), so
-       wireLinkIntercept() leaves it alone entirely rather than hash-
-       routing or iframe-mounting it. */
+    /* item.external: true renders a real <a target="_blank"> instead
+       of the <button data-href> every other item uses — same
+       data-nav-external/rel/sr-only pattern already used for Coaches
+       (see buildInternalNavHTML), so wireLinkIntercept() leaves it
+       alone entirely rather than hash-routing or iframe-mounting it.
+       Not currently used by any NAV_SECTIONS item (Community of
+       Practice uses iframe: true instead, so its breadcrumb renders),
+       but kept as a general option for a future genuinely-external
+       nav destination. */
     if (item.external) {
       return `
         <a class="${cls}" href="${item.href}" data-nav-external target="_blank" rel="noopener noreferrer">${iconHTML}

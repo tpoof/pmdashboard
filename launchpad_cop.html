@@ -16,6 +16,12 @@
     <link rel="stylesheet" href="./files/smarty_styles.css" />
 
     <style>
+      /* ── Hide legacy shell chrome ── */
+      #header,
+      #footer {
+        display: none !important;
+      }
+
       /* ── Upcoming session card ── */
       .cop-session-card {
         background: var(--surface, #fff);
@@ -282,21 +288,6 @@
           </div>
         </section>
       </main>
-
-      <button
-        class="lp-jump"
-        id="lpJump"
-        type="button"
-        aria-label="Back to top"
-        aria-hidden="true"
-        tabindex="-1"
-      >
-        <svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true">
-          <path
-            d="M450-160v-526L202-438l-42-42 320-320 320 320-42 42-248-248v526h-60Z"
-          />
-        </svg>
-      </button>
     </div>
     <!-- /.lp -->
 
@@ -308,27 +299,6 @@
     <script>
       (() => {
         "use strict";
-
-        /* ── Jump to top ── */
-        const initJumpBtn = () => {
-          const btn = document.getElementById("lpJump");
-          if (!btn) return;
-
-          const update = () => {
-            const vis =
-              (window.pageYOffset || document.documentElement.scrollTop) > 120;
-            btn.classList.toggle("vis", vis);
-            btn.setAttribute("aria-hidden", String(!vis));
-            btn.tabIndex = vis ? 0 : -1;
-          };
-
-          btn.addEventListener("click", () =>
-            window.scrollTo({ top: 0, behavior: "smooth" }),
-          );
-          window.addEventListener("scroll", update, { passive: true });
-          window.addEventListener("resize", update);
-          update();
-        };
 
         /* ── Upcoming session details ── */
         const loadUpcomingSession = async () => {
@@ -362,7 +332,6 @@
         };
 
         /* ── Init ── */
-        initJumpBtn();
         loadUpcomingSession();
       })();
     </script>
