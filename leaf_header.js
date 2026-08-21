@@ -323,8 +323,22 @@
      "/launchpad/report.php?a=lp_find_site" → "lp_find_site"
      "report.php?a=Find_my_site"               → "find_my_site" (lowercased)
      Absolute URLs with different origin handled gracefully. */
+  /* Explicit hash-key overrides for hrefs whose derived key would
+     otherwise be wrong. Checked first in hrefToHashKey() so every
+     caller (registerItem, wireLinkIntercept's click-time lookup,
+     resolveCurrentRoute) agrees on the same key automatically. */
+  var HREF_HASH_KEY_OVERRIDES = {
+    /* Community of Practice's own ?a=launchpad_homepage is that
+       destination page's internal param, unrelated to routing here —
+       without this override it would become the hash key, colliding
+       with launchpad_homepage having nothing to do with CoP. */
+    "https://leaf.va.gov/platform/CoP/report.php?a=launchpad_homepage":
+      "cop",
+  };
+
   function hrefToHashKey(href) {
     if (!href || href === "#") return null;
+    if (HREF_HASH_KEY_OVERRIDES[href]) return HREF_HASH_KEY_OVERRIDES[href];
     var match = href.match(/[?&]a=([^&#]+)/i);
     if (match) return match[1].toLowerCase();
     /* Fall back: use last path segment for hrefs without ?a= */
