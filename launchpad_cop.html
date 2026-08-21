@@ -153,6 +153,33 @@
         font-size: 1rem;
         color: var(--color-text, #1b1b1b);
       }
+      .cop-search-clear {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--color-text-muted, #5c6670);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+      .cop-search-clear[hidden] {
+        display: none;
+      }
+      .cop-search-clear:hover {
+        background: var(--color-primary-lightest, #e8f0fb);
+      }
+      .cop-search-clear:focus-visible {
+        outline: 3px solid var(--color-primary, #005ea2);
+        outline-offset: 2px;
+      }
+      .cop-search-clear svg {
+        width: 1rem;
+        height: 1rem;
+      }
 
       .cop-results-empty {
         text-align: center;
@@ -385,6 +412,23 @@
                 type="text"
                 placeholder="Search past sessions"
               />
+              <button
+                type="button"
+                id="cop-search-clear"
+                class="cop-search-clear"
+                aria-label="Clear search"
+                hidden
+              >
+                <svg
+                  viewBox="0 -960 960 960"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="m249-207-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z"
+                  />
+                </svg>
+              </button>
             </div>
 
             <div id="cop-results" aria-live="polite"></div>
@@ -553,8 +597,12 @@
           ...resultData[recordID],
         }));
 
+        // The server already filtered to matching records (or returned the
+        // full set when there's no search text) — client-side ranking here
+        // only controls sort order, it must not remove results the server
+        // already decided were a match.
         if (searchWords?.length > 0) {
-          list = list.sort(rankResults).filter((item) => item.rank > 0);
+          list = list.sort(rankResults);
         } else {
           list = list.sort(rankDefaultResults);
         }
@@ -598,34 +646,44 @@
       }
 
       var searchWords;
-      function search() {
-        const searchText = $("#searchHelpInput").val().trim();
-        searchWords = searchText ? searchText.split(/\s+/) : [];
-        const query = new LeafFormQuery();
-        const q = {
-          terms: [
-            {
-              id: "data",
-              indicatorID: "0",
-              operator: "MATCH ALL",
-              match: searchText,
-              gate: "AND",
-            },
-            {
-              id: "categoryID",
-              operator: "=",
-              match: "form_8fc8b",
-              gate: "AND",
-            },
-            { id: "deleted", operator: "=", match: 0, gate: "AND" },
-          ],
+
+      // A "data" / indicatorID "0" / MATCH ALL term searches every field on
+      // the form server-side (not just the ones we display). An empty match
+      // string is NOT the same as "no filter" to the query engine, so that
+      // term is only added when there's actual search text — otherwise it
+      // returns zero results instead of the full list.
+      function buildPastSessionsQuery(searchText) {
+        const terms = [
+          { id: "categoryID", operator: "=", match: "form_8fc8b", gate: "AND" },
+          { id: "deleted", operator: "=", match: 0, gate: "AND" },
+        ];
+        if (searchText) {
+          terms.unshift({
+            id: "data",
+            indicatorID: "0",
+            operator: "MATCH ALL",
+            match: searchText,
+            gate: "AND",
+          });
+        }
+        return {
+          terms,
           joins: [],
           sort: {},
           getData: ["25", "27", "26", "35"],
         };
-        query.importQuery(q);
+      }
+
+      function runPastSessionsQuery(searchText) {
+        searchWords = searchText ? searchText.split(/\s+/) : [];
+        const query = new LeafFormQuery();
+        query.importQuery(buildPastSessionsQuery(searchText));
         query.setExtraParams("&x-filterData=recordID,title");
         query.execute().then((results) => render(results));
+      }
+
+      function search() {
+        runPastSessionsQuery($("#searchHelpInput").val().trim());
       }
 
       // Delays repeated calls until N ms after the last one — avoids a
@@ -647,28 +705,27 @@
       }
 
       $(function () {
-        searchWords = [];
-        const query = new LeafFormQuery();
-        const q = {
-          terms: [
-            {
-              id: "categoryID",
-              operator: "=",
-              match: "form_8fc8b",
-              gate: "AND",
-            },
-            { id: "deleted", operator: "=", match: 0, gate: "AND" },
-          ],
-          joins: [],
-          sort: {},
-          getData: ["25", "27", "26", "35"],
+        const $input = $("#searchHelpInput");
+        const $clearBtn = $("#cop-search-clear");
+
+        const toggleClearBtn = () => {
+          $clearBtn.prop("hidden", $input.val().trim() === "");
         };
-        query.importQuery(q);
-        query.setExtraParams("&x-filterData=recordID,title");
-        query.execute().then((results) => render(results));
+
+        searchWords = [];
+        runPastSessionsQuery("");
 
         const debouncedSearch = debounce(() => search(), 300);
-        $("#searchHelpInput").keyup(debouncedSearch);
+        $input.on("keyup", () => {
+          toggleClearBtn();
+          debouncedSearch();
+        });
+
+        $clearBtn.on("click", () => {
+          $input.val("").focus();
+          toggleClearBtn();
+          runPastSessionsQuery("");
+        });
       });
     </script>
   </body>
