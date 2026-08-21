@@ -173,8 +173,8 @@
               icon: "diversity_3",
               title: "Community of Practice",
               desc: "Connect with LEAF site admins and builders VA-wide",
-              href: "/platform/CoP",
-              iframe: true,
+              href: "https://leaf.va.gov/platform/CoP/report.php?a=launchpad_homepage",
+              external: true,
             },
           ],
         },
@@ -262,9 +262,17 @@
 
   function buildRouteMap() {
     /* Registers one item into ROUTE_MAP — shared by top-level items and
-       nested children so both hash-route the same way. */
+       nested children so both hash-route the same way. External items
+       (e.g. Community of Practice) are skipped entirely — they're real
+       <a target="_blank"> links, not internal launchpad routes. */
     function registerItem(item, section) {
-      if (item.divider || !item.href || item.href === "#" || item.hidden)
+      if (
+        item.divider ||
+        !item.href ||
+        item.href === "#" ||
+        item.hidden ||
+        item.external
+      )
         return;
       var key = hrefToHashKey(item.href);
       if (key) {
@@ -450,6 +458,25 @@
           <span class="dd-link-ico">
             <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG[item.icon] || ""}</span>
           </span>`;
+    /* True external links (e.g. Community of Practice) render as a
+       real <a target="_blank"> instead of the <button data-href>
+       every other item uses — same data-nav-external/rel/sr-only
+       pattern already used for Coaches (see buildInternalNavHTML), so
+       wireLinkIntercept() leaves it alone entirely rather than hash-
+       routing or iframe-mounting it. */
+    if (item.external) {
+      return `
+        <a class="${cls}" href="${item.href}" data-nav-external target="_blank" rel="noopener noreferrer">${iconHTML}
+          <span class="dd-link-text">
+            <span class="dd-link-title-row">
+              <strong>${item.title}</strong>
+              ${badgeHTML}
+            </span>
+            <span class="dd-link-desc">${item.desc}</span>
+            <span class="lp-sr-only">(opens in new tab)</span>
+          </span>
+        </a>`;
+    }
     return `
         <button class="${cls}" data-href="${item.href}"${actionAttr}>${iconHTML}
           <span class="dd-link-text">
@@ -1891,6 +1918,67 @@
         } else {
           var contentHref = contentLink.getAttribute("href");
           if (contentHref && contentHref !== "#") {
+            /* ── Pure in-page anchor (e.g. lp_brand_guide's scrollspy
+               nav, or any page's own #lp-main skip link) ──
+               mountContent() injects a <base href> pointing at the
+               route's directory so relative API calls in a fetched
+               page's scripts resolve correctly (see mountContent()) —
+               untouched here, still needed for that. But the same
+               <base> also gets applied to native anchor resolution,
+               so an unhandled href="#section-id" click no longer
+               resolves against the current document; the browser
+               navigates to {base}/#section-id instead — a real,
+               wrong page. Checked before the ROUTE_MAP lookup below
+               so a genuine same-document element always wins over the
+               (very unlikely) case of a section id colliding with a
+               route key. */
+            if (contentHref.charAt(0) === "#") {
+              var anchorId = contentHref.slice(1);
+              var anchorTarget = anchorId
+                ? document.getElementById(anchorId)
+                : null;
+              if (anchorTarget) {
+                e.preventDefault();
+                try {
+                  anchorTarget.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                } catch (err) {}
+                /* history.replaceState, not location.hash — location.hash
+                   fires hashchange, which router() listens for and would
+                   try to treat the section id as a route key, fail to
+                   find it in ROUTE_MAP, and replace the currently-loaded
+                   page with the "page doesn't exist" error state.
+                   replaceState never fires hashchange, so router() never
+                   sees this. Trade-off: reloading the page while a
+                   section anchor is the active hash won't restore the
+                   loaded route — a limitation most hash-routed SPAs with
+                   in-page anchors accept; reloading the bare route URL
+                   still always works correctly. */
+                try {
+                  history.replaceState(
+                    null,
+                    "",
+                    window.location.pathname +
+                      window.location.search +
+                      "#" +
+                      anchorId,
+                  );
+                } catch (err) {}
+                /* Move focus to the target, matching standard in-page-
+                   anchor accessibility practice — this is fixing a
+                   skip-link/scrollspy pattern, so focus needs to land
+                   here for keyboard/AT users, not just scroll past it.
+                   preventScroll avoids fighting the smooth scroll above
+                   with the browser's own default instant-jump-on-focus. */
+                if (!anchorTarget.hasAttribute("tabindex")) {
+                  anchorTarget.setAttribute("tabindex", "-1");
+                }
+                anchorTarget.focus({ preventScroll: true });
+                return;
+              }
+            }
             var contentKey = hrefToHashKey(contentHref);
             if (contentKey && ROUTE_MAP[contentKey]) {
               e.preventDefault();
