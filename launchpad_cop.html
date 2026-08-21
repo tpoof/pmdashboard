@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Community of Practice — LEAF Launchpad</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./files/launchpad.css" />
+    <link rel="stylesheet" href="./files/smarty_styles.css" />
+
+    <style>
+      /* ── Upcoming session card ── */
+      .cop-session-card {
+        background: var(--surface, #fff);
+        border-radius: var(--radius, 8px);
+        box-shadow: var(--shadow-card, 0 2px 12px rgba(0, 0, 0, 0.08));
+        padding: 2rem;
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      .cop-session-row {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        padding: 1.1rem 0;
+        border-bottom: 1px solid var(--c-blue10, #d9e8f6);
+      }
+      .cop-session-row:last-of-type {
+        border-bottom: none;
+      }
+
+      .cop-session-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: var(--color-primary-lightest, #e8f0fb);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .cop-session-icon svg {
+        width: 1.4rem;
+        height: 1.4rem;
+        color: var(--color-primary, #005ea2);
+      }
+
+      .cop-session-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .cop-session-label {
+        font-family: "Public Sans", sans-serif;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text-muted, #5c6670);
+        margin: 0 0 0.3rem;
+      }
+      .cop-session-value {
+        font-family: "Source Sans 3", sans-serif;
+        font-size: 1.05rem;
+        color: var(--color-text, #1b1b1b);
+        margin: 0;
+        line-height: 1.55;
+      }
+
+      .cop-session-cta {
+        margin-top: 1.75rem;
+        text-align: center;
+      }
+
+      .cop-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        background: var(--color-primary, #005ea2);
+        color: #fff !important;
+        font-family: "Public Sans", sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        border: none;
+        border-radius: var(--radius, 6px);
+        padding: 0.85rem 2rem;
+        text-decoration: none;
+        transition: filter 0.2s;
+      }
+      .cop-btn:hover {
+        filter: brightness(0.92);
+      }
+      .cop-btn:focus-visible {
+        outline: 3px solid var(--color-primary, #005ea2);
+        outline-offset: 3px;
+      }
+      .cop-btn svg {
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+      }
+
+      /* ── Past sessions search ── */
+      .cop-search-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: var(--surface, #fff);
+        border: 1px solid var(--c-blue10, #d9e8f6);
+        border-radius: var(--radius, 8px);
+        padding: 0.75rem 1.1rem;
+        max-width: 560px;
+        margin: 0 auto 2rem;
+      }
+      .cop-search-bar:focus-within {
+        outline: 3px solid var(--color-primary, #005ea2);
+        outline-offset: 1px;
+      }
+      .cop-search-bar svg {
+        width: 1.15rem;
+        height: 1.15rem;
+        color: var(--color-text-muted, #5c6670);
+        flex-shrink: 0;
+      }
+      .cop-search-bar input {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-family: "Source Sans 3", sans-serif;
+        font-size: 1rem;
+        color: var(--color-text, #1b1b1b);
+      }
+
+      #cop-results table.leaf_grid {
+        width: 100%;
+      }
+
+      .cop-results-empty {
+        text-align: center;
+        color: var(--color-text-muted, #5c6670);
+        font-family: "Source Sans 3", sans-serif;
+        font-size: 1rem;
+      }
+    </style>
+
+    <link rel="stylesheet" href="./files/leaf_header.css" />
+    <script src="./files/leaf_header.js"></script>
+    <script src="../libs/js/jquery/jquery-ui.custom.min.js"></script>
+  </head>
+  <body>
+    <div class="lp" id="lp-root">
+      <a class="lp-skip" href="#lp-main">Skip to main content</a>
+      <div id="lp-nav-host"></div>
+
+      <main id="lp-main" tabindex="-1">
+        <!-- ══════════════════════════════════════════
+             HERO
+        ══════════════════════════════════════════ -->
+        <section class="section" aria-labelledby="cop-h1">
+          <div class="wrap">
+            <div class="sec-hd ctr">
+              <span class="eyebrow">Community of Practice</span>
+              <h1 class="sec-h2" id="cop-h1">Open Office Hours</h1>
+              <p class="sec-sub">
+                Biweekly sessions on Tuesdays at 11 AM EST — join the LEAF team
+                live for walkthroughs, Q&amp;A, and community discussion.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════
+             UPCOMING SESSION
+        ══════════════════════════════════════════ -->
+        <section class="section section-alt" aria-labelledby="cop-upcoming-h2">
+          <div class="wrap">
+            <div class="sec-hd ctr">
+              <span class="eyebrow">Next call</span>
+              <h2 class="sec-h2" id="cop-upcoming-h2">
+                Upcoming Session Details
+              </h2>
+            </div>
+
+            <div class="cop-session-card">
+              <div class="cop-session-row">
+                <div class="cop-session-icon" aria-hidden="true">
+                  <svg viewBox="0 -960 960 960" fill="currentColor">
+                    <path
+                      d="M480-400q-17 0-28.5-11.5T440-440q0-17 11.5-28.5T480-480q17 0 28.5 11.5T520-440q0 17-11.5 28.5T480-400Zm-188.5-11.5Q280-423 280-440t11.5-28.5Q303-480 320-480t28.5 11.5Q360-457 360-440t-11.5 28.5Q337-400 320-400t-28.5-11.5ZM640-400q-17 0-28.5-11.5T600-440q0-17 11.5-28.5T640-480q17 0 28.5 11.5T680-440q0 17-11.5 28.5T640-400ZM480-240q-17 0-28.5-11.5T440-280q0-17 11.5-28.5T480-320q17 0 28.5 11.5T520-280q0 17-11.5 28.5T480-240Zm-188.5-11.5Q280-263 280-280t11.5-28.5Q303-320 320-320t28.5 11.5Q360-297 360-280t-11.5 28.5Q337-240 320-240t-28.5-11.5ZM640-240q-17 0-28.5-11.5T600-280q0-17 11.5-28.5T640-320q17 0 28.5 11.5T680-280q0 17-11.5 28.5T640-240ZM180-80q-24 0-42-18t-18-42v-620q0-24 18-42t42-18h65v-60h65v60h340v-60h65v60h65q24 0 42 18t18 42v620q0 24-18 42t-42 18H180Zm0-60h600v-430H180v430Z"
+                    />
+                  </svg>
+                </div>
+                <div class="cop-session-body">
+                  <p class="cop-session-label">When</p>
+                  <p class="cop-session-value" id="form_content_when"></p>
+                </div>
+              </div>
+
+              <div class="cop-session-row">
+                <div class="cop-session-icon" aria-hidden="true">
+                  <svg viewBox="0 -960 960 960" fill="currentColor">
+                    <path
+                      d="M319-250h322v-60H319v60Zm0-170h322v-60H319v60ZM220-80q-24 0-42-18t-18-42v-680q0-24 18-42t42-18h361l219 219v521q0 24-18 42t-42 18H220Zm331-554h189L551-820v186Z"
+                    />
+                  </svg>
+                </div>
+                <div class="cop-session-body">
+                  <p class="cop-session-label">What</p>
+                  <p class="cop-session-value" id="form_content_what"></p>
+                </div>
+              </div>
+
+              <div class="cop-session-cta">
+                <a
+                  href="https://teams.microsoft.com/l/channel/19%3A31818766bbbc477db8898a6f45bc8ffd%40thread.tacv2/LEAF%20Biweekly%20Open%20Office%20Hours%20-%20CoP?groupId=56e12324-7248-4ed5-a983-613c9bf3acad"
+                  class="cop-btn"
+                  aria-label="Join the LEAF Biweekly Open Office Hours call in Microsoft Teams"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.68.68 0 0 0 .178.643l2.457 2.457a.68.68 0 0 0 .644.178l2.189-.547a1.75 1.75 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.6 18.6 0 0 1-7.01-4.42 18.6 18.6 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877zM15.854.146a.5.5 0 0 1 0 .708L11.707 5H14.5a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5v-4a.5.5 0 0 1 1 0v2.793L15.146.146a.5.5 0 0 1 .708 0"
+                    />
+                  </svg>
+                  Join the Biweekly Call
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════
+             PAST SESSIONS
+        ══════════════════════════════════════════ -->
+        <section class="section" aria-labelledby="cop-past-h2">
+          <div class="wrap">
+            <div class="sec-hd ctr">
+              <span class="eyebrow">Catch up</span>
+              <h2 class="sec-h2" id="cop-past-h2">
+                Past Open Office Hour Sessions
+              </h2>
+              <p class="sec-sub">
+                Search past sessions by topic, or browse the full list below.
+              </p>
+            </div>
+
+            <div class="cop-search-bar" role="search">
+              <svg
+                viewBox="0 -960 960 960"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="M796-121 533-384q-30 26-70 40.5T378-329q-108 0-183-75t-75-181q0-106 75-181t182-75q106 0 180.5 75T632-585q0 43-14 83t-42 75l264 262-44 44ZM377-389q81 0 138-57.5T572-585q0-81-57-138.5T377-781q-82 0-139.5 57.5T180-585q0 81 57.5 138.5T377-389Z"
+                />
+              </svg>
+              <label for="searchHelpInput" class="sr-only"
+                >Search past sessions</label
+              >
+              <input
+                id="searchHelpInput"
+                type="text"
+                placeholder="Search past sessions"
+              />
+            </div>
+
+            <div id="cop-results" aria-live="polite"></div>
+          </div>
+        </section>
+      </main>
+
+      <button
+        class="lp-jump"
+        id="lpJump"
+        type="button"
+        aria-label="Back to top"
+        aria-hidden="true"
+        tabindex="-1"
+      >
+        <svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true">
+          <path
+            d="M450-160v-526L202-438l-42-42 320-320 320 320-42 42-248-248v526h-60Z"
+          />
+        </svg>
+      </button>
+    </div>
+    <!-- /.lp -->
+
+    <!-- Breadcrumb data — must be set before leaf_breadcrumb.js loads -->
+    <script>
+      window.LEAF_BREADCRUMB = [{ label: "Community of Practice" }];
+    </script>
+
+    <script>
+      (() => {
+        "use strict";
+
+        /* ── Jump to top ── */
+        const initJumpBtn = () => {
+          const btn = document.getElementById("lpJump");
+          if (!btn) return;
+
+          const update = () => {
+            const vis =
+              (window.pageYOffset || document.documentElement.scrollTop) > 120;
+            btn.classList.toggle("vis", vis);
+            btn.setAttribute("aria-hidden", String(!vis));
+            btn.tabIndex = vis ? 0 : -1;
+          };
+
+          btn.addEventListener("click", () =>
+            window.scrollTo({ top: 0, behavior: "smooth" }),
+          );
+          window.addEventListener("scroll", update, { passive: true });
+          window.addEventListener("resize", update);
+          update();
+        };
+
+        /* ── Upcoming session details ── */
+        const loadUpcomingSession = async () => {
+          const idWhen = "16";
+          const idWhat = "17";
+          const q = {
+            terms: [
+              {
+                id: "categoryID",
+                operator: "=",
+                match: "form_605bd",
+                gate: "AND",
+              },
+              { id: "deleted", operator: "=", match: 0, gate: "AND" },
+            ],
+            joins: [],
+            sort: {},
+            getData: [idWhen, idWhat],
+          };
+          const query = new LeafFormQuery();
+          query.importQuery(q);
+          query.sort("recordID");
+          const data = await query.execute();
+          const req = data[4] ?? null;
+          if (req !== null) {
+            document.getElementById("form_content_when").textContent =
+              req?.s1?.["id" + idWhen] ?? "";
+            document.getElementById("form_content_what").textContent =
+              req?.s1?.["id" + idWhat] ?? "";
+          }
+        };
+
+        /* ── Init ── */
+        initJumpBtn();
+        loadUpcomingSession();
+      })();
+    </script>
+
+    <!-- ═══════════════════════════════════════════════
+         PAST SESSIONS — search & grid
+         Requires LeafFormQuery / LeafFormGrid (site-wide libs)
+    ════════════════════════════════════════════════ -->
+    <script type="text/javascript">
+      function render(resultData) {
+        const grid = new LeafFormGrid("cop-results", { readOnly: true });
+        grid.hideIndex();
+        grid.setDataBlob(resultData);
+        grid.setHeaders([
+          { name: "Date of Session", indicatorID: "25", editable: false },
+          { name: "Topics", indicatorID: "26", editable: false },
+          {
+            name: "Resources",
+            indicatorID: "27",
+            editable: false,
+            callback: function (data, blob) {
+              let content = "";
+              const link = blob[data.recordID]?.s1?.id27 || "";
+              const file = blob[data.recordID]?.s1?.id35 || "";
+              if (link !== "") {
+                content += `<a href="${link}" target="_blank">Watch Session</a>`;
+              }
+              if (file !== "") {
+                content += `<br><a href="file.php?form=${data.recordID}&amp;id=35&amp;series=1&amp;file=0" target="_blank" download>Download Presentation</a>`;
+              }
+              document.querySelector(`#${data.cellContainerID}`).innerHTML =
+                content;
+            },
+          },
+        ]);
+
+        let tGridData = [];
+        for (const i in resultData) {
+          tGridData.push(resultData[i]);
+        }
+        if (searchWords?.length > 0) {
+          tGridData = tGridData.sort(rankResults);
+          for (let i = tGridData.length - 1; i > 0; i--) {
+            if (tGridData[i].rank == 0) {
+              tGridData.pop();
+            }
+          }
+        } else {
+          tGridData = tGridData.sort(rankDefaultResults);
+        }
+
+        grid.setData(tGridData);
+        grid.sort(25, "desc");
+        grid.renderBody();
+        grid.announceResults();
+      }
+
+      function rankResults(a, b) {
+        let rankA = 0;
+        let rankB = 0;
+
+        searchWords.forEach((word) => {
+          word = word.toLowerCase();
+          if (a.title.toLowerCase().indexOf(word) != -1) rankA += 3;
+          for (const i in a.s1) {
+            if (a.s1[i] != null && a.s1[i].toLowerCase().indexOf(word) != -1)
+              rankA++;
+          }
+          if (b.title.toLowerCase().indexOf(word) != -1) rankB += 3;
+          for (const i in b.s1) {
+            if (b.s1[i] != null && b.s1[i].toLowerCase().indexOf(word) != -1)
+              rankB++;
+          }
+        });
+        a.rank = rankA;
+        b.rank = rankB;
+        if (rankA > rankB) return -1;
+        if (rankB > rankA) return 1;
+        return 0;
+      }
+
+      function rankDefaultResults(a, b) {
+        const dateA = new Date(a.s1.id22);
+        const dateB = new Date(b.s1.id22);
+        if (dateA > dateB) return -1;
+        if (dateB > dateA) return 1;
+        return 0;
+      }
+
+      var searchWords;
+      function search() {
+        searchWords = [];
+        const query = new LeafFormQuery();
+        const searchText = $("#searchHelpInput").val();
+        const q = {
+          terms: [
+            {
+              id: "data",
+              indicatorID: "0",
+              operator: "MATCH ALL",
+              match: searchText,
+              gate: "AND",
+            },
+            {
+              id: "categoryID",
+              operator: "=",
+              match: "form_8fc8b",
+              gate: "AND",
+            },
+            { id: "deleted", operator: "=", match: 0, gate: "AND" },
+          ],
+          joins: [],
+          sort: {},
+          getData: ["25", "27", "26", "35"],
+        };
+        query.importQuery(q);
+        query.setExtraParams("&x-filterData=recordID,title");
+        query.execute().then((results) => render(results));
+      }
+
+      // Delays repeated calls until N ms after the last one — avoids a
+      // query per keystroke while the user is still typing.
+      function debounce(func, wait, immediate) {
+        let timeout;
+        return function () {
+          const context = this,
+            args = arguments;
+          const later = function () {
+            timeout = null;
+            if (!immediate) func.apply(context, args);
+          };
+          const callNow = immediate && !timeout;
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+          if (callNow) func.apply(context, args);
+        };
+      }
+
+      $(function () {
+        const query = new LeafFormQuery();
+        const q = {
+          terms: [
+            {
+              id: "categoryID",
+              operator: "=",
+              match: "form_8fc8b",
+              gate: "AND",
+            },
+            { id: "deleted", operator: "=", match: 0, gate: "AND" },
+          ],
+          joins: [],
+          sort: {},
+          getData: ["25", "27", "26", "35"],
+        };
+        query.importQuery(q);
+        query.setExtraParams("&x-filterData=recordID,title");
+        query.execute().then((results) => render(results));
+
+        const debouncedSearch = debounce(() => search(), 300);
+        $("#searchHelpInput").keyup(debouncedSearch);
+      });
+    </script>
+  </body>
+</html>
