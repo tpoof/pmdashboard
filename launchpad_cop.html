@@ -154,15 +154,102 @@
         color: var(--color-text, #1b1b1b);
       }
 
-      #cop-results table.leaf_grid {
-        width: 100%;
-      }
-
       .cop-results-empty {
         text-align: center;
         color: var(--color-text-muted, #5c6670);
         font-family: "Source Sans 3", sans-serif;
         font-size: 1rem;
+      }
+
+      /* ── Past sessions — card grid ── */
+      .cop-session-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
+      }
+      @media (max-width: 900px) {
+        .cop-session-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 560px) {
+        .cop-session-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .cop-session-card-sm {
+        background: var(--surface, #fff);
+        border-radius: var(--radius, 8px);
+        box-shadow: var(--shadow-card, 0 2px 12px rgba(0, 0, 0, 0.08));
+        border-top: 4px solid var(--color-primary, #005ea2);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .cop-session-date {
+        font-family: "Public Sans", sans-serif;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-text-muted, #5c6670);
+        margin: 0;
+      }
+
+      .cop-session-topic {
+        font-family: "Public Sans", sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--color-text, #1b1b1b);
+        line-height: 1.4;
+        margin: 0;
+        flex: 1;
+      }
+
+      .cop-session-links {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        margin-top: 0.25rem;
+      }
+      .cop-session-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-family: "Source Sans 3", sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--color-primary, #005ea2);
+        text-decoration: none;
+      }
+      .cop-session-link:hover {
+        text-decoration: underline;
+      }
+      .cop-session-link:focus-visible {
+        outline: 3px solid var(--color-primary, #005ea2);
+        outline-offset: 2px;
+      }
+      .cop-session-link svg {
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+      }
+
+      .cop-load-more {
+        text-align: center;
+        margin-top: 2rem;
+      }
+      .cop-btn-outline {
+        background: transparent;
+        color: var(--color-primary, #005ea2) !important;
+        border: 2px solid var(--color-primary, #005ea2);
+      }
+      .cop-btn-outline:hover {
+        background: var(--color-primary-lightest, #e8f0fb);
+        filter: none;
       }
     </style>
 
@@ -346,56 +433,126 @@
     </script>
 
     <!-- ═══════════════════════════════════════════════
-         PAST SESSIONS — search & grid
-         Requires LeafFormQuery / LeafFormGrid (site-wide libs)
+         PAST SESSIONS — search & card grid
+         Requires LeafFormQuery (site-wide lib)
     ════════════════════════════════════════════════ -->
     <script type="text/javascript">
-      function render(resultData) {
-        const grid = new LeafFormGrid("cop-results", { readOnly: true });
-        grid.hideIndex();
-        grid.setDataBlob(resultData);
-        grid.setHeaders([
-          { name: "Date of Session", indicatorID: "25", editable: false },
-          { name: "Topics", indicatorID: "26", editable: false },
-          {
-            name: "Resources",
-            indicatorID: "27",
-            editable: false,
-            callback: function (data, blob) {
-              let content = "";
-              const link = blob[data.recordID]?.s1?.id27 || "";
-              const file = blob[data.recordID]?.s1?.id35 || "";
-              if (link !== "") {
-                content += `<a href="${link}" target="_blank">Watch Session</a>`;
-              }
-              if (file !== "") {
-                content += `<br><a href="file.php?form=${data.recordID}&amp;id=35&amp;series=1&amp;file=0" target="_blank" download>Download Presentation</a>`;
-              }
-              document.querySelector(`#${data.cellContainerID}`).innerHTML =
-                content;
-            },
-          },
-        ]);
+      const COP_PAGE_SIZE = 6;
+      const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "June",
+        "July",
+        "Aug",
+        "Sept",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
 
-        let tGridData = [];
-        for (const i in resultData) {
-          tGridData.push(resultData[i]);
+      let copAllSessions = [];
+      let copVisibleCount = COP_PAGE_SIZE;
+
+      function scrubHTML(input) {
+        const tClean = document.createElement("div");
+        tClean.innerHTML = input;
+        return tClean.innerText;
+      }
+
+      function formatSessionDate(raw) {
+        if (!raw) return "";
+        const d = new Date(raw);
+        if (isNaN(d)) return scrubHTML(raw);
+        const year =
+          d.getFullYear() !== new Date().getFullYear()
+            ? `, ${d.getFullYear()}`
+            : "";
+        return `${monthNames[d.getMonth()]} ${d.getDate()}${year}`;
+      }
+
+      function sessionCardHTML(item) {
+        const date = item.s1?.id25 || "";
+        const topic = scrubHTML(item.s1?.id26 || "Untitled Session");
+        const link = item.s1?.id27 || "";
+        const file = item.s1?.id35 || "";
+
+        let links = "";
+        if (link) {
+          links += `<a href="${link}" target="_blank" rel="noopener noreferrer" class="cop-session-link">
+            <svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="m383-310 267-170-267-170v340Zm97 230q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 31.5-156t86-127Q252-817 325-848.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 82-31.5 155T763-197.5q-54 54.5-127 86T480-80Z"/></svg>
+            Watch Session
+          </a>`;
         }
-        if (searchWords?.length > 0) {
-          tGridData = tGridData.sort(rankResults);
-          for (let i = tGridData.length - 1; i > 0; i--) {
-            if (tGridData[i].rank == 0) {
-              tGridData.pop();
-            }
+        if (file) {
+          links += `<a href="file.php?form=${item.recordID}&amp;id=35&amp;series=1&amp;file=0" target="_blank" download class="cop-session-link">
+            <svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M480-313 287-506l43-43 120 120v-371h60v371l120-120 43 43-193 193ZM220-160q-24 0-42-18t-18-42v-143h60v143h520v-143h60v143q0 24-18 42t-42 18H220Z"/></svg>
+            Download Presentation
+          </a>`;
+        }
+
+        return `
+          <article class="cop-session-card-sm" role="listitem">
+            <p class="cop-session-date">${formatSessionDate(date)}</p>
+            <h3 class="cop-session-topic">${topic}</h3>
+            ${links ? `<div class="cop-session-links">${links}</div>` : ""}
+          </article>
+        `;
+      }
+
+      function renderCards() {
+        const container = document.getElementById("cop-results");
+        const visible = copAllSessions.slice(0, copVisibleCount);
+
+        if (!visible.length) {
+          container.innerHTML =
+            '<p class="cop-results-empty">No past sessions found.</p>';
+          return;
+        }
+
+        const remaining = copAllSessions.length - copVisibleCount;
+        container.innerHTML = `
+          <div class="cop-session-grid" role="list" aria-label="Past Open Office Hour sessions">
+            ${visible.map(sessionCardHTML).join("")}
+          </div>
+          ${
+            remaining > 0
+              ? `
+            <div class="cop-load-more">
+              <button type="button" class="cop-btn cop-btn-outline" id="cop-load-more-btn">
+                Show More Sessions (${remaining} remaining)
+              </button>
+            </div>`
+              : ""
           }
+        `;
+
+        const moreBtn = document.getElementById("cop-load-more-btn");
+        if (moreBtn) {
+          moreBtn.addEventListener("click", () => {
+            copVisibleCount += COP_PAGE_SIZE;
+            renderCards();
+          });
+        }
+      }
+
+      function render(resultData) {
+        let list = Object.keys(resultData).map((recordID) => ({
+          recordID,
+          ...resultData[recordID],
+        }));
+
+        if (searchWords?.length > 0) {
+          list = list.sort(rankResults).filter((item) => item.rank > 0);
         } else {
-          tGridData = tGridData.sort(rankDefaultResults);
+          list = list.sort(rankDefaultResults);
         }
 
-        grid.setData(tGridData);
-        grid.sort(25, "desc");
-        grid.renderBody();
-        grid.announceResults();
+        copAllSessions = list;
+        copVisibleCount = COP_PAGE_SIZE;
+        renderCards();
       }
 
       function rankResults(a, b) {
@@ -423,8 +580,9 @@
       }
 
       function rankDefaultResults(a, b) {
-        const dateA = new Date(a.s1.id22);
-        const dateB = new Date(b.s1.id22);
+        // Sort by "Date of Session" (id25) — the only date field actually fetched.
+        const dateA = new Date(a.s1.id25);
+        const dateB = new Date(b.s1.id25);
         if (dateA > dateB) return -1;
         if (dateB > dateA) return 1;
         return 0;
@@ -432,9 +590,9 @@
 
       var searchWords;
       function search() {
-        searchWords = [];
+        const searchText = $("#searchHelpInput").val().trim();
+        searchWords = searchText ? searchText.split(/\s+/) : [];
         const query = new LeafFormQuery();
-        const searchText = $("#searchHelpInput").val();
         const q = {
           terms: [
             {
@@ -480,6 +638,7 @@
       }
 
       $(function () {
+        searchWords = [];
         const query = new LeafFormQuery();
         const q = {
           terms: [
