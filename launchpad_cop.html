@@ -79,6 +79,14 @@
         margin: 0;
         line-height: 1.55;
       }
+      /* Rich-text (Trumbowyg) fields render their own <p>/<ul>/etc. — reset the
+         first/last child margin so they don't add extra spacing above/below. */
+      .cop-session-value > :first-child {
+        margin-top: 0;
+      }
+      .cop-session-value > :last-child {
+        margin-bottom: 0;
+      }
 
       .cop-session-cta {
         margin-top: 1.75rem;
@@ -221,7 +229,7 @@
                 </div>
                 <div class="cop-session-body">
                   <p class="cop-session-label">What</p>
-                  <p class="cop-session-value" id="form_content_what"></p>
+                  <div class="cop-session-value" id="form_content_what"></div>
                 </div>
               </div>
 
@@ -326,7 +334,8 @@
           if (req !== null) {
             document.getElementById("form_content_when").textContent =
               req?.s1?.["id" + idWhen] ?? "";
-            document.getElementById("form_content_what").textContent =
+            // Rich-text field (Trumbowyg) — value is HTML markup, not plain text.
+            document.getElementById("form_content_what").innerHTML =
               req?.s1?.["id" + idWhat] ?? "";
           }
         };
