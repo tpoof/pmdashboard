@@ -132,6 +132,61 @@
           transition: none;
         }
       }
+
+      /* ── "View My Requests" tooltip ──
+         CSS-only, shown on :hover and :focus-within so keyboard users
+         get it too — dismissal is just moving focus/pointer away, no
+         JS needed. The accessible name/description doesn't depend on
+         visibility at all: aria-describedby on the button (see markup)
+         reaches screen readers on focus regardless of whether this is
+         visually shown. */
+      .lp-tooltip-wrap {
+        position: relative;
+        display: inline-flex;
+      }
+      .lp-tooltip {
+        position: absolute;
+        bottom: calc(100% + 9px);
+        left: 50%;
+        transform: translateX(-50%) translateY(4px);
+        max-width: 220px;
+        width: max-content;
+        text-align: center;
+        padding: 6px 10px;
+        border-radius: 5px;
+        background: #1b1b1b;
+        color: #fff;
+        font-family: "PublicSans-Regular", sans-serif;
+        font-size: 0.8125rem;
+        line-height: 1.4;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          opacity 0.15s,
+          transform 0.15s;
+        z-index: 20;
+      }
+      .lp-tooltip::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: #1b1b1b;
+      }
+      .lp-tooltip-wrap:hover .lp-tooltip,
+      .lp-tooltip-wrap:focus-within .lp-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .lp-tooltip {
+          transition: none;
+        }
+      }
     </style>
 
     <!-- Universal nav + Option B router -->
@@ -210,21 +265,36 @@
                   ></span>
                   Find a LEAF Site
                 </a>
-                <button type="button" class="btn btn-sec" id="mst-open-btn">
-                  <span class="material-symbols-outlined" aria-hidden="true"
-                    ><svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      height="24px"
-                      viewBox="0 -960 960 960"
-                      width="24px"
-                      fill="currentColor"
-                    >
-                      <path
-                        d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"
-                      /></svg
-                  ></span>
-                  View My Requests
-                </button>
+                <span class="lp-tooltip-wrap">
+                  <button
+                    type="button"
+                    class="btn btn-sec"
+                    id="mst-open-btn"
+                    aria-describedby="mst-open-btn-tip"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true"
+                      ><svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        height="24px"
+                        viewBox="0 -960 960 960"
+                        width="24px"
+                        fill="currentColor"
+                      >
+                        <path
+                          d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"
+                        /></svg
+                    ></span>
+                    View My Requests
+                  </button>
+                  <!-- role="tooltip" + aria-describedby (on the button
+                       above) means screen readers announce this on
+                       focus even without the visual hover state; the
+                       CSS below only handles sighted-hover/focus
+                       visibility. -->
+                  <span class="lp-tooltip" id="mst-open-btn-tip" role="tooltip"
+                    >View My LEAF National Requests</span
+                  >
+                </span>
               </div>
             </div>
           </div>
@@ -629,6 +699,24 @@
                           /></svg
                       ></span>
                       Nominate a Spotlight
+                    </a>
+                  </li>
+
+                  <li>
+                    <a
+                      class="nl-footer-link"
+                      href="https://leaf.va.gov/#goto=teams"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span class="material-symbols-outlined" aria-hidden="true"
+                        ><svg viewBox="0 -960 960 960" fill="currentColor">
+                          <path
+                            d="M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm160-320h320v-80H240v80Zm0-120h480v-80H240v80Zm0-120h480v-80H240v80Z"
+                          /></svg
+                      ></span>
+                      LEAF Community Teams Channel
+                      <span class="sr-only">(opens in new tab)</span>
                     </a>
                   </li>
 

@@ -448,8 +448,9 @@ button.dd-link {
    border, so the total box size and nav row height still match.
    #7bc143 (the brand green asked for) fails contrast outright at
    2.2:1 for both text and border, so this uses a deeper shade of the
-   same green instead: #3d6e1c text/border on white = 6.67:1 (WCAG AA
-   needs 4.5:1 text / 3:1 non-text UI) — comfortable margin on both. */
+   same green instead: #3d6e1c text/border on the tint background =
+   5.96:1 (WCAG AA needs 4.5:1 text / 3:1 non-text UI) — comfortable
+   margin on both, and 6.67:1 on hover against white. */
 .lp-nav-support-btn {
   display: inline-flex;
   align-items: center;
@@ -458,7 +459,7 @@ button.dd-link {
   font-family: 'PublicSans-Medium', sans-serif;
   font-size: 0.9rem;
   color: #3d6e1c;
-  background: #fff;
+  background: #eaf6e1;
   border: 1px solid #3d6e1c;
   border-radius: var(--nav-r);
   cursor: pointer;
@@ -470,10 +471,9 @@ button.dd-link {
   height: 1.1rem;
   fill: #3d6e1c !important;
 }
-/* Light green tint fill on hover — text stays #3d6e1c, still 5.96:1
-   against the lighter #eaf6e1 background. */
+/* Fades to white on hover — text stays #3d6e1c, now 6.67:1. */
 .lp-nav-support-btn:hover {
-  background: #eaf6e1;
+  background: #fff;
 }
 /* outline-offset pushes the ring clear of the button's own border,
    onto the header's near-white background instead — var(--nav-accent)
