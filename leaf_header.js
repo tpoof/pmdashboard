@@ -440,6 +440,8 @@
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M840-120v-640H120v320H40v-320q0-33 23.5-56.5T120-840h720q33 0 56.5 23.5T920-760v560q0 33-23.5 56.5T840-120ZM360-400q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-80v-112q0-34 17.5-62.5T104-298q62-31 126-46.5T360-360q66 0 130 15.5T616-298q29 15 46.5 43.5T680-192v112H40Z"/></svg>',
     account_balance:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M200-280v-280h80v280h-80Zm240 0v-280h80v280h-80ZM80-120v-80h800v80H80Zm600-160v-280h80v280h-80ZM80-640v-80l400-200 400 200v80H80Z"/></svg>',
+    support:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m480-80-10-120h-10q-142 0-241-99t-99-241q0-142 99-241t241-99q71 0 132.5 26.5t108 73q46.5 46.5 73 108T800-540q0 75-24.5 144t-67 128q-42.5 59-101 107T480-80Zm-21-241q17 0 29-12t12-29q0-17-12-29t-29-12q-17 0-29 12t-12 29q0 17 12 29t29 12Zm-29-127h60q0-30 6-42t38-44q18-18 30-39t12-45q0-51-34.5-76.5T460-720q-44 0-74 24.5T344-636l56 22q5-17 19-33.5t41-16.5q27 0 40.5 15t13.5 33q0 17-10 30.5T480-558q-35 30-42.5 47.5T430-448Z"/></svg>',
   };
 
   /* ─────────────────────────────────────────────────────────────
@@ -726,10 +728,41 @@
 </a>`;
   }
 
+  /* ─────────────────────────────────────────────────────────────
+     REQUEST SUPPORT (nav-level CTA)
+     Single-click form-modal trigger, not a NAV_SECTIONS dropdown — no
+     .dd-panel/children, so it's built and placed separately from
+     desktopSectionHTML()/mobileSectionHTML() rather than folded into
+     that loop. <button>, not <a>, same no-status-bar-preview rationale
+     as .dd-link. data-action="form-modal" already flows through the
+     shared branch in wireLinkIntercept() — no click-handler changes
+     needed. Desktop: last item in .lp-nav-links, right after Knowledge
+     Center. Mobile: pinned at the very top of .lp-accordion so it
+     isn't buried inside a collapsible section.
+  ───────────────────────────────────────────────────────────── */
+  var SUPPORT_FORM_URL =
+    "https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Help+Library";
+
+  function buildSupportButtonHTML() {
+    return `
+        <button class="lp-nav-support-btn" data-action="form-modal" data-modal-src="${SUPPORT_FORM_URL}" data-modal-title="Request Support">
+          <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.support}</span>
+          Request Support
+        </button>`;
+  }
+
+  function buildSupportNavHTML() {
+    return {
+      desktop: `<li>${buildSupportButtonHTML()}</li>`,
+      mobile: `<li class="lp-mobile-support-item">${buildSupportButtonHTML()}</li>`,
+    };
+  }
+
   function buildNavHTML() {
     var desktopItems = NAV_SECTIONS.map(desktopSectionHTML).join("");
     var mobileItems = NAV_SECTIONS.map(mobileSectionHTML).join("");
     var internal = buildInternalNavHTML();
+    var support = buildSupportNavHTML();
     return `
 <nav class="lp-nav" id="lpNav" aria-label="Launchpad navigation">
   <div class="lp-nav-in">
@@ -737,6 +770,7 @@
     <!-- Left: public nav sections -->
     <ul class="lp-nav-links" role="list">
       ${desktopItems}
+      ${support.desktop}
     </ul>
 
     <!-- Right: internal group (margin-left:auto pushes it to the edge) -->
@@ -753,6 +787,7 @@
     <!-- Mobile panel -->
     <div class="lp-mobile-panel" id="lpMobilePanel" hidden>
       <ul class="lp-accordion" role="list">
+        ${support.mobile}
         ${mobileItems}
         ${internal.mobile}
       </ul>
@@ -2024,10 +2059,11 @@
 
       /* Match nav dropdown links, internal buttons, footer quick-resource
          links, breadcrumb links, and any [data-action] trigger — the
-         last covers modal triggers that live in page-specific markup
-         (e.g. lp_home.html's "Request Support" button) rather than
-         nav-generated HTML, so any page can opt into the demo/form
-         modal system with plain data attributes and no JS of its own.
+         last covers modal triggers wherever they live, nav-generated
+         (Request Support, Watch a Demo) or page-specific markup (e.g. a
+         footer's "Nominate a Spotlight" link), so any page can opt into
+         the demo/form modal system with plain data attributes and no JS
+         of its own.
          .dd-link elements are now <button data-href> — no href attribute —
          so the browser status bar never previews the destination URL on hover.
          .lp-internal-btn elements (Leadership) also use data-href.
@@ -2236,10 +2272,10 @@
      Same open/close/focus-trap mechanics as the demo modal above, but
      with a visible header bar + title instead of the demo modal's
      cinematic video-only style, and re-populated per use (src/title)
-     instead of one hardcoded video — Request Support (lp_home.html)
-     and Nominate a Spotlight (footer link, this file) both open the
-     same modal element with different content. One shared instance,
-     lazily built on first use.
+     instead of one hardcoded video — Request Support (nav button, this
+     file) and Nominate a Spotlight (footer link, this file) both open
+     the same modal element with different content. One shared
+     instance, lazily built on first use.
   ───────────────────────────────────────────────────────────── */
   var formModalTrigger = null;
 
