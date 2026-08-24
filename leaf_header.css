@@ -440,24 +440,26 @@ button.dd-link {
 }
 
 /* ── Request Support nav button ──
-   Filled/accent treatment, unlike .dd-trigger's plain muted text —
-   reads as a clear call-to-action rather than another dropdown label.
-   <button>, not <a>, same no-status-bar-preview rationale as .dd-link.
-   Padding matches .dd-trigger (7px 13px) so nav row heights stay
-   aligned. Green (#7bc143) rather than --nav-accent blue, to stand
-   apart visually from the plain nav dropdowns. White text fails badly
-   against this particular green (2.2:1) — dark text (#1b1b1b, matches
-   --nav-text) measures 7.83:1 instead (WCAG AA needs 4.5:1). */
+   Outlined treatment, unlike .dd-trigger's plain borderless text — the
+   colored border + label reads as a distinct call-to-action without
+   the visual weight of a solid fill. <button>, not <a>, same
+   no-status-bar-preview rationale as .dd-link. Padding is 1px less
+   than .dd-trigger's 7px/13px on each side to offset the added
+   border, so the total box size and nav row height still match.
+   #7bc143 (the brand green asked for) fails contrast outright at
+   2.2:1 for both text and border, so this uses a deeper shade of the
+   same green instead: #3d6e1c text/border on white = 6.67:1 (WCAG AA
+   needs 4.5:1 text / 3:1 non-text UI) — comfortable margin on both. */
 .lp-nav-support-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 13px;
+  padding: 6px 12px;
   font-family: 'PublicSans-Medium', sans-serif;
   font-size: 0.9rem;
-  color: #1b1b1b; /* --nav-text */
-  background: #7bc143;
-  border: none;
+  color: #3d6e1c;
+  background: #fff;
+  border: 1px solid #3d6e1c;
   border-radius: var(--nav-r);
   cursor: pointer;
   white-space: nowrap;
@@ -466,34 +468,35 @@ button.dd-link {
 .lp-nav-support-btn .material-symbols-outlined svg {
   width: 1.1rem;
   height: 1.1rem;
-  fill: #1b1b1b !important;
+  fill: #3d6e1c !important;
 }
-/* Darkens on hover — dark text still measures 5.08:1 against #629a36. */
+/* Light green tint fill on hover — text stays #3d6e1c, still 5.96:1
+   against the lighter #eaf6e1 background. */
 .lp-nav-support-btn:hover {
-  background: #629a36;
+  background: #eaf6e1;
 }
-/* outline-offset pushes the ring clear of the button's own green fill,
+/* outline-offset pushes the ring clear of the button's own border,
    onto the header's near-white background instead — var(--nav-accent)
    there still measures 6.72:1, clearing the 3:1 non-text UI minimum.
-   Kept as --nav-accent (not a green) for consistency with every other
+   Kept as --nav-accent (not green) for consistency with every other
    focus-visible ring in this file — the ring sits on the page
-   background, not the button's own fill, so it doesn't need to match
-   the button's color. */
+   background, not the button itself, so it doesn't need to match the
+   button's own color. */
 .lp-nav-support-btn:focus-visible {
   outline: 3px solid var(--nav-accent);
   outline-offset: 2px;
 }
 
 /* Mobile: pinned above the accordion sections, not inside one — full-
-   width row matching .acc-trigger's touch target, same accent fill as
-   the desktop button above. */
+   width row matching .acc-trigger's touch target, same outlined
+   treatment as the desktop button above. */
 .lp-mobile-support-item {
   padding: 8px 8px 4px;
 }
 .lp-mobile-panel .lp-nav-support-btn {
   width: 100%;
   justify-content: center;
-  padding: 12px;
+  padding: 11px; /* 1px less than the visual 12px target — offsets the border, same total box size */
   min-height: 44px; /* Section 508 / WCAG 2.5.5 minimum touch target */
   font-family: 'PublicSans-Bold', sans-serif;
   font-size: 0.95rem;
