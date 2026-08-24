@@ -740,8 +740,12 @@
      Center. Mobile: pinned at the very top of .lp-accordion so it
      isn't buried inside a collapsible section.
   ───────────────────────────────────────────────────────────── */
+  /* &iframe=1 tells the LEAF support app to suppress its own
+     header/nav — without it, the fetched form renders a second full
+     LEAF header inside this modal's iframe, stacked on top of the
+     launchpad's own header behind it. */
   var SUPPORT_FORM_URL =
-    "https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Help+Library";
+    "https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Help+Library&iframe=1";
 
   function buildSupportButtonHTML() {
     return `
