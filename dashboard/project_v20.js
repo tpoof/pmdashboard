@@ -56,6 +56,34 @@
     customerOverviewUrl: 73,
   };
 
+  // Indicators excluded from inline editing per form type: fields driven by
+  // other UI (dependencies, recurring), tied to relational/reference data
+  // (project key, OKR/key result links, ticket numbers), or set by
+  // server-side logic (actual completion date).
+  var INLINE_EDIT_BLOCKLIST = {
+    task: new Set(
+      [
+        TASK_IND.projectKey,
+        TASK_IND.otherSubType,
+        TASK_IND.dependencies,
+        TASK_IND.supportTicket,
+        TASK_IND.okrAssociation,
+        TASK_IND.keyResultSelection,
+        TASK_IND.isRecurring,
+        TASK_IND.actualCompletionDate,
+      ].map(String),
+    ),
+    project: new Set(
+      [
+        PROJECT_IND.projectKey,
+        PROJECT_IND.okrAssociation,
+        PROJECT_IND.keyResultSelection,
+        PROJECT_IND.ticketNumber,
+        PROJECT_IND.customerOverviewUrl,
+      ].map(String),
+    ),
+  };
+
   var OKR_IND = {
     okrKey: 23,
     objective: 24,
