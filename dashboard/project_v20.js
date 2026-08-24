@@ -4362,8 +4362,53 @@
     return null;
   }
 
-  function fetchIndicatorMeta() {
-    return Promise.resolve(INLINE_INDICATOR_STATIC_MAP);
+  // Static editor metadata (format + options) for inline-editable indicators.
+  // Dropdown fields with live-derived option lists (category, projectStatus)
+  // keep options empty here — getDynamicOptions() supplies those at open time.
+  var INLINE_INDICATOR_STATIC_MAP = {
+    task: {},
+    project: {},
+  };
+  INLINE_INDICATOR_STATIC_MAP.task[String(TASK_IND.title)] = {
+    format: "text",
+  };
+  INLINE_INDICATOR_STATIC_MAP.task[String(TASK_IND.status)] = {
+    format: "dropdown",
+    options: STATUS_CONFIG.ALL_STATUSES,
+  };
+  INLINE_INDICATOR_STATIC_MAP.task[String(TASK_IND.priority)] = {
+    format: "dropdown",
+    options: ["High", "Medium", "Low"],
+  };
+  INLINE_INDICATOR_STATIC_MAP.task[String(TASK_IND.startDate)] = {
+    format: "date",
+  };
+  INLINE_INDICATOR_STATIC_MAP.task[String(TASK_IND.dueDate)] = {
+    format: "date",
+  };
+  INLINE_INDICATOR_STATIC_MAP.task[String(TASK_IND.category)] = {
+    format: "dropdown",
+    options: [],
+  };
+  INLINE_INDICATOR_STATIC_MAP.project[String(PROJECT_IND.projectName)] = {
+    format: "text",
+  };
+  INLINE_INDICATOR_STATIC_MAP.project[String(PROJECT_IND.description)] = {
+    format: "textarea",
+  };
+  INLINE_INDICATOR_STATIC_MAP.project[String(PROJECT_IND.projectStartDate)] = {
+    format: "date",
+  };
+  INLINE_INDICATOR_STATIC_MAP.project[String(PROJECT_IND.projectEndDate)] = {
+    format: "date",
+  };
+  INLINE_INDICATOR_STATIC_MAP.project[String(PROJECT_IND.projectStatus)] = {
+    format: "dropdown",
+    options: [],
+  };
+
+  function fetchIndicatorMeta(formType) {
+    return Promise.resolve(INLINE_INDICATOR_STATIC_MAP[formType] || {});
   }
 
   function resolveEditorType(fmt) {
