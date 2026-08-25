@@ -74,22 +74,17 @@
     </script>
     {/if}
 
-    {* ── Launchpad universal header ──
-       These 7 report.php actions (a=...) render their own header/nav via
-       leaf_header_preprod.css/.js instead of the legacy #header/menu.tpl
-       chrome below. Centralizing the check here means none of the 7 pages
-       need to remember to suppress the legacy header themselves. *}
-    {if $smarty.get.a == 'lp_home' || $smarty.get.a == 'lp_find_site' || $smarty.get.a == 'lp_form_library' || $smarty.get.a == 'lp_impact' || $smarty.get.a == 'lp_voc' || $smarty.get.a == 'lp_training_placeholder' || $smarty.get.a == 'lp_brand_guide'}
-        {assign var="lpUniversalHeader" value=true}
-        <link rel="stylesheet" href="/launchpad/files/leaf_header_preprod.css" />
-        <script src="/launchpad/files/leaf_header_preprod.js"></script>
-    {/if}
+    {* ── Universal header (site-wide) ──
+       Replaces the legacy #header/#footer/menu.tpl chrome everywhere.
+       See leaf_header_preprod.js/.css for the header/nav implementation. *}
+    <link rel="stylesheet" href="/launchpad/files/leaf_header_preprod.css" />
+    <script src="/launchpad/files/leaf_header_preprod.js"></script>
 
     <link rel="icon" href="vafavicon.ico" type="image/x-icon" />
 </head>
 <body>
 {if $smarty.get.a == ''}
-    <a href="#searchContainer" id="nav-skip-link">Skip to Search</a>
+    <a href="#lp-main" id="nav-skip-link">Skip to main content</a>
 {else}
     <a href="#bodyarea" id="nav-skip-link">Skip to main content</a>
 {/if}
@@ -100,28 +95,17 @@
 {if $smarty.server.HTTP_HOST === 'leaf.apps.vapo-aws-ppd.va.gov'}
     <div style="position: fixed; z-index: 9999; width: 100%; background-color: rgba(255,255,100,0.75); text-align: center;">VAPO TESTING</div>
 {/if}
-{if !$lpUniversalHeader}
-<header id="header">
-    {if $qrcodeURL != ''}
-    <div style="float: left;"><div id="qrcode-js" style="width: 72px; display: none;" ></div></div>
-    {/if}
-    <a href="./" style="cursor:pointer">
-      <img src="images/VA_icon_small.png" style="width: 80px" alt="VA seal, U.S. Department of Veterans Affairs" />
-      <span id="headerLabel">{$city|sanitize}</span>
-      <h1 id="headerDescription">{$title|sanitize}</h1>
-    </a>
-    <span id="headerHelp">
-        {if $leafSecure == 0}
-        <div class="alert" style="display: inline">
-            <span>Do not enter PHI/PII.</span>
-        </div>
-        {/if}
-        {$login}</span>
-    <span id="headerLogin"></span>
-    <span id="headerTab">{$emergency}{$tabText|sanitize}</span>
-    <span id="headerTabImg"><img src="images/tab.png" alt="" /></span>
-    <span id="headerMenu" class="noprint">{$menu}</span>
-</header>
+{* ── Session / print plumbing kept outside the legacy header ──
+   $login and #qrcode-js were previously rendered inside <header id="header">.
+   The legacy header markup is removed site-wide, but these two aren't
+   decorative — $login drives session/logout state and #qrcode-js is the
+   mount point the QRCode script in <head> targets. leaf_header_preprod.css
+   needs a rule for #lp-login-slot (currently unstyled, renders inline). *}
+{if $login != ''}
+<div id="lp-login-slot" class="noprint">{$login}</div>
+{/if}
+{if $qrcodeURL != ''}
+<div id="qrcode-js" style="width: 72px; display: none;"></div>
 {/if}
 
 <main id="body">
@@ -134,11 +118,5 @@
         </div>
     </div>
 </main>
-
-{if !$lpUniversalHeader}
-<footer class="noprint" id="footer"{if $hideFooter == true} style="visibility: hidden; display: none"{/if}>
-    <br /><br /><a id="versionID" href="?a=about">{$smarty.const.PRODUCT_NAME}<br />Version {$smarty.const.VERSION_NUMBER} r{$revision}</a>
-</footer>
-{/if}
 </body>
 </html>{/strip}

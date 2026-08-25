@@ -95,7 +95,7 @@
 
   /* ── Home route — used for the brand logo link and as the
      breadcrumb auto-detect's "hide breadcrumb here" match. ── */
-  var HOME_HREF = "/launchpad/report.php?a=lp_home";
+  var HOME_HREF = "https://leaf-preprod.va.gov";
 
   /* ── Nav content (single source of truth for desktop + mobile) ──
      href values here are the canonical URLs used by the router
@@ -334,6 +334,15 @@
        with launchpad_homepage having nothing to do with CoP. */
     "https://leaf.va.gov/platform/CoP/report.php?a=launchpad_homepage":
       "cop",
+    /* HOME_HREF now points at the bare marketing domain (no ?a= param),
+       which would otherwise derive to "leaf-preprod.va.gov" via the
+       last-path-segment fallback — never matching the homepage's own
+       URL. The homepage itself renders for the empty/default action
+       (report.php with no ?a=), which has no ?a= match either and so
+       falls back to the same rule, deriving "report.php". Pin HOME_HREF
+       to that same key so resolveCurrentRoute()'s home comparison still
+       matches and the breadcrumb stays hidden on the actual homepage. */
+    "https://leaf-preprod.va.gov": "report.php",
   };
 
   function hrefToHashKey(href) {

@@ -39,16 +39,6 @@
 {section name=i loop=$javascripts}
     <script type="text/javascript" src="{$javascripts[i]}"></script>
 {/section}
-
-    {* ── Launchpad universal header ──
-       Kept in sync with main.tpl: if any of the 7 launchpad actions are ever
-       rendered through the iframe template, they still get the universal
-       nav's CSS/JS. This template has no legacy #header/#footer to suppress,
-       so there's nothing else to gate here. *}
-    {if $smarty.get.a == 'lp_home' || $smarty.get.a == 'lp_find_site' || $smarty.get.a == 'lp_form_library' || $smarty.get.a == 'lp_impact' || $smarty.get.a == 'lp_voc' || $smarty.get.a == 'lp_training_placeholder' || $smarty.get.a == 'lp_brand_guide'}
-        <link rel="stylesheet" href="/launchpad/files/leaf_header_preprod.css" />
-        <script src="/launchpad/files/leaf_header_preprod.js"></script>
-    {/if}
 </head>
 <body>
 <div id="body">
