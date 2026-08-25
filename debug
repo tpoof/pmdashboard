@@ -1,19 +1,57 @@
-I'm embedding a LEAF form inside an
-<iframe>
-  on a different LEAF-hosted page (a modal on the Launchpad). The iframe's src
-  is:
-  https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request&iframe=1
-  When loaded inside the iframe, the form renders its own full site header/nav
-  in addition to the parent page's header — I get two stacked headers. I added
-  &iframe=1 as a query param hoping it would suppress the form's own header/nav
-  when embedded, but it isn't doing anything. Please find, in report.php (and
-  whatever controller/template it dispatches to for a=LEAF_Start_Request), the
-  actual mechanism that determines whether the page's header/nav is rendered: Is
-  there an existing query param, header check, or session flag that suppresses
-  the header for embedded/iframe contexts? What's it actually called? If nothing
-  like that exists today, where's the right place to add one (e.g. a Smarty
-  template conditional around the header include), and what would the minimal
-  change look like? Is there a reason header suppression might intentionally not
-  be supported for this route (e.g. security/framing policy), that I should know
-  about before trying to add it?</iframe
+# Investigation: is removing iframe for the 4 cross-app launchpad routes
+actually feasible? ## Context The LEAF launchpad (`/launchpad/`) uses
+`leaf_header_preprod.js`'s router to hash-route between pages while keeping its
+own header persistent. Most launchpad pages (Home, Find a Site, Form Library,
+Our Impact, Voice of the Customer, Learning Center, Brand Guide) are fetched and
+spliced directly into the launchpad's DOM (`iframe: false` / unset in
+`NAV_SECTIONS`). Four routes are explicitly flagged `iframe: true` instead, and
+mount in an `<iframe
+  >` rather than being spliced: - Community of Practice —
+  `https://leaf.va.gov/platform/CoP/report.php?a=launchpad_homepage` - Suggest
+  an Idea — `https://leaf.va.gov/platform/ideas` - Privacy & Compliance —
+  `https://leaf.va.gov/platform/privacy/report.php?a=resources` - Help Library —
+  `https://leaf.va.gov/platform/help_library/report.php?a=homepage` The existing
+  code comment explains why: "Full separate LEAF apps (CoP, Ideas, Help Library,
+  Privacy & Compliance) don't survive that splice — wrong document, wrong
+  scripts, wrong DOM." This was a deliberate choice, not an oversight. There's
+  now a general preference (audit/architecture guidance, not a specific reported
+  bug) to avoid iframe usage where possible. **Before any implementation work
+  happens, we need to know whether removing iframe for these 4 routes is
+  actually safe** — this is an investigation task, not a "go implement it" task.
+  ## What to investigate, per app (CoP, Ideas, Help Library, Privacy &
+  Compliance) For each of the 4 apps, using your visibility into their actual
+  repos: 1. **Is it genuinely a separate, independently-deployed application**,
+  or is it closer to a page within the same LEAF codebase that happens to live
+  at a different path? (This changes the answer a lot — a page in the same
+  codebase is a much smaller lift than a truly separate app.) 2. **Same-origin
+  check.** Are these served from the same origin as the launchpad (`leaf.va.gov`
+  / `leaf-preprod.va.gov`) with just a different path, or a genuinely different
+  origin? (Same-origin doesn't eliminate the splice risk the code comment
+  describes, but it does rule out CORS as a blocker for a fetch-based approach.)
+  3. **Global JS state collisions.** Does each app load its own copy of shared
+  libraries the launchpad also uses (jQuery, `LeafFormQuery`,
+  `dialogController`, etc.)? Would loading two copies of the same library in one
+  document break either app? Does either app rely on global IDs, `window.*`
+  globals, or singleton patterns that would collide if two pages' scripts ran in
+  the same document at once? 4. **CSS collisions.** Does each app ship
+  global/unscoped CSS (e.g. rules on bare `body`, `#header`, `#footer`, or
+  generic class names) that would leak into or be leaked into by the launchpad's
+  own styles if spliced into the same document? 5. **Session/auth boundary.** Do
+  any of these apps handle authentication/session state differently from the
+  launchpad (different cookie scope, different CSRF token handling, different
+  login flow) in a way that depends on being its own top-level document/origin
+  context? 6. **Fragment-endpoint feasibility.** Could each app reasonably
+  expose a stripped, content-only version of the relevant page — no `<head>
+    `, no own header/footer, no full bootstrapping — specifically for splicing
+    into another page's DOM? Is that a small change (a template variant) or does
+    it require deeper refactoring of how each app renders? ## What NOT to do yet
+    Do not implement any change to these 4 apps or to the launchpad's router.
+    This is scoped to reporting back findings per app so a real decision can be
+    made — attempting a splice-based fix without confirming points 3–5 above
+    risks silently breaking either app's own functionality in ways that are hard
+    to notice until a user hits the collision. ## Deliverable A short report,
+    per app, covering points 1–6 above, plus a recommendation: safe to convert
+    to fragment+splice, safe only with specific scoping work required (name it),
+    or genuinely needs to stay iframed (name why).
+  </head></iframe
 >
