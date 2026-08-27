@@ -27,10 +27,6 @@
         width: 1.35rem;
         height: 1.35rem;
       }
-      .scale-hd .material-symbols-outlined svg {
-        width: 2rem;
-        height: 2rem;
-      }
 
       .nl-link .material-symbols-outlined {
         color: #fff !important;
@@ -183,6 +179,455 @@
           transition: none;
         }
       }
+
+      /* ── LEAF Finder widget ── */
+      .finder-box {
+        width: 90%;
+        max-width: 1400px;
+        margin: 2rem auto;
+        display: grid;
+        grid-template-columns: minmax(0, 420px) 1fr;
+        gap: 1.5rem;
+        align-items: stretch;
+        min-height: 320px;
+        background: linear-gradient(90deg, #0a2540 0%, #0f3a63 100%);
+        border-radius: 20px;
+        padding: 2rem 1.5rem 1.5rem;
+      }
+      .finder-hd {
+        grid-column: 1 / -1;
+        text-align: center;
+        margin-bottom: 0.5rem;
+      }
+      .finder-hd .sec-h2 {
+        color: #fff;
+      }
+      .finder-hd .sec-sub {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1rem;
+      }
+      .finder-left {
+        padding: 1.5rem 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Left: search + topic list */
+      .finder-search {
+        position: relative;
+        width: 100%;
+        max-width: 320px;
+        border-radius: 999px;
+        transition: box-shadow 0.2s;
+      }
+      .finder-search-label {
+        display: block;
+        width: 100%;
+        max-width: 320px;
+        text-align: center;
+        font-family: "PublicSans-Medium", sans-serif;
+        font-size: 1rem;
+        color: #fff;
+        margin: 0 0 0.9rem;
+      }
+      .finder-search:focus-within {
+        box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.25);
+      }
+      .finder-search .material-symbols-outlined {
+        position: absolute;
+        left: 0.9rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255, 255, 255, 0.75);
+        pointer-events: none;
+      }
+      .finder-search .material-symbols-outlined svg {
+        width: 1.1rem;
+        height: 1.1rem;
+      }
+      .finder-input {
+        width: 100%;
+        padding: 0.7rem 2.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 999px;
+        font-family: "PublicSans-Regular", sans-serif;
+        font-size: 0.95rem;
+        text-align: center;
+        box-sizing: border-box;
+        background: transparent;
+        color: #fff;
+        transition: border-color 0.15s;
+      }
+      .finder-input::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.8rem;
+      }
+      .finder-input:focus-visible {
+        outline: none;
+        border-color: #fff;
+      }
+      .finder-clear {
+        position: absolute;
+        right: 0.35rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        padding: 0.3rem;
+        border-radius: 50%;
+        line-height: 0;
+        cursor: pointer;
+        color: #fff;
+      }
+      .finder-clear:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+      .finder-clear:focus-visible {
+        outline: 3px solid #fff;
+        outline-offset: 1px;
+      }
+      .finder-clear[hidden] {
+        display: none;
+      }
+
+      .finder-topics-row {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 1.25rem;
+        max-width: 100%;
+      }
+      .finder-topics-arrow {
+        flex-shrink: 0;
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        border-radius: 50%;
+        color: #fff;
+        opacity: 0.8;
+        cursor: pointer;
+        transition: opacity 0.15s;
+      }
+      .finder-topics-arrow:hover {
+        opacity: 1;
+      }
+      .finder-topics-arrow:focus-visible {
+        outline: 3px solid #fff;
+        outline-offset: 2px;
+      }
+      .finder-topics-arrow svg {
+        width: 1.6rem;
+        height: 1.6rem;
+      }
+      .finder-topics-arrow[disabled] {
+        opacity: 0.3;
+        cursor: default;
+      }
+      .finder-topics {
+        display: flex;
+        gap: 0.5rem;
+        padding: 0.25rem 0.1rem;
+        list-style: none;
+        max-width: 100%;
+        overflow-x: auto;
+        scroll-behavior: smooth;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .finder-topics::-webkit-scrollbar {
+        display: none;
+      }
+      .finder-topics > li {
+        flex: 0 0 auto;
+        scroll-snap-align: center;
+      }
+      .finder-topic-btn {
+        display: inline-block;
+        white-space: nowrap;
+        background: #fff;
+        border: none;
+        border-radius: 999px;
+        padding: 0.45rem 0.9rem;
+        font-family: "PublicSans-Medium", sans-serif;
+        font-size: 0.85rem;
+        color: #0a2540;
+        cursor: pointer;
+        transform: scale(1);
+        transition:
+          background 0.25s,
+          color 0.25s,
+          transform 0.25s,
+          box-shadow 0.25s,
+          padding 0.25s,
+          font-size 0.25s;
+      }
+      .finder-topic-btn:hover {
+        background: rgba(255, 255, 255, 0.85);
+      }
+      .finder-topic-btn[aria-pressed="true"] {
+        background: #f4a300;
+        color: #0a2540;
+        font-size: 0.95rem;
+        padding: 0.6rem 1.25rem;
+        transform: scale(1.15);
+        box-shadow: 0 4px 18px rgba(244, 163, 0, 0.5);
+      }
+      .finder-topic-btn:focus-visible {
+        outline: 3px solid #fff;
+        outline-offset: 2px;
+      }
+
+      /* Right: results panel */
+      .finder-panel {
+        padding: 1.5rem 1rem;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: #fff;
+      }
+      .finder-idle {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .finder-idle-ico {
+        width: 2.75rem;
+        height: 2.75rem;
+        color: #fff;
+        opacity: 0.75;
+        margin-bottom: 0.75rem;
+        animation: finder-float 3s ease-in-out infinite;
+      }
+      .finder-idle-ico svg {
+        width: 100%;
+        height: 100%;
+      }
+      @keyframes finder-float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-6px);
+        }
+      }
+      .finder-idle p {
+        font-family: "PublicSans-Regular", sans-serif;
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0;
+        max-width: 320px;
+      }
+      .finder-idle[hidden] {
+        display: none;
+      }
+      .finder-results {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        max-width: 420px;
+      }
+      .finder-results[hidden] {
+        display: none;
+      }
+      .finder-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        opacity: 0;
+        animation: finder-card-in 0.25s ease-out forwards;
+      }
+      @keyframes finder-card-in {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .finder-card-ico {
+        flex-shrink: 0;
+        width: 2.1rem;
+        height: 2.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        margin-bottom: 0.6rem;
+      }
+      .finder-card-ico svg {
+        width: 1.15rem;
+        height: 1.15rem;
+      }
+      .finder-card-yes {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 1rem;
+        margin: 0 0 0.75rem;
+      }
+      .finder-card-bullets {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-family: "PublicSans-Regular", sans-serif;
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.9);
+      }
+      .finder-card-bullets li {
+        margin-bottom: 0.4rem;
+      }
+      .finder-card-bullets li:last-child {
+        margin-bottom: 0;
+      }
+      .finder-card-more {
+        font-family: "PublicSans-Medium", sans-serif;
+        font-style: italic;
+        opacity: 0.85;
+      }
+
+      /* Next-step bar: slides open below the finder container once a
+         match is found. White background so button/link colors below
+         are guaranteed high contrast, independent of the navy card above. */
+      .finder-next-steps {
+        width: 90%;
+        max-width: 1400px;
+        margin: 0 auto 2rem;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 6px 20px rgba(10, 37, 64, 0.15);
+        padding: 1.5rem;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(-12px);
+        transition:
+          opacity 0.25s ease,
+          transform 0.25s ease;
+      }
+      .finder-next-steps.is-open {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .finder-next-steps-lead {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 1rem;
+        color: #0a2540;
+        margin: 0 0 1rem;
+      }
+      .finder-cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.75rem;
+      }
+      .finder-cta-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-radius: 999px;
+        padding: 0.6rem 1.1rem;
+        font-family: "PublicSans-Medium", sans-serif;
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition:
+          background 0.15s,
+          color 0.15s;
+      }
+      .finder-cta-btn .material-symbols-outlined svg {
+        width: 1.1rem;
+        height: 1.1rem;
+      }
+      /* Navy on white ≈ 14:1 contrast; white on navy ≈ 14:1 — both AAA. */
+      .finder-cta-primary {
+        background: #0a2540;
+        color: #fff;
+      }
+      .finder-cta-primary:hover {
+        background: #123a63;
+      }
+      .finder-cta-secondary {
+        background: #fff;
+        border: 2px solid #0a2540;
+        color: #0a2540;
+      }
+      .finder-cta-secondary:hover {
+        background: #eef2f6;
+      }
+      .finder-cta-btn:focus-visible {
+        outline: 3px solid #0a2540;
+        outline-offset: 2px;
+      }
+      .finder-readmore {
+        display: block;
+        margin-top: 1rem;
+        font-family: "PublicSans-Medium", sans-serif;
+        font-size: 0.8rem;
+        color: #0a2540;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .finder-readmore:hover,
+      .finder-readmore:focus-visible {
+        color: #123a63;
+      }
+      .finder-readmore:focus-visible {
+        outline: 3px solid #0a2540;
+        outline-offset: 2px;
+      }
+      .finder-empty {
+        padding: 1rem 0;
+      }
+      .finder-empty[hidden] {
+        display: none;
+      }
+      .finder-empty p {
+        font-family: "PublicSans-Regular", sans-serif;
+        font-size: 0.875rem;
+        margin: 0 0 0.85rem;
+      }
+
+      @media (max-width: 700px) {
+        .finder-box {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .finder-clear,
+        .finder-topic-btn,
+        .finder-topics-arrow,
+        .finder-search,
+        .finder-input,
+        .finder-topics,
+        .finder-next-steps,
+        .finder-cta-btn {
+          transition: none;
+          scroll-behavior: auto;
+        }
+        .finder-topic-btn[aria-pressed="true"] {
+          transform: none;
+        }
+        .finder-idle-ico {
+          animation: none;
+        }
+        .finder-card {
+          animation: none;
+          opacity: 1;
+          transform: none;
+        }
+      }
     </style>
 
     <!-- Universal nav + Option B router -->
@@ -305,6 +750,189 @@
           data-mount="mst-root"
           data-trigger="mst-open-btn"
         ></script>
+
+        <!-- ══════════════════════════════════════════
+             FINDER — "What can LEAF do for me?"
+        ══════════════════════════════════════════ -->
+        <section
+          id="lp-finder"
+          class="section section-alt"
+          aria-labelledby="finder-h2"
+        >
+          <div class="wrap">
+            <div class="finder-box">
+              <div class="finder-hd">
+                <h2 class="sec-h2" id="finder-h2">
+                  Not sure where to start? Let's find out.
+                </h2>
+                <p class="sec-sub">
+                  Every VA team's process is different — let's find where LEAF
+                  fits into yours.
+                </p>
+              </div>
+
+              <!-- Left: search + topic list -->
+              <div class="finder-left">
+                <label class="finder-search-label" for="finderInput"
+                  >What's slowing your team down?</label
+                >
+                <div class="finder-search">
+                  <span class="material-symbols-outlined" aria-hidden="true">
+                    <svg viewBox="0 -960 960 960" fill="currentColor">
+                      <path
+                        d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"
+                      />
+                    </svg>
+                  </span>
+                  <input
+                    type="text"
+                    id="finderInput"
+                    class="finder-input"
+                    placeholder="Search for a business problem or process — e.g. travel, approvals…"
+                    autocomplete="off"
+                  />
+                  <button
+                    type="button"
+                    class="finder-clear"
+                    id="finderClear"
+                    hidden
+                    aria-label="Clear search"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">
+                      <svg viewBox="0 -960 960 960" fill="currentColor">
+                        <path
+                          d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+                        />
+                      </svg>
+                    </span>
+                  </button>
+                </div>
+
+                <div class="finder-topics-row">
+                  <button
+                    type="button"
+                    class="finder-topics-arrow"
+                    id="finderTopicsPrev"
+                    aria-label="Scroll topics left"
+                  >
+                    <svg viewBox="0 -960 960 960" fill="currentColor">
+                      <path
+                        d="m480-320 56-56-64-64h168v-80H472l64-64-56-56-160 160 160 160Zm0 240q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"
+                      />
+                    </svg>
+                  </button>
+                  <ul
+                    class="finder-topics"
+                    id="finderTopics"
+                    role="list"
+                    aria-label="Browse by topic"
+                  ></ul>
+                  <button
+                    type="button"
+                    class="finder-topics-arrow"
+                    id="finderTopicsNext"
+                    aria-label="Scroll topics right"
+                  >
+                    <svg viewBox="0 -960 960 960" fill="currentColor">
+                      <path
+                        d="m480-320 160-160-160-160-56 56 64 64H320v80h168l-64 64 56 56Zm0 240q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Right: results panel -->
+              <div class="finder-panel">
+                <div class="finder-idle" id="finderIdle">
+                  <span class="finder-idle-ico" aria-hidden="true">
+                    <svg viewBox="0 -960 960 960" fill="currentColor">
+                      <path
+                        d="M423.5-103.5Q400-127 400-160h160q0 33-23.5 56.5T480-80q-33 0-56.5-23.5ZM320-200v-80h320v80H320Zm10-120q-69-41-109.5-110T180-580q0-125 87.5-212.5T480-880q125 0 212.5 87.5T780-580q0 81-40.5 150T630-320H330Z"
+                      />
+                    </svg>
+                  </span>
+                  <p>
+                    Start typing or select a topic — your answer will appear
+                    here.
+                  </p>
+                </div>
+
+                <div aria-live="polite">
+                  <ul
+                    class="finder-results"
+                    id="finderResults"
+                    role="list"
+                    aria-label="LEAF solutions"
+                    hidden
+                  ></ul>
+
+                  <div class="finder-empty" id="finderEmpty" hidden>
+                    <p>
+                      We couldn't find a match for that — but LEAF may still be
+                      able to help. Tell our team about your project.
+                    </p>
+                    <a href="#" class="btn btn-pri" id="finderCtaLinkNoMatch">
+                      <span
+                        class="material-symbols-outlined"
+                        aria-hidden="true"
+                      >
+                        <svg viewBox="0 -960 960 960" fill="currentColor">
+                          <path
+                            d="m480-80-10-120h-10q-142 0-241-99t-99-241q0-142 99-241t241-99q71 0 132.5 26.5t108 73q46.5 46.5 73 108T800-540q0 75-24.5 144t-67 128q-42.5 59-101 107T480-80Zm8-253q12-12 12-29t-12-29q-12-12-29-12t-29 12q-12 12-12 29t12 29q12 12 29 12t29-12Zm-58-115h60q0-30 6-42t38-44q18-18 30-39t12-45q0-51-34.5-76.5T460-720q-44 0-74 24.5T344-636l56 22q5-17 19-33.5t41-16.5q27 0 40.5 15t13.5 33q0 17-10 30.5T480-558q-35 30-42.5 47.5T430-448Z"
+                          />
+                        </svg>
+                      </span>
+                      Request a consultation
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="finder-next-steps"
+              id="finderNextSteps"
+              aria-live="polite"
+              hidden
+            >
+              <p class="finder-next-steps-lead">Ready to take the next step?</p>
+              <div class="finder-cta-row">
+                <a
+                  href="https://leaf-preprod.va.gov/launchpad/report.php?a=Start_new_site"
+                  class="finder-cta-btn finder-cta-primary"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true"
+                    ><svg viewBox="0 -960 960 960" fill="currentColor">
+                      <path
+                        d="m98-537 168-168q14-14 33-20t39-2l52 11q-54 64-85 116t-60 126L98-537Zm205 91q23-72 62.5-136T461-702q88-88 201-131.5T873-860q17 98-26 211T716-448q-55 55-120 95.5T459-289L303-446Zm276-120q23 23 56.5 23t56.5-23q23-23 23-56.5T692-679q-23-23-56.5-23T579-679q-23 23-23 56.5t23 56.5ZM551-85l-64-147q74-29 126.5-60T730-377l10 52q4 20-2 39.5T718-252L551-85ZM162-318q35-35 85-35.5t85 34.5q35 35 35 85t-35 85q-25 25-83.5 43T87-74q14-103 32-161t43-83Z"
+                      /></svg
+                  ></span>
+                  Ready? Build a new site
+                  <span class="lp-sr-only">(opens in new tab)</span>
+                </a>
+                <a
+                  href="#"
+                  class="finder-cta-btn finder-cta-secondary"
+                  id="finderCtaLinkMatch"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true"
+                    ><svg viewBox="0 -960 960 960" fill="currentColor">
+                      <path
+                        d="m480-80-10-120h-10q-142 0-241-99t-99-241q0-142 99-241t241-99q71 0 132.5 26.5t108 73q46.5 46.5 73 108T800-540q0 75-24.5 144t-67 128q-42.5 59-101 107T480-80Zm8-253q12-12 12-29t-12-29q-12-12-29-12t-29 12q-12 12-12 29t12 29q12 12 29 12t29-12Zm-58-115h60q0-30 6-42t38-44q18-18 30-39t12-45q0-51-34.5-76.5T460-720q-44 0-74 24.5T344-636l56 22q5-17 19-33.5t41-16.5q27 0 40.5 15t13.5 33q0 17-10 30.5T480-558q-35 30-42.5 47.5T430-448Z"
+                      /></svg
+                  ></span>
+                  Talk to our team
+                </a>
+              </div>
+              <a href="#steps-h2" class="finder-readmore"
+                >Not ready yet? Read more about LEAF below</a
+              >
+            </div>
+          </div>
+        </section>
 
         <!-- ══════════════════════════════════════════
              HOW IT WORKS
@@ -541,86 +1169,6 @@
         </section>
 
         <!-- ══════════════════════════════════════════
-             ENTERPRISE SCALE
-        ══════════════════════════════════════════ -->
-        <section class="section" aria-labelledby="scale-h2">
-          <div class="wrap">
-            <div class="sec-hd ctr">
-              <span class="eyebrow">Enterprise scale</span>
-              <h2 class="sec-h2" id="scale-h2">
-                Trusted across every level of VA.
-              </h2>
-              <p class="sec-sub">
-                From individual facilities to national offices, LEAF scales to
-                any organization's size and complexity.
-              </p>
-            </div>
-
-            <div class="scale">
-              <div class="scale-card">
-                <div class="scale-hd">
-                  <span class="material-symbols-outlined" aria-hidden="true"
-                    ><svg viewBox="0 -960 960 960" fill="currentColor">
-                      <path
-                        d="M420-280h120v-140h140v-120H540v-140H420v140H280v120h140v140ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Z"
-                      /></svg
-                  ></span>
-                  <p class="scale-title">Facility Level</p>
-                </div>
-                <ul class="scale-list">
-                  <li>Clinic Profile Management</li>
-                  <li>Eligibility &amp; Enrollment</li>
-                  <li>Onboarding &amp; Offboarding</li>
-                  <li>Conference &amp; Travel</li>
-                  <li>Work Order Submissions</li>
-                  <li><em>… and many more</em></li>
-                </ul>
-              </div>
-
-              <div class="scale-card">
-                <div class="scale-hd">
-                  <span class="material-symbols-outlined" aria-hidden="true"
-                    ><svg viewBox="0 -960 960 960" fill="currentColor">
-                      <path
-                        d="M600-120v-120H440v-400h-80v120H80v-320h280v120h240v-120h280v320H600v-120h-80v320h80v-120h280v320H600Z"
-                      /></svg
-                  ></span>
-                  <p class="scale-title">Regional Level</p>
-                </div>
-                <ul class="scale-list">
-                  <li>VISN Network Office</li>
-                  <li>Human Resources Management</li>
-                  <li>VBA Regional Offices</li>
-                  <li>VA Supportive Housing (VASH)</li>
-                  <li>Memorial Service Networks (MSNs)</li>
-                  <li><em>… and many more</em></li>
-                </ul>
-              </div>
-
-              <div class="scale-card">
-                <div class="scale-hd">
-                  <span class="material-symbols-outlined" aria-hidden="true"
-                    ><svg viewBox="0 -960 960 960" fill="currentColor">
-                      <path
-                        d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm-40-82v-78q-33 0-56.5-23.5T360-320v-40L168-552q-3 18-5.5 36t-2.5 36q0 121 79.5 212T440-162Zm276-102q20-22 36-47.5t26.5-53q10.5-27.5 16-56.5t5.5-59q0-98-54.5-179T600-776v16q0 33-23.5 56.5T520-680h-80v80q0 17-11.5 28.5T400-560h-80v80h240q17 0 28.5 11.5T600-440v120h40q26 0 47 15.5t29 40.5Z"
-                      /></svg
-                  ></span>
-                  <p class="scale-title">National Level</p>
-                </div>
-                <ul class="scale-list">
-                  <li>VA Central Office (Headquarters)</li>
-                  <li>Office of the Secretary of Veterans Affairs</li>
-                  <li>Office of Inspector General</li>
-                  <li>Office of General Counsel</li>
-                  <li>VHA Shark Tank</li>
-                  <li><em>… and many more</em></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ══════════════════════════════════════════
              NEWSLETTER + RESOURCE CARDS
         ══════════════════════════════════════════ -->
         <section id="lp-resources" class="nl" aria-labelledby="nl-h2">
@@ -774,6 +1322,440 @@
         input.addEventListener("input", () => {
           input.setCustomValidity("");
         });
+      })();
+
+      /* ── LEAF Finder ── */
+      (() => {
+        const CARD_ICON_SVG = `<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m424-296 282-282-56-56-226 226-114-114-56 56 170 170Zm56 216q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg>`;
+        // Swap this line to change how the right panel answers the question.
+        // Rotates so results don't always open with the same line.
+        const FINDER_ANSWER_INTROS = [
+          "Here's how LEAF has you covered:",
+          "This is exactly the kind of problem LEAF solves:",
+          "Consider it solved. Here's how:",
+          "Good news — this is exactly what LEAF was built for:",
+        ];
+
+        const SOLUTIONS = [
+          {
+            category: "Forms",
+            keywords: [
+              "form",
+              "forms",
+              "template",
+              "drag and drop",
+              "request form",
+              "no-code",
+            ],
+            title: "a custom digital form",
+            bullets: [
+              "Drag-and-drop editor — no developers needed",
+              "Dozens of question types, with conditional logic",
+              "Integrates with VA Active Directory",
+            ],
+          },
+          {
+            category: "Workflows",
+            keywords: [
+              "workflow",
+              "approval",
+              "approvals",
+              "routing",
+              "route",
+              "notify",
+              "approver",
+            ],
+            title: "automated approval routing",
+            bullets: [
+              "Interactive flowcharts route requests to the right approver",
+              "Notifies requestors and approvers at every step",
+              "Sub-forms for multi-part processes",
+            ],
+          },
+          {
+            category: "Reporting",
+            keywords: [
+              "report",
+              "reports",
+              "analytics",
+              "data",
+              "export",
+              "excel",
+              "dashboard",
+              "timeline",
+            ],
+            title: "built-in reporting and analytics",
+            bullets: [
+              "Report Builder with Excel export",
+              "Timeline Explorer to spot delays and gaps",
+              "Data Visualizer for submission patterns",
+            ],
+          },
+          {
+            category: "Forms",
+            keywords: ["template", "library", "va-approved", "import"],
+            title: "a library of ready-made forms",
+            bullets: [
+              "One-click import of VA-approved templates",
+              "Skip building common forms from scratch",
+            ],
+          },
+          {
+            category: "Forms",
+            keywords: [
+              "paper",
+              "paper process",
+              "paper processes",
+              "paper trail",
+              "paper forms",
+              "digitize",
+              "not digitized",
+              "arent digitized",
+              "aren't digitized",
+              "papers get lost",
+              "lost paperwork",
+              "no central tracking",
+              "central tracking",
+              "cant track",
+              "can't track",
+              "inability to track",
+              "track paper trail",
+              "manual process",
+              "filing cabinet",
+            ],
+            title: "a fully digital replacement for paper processes",
+            bullets: [
+              "Turns paper forms into a digital, no-code process",
+              "Nothing to lose — every submission is stored and searchable",
+              "One central system tracks every request from start to finish",
+            ],
+          },
+          {
+            category: "Requests",
+            keywords: ["inbox", "pending", "requests", "organize", "queue"],
+            title: "a centralized request inbox",
+            bullets: [
+              "All pending requests organized in one place",
+              "Quick actions to review and process each item",
+            ],
+          },
+          {
+            category: "Admin",
+            keywords: [
+              "access",
+              "permissions",
+              "roles",
+              "user group",
+              "it ticket",
+            ],
+            title: "self-managed access control",
+            bullets: [
+              "Manage roles and permissions for your team",
+              "No IT ticket required to update access",
+            ],
+          },
+          {
+            category: "Notifications",
+            keywords: [
+              "email",
+              "emails",
+              "notify",
+              "notification",
+              "reminder",
+              "back and forth",
+              "too many emails",
+              "email chain",
+              "email thread",
+              "cc chain",
+              "reduce emails",
+            ],
+            title: "automatic email notifications",
+            bullets: [
+              "Alerts sent at every workflow step",
+              "Keeps requestors and approvers in sync",
+            ],
+          },
+          {
+            category: "Workflows",
+            keywords: [
+              "back and forth",
+              "too many emails",
+              "email chain",
+              "email thread",
+              "cc chain",
+              "reduce emails",
+              "communication",
+              "status update",
+              "chasing approvals",
+              "follow up",
+            ],
+            title: "one system instead of email threads",
+            bullets: [
+              "Requests move through a tracked workflow, not scattered emails",
+              "Everyone sees status in one place — no chasing replies",
+              "Automatic notifications replace manual follow-up emails",
+            ],
+          },
+          {
+            category: "Admin",
+            keywords: ["admin", "oversight", "site performance", "monitor"],
+            title: "admin oversight tools",
+            bullets: [
+              "Monitor site performance in one dashboard",
+              "Streamline day-to-day administrative tasks",
+            ],
+          },
+          {
+            category: "Security",
+            keywords: [
+              "security",
+              "phi",
+              "pii",
+              "508",
+              "compliance",
+              "protection",
+            ],
+            title: "built-in data protection and compliance",
+            bullets: [
+              "LEAF-S certified safeguards for PHI/PII",
+              "Section 508 compliant out of the box",
+            ],
+          },
+          {
+            category: "HR & Onboarding",
+            keywords: [
+              "onboarding",
+              "offboarding",
+              "hr",
+              "human resources",
+              "eligibility",
+              "enrollment",
+            ],
+            title: "HR and onboarding workflows",
+            bullets: [
+              "Pre-built patterns for onboarding and offboarding",
+              "Handles eligibility and enrollment steps",
+            ],
+          },
+          {
+            category: "Travel",
+            keywords: ["travel", "tdy", "trip", "conference"],
+            title: "digital travel and conference requests",
+            bullets: [
+              "Digitizes travel and conference submissions",
+              "Routes through your team's approval chain",
+            ],
+          },
+        ];
+
+        const input = document.getElementById("finderInput");
+        const clearBtn = document.getElementById("finderClear");
+        const topicsList = document.getElementById("finderTopics");
+        const topicsPrev = document.getElementById("finderTopicsPrev");
+        const topicsNext = document.getElementById("finderTopicsNext");
+        const idleState = document.getElementById("finderIdle");
+        const resultsList = document.getElementById("finderResults");
+        const emptyState = document.getElementById("finderEmpty");
+        const nextSteps = document.getElementById("finderNextSteps");
+
+        function toggleNextSteps(show) {
+          if (!nextSteps) return;
+          const reduceMotion = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+          ).matches;
+
+          if (show) {
+            nextSteps.hidden = false;
+            if (reduceMotion) {
+              nextSteps.classList.add("is-open");
+            } else {
+              // Toggle hidden first so the browser registers the starting
+              // state, then add the class on the next frame so the
+              // opacity/transform transition actually plays.
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  nextSteps.classList.add("is-open");
+                });
+              });
+            }
+          } else {
+            nextSteps.classList.remove("is-open");
+            if (reduceMotion) {
+              nextSteps.hidden = true;
+            } else {
+              nextSteps.addEventListener(
+                "transitionend",
+                () => {
+                  nextSteps.hidden = true;
+                },
+                { once: true },
+              );
+            }
+          }
+        }
+        if (!input || !resultsList) return;
+
+        const topics = [...new Set(SOLUTIONS.map((s) => s.category))];
+        let activeTopic = null;
+        const topicBtns = [];
+
+        function updateTopicTip(btn) {
+          const tip = btn.nextElementSibling;
+          if (!tip) return;
+          tip.textContent =
+            btn.getAttribute("aria-pressed") === "true"
+              ? "Click to unselect"
+              : "Click to filter by this topic";
+        }
+
+        function selectTopic(topic, btn) {
+          const wasActive = activeTopic === topic;
+          activeTopic = wasActive ? null : topic;
+          topicBtns.forEach((b) => {
+            b.setAttribute(
+              "aria-pressed",
+              b === btn && !wasActive ? "true" : "false",
+            );
+            updateTopicTip(b);
+          });
+          input.value = "";
+          if (!wasActive) {
+            const reduceMotion = window.matchMedia(
+              "(prefers-reduced-motion: reduce)",
+            ).matches;
+            btn.scrollIntoView({
+              behavior: reduceMotion ? "auto" : "smooth",
+              inline: "center",
+              block: "nearest",
+            });
+          }
+          render();
+        }
+
+        topics.forEach((topic, i) => {
+          const li = document.createElement("li");
+          const wrap = document.createElement("span");
+          wrap.className = "lp-tooltip-wrap";
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "finder-topic-btn";
+          btn.textContent = topic;
+          btn.setAttribute("aria-pressed", "false");
+          const tipId = `finder-topic-tip-${i}`;
+          btn.setAttribute("aria-describedby", tipId);
+          btn.addEventListener("click", () => selectTopic(topic, btn));
+
+          const tip = document.createElement("span");
+          tip.className = "lp-tooltip";
+          tip.id = tipId;
+          tip.setAttribute("role", "tooltip");
+          tip.textContent = "Click to filter by this topic";
+
+          wrap.appendChild(btn);
+          wrap.appendChild(tip);
+          li.appendChild(wrap);
+          topicsList.appendChild(li);
+          topicBtns.push(btn);
+        });
+
+        function stepTopic(direction) {
+          const currentIndex = topicBtns.findIndex(
+            (b) => b.getAttribute("aria-pressed") === "true",
+          );
+          const nextIndex =
+            currentIndex === -1
+              ? direction > 0
+                ? 0
+                : topicBtns.length - 1
+              : (currentIndex + direction + topicBtns.length) %
+                topicBtns.length;
+          const nextBtn = topicBtns[nextIndex];
+          selectTopic(topics[nextIndex], nextBtn);
+        }
+
+        topicsPrev.addEventListener("click", () => stepTopic(-1));
+        topicsNext.addEventListener("click", () => stepTopic(1));
+
+        function matches(entry, query) {
+          if (activeTopic && entry.category !== activeTopic) return false;
+          if (!query) return !!activeTopic;
+
+          const haystack = [entry.title, ...entry.keywords]
+            .join(" ")
+            .toLowerCase();
+          if (haystack.includes(query)) return true;
+
+          // Also match on individual words so full sentences like "reduce
+          // back and forth emails" hit keyword phrases like "back and forth".
+          const queryWords = query.split(/\s+/).filter((w) => w.length > 2);
+          return queryWords.some((w) => haystack.includes(w));
+        }
+
+        function render() {
+          const query = input.value.trim().toLowerCase();
+          clearBtn.hidden = query.length === 0;
+
+          if (!query && !activeTopic) {
+            idleState.hidden = false;
+            resultsList.hidden = true;
+            emptyState.hidden = true;
+            toggleNextSteps(false);
+            return;
+          }
+          idleState.hidden = true;
+
+          const matched = SOLUTIONS.filter((entry) => matches(entry, query));
+
+          resultsList.innerHTML = "";
+
+          if (matched.length > 0) {
+            const allBullets = [...new Set(matched.flatMap((e) => e.bullets))];
+            const shown = allBullets.slice(0, 5);
+            const hasMore = allBullets.length > 5;
+
+            const li = document.createElement("li");
+            li.className = "finder-card";
+            const bulletItems = shown.map((b) => `<li>${b}</li>`).join("");
+            const moreItem = hasMore
+              ? `<li class="finder-card-more">…and more!</li>`
+              : "";
+            li.innerHTML = `
+              <div class="finder-card-ico">
+                <span class="material-symbols-outlined" aria-hidden="true">${CARD_ICON_SVG}</span>
+              </div>
+              <p class="finder-card-yes">${
+                FINDER_ANSWER_INTROS[
+                  Math.floor(Math.random() * FINDER_ANSWER_INTROS.length)
+                ]
+              }</p>
+              <ul class="finder-card-bullets">${bulletItems}${moreItem}</ul>`;
+            resultsList.appendChild(li);
+          }
+
+          resultsList.hidden = matched.length === 0;
+          emptyState.hidden = matched.length !== 0;
+          toggleNextSteps(matched.length > 0);
+        }
+
+        input.addEventListener("input", () => {
+          if (activeTopic) {
+            activeTopic = null;
+            topicBtns.forEach((b) => {
+              b.setAttribute("aria-pressed", "false");
+              updateTopicTip(b);
+            });
+          }
+          render();
+        });
+
+        clearBtn.addEventListener("click", () => {
+          input.value = "";
+          input.focus();
+          render();
+        });
+
+        render();
       })();
     </script>
   </body>
