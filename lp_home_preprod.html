@@ -271,6 +271,10 @@
         width: 1.1rem;
         height: 1.1rem;
       }
+      .finder-clear .material-symbols-outlined svg {
+        width: 1rem;
+        height: 1rem;
+      }
       .finder-input {
         width: 100%;
         padding: 0.7rem 2.5rem;
@@ -547,15 +551,18 @@
         max-width: 1800px;
         margin: 0 auto;
         background: #fff;
+        border: 1px solid rgba(10, 37, 64, 0.15);
         /* Wide at the top (flush with the box above), tapering narrower
            toward the bottom — an upside-down trapezoid "pull tab" rather
-           than a plain rectangle. */
+           than a plain rectangle. Border/shadow render inside the clip,
+           so they trace the trapezoid outline rather than a rectangle. */
         clip-path: polygon(0% 0%, 100% 0%, 91% 100%, 9% 100%);
         text-align: center;
         overflow: hidden;
         max-height: 0;
         opacity: 0;
-        filter: drop-shadow(0 6px 14px rgba(10, 37, 64, 0.18));
+        filter: drop-shadow(0 6px 14px rgba(10, 37, 64, 0.18))
+          drop-shadow(0 0 24px rgba(10, 37, 64, 0.12));
         transition:
           max-height 0.3s ease,
           opacity 0.2s ease;
@@ -598,14 +605,17 @@
         height: 1.1rem;
       }
       /* Navy on white ≈ 14:1 contrast; white on navy ≈ 14:1 — both AAA. */
-      .finder-cta-primary {
+      /* ".lp a" in launchpad.css (class+element = higher specificity than
+         a single class here) was winning over these button text colors
+         regardless of source order — scope to the container id to beat it. */
+      #finderNextSteps .finder-cta-primary {
         background: #0a2540;
         color: #fff;
       }
-      .finder-cta-primary:hover {
+      #finderNextSteps .finder-cta-primary:hover {
         background: #123a63;
       }
-      .finder-cta-secondary {
+      #finderNextSteps .finder-cta-secondary {
         background: #fff;
         border: 2px solid #0a2540;
         color: #0a2540;
@@ -622,7 +632,7 @@
       #steps-h2 {
         scroll-margin-top: 90px;
       }
-      .finder-readmore {
+      #finderNextSteps .finder-readmore {
         display: block;
         margin-top: 1rem;
         font-family: "PublicSans-Medium", sans-serif;
