@@ -259,12 +259,12 @@
       .finder-search:focus-within {
         box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.25);
       }
-      .finder-search .material-symbols-outlined {
+      #lp-finder .finder-search .material-symbols-outlined {
         position: absolute;
         left: 0.9rem;
         top: 50%;
         transform: translateY(-50%);
-        color: rgba(255, 255, 255, 0.75);
+        color: rgba(255, 255, 255, 0.85);
         pointer-events: none;
       }
       .finder-search .material-symbols-outlined svg {
@@ -298,12 +298,19 @@
       }
       .finder-clear {
         position: absolute;
-        right: 0.35rem;
+        right: 0.6rem;
         top: 50%;
         transform: translateY(-50%);
+        width: 1.5rem;
+        height: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         background: none;
         border: none;
-        padding: 0.3rem;
+        appearance: none;
+        padding: 0;
+        margin: 0;
         border-radius: 50%;
         line-height: 0;
         cursor: pointer;
@@ -550,17 +557,14 @@
         width: 80%;
         max-width: 1800px;
         margin: 0 auto;
-        background: #fff;
-        border: 1px solid rgba(10, 37, 64, 0.15);
-        /* Wide at the top (flush with the box above), tapering narrower
-           toward the bottom — an upside-down trapezoid "pull tab" rather
-           than a plain rectangle. Border/shadow render inside the clip,
-           so they trace the trapezoid outline rather than a rectangle. */
-        clip-path: polygon(0% 0%, 100% 0%, 91% 100%, 9% 100%);
         text-align: center;
         overflow: hidden;
         max-height: 0;
         opacity: 0;
+        /* Shadow lives on the outer element; the shape (clip-path) lives
+           on .finder-next-steps-inner below. Combining filter and
+           clip-path on the same element is unreliable across browser
+           rendering engines — splitting them is the robust pattern. */
         filter: drop-shadow(0 6px 14px rgba(10, 37, 64, 0.18))
           drop-shadow(0 0 24px rgba(10, 37, 64, 0.12));
         transition:
@@ -573,6 +577,13 @@
         margin-bottom: 2rem;
       }
       .finder-next-steps-inner {
+        height: 100%;
+        background: #fff;
+        border: 1px solid rgba(10, 37, 64, 0.15);
+        /* Wide at the top (flush with the box above), tapering narrower
+           toward the bottom — an upside-down trapezoid "pull tab" rather
+           than a plain rectangle. */
+        clip-path: polygon(0% 0%, 100% 0%, 91% 100%, 9% 100%);
         padding: 1.5rem 3rem 2rem;
       }
       .finder-next-steps-lead {
@@ -961,7 +972,7 @@
                         d="m98-537 168-168q14-14 33-20t39-2l52 11q-54 64-85 116t-60 126L98-537Zm205 91q23-72 62.5-136T461-702q88-88 201-131.5T873-860q17 98-26 211T716-448q-55 55-120 95.5T459-289L303-446Zm276-120q23 23 56.5 23t56.5-23q23-23 23-56.5T692-679q-23-23-56.5-23T579-679q-23 23-23 56.5t23 56.5ZM551-85l-64-147q74-29 126.5-60T730-377l10 52q4 20-2 39.5T718-252L551-85ZM162-318q35-35 85-35.5t85 34.5q35 35 35 85t-35 85q-25 25-83.5 43T87-74q14-103 32-161t43-83Z"
                       /></svg
                   ></span>
-                  Ready? Build a new site
+                  Build a new site
                   <span class="lp-sr-only">(opens in new tab)</span>
                 </a>
                 <a
