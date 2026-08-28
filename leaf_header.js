@@ -133,17 +133,17 @@
       label: "Solutions",
       items: [
         {
-          icon: "library_books",
-          title: "Use Cases",
-          desc: "Explore real workflows from teams across the VA",
-          href: "#",
-          hidden: true,
-        },
-        {
           icon: "description",
           title: "Form Library",
           desc: "Forms and templates built by VA teams",
           href: "/launchpad/report.php?a=lp_form_library",
+        },
+        {
+          icon: "cases",
+          title: "Use Cases",
+          desc: "Explore real workflows from teams across the VA",
+          href: "/launchpad/report.php?a=lp_use_case_placeholder",
+          badge: "Coming Soon",
         },
         {
           icon: "cable",
@@ -392,6 +392,8 @@
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M400-400h160v-80H400v80Zm0-120h320v-80H400v80Zm0-120h320v-80H400v80Zm-80 400q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Z"/></svg>',
     description:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520h200L520-800v200Z"/></svg>',
+    cases:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M120-80q-33 0-56.5-23.5T40-160v-440h80v440h680v80H120Zm160-160q-33 0-56.5-23.5T200-320v-440h200v-80q0-33 23.5-56.5T480-920h160q33 0 56.5 23.5T720-840v80h200v440q0 33-23.5 56.5T840-240H280Zm200-520h160v-80H480v80Z"/></svg>',
     cable:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-17 0-28.5-11.5T160-160v-40h-40v-160q0-17 11.5-28.5T160-400h40v-280q0-66 47-113t113-47q66 0 113 47t47 113v400q0 33 23.5 56.5T600-200q33 0 56.5-23.5T680-280v-280h-40q-17 0-28.5-11.5T600-600v-160h40v-40q0-17 11.5-28.5T680-840h80q17 0 28.5 11.5T800-800v40h40v160q0 17-11.5 28.5T800-560h-40v280q0 66-47 113t-113 47q-66 0-113-47t-47-113v-400q0-33-23.5-56.5T360-760q-33 0-56.5 23.5T280-680v280h40q17 0 28.5 11.5T360-360v160h-40v40q0 17-11.5 28.5T280-120h-80Z"/></svg>',
     location_on:

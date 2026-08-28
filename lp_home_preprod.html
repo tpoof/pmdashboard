@@ -141,6 +141,30 @@
         }
       }
 
+      /* ── Awards row ── */
+      .awards-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2.5rem;
+        justify-content: center;
+        align-items: center;
+        margin-top: 2.5rem;
+      }
+      .award-img {
+        max-width: 160px;
+        max-height: 90px;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        filter: grayscale(100%);
+        transition: filter 0.4s ease;
+        cursor: pointer;
+      }
+      .award-img:hover,
+      .award-img:focus {
+        filter: grayscale(0%);
+      }
+
       /* ── "View My Requests" tooltip ──
          CSS-only, shown on :hover and :focus-within so keyboard users
          get it too — dismissal is just moving focus/pointer away, no
@@ -271,10 +295,6 @@
         width: 1.1rem;
         height: 1.1rem;
       }
-      .finder-clear .material-symbols-outlined svg {
-        width: 1rem;
-        height: 1rem;
-      }
       .finder-input {
         width: 100%;
         padding: 0.7rem 2.5rem;
@@ -303,9 +323,8 @@
         transform: translateY(-50%);
         width: 1.5rem;
         height: 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: grid;
+        place-items: center;
         background: none;
         border: none;
         appearance: none;
@@ -315,6 +334,14 @@
         line-height: 0;
         cursor: pointer;
         color: #fff;
+      }
+      .finder-clear .material-symbols-outlined {
+        display: contents;
+      }
+      .finder-clear svg {
+        display: block;
+        width: 1rem;
+        height: 1rem;
       }
       .finder-clear:hover {
         background: rgba(255, 255, 255, 0.15);
@@ -1230,6 +1257,57 @@
           </div>
         </section>
 
+        <!-- ── AWARDS ── -->
+        <section class="section" aria-labelledby="awards-h2">
+          <div class="wrap">
+            <div class="sec-hd ctr">
+              <span class="eyebrow">Recognition</span>
+              <h2 class="sec-h2" id="awards-h2">Our Award-Winning Journey</h2>
+              <p class="sec-sub">
+                Recognized nationally for innovation, impact, and excellence in
+                public-sector technology.
+              </p>
+            </div>
+            <div class="awards-row" role="list">
+              <img
+                class="award-img"
+                src="./files/2019_FedIT_Innovation_Award.png"
+                alt="2019 FedHealthIT Innovation Award"
+                role="listitem"
+                tabindex="0"
+              />
+              <img
+                class="award-img"
+                src="./files/2019_Gears-of-Government_Award.png"
+                alt="2019 Gears of Government Award"
+                role="listitem"
+                tabindex="0"
+              />
+              <img
+                class="award-img"
+                src="./files/2022_disruptive_tech_awards.jpg"
+                alt="2022 Disruptive Tech Award"
+                role="listitem"
+                tabindex="0"
+              />
+              <img
+                class="award-img"
+                src="./files/2025_disruptive_tech_award-2-01.png"
+                alt="2025 Disruptive Tech Award"
+                role="listitem"
+                tabindex="0"
+              />
+              <img
+                class="award-img"
+                src="./files/2025_FORUM_Innovation_Award-01.png"
+                alt="2025 FORUM Innovation Award"
+                role="listitem"
+                tabindex="0"
+              />
+            </div>
+          </div>
+        </section>
+
         <!-- ══════════════════════════════════════════
              NEWSLETTER + RESOURCE CARDS
         ══════════════════════════════════════════ -->
@@ -1285,6 +1363,25 @@
                           /></svg
                       ></span>
                       LEAF SharePoint
+                      <span class="sr-only">(opens in new tab)</span>
+                    </a>
+                  </li>
+
+                  <li>
+                    <!-- PREPROD: URL updated for preprod testing -->
+                    <a
+                      class="nl-footer-link"
+                      href="https://leaf-preprod.va.gov/launchpad/report.php?a=Cost_Estimator"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span class="material-symbols-outlined" aria-hidden="true"
+                        ><svg viewBox="0 -960 960 960" fill="currentColor">
+                          <path
+                            d="M320-240h60v-80h80v-60h-80v-80h-60v80h-80v60h80v80Zm200-30h200v-60H520v60Zm0-100h200v-60H520v60Zm44-152 56-56 56 56 42-42-56-58 56-56-42-42-56 56-56-56-42 42 56 56-56 58 42 42Zm-314-70h200v-60H250v60Zm-50 472q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Z"
+                          /></svg
+                      ></span>
+                      LEAF Cost Estimator
                       <span class="sr-only">(opens in new tab)</span>
                     </a>
                   </li>
@@ -1400,71 +1497,18 @@
 
         const SOLUTIONS = [
           {
-            category: "Forms",
+            category: "Too much paper",
             keywords: [
               "form",
               "forms",
               "template",
+              "templates",
               "drag and drop",
               "request form",
               "no-code",
-            ],
-            title: "a custom digital form",
-            bullets: [
-              "Drag-and-drop editor — no developers needed",
-              "Dozens of question types, with conditional logic",
-              "Integrates with VA Active Directory",
-            ],
-          },
-          {
-            category: "Workflows",
-            keywords: [
-              "workflow",
-              "approval",
-              "approvals",
-              "routing",
-              "route",
-              "notify",
-              "approver",
-            ],
-            title: "automated approval routing",
-            bullets: [
-              "Interactive flowcharts route requests to the right approver",
-              "Notifies requestors and approvers at every step",
-              "Sub-forms for multi-part processes",
-            ],
-          },
-          {
-            category: "Reporting",
-            keywords: [
-              "report",
-              "reports",
-              "analytics",
-              "data",
-              "export",
-              "excel",
-              "dashboard",
-              "timeline",
-            ],
-            title: "built-in reporting and analytics",
-            bullets: [
-              "Report Builder with Excel export",
-              "Timeline Explorer to spot delays and gaps",
-              "Data Visualizer for submission patterns",
-            ],
-          },
-          {
-            category: "Forms",
-            keywords: ["template", "library", "va-approved", "import"],
-            title: "a library of ready-made forms",
-            bullets: [
-              "One-click import of VA-approved templates",
-              "Skip building common forms from scratch",
-            ],
-          },
-          {
-            category: "Forms",
-            keywords: [
+              "library",
+              "shared templates",
+              "import",
               "paper",
               "paper process",
               "paper processes",
@@ -1485,61 +1529,29 @@
               "manual process",
               "filing cabinet",
             ],
-            title: "a fully digital replacement for paper processes",
+            title: "a fully digital, no-code way to replace paper processes",
             bullets: [
-              "Turns paper forms into a digital, no-code process",
+              "Drag-and-drop form editor — no developers needed",
+              "Import ready-to-use form templates other VA teams have built and shared",
+              "Turns paper forms into a digital, trackable process",
               "Nothing to lose — every submission is stored and searchable",
-              "One central system tracks every request from start to finish",
+              "Integrates with VA Active Directory",
             ],
           },
           {
-            category: "Requests",
-            keywords: ["inbox", "pending", "requests", "organize", "queue"],
-            title: "a centralized request inbox",
-            bullets: [
-              "All pending requests organized in one place",
-              "Quick actions to review and process each item",
-            ],
-          },
-          {
-            category: "Admin",
+            category: "Manual approvals",
             keywords: [
-              "access",
-              "permissions",
-              "roles",
-              "user group",
-              "it ticket",
-            ],
-            title: "self-managed access control",
-            bullets: [
-              "Manage roles and permissions for your team",
-              "No IT ticket required to update access",
-            ],
-          },
-          {
-            category: "Notifications",
-            keywords: [
+              "workflow",
+              "approval",
+              "approvals",
+              "routing",
+              "route",
+              "notify",
+              "approver",
               "email",
               "emails",
-              "notify",
               "notification",
               "reminder",
-              "back and forth",
-              "too many emails",
-              "email chain",
-              "email thread",
-              "cc chain",
-              "reduce emails",
-            ],
-            title: "automatic email notifications",
-            bullets: [
-              "Alerts sent at every workflow step",
-              "Keeps requestors and approvers in sync",
-            ],
-          },
-          {
-            category: "Workflows",
-            keywords: [
               "back and forth",
               "too many emails",
               "email chain",
@@ -1550,62 +1562,158 @@
               "status update",
               "chasing approvals",
               "follow up",
-            ],
-            title: "one system instead of email threads",
-            bullets: [
-              "Requests move through a tracked workflow, not scattered emails",
-              "Everyone sees status in one place — no chasing replies",
-              "Automatic notifications replace manual follow-up emails",
-            ],
-          },
-          {
-            category: "Admin",
-            keywords: ["admin", "oversight", "site performance", "monitor"],
-            title: "admin oversight tools",
-            bullets: [
-              "Monitor site performance in one dashboard",
-              "Streamline day-to-day administrative tasks",
-            ],
-          },
-          {
-            category: "Security",
-            keywords: [
-              "security",
-              "phi",
-              "pii",
-              "508",
-              "compliance",
-              "protection",
-            ],
-            title: "built-in data protection and compliance",
-            bullets: [
-              "LEAF-S certified safeguards for PHI/PII",
-              "Section 508 compliant out of the box",
-            ],
-          },
-          {
-            category: "HR & Onboarding",
-            keywords: [
               "onboarding",
               "offboarding",
               "hr",
               "human resources",
               "eligibility",
               "enrollment",
+              "travel",
+              "tdy",
+              "trip",
+              "conference",
             ],
-            title: "HR and onboarding workflows",
+            title: "automated approval workflows instead of email chains",
             bullets: [
-              "Pre-built patterns for onboarding and offboarding",
-              "Handles eligibility and enrollment steps",
+              "Interactive flowcharts route requests to the right approver",
+              "Automatic notifications replace manual follow-up emails",
+              "Everyone sees status in one place — no chasing replies",
+              "Adaptable to onboarding, offboarding, travel-style approvals, and many other process types",
+              "Sub-forms handle multi-part approval processes",
             ],
           },
           {
-            category: "Travel",
-            keywords: ["travel", "tdy", "trip", "conference"],
-            title: "digital travel and conference requests",
+            category: "No visibility",
+            keywords: [
+              "report",
+              "reports",
+              "analytics",
+              "data",
+              "export",
+              "dashboard",
+              "timeline",
+              "security",
+              "phi",
+              "pii",
+              "compliance",
+              "protection",
+            ],
+            title:
+              "full visibility with built-in reporting and data protection",
             bullets: [
-              "Digitizes travel and conference submissions",
-              "Routes through your team's approval chain",
+              "Report Builder, Timeline Explorer, and Data Visualizer",
+              "See exactly where every request stands, in real time",
+              "LEAF-S certified safeguards for PHI/PII",
+              "Full audit trail of who did what, and when",
+            ],
+          },
+          {
+            category: "Disorganized requests",
+            keywords: ["inbox", "pending", "requests", "organize", "queue"],
+            title: "a centralized request inbox",
+            bullets: [
+              "All pending requests organized in one place",
+              "Quick actions to review and process each item",
+            ],
+          },
+          {
+            category: "Access & oversight headaches",
+            keywords: [
+              "access",
+              "permissions",
+              "roles",
+              "user group",
+              "it ticket",
+              "admin",
+              "oversight",
+              "site performance",
+              "monitor",
+            ],
+            title: "self-managed access and admin oversight",
+            bullets: [
+              "Manage roles and permissions for your team",
+              "No IT ticket required to update access",
+              "Monitor site performance in one dashboard",
+            ],
+          },
+          {
+            category: "Switching platforms",
+            keywords: [
+              "migrate",
+              "migration",
+              "migrate away",
+              "migrate off",
+              "move away from",
+              "switch platforms",
+              "switching platforms",
+              "legacy system",
+              "replace our system",
+              "sharepoint",
+              "powerapps",
+              "power apps",
+              "microsoft",
+              "servicenow",
+              "service now",
+              "snow",
+            ],
+            title: "a smooth migration off your current platform",
+            bullets: [
+              "Import existing forms, data, and records during setup",
+              "An alternative to SharePoint, PowerApps, ServiceNow, and similar tools",
+              "One VA-hosted system instead of scattered platforms",
+            ],
+          },
+          {
+            category: "Stuck with spreadsheets",
+            keywords: [
+              "excel",
+              "spreadsheet",
+              "spreadsheets",
+              "access database",
+              "shared excel",
+              "version control",
+              "google sheets",
+              "tracking in excel",
+            ],
+            title: "a real system instead of spreadsheets",
+            bullets: [
+              "No more shared files, version conflicts, or broken formulas",
+              "Everyone works from one live, permissioned system",
+              "Built-in reporting replaces manual spreadsheet tracking",
+            ],
+          },
+          {
+            category: "Cost, security & support",
+            keywords: [
+              "cost",
+              "costs",
+              "licensing",
+              "license",
+              "licenses",
+              "contract",
+              "contracts",
+              "third-party",
+              "vendor",
+              "vendor lock-in",
+              "procurement",
+              "budget",
+              "secure",
+              "security",
+              "standardized",
+              "consistency",
+              "national standard",
+              "support",
+              "embedded team",
+              "why leaf",
+              "unique",
+            ],
+            title:
+              "no licensing fees, standardized sites, built-in security, and expert support",
+            bullets: [
+              "No licenses, contracts, or third-party software — 100% VA owned and controlled",
+              "Centrally configured, nationally standardized sites with flexibility for local needs",
+              "Secure by design, built within VA infrastructure to meet the highest privacy and security standards",
+              "Expert, responsive support from an embedded team that scales with you",
             ],
           },
         ];

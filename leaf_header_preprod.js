@@ -94,8 +94,11 @@
   var ANNOUNCEMENT_SERIES = 1;
 
   /* ── Home route — used for the brand logo link and as the
-     breadcrumb auto-detect's "hide breadcrumb here" match. ── */
-  var HOME_HREF = "https://leaf-preprod.va.gov";
+     breadcrumb auto-detect's "hide breadcrumb here" match. Points at
+     the app's own default-action URL, not an external domain — the
+     header is site-wide now, so this has to bring users on any LEAF
+     page back into the app, not off of it. ── */
+  var HOME_HREF = "/launchpad/report.php";
 
   /* ── Nav content (single source of truth for desktop + mobile) ──
      href values here are the canonical URLs used by the router
@@ -133,17 +136,17 @@
       label: "Solutions",
       items: [
         {
-          icon: "library_books",
-          title: "Use Cases",
-          desc: "Explore real workflows from teams across the VA",
-          href: "#",
-          hidden: true,
-        },
-        {
           icon: "description",
           title: "Form Library",
           desc: "Forms and templates built by VA teams",
           href: "/launchpad/report.php?a=lp_form_library",
+        },
+        {
+          icon: "cases",
+          title: "Use Cases",
+          desc: "Explore real workflows from teams across the VA",
+          href: "/launchpad/report.php?a=lp_use_case_placeholder_preprod",
+          badge: "Coming Soon",
         },
         {
           icon: "cable",
@@ -334,15 +337,20 @@
        with launchpad_homepage having nothing to do with CoP. */
     "https://leaf.va.gov/platform/CoP/report.php?a=launchpad_homepage":
       "cop",
-    /* HOME_HREF now points at the bare marketing domain (no ?a= param),
-       which would otherwise derive to "leaf-preprod.va.gov" via the
-       last-path-segment fallback — never matching the homepage's own
-       URL. The homepage itself renders for the empty/default action
-       (report.php with no ?a=), which has no ?a= match either and so
-       falls back to the same rule, deriving "report.php". Pin HOME_HREF
-       to that same key so resolveCurrentRoute()'s home comparison still
-       matches and the breadcrumb stays hidden on the actual homepage. */
-    "https://leaf-preprod.va.gov": "report.php",
+    /* HOME_HREF ("/launchpad/report.php") has no ?a= param — the
+       homepage renders for the empty/default action — so it falls back
+       to the last-path-segment rule and derives "report.php", a key
+       router() doesn't recognize as home (only "", "home", "lp_home"
+       are). Left alone, clicking the breadcrumb's "Launchpad" crumb
+       (a real <a href=HOME_HREF> that wireLinkIntercept hash-routes)
+       would push "#report.php" and land on the "page doesn't exist"
+       state instead of home. Pin it to "home" instead: router() then
+       recognizes the pushed hash, AND — since HOME_HREF is the exact
+       string the real homepage's own URL resolves to as well — this
+       same entry makes resolveCurrentRoute()'s "here" vs HOME_HREF
+       comparison agree too, so the breadcrumb still hides correctly on
+       a direct load of the actual homepage. */
+    "/launchpad/report.php": "home",
   };
 
   function hrefToHashKey(href) {
@@ -401,6 +409,8 @@
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M400-400h160v-80H400v80Zm0-120h320v-80H400v80Zm0-120h320v-80H400v80Zm-80 400q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Z"/></svg>',
     description:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520h200L520-800v200Z"/></svg>',
+    cases:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M120-80q-33 0-56.5-23.5T40-160v-440h80v440h680v80H120Zm160-160q-33 0-56.5-23.5T200-320v-440h200v-80q0-33 23.5-56.5T480-920h160q33 0 56.5 23.5T720-840v80h200v440q0 33-23.5 56.5T840-240H280Zm200-520h160v-80H480v80Z"/></svg>',
     cable:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-17 0-28.5-11.5T160-160v-40h-40v-160q0-17 11.5-28.5T160-400h40v-280q0-66 47-113t113-47q66 0 113 47t47 113v400q0 33 23.5 56.5T600-200q33 0 56.5-23.5T680-280v-280h-40q-17 0-28.5-11.5T600-600v-160h40v-40q0-17 11.5-28.5T680-840h80q17 0 28.5 11.5T800-800v40h40v160q0 17-11.5 28.5T800-560h-40v280q0 66-47 113t-113 47q-66 0-113-47t-47-113v-400q0-33-23.5-56.5T360-760q-33 0-56.5 23.5T280-680v280h40q17 0 28.5 11.5T360-360v160h-40v40q0 17-11.5 28.5T280-120h-80Z"/></svg>',
     location_on:
