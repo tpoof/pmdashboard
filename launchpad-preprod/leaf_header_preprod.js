@@ -94,11 +94,14 @@
   var ANNOUNCEMENT_SERIES = 1;
 
   /* ── Home route — used for the brand logo link and as the
-     breadcrumb auto-detect's "hide breadcrumb here" match. Points at
-     the app's own default-action URL, not an external domain — the
-     header is site-wide now, so this has to bring users on any LEAF
-     page back into the app, not off of it. ── */
-  var HOME_HREF = "/launchpad/report.php";
+     breadcrumb auto-detect's "hide breadcrumb here" match. Absolute
+     to the preprod host — the header is site-wide now, so this has
+     to bring users on any LEAF page back into the app, not off of
+     it. Kept in sync with the matching entry in
+     HREF_HASH_KEY_OVERRIDES below — that entry must be updated too
+     if this ever changes, since hrefToHashKey() looks it up by exact
+     string match. ── */
+  var HOME_HREF = "https://leaf-preprod.va.gov/launchpad/report.php";
 
   /* ── Nav content (single source of truth for desktop + mobile) ──
      href values here are the canonical URLs used by the router
@@ -337,19 +340,22 @@
        with launchpad_homepage having nothing to do with CoP. */
     "https://leaf.va.gov/platform/CoP/report.php?a=launchpad_homepage":
       "cop",
-    /* HOME_HREF ("/launchpad/report.php") has no ?a= param — the
-       homepage renders for the empty/default action — so it falls back
-       to the last-path-segment rule and derives "report.php", a key
-       router() doesn't recognize as home (only "", "home", "lp_home"
-       are). Left alone, clicking the breadcrumb's "Launchpad" crumb
-       (a real <a href=HOME_HREF> that wireLinkIntercept hash-routes)
+    /* HOME_HREF has no ?a= param — the homepage renders for the
+       empty/default action — so it falls back to the last-path-segment
+       rule and derives "report.php", a key router() doesn't recognize
+       as home (only "", "home", "lp_home" are). Left alone, clicking
+       the brand logo or the breadcrumb's "Launchpad" crumb (real
+       <a href=HOME_HREF> elements that wireLinkIntercept hash-routes)
        would push "#report.php" and land on the "page doesn't exist"
        state instead of home. Pin it to "home" instead: router() then
-       recognizes the pushed hash, AND — since HOME_HREF is the exact
-       string the real homepage's own URL resolves to as well — this
-       same entry makes resolveCurrentRoute()'s "here" vs HOME_HREF
-       comparison agree too, so the breadcrumb still hides correctly on
-       a direct load of the actual homepage. */
+       recognizes the pushed hash. */
+    "https://leaf-preprod.va.gov/launchpad/report.php": "home",
+    /* window.location.pathname/search never include the origin, so
+       resolveCurrentRoute()'s "here" (a page's own relative URL) is
+       matched against this relative form — needed alongside the
+       absolute entry above so resolveCurrentRoute()'s "here" vs
+       HOME_HREF comparison still agrees and the breadcrumb keeps
+       hiding correctly on a direct load of the actual homepage. */
     "/launchpad/report.php": "home",
   };
 
