@@ -7,8 +7,10 @@
   // before changing them.
   const CONFIG = {
     categoryID: "form_3db88",
-    // TODO: point this at the real blog index/listing page once one exists.
-    blogIndexURL: "#",
+    // TODO: preprod path — leaf_header_preprod.js's Blog nav item points
+    // here too (/launchpad/report.php?a=blog); swap both for the
+    // production URL once this ships out of preprod.
+    blogIndexURL: "/launchpad/report.php?a=blog",
     indicators: {
       title: 2,
       category: 3,
