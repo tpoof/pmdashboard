@@ -7,6 +7,8 @@
   // before changing them.
   const CONFIG = {
     categoryID: "form_3db88",
+    // TODO: point this at the real blog index/listing page once one exists.
+    blogIndexURL: "#",
     indicators: {
       title: 2,
       category: 3,
@@ -105,7 +107,14 @@
   // Featured image is a File Upload indicator — LEAF doesn't return a plain
   // URL for those from api/form/query, so pull the rendered print-view HTML
   // and read the <img> LEAF already put in it (same trick as the Customer
-  // Hub's phase attachments).
+  // Hub's phase attachments, and the same img[src*="image.php"] selector
+  // ideas.js/ideas_v2.js/ideas_v4.js all use against this same endpoint).
+  // forms/print_subindicators_ajax.tpl — a server-rendered LEAF template,
+  // not another JS guess — confirms image.php is genuinely how this LEAF
+  // install serves indicator images. Still: verify against a real record
+  // with a featured image before shipping, since getprintindicator's
+  // markup for a plain top-level File Upload indicator could differ from
+  // the subindicator case that template covers.
   async function fetchIndicatorHTML(recordID, indicatorID) {
     return fetch(
       `${getAPIBase()}/ajaxIndex.php?a=getprintindicator&recordID=${encodeURIComponent(recordID)}&indicatorID=${encodeURIComponent(indicatorID)}&series=1`,
@@ -145,30 +154,44 @@
   // long-text field, not a custom block editor — LEAF may render a
   // textarea's line breaks back as literal <br> tags (same as the
   // Customer Hub's phase content), so normalize those to newlines before
-  // splitting into paragraphs on blank lines.
+  // splitting into paragraphs on blank lines. A block starting with "## "
+  // is a lightweight, no-Form-Editor-changes-needed convention for a
+  // section heading — tell authors about it in the body field's LEAF
+  // Form Editor description (e.g. "Start a line with ## and a space to
+  // make it a section heading.").
   function parseBodyParagraphs(raw) {
     if (!raw) return [];
     return raw
       .replace(/<br\s*\/?>/gi, "\n")
       .split(/\n\s*\n/)
       .map((p) => p.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .map((text) => {
+        if (text.startsWith("## ")) {
+          return { type: "heading", text: text.slice(3).replace(/\s+/g, " ").trim() };
+        }
+        return { type: "paragraph", text };
+      });
   }
 
-  function calcReadTime(paragraphs) {
-    const words = paragraphs.join(" ").split(/\s+/).filter(Boolean).length;
+  function calcReadTime(blocks) {
+    const words = blocks
+      .map((b) => b.text)
+      .join(" ")
+      .split(/\s+/)
+      .filter(Boolean).length;
     return Math.max(1, Math.round(words / 200));
   }
 
-  function renderBody(paragraphs) {
+  function renderBody(blocks) {
     const container = byId("bp-body");
     container.innerHTML = "";
-    paragraphs.forEach((text) => {
-      const p = document.createElement("p");
+    blocks.forEach((block) => {
+      const el = document.createElement(block.type === "heading" ? "h2" : "p");
       // Set decoded text via textContent (not interpolated into an HTML
       // string) so LEAF's pre-encoded entities aren't double-encoded.
-      p.textContent = text;
-      container.appendChild(p);
+      el.textContent = block.text;
+      container.appendChild(el);
     });
   }
 
@@ -191,7 +214,7 @@
       const category = getField(s1, CONFIG.indicators.category);
       const publishDate = getField(s1, CONFIG.indicators.publishDate);
       const lead = getField(s1, CONFIG.indicators.leadParagraph);
-      const paragraphs = parseBodyParagraphs(getField(s1, CONFIG.indicators.body));
+      const bodyBlocks = parseBodyParagraphs(getField(s1, CONFIG.indicators.body));
       const imageAlt = getField(s1, CONFIG.indicators.featuredImageAlt);
 
       byId("bp-title").textContent = title || "Untitled post";
@@ -206,11 +229,11 @@
       }
 
       byId("bp-date").textContent = formatDate(publishDate);
-      const minutes = calcReadTime(paragraphs);
+      const minutes = calcReadTime(bodyBlocks);
       byId("bp-readtime").textContent = `${minutes} min read`;
 
       byId("bp-lead").textContent = lead;
-      renderBody(paragraphs);
+      renderBody(bodyBlocks);
 
       const imageHTML = await fetchIndicatorHTML(
         recordID,
@@ -225,15 +248,36 @@
         figureEl.hidden = false;
       } else {
         figureEl.hidden = true;
+        // A non-empty response with no matching <img> means the selector
+        // in parseImageSrcFromHTML doesn't match this LEAF install's real
+        // markup — surface that instead of silently just hiding the image.
+        if (imageHTML.trim()) {
+          console.warn(
+            "[BlogPost] featured image indicator returned HTML but no img[src*='image.php'] was found — parseImageSrcFromHTML may need updating.",
+            imageHTML,
+          );
+        }
       }
 
       showContent();
+      byId("bp-title").focus();
     } catch (err) {
       console.error("[BlogPost]", err);
       showError("Something went wrong loading this post. Try refreshing the page.");
     }
   }
 
+  function wireBackLinks() {
+    document
+      .querySelectorAll(".bp-back-link, footer.bp-footer a")
+      .forEach((a) => {
+        a.href = CONFIG.blogIndexURL;
+      });
+  }
+
   window.addEventListener("hashchange", loadPost);
-  document.addEventListener("DOMContentLoaded", loadPost);
+  document.addEventListener("DOMContentLoaded", () => {
+    wireBackLinks();
+    loadPost();
+  });
 })();
