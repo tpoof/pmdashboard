@@ -13,6 +13,8 @@
       title: 2,
       category: 3,
       publishDate: 4,
+      // Still authored on the form, just not rendered here — it becomes
+      // the executive summary on the (future) blog index page instead.
       leadParagraph: 5,
       body: 6, // Plain text; paragraphs are separated by a blank line
     },
@@ -181,7 +183,6 @@
       const title = getField(s1, CONFIG.indicators.title);
       const category = getField(s1, CONFIG.indicators.category);
       const publishDate = getField(s1, CONFIG.indicators.publishDate);
-      const lead = getField(s1, CONFIG.indicators.leadParagraph);
       const bodyBlocks = parseBodyParagraphs(getField(s1, CONFIG.indicators.body));
 
       byId("bp-title").textContent = title || "Untitled post";
@@ -199,7 +200,6 @@
       const minutes = calcReadTime(bodyBlocks);
       byId("bp-readtime").textContent = `${minutes} min read`;
 
-      byId("bp-lead").textContent = lead;
       renderBody(bodyBlocks);
 
       showContent();

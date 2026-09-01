@@ -327,7 +327,7 @@ img { border: 0; max-width: 100%; }
   display: inline-flex;
   align-items: center;
   gap: var(--space-2xs);
-  max-width: 720px;
+  max-width: 840px;
   margin: var(--space-lg) auto 0;
   padding: 0 var(--space-lg);
   font-family: var(--font-body-bold);
@@ -337,7 +337,7 @@ img { border: 0; max-width: 100%; }
 #blogPost .bp-back-link:hover { text-decoration: underline; }
 
 #blogPost main {
-  max-width: 720px;
+  max-width: 840px;
   margin: 0 auto;
   padding: var(--space-xl) var(--space-lg) var(--space-3xl);
 }
@@ -379,20 +379,39 @@ img { border: 0; max-width: 100%; }
 }
 
 #blogPost article.bp-article {
+  position: relative; /* containing block for .bp-accent-icon */
   background: var(--surface-card);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   padding: var(--space-xl);
   font-size: var(--text-md);
   line-height: var(--leading-relaxed);
+  /* Brand accent rule, top edge only: border-style stays "none" on the
+     other three sides, so border-image has nothing to paint there. */
+  border-top: var(--border-accent) solid transparent;
+  border-image: linear-gradient(90deg, var(--leaf-brand-green), var(--leaf-brand-blue)) 1;
 }
 
-#blogPost .bp-lead {
-  margin: 0 0 var(--space-2xl);
-  font-family: var(--font-display-medium);
-  font-size: var(--text-2xl);
-  color: var(--text-heading);
-  line-height: var(--leading-snug);
+/* Decorative corner mark — aria-hidden, no accessible name, so it never
+   competes with the actual content for a screen reader or for clicks. */
+#blogPost .bp-accent-icon {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  width: 22px;
+  height: 22px;
+  fill: var(--leaf-brand-green);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Card widened to 840px for the accent treatment above, but full-width
+   paragraphs at that measure run past a comfortable line length — so the
+   text column stays capped and centered inside the wider card rather than
+   stretching edge to edge. */
+#blogPost .bp-body {
+  max-width: 640px;
+  margin: 0 auto;
 }
 
 #blogPost .bp-body p {
