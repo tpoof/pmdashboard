@@ -211,6 +211,12 @@
           iframe: true,
         },
         {
+          icon: "article",
+          title: "Blog",
+          desc: "Updates, stories, and news from the LEAF team",
+          href: "/launchpad/report.php?a=blog",
+        },
+        {
           icon: "school",
           title: "Learn",
           desc: "Training, videos, and resources to get the most out of LEAF",
@@ -265,6 +271,11 @@
     title: "Team",
     section: "Internal",
   };
+  var INTERNAL_ADMIN_ROUTE = {
+    href: "/launchpad/admin",
+    title: "Admin",
+    section: "Internal",
+  };
 
   function buildRouteMap() {
     /* Registers one item into ROUTE_MAP — shared by top-level items and
@@ -314,7 +325,7 @@
       if (key) ROUTE_MAP[key] = route;
     });
 
-    /* Register Leadership and Team so the hash router can load them inline */
+    /* Register Leadership, Team, and Admin so the hash router can load them inline */
     var leadershipKey = hrefToHashKey(INTERNAL_LEADERSHIP_ROUTE.href);
     if (leadershipKey) {
       ROUTE_MAP[leadershipKey] = INTERNAL_LEADERSHIP_ROUTE;
@@ -322,6 +333,10 @@
     var teamKey = hrefToHashKey(INTERNAL_TEAM_ROUTE.href);
     if (teamKey) {
       ROUTE_MAP[teamKey] = INTERNAL_TEAM_ROUTE;
+    }
+    var adminKey = hrefToHashKey(INTERNAL_ADMIN_ROUTE.href);
+    if (adminKey) {
+      ROUTE_MAP[adminKey] = INTERNAL_ADMIN_ROUTE;
     }
   }
 
@@ -429,6 +444,8 @@
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Z"/></svg>',
     menu_book:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M560-564v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-600q-38 0-73 9.5T560-564Zm0 220v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-380q-38 0-73 9t-67 27Zm0-110v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-490q-38 0-73 9.5T560-454Zm-40 176q44-21 88.5-31.5T700-320q36 0 70.5 6t69.5 18v-396q-33-14-68.5-21t-71.5-7q-47 0-93 12t-87 36v394Zm-40 118q-48-38-104-59t-116-21q-42 0-82.5 11T100-198q-21 11-40.5-1T40-234v-482q0-11 5.5-21T62-752q47-23 96.5-35.5T260-800q58 0 113.5 15T480-740q51-30 106.5-45T700-800q52 0 101.5 12.5T898-752q11 5 16.5 15t5.5 21v482q0 23-19.5 35t-40.5 1q-37-20-77.5-31T700-240q-60 0-116 21t-104 59Z"/></svg>',
+    article:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h600q24 0 42 18t18 42v600q0 24-18 42t-42 18H180Zm97-159h275v-60H277v60Zm0-171h406v-60H277v60Zm0-171h406v-60H277v60Z"/></svg>',
     school:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M840-280v-276L480-360 40-600l440-240 440 240v320h-80ZM480-120 200-272v-200l280 152 280-152v200L480-120Z"/></svg>',
     quiz:
@@ -650,6 +667,10 @@
     Leadership
   </button>
 
+  <button class="lp-internal-btn" data-href="/launchpad/admin">
+    Admin
+  </button>
+
   <!-- Users Online: live count via Server-Sent Events (see
        wireUsersOnlineBadge()) — not a link, so plain <span>, not
        <button>. .lp-internal-online-count is a class (not an id)
@@ -707,6 +728,18 @@
     <span class="dd-link-text">
       <strong>Leadership</strong>
       <span class="dd-link-desc">Platform leadership dashboard</span>
+    </span>
+  </button>
+</li>
+
+<li class="lp-internal-mobile-item">
+  <button class="dd-link" data-href="/launchpad/admin">
+    <span class="dd-link-ico">
+      <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
+    </span>
+    <span class="dd-link-text">
+      <strong>Admin</strong>
+      <span class="dd-link-desc">Launchpad admin tools</span>
     </span>
   </button>
 </li>
@@ -2098,19 +2131,25 @@
          .dd-link elements are now <button data-href> — no href attribute —
          so the browser status bar never previews the destination URL on hover.
          .lp-internal-btn elements (Leadership) also use data-href.
-         .lp-breadcrumb a elements (parent/Launchpad crumbs) are real
-         <a href> — the data-href fallback below reads their href
-         attribute directly, same as any other real anchor caught here.
-         Without this, breadcrumb clicks fell through entirely (matched
-         neither branch above), triggering a hard page reload instead
-         of a hash-route — which dropped the user out of the SPA, so
-         isLaunchpad() went false and every subsequent nav click
-         (including iframe-mounted ones like Community of Practice)
-         started navigating for real instead of routing.
+         .lp-breadcrumb a and .lp-brand elements (the "Launchpad" crumb and
+         the header logo) are real <a href> — the data-href fallback below
+         reads their href attribute directly, same as any other real anchor
+         caught here. .lp-brand was missing from this list entirely, so its
+         click fell through to the browser: since HOME_HREF carries no
+         fragment, clicking it while a route hash is already set (e.g.
+         "#lp_impact") isn't the same-document "fragment-only" navigation
+         it looks like — browsers treat the missing fragment as a real
+         navigation and reload the page instead of just clearing the hash,
+         which is slow at best and, depending on how the page got here (a
+         fetch+spliced or iframe-mounted route), can drop the user out of
+         the SPA context entirely instead of landing back on the launchpad.
+         Adding it here routes it through the same hash-push path
+         .lp-breadcrumb a already used, avoiding that inconsistent native
+         behavior instead of just hoping the browser does the right thing.
          [data-nav-external] marks real <a target="_blank"> tags (e.g.
          Coaches) that should navigate away natively — left alone. */
       var link = e.target.closest(
-        ".dd-link, .lp-panel-link, .lp-internal-btn, .lp-breadcrumb a, [data-action]",
+        ".dd-link, .lp-panel-link, .lp-internal-btn, .lp-breadcrumb a, .lp-brand, [data-action]",
       );
       if (!link) return;
 

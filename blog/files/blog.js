@@ -15,8 +15,6 @@
       publishDate: 4,
       leadParagraph: 5,
       body: 6, // Plain text; paragraphs are separated by a blank line
-      featuredImage: 7,
-      featuredImageAlt: 8,
     },
   };
 
@@ -104,36 +102,6 @@
     return rec.s1 || rec;
   }
 
-  // Featured image is a File Upload indicator — LEAF doesn't return a plain
-  // URL for those from api/form/query, so pull the rendered print-view HTML
-  // and read the <img> LEAF already put in it (same trick as the Customer
-  // Hub's phase attachments, and the same img[src*="image.php"] selector
-  // ideas.js/ideas_v2.js/ideas_v4.js all use against this same endpoint).
-  // forms/print_subindicators_ajax.tpl — a server-rendered LEAF template,
-  // not another JS guess — confirms image.php is genuinely how this LEAF
-  // install serves indicator images. Still: verify against a real record
-  // with a featured image before shipping, since getprintindicator's
-  // markup for a plain top-level File Upload indicator could differ from
-  // the subindicator case that template covers.
-  async function fetchIndicatorHTML(recordID, indicatorID) {
-    return fetch(
-      `${getAPIBase()}/ajaxIndex.php?a=getprintindicator&recordID=${encodeURIComponent(recordID)}&indicatorID=${encodeURIComponent(indicatorID)}&series=1`,
-      {
-        credentials: "include",
-        headers: { "x-requested-with": "XMLHttpRequest" },
-      },
-    )
-      .then((r) => r.text())
-      .catch(() => "");
-  }
-
-  function parseImageSrcFromHTML(html) {
-    const tmp = document.createElement("div");
-    tmp.innerHTML = html;
-    const img = tmp.querySelector('img[src*="image.php"]');
-    return img ? img.getAttribute("src") || "" : "";
-  }
-
   function formatDate(raw) {
     if (!raw) return "";
     // Parse y-m-d manually so a date-only string doesn't shift a day under
@@ -215,7 +183,6 @@
       const publishDate = getField(s1, CONFIG.indicators.publishDate);
       const lead = getField(s1, CONFIG.indicators.leadParagraph);
       const bodyBlocks = parseBodyParagraphs(getField(s1, CONFIG.indicators.body));
-      const imageAlt = getField(s1, CONFIG.indicators.featuredImageAlt);
 
       byId("bp-title").textContent = title || "Untitled post";
       document.title = title || "Blog post";
@@ -234,30 +201,6 @@
 
       byId("bp-lead").textContent = lead;
       renderBody(bodyBlocks);
-
-      const imageHTML = await fetchIndicatorHTML(
-        recordID,
-        CONFIG.indicators.featuredImage,
-      );
-      const imageSrc = parseImageSrcFromHTML(imageHTML);
-      const figureEl = byId("bp-image-figure");
-      const imgEl = byId("bp-image");
-      if (imageSrc) {
-        imgEl.src = imageSrc;
-        imgEl.alt = imageAlt || "";
-        figureEl.hidden = false;
-      } else {
-        figureEl.hidden = true;
-        // A non-empty response with no matching <img> means the selector
-        // in parseImageSrcFromHTML doesn't match this LEAF install's real
-        // markup — surface that instead of silently just hiding the image.
-        if (imageHTML.trim()) {
-          console.warn(
-            "[BlogPost] featured image indicator returned HTML but no img[src*='image.php'] was found — parseImageSrcFromHTML may need updating.",
-            imageHTML,
-          );
-        }
-      }
 
       showContent();
       byId("bp-title").focus();
