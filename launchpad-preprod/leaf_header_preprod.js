@@ -667,7 +667,10 @@
     Leadership
   </button>
 
-  <button class="lp-internal-btn" data-href="/launchpad/admin">
+  <!-- Admin is a real standalone page, not meant to fetch+splice into
+       the launchpad shell like Team/Leadership — data-nav-fullpage tells
+       wireLinkIntercept() to always navigate here for real. -->
+  <button class="lp-internal-btn" data-href="/launchpad/admin" data-nav-fullpage>
     Admin
   </button>
 
@@ -733,7 +736,7 @@
 </li>
 
 <li class="lp-internal-mobile-item">
-  <button class="dd-link" data-href="/launchpad/admin">
+  <button class="dd-link" data-href="/launchpad/admin" data-nav-fullpage>
     <span class="dd-link-ico">
       <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
     </span>
@@ -2193,6 +2196,18 @@
 
       e.preventDefault();
       closeAllDropdowns(null);
+
+      /* data-nav-fullpage: this destination is a real, standalone page
+         (e.g. Admin) that should never be folded into the SPA — unlike
+         Team/Leadership, which are meant to fetch+splice into the
+         launchpad shell so the URL bar shows "#team"/"#leadership".
+         Skip the hash-router entirely, even while on the launchpad, so
+         the browser always lands on the destination's own real URL
+         instead of "{launchpad url}#admin". */
+      if (link.hasAttribute("data-nav-fullpage")) {
+        window.location.href = href;
+        return;
+      }
 
       /* Off the launchpad there's no router wired (no hashchange
          listener, no swap host) — pushing a hash here would just leave
