@@ -1,0 +1,45 @@
+<link rel="stylesheet" href="blog.css">
+
+<div id="blogPost" lang="en">
+  <a class="bp-skip-link" href="#bp-article">Skip to article</a>
+
+  <div id="bp-live-polite" class="bp-sr-only" aria-live="polite" aria-atomic="true"></div>
+  <div id="bp-live-assertive" class="bp-sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+  <div id="bp-loading" class="bp-loading" role="status" aria-label="Loading post">
+    <div class="bp-spinner" aria-hidden="true"></div>
+    <p>Loading post&hellip;</p>
+  </div>
+
+  <div id="bp-error" class="bp-error" role="alert" style="display:none"></div>
+
+  <div id="bp-content" style="display:none">
+    <a class="bp-back-link" href="#">&larr; Back to blog</a>
+
+    <main>
+      <header class="bp-header">
+        <span id="bp-category" class="bp-category" style="display:none"></span>
+        <h1 id="bp-title" class="bp-title"></h1>
+        <div class="bp-byline">
+          <span id="bp-date"></span>
+          <span aria-hidden="true">&middot;</span>
+          <span id="bp-readtime"></span>
+        </div>
+      </header>
+
+      <article id="bp-article" class="bp-article">
+        <p id="bp-lead" class="bp-lead"></p>
+        <div id="bp-body" class="bp-body"></div>
+        <figure id="bp-image-figure" class="bp-image" hidden>
+          <img id="bp-image" src="" alt="">
+        </figure>
+      </article>
+
+      <footer class="bp-footer">
+        <a href="#">&larr; Back to blog</a>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script src="BlogPost.js"></script>
