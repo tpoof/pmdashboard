@@ -41,11 +41,14 @@
    7. Header's breadcrumb row updates to reflect current view
    8. Live region announces new page to screen readers
 
-   Full separate LEAF apps (e.g. Help Library) don't survive that
-   splice — wrong document, wrong scripts, wrong DOM — so those
-   routes (iframe: true in NAV_SECTIONS) mount in an <iframe>
-   instead, still hash-routed so the header stays visible and
-   back-to-launchpad still works.
+   A full separate LEAF app (wrong document, wrong scripts, wrong
+   DOM if fetched+spliced) can still be registered with
+   iframe: true in NAV_SECTIONS to mount in an <iframe> instead —
+   still hash-routed so the header stays visible and
+   back-to-launchpad still works. No current nav item needs this
+   (all now live under the same launchpad domain and fetch+splice
+   normally), but the mechanism stays available for a future one
+   that doesn't.
 
    Back button works natively via hash history.
    Modifier-key clicks (Ctrl/Cmd/middle) always open real tabs.
@@ -148,7 +151,7 @@
           icon: "cases",
           title: "Use Cases",
           desc: "Explore real workflows from teams across the VA",
-          href: "/report.php?a=lp_use_case",
+          href: "/launchpad/report.php?a=lp_use_case",
           badge: "Coming Soon",
         },
         {
@@ -179,7 +182,7 @@
               icon: "diversity_3",
               title: "Community of Practice",
               desc: "Connect with LEAF site admins and builders VA-wide",
-              href: "/report.php?a=lp_cop",
+              href: "/launchpad/report.php?a=lp_cop",
             },
           ],
         },
@@ -187,13 +190,13 @@
           icon: "lightbulb",
           title: "Suggest an Idea",
           desc: "Submit an idea to improve LEAF",
-          href: "/report.php?a=lp_ideas",
+          href: "/launchpad/report.php?a=lp_ideas",
         },
         {
           icon: "privacy_tip",
           title: "Privacy & Compliance",
           desc: "LEAF privacy and compliance resources",
-          href: "/report.php?a=lp_privacy",
+          href: "/launchpad/report.php?a=lp_privacy",
         },
       ],
     },
@@ -204,20 +207,19 @@
           icon: "menu_book",
           title: "Help Library",
           desc: "Guides and documentation",
-          href: "https://leaf.va.gov/platform/help_library/report.php?a=homepage",
-          iframe: true,
+          href: "/launchpad/report.php?a=lp_help_library",
         },
         {
           icon: "article",
           title: "Blog",
           desc: "Updates, stories, and news from the LEAF team",
-          href: "/report.php?a=lp_blog",
+          href: "/launchpad/report.php?a=lp_blog",
         },
         {
           icon: "school",
           title: "Learn",
           desc: "Training, videos, and resources to get the most out of LEAF",
-          href: "/report.php?a=lp_learn",
+          href: "/launchpad/report.php?a=lp_learn",
           badge: "Coming Soon",
         },
         {
@@ -259,12 +261,12 @@
   /* Static definitions for the Internal section's direct links so the
      router knows about them, same as any other nav destination. */
   var INTERNAL_LEADERSHIP_ROUTE = {
-    href: "/report.php?a=lp_leadership",
+    href: "/launchpad/report.php?a=lp_leadership",
     title: "Leadership",
     section: "Internal",
   };
   var INTERNAL_TEAM_ROUTE = {
-    href: "/report.php?a=lp_team",
+    href: "/launchpad/report.php?a=lp_team",
     title: "Team",
     section: "Internal",
   };
@@ -492,11 +494,11 @@
      look and behave identically. Use <button data-href> instead of
      <a href> so the browser status bar never previews the destination
      URL on hover — navigation is handled by wireLinkIntercept(), which
-     reads data-href. Applies to iframe items too (e.g. Help Library) —
-     they're still hash-routed so the header stays visible; loadView()
-     mounts them in an <iframe> instead of fetching+splicing their HTML,
-     since they're full separate LEAF apps rather than lightweight
-     content pages. */
+     reads data-href. Applies to any future iframe: true item too —
+     it's still hash-routed so the header stays visible; loadView()
+     mounts it in an <iframe> instead of fetching+splicing its HTML,
+     since it's a full separate LEAF app rather than a lightweight
+     content page. */
   function linkRowHTML(item, extraClass) {
     var badgeHTML = item.badge
       ? `<span class="dd-badge">${item.badge}</span>`
@@ -522,10 +524,8 @@
        data-nav-external/rel/sr-only pattern already used for Coaches
        (see buildInternalNavHTML), so wireLinkIntercept() leaves it
        alone entirely rather than hash-routing or iframe-mounting it.
-       Not currently used by any NAV_SECTIONS item (Community of
-       Practice uses iframe: true instead, so its breadcrumb renders),
-       but kept as a general option for a future genuinely-external
-       nav destination. */
+       Not currently used by any NAV_SECTIONS item, but kept as a
+       general option for a future genuinely-external nav destination. */
     if (item.external) {
       return `
         <a class="${cls}" href="${item.href}" data-nav-external target="_blank" rel="noopener noreferrer">${iconHTML}
@@ -650,11 +650,11 @@
     <span class="lp-sr-only">(opens in new tab)</span>
   </a>
 
-  <button class="lp-internal-btn" data-href="/report.php?a=lp_team">
+  <button class="lp-internal-btn" data-href="/launchpad/report.php?a=lp_team">
     Team
   </button>
 
-  <button class="lp-internal-btn" data-href="/report.php?a=lp_leadership">
+  <button class="lp-internal-btn" data-href="/launchpad/report.php?a=lp_leadership">
     Leadership
   </button>
 
@@ -703,7 +703,7 @@
 </li>
 
 <li class="lp-internal-mobile-item">
-  <button class="dd-link" data-href="/report.php?a=lp_team">
+  <button class="dd-link" data-href="/launchpad/report.php?a=lp_team">
     <span class="dd-link-ico">
       <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
     </span>
@@ -715,7 +715,7 @@
 </li>
 
 <li class="lp-internal-mobile-item">
-  <button class="dd-link" data-href="/report.php?a=lp_leadership">
+  <button class="dd-link" data-href="/launchpad/report.php?a=lp_leadership">
     <span class="dd-link-ico">
       <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
     </span>
@@ -1686,7 +1686,7 @@
     frame.style.cssText =
       "width:100%;min-height:75vh;border:0;display:block;overflow:hidden;visibility:hidden;";
 
-    /* Embedded pages (e.g. Help Library) are
+    /* Embedded pages (any iframe: true route) are
        real, separately-rendered LEAF pages — their native #header/#footer
        chrome is server-rendered directly into the HTML, so it paints
        before that page's own client-side script has run to hide it.
@@ -1916,7 +1916,7 @@
     updateNavCurrent(route.section);
     updateBreadcrumb(route);
 
-    /* Full separate LEAF apps (e.g. Help Library) can't survive being
+    /* A full separate LEAF app (iframe: true route) can't survive being
        fetched+spliced into this document — wrong document, wrong
        scripts, wrong DOM. Mount them in an iframe instead: same
        hash-routed shell (header stays visible, back-to-launchpad
