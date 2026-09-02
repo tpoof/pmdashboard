@@ -428,6 +428,30 @@ img { border: 0; max-width: 100%; }
   margin: 0 auto;
 }
 
+/* Clearfix: without this, a floated figure taller than the surrounding
+   text escapes this container's height entirely, and the card's padding
+   ends before the image does. */
+#blogPost .bp-body::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+#blogPost .bp-body figure.bp-image {
+  float: right;
+  width: 35%;
+  min-width: 220px;
+  max-width: 320px;
+  margin: 0 0 var(--space-lg) var(--space-lg);
+}
+#blogPost .bp-body figure.bp-image img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+}
+
 #blogPost .bp-body p {
   margin: 0 0 var(--space-lg);
   line-height: 1.7;
@@ -450,4 +474,11 @@ img { border: 0; max-width: 100%; }
   #blogPost article.bp-article { padding: var(--space-lg); }
   #blogPost .bp-header-icon { width: 48px; height: 48px; }
   #blogPost .bp-header-icon svg { width: 30px; height: 30px; }
+  #blogPost .bp-body figure.bp-image {
+    float: none;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0 0 var(--space-lg);
+  }
 }

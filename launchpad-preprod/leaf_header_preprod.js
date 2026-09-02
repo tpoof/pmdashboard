@@ -1,19 +1,20 @@
 /* ============================================================
-   LEAF Universal Header  |  leaf_header.js
+   LEAF Universal Header (Preprod)  |  leaf_header_preprod.js
    ─────────────────────────────────────────────────────────────
-   Lives at /launchpad/files/leaf_header.js — every page should
-   point here directly so there's exactly one copy to edit.
+   Lives at /launchpad/files/leaf_header_preprod.js — every preprod
+   page should point here directly so there's exactly one copy to
+   edit.
 
    Renders branding/logo, nav menu, and breadcrumb row as one
    sticky unit. Hides LEAF's native #header/#footer chrome (see
-   leaf_header.css) since this component owns branding.
+   leaf_header_preprod.css) since this component owns branding.
 
    Self-mounting: auto-injects its own stylesheet and, if the
    host page doesn't already have one, creates the
    <div id="lp-header-host"> for itself. A brand-new page only
    needs ONE line added to it, right before </head> or </body>:
 
-       <script src="/launchpad/files/leaf_header.js"></script>
+       <script src="/launchpad/files/leaf_header_preprod.js"></script>
 
    ── Breadcrumb: auto-detected, no per-page flag ─────────────
    Every real page's URL already matches an entry in NAV_SECTIONS
@@ -760,7 +761,7 @@
      BRAND / LOGO
      Plain inline-flex link, no padded/bordered container — sits
      flush at the header's left edge alongside the nav. Fill color
-     is set in leaf_header.css (.lp-brand-logo path), not inline,
+     is set in leaf_header_preprod.css (.lp-brand-logo path), not inline,
      so it stays themeable in one place.
   ───────────────────────────────────────────────────────────── */
   function buildBrandHTML() {
@@ -906,13 +907,16 @@
      SELF-MOUNT: STYLESHEET
   ───────────────────────────────────────────────────────────── */
   /* Hardcoded path — pinned to the header's own CSS filename so
-     this JS always loads the right stylesheet. */
-  var LEAF_HEADER_CSS_HREF = "/launchpad/files/leaf_header.css";
+     this JS always loads the right stylesheet. Preprod's filename
+     (leaf_header_preprod.css) differs from the live header's
+     (leaf_header.css) — pointing this at the wrong one 404s and
+     leaves the header completely unstyled. */
+  var LEAF_HEADER_CSS_HREF = "/launchpad/files/leaf_header_preprod.css";
 
   function ensureStylesheet() {
     if (
       document.querySelector(
-        'link[href*="leaf_header.css"], link[href*="leaf-header.css"]',
+        'link[href*="leaf_header_preprod.css"], link[href*="leaf_header.css"], link[href*="leaf-header.css"]',
       )
     )
       return;
@@ -1690,7 +1694,7 @@
        real, separately-rendered LEAF pages — their native #header/#footer
        chrome is server-rendered directly into the HTML, so it paints
        before that page's own client-side script has run to hide it.
-       leaf_header.css's hide rule can't reach across the iframe boundary
+       leaf_header_preprod.css's hide rule can't reach across the iframe boundary
        to stop that. Keeping the frame hidden until "load" (and showing
        our own spinner in its place) hides that flash from the user
        instead of trying to prevent it inside a document we don't own. */
@@ -2548,7 +2552,7 @@
   }
 
   /* Tracks the ResizeObserver watching the banner so the header's
-     top offset (--lp-announcement-h, see leaf_header.css .lp-header)
+     top offset (--lp-announcement-h, see leaf_header_preprod.css .lp-header)
      stays in sync if rich-text content reflows (window resize,
      multi-line wrapping, etc). */
   var _announcementResizeObserver = null;

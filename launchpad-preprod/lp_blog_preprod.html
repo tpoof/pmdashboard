@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Blog — LEAF Launchpad</title>
 
-    <!-- TODO: verify path before production -->
-    <link rel="stylesheet" href="./files/launchpad.css" />
+    <!-- Confirmed against main.tpl's own header/nav include. -->
+    <link rel="stylesheet" href="/launchpad/files/leaf_header_preprod.css" />
 
     <style>
       /* Icon sizing for classes defined in launchpad.css (out of scope
@@ -168,7 +168,7 @@
   <body>
     <div class="lp" id="lp-root">
       <a class="lp-skip" href="#lp-main">Skip to main content</a>
-      <div id="lp-nav-host"></div>
+      <div id="lp-header-host"></div>
 
       <main id="lp-main" tabindex="-1">
         <!-- ── PAGE TITLE ── -->
@@ -252,8 +252,8 @@
     </div>
     <!-- /.lp -->
 
-    <!-- TODO: verify path before production -->
-    <script src="/platform/designs/files/leaf_nav.js"></script>
+    <!-- Confirmed against main.tpl's own header/nav include. -->
+    <script src="/launchpad/files/leaf_header_preprod.js"></script>
 
     <script>
       (() => {
@@ -263,7 +263,16 @@
         // indicatorID by purpose instead of scattering raw numbers through
         // the code. Verify these against the "Blog Post" form in LEAF Form
         // Editor before changing them — kept in sync with blog/files/blog.js.
+        //
+        // This page is served from /launchpad/, a different directory than
+        // the Blog Post form's own site — LeafFormQuery.execute() hits
+        // ./api/form/query relative to wherever the query is constructed,
+        // same failure mode blog.js's own getAPIBase() derivation hit.
+        // formQuery.md documents setRootURL(url) ("Sets the root URL for
+        // the API endpoint") for exactly this case, so that's called below
+        // instead of relying on the constructor or a derived base.
         const CONFIG = {
+          apiBase: "/platform/blog", // Relative, no host — see setRootURL() below
           categoryID: "form_3db88",
           stepID: 3, // Published
           indicators: {
@@ -407,6 +416,7 @@
 
           try {
             const query = new LeafFormQuery();
+            query.setRootURL(CONFIG.apiBase);
             query.addTerm("categoryID", "=", CONFIG.categoryID);
             query.addTerm("stepID", "=", CONFIG.stepID);
             query.getData(Object.values(CONFIG.indicators));
