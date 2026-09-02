@@ -34,7 +34,8 @@
   // leaf_header.js already sanitizes untrusted HTML before mounting it
   // (its announcement banner) via this exact DOMPurify build — reusing it
   // here rather than adding a second copy of the same dependency.
-  const DOMPURIFY_SRC = "https://leaf.va.gov/app/libs/js/dompurify/dompurify.min.js";
+  const DOMPURIFY_SRC =
+    "https://leaf.va.gov/app/libs/js/dompurify/dompurify.min.js";
 
   function ensureDompurify() {
     if (window.DOMPurify) return Promise.resolve();
@@ -44,7 +45,9 @@
         if (window.DOMPurify) return resolve();
         existing.addEventListener("load", () => resolve());
         existing.addEventListener("error", () => {
-          console.warn("[BlogPost] DOMPurify failed to load — body will not render.");
+          console.warn(
+            "[BlogPost] DOMPurify failed to load — body will not render.",
+          );
           resolve();
         });
       });
@@ -55,7 +58,9 @@
       s.async = true;
       s.onload = () => resolve();
       s.onerror = () => {
-        console.warn("[BlogPost] DOMPurify failed to load — body will not render.");
+        console.warn(
+          "[BlogPost] DOMPurify failed to load — body will not render.",
+        );
         resolve();
       };
       document.head.appendChild(s);
@@ -197,11 +202,19 @@
     const container = byId("bp-body-content");
     if (!window.DOMPurify) {
       container.textContent = "";
-      console.warn("[BlogPost] Rendering body as empty — DOMPurify unavailable.");
+      console.warn(
+        "[BlogPost] Rendering body as empty — DOMPurify unavailable.",
+      );
       return 0;
     }
-    container.innerHTML = window.DOMPurify.sanitize(bodyHTML);
-    return (container.textContent || "").trim().split(/\s+/).filter(Boolean).length;
+    // FORBID_ATTR strips inline style attributes so pasted content (from
+    // Word, Google Docs, etc.) can't override the page's font/color and
+    // break visual consistency — LEAF's own CSS controls all typography.
+    container.innerHTML = window.DOMPurify.sanitize(bodyHTML, {
+      FORBID_ATTR: ["style"],
+    });
+    return (container.textContent || "").trim().split(/\s+/).filter(Boolean)
+      .length;
   }
 
   function calcReadTime(wordCount) {
@@ -217,7 +230,10 @@
 
     showLoading();
     try {
-      const [s1] = await Promise.all([fetchPostData(recordID), ensureDompurify()]);
+      const [s1] = await Promise.all([
+        fetchPostData(recordID),
+        ensureDompurify(),
+      ]);
       if (!s1) {
         showError("That post could not be found.");
         return;
@@ -245,7 +261,10 @@
       const wordCount = renderBody(bodyHTML);
       byId("bp-readtime").textContent = `${calcReadTime(wordCount)} min read`;
 
-      const imageHTML = await fetchIndicatorHTML(recordID, CONFIG.indicators.featuredImage);
+      const imageHTML = await fetchIndicatorHTML(
+        recordID,
+        CONFIG.indicators.featuredImage,
+      );
       const imageSrc = parseImageSrcFromHTML(imageHTML);
       const figureEl = byId("bp-image-figure");
       const imgEl = byId("bp-image");
@@ -270,7 +289,9 @@
       byId("bp-title").focus();
     } catch (err) {
       console.error("[BlogPost]", err);
-      showError("Something went wrong loading this post. Try refreshing the page.");
+      showError(
+        "Something went wrong loading this post. Try refreshing the page.",
+      );
     }
   }
 
