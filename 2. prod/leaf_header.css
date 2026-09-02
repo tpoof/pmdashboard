@@ -303,6 +303,16 @@
   border: 1px solid var(--nav-panel-bd);
   border-radius: var(--nav-r-lg);
   box-shadow: 0 8px 32px rgba(0, 10, 60, 0.14);
+  /* width: max-content, not just min-width, because button.dd-link below
+     is width:100% — a percentage width can't drive this panel's own
+     shrink-to-fit sizing (that's a circular dependency: panel width
+     depends on button width depends on panel width), so without an
+     explicit width some title+badge combos (e.g. "Use Cases" +
+     "Coming Soon") could wrap even though the panel had room. The
+     max-width caps it so a long description can't blow the panel past
+     a sane width or off-screen on a narrow viewport. */
+  width: max-content;
+  max-width: min(90vw, 340px);
   min-width: 260px;
   padding: 8px;
   z-index: 400;
