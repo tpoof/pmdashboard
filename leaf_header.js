@@ -13,7 +13,11 @@
    <div id="lp-header-host"> for itself. A brand-new page only
    needs ONE line added to it, right before </head> or </body>:
 
-       <script src="/launchpad/files/leaf_header.js"></script>
+       <script src="/launchpad/files/leaf_header.js" data-is-admin="<!--{$is_admin}-->"></script>
+
+   data-is-admin gates the Internal nav bar (Coaches/Team/Leadership/
+   Admin/Users Online) — see IS_ADMIN below. Omitting the attribute
+   is safe; the bar simply stays hidden.
 
    ── Breadcrumb: auto-detected, no per-page flag ─────────────
    Every real page's URL already matches an entry in NAV_SECTIONS
@@ -41,11 +45,14 @@
    7. Header's breadcrumb row updates to reflect current view
    8. Live region announces new page to screen readers
 
-   Full separate LEAF apps (CoP, Ideas, Help Library, Privacy &
-   Compliance) don't survive that splice — wrong document, wrong
-   scripts, wrong DOM — so those routes (iframe: true in
-   NAV_SECTIONS) mount in an <iframe> instead, still hash-routed
-   so the header stays visible and back-to-launchpad still works.
+   A full separate LEAF app (wrong document, wrong scripts, wrong
+   DOM if fetched+spliced) can still be registered with
+   iframe: true in NAV_SECTIONS to mount in an <iframe> instead —
+   still hash-routed so the header stays visible and
+   back-to-launchpad still works. No current nav item needs this
+   (all now live under the same launchpad domain and fetch+splice
+   normally), but the mechanism stays available for a future one
+   that doesn't.
 
    Back button works natively via hash history.
    Modifier-key clicks (Ctrl/Cmd/middle) always open real tabs.
@@ -69,6 +76,23 @@
 
 (function () {
   "use strict";
+
+  /* ── Admin gate ──────────────────────────────────────────────────
+     document.currentScript is only valid synchronously while this
+     script first executes, so it's captured here, before any other
+     code runs. Reads data-is-admin off this same <script> tag —
+     same host-page pattern lp_home.html already uses for
+     multisite-grid.js's data-is-admin/data-user-id. Any value other
+     than "1"/"true"/"yes" (including the attribute being absent, or
+     an unrendered "<!--{$is_admin}-->" if Smarty didn't parse it)
+     is treated as not-admin, so the Internal nav bar fails hidden,
+     never fails open. */
+  var HEADER_SCRIPT_EL = document.currentScript;
+  var IS_ADMIN = (function () {
+    var raw =
+      HEADER_SCRIPT_EL && HEADER_SCRIPT_EL.getAttribute("data-is-admin");
+    return !!raw && /^(1|true|yes)$/i.test(raw.trim());
+  })();
 
   /* ── Announcement banner config ──────────────────────────────────
      Placeholder record/indicator IDs — swap in real values before
@@ -94,8 +118,14 @@
   var ANNOUNCEMENT_SERIES = 1;
 
   /* ── Home route — used for the brand logo link and as the
-     breadcrumb auto-detect's "hide breadcrumb here" match. ── */
-  var HOME_HREF = "/launchpad/report.php?a=lp_home";
+     breadcrumb auto-detect's "hide breadcrumb here" match. Absolute
+     to the live host — the header is site-wide now, so this has
+     to bring users on any LEAF page back into the app, not off of
+     it. Kept in sync with the matching entry in
+     HREF_HASH_KEY_OVERRIDES below — that entry must be updated too
+     if this ever changes, since hrefToHashKey() looks it up by exact
+     string match. ── */
+  var HOME_HREF = "https://leaf.va.gov/launchpad/report.php";
 
   /* ── Nav content (single source of truth for desktop + mobile) ──
      href values here are the canonical URLs used by the router
@@ -142,7 +172,7 @@
           icon: "cases",
           title: "Use Cases",
           desc: "Explore real workflows from teams across the VA",
-          href: "/launchpad/report.php?a=lp_use_case_placeholder",
+          href: "/launchpad/report.php?a=lp_use_case",
           badge: "Coming Soon",
         },
         {
@@ -172,25 +202,22 @@
             {
               icon: "diversity_3",
               title: "Community of Practice",
-              desc: "Connect with LEAF site admins and builders VA-wide",
-              href: "https://leaf.va.gov/platform/CoP/report.php?a=launchpad_homepage",
-              iframe: true,
+              desc: "Connect with LEAF site admins VA-wide",
+              href: "/launchpad/report.php?a=lp_cop",
             },
           ],
         },
         {
           icon: "lightbulb",
-          title: "Suggest an Idea",
+          title: "Submit an Idea",
           desc: "Submit an idea to improve LEAF",
-          href: "https://leaf.va.gov/platform/ideas",
-          iframe: true,
+          href: "/launchpad/report.php?a=lp_ideas",
         },
         {
           icon: "privacy_tip",
-          title: "Privacy & Compliance",
-          desc: "LEAF privacy and compliance resources",
-          href: "https://leaf.va.gov/platform/privacy/report.php?a=resources",
-          iframe: true,
+          title: "Privacy",
+          desc: "LEAF privacy resources",
+          href: "/launchpad/report.php?a=lp_privacy",
         },
       ],
     },
@@ -201,14 +228,20 @@
           icon: "menu_book",
           title: "Help Library",
           desc: "Guides and documentation",
-          href: "https://leaf.va.gov/platform/help_library/report.php?a=homepage",
-          iframe: true,
+          href: "/launchpad/report.php?a=lp_help_library",
+        },
+        {
+          icon: "article",
+          title: "Blog",
+          desc: "Integration and innovation stories, shared with LEAF collaborators and contributors",
+          href: "/launchpad/report.php?a=lp_blog",
+          hidden: true,
         },
         {
           icon: "school",
           title: "Learn",
           desc: "Training, videos, and resources to get the most out of LEAF",
-          href: "/launchpad/report.php?a=lp_training_placeholder",
+          href: "/launchpad/report.php?a=lp_learn",
           badge: "Coming Soon",
         },
         {
@@ -250,13 +283,18 @@
   /* Static definitions for the Internal section's direct links so the
      router knows about them, same as any other nav destination. */
   var INTERNAL_LEADERSHIP_ROUTE = {
-    href: "/platform/projects/report.php?a=leadership",
+    href: "/launchpad/report.php?a=lp_leadership",
     title: "Leadership",
     section: "Internal",
   };
   var INTERNAL_TEAM_ROUTE = {
-    href: "/platform/projects/report.php?a=team",
+    href: "/launchpad/report.php?a=lp_team",
     title: "Team",
+    section: "Internal",
+  };
+  var INTERNAL_ADMIN_ROUTE = {
+    href: "/launchpad/admin",
+    title: "Admin",
     section: "Internal",
   };
 
@@ -308,7 +346,7 @@
       if (key) ROUTE_MAP[key] = route;
     });
 
-    /* Register Leadership and Team so the hash router can load them inline */
+    /* Register Leadership, Team, and Admin so the hash router can load them inline */
     var leadershipKey = hrefToHashKey(INTERNAL_LEADERSHIP_ROUTE.href);
     if (leadershipKey) {
       ROUTE_MAP[leadershipKey] = INTERNAL_LEADERSHIP_ROUTE;
@@ -316,6 +354,10 @@
     var teamKey = hrefToHashKey(INTERNAL_TEAM_ROUTE.href);
     if (teamKey) {
       ROUTE_MAP[teamKey] = INTERNAL_TEAM_ROUTE;
+    }
+    var adminKey = hrefToHashKey(INTERNAL_ADMIN_ROUTE.href);
+    if (adminKey) {
+      ROUTE_MAP[adminKey] = INTERNAL_ADMIN_ROUTE;
     }
   }
 
@@ -328,12 +370,23 @@
      caller (registerItem, wireLinkIntercept's click-time lookup,
      resolveCurrentRoute) agrees on the same key automatically. */
   var HREF_HASH_KEY_OVERRIDES = {
-    /* Community of Practice's own ?a=launchpad_homepage is that
-       destination page's internal param, unrelated to routing here —
-       without this override it would become the hash key, colliding
-       with launchpad_homepage having nothing to do with CoP. */
-    "https://leaf.va.gov/platform/CoP/report.php?a=launchpad_homepage":
-      "cop",
+    /* HOME_HREF has no ?a= param — the homepage renders for the
+       empty/default action — so it falls back to the last-path-segment
+       rule and derives "report.php", a key router() doesn't recognize
+       as home (only "", "home", "lp_home" are). Left alone, clicking
+       the brand logo or the breadcrumb's "Launchpad" crumb (real
+       <a href=HOME_HREF> elements that wireLinkIntercept hash-routes)
+       would push "#report.php" and land on the "page doesn't exist"
+       state instead of home. Pin it to "home" instead: router() then
+       recognizes the pushed hash. */
+    "https://leaf.va.gov/launchpad/report.php": "home",
+    /* window.location.pathname/search never include the origin, so
+       resolveCurrentRoute()'s "here" (a page's own relative URL) is
+       matched against this relative form — needed alongside the
+       absolute entry above so resolveCurrentRoute()'s "here" vs
+       HOME_HREF comparison still agrees and the breadcrumb keeps
+       hiding correctly on a direct load of the actual homepage. */
+    "/launchpad/report.php": "home",
   };
 
   function hrefToHashKey(href) {
@@ -406,16 +459,15 @@
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Z"/></svg>',
     menu_book:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M560-564v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-600q-38 0-73 9.5T560-564Zm0 220v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-380q-38 0-73 9t-67 27Zm0-110v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-490q-38 0-73 9.5T560-454Zm-40 176q44-21 88.5-31.5T700-320q36 0 70.5 6t69.5 18v-396q-33-14-68.5-21t-71.5-7q-47 0-93 12t-87 36v394Zm-40 118q-48-38-104-59t-116-21q-42 0-82.5 11T100-198q-21 11-40.5-1T40-234v-482q0-11 5.5-21T62-752q47-23 96.5-35.5T260-800q58 0 113.5 15T480-740q51-30 106.5-45T700-800q52 0 101.5 12.5T898-752q11 5 16.5 15t5.5 21v482q0 23-19.5 35t-40.5 1q-37-20-77.5-31T700-240q-60 0-116 21t-104 59Z"/></svg>',
+    article:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h600q24 0 42 18t18 42v600q0 24-18 42t-42 18H180Zm97-159h275v-60H277v60Zm0-171h406v-60H277v60Zm0-171h406v-60H277v60Z"/></svg>',
     school:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M840-280v-276L480-360 40-600l440-240 440 240v320h-80ZM480-120 200-272v-200l280 152 280-152v200L480-120Z"/></svg>',
-    quiz:
-      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M560-360q17 0 29.5-12.5T602-402q0-17-12.5-29.5T560-444q-17 0-29.5 12.5T518-402q0 17 12.5 29.5T560-360Zm-30-128h60q0-29 6-42.5t28-35.5q30-30 40-48.5t10-43.5q0-45-31.5-73.5T560-760q-41 0-71.5 23T446-676l54 22q9-25 24.5-37.5T560-704q24 0 39 13.5t15 36.5q0 14-8 26.5T578-596q-33 29-40.5 45.5T530-488ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Z"/></svg>',
+    quiz: '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M560-360q17 0 29.5-12.5T602-402q0-17-12.5-29.5T560-444q-17 0-29.5 12.5T518-402q0 17 12.5 29.5T560-360Zm-30-128h60q0-29 6-42.5t28-35.5q30-30 40-48.5t10-43.5q0-45-31.5-73.5T560-760q-41 0-71.5 23T446-676l54 22q9-25 24.5-37.5T560-704q24 0 39 13.5t15 36.5q0 14-8 26.5T578-596q-33 29-40.5 45.5T530-488ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Z"/></svg>',
     arrow_drop_down:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-360 280-560h400L480-360Z"/></svg>',
-    lock:
-      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm240-200q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z"/></svg>',
-    sync:
-      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M160-160v-80h110l-16-14q-49-49-71.5-106.5T160-478q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z"/></svg>',
+    lock: '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm240-200q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z"/></svg>',
+    sync: '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M160-160v-80h110l-16-14q-49-49-71.5-106.5T160-478q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z"/></svg>',
     groups:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M0-240v-63q0-43 44-70t116-27q13 0 25 .5t23 2.5q-14 21-21 44t-7 48v65H0Zm240 0v-65q0-32 17.5-58.5T307-410q32-20 76.5-30t96.5-10q53 0 97.5 10t76.5 30q32 20 49 46.5t17 58.5v65H240Zm540 0v-65q0-26-6.5-49T754-397q11-2 22.5-2.5t23.5-.5q72 0 116 26.5t44 70.5v63H780ZM160-440q-33 0-56.5-23.5T80-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T160-440Zm640 0q-33 0-56.5-23.5T720-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T800-440Zm-320-40q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T600-600q0 50-34.5 85T480-480Z"/></svg>',
     link_off:
@@ -428,8 +480,7 @@
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>',
     wrong_location:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 400Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q17 0 35 2t35 4l96 96-84 84 113 113 84-84 31 32q4 20 7 40t3 41q0 100-79.5 217.5T480-80Zm195-558-56-56 84-84-84-84 56-56 84 84 84-84 56 56-84 84 84 84-56 56-84-84-84 84Z"/></svg>',
-    home:
-      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M160-120v-480l320-240 320 240v480H560v-280H400v280H160Z"/></svg>',
+    home: '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M160-120v-480l320-240 320 240v480H560v-280H400v280H160Z"/></svg>',
     refresh:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>',
     open_in_new:
@@ -461,11 +512,11 @@
      look and behave identically. Use <button data-href> instead of
      <a href> so the browser status bar never previews the destination
      URL on hover — navigation is handled by wireLinkIntercept(), which
-     reads data-href. Applies to iframe items too (CoP, Ideas, Help
-     Library, Privacy & Compliance) — they're still hash-routed so the
-     header stays visible; loadView() mounts them in an <iframe> instead
-     of fetching+splicing their HTML, since they're full separate LEAF
-     apps rather than lightweight content pages. */
+     reads data-href. Applies to any future iframe: true item too —
+     it's still hash-routed so the header stays visible; loadView()
+     mounts it in an <iframe> instead of fetching+splicing its HTML,
+     since it's a full separate LEAF app rather than a lightweight
+     content page. */
   function linkRowHTML(item, extraClass) {
     var badgeHTML = item.badge
       ? `<span class="dd-badge">${item.badge}</span>`
@@ -491,10 +542,8 @@
        data-nav-external/rel/sr-only pattern already used for Coaches
        (see buildInternalNavHTML), so wireLinkIntercept() leaves it
        alone entirely rather than hash-routing or iframe-mounting it.
-       Not currently used by any NAV_SECTIONS item (Community of
-       Practice uses iframe: true instead, so its breadcrumb renders),
-       but kept as a general option for a future genuinely-external
-       nav destination. */
+       Not currently used by any NAV_SECTIONS item, but kept as a
+       general option for a future genuinely-external nav destination. */
     if (item.external) {
       return `
         <a class="${cls}" href="${item.href}" data-nav-external target="_blank" rel="noopener noreferrer">${iconHTML}
@@ -586,18 +635,16 @@
   /* ─────────────────────────────────────────────────────────────
      INTERNAL NAV SECTION
      Right-aligned group: [ 🔒 ] Coaches (new tab) → Team → Leadership
-     → Users Online (live status). Renders unconditionally — no
-     per-user gating right now.
-
-     Real gating was built and tested (admin via window.leafHeaderConfig
-     .isAdmin ← Smarty $empMembership['groupID'][1], Leadership via
-     .isLeadershipGroup ← groupID[52]), but is disabled until these
-     pages are converted to .tpl and $empMembership is confirmed
-     available server-side. Re-enabling it means restoring the
-     window.leafHeaderConfig read + the isAdminFlag/isLeadershipGroupFlag
-     params this function used to take.
+     → Admin → Users Online (live status). Admin-only — gated on
+     IS_ADMIN (see top of file). Returns empty markup for non-admins
+     so the section never enters the DOM, rather than being hidden
+     with CSS.
   ───────────────────────────────────────────────────────────── */
   function buildInternalNavHTML() {
+    if (!IS_ADMIN) {
+      return { desktop: "", mobile: "" };
+    }
+
     var desktopInternal = `
 <div class="lp-nav-internal" role="navigation" aria-label="Internal team links">
 
@@ -618,12 +665,19 @@
     <span class="lp-sr-only">(opens in new tab)</span>
   </a>
 
-  <button class="lp-internal-btn" data-href="/platform/projects/report.php?a=team">
+  <button class="lp-internal-btn" data-href="/launchpad/report.php?a=lp_team">
     Team
   </button>
 
-  <button class="lp-internal-btn" data-href="/platform/projects/report.php?a=leadership">
+  <button class="lp-internal-btn" data-href="/launchpad/report.php?a=lp_leadership">
     Leadership
+  </button>
+
+  <!-- Admin is a real standalone page, not meant to fetch+splice into
+       the launchpad shell like Team/Leadership — data-nav-fullpage tells
+       wireLinkIntercept() to always navigate here for real. -->
+  <button class="lp-internal-btn" data-href="/launchpad/admin" data-nav-fullpage>
+    Admin
   </button>
 
   <!-- Users Online: live count via Server-Sent Events (see
@@ -663,7 +717,7 @@
 </li>
 
 <li class="lp-internal-mobile-item">
-  <button class="dd-link" data-href="/platform/projects/report.php?a=team">
+  <button class="dd-link" data-href="/launchpad/report.php?a=lp_team">
     <span class="dd-link-ico">
       <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
     </span>
@@ -675,13 +729,25 @@
 </li>
 
 <li class="lp-internal-mobile-item">
-  <button class="dd-link" data-href="/platform/projects/report.php?a=leadership">
+  <button class="dd-link" data-href="/launchpad/report.php?a=lp_leadership">
     <span class="dd-link-ico">
       <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
     </span>
     <span class="dd-link-text">
       <strong>Leadership</strong>
       <span class="dd-link-desc">Platform leadership dashboard</span>
+    </span>
+  </button>
+</li>
+
+<li class="lp-internal-mobile-item">
+  <button class="dd-link" data-href="/launchpad/admin" data-nav-fullpage>
+    <span class="dd-link-ico">
+      <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
+    </span>
+    <span class="dd-link-text">
+      <strong>Admin</strong>
+      <span class="dd-link-desc">Launchpad admin tools</span>
     </span>
   </button>
 </li>
@@ -854,7 +920,8 @@
      SELF-MOUNT: STYLESHEET
   ───────────────────────────────────────────────────────────── */
   /* Hardcoded path — pinned to the header's own CSS filename so
-     this JS always loads the right stylesheet. */
+     this JS always loads the right stylesheet. Pointing this at the
+     wrong file 404s and leaves the header completely unstyled. */
   var LEAF_HEADER_CSS_HREF = "/launchpad/files/leaf_header.css";
 
   function ensureStylesheet() {
@@ -886,7 +953,10 @@
        land the header (full of focusable nav buttons) ahead of the
        skip link, defeating its purpose. */
     var skip = document.getElementById("lp-skip-nav");
-    document.body.insertBefore(host, skip ? skip.nextSibling : document.body.firstChild);
+    document.body.insertBefore(
+      host,
+      skip ? skip.nextSibling : document.body.firstChild,
+    );
     return host;
   }
 
@@ -1443,12 +1513,16 @@
     if (reason === "missing") {
       host.innerHTML =
         '<div class="lp-swap-error lp-swap-error--missing" role="alert" style="text-align:center;padding:2rem 1.5rem;">' +
-        '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true" style="color:#6b7280;">' + ICON_SVG.wrong_location + '</span>' +
+        '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true" style="color:#6b7280;">' +
+        ICON_SVG.wrong_location +
+        "</span>" +
         '<p class="lp-swap-error-msg" style="font-weight:600;font-size:16px;margin:12px 0 4px;">This page doesn\'t exist</p>' +
         '<p style="font-size:13px;color:#6b7280;margin:0 0 20px;">It may have moved or the link is outdated.</p>' +
         '<div style="display:flex;justify-content:center;margin-bottom:24px;">' +
         '<button class="lp-panel-link btn btn-primary" data-href="report.php?a=lp_home">' +
-        '<span class="material-symbols-outlined" aria-hidden="true">' + ICON_SVG.home + '</span> Back to Launchpad' +
+        '<span class="material-symbols-outlined" aria-hidden="true">' +
+        ICON_SVG.home +
+        "</span> Back to Launchpad" +
         "</button>" +
         "</div>" +
         '<div style="border-top:1px solid #d9e8f6;padding-top:16px;text-align:left;max-width:420px;margin:0 auto;">' +
@@ -1464,19 +1538,25 @@
     /* "fetch" (default/fallback) */
     host.innerHTML =
       '<div class="lp-swap-error lp-swap-error--fetch" role="alert" style="text-align:center;padding:2rem 1.5rem;">' +
-      '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true" style="color:#b45309;">' + ICON_SVG.cloud_off + '</span>' +
+      '<span class="material-symbols-outlined lp-swap-error-ico" aria-hidden="true" style="color:#b45309;">' +
+      ICON_SVG.cloud_off +
+      "</span>" +
       '<p class="lp-swap-error-msg" style="font-weight:600;font-size:16px;margin:12px 0 4px;">This page is temporarily unavailable</p>' +
       '<p style="font-size:13px;color:#6b7280;margin:0 0 20px;">We reached the site but couldn\'t load the content. This is usually temporary.</p>' +
       '<div style="display:flex;gap:8px;justify-content:center;">' +
       '<button class="lp-panel-link btn btn-primary" data-href="' +
       url +
       '">' +
-      '<span class="material-symbols-outlined" aria-hidden="true">' + ICON_SVG.refresh + '</span> Try again' +
+      '<span class="material-symbols-outlined" aria-hidden="true">' +
+      ICON_SVG.refresh +
+      "</span> Try again" +
       "</button>" +
       '<a class="lp-swap-error-link btn btn-sec" href="' +
       url +
       '" target="_blank" rel="noopener noreferrer">' +
-      '<span class="material-symbols-outlined" aria-hidden="true">' + ICON_SVG.open_in_new + '</span>' +
+      '<span class="material-symbols-outlined" aria-hidden="true">' +
+      ICON_SVG.open_in_new +
+      "</span>" +
       "Open in a new tab" +
       "</a>" +
       "</div>" +
@@ -1499,7 +1579,8 @@
        back to the bare tag selector — it's still the same element,
        just under its new id — so _lpMain never ends up null and
        showSwapView()/showLaunchpadHome() can actually hide/show it. */
-    _lpMain = document.getElementById("lp-main") || document.querySelector("main");
+    _lpMain =
+      document.getElementById("lp-main") || document.querySelector("main");
     _swapHost =
       document.querySelector("[data-lp-swap-host]") ||
       document.getElementById("lpSwapHost");
@@ -1634,7 +1715,7 @@
     frame.style.cssText =
       "width:100%;min-height:75vh;border:0;display:block;overflow:hidden;visibility:hidden;";
 
-    /* Embedded pages (CoP, Ideas, Help Library, Privacy & Compliance) are
+    /* Embedded pages (any iframe: true route) are
        real, separately-rendered LEAF pages — their native #header/#footer
        chrome is server-rendered directly into the HTML, so it paints
        before that page's own client-side script has run to hide it.
@@ -1864,12 +1945,12 @@
     updateNavCurrent(route.section);
     updateBreadcrumb(route);
 
-    /* Full separate LEAF apps (CoP, Ideas, Help Library, Privacy &
-       Compliance) can't survive being fetched+spliced into this
-       document — wrong document, wrong scripts, wrong DOM. Mount them
-       in an iframe instead: same hash-routed shell (header stays
-       visible, back-to-launchpad still works), but the embedded
-       page runs in its own real document. */
+    /* A full separate LEAF app (iframe: true route) can't survive being
+       fetched+spliced into this document — wrong document, wrong
+       scripts, wrong DOM. Mount them in an iframe instead: same
+       hash-routed shell (header stays visible, back-to-launchpad
+       still works), but the embedded page runs in its own real
+       document. */
     if (route.iframe) {
       mountIframe(route);
       _currentLoadUrl = null;
@@ -2073,19 +2154,25 @@
          .dd-link elements are now <button data-href> — no href attribute —
          so the browser status bar never previews the destination URL on hover.
          .lp-internal-btn elements (Leadership) also use data-href.
-         .lp-breadcrumb a elements (parent/Launchpad crumbs) are real
-         <a href> — the data-href fallback below reads their href
-         attribute directly, same as any other real anchor caught here.
-         Without this, breadcrumb clicks fell through entirely (matched
-         neither branch above), triggering a hard page reload instead
-         of a hash-route — which dropped the user out of the SPA, so
-         isLaunchpad() went false and every subsequent nav click
-         (including iframe-mounted ones like Community of Practice)
-         started navigating for real instead of routing.
+         .lp-breadcrumb a and .lp-brand elements (the "Launchpad" crumb and
+         the header logo) are real <a href> — the data-href fallback below
+         reads their href attribute directly, same as any other real anchor
+         caught here. .lp-brand was missing from this list entirely, so its
+         click fell through to the browser: since HOME_HREF carries no
+         fragment, clicking it while a route hash is already set (e.g.
+         "#lp_impact") isn't the same-document "fragment-only" navigation
+         it looks like — browsers treat the missing fragment as a real
+         navigation and reload the page instead of just clearing the hash,
+         which is slow at best and, depending on how the page got here (a
+         fetch+spliced or iframe-mounted route), can drop the user out of
+         the SPA context entirely instead of landing back on the launchpad.
+         Adding it here routes it through the same hash-push path
+         .lp-breadcrumb a already used, avoiding that inconsistent native
+         behavior instead of just hoping the browser does the right thing.
          [data-nav-external] marks real <a target="_blank"> tags (e.g.
          Coaches) that should navigate away natively — left alone. */
       var link = e.target.closest(
-        ".dd-link, .lp-panel-link, .lp-internal-btn, .lp-breadcrumb a, [data-action]",
+        ".dd-link, .lp-panel-link, .lp-internal-btn, .lp-breadcrumb a, .lp-brand, [data-action]",
       );
       if (!link) return;
 
@@ -2129,6 +2216,18 @@
 
       e.preventDefault();
       closeAllDropdowns(null);
+
+      /* data-nav-fullpage: this destination is a real, standalone page
+         (e.g. Admin) that should never be folded into the SPA — unlike
+         Team/Leadership, which are meant to fetch+splice into the
+         launchpad shell so the URL bar shows "#team"/"#leadership".
+         Skip the hash-router entirely, even while on the launchpad, so
+         the browser always lands on the destination's own real URL
+         instead of "{launchpad url}#admin". */
+      if (link.hasAttribute("data-nav-fullpage")) {
+        window.location.href = href;
+        return;
+      }
 
       /* Off the launchpad there's no router wired (no hashchange
          listener, no swap host) — pushing a hash here would just leave
@@ -2396,9 +2495,11 @@
 
     var source = new EventSource(USERS_ONLINE_SSE_URL);
     source.onmessage = function (event) {
-      document.querySelectorAll(".lp-internal-online-count").forEach(function (el) {
-        el.textContent = event.data;
-      });
+      document
+        .querySelectorAll(".lp-internal-online-count")
+        .forEach(function (el) {
+          el.textContent = event.data;
+        });
     };
     /* No onerror handling needed — EventSource auto-reconnects per
        spec, and the last known count staying visible in the meantime
@@ -2434,7 +2535,9 @@
      injecting a duplicate. */
   function ensureDompurify() {
     if (window.DOMPurify) return Promise.resolve();
-    var existing = document.querySelector('script[src="' + DOMPURIFY_SRC + '"]');
+    var existing = document.querySelector(
+      'script[src="' + DOMPURIFY_SRC + '"]',
+    );
     if (existing) {
       return new Promise(function (resolve) {
         if (window.DOMPurify) {
@@ -2445,7 +2548,9 @@
           resolve();
         });
         existing.addEventListener("error", function () {
-          console.warn("[LP] DOMPurify failed to load — announcement banner will not render");
+          console.warn(
+            "[LP] DOMPurify failed to load — announcement banner will not render",
+          );
           resolve();
         });
       });
@@ -2458,7 +2563,9 @@
         resolve();
       };
       s.onerror = function () {
-        console.warn("[LP] DOMPurify failed to load — announcement banner will not render");
+        console.warn(
+          "[LP] DOMPurify failed to load — announcement banner will not render",
+        );
         resolve();
       };
       document.head.appendChild(s);
@@ -2484,7 +2591,10 @@
   var _announcementResizeObserver = null;
 
   function setAnnouncementHeightVar(px) {
-    document.documentElement.style.setProperty("--lp-announcement-h", px + "px");
+    document.documentElement.style.setProperty(
+      "--lp-announcement-h",
+      px + "px",
+    );
   }
 
   function removeAnnouncementBanner() {
@@ -2562,7 +2672,9 @@
         var rec = data && data[ANNOUNCEMENT_INDICATOR_ID];
         if (!rec) return null;
         var displayed =
-          typeof rec.displayedValue === "string" ? rec.displayedValue.trim() : "";
+          typeof rec.displayedValue === "string"
+            ? rec.displayedValue.trim()
+            : "";
         var raw = displayed || rec.value;
         return raw && String(raw).trim() ? String(raw) : null;
       })
@@ -2621,7 +2733,9 @@
     btn.setAttribute("aria-hidden", "true");
     btn.tabIndex = -1;
     btn.innerHTML =
-      '<span class="material-symbols-outlined" aria-hidden="true">' + ICON_SVG.arrow_upward + '</span>';
+      '<span class="material-symbols-outlined" aria-hidden="true">' +
+      ICON_SVG.arrow_upward +
+      "</span>";
     document.body.appendChild(btn);
 
     function update() {

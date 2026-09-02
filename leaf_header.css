@@ -18,8 +18,10 @@
 @font-face {
   font-family: "PublicSans-Regular";
   src:
-    url("/app/libs/css/fonts/public-sans/PublicSans-Regular.woff2") format("woff2"),
-    url("/app/libs/css/fonts/public-sans/PublicSans-Regular.woff") format("woff");
+    url("/app/libs/css/fonts/public-sans/PublicSans-Regular.woff2")
+      format("woff2"),
+    url("/app/libs/css/fonts/public-sans/PublicSans-Regular.woff")
+      format("woff");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -27,7 +29,8 @@
 @font-face {
   font-family: "PublicSans-Medium";
   src:
-    url("/app/libs/css/fonts/public-sans/PublicSans-Medium.woff2") format("woff2"),
+    url("/app/libs/css/fonts/public-sans/PublicSans-Medium.woff2")
+      format("woff2"),
     url("/app/libs/css/fonts/public-sans/PublicSans-Medium.woff") format("woff");
   font-weight: 500;
   font-style: normal;
@@ -45,8 +48,10 @@
 @font-face {
   font-family: "Source Sans Pro Web";
   src:
-    url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-regular-webfont.woff2") format("woff2"),
-    url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-regular-webfont.woff") format("woff");
+    url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-regular-webfont.woff2")
+      format("woff2"),
+    url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-regular-webfont.woff")
+      format("woff");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -54,8 +59,10 @@
 @font-face {
   font-family: "Source Sans Pro Web-Bold";
   src:
-    url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-bold-webfont.woff2") format("woff2"),
-    url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-bold-webfont.woff") format("woff");
+    url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-bold-webfont.woff2")
+      format("woff2"),
+    url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-bold-webfont.woff")
+      format("woff");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -117,7 +124,7 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   text-decoration: none;
-  font-family: 'PublicSans-Bold', sans-serif;
+  font-family: "PublicSans-Bold", sans-serif;
   font-size: 0.9rem;
   color: #fff;
   background: var(--nav-hl);
@@ -239,7 +246,7 @@
   align-items: center;
   gap: 5px;
   padding: 7px 13px;
-  font-family: 'PublicSans-Medium', sans-serif;
+  font-family: "PublicSans-Medium", sans-serif;
   font-size: 0.9rem;
   color: var(--nav-muted);
   background: transparent;
@@ -263,7 +270,7 @@
 /* Active section indicator */
 .dd-trigger[aria-current="true"] {
   color: var(--nav-accent);
-  font-family: 'PublicSans-Bold', sans-serif;
+  font-family: "PublicSans-Bold", sans-serif;
 }
 .dd-chevron {
   display: inline-flex;
@@ -381,7 +388,7 @@ button.dd-link {
 }
 
 .dd-link-text strong {
-  font-family: 'PublicSans-Bold', sans-serif;
+  font-family: "PublicSans-Bold", sans-serif;
   font-size: 0.875rem;
   color: var(--nav-hl);
 }
@@ -456,7 +463,7 @@ button.dd-link {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  font-family: 'PublicSans-Medium', sans-serif;
+  font-family: "PublicSans-Medium", sans-serif;
   font-size: 0.9rem;
   color: #3d6e1c;
   background: #eaf6e1;
@@ -498,7 +505,7 @@ button.dd-link {
   justify-content: center;
   padding: 11px; /* 1px less than the visual 12px target — offsets the border, same total box size */
   min-height: 44px; /* Section 508 / WCAG 2.5.5 minimum touch target */
-  font-family: 'PublicSans-Bold', sans-serif;
+  font-family: "PublicSans-Bold", sans-serif;
   font-size: 0.95rem;
 }
 
@@ -594,7 +601,7 @@ button.dd-link {
   gap: 8px;
   padding: 12px;
   min-height: 44px;
-  font-family: 'PublicSans-Bold', sans-serif;
+  font-family: "PublicSans-Bold", sans-serif;
   font-size: 0.95rem;
   color: var(--nav-text);
   background: transparent;
@@ -692,7 +699,7 @@ button.dd-link {
   border: none;
   background: transparent;
   color: #3d4551; /* --nav-muted */
-  font-family: 'PublicSans-Medium', sans-serif;
+  font-family: "PublicSans-Medium", sans-serif;
   font-size: 0.9rem;
   text-decoration: underline;
   white-space: nowrap;
@@ -742,7 +749,7 @@ button.dd-link {
   flex-shrink: 0;
 }
 .lp-internal-online-count {
-  font-family: 'PublicSans-Bold', sans-serif;
+  font-family: "PublicSans-Bold", sans-serif;
 }
 
 @keyframes lp-spin {
@@ -808,7 +815,7 @@ button.dd-link {
 .lp-announcement-body {
   flex: 1;
   min-width: 0;
-  font-family: 'PublicSans-Regular', sans-serif;
+  font-family: "PublicSans-Regular", sans-serif;
   font-size: 0.85rem;
   line-height: 1.5;
   color: #78350f; /* matches .hl-sh-desc body tone */
@@ -900,14 +907,14 @@ button.dd-link {
   padding: 10px 24px;
   background: rgba(239, 246, 251, 0.97); /* --nav-hover-bg tint */
   border-top: 1px solid var(--nav-panel-bd);
-  font-family: 'PublicSans-Regular', sans-serif;
+  font-family: "PublicSans-Regular", sans-serif;
   font-size: 0.8125rem;
   color: var(--nav-muted);
 }
 
 .lp-breadcrumb a {
   font-size: 0.8125rem;
-  font-family: 'PublicSans-Medium', sans-serif;
+  font-family: "PublicSans-Medium", sans-serif;
   font-style: normal;
   color: var(--nav-accent);
   text-decoration: underline;

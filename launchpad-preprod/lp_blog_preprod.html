@@ -416,7 +416,14 @@
 
           try {
             const query = new LeafFormQuery();
-            query.setRootURL(CONFIG.apiBase);
+            // execute() builds its URL as `${rootURL}api/form/query?...`
+            // with no separator of its own — setRootURL() doesn't
+            // normalize either, so a slash-less CONFIG.apiBase produces
+            // ".../platform/blogapi/form/query". blog.js's own manual
+            // concatenation already expects (and needs) apiBase without
+            // a trailing slash, so append it here rather than changing
+            // the shared constant.
+            query.setRootURL(CONFIG.apiBase + "/");
             query.addTerm("categoryID", "=", CONFIG.categoryID);
             query.addTerm("stepID", "=", CONFIG.stepID);
             query.getData(Object.values(CONFIG.indicators));
