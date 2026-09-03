@@ -281,8 +281,14 @@
           // no separator. "files/" (where blog.js itself lives) is just
           // the assets subfolder, same pattern as /launchpad/files/
           // leaf_header.js — the API hangs off the site root, not files/.
-          categoryID: "form_3db88",
-          stepID: 3, // Published
+          //
+          // No categoryID/formID filter here — confirmed against a real
+          // record that /platform/blog/api/form/query is already scoped
+          // to this one form; categoryID isn't a real filterable field
+          // (blog.js's own working query doesn't use one either). Publish
+          // status is the string field lastStatus, not a numeric stepID —
+          // confirmed against a live "Published" record's actual response.
+          publishedStatus: "Published",
           indicators: {
             title: 2,
             category: 3,
@@ -431,8 +437,7 @@
           try {
             const query = new LeafFormQuery();
             query.setRootURL(CONFIG.apiBase);
-            query.addTerm("categoryID", "=", CONFIG.categoryID);
-            query.addTerm("stepID", "=", CONFIG.stepID);
+            query.addTerm("lastStatus", "=", CONFIG.publishedStatus);
             query.getData(Object.values(CONFIG.indicators));
             // LeafFormQuery forwards its sort column straight through to the
             // query API, same as getData's indicatorID addressing — passing
