@@ -1,4 +1,4 @@
 fetch("/platform/blog/api/form/query?q=" + encodeURIComponent(JSON.stringify({
   terms: [{id:"recordID", operator:">", match:0, gate:"AND"}],
-  joins: [], sort: {}, getData: [2,3,4,5], limit: 12, limitOffset: 0
+  joins: [], sort: {column: 4, direction: "DESC"}, getData: [2,3,4,5], limit: 12, limitOffset: 0
 })), { credentials: "include" }).then(r => r.json()).then(console.log);
