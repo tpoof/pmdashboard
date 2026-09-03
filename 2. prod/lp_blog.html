@@ -6,7 +6,7 @@
     <title>Blog — LEAF Launchpad</title>
 
     <!-- Confirmed against main.tpl's own header/nav include. -->
-    <link rel="stylesheet" href="/launchpad/files/leaf_header.css" />
+    <link rel="stylesheet" href="./files/leaf_header.css" />
 
     <style>
       /* Icon sizing for classes defined in launchpad.css (out of scope
@@ -254,7 +254,7 @@
 
     <!-- Confirmed against main.tpl's own header/nav include. -->
     <script
-      src="/launchpad/files/leaf_header.js"
+      src="./files/leaf_header.js"
       data-is-admin="<!--{$is_admin}-->"
     ></script>
 
@@ -275,7 +275,10 @@
         // the API endpoint") for exactly this case, so that's called below
         // instead of relying on the constructor or a derived base.
         const CONFIG = {
-          apiBase: "/platform/blog", // Relative, no host — see setRootURL() below
+          apiBase: "/platform/blog/files", // Matches blog.js's own directory
+          // (leaf.va.gov/platform/blog/files/blog.js) — its relative
+          // ./api/form/query resolves against that path, so setRootURL()
+          // below has to point here too, not just /platform/blog.
           categoryID: "form_3db88",
           stepID: 3, // Published
           indicators: {
@@ -343,12 +346,15 @@
           if (text.length <= maxLen) return text;
           const slice = text.slice(0, maxLen + 1);
           const lastSpace = slice.lastIndexOf(" ");
-          const cut = lastSpace > 0 ? slice.slice(0, lastSpace) : slice.slice(0, maxLen);
+          const cut =
+            lastSpace > 0 ? slice.slice(0, lastSpace) : slice.slice(0, maxLen);
           return cut.trim() + "…";
         }
 
         function announce(message, assertive) {
-          const node = byId(assertive ? "blog-live-assertive" : "blog-live-polite");
+          const node = byId(
+            assertive ? "blog-live-assertive" : "blog-live-polite",
+          );
           if (!node) return;
           node.textContent = "";
           setTimeout(() => {
@@ -360,10 +366,13 @@
         // heading of the first newly-appended card after "Load more",
         // same accessible-focus pattern as BlogPost.js's byId("bp-title").
         function createCard(recordID, s1) {
-          const title = getField(s1, CONFIG.indicators.title) || "Untitled post";
+          const title =
+            getField(s1, CONFIG.indicators.title) || "Untitled post";
           const category = getField(s1, CONFIG.indicators.category);
           const publishDateRaw = getField(s1, CONFIG.indicators.publishDate);
-          const excerpt = truncateExcerpt(getField(s1, CONFIG.indicators.excerpt));
+          const excerpt = truncateExcerpt(
+            getField(s1, CONFIG.indicators.excerpt),
+          );
 
           const card = document.createElement("article");
           card.className = "blog-card";
@@ -466,7 +475,10 @@
 
             if (isLoadMore) {
               if (firstNewHeading) firstNewHeading.focus();
-              announce(`${entries.length} more post${entries.length === 1 ? "" : "s"} loaded.`, false);
+              announce(
+                `${entries.length} more post${entries.length === 1 ? "" : "s"} loaded.`,
+                false,
+              );
             }
           } catch (err) {
             console.error("[BlogIndex]", err);
@@ -481,7 +493,9 @@
 
         function initGrid() {
           const loadMoreBtn = byId("blog-load-more");
-          loadMoreBtn?.addEventListener("click", () => loadBatch(currentOffset, true));
+          loadMoreBtn?.addEventListener("click", () =>
+            loadBatch(currentOffset, true),
+          );
           loadBatch(0, false);
         }
 
