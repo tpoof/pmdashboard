@@ -293,6 +293,11 @@
           // the string field lastStatus, not a numeric stepID — confirmed
           // against a live "Published" record's actual response.
           publishedStatus: "Published",
+          // Real single-post reader page — blog.js's own hash-routed
+          // template, confirmed working at .../report.php?a=post#<id>.
+          // Absolute since this index page lives under /launchpad/, a
+          // different site/directory than the reader page.
+          postReaderURL: "https://leaf.va.gov/platform/blog/report.php?a=post",
           indicators: {
             title: 2,
             category: 3,
@@ -401,7 +406,7 @@
           heading.className = "blog-card-title";
           heading.tabIndex = -1;
           const link = document.createElement("a");
-          link.href = `BlogPost.html#${encodeURIComponent(recordID)}`;
+          link.href = `${CONFIG.postReaderURL}#${encodeURIComponent(recordID)}`;
           link.textContent = title;
           heading.appendChild(link);
           card.appendChild(heading);
