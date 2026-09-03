@@ -6,7 +6,7 @@
     <title>Blog — LEAF Launchpad</title>
 
     <!-- Confirmed against main.tpl's own header/nav include. -->
-    <link rel="stylesheet" href="./files/leaf_header.css" />
+    <link rel="stylesheet" href="/launchpad/files/leaf_header.css" />
 
     <style>
       /* Icon sizing for classes defined in launchpad.css (out of scope
@@ -254,7 +254,7 @@
 
     <!-- Confirmed against main.tpl's own header/nav include. -->
     <script
-      src="./files/leaf_header.js"
+      src="/launchpad/files/leaf_header.js"
       data-is-admin="<!--{$is_admin}-->"
     ></script>
 
@@ -275,10 +275,9 @@
         // the API endpoint") for exactly this case, so that's called below
         // instead of relying on the constructor or a derived base.
         const CONFIG = {
-          apiBase: "/platform/blog/files", // Matches blog.js's own directory
-          // (leaf.va.gov/platform/blog/files/blog.js) — its relative
-          // ./api/form/query resolves against that path, so setRootURL()
-          // below has to point here too, not just /platform/blog.
+          apiBase: "/platform/blog/files/", // Trailing slash required —
+          // formQuery.js's execute() does `${rootURL}api/form/query`
+          // with no separator, so rootURL must supply the slash itself.
           categoryID: "form_3db88",
           stepID: 3, // Published
           indicators: {
