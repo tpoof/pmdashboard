@@ -278,27 +278,20 @@
         // indicatorID by purpose instead of scattering raw numbers through
         // the code. Verify these against the "Blog Post" form in LEAF Form
         // Editor before changing them — kept in sync with blog/files/blog.js.
-        //
-        // This page is served from /launchpad/, a different directory than
-        // the Blog Post form's own site — LeafFormQuery.execute() hits
-        // ./api/form/query relative to wherever the query is constructed,
-        // same failure mode blog.js's own getAPIBase() derivation hit.
-        // formQuery.md documents setRootURL(url) ("Sets the root URL for
-        // the API endpoint") for exactly this case, so that's called below
-        // instead of relying on the constructor or a derived base.
         const CONFIG = {
-          apiBase: "/platform/blog/", // Site root, trailing slash required —
-          // formQuery.js's execute() does `${rootURL}api/form/query` with
-          // no separator. "files/" (where blog.js itself lives) is just
-          // the assets subfolder, same pattern as /launchpad/files/
-          // leaf_header.js — the API hangs off the site root, not files/.
-          //
-          // No categoryID/formID filter here — confirmed against a real
-          // record that /platform/blog/api/form/query is already scoped
-          // to this one form; categoryID isn't a real filterable field
-          // (blog.js's own working query doesn't use one either). Publish
-          // status is the string field lastStatus, not a numeric stepID —
-          // confirmed against a live "Published" record's actual response.
+          // Site root — this page is served from /launchpad/, a different
+          // directory than the Blog Post form's own site, so the query
+          // below builds an absolute path from this rather than a relative
+          // one. "files/" (where blog.js itself lives) is just the assets
+          // subfolder, same pattern as /launchpad/files/leaf_header.js —
+          // the API hangs off the site root, not files/.
+          apiBase: "/platform/blog/",
+          // No categoryID/formID filter — confirmed against a real record
+          // that /platform/blog/api/form/query is already scoped to this
+          // one form; categoryID isn't a real filterable field (blog.js's
+          // own working query doesn't use one either). Publish status is
+          // the string field lastStatus, not a numeric stepID — confirmed
+          // against a live "Published" record's actual response.
           publishedStatus: "Published",
           indicators: {
             title: 2,
@@ -446,26 +439,32 @@
           }
 
           try {
-            const query = new LeafFormQuery();
-            query.setRootURL(CONFIG.apiBase);
-            // recordID > 0 rather than no terms at all — confirmed against
-            // this API that an empty terms array is treated as an
-            // unmatchable query (always returns []), not "no filter."
-            // categoryID/stepID aren't usable here either (see
-            // publishedStatus below for how "published" is actually
-            // determined), so this is the real "select everything" query.
-            query.addTerm("recordID", ">", 0);
-            query.getData(Object.values(CONFIG.indicators));
-            // LeafFormQuery forwards its sort column straight through to the
-            // query API, same as getData's indicatorID addressing — passing
-            // the publishDate indicatorID sorts by when a post was
-            // published rather than LEAF's built-in "date" (submitted)
-            // column. The client-side re-sort below is a defensive backstop
-            // in case that isn't actually supported server-side.
-            query.sort(CONFIG.indicators.publishDate, "DESC");
-            query.setLimit(offset, CONFIG.batchSize);
-
-            const results = await query.execute();
+            // Bypasses LeafFormQuery/formQuery.js entirely — confirmed its
+            // execute() builds request URLs via a lossy custom encoder
+            // (encodeReadableURI, which doesn't properly escape {}/[]/etc.)
+            // that this API silently mishandles, always returning []. A
+            // manually-built fetch with encodeURIComponent — the same
+            // approach blog/files/blog.js already uses successfully for
+            // the single-post query — returns real data. recordID > 0
+            // rather than an empty terms array, since this API treats an
+            // empty array as unmatchable rather than "no filter."
+            const q = {
+              terms: [{ id: "recordID", operator: ">", match: 0, gate: "AND" }],
+              joins: [],
+              sort: {
+                column: CONFIG.indicators.publishDate,
+                direction: "DESC",
+              },
+              getData: Object.values(CONFIG.indicators),
+              limit: CONFIG.batchSize,
+              limitOffset: offset,
+            };
+            const r = await fetch(
+              `${CONFIG.apiBase}api/form/query?q=${encodeURIComponent(JSON.stringify(q))}`,
+              { credentials: "include" },
+            );
+            if (!r.ok) throw new Error("Query failed HTTP " + r.status);
+            const results = await r.json();
             const rawEntries = Object.entries(results || {});
             const entries = rawEntries.filter(
               ([, rec]) => rec.lastStatus === CONFIG.publishedStatus,
