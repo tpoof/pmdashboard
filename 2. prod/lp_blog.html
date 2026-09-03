@@ -466,6 +466,13 @@
             query.setLimit(offset, CONFIG.batchSize);
 
             const results = await query.execute();
+            // TEMP DEBUG — remove once posts are loading correctly.
+            console.log(
+              "[BlogIndex debug] query.execute() resolved. typeof results:",
+              typeof results,
+              "value:",
+              results,
+            );
             const rawEntries = Object.entries(results || {});
             const entries = rawEntries.filter(
               ([, rec]) => rec.lastStatus === CONFIG.publishedStatus,
