@@ -446,6 +446,12 @@
             // TEMP DEBUG — remove once posts are loading correctly.
             console.log("[BlogIndex debug] rootURL:", query.getRootURL());
             console.log("[BlogIndex debug] query:", query.getQuery());
+            console.log(
+              "[BlogIndex debug] full query JSON (open this in a new tab):",
+              query.getRootURL() +
+                "api/form/query?q=" +
+                encodeURIComponent(JSON.stringify(query.getQuery())),
+            );
 
             const results = await query.execute();
 
@@ -480,12 +486,26 @@
             });
 
             status.hidden = true;
+            // TEMP DEBUG — remove once posts are loading correctly.
+            console.log(
+              "[BlogIndex debug] reached spinner-hide line. status.hidden now:",
+              status.hidden,
+              "| actual DOM attribute:",
+              status.getAttribute("hidden"),
+            );
 
             const gotFullBatch = entries.length === CONFIG.batchSize;
             loadMoreWrap.hidden = !gotFullBatch;
             if (loadMoreBtn) loadMoreBtn.disabled = false;
 
             empty.hidden = grid.children.length !== 0;
+            // TEMP DEBUG — remove once posts are loading correctly.
+            console.log(
+              "[BlogIndex debug] empty.hidden:",
+              empty.hidden,
+              "| grid children:",
+              grid.children.length,
+            );
 
             currentOffset = offset + entries.length;
 
