@@ -443,7 +443,19 @@
             query.sort(CONFIG.indicators.publishDate, "DESC");
             query.setLimit(offset, CONFIG.batchSize);
 
+            // TEMP DEBUG — remove once posts are loading correctly.
+            console.log("[BlogIndex debug] rootURL:", query.getRootURL());
+            console.log("[BlogIndex debug] query:", query.getQuery());
+
             const results = await query.execute();
+
+            // TEMP DEBUG — remove once posts are loading correctly.
+            console.log("[BlogIndex debug] raw results:", results);
+            console.log(
+              "[BlogIndex debug] result count:",
+              Object.keys(results || {}).length,
+            );
+
             const entries = Object.entries(results || {});
 
             entries.sort((a, b) => {
@@ -460,6 +472,8 @@
             let firstNewHeading = null;
             entries.forEach(([recordID, rec]) => {
               const s1 = rec.s1 || rec;
+              // TEMP DEBUG — remove once posts are loading correctly.
+              console.log("[BlogIndex debug] record", recordID, "s1:", s1);
               const { card, heading } = createCard(recordID, s1);
               grid.appendChild(card);
               if (!firstNewHeading) firstNewHeading = heading;
