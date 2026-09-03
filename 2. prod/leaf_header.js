@@ -130,7 +130,7 @@
      HREF_HASH_KEY_OVERRIDES below — that entry must be updated too
      if this ever changes, since hrefToHashKey() looks it up by exact
      string match. ── */
-  var HOME_HREF = "https://leaf.va.gov/launchpad/report.php";
+  var HOME_HREF = "https://leaf.va.gov/launchpad";
 
   /* ── Nav content (single source of truth for desktop + mobile) ──
      href values here are the canonical URLs used by the router
@@ -377,21 +377,23 @@
   var HREF_HASH_KEY_OVERRIDES = {
     /* HOME_HREF has no ?a= param — the homepage renders for the
        empty/default action — so it falls back to the last-path-segment
-       rule and derives "report.php", a key router() doesn't recognize
+       rule and derives "launchpad", a key router() doesn't recognize
        as home (only "", "home", "lp_home" are). Left alone, clicking
        the brand logo or the breadcrumb's "Launchpad" crumb (real
        <a href=HOME_HREF> elements that wireLinkIntercept hash-routes)
-       would push "#report.php" and land on the "page doesn't exist"
+       would push "#launchpad" and land on the "page doesn't exist"
        state instead of home. Pin it to "home" instead: router() then
-       recognizes the pushed hash. */
-    "https://leaf.va.gov/launchpad/report.php": "home",
+       recognizes the pushed hash. Relies on the web server treating
+       report.php as the directory index for /launchpad — flag if that
+       assumption is wrong and the bare URL doesn't resolve. */
+    "https://leaf.va.gov/launchpad": "home",
     /* window.location.pathname/search never include the origin, so
        resolveCurrentRoute()'s "here" (a page's own relative URL) is
        matched against this relative form — needed alongside the
        absolute entry above so resolveCurrentRoute()'s "here" vs
        HOME_HREF comparison still agrees and the breadcrumb keeps
        hiding correctly on a direct load of the actual homepage. */
-    "/launchpad/report.php": "home",
+    "/launchpad": "home",
   };
 
   function hrefToHashKey(href) {
@@ -643,7 +645,10 @@
      → Admin → Users Online (live status). Sysadmin-only — gated on
      IS_SYSADMIN (see top of file). Returns empty markup for non-sysadmins
      so the section never enters the DOM, rather than being hidden
-     with CSS.
+     with CSS. data-sysadmin="1" on the wrapper div plus the matching
+     CSS rule in leaf_header.css is defense in depth only — belt and
+     suspenders in case this markup is ever cached or duplicated
+     outside this function; the real gate is the early return below.
   ───────────────────────────────────────────────────────────── */
   function buildInternalNavHTML() {
     if (!IS_SYSADMIN) {
@@ -651,7 +656,7 @@
     }
 
     var desktopInternal = `
-<div class="lp-nav-internal" role="navigation" aria-label="Internal team links">
+<div class="lp-nav-internal" data-sysadmin="1" role="navigation" aria-label="Internal team links">
 
   <!-- Lock icon is the only visible content — role="img" + aria-label
        gives it an accessible name since there's no visible text. -->
@@ -702,13 +707,13 @@
 
 <!-- Mobile separator before Internal section — lock icon only, same
      role="img"+aria-label treatment as the desktop version. -->
-<li class="lp-internal-mobile-item" role="separator">
+<li class="lp-internal-mobile-item" data-sysadmin="1" role="separator">
   <div class="lp-mobile-internal-sep" role="img" aria-label="Internal">
     <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.lock}</span>
   </div>
 </li>
 
-<li class="lp-internal-mobile-item">
+<li class="lp-internal-mobile-item" data-sysadmin="1">
   <a class="dd-link" href="https://leaf.va.gov/launchpad/report.php?a=Coaches" data-nav-external target="_blank" rel="noopener noreferrer">
     <span class="dd-link-ico">
       <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.co_present}</span>
@@ -721,7 +726,7 @@
   </a>
 </li>
 
-<li class="lp-internal-mobile-item">
+<li class="lp-internal-mobile-item" data-sysadmin="1">
   <button class="dd-link" data-href="/launchpad/report.php?a=lp_team">
     <span class="dd-link-ico">
       <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
@@ -733,7 +738,7 @@
   </button>
 </li>
 
-<li class="lp-internal-mobile-item">
+<li class="lp-internal-mobile-item" data-sysadmin="1">
   <button class="dd-link" data-href="/launchpad/report.php?a=lp_leadership">
     <span class="dd-link-ico">
       <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
@@ -745,7 +750,7 @@
   </button>
 </li>
 
-<li class="lp-internal-mobile-item">
+<li class="lp-internal-mobile-item" data-sysadmin="1">
   <button class="dd-link" data-href="/launchpad/admin" data-nav-fullpage>
     <span class="dd-link-ico">
       <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>
@@ -760,7 +765,7 @@
 <!-- Users Online: same live count as the desktop badge above (shares
      .lp-internal-online-count), rendered here as a non-interactive
      status row matching the Coaches/Team/Leadership row shape. -->
-<li class="lp-internal-mobile-item lp-internal-online">
+<li class="lp-internal-mobile-item lp-internal-online" data-sysadmin="1">
   <span class="dd-link">
     <span class="dd-link-ico">
       <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.groups}</span>

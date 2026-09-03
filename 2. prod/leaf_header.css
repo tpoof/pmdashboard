@@ -637,8 +637,18 @@ button.dd-link {
 }
 
 /* ── Internal section (Coaches / Team / Leadership) ──
-   Right-aligned group built in leaf_header.js's buildInternalNavHTML()
-   — renders unconditionally for now (see that function's gating note). */
+   Right-aligned group built in leaf_header.js's buildInternalNavHTML().
+   Gated server-side of the DOM: the JS only emits this markup (with
+   data-sysadmin="1") when IS_SYSADMIN is true — non-sysadmins never
+   receive the element at all. The rule below is defense in depth only,
+   in case this markup is ever cached or duplicated without that
+   attribute; it is not the real gate. */
+.lp-nav-internal:not([data-sysadmin="1"]) {
+  display: none !important;
+}
+.lp-internal-mobile-item:not([data-sysadmin="1"]) {
+  display: none !important;
+}
 .lp-nav-internal {
   display: flex;
   align-items: center;
