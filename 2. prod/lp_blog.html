@@ -8,6 +8,7 @@
     <!-- Confirmed against main.tpl's own header/nav include. -->
     <link rel="stylesheet" href="./files/launchpad.css" />
     <link rel="stylesheet" href="./files/leaf_header.css" />
+    <link rel="stylesheet" href="./files/blog.css" />
 
     <style>
       /* Icon sizing for classes defined in launchpad.css (out of scope
@@ -175,6 +176,14 @@
         width: 1.25rem;
         height: 1.25rem;
       }
+
+      /* Defensive — same [hidden]-vs-display trap as .blog-status above.
+         blog.css (external, not owned by this edit) may give .bp-image an
+         explicit display; this guarantees figureEl.hidden actually hides
+         it regardless of what that rule turns out to be. */
+      .bp-image[hidden] {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -183,67 +192,135 @@
       <div id="lp-header-host"></div>
 
       <main id="lp-main" tabindex="-1">
-        <!-- ── PAGE TITLE ── -->
-        <section class="section" aria-labelledby="blog-page-h1">
-          <div class="wrap">
-            <div class="sec-hd ctr">
-              <span class="eyebrow">From the LEAF team</span>
-              <h1 class="sec-h2" id="blog-page-h1">Blog</h1>
-              <p class="sec-sub">
-                Updates, stories, and news from the LEAF team.
-              </p>
+        <div
+          id="blog-live-polite"
+          class="sr-only"
+          aria-live="polite"
+          aria-atomic="true"
+        ></div>
+        <div
+          id="blog-live-assertive"
+          class="sr-only"
+          aria-live="assertive"
+          aria-atomic="true"
+        ></div>
+
+        <div id="blog-index-view">
+          <!-- ── PAGE TITLE ── -->
+          <section class="section" aria-labelledby="blog-page-h1">
+            <div class="wrap">
+              <div class="sec-hd ctr">
+                <span class="eyebrow">From the LEAF team</span>
+                <h1 class="sec-h2" id="blog-page-h1" tabindex="-1">Blog</h1>
+                <p class="sec-sub">
+                  Updates, stories, and news from the LEAF team.
+                </p>
+              </div>
             </div>
+          </section>
+
+          <!-- ── POST GRID ── -->
+          <section class="section section-alt" aria-labelledby="blog-grid-h2">
+            <div class="wrap">
+              <div class="sec-hd ctr">
+                <span class="eyebrow">Latest posts</span>
+                <h2 class="sec-h2" id="blog-grid-h2" tabindex="-1">
+                  All Posts
+                </h2>
+                <p class="sec-sub">Browse recent posts from the LEAF team.</p>
+              </div>
+
+              <div id="blog-status" class="blog-status" role="status">
+                <div class="blog-spinner" aria-hidden="true"></div>
+                <p>Loading posts&hellip;</p>
+              </div>
+
+              <div id="blog-error" class="blog-error" role="alert" hidden></div>
+
+              <div id="blog-empty" class="blog-empty" hidden>
+                There are no blog posts yet.
+              </div>
+
+              <div class="blog-grid" role="list" id="blog-grid"></div>
+
+              <div class="blog-load-more-wrap" id="blog-load-more-wrap" hidden>
+                <button class="btn btn-sec" id="blog-load-more" type="button">
+                  Load more
+                  <span class="material-symbols-outlined" aria-hidden="true"
+                    ><svg viewBox="0 -960 960 960" fill="currentColor">
+                      <path
+                        d="M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z"
+                      /></svg
+                  ></span>
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- ── POST READER (shown via #<recordID> hash — see route() below) ── -->
+        <div id="blog-post-view" style="display: none">
+          <a class="bp-skip-link" href="#bp-article">Skip to article</a>
+          <div
+            id="bp-loading"
+            class="bp-loading"
+            role="status"
+            aria-label="Loading post"
+          >
+            <div class="bp-spinner" aria-hidden="true"></div>
+            <p>Loading post&hellip;</p>
           </div>
-        </section>
-
-        <!-- ── POST GRID ── -->
-        <section class="section section-alt" aria-labelledby="blog-grid-h2">
-          <div class="wrap">
-            <div class="sec-hd ctr">
-              <span class="eyebrow">Latest posts</span>
-              <h2 class="sec-h2" id="blog-grid-h2">All Posts</h2>
-              <p class="sec-sub">Browse recent posts from the LEAF team.</p>
-            </div>
-
-            <div
-              id="blog-live-polite"
-              class="sr-only"
-              aria-live="polite"
-              aria-atomic="true"
-            ></div>
-            <div
-              id="blog-live-assertive"
-              class="sr-only"
-              aria-live="assertive"
-              aria-atomic="true"
-            ></div>
-
-            <div id="blog-status" class="blog-status" role="status">
-              <div class="blog-spinner" aria-hidden="true"></div>
-              <p>Loading posts&hellip;</p>
-            </div>
-
-            <div id="blog-error" class="blog-error" role="alert" hidden></div>
-
-            <div id="blog-empty" class="blog-empty" hidden>
-              There are no blog posts yet.
-            </div>
-
-            <div class="blog-grid" role="list" id="blog-grid"></div>
-
-            <div class="blog-load-more-wrap" id="blog-load-more-wrap" hidden>
-              <button class="btn btn-sec" id="blog-load-more" type="button">
-                Load more
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z"
-                    /></svg
+          <div
+            id="bp-error"
+            class="bp-error"
+            role="alert"
+            style="display: none"
+          ></div>
+          <div id="bp-content" style="display: none">
+            <a class="bp-back-link" href="#">&larr; Back to blog</a>
+            <main>
+              <header class="bp-header">
+                <span
+                  id="bp-category"
+                  class="bp-category"
+                  style="display: none"
                 ></span>
-              </button>
-            </div>
+                <div class="bp-header-row">
+                  <div class="bp-header-icon" aria-hidden="true">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 -960 960 960"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M480-40 360-160H200q-33 0-56.5-23.5T120-240v-560q0-33 23.5-56.5T200-880h560q33 0 56.5 23.5T840-800v560q0 33-23.5 56.5T760-160H600L480-40Zm0-280q86 0 143-60t57-140v-200H480q-81 0-140.5 57T280-520q0 30 8.5 57t23.5 50l-16 16q-12 12-12 28t12 28q12 12 27.5 11.5T352-341l15-14q24 17 52.5 26t60.5 9Zm62-226.5q0 16.5-12 28.5l-75 75q-12 12-28.5 12T398-443q-11-12-11-28.5t11-27.5l76-76q12-12 28-12t28 12q12 12 12 28.5Z"
+                      />
+                    </svg>
+                  </div>
+                  <div class="bp-header-text">
+                    <h1 id="bp-title" class="bp-title" tabindex="-1"></h1>
+                    <div class="bp-byline">
+                      <span id="bp-date"></span>
+                      <span aria-hidden="true">&middot;</span>
+                      <span id="bp-readtime"></span>
+                    </div>
+                  </div>
+                </div>
+              </header>
+              <article id="bp-article" class="bp-article">
+                <div id="bp-body" class="bp-body">
+                  <figure id="bp-image-figure" class="bp-image" hidden>
+                    <img id="bp-image" src="" alt="" />
+                  </figure>
+                  <div id="bp-body-content"></div>
+                </div>
+              </article>
+              <footer class="bp-footer">
+                <a class="bp-back-link" href="#">&larr; Back to blog</a>
+              </footer>
+            </main>
           </div>
-        </section>
+        </div>
       </main>
 
       <button
@@ -293,19 +370,26 @@
           // the string field lastStatus, not a numeric stepID — confirmed
           // against a live "Published" record's actual response.
           publishedStatus: "Published",
-          // Real single-post reader page — blog.js's own hash-routed
-          // template, confirmed working at .../report.php?a=post#<id>.
-          // Absolute since this index page lives under /launchpad/, a
-          // different site/directory than the reader page.
-          postReaderURL: "https://leaf.va.gov/platform/blog/report.php?a=post",
+          // Full field set — the grid only fetches title/category/
+          // publishDate/excerpt (see loadBatch's getData call below); the
+          // reader fetches all of these for a single post.
           indicators: {
             title: 2,
             category: 3,
             publishDate: 4,
             excerpt: 5, // Lead paragraph, truncated as the card summary
+            body: 6, // Trumbowyg-authored HTML, sanitized before rendering
+            featuredImage: 7,
+            featuredImageAlt: 8,
           },
           batchSize: 12,
         };
+
+        // Same self-hosted build leaf_header.js already uses to sanitize
+        // its announcement banner — reusing it here rather than adding a
+        // second copy of the same dependency.
+        const DOMPURIFY_SRC =
+          "https://leaf.va.gov/app/libs/js/dompurify/dompurify.min.js";
 
         const byId = (id) => document.getElementById(id);
 
@@ -406,7 +490,7 @@
           heading.className = "blog-card-title";
           heading.tabIndex = -1;
           const link = document.createElement("a");
-          link.href = `${CONFIG.postReaderURL}#${encodeURIComponent(recordID)}`;
+          link.href = `#${encodeURIComponent(recordID)}`;
           link.textContent = title;
           heading.appendChild(link);
           card.appendChild(heading);
@@ -461,7 +545,12 @@
               // even though {} alone works. Sorting entirely client-side
               // below instead (by the real publishDate field values).
               sort: {},
-              getData: Object.values(CONFIG.indicators),
+              getData: [
+                CONFIG.indicators.title,
+                CONFIG.indicators.category,
+                CONFIG.indicators.publishDate,
+                CONFIG.indicators.excerpt,
+              ],
               limit: CONFIG.batchSize,
               limitOffset: offset,
             };
@@ -534,6 +623,240 @@
           loadBatch(0, false);
         }
 
+        // ── Post reader — merged in from blog/files/blog.js so posts open
+        // inline via #<recordID> instead of navigating to the standalone
+        // reader page (leaf.va.gov/platform/blog/...), which would expose
+        // that internal URL to the user. Keep in sync with blog.js if the
+        // form's fields change; that page is still the source of truth
+        // for anyone opening a shared post link directly. ──
+
+        function ensureDompurify() {
+          if (window.DOMPurify) return Promise.resolve();
+          const existing = document.querySelector(
+            `script[src="${DOMPURIFY_SRC}"]`,
+          );
+          if (existing) {
+            return new Promise((resolve) => {
+              if (window.DOMPurify) return resolve();
+              existing.addEventListener("load", () => resolve());
+              existing.addEventListener("error", () => {
+                console.warn(
+                  "[BlogPost] DOMPurify failed to load — body will not render.",
+                );
+                resolve();
+              });
+            });
+          }
+          return new Promise((resolve) => {
+            const s = document.createElement("script");
+            s.src = DOMPURIFY_SRC;
+            s.async = true;
+            s.onload = () => resolve();
+            s.onerror = () => {
+              console.warn(
+                "[BlogPost] DOMPurify failed to load — body will not render.",
+              );
+              resolve();
+            };
+            document.head.appendChild(s);
+          });
+        }
+
+        function getRecordIDFromHash() {
+          const hash = window.location.hash.replace("#", "").trim();
+          return /^\d+$/.test(hash) ? hash : "";
+        }
+
+        async function fetchPostData(recordID) {
+          const q = {
+            terms: [
+              { id: "recordIDs", operator: "=", match: recordID, gate: "AND" },
+            ],
+            joins: [],
+            sort: {},
+            getData: Object.values(CONFIG.indicators),
+          };
+          const r = await fetch(
+            `${CONFIG.apiBase}api/form/query?q=${encodeURIComponent(JSON.stringify(q))}`,
+            { credentials: "include" },
+          );
+          if (!r.ok) throw new Error("Query failed HTTP " + r.status);
+          const data = await r.json();
+          const rec = data && data[recordID];
+          return rec || null;
+        }
+
+        // Featured image is a File Upload indicator — api/form/query
+        // doesn't return a plain URL for those, so this reads the <img>
+        // LEAF's own print-view HTML already contains for it instead.
+        async function fetchIndicatorHTML(recordID, indicatorID) {
+          return fetch(
+            `${CONFIG.apiBase}ajaxIndex.php?a=getprintindicator&recordID=${encodeURIComponent(recordID)}&indicatorID=${encodeURIComponent(indicatorID)}&series=1`,
+            {
+              credentials: "include",
+              headers: { "x-requested-with": "XMLHttpRequest" },
+            },
+          )
+            .then((r) => r.text())
+            .catch(() => "");
+        }
+
+        function parseImageSrcFromHTML(html) {
+          const tmp = document.createElement("div");
+          tmp.innerHTML = html;
+          const img = tmp.querySelector('img[src*="image.php"]');
+          return img ? img.getAttribute("src") || "" : "";
+        }
+
+        function calcReadTime(wordCount) {
+          return Math.max(1, Math.round(wordCount / 200));
+        }
+
+        function renderBody(bodyHTML) {
+          const container = byId("bp-body-content");
+          if (!window.DOMPurify) {
+            container.textContent = "";
+            console.warn(
+              "[BlogPost] Rendering body as empty — DOMPurify unavailable.",
+            );
+            return 0;
+          }
+          // FORBID_ATTR strips inline style so pasted content (from Word,
+          // Google Docs, etc.) can't override this page's typography.
+          container.innerHTML = window.DOMPurify.sanitize(bodyHTML, {
+            FORBID_ATTR: ["style"],
+          });
+          return (container.textContent || "")
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean).length;
+        }
+
+        function showPostLoading() {
+          byId("bp-loading").style.display = "";
+          byId("bp-error").style.display = "none";
+          byId("bp-content").style.display = "none";
+        }
+
+        function showPostError(message) {
+          byId("bp-loading").style.display = "none";
+          byId("bp-content").style.display = "none";
+          const errEl = byId("bp-error");
+          errEl.textContent = message;
+          errEl.style.display = "";
+          announce(message, true);
+        }
+
+        function showPostContent() {
+          byId("bp-loading").style.display = "none";
+          byId("bp-error").style.display = "none";
+          byId("bp-content").style.display = "";
+          announce("Post loaded.", false);
+        }
+
+        async function loadPost(recordID) {
+          showPostLoading();
+          try {
+            const [rec] = await Promise.all([
+              fetchPostData(recordID),
+              ensureDompurify(),
+            ]);
+            if (!rec || rec.lastStatus !== CONFIG.publishedStatus) {
+              showPostError("That post could not be found.");
+              return;
+            }
+            const s1 = rec.s1 || rec;
+
+            const title = getField(s1, CONFIG.indicators.title);
+            const category = getField(s1, CONFIG.indicators.category);
+            const publishDate = getField(s1, CONFIG.indicators.publishDate);
+            const bodyHTML = getField(s1, CONFIG.indicators.body);
+            const imageAlt = getField(s1, CONFIG.indicators.featuredImageAlt);
+
+            byId("bp-title").textContent = title || "Untitled post";
+            document.title = (title || "Blog post") + " — LEAF Launchpad";
+
+            const categoryEl = byId("bp-category");
+            if (category) {
+              categoryEl.textContent = category;
+              categoryEl.style.display = "";
+            } else {
+              categoryEl.style.display = "none";
+            }
+
+            byId("bp-date").textContent = formatDate(publishDate);
+
+            const wordCount = renderBody(bodyHTML);
+            byId("bp-readtime").textContent =
+              `${calcReadTime(wordCount)} min read`;
+
+            const imageHTML = await fetchIndicatorHTML(
+              recordID,
+              CONFIG.indicators.featuredImage,
+            );
+            const imageSrc = parseImageSrcFromHTML(imageHTML);
+            const figureEl = byId("bp-image-figure");
+            const imgEl = byId("bp-image");
+            if (imageSrc) {
+              imgEl.src = imageSrc;
+              imgEl.alt = imageAlt || "";
+              figureEl.hidden = false;
+            } else {
+              figureEl.hidden = true;
+              if (imageHTML.trim()) {
+                console.warn(
+                  "[BlogPost] featured image indicator returned HTML but no img[src*='image.php'] was found.",
+                  imageHTML,
+                );
+              }
+            }
+
+            showPostContent();
+            byId("bp-title").focus();
+          } catch (err) {
+            console.error("[BlogPost]", err);
+            showPostError(
+              "Something went wrong loading this post. Try refreshing the page.",
+            );
+          }
+        }
+
+        function showIndexView() {
+          byId("blog-post-view").style.display = "none";
+          byId("blog-index-view").style.display = "";
+          document.title = "Blog — LEAF Launchpad";
+          byId("blog-grid-h2").focus();
+          announce("Returned to blog post list.", false);
+        }
+
+        function showPostView() {
+          byId("blog-index-view").style.display = "none";
+          byId("blog-post-view").style.display = "";
+        }
+
+        function route() {
+          const recordID = getRecordIDFromHash();
+          if (recordID) {
+            showPostView();
+            loadPost(recordID);
+          } else {
+            showIndexView();
+          }
+        }
+
+        function wireBackLinks() {
+          document.querySelectorAll(".bp-back-link").forEach((a) => {
+            a.addEventListener("click", (e) => {
+              e.preventDefault();
+              if (window.location.hash) {
+                window.location.hash = "";
+              } else {
+                showIndexView();
+              }
+            });
+          });
+        }
+
         // ── Jump to top — copied verbatim from the other Launchpad pages ──
         const initJumpBtn = () => {
           const btn = document.getElementById("lpJump");
@@ -558,7 +881,10 @@
         document.addEventListener("DOMContentLoaded", () => {
           initGrid();
           initJumpBtn();
+          wireBackLinks();
+          route();
         });
+        window.addEventListener("hashchange", route);
       })();
     </script>
   </body>
