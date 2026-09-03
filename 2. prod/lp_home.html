@@ -730,7 +730,7 @@
     <link rel="stylesheet" href="/launchpad/files/leaf_header.css" />
     <script
       src="/launchpad/files/leaf_header.js"
-      data-is-admin="<!--{$is_admin}-->"
+      data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
     ></script>
   </head>
   <body>
@@ -846,7 +846,7 @@
         <script
           src="./files/multisite-grid.js"
           data-user-id="<!--{$userID}-->"
-          data-is-admin="<!--{$is_admin}-->"
+          data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
           data-mount="mst-root"
           data-trigger="mst-open-btn"
         ></script>

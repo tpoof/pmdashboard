@@ -13,11 +13,15 @@
    <div id="lp-header-host"> for itself. A brand-new page only
    needs ONE line added to it, right before </head> or </body>:
 
-       <script src="/launchpad/files/leaf_header.js" data-is-admin="<!--{$is_admin}-->"></script>
+       <script src="/launchpad/files/leaf_header.js"
+               data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->">
+       </script>
 
-   data-is-admin gates the Internal nav bar (Coaches/Team/Leadership/
-   Admin/Users Online) — see IS_ADMIN below. Omitting the attribute
-   is safe; the bar simply stays hidden.
+   data-is-sysadmin gates the Internal nav bar (Coaches/Team/Leadership/
+   Admin/Users Online) — see IS_SYSADMIN below. It's separate from
+   $is_admin (used elsewhere in the app for broader admin checks);
+   this bar specifically requires Sysadmin group membership (groupID
+   1). Omitting the attribute is safe; the bar simply stays hidden.
 
    ── Breadcrumb: auto-detected, no per-page flag ─────────────
    Every real page's URL already matches an entry in NAV_SECTIONS
@@ -77,20 +81,21 @@
 (function () {
   "use strict";
 
-  /* ── Admin gate ──────────────────────────────────────────────────
+  /* ── Sysadmin gate ───────────────────────────────────────────────
      document.currentScript is only valid synchronously while this
      script first executes, so it's captured here, before any other
-     code runs. Reads data-is-admin off this same <script> tag —
-     same host-page pattern lp_home.html already uses for
-     multisite-grid.js's data-is-admin/data-user-id. Any value other
-     than "1"/"true"/"yes" (including the attribute being absent, or
-     an unrendered "<!--{$is_admin}-->" if Smarty didn't parse it)
-     is treated as not-admin, so the Internal nav bar fails hidden,
-     never fails open. */
+     code runs. Reads data-is-sysadmin off this same <script> tag —
+     same host-page pattern lp_home.html uses for multisite-grid.js's
+     data-is-sysadmin/data-user-id. Sourced from Smarty's
+     $empMembership['groupID'][1] check (Sysadmin group), not the
+     broader $is_admin flag. Any value other than "1"/"true"/"yes"
+     (including the attribute being absent, or an unrendered Smarty
+     tag) is treated as not-sysadmin, so the Internal nav bar fails
+     hidden, never fails open. */
   var HEADER_SCRIPT_EL = document.currentScript;
-  var IS_ADMIN = (function () {
+  var IS_SYSADMIN = (function () {
     var raw =
-      HEADER_SCRIPT_EL && HEADER_SCRIPT_EL.getAttribute("data-is-admin");
+      HEADER_SCRIPT_EL && HEADER_SCRIPT_EL.getAttribute("data-is-sysadmin");
     return !!raw && /^(1|true|yes)$/i.test(raw.trim());
   })();
 
@@ -635,13 +640,13 @@
   /* ─────────────────────────────────────────────────────────────
      INTERNAL NAV SECTION
      Right-aligned group: [ 🔒 ] Coaches (new tab) → Team → Leadership
-     → Admin → Users Online (live status). Admin-only — gated on
-     IS_ADMIN (see top of file). Returns empty markup for non-admins
+     → Admin → Users Online (live status). Sysadmin-only — gated on
+     IS_SYSADMIN (see top of file). Returns empty markup for non-sysadmins
      so the section never enters the DOM, rather than being hidden
      with CSS.
   ───────────────────────────────────────────────────────────── */
   function buildInternalNavHTML() {
-    if (!IS_ADMIN) {
+    if (!IS_SYSADMIN) {
       return { desktop: "", mobile: "" };
     }
 
