@@ -359,7 +359,7 @@
                       />
                     </svg>
                   </span>
-                  <span class="lp-sr-only">(opens in new tab)</span>
+                  <span class="sr-only">(opens in new tab)</span>
                 </a>
               </div>
             </div>
@@ -530,17 +530,24 @@
 
         let links = "";
         if (link) {
-          // Reused from leaf_header_preprod.js ICON_SVG.play_circle
+          // Reused from leaf_header_preprod.js ICON_SVG.play_circle + open_in_new
           links += `<a href="${link}" target="_blank" rel="noopener noreferrer" class="cop-session-link">
             <span class="material-symbols-outlined" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="m380-300 280-180-280-180v360ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg></span>
             Watch Session
+            <span class="material-symbols-outlined" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/></svg></span>
+            <span class="sr-only">(opens in new tab)</span>
           </a>`;
         }
         if (file) {
-          // Material Symbols (Filled): download
-          links += `<a href="file.php?form=${item.recordID}&amp;id=35&amp;series=1&amp;file=0" target="_blank" download class="cop-session-link">
-            <span class="material-symbols-outlined" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-313 287-506l43-43 120 120v-371h60v371l120-120 43 43-193 193ZM220-160q-24 0-42-18t-18-42v-143h60v143h520v-143h60v143q0 24-18 42t-42 18H220Z"/></svg></span>
-            Download Presentation
+          // Opens the presentation in a new tab for viewing rather than
+          // forcing a download — the download attribute is ignored on
+          // cross-origin links anyway, which is why this previously
+          // appeared broken instead of downloading.
+          links += `<a href="file.php?form=${item.recordID}&amp;id=35&amp;series=1&amp;file=0" target="_blank" rel="noopener noreferrer" class="cop-session-link">
+            <span class="material-symbols-outlined" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520h200L520-800v200Z"/></svg></span>
+            View Presentation
+            <span class="material-symbols-outlined" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/></svg></span>
+            <span class="sr-only">(opens in new tab)</span>
           </a>`;
         }
 
