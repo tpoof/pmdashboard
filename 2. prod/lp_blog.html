@@ -437,7 +437,14 @@
           try {
             const query = new LeafFormQuery();
             query.setRootURL(CONFIG.apiBase);
-            query.addTerm("lastStatus", "=", CONFIG.publishedStatus);
+            // No server-side status/category filter — confirmed against
+            // this API's real responses that categoryID/stepID aren't
+            // present on records at all (an unfiltered query returns the
+            // same shape), and lastStatus isn't a recognized query term
+            // (the API returns the string "0" for an unrecognized field,
+            // vs. [] for a recognized field with no matches). Filtering
+            // on lastStatus === "Published" client-side below instead,
+            // since that field IS present on every real record.
             query.getData(Object.values(CONFIG.indicators));
             // LeafFormQuery forwards its sort column straight through to the
             // query API, same as getData's indicatorID addressing — passing
@@ -448,26 +455,11 @@
             query.sort(CONFIG.indicators.publishDate, "DESC");
             query.setLimit(offset, CONFIG.batchSize);
 
-            // TEMP DEBUG — remove once posts are loading correctly.
-            console.log("[BlogIndex debug] rootURL:", query.getRootURL());
-            console.log("[BlogIndex debug] query:", query.getQuery());
-            console.log(
-              "[BlogIndex debug] full query JSON (open this in a new tab):",
-              query.getRootURL() +
-                "api/form/query?q=" +
-                encodeURIComponent(JSON.stringify(query.getQuery())),
-            );
-
             const results = await query.execute();
-
-            // TEMP DEBUG — remove once posts are loading correctly.
-            console.log("[BlogIndex debug] raw results:", results);
-            console.log(
-              "[BlogIndex debug] result count:",
-              Object.keys(results || {}).length,
+            const rawEntries = Object.entries(results || {});
+            const entries = rawEntries.filter(
+              ([, rec]) => rec.lastStatus === CONFIG.publishedStatus,
             );
-
-            const entries = Object.entries(results || {});
 
             entries.sort((a, b) => {
               const s1a = a[1].s1 || a[1];
@@ -483,36 +475,23 @@
             let firstNewHeading = null;
             entries.forEach(([recordID, rec]) => {
               const s1 = rec.s1 || rec;
-              // TEMP DEBUG — remove once posts are loading correctly.
-              console.log("[BlogIndex debug] record", recordID, "s1:", s1);
               const { card, heading } = createCard(recordID, s1);
               grid.appendChild(card);
               if (!firstNewHeading) firstNewHeading = heading;
             });
 
             status.hidden = true;
-            // TEMP DEBUG — remove once posts are loading correctly.
-            console.log(
-              "[BlogIndex debug] reached spinner-hide line. status.hidden now:",
-              status.hidden,
-              "| actual DOM attribute:",
-              status.getAttribute("hidden"),
-            );
 
-            const gotFullBatch = entries.length === CONFIG.batchSize;
+            // Based on the raw (pre-filter) count, not entries.length —
+            // a full raw batch means the server may have more records to
+            // page through even if few/none of this batch were published.
+            const gotFullBatch = rawEntries.length === CONFIG.batchSize;
             loadMoreWrap.hidden = !gotFullBatch;
             if (loadMoreBtn) loadMoreBtn.disabled = false;
 
             empty.hidden = grid.children.length !== 0;
-            // TEMP DEBUG — remove once posts are loading correctly.
-            console.log(
-              "[BlogIndex debug] empty.hidden:",
-              empty.hidden,
-              "| grid children:",
-              grid.children.length,
-            );
 
-            currentOffset = offset + entries.length;
+            currentOffset = offset + rawEntries.length;
 
             if (isLoadMore) {
               if (firstNewHeading) firstNewHeading.focus();
