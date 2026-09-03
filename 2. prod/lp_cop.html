@@ -543,7 +543,10 @@
           // forcing a download — the download attribute is ignored on
           // cross-origin links anyway, which is why this previously
           // appeared broken instead of downloading.
-          links += `<a href="file.php?form=${item.recordID}&amp;id=35&amp;series=1&amp;file=0" target="_blank" rel="noopener noreferrer" class="cop-session-link">
+          // Prefixed with COP_ROOT_URL — the file lives on the CoP LEAF
+          // site, so a bare relative "file.php" URL resolves against this
+          // Launchpad's own domain instead and 404s/"invalid file"s.
+          links += `<a href="${COP_ROOT_URL}file.php?form=${item.recordID}&amp;id=35&amp;series=1&amp;file=0" target="_blank" rel="noopener noreferrer" class="cop-session-link">
             <span class="material-symbols-outlined" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520h200L520-800v200Z"/></svg></span>
             View Presentation
             <span class="material-symbols-outlined" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/></svg></span>
