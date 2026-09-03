@@ -263,6 +263,9 @@
       (() => {
         "use strict";
 
+        // TEMP DEBUG — remove once posts are loading correctly.
+        console.log("[BlogIndex debug] script started executing");
+
         // Mirrors BlogPost.js's CONFIG.indicators pattern: name every
         // indicatorID by purpose instead of scattering raw numbers through
         // the code. Verify these against the "Blog Post" form in LEAF Form
@@ -420,6 +423,13 @@
         }
 
         async function loadBatch(offset, isLoadMore) {
+          // TEMP DEBUG — remove once posts are loading correctly.
+          console.log(
+            "[BlogIndex debug] loadBatch called, offset:",
+            offset,
+            "isLoadMore:",
+            isLoadMore,
+          );
           const grid = byId("blog-grid");
           const status = byId("blog-status");
           const error = byId("blog-error");
@@ -541,9 +551,18 @@
         };
 
         document.addEventListener("DOMContentLoaded", () => {
+          // TEMP DEBUG — remove once posts are loading correctly.
+          console.log(
+            "[BlogIndex debug] DOMContentLoaded fired, calling initGrid()",
+          );
           initGrid();
           initJumpBtn();
         });
+        // TEMP DEBUG — remove once posts are loading correctly.
+        console.log(
+          "[BlogIndex debug] document.readyState at script end:",
+          document.readyState,
+        );
       })();
     </script>
   </body>
