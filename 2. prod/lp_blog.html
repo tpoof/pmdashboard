@@ -451,10 +451,11 @@
             const q = {
               terms: [{ id: "recordID", operator: ">", match: 0, gate: "AND" }],
               joins: [],
-              sort: {
-                column: CONFIG.indicators.publishDate,
-                direction: "DESC",
-              },
+              // No server-side sort — confirmed it breaks this endpoint:
+              // {column: <indicatorID>, direction} silently returns [],
+              // even though {} alone works. Sorting entirely client-side
+              // below instead (by the real publishDate field values).
+              sort: {},
               getData: Object.values(CONFIG.indicators),
               limit: CONFIG.batchSize,
               limitOffset: offset,

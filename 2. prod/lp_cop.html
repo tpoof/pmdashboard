@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Community of Practice — LEAF Launchpad</title>
 
-    <link rel="stylesheet" href="./files/launchpad.css" />
+    <link rel="stylesheet" href="/launchpad/files/launchpad.css" />
     <link rel="stylesheet" href="/platform/designs/files/smarty_styles.css" />
 
     <style>
@@ -425,8 +425,10 @@
            id16/17, id25/26/27/35) live on the CoP LEAF site, not this
            Launchpad's own site — every LeafFormQuery here must target it
            explicitly via setRootURL(), or the query resolves against the
-           wrong site and returns nothing. */
-        const COP_ROOT_URL = "https://leaf.va.gov/platform/CoP";
+           wrong site and returns nothing.
+           Trailing slash is required: formQuery.js builds the endpoint as
+           `${rootURL}api/form/query?q=...` with no separator inserted. */
+        const COP_ROOT_URL = "https://leaf.va.gov/platform/CoP/";
 
         /* ── Upcoming session details ── */
         const loadUpcomingSession = async () => {
@@ -660,8 +662,10 @@
 
       // categoryID form_8fc8b lives on the CoP LEAF site, not this
       // Launchpad's own site — must target it explicitly (see the matching
-      // COP_ROOT_URL note in the upcoming-session script above).
-      const COP_ROOT_URL = "https://leaf.va.gov/platform/CoP";
+      // COP_ROOT_URL note in the upcoming-session script above). Trailing
+      // slash required — formQuery.js concatenates rootURL + "api/form/query"
+      // with no separator.
+      const COP_ROOT_URL = "https://leaf.va.gov/platform/CoP/";
 
       function runPastSessionsQuery(searchText) {
         searchWords = searchText ? searchText.split(/\s+/) : [];
