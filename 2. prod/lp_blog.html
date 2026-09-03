@@ -275,9 +275,11 @@
         // the API endpoint") for exactly this case, so that's called below
         // instead of relying on the constructor or a derived base.
         const CONFIG = {
-          apiBase: "/platform/blog/files/", // Trailing slash required —
-          // formQuery.js's execute() does `${rootURL}api/form/query`
-          // with no separator, so rootURL must supply the slash itself.
+          apiBase: "/platform/blog/", // Site root, trailing slash required —
+          // formQuery.js's execute() does `${rootURL}api/form/query` with
+          // no separator. "files/" (where blog.js itself lives) is just
+          // the assets subfolder, same pattern as /launchpad/files/
+          // leaf_header.js — the API hangs off the site root, not files/.
           categoryID: "form_3db88",
           stepID: 3, // Published
           indicators: {
