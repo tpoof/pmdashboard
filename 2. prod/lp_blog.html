@@ -274,9 +274,6 @@
       (() => {
         "use strict";
 
-        // TEMP DEBUG — remove once posts are loading correctly.
-        console.log("[BlogIndex debug] script started executing");
-
         // Mirrors BlogPost.js's CONFIG.indicators pattern: name every
         // indicatorID by purpose instead of scattering raw numbers through
         // the code. Verify these against the "Blog Post" form in LEAF Form
@@ -434,13 +431,6 @@
         }
 
         async function loadBatch(offset, isLoadMore) {
-          // TEMP DEBUG — remove once posts are loading correctly.
-          console.log(
-            "[BlogIndex debug] loadBatch called, offset:",
-            offset,
-            "isLoadMore:",
-            isLoadMore,
-          );
           const grid = byId("blog-grid");
           const status = byId("blog-status");
           const error = byId("blog-error");
@@ -458,14 +448,13 @@
           try {
             const query = new LeafFormQuery();
             query.setRootURL(CONFIG.apiBase);
-            // No server-side status/category filter — confirmed against
-            // this API's real responses that categoryID/stepID aren't
-            // present on records at all (an unfiltered query returns the
-            // same shape), and lastStatus isn't a recognized query term
-            // (the API returns the string "0" for an unrecognized field,
-            // vs. [] for a recognized field with no matches). Filtering
-            // on lastStatus === "Published" client-side below instead,
-            // since that field IS present on every real record.
+            // recordID > 0 rather than no terms at all — confirmed against
+            // this API that an empty terms array is treated as an
+            // unmatchable query (always returns []), not "no filter."
+            // categoryID/stepID aren't usable here either (see
+            // publishedStatus below for how "published" is actually
+            // determined), so this is the real "select everything" query.
+            query.addTerm("recordID", ">", 0);
             query.getData(Object.values(CONFIG.indicators));
             // LeafFormQuery forwards its sort column straight through to the
             // query API, same as getData's indicatorID addressing — passing
@@ -477,13 +466,6 @@
             query.setLimit(offset, CONFIG.batchSize);
 
             const results = await query.execute();
-            // TEMP DEBUG — remove once posts are loading correctly.
-            console.log(
-              "[BlogIndex debug] query.execute() resolved. typeof results:",
-              typeof results,
-              "value:",
-              results,
-            );
             const rawEntries = Object.entries(results || {});
             const entries = rawEntries.filter(
               ([, rec]) => rec.lastStatus === CONFIG.publishedStatus,
@@ -569,18 +551,9 @@
         };
 
         document.addEventListener("DOMContentLoaded", () => {
-          // TEMP DEBUG — remove once posts are loading correctly.
-          console.log(
-            "[BlogIndex debug] DOMContentLoaded fired, calling initGrid()",
-          );
           initGrid();
           initJumpBtn();
         });
-        // TEMP DEBUG — remove once posts are loading correctly.
-        console.log(
-          "[BlogIndex debug] document.readyState at script end:",
-          document.readyState,
-        );
       })();
     </script>
   </body>
