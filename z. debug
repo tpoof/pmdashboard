@@ -1,1 +1,1 @@
-leaf.va.gov/platform/blog/api/form/query?q=%7B%22terms%22%3A%20%5B%5D%2C%20%22joins%22%3A%20%5B%5D%2C%20%22sort%22%3A%20%7B%7D%2C%20%22getData%22%3A%20%5B2%2C%203%2C%204%2C%205%5D%7D
+leaf.va.gov/platform/blog/api/form/query?q=%7B%22terms%22%3A%20%5B%7B%22id%22%3A%20%22recordID%22%2C%20%22operator%22%3A%20%22%3E%22%2C%20%22match%22%3A%200%2C%20%22gate%22%3A%20%22AND%22%7D%5D%2C%20%22joins%22%3A%20%5B%5D%2C%20%22sort%22%3A%20%7B%7D%2C%20%22getData%22%3A%20%5B2%2C%203%2C%204%2C%205%5D%2C%20%22limit%22%3A%2012%2C%20%22limitOffset%22%3A%200%7D
