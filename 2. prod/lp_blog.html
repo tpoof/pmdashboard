@@ -160,6 +160,17 @@
         margin-top: 2.5rem;
       }
 
+      /* .blog-status and .blog-load-more-wrap both set display:flex,
+         which — being an author rule — always wins over the browser's
+         own [hidden]{display:none} default, regardless of selector
+         order or specificity (user-agent styles are the lowest-priority
+         cascade origin). Setting the hidden attribute via JS alone
+         doesn't actually hide either element without this. */
+      .blog-status[hidden],
+      .blog-load-more-wrap[hidden] {
+        display: none;
+      }
+
       .lp-jump .material-symbols-outlined svg {
         width: 1.25rem;
         height: 1.25rem;
