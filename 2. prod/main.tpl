@@ -76,9 +76,21 @@
 
     {* ── Universal header (site-wide) ──
        Replaces the legacy #header/#footer/menu.tpl chrome everywhere.
-       See leaf_header_preprod.js/.css for the header/nav implementation. *}
-    <link rel="stylesheet" href="/launchpad/files/leaf_header_preprod.css" />
-    <script src="/launchpad/files/leaf_header_preprod.js"></script>
+       See leaf_header.js/.css for the header/nav implementation. *}
+    <link rel="stylesheet" href="/launchpad/files/leaf_header.css" />
+    <script
+      src="/launchpad/files/leaf_header.js"
+      data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
+    ></script>
+
+    {* TODO(header revisit): launchpad.css is currently linked from inside
+       view_homepage.tpl's own body content (it lost its <head> when that
+       file was stripped down to a body-only fragment for main.tpl's
+       {$body} slot — see view_homepage.tpl history). A <link> tag in the
+       body still loads/applies fine, but it's non-standard placement and
+       can cause a brief flash-of-unstyled-content. Move it here instead,
+       alongside the other global stylesheet imports above, next time the
+       header/launchpad styling is revisited. *}
 
     <link rel="icon" href="vafavicon.ico" type="image/x-icon" />
 </head>

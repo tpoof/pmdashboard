@@ -1,14 +1,7 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LEAF Launchpad — Your Platform for Digital Transformation</title>
+<!-- Design system -->
+<link rel="stylesheet" href="./files/launchpad.css" />
 
-    <!-- Design system -->
-    <link rel="stylesheet" href="./files/launchpad.css" />
-
-    <style>
+<style>
       /* Icon sizing for classes defined in launchpad.css (out of scope
          for this edit) — that file still sizes .material-symbols-outlined
          via font-size, which no longer affects the inlined <svg>. These
@@ -726,14 +719,6 @@
       }
     </style>
 
-    <!-- Universal nav + Option B router -->
-    <link rel="stylesheet" href="/launchpad/files/leaf_header.css" />
-    <script
-      src="/launchpad/files/leaf_header.js"
-      data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
-    ></script>
-  </head>
-  <body>
     <div class="lp" id="lp-root">
       <a class="lp-skip" href="#main-content">Skip to main content</a>
 
@@ -1960,5 +1945,3 @@
         render();
       })();
     </script>
-  </body>
-</html>

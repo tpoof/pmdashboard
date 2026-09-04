@@ -361,7 +361,7 @@
     <!-- Confirmed against main.tpl's own header/nav include. -->
     <script
       src="./files/leaf_header.js"
-      data-is-admin="<!--{$is_admin}-->"
+      data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
     ></script>
 
     <script>
