@@ -187,6 +187,18 @@
       .bp-image[hidden] {
         display: none;
       }
+
+      /* Replicates blog.css's #blogPost main rule (max-width/centering/
+         padding) — that selector targets an actual <main> element, but
+         this content sits inside the page's own <main id="lp-main">, so
+         a second nested <main> would be an invalid, inaccessible
+         landmark. This div carries the same layout instead, using the
+         same design tokens blog.css already defines. */
+      #blogPost .bp-content-inner {
+        max-width: 840px;
+        margin: 0 auto;
+        padding: var(--space-xl) var(--space-lg) var(--space-3xl);
+      }
     </style>
   </head>
   <body>
@@ -282,7 +294,7 @@
             ></div>
             <div id="bp-content" style="display: none">
               <a class="bp-back-link" href="#">&larr; Back to blog</a>
-              <div>
+              <div class="bp-content-inner">
                 <header class="bp-header">
                   <span
                     id="bp-category"

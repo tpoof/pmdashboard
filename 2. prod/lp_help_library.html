@@ -10,7 +10,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LEAF Help Library</title>
-    <link rel="stylesheet" href="/platform/help_library/files/help_library.css" />
+    <link
+      rel="stylesheet"
+      href="/platform/help_library/files/help_library.css"
+    />
   </head>
   <body class="smarty lp-scope">
     <div class="hl-root">
@@ -109,14 +112,20 @@
         <div class="hl-modal-overlay" id="consultOverlay"></div>
         <div class="hl-modal-dialog">
           <div class="hl-modal-header">
-            <p class="hl-modal-title" id="consultModalTitle">Request a consultation</p>
+            <p class="hl-modal-title" id="consultModalTitle">
+              Request a consultation
+            </p>
             <button
               class="hl-modal-close"
               id="consultClose"
               type="button"
               aria-label="Close consultation request form"
             >
-              <span class="hl-icon" aria-hidden="true" id="consultCloseIcon"></span>
+              <span
+                class="hl-icon"
+                aria-hidden="true"
+                id="consultCloseIcon"
+              ></span>
             </button>
           </div>
           <p id="consultModalDesc" class="hl-sr-only">
@@ -130,8 +139,18 @@
             ></iframe>
             <div class="hl-consult-fallback" id="consultFallback" role="status">
               <span>Trouble viewing the form?</span>
-              <a href="#" id="consultFallbackLink" target="_blank" rel="noopener">
-                Open in a new tab <span class="hl-icon" aria-hidden="true" id="consultFallbackIcon"></span>
+              <a
+                href="#"
+                id="consultFallbackLink"
+                target="_blank"
+                rel="noopener"
+              >
+                Open in a new tab
+                <span
+                  class="hl-icon"
+                  aria-hidden="true"
+                  id="consultFallbackIcon"
+                ></span>
               </a>
             </div>
           </div>
@@ -141,15 +160,37 @@
       <!-- LIBRARY PAGE -->
       <div class="hl-lpage" id="lpage">
         <div class="hl-hero">
-          <span class="hl-hero-deco hl-hero-deco--book" aria-hidden="true" id="heroDecoBook"></span>
-          <span class="hl-hero-deco hl-hero-deco--video" aria-hidden="true" id="heroDecoVideo"></span>
-          <span class="hl-hero-deco hl-hero-deco--help" aria-hidden="true" id="heroDecoHelp"></span>
-          <span class="hl-hero-deco hl-hero-deco--bulb" aria-hidden="true" id="heroDecoBulb"></span>
+          <span
+            class="hl-hero-deco hl-hero-deco--book"
+            aria-hidden="true"
+            id="heroDecoBook"
+          ></span>
+          <span
+            class="hl-hero-deco hl-hero-deco--video"
+            aria-hidden="true"
+            id="heroDecoVideo"
+          ></span>
+          <span
+            class="hl-hero-deco hl-hero-deco--help"
+            aria-hidden="true"
+            id="heroDecoHelp"
+          ></span>
+          <span
+            class="hl-hero-deco hl-hero-deco--bulb"
+            aria-hidden="true"
+            id="heroDecoBulb"
+          ></span>
 
           <div class="hl-hero-inner">
-            <p class="hl-hero-greeting" id="heroGreeting" data-first-name="{$firstName|sanitize}"></p>
+            <p
+              class="hl-hero-greeting"
+              id="heroGreeting"
+              data-first-name="{$firstName|sanitize}"
+            ></p>
             <h1>What are we solving today?</h1>
-            <p class="hl-hero-sub">Search tutorials, videos, and guides, all in one place.</p>
+            <p class="hl-hero-sub">
+              Search tutorials, videos, and guides, all in one place.
+            </p>
             <div class="hl-sbox" role="search">
               <label for="sq" class="hl-sr-only">Search help library</label>
               <input
@@ -196,7 +237,11 @@
                   role="status"
                   aria-live="polite"
                 ></div>
-                <div class="hl-sort-pills" role="group" aria-labelledby="sortLbl">
+                <div
+                  class="hl-sort-pills"
+                  role="group"
+                  aria-labelledby="sortLbl"
+                >
                   <span class="hl-sort-lbl" id="sortLbl">Sort by:</span>
                   <button
                     class="hl-spill on"
@@ -204,7 +249,11 @@
                     data-s="recent"
                     aria-pressed="true"
                   >
-                    <span class="hl-icon" aria-hidden="true" id="scheduleIcon"></span>
+                    <span
+                      class="hl-icon"
+                      aria-hidden="true"
+                      id="scheduleIcon"
+                    ></span>
                     Recent
                   </button>
                   <button
@@ -213,7 +262,11 @@
                     data-s="alpha"
                     aria-pressed="false"
                   >
-                    <span class="hl-icon" aria-hidden="true" id="alphaIcon"></span>
+                    <span
+                      class="hl-icon"
+                      aria-hidden="true"
+                      id="alphaIcon"
+                    ></span>
                     Alphabetical
                   </button>
                 </div>
@@ -249,8 +302,7 @@
       // Config needed by the "Was this resource helpful?" feedback widget
       // (logs new records to the dedicated feedback form, form_35f88) —
       // same Smarty-injection pattern as window.leafIdeaPortal in
-      // ideas_v4.html. TODO: confirm the correct Smarty variables for
-      // userID/CSRFToken on this template before production.
+      // ideas_v4.html. userID/CSRFToken variables confirmed working.
       window.helpLibConfig = {
         userID: '<!--{$userID|unescape|escape:"quotes"}-->',
         csrfToken: '<!--{$CSRFToken|unescape|escape:"quotes"}-->',
@@ -264,9 +316,15 @@
         document.head.appendChild(s);
       }
 
-      loadAppScript(window.APP_JS_PATH + "/dompurify/dompurify.min.js", function () {
-        loadAppScript("/platform/help_library/files/help_library.js", function () {});
-      });
+      loadAppScript(
+        window.APP_JS_PATH + "/dompurify/dompurify.min.js",
+        function () {
+          loadAppScript(
+            "/platform/help_library/files/help_library.js",
+            function () {},
+          );
+        },
+      );
     </script>
   </body>
 </html>
