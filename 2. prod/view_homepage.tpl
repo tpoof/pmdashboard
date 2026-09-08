@@ -120,6 +120,22 @@
         text-decoration-color: #fff !important;
       }
 
+      /* ── Newsletter form status (inline success/error, replaces alert()) ── */
+      .nl-status {
+        margin: 0.75rem 0 0;
+        font-family: "PublicSans-Medium", sans-serif;
+        font-size: 0.9rem;
+      }
+      .nl-status:empty {
+        display: none;
+      }
+      .nl-status.is-success {
+        color: #7ed99b;
+      }
+      .nl-status.is-error {
+        color: #ff9d9d;
+      }
+
       /* ── Responsive: nl-in layout ── */
       @media (max-width: 700px) {
         .nl-in {
@@ -152,8 +168,7 @@
         transition: filter 0.4s ease;
         cursor: pointer;
       }
-      .award-img:hover,
-      .award-img:focus {
+      .award-img:hover {
         filter: grayscale(0%);
       }
 
@@ -829,7 +844,7 @@
         <!-- Modal + mount point + Smarty-rendered config — place once anywhere in <body> -->
         <div id="mst-root"></div>
         <script
-          src="./files/multisite-grid.js"
+          src="./files/multigrid.js"
           data-user-id="<!--{$userID}-->"
           data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
           data-mount="mst-root"
@@ -1256,41 +1271,31 @@
                 public-sector technology.
               </p>
             </div>
-            <div class="awards-row" role="list">
+            <div class="awards-row">
               <img
                 class="award-img"
                 src="./files/2019_FedIT_Innovation_Award.png"
                 alt="2019 FedHealthIT Innovation Award"
-                role="listitem"
-                tabindex="0"
               />
               <img
                 class="award-img"
                 src="./files/2019_Gears-of-Government_Award.png"
                 alt="2019 Gears of Government Award"
-                role="listitem"
-                tabindex="0"
               />
               <img
                 class="award-img"
                 src="./files/2022_disruptive_tech_awards.jpg"
                 alt="2022 Disruptive Tech Award"
-                role="listitem"
-                tabindex="0"
               />
               <img
                 class="award-img"
                 src="./files/2025_disruptive_tech_award-2-01.png"
                 alt="2025 Disruptive Tech Award"
-                role="listitem"
-                tabindex="0"
               />
               <img
                 class="award-img"
                 src="./files/2025_FORUM_Innovation_Award-01.png"
                 alt="2025 FORUM Innovation Award"
-                role="listitem"
-                tabindex="0"
               />
             </div>
           </div>
@@ -1328,6 +1333,12 @@
                 />
                 <button class="nl-btn" type="submit">Subscribe</button>
               </form>
+              <p
+                class="nl-status"
+                id="lpNlStatus"
+                role="status"
+                aria-live="polite"
+              ></p>
             </div>
 
             <!-- Right: supplemental links -->
@@ -1448,11 +1459,115 @@
         if (e.target.tagName === "IMG") e.preventDefault();
       });
 
-      /* ── Newsletter form (basic validation) ── */
+      /* ── Newsletter form (silent AJAX submission) ──
+         Creates a record on form_9015b at service_requests_launchpad --
+         a different LEAF site than this page (this page lives at
+         /launchpad/, confirmed by lp_blog.html's own cross-site apiBase
+         comment) -- with the email address written to indicator 487.
+         No LeafFormQuery-adjacent save/create helper exists site-wide;
+         formQuery.js (LeafFormQuery) is a read-only query builder (see
+         repo_report.md's "Form Query + Search" entry), so this hand-
+         rolls a raw fetch. Shape mirrors calendar.js's feedback widget,
+         the only other from-scratch record-creation example in this
+         codebase: create -> write indicator -> best-effort submit.
+
+         NOTE: this is a genuine cross-site write -- this page's own
+         CSRFToken is sent to a different LEAF instance's API. These
+         portal instances share one VA-SSO session under leaf.va.gov, so
+         the token should validate there too, but that assumption hasn't
+         been confirmed against a live submission. Worth a real test
+         (and a look at LEAF's CSRF middleware) if subscriptions start
+         failing silently. */
       (() => {
         const form = document.getElementById("lpNlForm");
         const input = document.getElementById("lpNlEmail");
-        if (!form || !input) return;
+        const statusEl = document.getElementById("lpNlStatus");
+        if (!form || !input || !statusEl) return;
+
+        const CSRF = '<!--{$CSRFToken|unescape|escape:"quotes"}-->';
+        const NL_ENDPOINT =
+          "https://leaf.va.gov/platform/service_requests_launchpad/";
+        const NL_FORM_ID = "form_9015b";
+        const NL_INDICATOR_ID = "487";
+        // Single-step workflow assumed (mirrors the feedback widget
+        // pattern) -- verify against form_9015b's real workflow if
+        // subscriptions aren't showing up as submitted.
+        const NL_STEP_ID = "1";
+
+        function encodeBody(obj) {
+          const body = new URLSearchParams();
+          Object.keys(obj || {}).forEach((k) => {
+            const v = obj[k];
+            if (v === undefined || v === null) return;
+            body.append(String(k), String(v));
+          });
+          return body.toString();
+        }
+
+        async function apiPost(path, dataObj) {
+          const res = await fetch(NL_ENDPOINT + path, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type":
+                "application/x-www-form-urlencoded; charset=UTF-8",
+              "x-requested-with": "XMLHttpRequest",
+            },
+            body: encodeBody(dataObj),
+          });
+          if (!res.ok) throw new Error(`POST ${path} -> HTTP ${res.status}`);
+          const text = await res.text();
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            return text;
+          }
+        }
+
+        function setStatus(message, kind) {
+          statusEl.textContent = message;
+          statusEl.classList.remove("is-success", "is-error");
+          if (kind) statusEl.classList.add(kind);
+        }
+
+        async function subscribe(email) {
+          // Step 1: create the record (field name confirmed against
+          // calendar.js's createRecord() -- `num{categoryID}` with the
+          // "form_" prefix intact).
+          const createRes = await apiPost("api/form/new", {
+            CSRFToken: CSRF,
+            title: "Newsletter Subscription",
+            [`num${NL_FORM_ID}`]: "on",
+          });
+          const recordID = parseInt(
+            String(createRes).trim().replace(/^"|"$/g, ""),
+            10,
+          );
+          if (!recordID || recordID <= 0) {
+            throw new Error(`Record creation returned no ID: ${createRes}`);
+          }
+
+          // Step 2: write the email to indicator 487.
+          await apiPost(`api/form/${encodeURIComponent(recordID)}`, {
+            recordID,
+            CSRFToken: CSRF,
+            [NL_INDICATOR_ID]: email,
+          });
+
+          // Step 3: submit into the workflow, best-effort. Mirrors
+          // calendar.js's own submitRecord() (not the feedback widget's
+          // stricter inline version) -- the record + indicator write is
+          // what actually matters here, so a wrong step-ID guess
+          // shouldn't turn an otherwise-successful signup into an error.
+          try {
+            await apiPost(`api/form/${encodeURIComponent(recordID)}/submit`, {
+              CSRFToken: CSRF,
+              stepID: NL_STEP_ID,
+            });
+          } catch (e) {
+            /* record + indicator are saved either way */
+          }
+        }
 
         form.addEventListener("submit", (e) => {
           e.preventDefault();
@@ -1462,7 +1577,30 @@
             return;
           }
           input.setCustomValidity("");
-          // TODO: wire up to subscription endpoint
+
+          const email = input.value.trim();
+          const submitBtn = form.querySelector(".nl-btn");
+          if (submitBtn) submitBtn.disabled = true;
+          setStatus("Subscribing...", null);
+
+          subscribe(email)
+            .then(() => {
+              form.hidden = true;
+              setStatus(
+                "You're subscribed! Watch your VA inbox for updates.",
+                "is-success",
+              );
+            })
+            .catch((err) => {
+              console.error("[Newsletter] subscription failed:", err);
+              setStatus(
+                "Something went wrong subscribing you. Please try again.",
+                "is-error",
+              );
+            })
+            .finally(() => {
+              if (submitBtn) submitBtn.disabled = false;
+            });
         });
 
         input.addEventListener("input", () => {

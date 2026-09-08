@@ -85,7 +85,7 @@
      document.currentScript is only valid synchronously while this
      script first executes, so it's captured here, before any other
      code runs. Reads data-is-sysadmin off this same <script> tag —
-     same host-page pattern lp_home.html uses for multisite-grid.js's
+     same host-page pattern lp_home.html uses for multigrid.js's
      data-is-sysadmin/data-user-id. Sourced from Smarty's
      $empMembership['groupID'][1] check (Sysadmin group), not the
      broader $is_admin flag. Any value other than "1"/"true"/"yes"

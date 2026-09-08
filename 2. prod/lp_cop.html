@@ -173,32 +173,33 @@
         font-size: 1rem;
       }
 
-      /* ── Past sessions — card grid ── */
+      /* ── Past sessions — condensed row list ── */
       .cop-session-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.25rem;
-      }
-      @media (max-width: 900px) {
-        .cop-session-grid {
-          grid-template-columns: repeat(2, 1fr);
-        }
-      }
-      @media (max-width: 560px) {
-        .cop-session-grid {
-          grid-template-columns: 1fr;
-        }
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
       }
 
       .cop-session-card-sm {
         background: var(--c-white);
         border-radius: var(--r-lg);
         box-shadow: 0 2px 8px rgba(0, 10, 40, 0.06);
-        border-top: 4px solid var(--lp-accent);
-        padding: 1.5rem;
+        border-left: 4px solid var(--lp-accent);
+        padding: 1rem 1.25rem;
         display: flex;
-        flex-direction: column;
-        gap: 0.6rem;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.25rem;
+      }
+      @media (max-width: 640px) {
+        .cop-session-card-sm {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
+
+      .cop-session-body {
+        min-width: 0;
       }
 
       .cop-session-date {
@@ -207,7 +208,7 @@
         letter-spacing: 0.06em;
         text-transform: uppercase;
         color: var(--c-muted);
-        margin: 0;
+        margin: 0 0 0.25rem;
       }
 
       .cop-session-topic {
@@ -216,10 +217,9 @@
         color: var(--c-text);
         line-height: 1.5;
         margin: 0;
-        flex: 1;
       }
       /* Rich-text (Trumbowyg) content — reset spacing on its own child
-         elements so it doesn't add unexpected gaps inside the card. */
+         elements so it doesn't add unexpected gaps inside the row. */
       .cop-session-topic > :first-child {
         margin-top: 0;
       }
@@ -229,9 +229,9 @@
 
       .cop-session-links {
         display: flex;
-        flex-direction: column;
-        gap: 0.4rem;
-        margin-top: 0.25rem;
+        align-items: center;
+        gap: 1.25rem;
+        flex-shrink: 0;
       }
       .cop-session-link {
         display: inline-flex;
@@ -241,6 +241,7 @@
         font-size: 0.95rem;
         color: var(--lp-accent);
         text-decoration: none;
+        white-space: nowrap;
       }
       .cop-session-link:hover {
         text-decoration: underline;
@@ -485,7 +486,7 @@
          Requires LeafFormQuery (site-wide lib)
     ════════════════════════════════════════════════ -->
     <script type="text/javascript">
-      const COP_PAGE_SIZE = 6;
+      const COP_PAGE_SIZE = 5;
       const monthNames = [
         "Jan",
         "Feb",
@@ -557,8 +558,10 @@
 
         return `
           <article class="cop-session-card-sm" role="listitem">
-            <p class="cop-session-date">${formatSessionDate(date)}</p>
-            <h3 class="cop-session-topic">${topic}</h3>
+            <div class="cop-session-body">
+              <p class="cop-session-date">${formatSessionDate(date)}</p>
+              <h3 class="cop-session-topic">${topic}</h3>
+            </div>
             ${links ? `<div class="cop-session-links">${links}</div>` : ""}
           </article>
         `;
