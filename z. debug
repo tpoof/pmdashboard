@@ -1,4 +1,12 @@
-fetch("/platform/blog/api/form/query?q=" + encodeURIComponent(JSON.stringify({
-  terms: [{id:"recordID", operator:">", match:0, gate:"AND"}],
-  joins: [], sort: {column: 4, direction: "DESC"}, getData: [2,3,4,5], limit: 12, limitOffset: 0
-})), { credentials: "include" }).then(r => r.json()).then(console.log);
+I need to understand how report.php resolves the ?a= query parameter to a template/page in this codebase, specifically for the LEAF Launchpad app.
+
+Please investigate and report back:
+
+Find report.php (or whatever file handles requests like /launchpad/report.php?a=lp_impact) and show me how it maps the a parameter to a template or controller action — is it an exact-match switch/associative array/lookup table keyed by strings like lp_impact, lp_help_library, lp_find_site, etc.? Or is there some other indirection (e.g. filename convention, database-driven route table, regex pattern)?
+Specifically list every current a= value this resolver recognizes for the Launchpad app (grep for lp_impact, lp_help_library, lp_find_site, lp_form_library, lp_use_case, lp_voc, lp_cop, lp_ideas, lp_privacy, lp_blog, lp_learn, lp_leadership, lp_team, lp_home, and any others you find referencing this pattern).
+Would it be possible to add an alias — e.g. having ?a=impact resolve to the exact same template/handler currently serving ?a=lp_impact — without breaking the existing ?a=lp_impact request? Show me what that change would look like (a new case/key added to whatever the existing lookup mechanism is), or tell me if the resolver's structure makes that not straightforward (e.g. if action names are tied 1:1 to filenames on disk with no lookup layer to add an alias to).
+Are there any other places in the backend that construct or validate these lp_* URLs — redirect logic, auth/permission checks keyed by action name, logging, analytics, etc. — that a rename or alias would need to account for?
+
+Context: We're considering renaming the lp_ prefix off of Launchpad's action names (e.g. lp_impact → impact) on the frontend (leaf_header.js), and want to do a staged rollout where both the old and new names resolve to the same page during a transition period, rather than a hard cutover. I need to know if that's feasible on the backend side, and what the actual change would look like, before committing to a plan.
+
+Don't make any changes — this is investigation only. Report back what you find.
