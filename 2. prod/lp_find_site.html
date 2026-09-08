@@ -99,6 +99,18 @@
         outline-offset: -3px;
       }
 
+      /* Before a search has run there's nothing to collapse to — the
+         toggle is inert and shows no chevron/Edit Search affordance. */
+      .leaf-find .lf-search-toggle:disabled {
+        cursor: default;
+      }
+      .leaf-find .lf-search-toggle:disabled:hover {
+        background: var(--c-blue5);
+      }
+      .leaf-find .lf-search-toggle:disabled .lf-toggle-right {
+        display: none;
+      }
+
       .leaf-find .lf-toggle-left {
         display: flex;
         align-items: center;
@@ -212,6 +224,19 @@
         margin-top: 1.25rem;
       }
 
+      /* Explicit fallbacks so Search/Clear stay readable even if the
+         launchpad.css custom properties fail to resolve for any reason. */
+      .leaf-find .btn-pri {
+        background: var(--lp-pri, #005ea2);
+        color: var(--lp-pri-txt, #fff) !important;
+        border-color: var(--lp-pri, #005ea2);
+      }
+      .leaf-find .btn-sec {
+        background: var(--lp-sec-bg, transparent);
+        color: var(--lp-sec-txt, #005ea2) !important;
+        border-color: var(--lp-sec-bdr, #005ea2);
+      }
+
       /* ── Progress ── */
       .leaf-find .lf-progress-area {
         padding: 1.5rem 1.25rem;
@@ -283,17 +308,36 @@
 
       .leaf-find .lf-col-header {
         display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        padding: 0.6rem 1rem;
+        border-bottom: 1px solid var(--c-blue10);
+        background: var(--c-blue5);
+        flex-shrink: 0;
+      }
+
+      .leaf-find .lf-col-header-row {
+        display: flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.6rem 1rem;
+      }
+
+      .leaf-find .lf-col-header-title {
         font-size: 0.7rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.07em;
         color: var(--c-muted);
-        border-bottom: 1px solid var(--c-blue10);
-        background: var(--c-blue5);
-        flex-shrink: 0;
+      }
+
+      .leaf-find .lf-col-header-row .lf-col-header-title {
+        flex: 1;
+      }
+
+      .leaf-find .lf-col-help {
+        font-size: 0.75rem;
+        color: var(--c-muted);
+        line-height: 1.4;
       }
 
       .leaf-find .lf-sitelist {
@@ -371,10 +415,6 @@
       .leaf-find .lf-mobile-back:focus-visible {
         outline: 3px solid var(--lp-accent);
         outline-offset: 2px;
-      }
-
-      .leaf-find .lf-col-header-title {
-        flex: 1;
       }
 
       .leaf-find .lf-detail {
@@ -631,7 +671,7 @@
               $btn
                 .find(".lf-toggle-summary")
                 .text(summary ? "— " + summary : "");
-              $btn.find(".lf-toggle-right").html(chevronHTML + " Refine");
+              $btn.find(".lf-toggle-right").html(chevronHTML + " Edit Search");
             }
 
             function expandSearch() {
@@ -922,6 +962,7 @@
               );
               $("#lf-errorNotice").html(errHtml);
               $("#lf-resultsArea").show();
+              $("#lf-searchToggle").prop("disabled", false);
               collapseSearch(
                 `Station ${$("#lf-stationNumber").val().trim() || $("#lf-visn").val() || $("#lf-state").val()}`,
               );
@@ -1110,6 +1151,7 @@
                 $("#lf-progressArea").hide();
                 $("#lf-noticeArea").hide();
                 $("#lf-split").removeClass("lf-detail-open");
+                $("#lf-searchToggle").prop("disabled", true);
                 expandSearch();
               });
 
@@ -1187,6 +1229,7 @@
                 id="lf-searchToggle"
                 aria-expanded="true"
                 aria-controls="lf-searchPanel"
+                disabled
               >
                 <span class="lf-toggle-left">
                   <!-- Material Symbols (Filled): search -->
@@ -1215,7 +1258,7 @@
                       />
                     </svg>
                   </span>
-                  Collapse
+                  Edit Search
                 </span>
               </button>
 
@@ -1319,7 +1362,13 @@
                 >
                   <!-- Left -->
                   <div class="lf-sitelist-wrap">
-                    <div class="lf-col-header">LEAF Sites</div>
+                    <div class="lf-col-header">
+                      <span class="lf-col-header-title">Active Sites</span>
+                      <span class="lf-col-help"
+                        >Click a site below to see its primary administrator and
+                        forms.</span
+                      >
+                    </div>
                     <div
                       class="lf-sitelist"
                       id="lf-sitelist"
@@ -1332,27 +1381,32 @@
                   <!-- Right -->
                   <div class="lf-detail-wrap">
                     <div class="lf-col-header">
-                      <button
-                        type="button"
-                        class="lf-mobile-back"
-                        id="lf-mobileBack"
-                        aria-label="Back to site list"
-                      >
-                        <!-- Material Symbols (Filled): arrow_back -->
-                        <span
-                          class="material-symbols-outlined"
-                          aria-hidden="true"
+                      <div class="lf-col-header-row">
+                        <button
+                          type="button"
+                          class="lf-mobile-back"
+                          id="lf-mobileBack"
+                          aria-label="Back to site list"
                         >
-                          <svg viewBox="0 -960 960 960" fill="currentColor">
-                            <path
-                              d="M313-440l224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z"
-                            />
-                          </svg>
-                        </span>
-                        Back
-                      </button>
-                      <span class="lf-col-header-title"
-                        >Site Details &amp; Forms</span
+                          <!-- Material Symbols (Filled): arrow_back -->
+                          <span
+                            class="material-symbols-outlined"
+                            aria-hidden="true"
+                          >
+                            <svg viewBox="0 -960 960 960" fill="currentColor">
+                              <path
+                                d="M313-440l224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z"
+                              />
+                            </svg>
+                          </span>
+                          Back
+                        </button>
+                        <span class="lf-col-header-title"
+                          >Site Details &amp; Forms</span
+                        >
+                      </div>
+                      <span class="lf-col-help"
+                        >Selecting a form opens that site in a new tab.</span
                       >
                     </div>
                     <div
