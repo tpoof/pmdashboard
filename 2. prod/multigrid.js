@@ -78,7 +78,7 @@
     siteCreations: {
       url: "https://leaf.va.gov/launchpad/",
       name: "Site Creations",
-      description: "the LEAF sites you've created",
+      description: "LEAF sites you've requested",
       isLaunchpad: true,
       allRequestsLabel: "Site Creations",
     },
@@ -98,7 +98,7 @@
     ideas: {
       url: "https://leaf.va.gov/platform/ideas/",
       name: "Ideas",
-      description: "the ideas you've submitted to improve LEAF",
+      description: "ideas you've submitted to improve LEAF",
       isIdeas: true,
       allRequestsLabel: "Ideas",
     },
@@ -126,7 +126,7 @@
       name: "All Requests",
       kind: "all",
       sourceKeys: ["siteCreations", "serviceRequests", "support", "ideas"],
-      description: "requests across every LEAF site you use",
+      description: "LEAF National requests",
     },
     {
       id: "siteCreations",
@@ -139,7 +139,7 @@
       name: "National Support",
       kind: "merged",
       sourceKeys: ["serviceRequests", "support"],
-      description: "your service requests and support consultations",
+      description: "support requests and consultations",
     },
     {
       id: "ideas",
@@ -308,6 +308,18 @@
     );
   }
 
+  // Sort direction indicators for sortable table headers -- Material
+  // Symbols arrow_upward/arrow_downward, inline per this codebase's
+  // convention (a bare <svg viewBox/fill="currentColor">, no width/
+  // height/xmlns attributes -- see e.g. the hero-kicker icon in
+  // view_homepage.tpl). Sized via a CSS rule keyed to the containing
+  // .mst-sort-btn class, same technique as .hero-kicker/.btn/.feat-ico
+  // etc. there, rather than sizing the <svg> itself.
+  var SORT_ASC_SVG =
+    '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z"/></svg>';
+  var SORT_DESC_SVG =
+    '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-800v487L216-537l-56 57 320 320 320-320-56-57-224 224v-487h-80Z"/></svg>';
+
   // ============================================================
   //  Column definitions -- one builder per table shape
   // ============================================================
@@ -316,10 +328,14 @@
   // the cell's HTML. Splitting the two means a column with rich markup
   // (a link, a badge, a status pill) can still sort on something plain.
 
-  // Shared 4-column layout for National Support and Ideas: Date
-  // Initiated, UID, Title, Status. (National Support used to also carry
-  // a Source column tagging Service Requests vs. Support -- removed
-  // since each already has its own dedicated tab to narrow to one.)
+  // Shared 3-column layout for National Support and Ideas: Date
+  // Initiated, Request, Status. (National Support used to also carry a
+  // Source column tagging Service Requests vs. Support -- removed since
+  // each already has its own dedicated tab to narrow to one. UID and
+  // Title used to be separate columns -- merged into the same "Request"
+  // badge+title-link treatment All Requests and Site Creations already
+  // use, via the shared requestCellHTML(), so all four tabs share
+  // identical column structure.)
   function buildGenericColumns() {
     return [
       {
@@ -332,37 +348,18 @@
         },
       },
       {
-        name: "UID",
-        // On National Support (2 merged sources) this only orders what's
-        // currently displayed -- recordID sequences are independent per
-        // site, so it's not a global chronological order. Date Initiated
-        // is the sort that's actually meaningful across sources.
-        getValue: function (row) {
-          return parseInt(row.recordID, 10) || 0;
-        },
-        render: function (row) {
-          return (
-            '<a href="' +
-            row.link +
-            '" target="_blank">' +
-            row.recordID +
-            "</a>"
-          );
-        },
-      },
-      {
-        name: "Title",
+        name: "Request",
+        // Same sort key as the Request column on All Requests and the
+        // Project column on Site Creations: title text, not recordID --
+        // recordID sequences are independent per site, so a numeric sort
+        // wouldn't mean anything once National Support merges two of
+        // them. Date Initiated is the column with real chronological
+        // meaning across sources.
         getValue: function (row) {
           return (row.rec.title || "").toLowerCase();
         },
         render: function (row) {
-          return (
-            '<a href="' +
-            row.link +
-            '" target="_blank">' +
-            (row.rec.title || "") +
-            "</a>"
-          );
+          return requestCellHTML(row.link, row.recordID, row.rec.title || "");
         },
       },
       {
@@ -623,11 +620,22 @@
           var dir = i === state.columnIndex ? state.direction : null;
           var ariaSort =
             dir === "asc" ? "ascending" : dir === "desc" ? "descending" : "none";
-          // Up/down triangle entities as a dependency-free placeholder --
-          // FLAG: swap for real Material Symbols icons (arrow_upward /
-          // arrow_downward) to match the rest of the design system once
-          // icon assets are wired up for this widget.
-          var icon = dir === "asc" ? "&#9650;" : dir === "desc" ? "&#9660;" : "";
+          // No icon at all for the unsorted state -- aria-sort="none" on
+          // the <th> is the source of truth for AT users either way; the
+          // icon here is purely a decorative, sighted-user affordance for
+          // whichever single column is currently sorted.
+          var iconHTML = "";
+          if (dir === "asc") {
+            iconHTML =
+              '<span class="material-symbols-outlined" aria-hidden="true">' +
+              SORT_ASC_SVG +
+              "</span>";
+          } else if (dir === "desc") {
+            iconHTML =
+              '<span class="material-symbols-outlined" aria-hidden="true">' +
+              SORT_DESC_SVG +
+              "</span>";
+          }
           return (
             '<th scope="col" aria-sort="' +
             ariaSort +
@@ -636,9 +644,8 @@
             i +
             '">' +
             col.name +
-            '<span class="mst-sort-icon" aria-hidden="true">' +
-            icon +
-            "</span></button></th>"
+            iconHTML +
+            "</button></th>"
           );
         })
         .join("");
@@ -934,7 +941,7 @@
       '<div class="mst-modal-hd">' +
       '<h2 class="mst-modal-title" id="mst-modal-title">View My Requests (LEAF National Requests)</h2>' +
       '<button type="button" class="mst-modal-close" id="mst-modal-close" aria-label="Close dialog">' +
-      '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>' +
       "</button>" +
       "</div>" +
       '<div class="mst-modal-body" id="mst-modal-body"></div>' +
@@ -1064,7 +1071,11 @@
       '.mst-container .mst-sort-btn{display:flex;align-items:center;gap:4px;width:100%;border:0;background:transparent;color:inherit;font:inherit;font-weight:700;text-align:left;cursor:pointer;padding:10px;}',
       ".mst-container .mst-sort-btn:hover{background:var(--c-blue20,#aacdec);}",
       ".mst-container .mst-sort-btn:focus-visible{outline:3px solid var(--lp-accent,#005ea2);outline-offset:-3px;}",
-      ".mst-container .mst-sort-icon{font-size:0.7em;line-height:1;}",
+      // Sized via the containing .mst-sort-btn class, same technique as
+      // .hero-kicker/.btn/.feat-ico .material-symbols-outlined svg
+      // elsewhere in this codebase (e.g. view_homepage.tpl), rather than
+      // sizing the <svg> itself.
+      ".mst-container .mst-sort-btn .material-symbols-outlined svg{width:1rem;height:1rem;}",
 
       /* -- Launchpad-specific column styling -- */
       ".mst-container .mst-lp-recid a{display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;background:var(--c-text,#1b1b1b);color:#fff !important;border-radius:var(--r,5px);font-weight:900;font-size:1em;line-height:1;text-decoration:none;text-align:center;}",
@@ -1096,6 +1107,12 @@
       ".mst-modal-close{border:0;background:transparent;cursor:pointer;color:var(--c-muted,#3d4551);padding:8px;border-radius:999px;line-height:0;flex:0 0 auto;}",
       ".mst-modal-close:hover{background:var(--lp-bg-alt,#eff6fb);}",
       ".mst-modal-close:focus-visible{outline:3px solid var(--lp-accent,#005ea2);outline-offset:2px;}",
+      // Sized via the containing .mst-modal-close class, same mechanism
+      // as the sort-icon svg above, rather than the width/height
+      // attributes this used to carry directly on the <svg>. 24px keeps
+      // the rendered size identical to before (px, not rem, so this
+      // can't shift with a different root font-size).
+      ".mst-modal-close svg{width:24px;height:24px;}",
       ".mst-modal-body{padding:20px 24px 28px;overflow-y:auto;flex:1 1 auto;position:relative;}",
       /* LeafFormGrid's base stylesheet applies position:sticky;top:0 directly
          to its <thead>/<th> elements. This widget no longer renders through
