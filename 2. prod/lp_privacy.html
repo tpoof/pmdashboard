@@ -23,10 +23,6 @@
         width: 1.15rem;
         height: 1.15rem;
       }
-      .priv-hero-badge .material-symbols-outlined svg {
-        width: 0.95rem;
-        height: 0.95rem;
-      }
       .priv-card-icon .material-symbols-outlined svg {
         width: 1.4rem;
         height: 1.4rem;
@@ -41,26 +37,11 @@
       }
 
       /* ── Hero ── */
-      .priv-hero-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        background: var(--lp-warn-bg);
-        color: var(--lp-warn-txt);
-        font-family: "Public Sans", sans-serif;
-        font-weight: 700;
-        font-size: 0.8rem;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        padding: 0.4rem 0.9rem;
-        border-radius: 999px;
-        border: 1px solid var(--lp-warn-bdr);
-        margin-bottom: 1rem;
-      }
-      .priv-reading-time {
-        color: var(--c-muted);
-        font-size: 0.9rem;
-        margin-top: 0.75rem;
+      /* Match the lead paragraph's width to the title instead of
+         launchpad.css's default .sec-sub max-width (620px), which read
+         noticeably narrower than the h1 above it. */
+      #priv-h1 + .sec-sub {
+        max-width: 760px;
       }
 
       /* ── Card shell, reused across Recent Enhancements / LEAF-S / Resources ── */
@@ -273,17 +254,6 @@
         <section class="section" aria-labelledby="priv-h1">
           <div class="wrap">
             <div class="sec-hd ctr">
-              <span class="priv-hero-badge">
-                <span class="material-symbols-outlined" aria-hidden="true">
-                  <!-- Material Symbols (Filled): lock -->
-                  <svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm240-200q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z"
-                    />
-                  </svg>
-                </span>
-                Important
-              </span>
               <h1 class="sec-h2" id="priv-h1">
                 Platform Enhancements to Strengthen Privacy
               </h1>
@@ -293,10 +263,6 @@
                 the VA Privacy Program. The resources below are intended to help
                 teams understand available guidance and incorporate privacy
                 considerations directly into their workflows.
-              </p>
-              <p class="priv-reading-time">
-                Estimated Reading Time:
-                <span id="readingTime">~2 mins</span>
               </p>
             </div>
           </div>
@@ -312,7 +278,7 @@
               <h2 class="sec-h2" id="priv-recent-h2">Recent Enhancements</h2>
             </div>
 
-            <div class="priv-card" style="max-width: 760px; margin: 0 auto">
+            <div class="priv-card">
               <p
                 id="recentChangesMessage"
                 class="priv-changes-message"
@@ -481,6 +447,13 @@
                   target="_blank"
                   rel="noopener noreferrer"
                 >
+                  <span class="material-symbols-outlined" aria-hidden="true">
+                    <svg viewBox="0 -960 960 960" fill="currentColor">
+                      <path
+                        d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"
+                      />
+                    </svg>
+                  </span>
                   LEAF-S Help Library Tutorial
                   <span class="sr-only">(opens in a new tab)</span>
                 </a>
@@ -935,7 +908,6 @@
               .sort((a, b) => b.sortValue - a.sortValue);
 
             renderRecentChanges();
-            updateReadingTime();
           } catch (error) {
             recentChanges = [];
             recentChangesList.innerHTML = "";
@@ -974,18 +946,7 @@
           update();
         };
 
-        /* ── Estimated reading time from visible page text ── */
-        function updateReadingTime() {
-          const main = document.getElementById("lp-main");
-          const el = document.getElementById("readingTime");
-          if (!main || !el) return;
-          const wordCount = (main.innerText || "").trim().split(/\s+/).length;
-          const minutes = Math.max(1, Math.round(wordCount / 200));
-          el.textContent = "~" + minutes + " min" + (minutes !== 1 ? "s" : "");
-        }
-
         initJumpBtn();
-        updateReadingTime();
         loadRecentChanges();
       })();
     </script>

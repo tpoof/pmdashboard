@@ -278,7 +278,8 @@
 
   /* ── Router: hash key → { href, title, section } lookup table ──
      Built once at init from NAV_SECTIONS. Hash key is the ?a= param
-     value (e.g. "lp_impact", "lp_find_site"). Also doubles as the
+     value, minus its lp_ prefix per HREF_HASH_KEY_OVERRIDES (e.g.
+     "impact", "find_site"). Also doubles as the
      breadcrumb auto-detect table for static (non-launchpad) pages —
      see resolveCurrentRoute(). Leadership is also registered here
      even though it lives in the separate INTERNAL_SECTION — it
@@ -367,7 +368,7 @@
   }
 
   /* Derive a hash key from any href.
-     "/launchpad/report.php?a=lp_find_site" → "lp_find_site"
+     "/launchpad/report.php?a=lp_find_site" → "find_site" (via override below)
      "report.php?a=Find_my_site"               → "find_my_site" (lowercased)
      Absolute URLs with different origin handled gracefully. */
   /* Explicit hash-key overrides for hrefs whose derived key would
@@ -394,6 +395,31 @@
        HOME_HREF comparison still agrees and the breadcrumb keeps
        hiding correctly on a direct load of the actual homepage. */
     "/launchpad": "home",
+    /* lp_* → short-key rename: no backend template aliases exist yet
+       for these action names, so hrefs (and the ?a= values actually
+       fetched) are untouched — only the hash key used for in-app
+       routing drops the lp_ prefix. Old #lp_* hashes still resolve via
+       LEGACY_HASH_KEY_ALIASES in router(). */
+    "/launchpad/report.php?a=lp_impact": "impact",
+    "/launchpad/report.php?a=lp_roadmap": "roadmap",
+    "/launchpad/report.php?a=lp_form_library": "form_library",
+    "/launchpad/report.php?a=lp_use_case": "use_case",
+    "/launchpad/report.php?a=lp_integrations": "integrations",
+    "/launchpad/report.php?a=lp_find_site": "find_site",
+    "/launchpad/report.php?a=lp_voc": "voc",
+    "/launchpad/report.php?a=lp_cop": "cop",
+    "/launchpad/report.php?a=lp_ideas": "ideas",
+    "/launchpad/report.php?a=lp_privacy": "privacy",
+    "/launchpad/report.php?a=lp_blog": "blog",
+    "/launchpad/report.php?a=lp_learn": "learn",
+    "/launchpad/report.php?a=lp_brand_guide": "brand_guide",
+    "/launchpad/report.php?a=lp_leadership": "leadership",
+    "/launchpad/report.php?a=lp_team": "team",
+    /* showSwapError()'s hardcoded "Back to Launchpad" button (below)
+       keeps its literal ?a=lp_home text — same no-backend-alias reason
+       as above — but should still push "#home" like every other home
+       entry point, not the legacy "#lp_home" hash. */
+    "report.php?a=lp_home": "home",
   };
 
   function hrefToHashKey(href) {
@@ -2033,6 +2059,27 @@
       });
   }
 
+  /* Old #lp_* hashes (bookmarks, external links) still resolve to their
+     route under its new short key — same precedent as router()'s
+     "home"/"lp_home" fallback below, generalized to every renamed route. */
+  var LEGACY_HASH_KEY_ALIASES = {
+    lp_impact: "impact",
+    lp_roadmap: "roadmap",
+    lp_form_library: "form_library",
+    lp_use_case: "use_case",
+    lp_integrations: "integrations",
+    lp_find_site: "find_site",
+    lp_voc: "voc",
+    lp_cop: "cop",
+    lp_ideas: "ideas",
+    lp_privacy: "privacy",
+    lp_blog: "blog",
+    lp_learn: "learn",
+    lp_brand_guide: "brand_guide",
+    lp_leadership: "leadership",
+    lp_team: "team",
+  };
+
   /* ─────────────────────────────────────────────────────────────
      ROUTER
      Reads window.location.hash and dispatches to the right view.
@@ -2043,8 +2090,9 @@
        hash side-effects inside init functions re-triggering navigation. */
     if (_routerSuppressed) return;
 
-    var raw = window.location.hash; /* e.g. "#lp_find_site" or "" */
+    var raw = window.location.hash; /* e.g. "#find_site" or "" */
     var key = raw.replace(/^#/, "").toLowerCase();
+    key = LEGACY_HASH_KEY_ALIASES[key] || key;
 
     if (!key || key === "home" || key === "lp_home") {
       showLaunchpadHome();
@@ -2170,7 +2218,7 @@
          caught here. .lp-brand was missing from this list entirely, so its
          click fell through to the browser: since HOME_HREF carries no
          fragment, clicking it while a route hash is already set (e.g.
-         "#lp_impact") isn't the same-document "fragment-only" navigation
+         "#impact") isn't the same-document "fragment-only" navigation
          it looks like — browsers treat the missing fragment as a real
          navigation and reload the page instead of just clearing the hash,
          which is slow at best and, depending on how the page got here (a
