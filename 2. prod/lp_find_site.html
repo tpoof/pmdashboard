@@ -323,11 +323,9 @@
       }
 
       .leaf-find .lf-col-header-title {
-        font-size: 0.7rem;
+        font-size: 1rem;
         font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.07em;
-        color: var(--c-muted);
+        color: var(--c-text);
       }
 
       .leaf-find .lf-col-header-row .lf-col-header-title {
@@ -497,6 +495,19 @@
       .leaf-find .lf-detail__admin-value.is-muted {
         color: var(--c-muted);
         font-style: italic;
+      }
+
+      .leaf-find .lf-detail__admin-value a {
+        color: var(--lp-accent);
+        text-decoration: none;
+      }
+      .leaf-find .lf-detail__admin-value a:hover {
+        text-decoration: underline;
+        color: var(--lp-hl);
+      }
+      .leaf-find .lf-detail__admin-value a:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
       }
 
       .leaf-find .lf-forms-section {
@@ -799,7 +810,7 @@
               } else if (d.admin) {
                 adminHtml = `
                 <p class="lf-section-label">Primary Administrator</p>
-                <p class="lf-detail__admin-value">${d.admin}</p>`;
+                <p class="lf-detail__admin-value"><a href="mailto:${d.admin}">${d.admin}</a></p>`;
               } else {
                 adminHtml = `
                 <p class="lf-section-label">Primary Administrator</p>
@@ -887,22 +898,14 @@
                       url: siteURL + "/api/system/settings",
                     }).then((r) => {
                       const label = r.heading || siteURL;
-                      siteData[siteURL] = {
-                        label,
-                        admin: null,
-                        forms: [],
-                        adminLoaded: false,
-                        formsLoaded: false,
-                      };
-                      insertRow(siteURL, label);
 
                       const formsP = $.ajax({
                         type: "GET",
                         url:
                           siteURL +
                           "/api/formStack/categoryList/all?x-filterData=workflowID,categoryName,visible,disabled",
-                      }).then((forms) => {
-                        const names = forms
+                      }).then((forms) =>
+                        forms
                           .filter(
                             (f) =>
                               f.workflowID != 0 &&
@@ -910,16 +913,31 @@
                               f.disabled == 0,
                           )
                           .map((f) => f.categoryName)
-                          .sort();
-                        updateRowForms(siteURL, names);
-                      });
+                          .sort(),
+                      );
 
                       const adminP = fetch(`${siteURL}/api/system/primaryadmin`)
                         .then((r) => r.json())
-                        .then((d) => updateRowAdmin(siteURL, d.email || null))
-                        .catch(() => updateRowAdmin(siteURL, null));
+                        .then((d) => d.email || null)
+                        .catch(() => null);
 
-                      return Promise.all([formsP, adminP]);
+                      // A site with no admin and no forms has nothing useful
+                      // to show — leave it out of the Active Sites list.
+                      return Promise.all([formsP, adminP]).then(
+                        ([forms, admin]) => {
+                          if (!admin && forms.length === 0) return;
+                          siteData[siteURL] = {
+                            label,
+                            admin,
+                            forms,
+                            adminLoaded: true,
+                            formsLoaded: true,
+                          };
+                          insertRow(siteURL, label);
+                          updateRowAdmin(siteURL, admin);
+                          updateRowForms(siteURL, forms);
+                        },
+                      );
                     });
                   })
                   .always(() => {
@@ -957,8 +975,11 @@
                   ? `<span class="lf-error-notice"><span class="material-symbols-outlined" aria-hidden="true">${icon("warning")}</span> ${failedSites.length} site(s) unreachable</span>`
                   : "";
 
+              // Count the rendered rows directly, not siteData, so the
+              // label can never drift from what's actually listed.
+              const shownCount = $list.find(".lf-site-row").length;
               $("#lf-resultsMeta").text(
-                `${count} active site${count !== 1 ? "s" : ""}`,
+                `${shownCount} active site${shownCount !== 1 ? "s" : ""}`,
               );
               $("#lf-errorNotice").html(errHtml);
               $("#lf-resultsArea").show();
