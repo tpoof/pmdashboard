@@ -812,9 +812,13 @@
                 <p class="lf-section-label">Primary Administrator</p>
                 <p class="lf-detail__admin-value is-muted" aria-live="polite">Loading…</p>`;
               } else if (d.admin) {
+                const mailSubject = encodeURIComponent(`LEAF: ${d.label}`);
+                const mailBody = encodeURIComponent(
+                  `${location.origin}${siteURL}`,
+                );
                 adminHtml = `
                 <p class="lf-section-label">Primary Administrator</p>
-                <p class="lf-detail__admin-value"><a href="mailto:${d.admin}">${d.admin}</a></p>`;
+                <p class="lf-detail__admin-value"><a href="mailto:${d.admin}?subject=${mailSubject}&body=${mailBody}">${d.admin}</a></p>`;
               } else {
                 adminHtml = `
                 <p class="lf-section-label">Primary Administrator</p>
