@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Our Impact — LEAF Launchpad</title>
 
-    <!-- TODO: verify path before production -->
     <link rel="stylesheet" href="./files/launchpad.css" />
 
     <style>
@@ -181,7 +180,10 @@
       }
     </style>
 
-    <!-- TODO: verify path before production -->
+    <!-- Universal nav — not yet enabled on this page; leaf_header.js
+         self-mounts into #lp-nav-host below once wired up. -->
+    <!-- <link rel="stylesheet" href="/launchpad/files/leaf_header.css" /> -->
+    <!-- <script src="/launchpad/files/leaf_header.js"></script> -->
   </head>
   <body>
     <div class="lp" id="lp-root">
@@ -277,11 +279,7 @@
                   innovation across your organization.
                 </p>
               </div>
-              <div
-                class="step-img contain"
-                role="img"
-                aria-label="No-code and low-code balance diagram"
-              >
+              <div class="step-img contain">
                 <img
                   src="./files/see-saw.png"
                   alt="Diagram showing the balance between low-code and no-code approaches"

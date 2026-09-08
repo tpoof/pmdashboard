@@ -233,7 +233,7 @@
           icon: "menu_book",
           title: "Help Library",
           desc: "Guides and documentation",
-          href: "/launchpad/report.php?a=lp_help_library",
+          href: "https://leaf.va.gov/platform/help_library/report.php?a=homepage",
         },
         {
           icon: "article",
