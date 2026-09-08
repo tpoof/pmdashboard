@@ -899,26 +899,43 @@
                     }).then((r) => {
                       const label = r.heading || siteURL;
 
+                      // Tolerant of API drift: treats a non-array response,
+                      // string-typed flags, or blank names as "no forms"
+                      // instead of letting bad data pass the filter below.
                       const formsP = $.ajax({
                         type: "GET",
                         url:
                           siteURL +
                           "/api/formStack/categoryList/all?x-filterData=workflowID,categoryName,visible,disabled",
-                      }).then((forms) =>
-                        forms
-                          .filter(
-                            (f) =>
-                              f.workflowID != 0 &&
-                              f.visible == 1 &&
-                              f.disabled == 0,
-                          )
-                          .map((f) => f.categoryName)
-                          .sort(),
-                      );
+                      })
+                        .then((forms) => {
+                          if (!Array.isArray(forms)) return [];
+                          return forms
+                            .filter(
+                              (f) =>
+                                Number(f.workflowID) !== 0 &&
+                                Number(f.visible) === 1 &&
+                                Number(f.disabled) === 0,
+                            )
+                            .map((f) =>
+                              (f.categoryName || "").toString().trim(),
+                            )
+                            .filter(Boolean)
+                            .sort();
+                        })
+                        .catch(() => []);
 
+                      // Only counts as "has an admin" if it's a real-looking
+                      // email — a malformed/empty field from the API can't
+                      // let a dead-end row through.
                       const adminP = fetch(`${siteURL}/api/system/primaryadmin`)
                         .then((r) => r.json())
-                        .then((d) => d.email || null)
+                        .then((d) => {
+                          const email = ((d && d.email) || "")
+                            .toString()
+                            .trim();
+                          return /\S+@\S+\.\S+/.test(email) ? email : null;
+                        })
                         .catch(() => null);
 
                       // A site with no admin and no forms has nothing useful

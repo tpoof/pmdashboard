@@ -24,6 +24,23 @@
  *  mismatched character encoding, which can silently break string
  *  literals or comment delimiters and cause syntax errors in production
  *  even though the file parses fine in an editor. Keep it ASCII-only.
+ *
+ *  ARCHITECTURE NOTE (all four tabs render through one table engine):
+ *  Every tab -- All Requests, Site Creations, National Support, Ideas --
+ *  now renders through the single renderDataTable() below instead of
+ *  Site Creations/Ideas going through LeafFormGrid while the merged tabs
+ *  got hand-rolled HTML. Two things made that split impossible to reconcile:
+ *   1. The merged tabs (National Support, All Requests) combine rows from
+ *      more than one LEAF site per table -- LeafFormGrid is bound to a
+ *      single setRootURL()/data blob, so it was never going to render
+ *      those regardless of its own feature set.
+ *   2. Requiring identical chrome (header style, borders, striping, font
+ *      sizing, padding) AND identical, keyboard-accessible sort behavior
+ *      across a third-party widget's own markup and a hand-rolled table
+ *      is not something that can be guaranteed from this repo, since
+ *      LeafFormGrid's source isn't vendored here to verify against.
+ *  Standardizing on one renderer also drops a conditional external
+ *  dependency, per this project's "minimize external dependencies" rule.
  * ============================================================
  */
 (function () {
@@ -56,10 +73,6 @@
    *  Set isLaunchpad: true on a site to use the Date/Project/Status
    *  (with Site Ready button) column layout instead of the default
    *  Date Initiated/UID/Title/Status layout.
-   *
-   *  Set nationalSupportLabel on a site to have it participate in the
-   *  National Support merged tab, tagged with that label in the Source
-   *  column.
    */
   var SOURCE_SITES = {
     siteCreations: {
@@ -74,14 +87,12 @@
       name: "Service Requests",
       description:
         "your case studies, spotlight nominations, training requests, and feedback submissions",
-      nationalSupportLabel: "Service Requests",
       allRequestsLabel: "National Support",
     },
     support: {
       url: "https://leaf.va.gov/platform/support/",
       name: "Support",
       description: "your LEAF National consultation requests",
-      nationalSupportLabel: "Support",
       allRequestsLabel: "National Support",
     },
     ideas: {
@@ -97,10 +108,11 @@
   /*
    *  TABS -- the visible tablist. Each tab points at one or more
    *  SOURCE_SITES keys:
-   *    kind: "all"    - aggregates every source below into one table,
-   *                     with client-side site filter chips
+   *    kind: "all"    - aggregates every source below into one table
    *    kind: "merged" - combines >1 source into one table (National
-   *                     Support), tagging each row with its source
+   *                     Support); the two sources are no longer tagged
+   *                     per-row (no visible Source column -- each site
+   *                     already has its own dedicated tab for that)
    *    kind: "single" - one source, one table -- unchanged from the
    *                     original per-site behavior
    *
@@ -137,29 +149,6 @@
     },
   ];
 
-  // Site filter chips for the All Requests tab -- the 3 allRequestsLabel
-  // values, all on by default. Client-side show/hide only (no re-fetch).
-  var ALL_REQUESTS_SITE_LABELS = ["Site Creations", "National Support", "Ideas"];
-  var allRequestsFilters = {
-    "Site Creations": true,
-    "National Support": true,
-    Ideas: true,
-  };
-
-  var MONTH_ABBR = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "June",
-    "July",
-    "Aug",
-    "Sept",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
   var REQUESTOR_FIELD_ID = "userID";
 
   // -- Current user ---------------------------------------------------------
@@ -173,27 +162,6 @@
       : typeof session !== "undefined" && session && session.userID
         ? session.userID
         : cfg.userID;
-
-  // -- User display-name cache -----------------------------------------------
-  var userNameCache = {};
-  async function resolveUserName(userID) {
-    if (!userID) return { name: "-", fallback: false };
-    if (userNameCache[userID] !== undefined) return userNameCache[userID];
-    try {
-      // PLACEHOLDER: replace with your actual lookup, e.g.:
-      // const resp = await fetch('/api/users/' + encodeURIComponent(userID), { credentials: 'include' });
-      // if (!resp.ok) throw new Error('lookup failed');
-      // const person = await resp.json();
-      // const result = { name: person.displayName || person.name || userID, fallback: false };
-      // userNameCache[userID] = result;
-      // return result;
-      throw new Error("no lookup endpoint configured");
-    } catch (e) {
-      var result = { name: String(userID), fallback: true };
-      userNameCache[userID] = result;
-      return result;
-    }
-  }
 
   // -- Query ------------------------------------------------------------------
   // For Site Creations specifically, also request data fields 17/21/22
@@ -235,13 +203,23 @@
     return query;
   }
 
+  // -- Date formatting -------------------------------------------------------
+  // Shared formatter -- MM/DD/YYYY everywhere a date renders, across all
+  // four tabs. Replaces the old per-tab toLocaleDateString() calls
+  // (locale-dependent) and Site Creations' abbreviated "Sep 8" scheme, so
+  // every tab's Date column matches exactly.
+  function formatDateMDY(epochSeconds) {
+    if (!epochSeconds) return "";
+    var d = new Date(epochSeconds * 1000);
+    var mm = String(d.getMonth() + 1).padStart(2, "0");
+    var dd = String(d.getDate()).padStart(2, "0");
+    return mm + "/" + dd + "/" + String(d.getFullYear());
+  }
+
   // -- Status helpers -----------------------------------------------------
-  // Every per-origin Status rule lives here, once, and is reused by both
-  // the single-site tab renderers (buildHeaders/buildLaunchpadHeaders,
-  // which write into a LeafFormGrid/DOM callback) and the merged-table
-  // renderers below (which build an HTML string for a row that may have
-  // come from any of several origins). Routing by origin here rather
-  // than duplicating/rewriting the logic is what makes the merge safe.
+  // Every per-origin Status rule lives here, once, and is reused by every
+  // column builder below. Routing by origin here rather than duplicating/
+  // rewriting the logic is what makes the merged tabs safe.
 
   // Plain-text status -> HTML, with red-italic styling for "Not Submitted".
   function statusHTMLFor(text) {
@@ -251,24 +229,27 @@
     return "<span>" + text + "</span>";
   }
 
-  function setStatusCellText(el, text) {
-    el.innerHTML = statusHTMLFor(text);
-  }
-
-  // Generic (non-Launchpad, non-Ideas) status text: the workflow's own
-  // lastStatus field. This is the fallback both Service Requests and
-  // Support use today -- see the NOTE on nationalSupportStatusText below.
-  function genericStatusText(rec) {
+  // Generic (non-Launchpad) status text, routed by origin:
+  //  - Ideas: its custom status field (indicatorID 12), not lastStatus.
+  //  - everything else (Service Requests, Support): the workflow's own
+  //    lastStatus field.
+  // FLAG: Service Requests and Support both fall through to the plain
+  // lastStatus branch -- correct today because neither has ever needed a
+  // custom status field of its own (unlike Ideas' id12), so merging them
+  // into National Support didn't change their status logic at all. If
+  // either one grows a custom status field later, this is the one place
+  // that would need a per-source branch added -- it can't tell the two
+  // apart once merged.
+  function statusTextForSource(sourceKey, rec) {
+    var source = SOURCE_SITES[sourceKey];
+    if (source.isIdeas) {
+      var v =
+        rec && rec.s1 && rec.s1.id12 !== undefined && rec.s1.id12 !== null
+          ? rec.s1.id12
+          : "";
+      return v || "Not Submitted";
+    }
     return rec && rec.lastStatus ? rec.lastStatus : "Not Submitted";
-  }
-
-  // Ideas' custom status field (indicatorID 12), in place of lastStatus.
-  function ideasStatusText(rec) {
-    var v =
-      rec && rec.s1 && rec.s1.id12 !== undefined && rec.s1.id12 !== null
-        ? rec.s1.id12
-        : "";
-    return v || "Not Submitted";
   }
 
   // Site Creations' "Site Ready" logic: a link once the site's server
@@ -295,163 +276,22 @@
     return "-";
   }
 
-  // FLAG: routes a merged-table row's Status cell by its source key.
-  // Site Creations and Ideas each get their own real per-site logic
-  // above. Service Requests and Support both fall through to the
-  // generic lastStatus branch -- that's correct today because neither
-  // one has ever needed a custom status field (unlike Ideas' id12), so
-  // merging them didn't change their status logic at all. If either
-  // Service Requests or Support ever grows a custom status field of its
-  // own, this is the one place (plus nationalSupportStatusText below)
-  // that would need a per-source branch added -- right now this
-  // function can't tell them apart once merged.
-  function statusTextForSource(sourceKey, rec) {
-    var source = SOURCE_SITES[sourceKey];
-    if (source.isIdeas) return ideasStatusText(rec);
-    return genericStatusText(rec);
-  }
-
+  // All Requests' Status column: routes to launchpadStatusHTML for Site
+  // Creations rows, the generic/Ideas text logic for everything else.
   function allRequestsStatusHTML(sourceKey, rec) {
     var source = SOURCE_SITES[sourceKey];
     if (source.isLaunchpad) return launchpadStatusHTML(rec);
     return statusHTMLFor(statusTextForSource(sourceKey, rec));
   }
 
-  // Same FLAG as statusTextForSource above: National Support's Status
-  // column has no way today to distinguish Service Requests from
-  // Support -- both use the generic lastStatus fallback.
-  function nationalSupportStatusHTML(sourceKey, rec) {
-    return statusHTMLFor(statusTextForSource(sourceKey, rec));
+  // Sort key for a Launchpad-style Status cell -- there's no numeric/text
+  // value to sort, just "has a Site Ready link" or not, so that's what's
+  // compared.
+  function launchpadStatusSortValue(rec) {
+    return launchpadStatusHTML(rec) === "-" ? "-" : "Site Ready";
   }
 
-  // -- Column header builder (single-site tabs only) ---------------------
-  function buildHeaders(site) {
-    if (site.isLaunchpad) {
-      return buildLaunchpadHeaders(site);
-    }
-
-    return [
-      {
-        name: "Date Initiated",
-        indicatorID: "dateInitiated",
-        editable: false,
-        callback: function (data, blob) {
-          var rec = blob[data.recordID];
-          var text = "";
-          if (rec && rec.date) {
-            text = new Date(rec.date * 1000).toLocaleDateString();
-          }
-          document.getElementById(data.cellContainerID).textContent = text;
-        },
-      },
-      {
-        name: "UID",
-        indicatorID: "uid",
-        editable: false,
-        callback: function (data, blob) {
-          document.getElementById(data.cellContainerID).innerHTML =
-            '<a target="_blank" href="' +
-            site.url +
-            "index.php?a=printview&recordID=" +
-            data.recordID +
-            '">' +
-            data.recordID +
-            "</a>";
-        },
-      },
-      {
-        name: "Title",
-        indicatorID: "title",
-        editable: false,
-        callback: function (data, blob) {
-          var title =
-            blob[data.recordID] && blob[data.recordID].title
-              ? blob[data.recordID].title
-              : "";
-          document.getElementById(data.cellContainerID).innerHTML =
-            '<a href="' +
-            site.url +
-            "index.php?a=printview&recordID=" +
-            data.recordID +
-            '" target="_blank">' +
-            title +
-            "</a>";
-        },
-      },
-      {
-        name: "Status",
-        indicatorID: "currentStatus",
-        editable: false,
-        callback: function (data, blob) {
-          var rec = blob[data.recordID];
-          var el = document.getElementById(data.cellContainerID);
-          if (site.isIdeas) {
-            setStatusCellText(el, ideasStatusText(rec));
-          } else {
-            setStatusCellText(el, genericStatusText(rec));
-          }
-        },
-      },
-    ];
-  }
-
-  // -- Launchpad-specific columns: Date, Project, Status (with Site Ready) ----
-  // Mirrors the native Launchpad "welcome back" search widget's renderResult():
-  //   Date    -- abbreviated month + day (+ year if not current year)
-  //   Project -- recordID badge + title link
-  //   Status  -- "Pending X" / "Waiting for X" text, OR a "Site Ready" button
-  //              once the site's server fields (s1.id17/id21/id22) are
-  //              populated, matching the native widget's logic exactly.
-  function buildLaunchpadHeaders(site) {
-    return [
-      {
-        name: "Date",
-        indicatorID: "date",
-        editable: false,
-        callback: function (data, blob) {
-          var rec = blob[data.recordID];
-          var text = "";
-          if (rec && rec.date) {
-            var date = new Date(rec.date * 1000);
-            var now = new Date();
-            var year =
-              now.getFullYear() !== date.getFullYear()
-                ? " " + date.getFullYear()
-                : "";
-            text = MONTH_ABBR[date.getMonth()] + " " + date.getDate() + year;
-          }
-          document.getElementById(data.cellContainerID).textContent = text;
-        },
-      },
-      {
-        name: "Project",
-        indicatorID: "title",
-        editable: false,
-        callback: function (data, blob) {
-          var rec = blob[data.recordID] || {};
-          var title = rec.title || "";
-          document.getElementById(data.cellContainerID).innerHTML =
-            requestCellHTML(
-              site.url + "index.php?a=printview&recordID=" + data.recordID,
-              data.recordID,
-              title,
-            );
-        },
-      },
-      {
-        name: "Status",
-        indicatorID: "currentStatus",
-        editable: false,
-        callback: function (data, blob) {
-          var rec = blob[data.recordID] || {};
-          document.getElementById(data.cellContainerID).innerHTML =
-            launchpadStatusHTML(rec);
-        },
-      },
-    ];
-  }
-
-  // Shared "badge recordID + title link" cell, used by Site Creations'
+  // Shared "badge recordID + title link" cell -- used by Site Creations'
   // Project column and by the All Requests Request column.
   function requestCellHTML(link, recordID, title) {
     return (
@@ -471,11 +311,167 @@
   }
 
   // ============================================================
+  //  Column definitions -- one builder per table shape
+  // ============================================================
+  // Every column has { name, getValue(row), render(row) }. getValue
+  // returns a plain comparable value (used for sorting); render returns
+  // the cell's HTML. Splitting the two means a column with rich markup
+  // (a link, a badge, a status pill) can still sort on something plain.
+
+  // Shared 4-column layout for National Support and Ideas: Date
+  // Initiated, UID, Title, Status. (National Support used to also carry
+  // a Source column tagging Service Requests vs. Support -- removed
+  // since each already has its own dedicated tab to narrow to one.)
+  function buildGenericColumns() {
+    return [
+      {
+        name: "Date Initiated",
+        getValue: function (row) {
+          return row.dateEpoch;
+        },
+        render: function (row) {
+          return formatDateMDY(row.rec.date);
+        },
+      },
+      {
+        name: "UID",
+        // On National Support (2 merged sources) this only orders what's
+        // currently displayed -- recordID sequences are independent per
+        // site, so it's not a global chronological order. Date Initiated
+        // is the sort that's actually meaningful across sources.
+        getValue: function (row) {
+          return parseInt(row.recordID, 10) || 0;
+        },
+        render: function (row) {
+          return (
+            '<a href="' +
+            row.link +
+            '" target="_blank">' +
+            row.recordID +
+            "</a>"
+          );
+        },
+      },
+      {
+        name: "Title",
+        getValue: function (row) {
+          return (row.rec.title || "").toLowerCase();
+        },
+        render: function (row) {
+          return (
+            '<a href="' +
+            row.link +
+            '" target="_blank">' +
+            (row.rec.title || "") +
+            "</a>"
+          );
+        },
+      },
+      {
+        name: "Status",
+        getValue: function (row) {
+          return statusTextForSource(row.sourceKey, row.rec);
+        },
+        render: function (row) {
+          return statusHTMLFor(statusTextForSource(row.sourceKey, row.rec));
+        },
+      },
+    ];
+  }
+
+  // Site Creations-only layout: Date, Project (badge+title), Status.
+  // FLAG: Status here is a "Site Ready" link/dash, not plain status text
+  // -- the one cell that can't match the other tabs' Status column
+  // content, because Site Creations records carry server-provisioning
+  // fields (s1.id17/21/22) nothing else does. The table chrome (header
+  // style, sort mechanics, borders, striping, padding) is identical to
+  // every other tab; only this cell's content legitimately differs.
+  function buildLaunchpadColumns() {
+    return [
+      {
+        name: "Date",
+        getValue: function (row) {
+          return row.dateEpoch;
+        },
+        render: function (row) {
+          return formatDateMDY(row.rec.date);
+        },
+      },
+      {
+        name: "Project",
+        getValue: function (row) {
+          return (row.rec.title || "").toLowerCase();
+        },
+        render: function (row) {
+          return requestCellHTML(row.link, row.recordID, row.rec.title || "");
+        },
+      },
+      {
+        name: "Status",
+        getValue: function (row) {
+          return launchpadStatusSortValue(row.rec);
+        },
+        render: function (row) {
+          return launchpadStatusHTML(row.rec);
+        },
+      },
+    ];
+  }
+
+  // All Requests layout: Date, Site, Request (merged UID+Title badge),
+  // Status. Status routes by source origin (see allRequestsStatusHTML)
+  // rather than re-deriving per-origin logic here.
+  function buildAllRequestsColumns() {
+    return [
+      {
+        name: "Date",
+        getValue: function (row) {
+          return row.dateEpoch;
+        },
+        render: function (row) {
+          return formatDateMDY(row.rec.date);
+        },
+      },
+      {
+        name: "Site",
+        getValue: function (row) {
+          return row.site.allRequestsLabel;
+        },
+        render: function (row) {
+          return row.site.allRequestsLabel;
+        },
+      },
+      {
+        name: "Request",
+        getValue: function (row) {
+          return (row.rec.title || "").toLowerCase();
+        },
+        render: function (row) {
+          return requestCellHTML(row.link, row.recordID, row.rec.title || "");
+        },
+      },
+      {
+        name: "Status",
+        getValue: function (row) {
+          var source = SOURCE_SITES[row.sourceKey];
+          return source.isLaunchpad
+            ? launchpadStatusSortValue(row.rec)
+            : statusTextForSource(row.sourceKey, row.rec);
+        },
+        render: function (row) {
+          return allRequestsStatusHTML(row.sourceKey, row.rec);
+        },
+      },
+    ];
+  }
+
+  // ============================================================
   //  Runtime
   // ============================================================
 
   var siteState = {}; // keyed by source.url -- { data, rendered, error }
   var mstRootEl = null; // set by buildShell -- the container passed to buildAndLoadGrid
+  var sortState = {}; // keyed by tab.id -- { columnIndex, direction }
 
   function stateKey(source) {
     return source.url;
@@ -557,11 +553,12 @@
   }
 
   // -- Row view-models -----------------------------------------------------
-  // Every merged/all-requests row carries a composite `key` of
-  // `${site.url}__${recordID}` (per-source recordIDs are NOT globally
-  // unique -- Site Creations, Service Requests, Support, and Ideas are
-  // four independent LEAF sites, each with their own recordID sequence,
-  // so two different sources can easily produce the same numeric ID).
+  // Every row carries a composite `key` of `${site.url}__${recordID}`
+  // (per-source recordIDs are NOT globally unique -- Site Creations,
+  // Service Requests, Support, and Ideas are four independent LEAF
+  // sites, each with their own recordID sequence, so two different
+  // sources can easily produce the same numeric ID). This is kept as an
+  // internal row identifier even where it's not shown as a column.
   function rowsForSource(sourceKey) {
     var source = SOURCE_SITES[sourceKey];
     var state = siteState[stateKey(source)];
@@ -588,292 +585,122 @@
     return rows;
   }
 
-  // FLAG: sorting merged rows by recordID (the original single-site
-  // default) stops meaning anything once rows come from more than one
-  // source -- each source's recordID sequence is independent, so
-  // "recordID desc" no longer approximates recency across sites. Both
-  // merged views below sort by date instead. This is an explicit
-  // deviation from the original per-site table's recordID-desc sort;
-  // the task only specified date-desc for All Requests, but the same
-  // reasoning applies to National Support once two sources are combined,
-  // so it uses the same sort for consistency.
-  function sortByDateDesc(rows) {
-    rows.sort(function (a, b) {
-      return b.dateEpoch - a.dateEpoch;
-    });
-    return rows;
-  }
-
-  // -- Single-site table fallback (used when LeafFormGrid isn't available) --
-  function renderTable(site, bodyEl, data) {
-    var records = Object.keys(data).map(function (id) {
-      var rec = data[id] || {};
-      return {
-        recordID: id,
-        rec: rec,
-        userID: rec[REQUESTOR_FIELD_ID] || null,
-        service: rec.service || "",
-        title: rec.title || "",
-        statusText: rec.lastStatus || "Not Submitted",
-        date: rec.date ? new Date(rec.date * 1000).toLocaleDateString() : "",
+  // -- Shared table renderer (used by all four tabs) -----------------------
+  // Every column is sortable: clicking its header button toggles
+  // ascending/descending for that column; aria-sort on the <th> tracks
+  // state ("ascending"/"descending"/"none"), and the header control is a
+  // real <button>, so Enter/Space activate it the same as a click with
+  // no extra keyboard handling needed. Sort state is kept per tab.id so
+  // switching tabs and back, or a merged tab re-rendering as more data
+  // arrives, doesn't reset the user's chosen sort.
+  function renderDataTable(bodyEl, tableId, columns, rows, opts) {
+    opts = opts || {};
+    var state = sortState[tableId];
+    if (!state) {
+      state = {
+        columnIndex: opts.defaultSortIndex != null ? opts.defaultSortIndex : 0,
+        direction: opts.defaultSortDir || "desc",
       };
-    });
-
-    records.sort(function (a, b) {
-      return b.recordID - a.recordID;
-    });
-
-    var headCells =
-      "<th>Date Initiated</th><th>UID</th><th>Title</th><th>Status</th>";
-    var colCount = 4;
-
-    var html =
-      '<div class="ip-tableWrap"><table class="ip-table"><thead><tr>' +
-      headCells +
-      "</tr></thead><tbody>";
-
-    if (records.length === 0) {
-      html +=
-        '<tr><td colspan="' +
-        colCount +
-        '" style="text-align:center; color:var(--c-muted);">No records found.</td></tr>';
+      sortState[tableId] = state;
     }
 
-    records.forEach(function (r) {
-      var link = site.url + "index.php?a=printview&recordID=" + r.recordID;
-      html +=
-        '<tr data-recordid="' +
-        r.recordID +
-        '">' +
-        "<td>" +
-        r.date +
-        "</td>" +
-        '<td><a href="' +
-        link +
-        '" target="_blank">' +
-        r.recordID +
-        "</a></td>" +
-        '<td><a href="' +
-        link +
-        '" target="_blank">' +
-        r.title +
-        "</a></td>" +
-        "<td>" +
-        statusHTMLFor(r.statusText) +
-        "</td>" +
-        "</tr>";
-    });
-
-    html += "</tbody></table></div>";
-    bodyEl.innerHTML = html;
-
-    records.forEach(function (r) {
-      if (!r.userID) return;
-      var row = bodyEl.querySelector(
-        'tr[data-recordid="' + r.recordID + '"] .mst-requestor-cell',
-      );
-      if (!row) return;
-      resolveUserName(r.userID).then(function (result) {
-        row.textContent = result.name;
-        if (result.fallback) {
-          row.title = "Directory lookup unavailable";
-          row.style.fontStyle = "italic";
-        }
+    function sortedRows() {
+      var col = columns[state.columnIndex];
+      if (!col) return rows;
+      var copy = rows.slice();
+      copy.sort(function (a, b) {
+        var va = col.getValue(a);
+        var vb = col.getValue(b);
+        var cmp = va < vb ? -1 : va > vb ? 1 : 0;
+        return state.direction === "asc" ? cmp : -cmp;
       });
-    });
-  }
-
-  // -- Merged tables (National Support, All Requests) ---------------------
-  // Shared wrapper: builds rows from every source in the tab, sorts them,
-  // hands them to a table-builder, and appends a pending/error banner so
-  // the tab renders whatever's already resolved instead of blocking on
-  // the slowest fetch.
-  function renderMergedTab(tab, bodyEl, tableBuilder) {
-    var rows = sortByDateDesc(rowsForSources(tab.sourceKeys));
-    var erroredKeys = tab.sourceKeys.filter(isSourceErrored);
-    var pending = tab.sourceKeys.some(isSourcePending);
-
-    var html = "";
-    erroredKeys.forEach(function (k) {
-      html +=
-        '<p class="ip-error">Error loading data from ' +
-        SOURCE_SITES[k].url +
-        ". Check your network access and permissions.</p>";
-    });
-    html += tableBuilder(rows);
-    if (pending) {
-      html +=
-        '<p class="mst-loading-more" role="status">Loading more requests&hellip;</p>';
+      return copy;
     }
 
-    bodyEl.innerHTML = html;
-    return rows;
-  }
+    function draw() {
+      var sorted = sortedRows();
 
-  function buildNationalSupportTable(rows) {
-    var head =
-      "<th>Date Initiated</th><th>UID</th><th>Title</th><th>Status</th><th>Source</th>";
-    var body = rows
-      .map(function (r) {
-        var dateText = r.rec.date
-          ? new Date(r.rec.date * 1000).toLocaleDateString()
-          : "";
-        var title = r.rec.title || "";
-        return (
-          '<tr data-rowkey="' +
-          r.key +
-          '">' +
-          "<td>" +
-          dateText +
-          "</td>" +
-          '<td><a href="' +
-          r.link +
-          '" target="_blank">' +
-          r.recordID +
-          "</a></td>" +
-          '<td><a href="' +
-          r.link +
-          '" target="_blank">' +
-          title +
-          "</a></td>" +
-          "<td>" +
-          nationalSupportStatusHTML(r.sourceKey, r.rec) +
-          "</td>" +
-          "<td>" +
-          SOURCE_SITES[r.sourceKey].nationalSupportLabel +
-          "</td>" +
-          "</tr>"
-        );
-      })
-      .join("");
+      var headHTML = columns
+        .map(function (col, i) {
+          var dir = i === state.columnIndex ? state.direction : null;
+          var ariaSort =
+            dir === "asc" ? "ascending" : dir === "desc" ? "descending" : "none";
+          // Up/down triangle entities as a dependency-free placeholder --
+          // FLAG: swap for real Material Symbols icons (arrow_upward /
+          // arrow_downward) to match the rest of the design system once
+          // icon assets are wired up for this widget.
+          var icon = dir === "asc" ? "&#9650;" : dir === "desc" ? "&#9660;" : "";
+          return (
+            '<th scope="col" aria-sort="' +
+            ariaSort +
+            '">' +
+            '<button type="button" class="mst-sort-btn" data-col-index="' +
+            i +
+            '">' +
+            col.name +
+            '<span class="mst-sort-icon" aria-hidden="true">' +
+            icon +
+            "</span></button></th>"
+          );
+        })
+        .join("");
 
-    if (!rows.length) {
-      body =
-        '<tr><td colspan="5" style="text-align:center; color:var(--c-muted);">No records found.</td></tr>';
-    }
+      var rowsHTML = sorted
+        .map(function (row) {
+          return (
+            '<tr data-rowkey="' +
+            row.key +
+            '">' +
+            columns
+              .map(function (col) {
+                return "<td>" + col.render(row) + "</td>";
+              })
+              .join("") +
+            "</tr>"
+          );
+        })
+        .join("");
 
-    return (
-      '<div class="ip-tableWrap"><table class="ip-table"><thead><tr>' +
-      head +
-      "</tr></thead><tbody>" +
-      body +
-      "</tbody></table></div>"
-    );
-  }
+      if (!sorted.length) {
+        rowsHTML =
+          '<tr><td colspan="' +
+          columns.length +
+          '" class="mst-empty">No records found.</td></tr>';
+      }
 
-  function buildAllRequestsTable(rows) {
-    var head = "<th>Date</th><th>Site</th><th>Request</th><th>Status</th>";
-    var body = rows
-      .map(function (r) {
-        var dateText = r.rec.date
-          ? new Date(r.rec.date * 1000).toLocaleDateString(undefined, {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
-          : "";
-        var title = r.rec.title || "";
-        var siteLabel = r.site.allRequestsLabel;
-        return (
-          '<tr data-rowkey="' +
-          r.key +
-          '" data-site-label="' +
-          siteLabel +
-          '">' +
-          "<td>" +
-          dateText +
-          "</td>" +
-          "<td>" +
-          siteLabel +
-          "</td>" +
-          "<td>" +
-          requestCellHTML(r.link, r.recordID, title) +
-          "</td>" +
-          "<td>" +
-          allRequestsStatusHTML(r.sourceKey, r.rec) +
-          "</td>" +
-          "</tr>"
-        );
-      })
-      .join("");
+      var tableClass = "ip-table" + (opts.extraTableClass ? " " + opts.extraTableClass : "");
+      var tableHTML =
+        '<div class="ip-tableWrap"><table class="' +
+        tableClass +
+        '"><thead><tr>' +
+        headHTML +
+        "</tr></thead><tbody>" +
+        rowsHTML +
+        "</tbody></table></div>";
 
-    if (!rows.length) {
-      body =
-        '<tr><td colspan="4" style="text-align:center; color:var(--c-muted);">No records found.</td></tr>';
-    }
+      bodyEl.innerHTML = (opts.beforeHTML || "") + tableHTML + (opts.afterHTML || "");
 
-    return (
-      '<div class="ip-tableWrap"><table class="ip-table"><thead><tr>' +
-      head +
-      "</tr></thead><tbody>" +
-      body +
-      "</tbody></table></div>"
-    );
-  }
-
-  // -- All Requests site filter chips ---------------------------------------
-  // Real toggle-button semantics (aria-pressed), wrapped in a labeled
-  // role="group" -- not a bare CSS-class toggle. Client-side show/hide
-  // only; never triggers a re-fetch.
-  function buildAllRequestsFilterChipsHTML() {
-    var chips = ALL_REQUESTS_SITE_LABELS.map(function (label) {
-      var pressed = allRequestsFilters[label];
-      return (
-        '<button type="button" class="mst-filter-chip' +
-        (pressed ? " is-pressed" : "") +
-        '" data-site-filter="' +
-        label +
-        '" aria-pressed="' +
-        pressed +
-        '">' +
-        '<span class="mst-filter-chip-check" aria-hidden="true">' +
-        (pressed ? "&#10003;" : "") +
-        "</span> " +
-        label +
-        "</button>"
-      );
-    }).join("");
-    return (
-      '<div class="mst-filter-group" role="group" aria-label="Filter All Requests by site">' +
-      chips +
-      "</div>"
-    );
-  }
-
-  function applyAllRequestsFilters(bodyEl) {
-    bodyEl.querySelectorAll("tr[data-site-label]").forEach(function (row) {
-      var label = row.getAttribute("data-site-label");
-      row.hidden = !allRequestsFilters[label];
-    });
-  }
-
-  function wireAllRequestsFilterChips(containerEl, bodyEl) {
-    containerEl.querySelectorAll("[data-site-filter]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var label = btn.getAttribute("data-site-filter");
-        allRequestsFilters[label] = !allRequestsFilters[label];
-        var pressed = allRequestsFilters[label];
-        btn.setAttribute("aria-pressed", String(pressed));
-        btn.classList.toggle("is-pressed", pressed);
-        var check = btn.querySelector(".mst-filter-chip-check");
-        if (check) check.innerHTML = pressed ? "&#10003;" : "";
-        applyAllRequestsFilters(bodyEl);
+      bodyEl.querySelectorAll(".mst-sort-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var idx = parseInt(btn.getAttribute("data-col-index"), 10);
+          if (state.columnIndex === idx) {
+            state.direction = state.direction === "asc" ? "desc" : "asc";
+          } else {
+            state.columnIndex = idx;
+            state.direction = "asc";
+          }
+          draw();
+          var refocus = bodyEl.querySelectorAll(".mst-sort-btn")[idx];
+          if (refocus) refocus.focus();
+        });
       });
-    });
-  }
+    }
 
-  function renderAllRequestsTab(tab, bodyEl) {
-    renderMergedTab(tab, bodyEl, buildAllRequestsTable);
-    bodyEl.insertAdjacentHTML("afterbegin", buildAllRequestsFilterChipsHTML());
-    wireAllRequestsFilterChips(bodyEl, bodyEl);
-    applyAllRequestsFilters(bodyEl);
+    draw();
   }
 
   // -- Single-source tab (Site Creations, Ideas) ---------------------------
-  // Unchanged in spirit from the original per-site renderGrid(): uses
-  // LeafFormGrid when available, falls back to renderTable(), and only
-  // draws once per resolved fetch (LeafFormGrid render is a one-shot).
-  function renderSingleSourceTab(tab, bodyEl, tabIndex) {
+  function renderSingleSourceTab(tab, bodyEl) {
     var sourceKey = tab.sourceKeys[0];
     var source = SOURCE_SITES[sourceKey];
     var state = siteState[stateKey(source)];
@@ -886,28 +713,46 @@
         ". Check your network access and permissions.</p>";
       return;
     }
-    if (!state.data || state.rendered) return;
+    if (!state.data) return;
 
-    if (typeof LeafFormGrid !== "undefined") {
-      var gridID = "mst-grid-" + tabIndex;
-      if (!document.getElementById(gridID)) {
-        var div = document.createElement("div");
-        div.id = gridID;
-        bodyEl.appendChild(div);
-      }
-      var grid = new LeafFormGrid(gridID);
-      grid.setRootURL(source.url);
-      grid.hideIndex();
-      grid.setDataBlob(state.data);
-      grid.setData(Object.values(state.data));
-      grid.setHeaders(buildHeaders(source));
-      grid.sort("recordID", "desc");
-      grid.renderBody();
-    } else {
-      renderTable(source, bodyEl, state.data);
-    }
+    var rows = rowsForSource(sourceKey);
+    var columns = source.isLaunchpad
+      ? buildLaunchpadColumns()
+      : buildGenericColumns();
+    renderDataTable(bodyEl, tab.id, columns, rows, {
+      defaultSortIndex: 0,
+      defaultSortDir: "desc",
+    });
+  }
 
-    state.rendered = true;
+  // -- Merged tabs (National Support, All Requests) ------------------------
+  // Renders whatever's already resolved per source and appends a
+  // pending/error banner, rather than blocking on the slowest fetch.
+  function renderMergedTab(tab, bodyEl, columns) {
+    var rows = rowsForSources(tab.sourceKeys);
+    var erroredKeys = tab.sourceKeys.filter(isSourceErrored);
+    var pending = tab.sourceKeys.some(isSourcePending);
+
+    var beforeHTML = erroredKeys
+      .map(function (k) {
+        return (
+          '<p class="ip-error">Error loading data from ' +
+          SOURCE_SITES[k].url +
+          ". Check your network access and permissions.</p>"
+        );
+      })
+      .join("");
+    var afterHTML = pending
+      ? '<p class="mst-loading-more" role="status">Loading more requests&hellip;</p>'
+      : "";
+
+    renderDataTable(bodyEl, tab.id, columns, rows, {
+      defaultSortIndex: 0,
+      defaultSortDir: "desc",
+      beforeHTML: beforeHTML,
+      afterHTML: afterHTML,
+      extraTableClass: tab.kind === "all" ? "mst-table-all" : "",
+    });
   }
 
   // -- Tab dispatch ----------------------------------------------------------
@@ -917,11 +762,11 @@
     if (!tab || !bodyEl) return;
 
     if (tab.kind === "single") {
-      renderSingleSourceTab(tab, bodyEl, tabIndex);
+      renderSingleSourceTab(tab, bodyEl);
     } else if (tab.kind === "merged") {
-      renderMergedTab(tab, bodyEl, buildNationalSupportTable);
+      renderMergedTab(tab, bodyEl, buildGenericColumns());
     } else if (tab.kind === "all") {
-      renderAllRequestsTab(tab, bodyEl);
+      renderMergedTab(tab, bodyEl, buildAllRequestsColumns());
     }
   }
 
@@ -1201,14 +1046,27 @@
       ".mst-container .ip-panel{display:none;}",
       ".mst-container .ip-panel.is-active{display:block;}",
       ".mst-container .ip-tableWrap{background:var(--lp-bg,#fff);border-radius:var(--r-lg,8px);padding:20px;box-shadow:0 2px 8px rgba(0,10,40,.06);border:1px solid var(--c-blue10,#d9e8f6);overflow-x:auto;width:100%;}",
+
+      // -- Shared table chrome: identical header style, borders, font
+      // sizing, cell padding, striping and hover across all four tabs. --
       ".mst-container .ip-table{width:100%;border-collapse:collapse;table-layout:auto;background:#fff;min-width:840px;font-size:16px;}",
-      ".mst-container .ip-table th,.mst-container .ip-table td{border:1px solid var(--c-gray20,#c9c9c9);padding:10px;vertical-align:top;word-wrap:break-word;overflow-wrap:anywhere;text-align:left;}",
-      '.mst-container .ip-table th{background:var(--c-blue10,#d9e8f6);font-family:"Public Sans",sans-serif;font-weight:700;color:var(--lp-hl,#1a4480);user-select:none;}',
+      ".mst-container .ip-table td{border:1px solid var(--c-gray20,#c9c9c9);padding:10px;vertical-align:top;word-wrap:break-word;overflow-wrap:anywhere;text-align:left;}",
+      '.mst-container .ip-table th{border:1px solid var(--c-gray20,#c9c9c9);padding:0;vertical-align:top;text-align:left;background:var(--c-blue10,#d9e8f6);font-family:"Public Sans",sans-serif;font-weight:700;color:var(--lp-hl,#1a4480);user-select:none;}',
+      ".mst-container .ip-table tbody tr:nth-child(even){background:var(--c-gray5,#f0f0f0);}",
       ".mst-container .ip-table tbody tr:hover{background:var(--lp-bg-alt,#eff6fb);}",
       ".mst-container .ip-table td a{color:var(--lp-accent,#005ea2);text-decoration:none;}",
       ".mst-container .ip-table td a:hover{text-decoration:underline;}",
       ".mst-container .ip-error{color:#b91c1c;font-size:14px;font-weight:600;}",
       ".mst-container .mst-status-not-submitted{color:#b91c1c;font-style:italic;font-size:0.875em;}",
+      ".mst-container .mst-empty{text-align:center;color:var(--c-muted,#3d4551);}",
+
+      // -- Sortable column headers: real <button> per header, so
+      // Enter/Space activate it exactly like a click (no separate
+      // keyboard handling needed). aria-sort lives on the <th>. --
+      '.mst-container .mst-sort-btn{display:flex;align-items:center;gap:4px;width:100%;border:0;background:transparent;color:inherit;font:inherit;font-weight:700;text-align:left;cursor:pointer;padding:10px;}',
+      ".mst-container .mst-sort-btn:hover{background:var(--c-blue20,#aacdec);}",
+      ".mst-container .mst-sort-btn:focus-visible{outline:3px solid var(--lp-accent,#005ea2);outline-offset:-3px;}",
+      ".mst-container .mst-sort-icon{font-size:0.7em;line-height:1;}",
 
       /* -- Launchpad-specific column styling -- */
       ".mst-container .mst-lp-recid a{display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;background:var(--c-text,#1b1b1b);color:#fff !important;border-radius:var(--r,5px);font-weight:900;font-size:1em;line-height:1;text-decoration:none;text-align:center;}",
@@ -1217,13 +1075,14 @@
       ".mst-container .mst-site-ready-btn:hover{background:var(--c-blue10,#d9e8f6);text-decoration:none;}",
       ".mst-container .mst-site-ready-btn:focus-visible{outline:3px solid var(--lp-accent,#005ea2);outline-offset:2px;}",
 
-      /* -- All Requests site filter chips -- */
-      ".mst-container .mst-filter-group{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px 0;}",
-      '.mst-container .mst-filter-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--c-blue20,#aacdec);background:var(--lp-bg,#fff);color:var(--c-muted,#3d4551);border-radius:999px;padding:6px 14px;font-family:"Public Sans",sans-serif;font-weight:700;font-size:0.875rem;cursor:pointer;transition:background .15s,color .15s,border-color .15s;}',
-      ".mst-container .mst-filter-chip:hover{border-color:var(--lp-accent,#005ea2);}",
-      ".mst-container .mst-filter-chip:focus-visible{outline:3px solid var(--lp-accent,#005ea2);outline-offset:2px;}",
-      ".mst-container .mst-filter-chip.is-pressed{background:var(--lp-accent,#005ea2);border-color:var(--lp-accent,#005ea2);color:#fff;}",
-      ".mst-container .mst-filter-chip-check{display:inline-block;width:1em;}",
+      // -- All Requests column widths: Date/Site/Status fixed and
+      // non-wrapping, Request flexible and allowed to wrap. Same
+      // nth-child + width/white-space technique already used elsewhere
+      // in this codebase's .ip-table styling. --
+      ".mst-container .mst-table-all th:nth-child(1),.mst-container .mst-table-all td:nth-child(1){width:110px;white-space:nowrap;}",
+      ".mst-container .mst-table-all th:nth-child(2),.mst-container .mst-table-all td:nth-child(2){width:140px;white-space:nowrap;}",
+      ".mst-container .mst-table-all th:nth-child(3),.mst-container .mst-table-all td:nth-child(3){width:auto;white-space:normal;word-wrap:break-word;overflow-wrap:break-word;}",
+      ".mst-container .mst-table-all th:nth-child(4),.mst-container .mst-table-all td:nth-child(4){width:130px;white-space:nowrap;}",
 
       /* -- Partial-loading indicator (All Requests / National Support) -- */
       ".mst-container .mst-loading-more{margin:10px 0 0;font-size:0.875rem;font-style:italic;color:var(--c-muted,#3d4551);}",
@@ -1241,10 +1100,10 @@
       ".mst-modal-close:focus-visible{outline:3px solid var(--lp-accent,#005ea2);outline-offset:2px;}",
       ".mst-modal-body{padding:20px 24px 28px;overflow-y:auto;flex:1 1 auto;position:relative;}",
       /* LeafFormGrid's base stylesheet applies position:sticky;top:0 directly
-         to its <thead>/<th> elements. Inside our modal's shorter internal
-         scroll container that sticks the header mid-table instead of at the
-         top, overlapping rows. Override with a selector specific enough to
-         beat LEAF's own rule. */
+         to its <thead>/<th> elements. This widget no longer renders through
+         LeafFormGrid, but this override is kept in case a page embedding
+         this modal also loads LeafFormGrid's CSS for something else on the
+         same page, which would otherwise still leak into .ip-table here. */
       ".mst-modal-body table thead,",
       ".mst-modal-body table thead tr,",
       ".mst-modal-body table thead th,",
