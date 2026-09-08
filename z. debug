@@ -1,11 +1,8 @@
-You found this ?a= resolver pattern in LEAF_Nexus/report.php and LEAF_Request_Portal/report.php: a switch for a few special cases, falling back to file_exists("templates/reports/{$action}.tpl").
+You found that report.php's ?a= resolver in a couple of LEAF apps follows this pattern: a switch handles a few special-case action names, and everything else falls back to file_exists("templates/reports/{$action}.tpl") — i.e. the action name maps directly to a template filename by convention.
 
-Search across all repos in the LEAF GitHub org for a repo that corresponds to the "Launchpad" application. Look for:
+I want to confirm whether this is a platform-wide LEAF convention (used consistently by report.php across LEAF apps generally) rather than something specific to the one or two repos you happened to check. Search a broader sample of repos in the org that contain a report.php file and check:
 
-Any repo whose name, README, or file paths reference "Launchpad" or "launchpad."
-Within candidate repos, a report.php (or similarly-named front controller) that follows the same switch + file_exists("templates/reports/{$action}.tpl") pattern you found in the other two apps.
-A templates/reports/ directory (or equivalent) containing files with an lp_ prefix — e.g. lp_impact.tpl, lp_help_library.tpl, lp_find_site.tpl — confirming this is the right app.
+Do they all follow the same switch + file_exists("templates/reports/{$action}.tpl") fallback pattern, or does it vary app to app?
+In general, is it standard/safe across LEAF apps to add an alias — i.e. a second .tpl file that reuses/includes an existing template's content under a different action name — without needing changes anywhere else (routing config, permissions, etc.)? Or have you seen exceptions where action names are validated against something beyond just template file existence (an allowlist, a database table, a permissions check keyed by action name)?
 
-If you find it: confirm whether it uses the identical resolver pattern, and whether adding an alias (a second template file that reuses an existing one's content, or a new switch case) would work the same way it would in the two apps you already checked.
-
-If no repo matches — no "Launchpad"-named repo, or none containing lp_-prefixed templates — say so explicitly. Don't assume it uses the same pattern as LEAF_Nexus/LEAF_Request_Portal just because those two do; confirm it directly or report that you couldn't locate it.
+Report back generically — I don't need you to identify or confirm any specific app's routes, just whether this resolver pattern and the alias approach are something we can rely on as a general LEAF backend convention.
