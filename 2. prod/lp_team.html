@@ -216,7 +216,7 @@
         background: linear-gradient(
           135deg,
           var(--lp-accent-strong, #004a82),
-          #0071bc
+          var(--lp-accent)
         );
         color: #fff;
         border-radius: var(--r-lg);
@@ -712,10 +712,20 @@
               </button>
             </div>
             <div class="thb-filters" role="group" aria-label="Filter by type">
-              <button class="thb-filter active" data-filter="all" type="button">
+              <button
+                class="thb-filter active"
+                data-filter="all"
+                type="button"
+                aria-pressed="true"
+              >
                 All
               </button>
-              <button class="thb-filter" data-filter="submit" type="button">
+              <button
+                class="thb-filter"
+                data-filter="submit"
+                type="button"
+                aria-pressed="false"
+              >
                 <span class="material-symbols-outlined" aria-hidden="true"
                   ><svg viewBox="0 -960 960 960" fill="currentColor">
                     <path
@@ -723,7 +733,12 @@
                     /></svg></span
                 >Submit Reports
               </button>
-              <button class="thb-filter" data-filter="view" type="button">
+              <button
+                class="thb-filter"
+                data-filter="view"
+                type="button"
+                aria-pressed="false"
+              >
                 <span class="material-symbols-outlined" aria-hidden="true"
                   ><svg viewBox="0 -960 960 960" fill="currentColor">
                     <path
@@ -740,7 +755,13 @@
           </div>
 
           <!-- Admin inbox -->
-          <div class="thb-admin" id="thbAdmin" data-type="admin">
+          <div
+            class="thb-admin"
+            id="thbAdmin"
+            data-type="admin"
+            role="region"
+            aria-label="Admin inbox"
+          >
             <div class="thb-admin-left">
               <span class="thb-admin-icon"
                 ><span class="material-symbols-outlined" aria-hidden="true"
@@ -800,7 +821,9 @@
             </button>
             <div class="thb-sec-body" id="bodySubmit">
               <div class="thb-grid" id="gridSubmit"></div>
-              <p class="thb-empty">No submit forms match your search.</p>
+              <p class="thb-empty" aria-live="polite">
+                No submit forms match your search.
+              </p>
             </div>
           </section>
 
@@ -835,7 +858,9 @@
             </button>
             <div class="thb-sec-body" id="bodyView">
               <div id="viewGroups"></div>
-              <p class="thb-empty">No reports match your search.</p>
+              <p class="thb-empty" aria-live="polite">
+                No reports match your search.
+              </p>
             </div>
           </section>
 
@@ -1118,7 +1143,6 @@
           const clearBtn = $id("thbClear");
           const admin = $id("thbAdmin");
           const resultCount = $id("thbResultCount");
-          const totalTiles = document.querySelectorAll(".thb-tile").length;
           let typeFilter = "all";
 
           const sections = [
@@ -1188,10 +1212,12 @@
 
           document.querySelectorAll(".thb-filter").forEach((btn) => {
             btn.addEventListener("click", () => {
-              document
-                .querySelectorAll(".thb-filter")
-                .forEach((b) => b.classList.remove("active"));
+              document.querySelectorAll(".thb-filter").forEach((b) => {
+                b.classList.remove("active");
+                b.setAttribute("aria-pressed", "false");
+              });
               btn.classList.add("active");
+              btn.setAttribute("aria-pressed", "true");
               typeFilter = btn.getAttribute("data-filter");
               apply();
             });

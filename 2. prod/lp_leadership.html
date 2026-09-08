@@ -223,14 +223,19 @@
       }
 
       /* ── Power BI Modal ── */
+      /* Global header (launchpad.css) is fixed with a high z-index and paints
+       over centered overlays. We push the dialog down below the header via
+       --ldh-header-offset instead of relying on z-index alone — same
+       technique used by the Team Hub's admin inbox modal. */
       .ldh-modal {
+        --ldh-header-offset: 120px;
         position: fixed;
         inset: 0;
         display: none;
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
-        padding: 20px;
-        z-index: 1000;
+        padding: var(--ldh-header-offset) 20px 24px;
+        z-index: 2147483000;
       }
 
       .ldh-modal.is-open {
@@ -246,7 +251,7 @@
       .ldh-modal__dialog {
         position: relative;
         width: min(1300px, 94vw);
-        height: 90vh;
+        height: calc(100vh - var(--ldh-header-offset) - 24px);
         background: #fff;
         border-radius: var(--r-lg);
         overflow: hidden;
@@ -424,7 +429,7 @@
                   <span class="material-symbols-outlined" aria-hidden="true"
                     ><svg viewBox="0 -960 960 960" fill="currentColor">
                       <path
-                        d="M153-73q-33-33-33-81t33-81q33-33 81-33 14 0 24.5 2.5T280-258l85-106q-19-23-29-52.5t-5-61.5l-121-41q-15 25-39.5 39T114-466q-48 0-81-33T0-580q0-48 33-81t81-33q48 0 81 33t33 81v4l122 42q18-32 43.5-49t56.5-24v-129q-39-11-61.5-43T366-846q0-48 33-81t81-33q48 0 81 33t33 81q0 35-23 67t-61 43v129q31 7 57 24t44 49l121-42v-4q0-48 33-81t81-33q48 0 81 33t33 81q0 48-33 81t-81 33q-32 0-57-14t-39-39l-121 41q5 32-4.5 61.5T595-364l85 106q11-5 21.5-7.5T726-268q48 0 81 33t33 81q0 48-33 81t-81 33q-48 0-81-33t-33-81q0-20 5.5-36t15.5-31l-85-106q-32 17-68.5 17T411-327l-84 107q10 15 15.5 30.5T348-154q0 48-33 81t-81 33q-48 0-81-33Z"
+                        d="M153-73q-33-33-33-81t33-81q33-33 81-33 14 0 24.5 2.5T280-258l85-106q-19-23-29-52.5t-5-61.5l-121-41q-15 25-39.5 39T114-466q-48 0-81-33T0-580q0-48 33-81t81-33q48 0 81 33t33 81v4l122 42q18-32 43.5-49t56.5-24v-129q-39-11-61.5-43T366-846q0-48 33-81t81-33q48 0 81 33t33 81q0 35-23 67t-61 43v129q31 7 57 24t44 49l121-42v-4q0-48 33-81t81-33q48 0 81 33t33 81q0 48-33 81t-81 33q-32 0-57-14t-39-39l-121 41q5 32-4.5 61.5T595-364l85 106q11-5 21.5-7.5T726-268q48 0 81 33t33 81q0 48-33 81t-81 33q-48 0-81-33t-33-81q0-20 5.5-36t15.5-31l-85-106q-32 17-68.5 17T411-327l-84 107q10 15 15.5 30.5T348-154q0 48-33 81t-81 33Z"
                       /></svg
                   ></span>
                 </span>
@@ -705,8 +710,33 @@
 
           let lastFocused = null;
 
+          /* Measure the fixed/sticky global header so the dialog always clears it.
+           Falls back to the CSS default (120px) if nothing is found. */
+          const measureHeaderOffset = () => {
+            let bottom = 0;
+            document
+              .querySelectorAll(
+                'header, nav, [class*="breadcrumb"], [class*="nav"]',
+              )
+              .forEach((el) => {
+                const cs = getComputedStyle(el);
+                if (cs.position === "fixed" || cs.position === "sticky") {
+                  const rect = el.getBoundingClientRect();
+                  if (rect.top <= 4 && rect.bottom > bottom)
+                    bottom = rect.bottom;
+                }
+              });
+            if (bottom > 0) {
+              modal.style.setProperty(
+                "--ldh-header-offset",
+                `${Math.ceil(bottom) + 16}px`,
+              );
+            }
+          };
+
           const openModal = (src, title) => {
             lastFocused = document.activeElement;
+            measureHeaderOffset();
             titleEl.textContent = title || "Report";
             frame.src = src;
             modal.classList.add("is-open");
