@@ -149,8 +149,6 @@
     },
   ];
 
-  var REQUESTOR_FIELD_ID = "userID";
-
   // -- Current user ---------------------------------------------------------
   // Prefer the value passed via data-attribute (rendered server-side by Smarty
   // on the embedding page). Fall back to a `session` global if present.

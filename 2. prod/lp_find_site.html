@@ -334,6 +334,7 @@
 
       .leaf-find .lf-col-help {
         font-size: 0.75rem;
+        font-style: italic;
         color: var(--c-muted);
         line-height: 1.4;
       }
@@ -441,11 +442,6 @@
       .leaf-find .lf-prompt__text {
         font-size: 0.95rem;
         font-weight: 600;
-        margin: 0;
-      }
-
-      .leaf-find .lf-prompt__sub {
-        font-size: 0.825rem;
         margin: 0;
       }
 
@@ -799,7 +795,15 @@
 
             function renderDetail(siteURL) {
               const d = siteData[siteURL];
-              if (!d) return;
+              if (!d) {
+                // Should not happen, but fail loud-ish rather than leaving
+                // the panel showing stale/no content on click.
+                console.warn("lp_find_site: no data loaded for", siteURL);
+                $("#lf-detail").html(
+                  `<p class="lf-no-forms">This site's details couldn't be loaded. Try searching again.</p>`,
+                );
+                return;
+              }
 
               // Admin section
               let adminHtml = "";
@@ -850,8 +854,7 @@
               $("#lf-detail").html(`
               <div class="lf-prompt" role="status">
                 <span class="lf-prompt__icon material-symbols-outlined" aria-hidden="true">${icon("list_alt")}</span>
-                <p class="lf-prompt__text">Select a site to view its details</p>
-                <p class="lf-prompt__sub">Choose any site from the list on the left</p>
+                <p class="lf-prompt__text">Select a site from the list on the left to view its details</p>
               </div>`);
             }
 
@@ -871,18 +874,25 @@
                 return;
               }
 
-              $("#lf-progressArea").show();
-              totalSites = keys.length;
-              setProgress(0, totalSites);
-
               let queue = new intervalQueue();
               queue.setConcurrency(2);
-              keys.forEach((i) =>
-                queue.push({
-                  rootURL: sites[i].s1.id22,
-                  siteName: sites[i].s1.id21,
-                }),
-              );
+              // A search can return more than one facility record pointing
+              // at the same underlying site (e.g. two station numbers under
+              // one VISN) — dedupe so that site is only ever checked once,
+              // instead of two concurrent workers racing to insert its row.
+              const queuedSites = new Set();
+              keys.forEach((i) => {
+                const rootURL = sites[i].s1.id22;
+                const siteName = sites[i].s1.id21;
+                const key = rootURL + "/" + siteName;
+                if (queuedSites.has(key)) return;
+                queuedSites.add(key);
+                queue.push({ rootURL, siteName });
+              });
+
+              $("#lf-progressArea").show();
+              totalSites = queuedSites.size;
+              setProgress(0, totalSites);
 
               queue.setOnWorkerError((item) => {
                 failedSites.push("/" + item.rootURL + "/" + item.siteName);
@@ -1467,10 +1477,8 @@
                           </svg>
                         </span>
                         <p class="lf-prompt__text">
-                          Select a site to view its details
-                        </p>
-                        <p class="lf-prompt__sub">
-                          Choose any site from the list on the left
+                          Select a site from the list on the left to view its
+                          details
                         </p>
                       </div>
                     </div>
