@@ -8,6 +8,30 @@
     <link rel="stylesheet" href="./files/launchpad.css" />
 
     <style>
+      /* Icon sizing for classes defined in launchpad.css (out of scope
+         for this edit) — that file still sizes .material-symbols-outlined
+         via font-size, which no longer affects the inlined <svg>. These
+         restore each icon's pre-conversion size without touching
+         launchpad.css. */
+      .training-hero-badge .material-symbols-outlined svg {
+        width: 1rem;
+        height: 1rem;
+        color: var(--color-primary, #005ea2);
+      }
+      .training-cta-btn .material-symbols-outlined svg {
+        width: 1.1rem;
+        height: 1.1rem;
+        color: var(--color-primary, #005ea2) !important;
+      }
+      .training-modal-close .material-symbols-outlined svg {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+      .lp-jump .material-symbols-outlined svg {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+
       /* ── Hero visual ── */
       .training-hero-icon {
         width: 110px;
@@ -32,17 +56,30 @@
         gap: 0.4rem;
         background: var(--color-primary-lightest, #e8f0fb);
         color: var(--color-primary, #005ea2);
-        font-family: 'PublicSans-Bold', sans-serif;
+        font-family: "PublicSans-Bold", sans-serif;
         font-size: 0.8rem;
         letter-spacing: 0.04em;
         padding: 0.4rem 0.9rem;
         border-radius: 999px;
         margin-top: 1.5rem;
       }
-      .training-hero-badge svg {
-        width: 1rem;
-        height: 1rem;
-        color: var(--color-primary, #005ea2);
+
+      /* ── What to expect ── */
+      .training-expect-list {
+        max-width: 620px;
+        margin: 0 auto;
+        padding: 0 0 0 1.25rem;
+        text-align: left;
+        color: var(--color-text, #1b1b1b);
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 1.05rem;
+        line-height: 1.7;
+      }
+      .training-expect-list li {
+        margin-bottom: 0.6rem;
+      }
+      .training-expect-list li:last-child {
+        margin-bottom: 0;
       }
 
       /* ── CTA band ── */
@@ -59,7 +96,7 @@
         gap: 1rem;
       }
       .training-cta-eyebrow {
-        font-family: 'PublicSans-Bold', sans-serif;
+        font-family: "PublicSans-Bold", sans-serif;
         font-size: 0.8rem;
         letter-spacing: 0.1em;
         text-transform: uppercase;
@@ -67,13 +104,13 @@
         margin: 0;
       }
       .training-cta-heading {
-        font-family: 'PublicSans-Bold', sans-serif;
+        font-family: "PublicSans-Bold", sans-serif;
         font-size: clamp(1.5rem, 3vw, 2.1rem);
         margin: 0;
         color: #fff;
       }
       .training-cta-sub {
-        font-family: 'Source Sans Pro Web', sans-serif;
+        font-family: "Source Sans Pro Web", sans-serif;
         font-size: 1.05rem;
         color: rgba(255, 255, 255, 0.85);
         margin: 0;
@@ -86,7 +123,7 @@
         gap: 0.5rem;
         background: #fff;
         color: var(--color-primary, #005ea2) !important;
-        font-family: 'PublicSans-Bold', sans-serif;
+        font-family: "PublicSans-Bold", sans-serif;
         font-size: 1rem;
         border: none;
         border-radius: var(--radius, 6px);
@@ -101,11 +138,6 @@
       .training-cta-btn:focus-visible {
         outline: 3px solid #fff;
         outline-offset: 3px;
-      }
-      .training-cta-btn svg {
-        width: 1.1rem;
-        height: 1.1rem;
-        color: var(--color-primary, #005ea2) !important;
       }
 
       /* ── Registration modal ── */
@@ -143,7 +175,7 @@
         flex-shrink: 0;
       }
       .training-modal-header h2 {
-        font-family: 'PublicSans-Bold', sans-serif;
+        font-family: "PublicSans-Bold", sans-serif;
         font-size: 1.1rem;
         color: var(--color-text, #1b1b1b);
         margin: 0;
@@ -168,10 +200,6 @@
         outline: 3px solid var(--color-primary, #005ea2);
         outline-offset: 2px;
       }
-      .training-modal-close svg {
-        width: 1.25rem;
-        height: 1.25rem;
-      }
 
       .training-modal-body {
         flex: 1;
@@ -184,7 +212,6 @@
         display: block;
       }
     </style>
-
   </head>
   <body>
     <div class="lp" id="lp-root">
@@ -218,20 +245,45 @@
                 the platform, all in one place. We're building it now.
               </p>
               <span class="training-hero-badge">
-                <svg
-                  viewBox="0 -960 960 960"
-                  fill="currentColor"
-                  width="1em"
-                  height="1em"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M768-120 517-371l57-57 251 251-57 57Zm-581 0-57-57 290-290-107-107-23 23-44-44v85l-24 24-122-122 24-24h86l-48-48 131-131q17-17 37-23t44-6q24 0 44 8.5t37 25.5L348-699l48 48-24 24 104 104 122-122q-8-13-12.5-30t-4.5-36q0-53 38.5-91.5T711-841q15 0 25.5 3t17.5 8l-85 85 75 75 85-85q5 8 8.5 19.5T841-709q0 53-38.5 91.5T711-579q-18 0-31-2.5t-24-7.5L187-120Z"
-                  />
-                </svg>
+                <span class="material-symbols-outlined" aria-hidden="true">
+                  <svg viewBox="0 -960 960 960" fill="currentColor">
+                    <path
+                      d="M768-120 517-371l57-57 251 251-57 57Zm-581 0-57-57 290-290-107-107-23 23-44-44v85l-24 24-122-122 24-24h86l-48-48 131-131q17-17 37-23t44-6q24 0 44 8.5t37 25.5L348-699l48 48-24 24 104 104 122-122q-8-13-12.5-30t-4.5-36q0-53 38.5-91.5T711-841q15 0 25.5 3t17.5 8l-85 85 75 75 85-85q5 8 8.5 19.5T841-709q0 53-38.5 91.5T711-579q-18 0-31-2.5t-24-7.5L187-120Z"
+                    />
+                  </svg>
+                </span>
                 In development
               </span>
             </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════
+             WHAT TO EXPECT
+             Placeholder copy below — pending point-of-contact
+             review/approval before this page goes live.
+        ══════════════════════════════════════════ -->
+        <section
+          class="section section-alt"
+          aria-labelledby="training-expect-h2"
+        >
+          <div class="wrap">
+            <div class="sec-hd ctr">
+              <h2 class="sec-h2" id="training-expect-h2">What to Expect</h2>
+              <p class="sec-sub">
+                Once launched, the Learning Center will include:
+              </p>
+            </div>
+            <ul class="training-expect-list">
+              <li>
+                Self-paced courses and step-by-step guides for common LEAF
+                workflows
+              </li>
+              <li>
+                Video tutorials and quick-reference materials organized by role
+              </li>
+              <li>Sign up for live training sessions with the LEAF team</li>
+            </ul>
           </div>
         </section>
 
@@ -255,17 +307,13 @@
                 type="button"
                 id="trainingRegisterBtn"
               >
-                <svg
-                  viewBox="0 -960 960 960"
-                  fill="currentColor"
-                  width="1em"
-                  height="1em"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M433-228 295-365l42-42 96 94 184-184 42 43-226 226ZM180-80q-24 0-42-18t-18-42v-620q0-24 18-42t42-18h65v-60h65v60h340v-60h65v60h65q24 0 42 18t18 42v620q0 24-18 42t-42 18H180Zm0-60h600v-430H180v430Z"
-                  />
-                </svg>
+                <span class="material-symbols-outlined" aria-hidden="true">
+                  <svg viewBox="0 -960 960 960" fill="currentColor">
+                    <path
+                      d="M433-228 295-365l42-42 96 94 184-184 42 43-226 226ZM180-80q-24 0-42-18t-18-42v-620q0-24 18-42t42-18h65v-60h65v60h340v-60h65v60h65q24 0 42 18t18 42v620q0 24-18 42t-42 18H180Zm0-60h600v-430H180v430Z"
+                    />
+                  </svg>
+                </span>
                 Register for Live Training
               </button>
             </div>
@@ -293,17 +341,13 @@
               type="button"
               aria-label="Close training registration dialog"
             >
-              <svg
-                viewBox="0 -960 960 960"
-                fill="currentColor"
-                width="1em"
-                height="1em"
-                aria-hidden="true"
-              >
-                <path
-                  d="m249-207-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z"
-                />
-              </svg>
+              <span class="material-symbols-outlined" aria-hidden="true">
+                <svg viewBox="0 -960 960 960" fill="currentColor">
+                  <path
+                    d="m249-207-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z"
+                  />
+                </svg>
+              </span>
             </button>
           </div>
           <div class="training-modal-body">
@@ -324,20 +368,21 @@
         aria-hidden="true"
         tabindex="-1"
       >
-        <svg
-          viewBox="0 -960 960 960"
-          fill="currentColor"
-          width="1em"
-          height="1em"
-          aria-hidden="true"
-        >
-          <path
-            d="M450-160v-526L202-438l-42-42 320-320 320 320-42 42-248-248v526h-60Z"
-          />
-        </svg>
+        <span class="material-symbols-outlined" aria-hidden="true">
+          <svg viewBox="0 -960 960 960" fill="currentColor">
+            <path
+              d="M450-160v-526L202-438l-42-42 320-320 320 320-42 42-248-248v526h-60Z"
+            />
+          </svg>
+        </span>
       </button>
     </div>
     <!-- /.lp -->
+
+    <!-- Breadcrumb data — must be set before leaf_breadcrumb.js loads -->
+    <script>
+      window.LEAF_BREADCRUMB = [{ label: "Learning Center" }];
+    </script>
 
     <script>
       (() => {
