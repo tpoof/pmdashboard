@@ -25,6 +25,20 @@
   main.tpl (see its <head> and the {$body} slot) — they're added back
   here so the header/nav actually mounts when this file is opened on
   its own.
+
+  Known limitations when testing standalone (confirmed testing-
+  environment constraints, not code bugs — see multigrid.js/
+  leaf_header.js/main_iframe.tpl):
+    - View My Requests / multigrid data: won't populate from a local
+      file — needs a real leaf.va.gov session (same-origin request +
+      a real userID, not the "test-user" placeholder above).
+    - Internal admin nav: hidden by design (data-is-sysadmin="0"
+      default here). To test as admin, temporarily flip that
+      attribute to "1" on the leaf_header.js <script> tag below,
+      then revert before committing.
+    - Submit an Idea / Help Library: won't load from a local file or
+      dev origin — those routes only resolve (and pass CORS) when
+      served from https://leaf.va.gov/launchpad/.
 -->
 <!doctype html>
 <html lang="en">
