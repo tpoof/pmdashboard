@@ -203,25 +203,29 @@
       }
 
       .cop-session-date {
-        font-family: "PublicSans-Bold", sans-serif;
-        font-size: 0.75rem;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--c-muted);
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.85rem;
+        color: var(--lp-accent);
         margin: 0 0 0.25rem;
       }
 
       .cop-session-topic {
         font-family: "Source Sans Pro Web", sans-serif;
+        font-weight: 400;
         font-size: 1.05rem;
         color: var(--c-text);
         line-height: 1.5;
         margin: 0;
       }
       /* Rich-text (Trumbowyg) content — reset spacing on its own child
-         elements so it doesn't add unexpected gaps inside the row. */
+         elements so it doesn't add unexpected gaps inside the row, and
+         force regular weight since the CMS content often comes through
+         wrapped in <strong>/<b> tags. */
       .cop-session-topic > :first-child {
         margin-top: 0;
+      }
+      .cop-session-topic * {
+        font-weight: 400 !important;
       }
       .cop-session-topic > :last-child {
         margin-bottom: 0;
@@ -229,31 +233,22 @@
 
       .cop-session-links {
         display: flex;
-        align-items: center;
-        gap: 1.25rem;
+        flex-direction: column;
+        gap: 0.5rem;
         flex-shrink: 0;
       }
-      .cop-session-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        font-family: "Source Sans Pro Web-Bold", sans-serif;
-        font-size: 0.95rem;
-        color: var(--lp-accent);
-        text-decoration: none;
+      /* Watch Session / Download Presentation reuse launchpad.css's
+         .btn/.btn-sec — this just sizes them down to fit a condensed
+         row and keeps their icons aligned. */
+      .cop-session-links .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
         white-space: nowrap;
+        justify-content: center;
       }
-      .cop-session-link:hover {
-        text-decoration: underline;
-      }
-      .cop-session-link:focus-visible {
-        outline: 3px solid var(--lp-accent);
-        outline-offset: 2px;
-      }
-      .cop-session-link .material-symbols-outlined svg {
+      .cop-session-links .btn .material-symbols-outlined svg {
         width: 1rem;
         height: 1rem;
-        flex-shrink: 0;
       }
 
       .cop-load-more {
@@ -487,20 +482,6 @@
     ════════════════════════════════════════════════ -->
     <script type="text/javascript">
       const COP_PAGE_SIZE = 5;
-      const monthNames = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "June",
-        "July",
-        "Aug",
-        "Sept",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
 
       let copAllSessions = [];
       let copVisibleCount = COP_PAGE_SIZE;
@@ -515,11 +496,9 @@
         if (!raw) return "";
         const d = new Date(raw);
         if (isNaN(d)) return scrubHTML(raw);
-        const year =
-          d.getFullYear() !== new Date().getFullYear()
-            ? `, ${d.getFullYear()}`
-            : "";
-        return `${monthNames[d.getMonth()]} ${d.getDate()}${year}`;
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return `${mm}/${dd}/${d.getFullYear()}`;
       }
 
       function sessionCardHTML(item) {
@@ -532,7 +511,7 @@
         let links = "";
         if (link) {
           // Reused from leaf_header_preprod.js ICON_SVG.play_circle + open_in_new
-          links += `<a href="${link}" target="_blank" rel="noopener noreferrer" class="cop-session-link">
+          links += `<a href="${link}" target="_blank" rel="noopener noreferrer" class="btn btn-sec">
             <span class="material-symbols-outlined" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="m380-300 280-180-280-180v360ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg></span>
             Watch Session
             <span class="material-symbols-outlined" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/></svg></span>
@@ -550,7 +529,7 @@
           // file.php currently forces a download (Content-Disposition:
           // attachment) regardless of target/rel — revisit as "View
           // Presentation" once inline viewing is confirmed with backend.
-          links += `<a href="${COP_ROOT_URL}file.php?form=${item.recordID}&amp;id=35&amp;series=1&amp;file=0" download rel="noopener noreferrer" class="cop-session-link">
+          links += `<a href="${COP_ROOT_URL}file.php?form=${item.recordID}&amp;id=35&amp;series=1&amp;file=0" download rel="noopener noreferrer" class="btn btn-sec">
             <span class="material-symbols-outlined" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-313 287-506l43-43 120 120v-371h60v371l120-120 43 43-193 193ZM220-160q-24 0-42-18t-18-42v-143h60v143h520v-143h60v143q0 24-18 42t-42 18H220Z"/></svg></span>
             Download Presentation
           </a>`;
