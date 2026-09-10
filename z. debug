@@ -1,14 +1,18 @@
-Final pass on this investigation. We've confirmed:
-- report.php assigns body via: $main->assign('body', $t_form->fetch("reports/{$action}.tpl"));
-- So a=LEAF_Start_Request renders LEAF_Request_Portal/templates/reports/LEAF_Start_Request.tpl
-- a=spotlight_direct renders LEAF_Request_Portal/templates/reports/spotlight_direct.tpl
-- main_iframe.tpl renders {$body} directly with no wrapping chrome, so any header-like markup seen in the modal has to live inside these two report templates or something they {include}.
-- The existing convention in this repo for this exact purpose is a variable named isIframe (seen used elsewhere in templates already) — reuse that name, don't invent a new one.
+This investigation has hit a contradiction and needs a different angle. Confirmed so far:
+- report.php branches correctly: isset($_GET['iframe']) selects main_iframe.tpl over main.tpl.
+- main_iframe.tpl (LEAF_Request_Portal) is clean — no header/menu/login/footer markup, no includes.
+- LEAF_Start_Request.tpl (the body template for a=LEAF_Start_Request) is also clean — no header/nav-like markup at all.
+- spotlight_direct.tpl doesn't exist at templates/reports/spotlight_direct.tpl — that action must resolve somewhere else.
 
-Please, this time actually fetch and show me in full:
-1. templates/reports/LEAF_Start_Request.tpl — complete contents.
-2. templates/reports/spotlight_direct.tpl — complete contents.
-3. Any {include file="..."} statements inside either of those two templates — fetch and show those included files too, recursively, until there are no more includes left to follow. Don't stop at one level.
-4. Within all of that, once you have full contents (not truncated/capped results), point to the exact top-of-body block that renders a header/nav-like element — the visual header showing in the modal. Quote the exact lines, with file name and line numbers.
-5. Confirm whether isIframe is already assigned anywhere upstream of these two templates (in report.php, a shared form-rendering helper, or a base class), or whether it needs to be newly assigned via: $t_form->assign('isIframe', isset($_GET['iframe']) ? 1 : 0); before the fetch() call for these actions.
-6. Give me the final proposed diff: the exact {if !$isIframe} ... {/if} wrap around the offending block (with file + line numbers), plus the exact report.php change (if needed) to assign isIframe before fetching these two templates. Still no edits applied — just the precise proposed diff for me to review and apply myself.
+Yet loading either URL directly in a browser (with &iframe=1 present) still visibly shows a full header/nav. Since both templates in the actual render path are clean, the header must be coming from somewhere outside main.tpl/main_iframe.tpl/LEAF_Start_Request.tpl entirely. Two theories to check:
+
+THEORY 1 — customTemplate() resolves to something other than what we've been reading.
+1. Find the definition of customTemplate() (referenced as customTemplate('main.tpl') in report.php). Show its full source.
+2. Determine what it actually does: does it ever return a different file path than the literal string passed in, based on site config, environment (prod/preprod/vapo), theme, or per-installation overrides? If so, show me how to determine which actual file gets loaded for this specific environment/site, and fetch that file's real contents.
+3. Same question for how "reports/{$action}.tpl" resolves for $t_form->fetch() — is there an equivalent override/resolver, or is it a direct literal file path? This matters for figuring out where a=spotlight_direct actually renders from, given the literal file doesn't exist.
+
+THEORY 2 — a shared/global header script or include runs independent of these templates.
+4. Search this repo for any JavaScript or PHP include that renders a header/nav and is loaded platform-wide across LEAF apps (report.php pages included) — NOT scoped to whether $_GET['iframe'] is set. Look for something analogous to leaf_header.js (used on the LEAF Launchpad) but potentially also injected into LEAF_Request_Portal pages via a shared layout, a common footer/header include across all LEAF_* apps, or a global <script src="..."> tag that isn't part of main.tpl/main_iframe.tpl at all (e.g. injected via a top-level layout wrapper, a base template all apps extend, or a site-wide analytics/nav script).
+5. If found, check whether that script/include has any awareness of iframe context (checks window.self !== window.top, a data attribute, a cookie, etc.) or whether it unconditionally renders regardless of embedding context — that would fully explain the leak independent of report.php's own iframe branching.
+
+Report back what you find for both theories with file paths and line numbers. Still no edits — this is purely to locate the actual source of the rendered header before proposing any fix.
