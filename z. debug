@@ -1,18 +1,15 @@
-This investigation has hit a contradiction and needs a different angle. Confirmed so far:
-- report.php branches correctly: isset($_GET['iframe']) selects main_iframe.tpl over main.tpl.
-- main_iframe.tpl (LEAF_Request_Portal) is clean — no header/menu/login/footer markup, no includes.
-- LEAF_Start_Request.tpl (the body template for a=LEAF_Start_Request) is also clean — no header/nav-like markup at all.
-- spotlight_direct.tpl doesn't exist at templates/reports/spotlight_direct.tpl — that action must resolve somewhere else.
+This is the targeted follow-up to close out the investigation definitively. Please fetch and show full contents (not summaries, not capped/truncated results) for each of the following, with file paths and line numbers:
 
-Yet loading either URL directly in a browser (with &iframe=1 present) still visibly shows a full header/nav. Since both templates in the actual render path are clean, the header must be coming from somewhere outside main.tpl/main_iframe.tpl/LEAF_Start_Request.tpl entirely. Two theories to check:
+1. The full definition of customTemplate() — wherever it's declared (likely a shared utility/include under LEAF_Request_Portal or a common lib shared across LEAF_* apps). Show me exactly how it resolves a template name string into an actual file path: does it check a site config, environment variable (prod/preprod/vapo), per-installation theme/override directory, or database-stored template mapping before falling back to the literal filesystem path?
 
-THEORY 1 — customTemplate() resolves to something other than what we've been reading.
-1. Find the definition of customTemplate() (referenced as customTemplate('main.tpl') in report.php). Show its full source.
-2. Determine what it actually does: does it ever return a different file path than the literal string passed in, based on site config, environment (prod/preprod/vapo), theme, or per-installation overrides? If so, show me how to determine which actual file gets loaded for this specific environment/site, and fetch that file's real contents.
-3. Same question for how "reports/{$action}.tpl" resolves for $t_form->fetch() — is there an equivalent override/resolver, or is it a direct literal file path? This matters for figuring out where a=spotlight_direct actually renders from, given the literal file doesn't exist.
+2. Based on what customTemplate() does, tell me the ACTUAL file path it resolves to for main_iframe.tpl in this environment/deployment — not the base templates/main_iframe.tpl we already confirmed is clean, but whatever override (if any) actually gets loaded at runtime. Fetch and show that file's full contents if it differs from the base file.
 
-THEORY 2 — a shared/global header script or include runs independent of these templates.
-4. Search this repo for any JavaScript or PHP include that renders a header/nav and is loaded platform-wide across LEAF apps (report.php pages included) — NOT scoped to whether $_GET['iframe'] is set. Look for something analogous to leaf_header.js (used on the LEAF Launchpad) but potentially also injected into LEAF_Request_Portal pages via a shared layout, a common footer/header include across all LEAF_* apps, or a global <script src="..."> tag that isn't part of main.tpl/main_iframe.tpl at all (e.g. injected via a top-level layout wrapper, a base template all apps extend, or a site-wide analytics/nav script).
-5. If found, check whether that script/include has any awareness of iframe context (checks window.self !== window.top, a data attribute, a cookie, etc.) or whether it unconditionally renders regardless of embedding context — that would fully explain the leak independent of report.php's own iframe branching.
+3. Trace exactly how a=spotlight_direct is dispatched in report.php, since templates/reports/spotlight_direct.tpl does not exist as a literal file. Is the action name transformed/mapped before being passed to fetch("reports/{$action}.tpl")? Is there a plugin system, a database-backed template registry, or a different dispatch branch entirely for this action? Show me the exact code path from $_GET['a'] = 'spotlight_direct' to whatever template content actually ends up in $body.
 
-Report back what you find for both theories with file paths and line numbers. Still no edits — this is purely to locate the actual source of the rendered header before proposing any fix.
+4. Show me the full include/bootstrap chain that runs in report.php BEFORE $main->display() is called — every require/include at the top of the file and anything they in turn load — looking specifically for anything that unconditionally emits header/nav HTML or loads a header-rendering script, independent of the main.tpl vs main_iframe.tpl choice.
+
+5. Once you've traced the actual resolved template(s) for both actions in this environment, quote the exact header/nav-like markup block you find — file, line numbers, and the literal HTML/Smarty — so we finally have the real offending code.
+
+6. Only after that: propose the minimal diff (file + line-anchored) to gate that specific block behind the existing isIframe convention, plus whatever upstream change is needed to make sure $isIframe actually reaches that specific resolved template's rendering context.
+
+Still no edits — this is the trace that should finally locate the real source, given the previous two passes ruled out the base templates.
