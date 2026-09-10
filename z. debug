@@ -1,8 +1,2 @@
-You found that report.php's ?a= resolver in a couple of LEAF apps follows this pattern: a switch handles a few special-case action names, and everything else falls back to file_exists("templates/reports/{$action}.tpl") — i.e. the action name maps directly to a template filename by convention.
-
-I want to confirm whether this is a platform-wide LEAF convention (used consistently by report.php across LEAF apps generally) rather than something specific to the one or two repos you happened to check. Search a broader sample of repos in the org that contain a report.php file and check:
-
-Do they all follow the same switch + file_exists("templates/reports/{$action}.tpl") fallback pattern, or does it vary app to app?
-In general, is it standard/safe across LEAF apps to add an alias — i.e. a second .tpl file that reuses/includes an existing template's content under a different action name — without needing changes anywhere else (routing config, permissions, etc.)? Or have you seen exceptions where action names are validated against something beyond just template file existence (an allowlist, a database table, a permissions check keyed by action name)?
-
-Report back generically — I don't need you to identify or confirm any specific app's routes, just whether this resolver pattern and the alias approach are something we can rely on as a general LEAF backend convention.
+https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Help+Library&iframe=1
+https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=spotlight_direct&iframe=1
