@@ -1384,11 +1384,13 @@
                   </li>
 
                   <li>
+                    <!-- href is the plain fallback (new tab / no-JS); data-modal-src needs
+                         &iframe=1 so the LEAF app suppresses its own header inside the modal. -->
                     <a
                       class="nl-footer-link"
                       href="https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=spotlight_direct"
                       data-action="form-modal"
-                      data-modal-src="https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=spotlight_direct"
+                      data-modal-src="https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=spotlight_direct&iframe=1"
                       data-modal-title="Nominate a Spotlight"
                     >
                       <span class="material-symbols-outlined" aria-hidden="true"
