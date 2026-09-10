@@ -1229,9 +1229,12 @@
     );
 
     scripts.forEach(function (oldScript) {
+      /* Match an actual call (the ( is required), not just the words
+         "document.write" appearing anywhere — e.g. inside a comment
+         explaining that a script deliberately avoids it. */
       if (
         oldScript.textContent &&
-        oldScript.textContent.indexOf("document.write") > -1
+        /document\s*\.\s*write(ln)?\s*\(/.test(oldScript.textContent)
       ) {
         console.warn("[LP] Skipped script containing document.write");
         return;
