@@ -1,2 +1,21 @@
-https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Help+Library&iframe=1
-https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=spotlight_direct&iframe=1
+I need to add (or fix) support for suppressing this app's own header/nav when it's loaded inside an iframe from another site.
+
+Context: report.php is loaded inside a modal iframe from a separate front-end (LEAF Launchpad). The launchpad passes a query param, &iframe=1, on the URL when it embeds this page in a modal — the intent is that report.php should detect this param and skip rendering its own header/nav, since the launchpad already has its own header and the embedded page's header renders as a redundant duplicate inside the modal.
+
+Currently, &iframe=1 has no effect — I confirmed by opening the exact URLs directly in a browser (not even inside an iframe) and the header/nav renders regardless of the param being present. So either:
+1. iframe=1 was never actually implemented as a real flag in this app, or
+2. it's being read but not wired to anything that actually suppresses header rendering, or
+3. there's a different existing mechanism in this codebase (a different param name, a session flag, a layout/template variable) meant for this exact purpose that I should be using instead of iframe=1.
+
+URLs I'm testing against:
+- report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Help+Library&iframe=1
+- report.php?a=spotlight_direct&iframe=1
+
+Please:
+1. Search this codebase for how report.php currently reads $_GET params and decides what to render (header/nav include, layout wrapper, etc.) — show me where the header/nav gets included so I can see the decision point.
+2. Check whether $_GET['iframe'] (or any similarly-named param) is referenced anywhere already, even if unused/dead code.
+3. Check whether there's an existing, different mechanism already used elsewhere in this app or platform for suppressing header/nav in an embedded/iframe context (some apps use a template variable, a layout override, or check $_SERVER['HTTP_REFERER'] / a sec-fetch-dest header instead of a query param) — I'd rather reuse an existing pattern than invent a new one.
+4. If no such mechanism exists, suggest the minimal, safest way to add one: reading $_GET['iframe'] === '1' (or whatever the existing convention is) and conditionally skipping the header/nav include, without breaking the page for normal (non-embedded) visitors who load it directly.
+5. Flag anything about the header/nav include that would make this tricky (e.g., if header markup and page content aren't cleanly separable, or if there's shared state/session logic in the header include that other parts of the page depend on).
+
+Don't make changes yet — just show me what you find and propose an approach so I can review before anything is edited.
