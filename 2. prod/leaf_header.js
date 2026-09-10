@@ -163,7 +163,7 @@
           icon: "lightbulb",
           title: "Submit an Idea",
           desc: "Submit an idea to improve LEAF",
-          href: "/launchpad/report.php?a=lp_ideas",
+          href: "https://leaf.va.gov/platform/ideas/",
         },
         {
           icon: "privacy_tip",
@@ -342,6 +342,10 @@
     /* showSwapError()'s hardcoded "Back to Launchpad" button keeps
        ?a=lp_home text but should still push "#home", not "#lp_home". */
     "report.php?a=lp_home": "home",
+    /* Help Library's ?a=homepage param would otherwise derive "homepage" —
+       pinned to match its nav item's own name instead (see NAV_SECTIONS). */
+    "https://leaf.va.gov/platform/help_library/report.php?a=homepage":
+      "help_library",
   };
 
   function hrefToHashKey(href) {
