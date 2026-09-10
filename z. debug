@@ -1,14 +1,14 @@
-Continuing the investigation: main.tpl and main_iframe.tpl (in both LEAF_Request_Portal and LEAF_Nexus) are confirmed clean — main_iframe.tpl has no header/menu/login includes and doesn't reference $menu/$login. So the duplicate header seen when loading these two actions inside a modal iframe must be coming from {$body} itself — the report/form body template rendered for these specific actions, not the shared layout.
+Final pass on this investigation. We've confirmed:
+- report.php assigns body via: $main->assign('body', $t_form->fetch("reports/{$action}.tpl"));
+- So a=LEAF_Start_Request renders LEAF_Request_Portal/templates/reports/LEAF_Start_Request.tpl
+- a=spotlight_direct renders LEAF_Request_Portal/templates/reports/spotlight_direct.tpl
+- main_iframe.tpl renders {$body} directly with no wrapping chrome, so any header-like markup seen in the modal has to live inside these two report templates or something they {include}.
+- The existing convention in this repo for this exact purpose is a variable named isIframe (seen used elsewhere in templates already) — reuse that name, don't invent a new one.
 
-The two actions to trace:
-- a=LEAF_Start_Request (used for both the Help Library "Request Support" form, id=form_ba7de, and the Learning Center "Training Registration" form, id=form_a3df9 — same action, different form ids, so check whether behavior differs by id or is shared across all LEAF_Start_Request calls)
-- a=spotlight_direct
-
-Please:
-1. Trace exactly which template(s) get rendered into $body for a=LEAF_Start_Request and a=spotlight_direct in LEAF_Request_Portal/report.php — find the code path from the $_GET['a'] switch/dispatch to the actual .tpl file(s) assigned as body content.
-2. Show me the full contents of whatever body template(s) you find. I'm looking for a top-of-page block that visually mimics a global header/nav — search for ids/classes like header, menu, nav, headerMenu, menu2, logo, or any hardcoded HTML resembling a site header (title bar, nav links, login/user info) sitting inside what should just be form/report content.
-3. Confirm whether this block is present unconditionally, or whether it's already gated behind some flag (and if gated, what flag, and why it's still showing — e.g. wrong variable name, inverted condition, or the flag never actually gets passed down to this specific template).
-4. Check whether there's an existing $isIframe (or equivalently named) variable used elsewhere in the app for exactly this purpose — reuse that name/pattern if it exists, don't invent a new one.
-5. Propose the minimal fix: wrapping the offending block in {if !$isIframe} (or the existing equivalent), plus what needs to happen upstream (report.php or a shared form-rendering function) to actually assign that variable when $_GET['iframe'] is set and pass it into these specific body templates' context, if it isn't reaching them today.
-
-Still no edits — show me the template block and the proposed {if} wrap so I can review before anything changes.
+Please, this time actually fetch and show me in full:
+1. templates/reports/LEAF_Start_Request.tpl — complete contents.
+2. templates/reports/spotlight_direct.tpl — complete contents.
+3. Any {include file="..."} statements inside either of those two templates — fetch and show those included files too, recursively, until there are no more includes left to follow. Don't stop at one level.
+4. Within all of that, once you have full contents (not truncated/capped results), point to the exact top-of-body block that renders a header/nav-like element — the visual header showing in the modal. Quote the exact lines, with file name and line numbers.
+5. Confirm whether isIframe is already assigned anywhere upstream of these two templates (in report.php, a shared form-rendering helper, or a base class), or whether it needs to be newly assigned via: $t_form->assign('isIframe', isset($_GET['iframe']) ? 1 : 0); before the fetch() call for these actions.
+6. Give me the final proposed diff: the exact {if !$isIframe} ... {/if} wrap around the offending block (with file + line numbers), plus the exact report.php change (if needed) to assign isIframe before fetching these two templates. Still no edits applied — just the precise proposed diff for me to review and apply myself.
