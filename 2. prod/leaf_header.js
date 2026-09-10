@@ -180,7 +180,12 @@
           icon: "menu_book",
           title: "Help Library",
           desc: "Guides and documentation",
+          /* iframe: true — Help Library has its own internal hash routing
+             (e.g. #article-162), which needs its own real window/document
+             to not collide with the launchpad's router(). Ideas has no
+             internal routing, so it stays fetch+splice. */
           href: "https://leaf.va.gov/platform/help_library/report.php?a=homepage",
+          iframe: true,
         },
         {
           icon: "article",
