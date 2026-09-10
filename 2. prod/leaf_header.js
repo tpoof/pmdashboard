@@ -744,11 +744,32 @@
     };
   }
 
+  /* ─────────────────────────────────────────────────────────────
+     ACCOUNT SLOT
+     Far-right, always rendered (unlike buildInternalNavHTML() above,
+     never gated on IS_SYSADMIN) — just an empty mount point. inject()
+     fills it by moving the real #lp-login-slot node (Smarty-rendered
+     by main.tpl, not built here) into place once this markup exists.
+  ───────────────────────────────────────────────────────────── */
+  function buildAccountSlotHTML() {
+    return {
+      desktop: `
+<div class="lp-nav-account">
+  <div id="lp-login-slot-mount"></div>
+</div>`,
+      mobile: `
+<li class="lp-mobile-account-item">
+  <div id="lp-login-slot-mobile-mount"></div>
+</li>`,
+    };
+  }
+
   function buildNavHTML() {
     var desktopItems = NAV_SECTIONS.map(desktopSectionHTML).join("");
     var mobileItems = NAV_SECTIONS.map(mobileSectionHTML).join("");
     var internal = buildInternalNavHTML();
     var support = buildSupportNavHTML();
+    var account = buildAccountSlotHTML();
     return `
 <nav class="lp-nav" id="lpNav" aria-label="Launchpad navigation">
   <div class="lp-nav-in">
@@ -761,6 +782,9 @@
 
     <!-- Right: internal group (margin-left:auto pushes it to the edge) -->
     ${internal.desktop}
+
+    <!-- Far right: account slot (login/logout) — always rendered -->
+    ${account.desktop}
 
     <!-- Mobile hamburger toggle -->
     <button class="lp-nav-toggle" id="lpNavToggle" type="button"
@@ -776,6 +800,7 @@
         ${support.mobile}
         ${mobileItems}
         ${internal.mobile}
+        ${account.mobile}
       </ul>
     </div>
 
@@ -927,6 +952,29 @@
     ensureSkipLink();
     var host = ensureHost();
     host.outerHTML = buildHeaderHTML();
+
+    /* #lp-login-slot is real Smarty-rendered content from main.tpl, a
+       sibling of #lp-header-host — untouched by the outerHTML replace
+       above. It's one DOM node but buildNavHTML() just created two
+       mount points (desktop + mobile, both exist at once, CSS picks
+       which is visible per width) — a node can only live in one place,
+       so it's moved into the desktop mount and cloned into the mobile
+       one (id reassigned to avoid a duplicate). Only one copy is ever
+       visible/focusable at a given width, so nothing doubles up. */
+    var loginSlot = document.getElementById("lp-login-slot");
+    var loginSlotMount = document.getElementById("lp-login-slot-mount");
+    var loginSlotMobileMount = document.getElementById(
+      "lp-login-slot-mobile-mount",
+    );
+    if (loginSlot && loginSlotMount) {
+      loginSlotMount.appendChild(loginSlot);
+      if (loginSlotMobileMount) {
+        var loginSlotMobile = loginSlot.cloneNode(true);
+        loginSlotMobile.id = "lp-login-slot-mobile";
+        loginSlotMobileMount.appendChild(loginSlotMobile);
+      }
+    }
+
     ensureMainContentTarget();
 
     /* Needed on every page now — static pages use it for breadcrumb

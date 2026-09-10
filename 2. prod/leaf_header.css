@@ -628,7 +628,11 @@ button.dd-link {
 /* Matches .dd-trigger's shape/font. Underlined since these plain-text
    links have no icon/color to signal "clickable" otherwise — matches the
    existing underline convention used by .lp-breadcrumb a. */
-.lp-internal-btn {
+.lp-internal-btn,
+#lp-login-slot a,
+#lp-login-slot input[type="submit"],
+#lp-login-slot-mobile a,
+#lp-login-slot-mobile input[type="submit"] {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -647,14 +651,32 @@ button.dd-link {
     background 0.15s;
   line-height: 1.4;
 }
-.lp-internal-btn:hover {
+.lp-internal-btn:hover,
+#lp-login-slot a:hover,
+#lp-login-slot input[type="submit"]:hover,
+#lp-login-slot-mobile a:hover,
+#lp-login-slot-mobile input[type="submit"]:hover {
   background: #ffffff;
   color: #005ea2;
   text-decoration: underline;
 }
-.lp-internal-btn:focus-visible {
+.lp-internal-btn:focus-visible,
+#lp-login-slot a:focus-visible,
+#lp-login-slot input[type="submit"]:focus-visible,
+#lp-login-slot-mobile a:focus-visible,
+#lp-login-slot-mobile input[type="submit"]:focus-visible {
   outline: 3px solid #005ea2;
   outline-offset: 2px;
+}
+/* <input type="submit"> keeps native OS button chrome (border,
+   background, box-sizing) in some browsers even with border:none/
+   background:transparent set above -- strip it so the shared rule
+   above is what actually renders. */
+#lp-login-slot input[type="submit"],
+#lp-login-slot-mobile input[type="submit"] {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
 }
 
 /* Muted pill, not a button — reads as a live stat, not a link, so
@@ -715,6 +737,57 @@ button.dd-link {
    non-interactive span — hover affordance toned down accordingly. */
 .lp-internal-mobile-item.lp-internal-online .dd-link {
   cursor: default;
+}
+
+/* ── Account slot (#lp-login-slot) ──
+   Real Smarty-rendered content from main.tpl ($login, see login.tpl) —
+   moved/cloned in here by leaf_header.js's inject(), not built by this
+   file. Always rendered regardless of IS_SYSADMIN (unlike
+   .lp-nav-internal above), so it gets its own wrapper rather than
+   living inside — and being hidden by — that admin-only container. */
+.lp-nav-account {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+/* When .lp-nav-internal is also present (admin), its own margin-left:
+   auto already pushed the whole right cluster to the edge — drop this
+   one's so the two sit as a single group with a small gap between them
+   instead of fighting over the free space. */
+.lp-nav-internal + .lp-nav-account {
+  margin-left: 8px;
+}
+
+#lp-login-slot,
+#lp-login-slot-mobile {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: "PublicSans-Medium", sans-serif;
+  font-size: 0.9rem;
+  color: #3d4551; /* --nav-muted */
+}
+/* "Welcome, Name!" — plain nav text, not a button. */
+#lp-login-slot b,
+#lp-login-slot-mobile b {
+  font-family: "PublicSans-Bold", sans-serif;
+  color: #1b1b1b; /* --nav-text */
+}
+/* Logged-out form's status message — left at its site-wide .alert
+   color, just sized to fit the nav row. */
+#lp-login-slot .alert,
+#lp-login-slot-mobile .alert {
+  font-size: 0.85rem;
+}
+
+/* Mobile: account section separator — same treatment as
+   .lp-mobile-internal-sep above. */
+.lp-mobile-account-item {
+  padding: 10px 16px;
+  border-top: 1px solid #d9e8f6; /* --nav-panel-bd */
+  margin-top: 4px;
 }
 
 /* ── Announcement banner ──
@@ -804,6 +877,9 @@ button.dd-link {
   .lp-nav-internal {
     display: none !important;
   }
+  .lp-nav-account {
+    display: none !important;
+  }
 }
 @media (min-width: 641px) {
   .lp-nav-toggle,
@@ -811,6 +887,9 @@ button.dd-link {
     display: none !important;
   }
   .lp-internal-mobile-item {
+    display: none !important;
+  }
+  .lp-mobile-account-item {
     display: none !important;
   }
 }
