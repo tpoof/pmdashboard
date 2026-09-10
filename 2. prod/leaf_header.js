@@ -746,19 +746,26 @@
 
   /* ─────────────────────────────────────────────────────────────
      ACCOUNT SLOT
-     Far-right, always rendered (unlike buildInternalNavHTML() above,
-     never gated on IS_SYSADMIN) — just an empty mount point. inject()
-     fills it by moving the real #lp-login-slot node (Smarty-rendered
-     by main.tpl, not built here) into place once this markup exists.
+     Far-right, mirror of buildInternalNavHTML() above — gated on the
+     same IS_SYSADMIN, just inverted, so the two are mutually
+     exclusive: sysadmins get the internal group, everyone else gets
+     this. Empty markup for sysadmins means the mount point never
+     enters the DOM for them, same "fails hidden" reasoning as the
+     internal group. When it does render, it's just an empty mount
+     point — inject() fills it by moving the real #lp-login-slot node
+     (Smarty-rendered by main.tpl, not built here) into place.
   ───────────────────────────────────────────────────────────── */
   function buildAccountSlotHTML() {
+    if (IS_SYSADMIN) {
+      return { desktop: "", mobile: "" };
+    }
     return {
       desktop: `
-<div class="lp-nav-account">
+<div class="lp-nav-account" data-sysadmin="0">
   <div id="lp-login-slot-mount"></div>
 </div>`,
       mobile: `
-<li class="lp-mobile-account-item">
+<li class="lp-mobile-account-item" data-sysadmin="0">
   <div id="lp-login-slot-mobile-mount"></div>
 </li>`,
     };
@@ -783,7 +790,8 @@
     <!-- Right: internal group (margin-left:auto pushes it to the edge) -->
     ${internal.desktop}
 
-    <!-- Far right: account slot (login/logout) — always rendered -->
+    <!-- Far right: account slot (login/logout) — non-admin only,
+         mirrors the internal group above -->
     ${account.desktop}
 
     <!-- Mobile hamburger toggle -->
@@ -955,11 +963,15 @@
 
     /* #lp-login-slot is real Smarty-rendered content from main.tpl, a
        sibling of #lp-header-host — untouched by the outerHTML replace
-       above. It's one DOM node but buildNavHTML() just created two
-       mount points (desktop + mobile, both exist at once, CSS picks
-       which is visible per width) — a node can only live in one place,
-       so it's moved into the desktop mount and cloned into the mobile
-       one (id reassigned to avoid a duplicate). Only one copy is ever
+       above. The mount points only exist when buildAccountSlotHTML()
+       actually rendered them (non-sysadmin) — for a sysadmin neither
+       mount is in the DOM, so this whole block is a no-op and
+       #lp-login-slot is simply left where main.tpl put it, unmoved.
+       When the mounts do exist: it's one DOM node but two mount points
+       (desktop + mobile, both exist at once, CSS picks which is
+       visible per width) — a node can only live in one place, so it's
+       moved into the desktop mount and cloned into the mobile one (id
+       reassigned to avoid a duplicate). Only one copy is ever
        visible/focusable at a given width, so nothing doubles up. */
     var loginSlot = document.getElementById("lp-login-slot");
     var loginSlotMount = document.getElementById("lp-login-slot-mount");

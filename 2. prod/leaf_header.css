@@ -742,21 +742,23 @@ button.dd-link {
 /* ── Account slot (#lp-login-slot) ──
    Real Smarty-rendered content from main.tpl ($login, see login.tpl) —
    moved/cloned in here by leaf_header.js's inject(), not built by this
-   file. Always rendered regardless of IS_SYSADMIN (unlike
-   .lp-nav-internal above), so it gets its own wrapper rather than
-   living inside — and being hidden by — that admin-only container. */
+   file. Mirror of .lp-nav-internal above: built by buildAccountSlotHTML()
+   only when IS_SYSADMIN is false, gated there via data-sysadmin="0" —
+   mutually exclusive with .lp-nav-internal, never both in the DOM at
+   once, so it never needs to share space with it. This CSS rule is
+   defense in depth only, matching the existing pattern above — not the
+   real gate. */
+.lp-nav-account:not([data-sysadmin="0"]) {
+  display: none !important;
+}
+.lp-mobile-account-item:not([data-sysadmin="0"]) {
+  display: none !important;
+}
 .lp-nav-account {
   display: flex;
   align-items: center;
   margin-left: auto;
   flex-shrink: 0;
-}
-/* When .lp-nav-internal is also present (admin), its own margin-left:
-   auto already pushed the whole right cluster to the edge — drop this
-   one's so the two sit as a single group with a small gap between them
-   instead of fighting over the free space. */
-.lp-nav-internal + .lp-nav-account {
-  margin-left: 8px;
 }
 
 #lp-login-slot,
