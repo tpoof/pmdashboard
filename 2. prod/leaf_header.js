@@ -163,13 +163,7 @@
           icon: "lightbulb",
           title: "Submit an Idea",
           desc: "Submit an idea to improve LEAF",
-          /* Lives on its own LEAF site now, not as launchpad-local
-             content — iframe: true mounts it instead of fetch+splicing
-             a local copy, so the form and its data always come from
-             that site. hrefToHashKey()'s last-path-segment fallback
-             already derives "ideas" here, matching the existing key. */
-          href: "https://leaf.va.gov/platform/ideas",
-          iframe: true,
+          href: "/launchpad/report.php?a=lp_ideas",
         },
         {
           icon: "privacy_tip",
@@ -186,12 +180,7 @@
           icon: "menu_book",
           title: "Help Library",
           desc: "Guides and documentation",
-          /* Same iframe: true pattern as Submit an Idea above — its
-             ?a=homepage param would otherwise derive the hash key
-             "homepage" (see HREF_HASH_KEY_OVERRIDES), too generic to
-             risk colliding with another route. */
           href: "https://leaf.va.gov/platform/help_library/report.php?a=homepage",
-          iframe: true,
         },
         {
           icon: "article",
@@ -353,10 +342,6 @@
     /* showSwapError()'s hardcoded "Back to Launchpad" button keeps
        ?a=lp_home text but should still push "#home", not "#lp_home". */
     "report.php?a=lp_home": "home",
-    /* Help Library's ?a=homepage param would otherwise derive "homepage" —
-       pinned to match its nav item's own name instead (see NAV_SECTIONS). */
-    "https://leaf.va.gov/platform/help_library/report.php?a=homepage":
-      "help_library",
   };
 
   function hrefToHashKey(href) {
