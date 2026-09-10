@@ -7,28 +7,23 @@
 
     <link rel="stylesheet" href="./files/launchpad.css" />
 
-    <!-- Platform dependencies: DOMPurify + LeafPreview -->
     <script src="https://leaf.va.gov/app/libs/js/dompurify/dompurify.min.js"></script>
     <script src="https://leaf.va.gov/platform/designs/js/LeafPreview.js"></script>
 
     <style>
-      /* Icon sizing for .lp-jump, defined in launchpad.css (out of
-         scope for this edit) — that file still sizes
-         .material-symbols-outlined via font-size, which no longer
-         affects the inlined <svg>. */
+      /* launchpad.css sizes .material-symbols-outlined via font-size,
+         which no longer affects this inlined <svg>; re-sized here. */
       .lp-jump .material-symbols-outlined svg {
         width: 1.25rem;
         height: 1.25rem;
       }
 
-      /* ── Page shell ── */
       .lfl-page {
         padding: 2rem 1.5rem 4rem;
         background: var(--c-gray5);
         min-height: 100vh;
       }
 
-      /* ── Top bar ── */
       .lfl-topbar {
         display: flex;
         align-items: center;
@@ -79,14 +74,12 @@
         height: 1.1rem;
       }
 
-      /* ── Body layout ── */
       .lfl-body {
         display: flex;
         gap: 1.25rem;
         align-items: flex-start;
       }
 
-      /* ── Sidebar ── */
       .lfl-sidebar {
         flex: 0 0 220px;
         min-width: 0;
@@ -117,7 +110,6 @@
         margin: 0.25rem 0;
       }
 
-      /* ── Filter buttons ── */
       .lfl-filter-btn {
         display: flex;
         align-items: center;
@@ -161,7 +153,6 @@
         outline-offset: 2px;
       }
 
-      /* ── Main content ── */
       .lfl-content {
         flex: 1;
         min-width: 0;
@@ -180,7 +171,7 @@
         margin-bottom: 1rem;
       }
 
-      /* ── Progress bar (shown during initial library load) ── */
+      /* Shown during initial library load */
       .lfl-progress {
         background: #fff;
         border: 1px solid var(--c-blue10);
@@ -213,7 +204,6 @@
         transition: width 0.2s ease;
       }
 
-      /* ── Grid card ── */
       .lfl-grid-card {
         background: #fff;
         border: 1px solid var(--c-blue10);
@@ -223,7 +213,6 @@
         overflow-x: auto;
       }
 
-      /* ── Info note ── */
       .lfl-info-note {
         display: flex;
         align-items: flex-start;
@@ -247,12 +236,10 @@
         height: 1.15rem !important;
       }
 
-      /* ── Featured row highlight ── */
       .lfl-featured-row {
         background-color: #fff8e1 !important;
       }
 
-      /* ── Legend ── */
       .lfl-legend {
         display: flex;
         justify-content: flex-end;
@@ -273,7 +260,6 @@
         flex-shrink: 0;
       }
 
-      /* ── Responsive ── */
       @media (max-width: 768px) {
         .lfl-body {
           flex-direction: column;
@@ -337,7 +323,6 @@
 
       <main id="lp-main" tabindex="-1">
         <div class="lfl-page">
-          <!-- Top bar -->
           <div class="lfl-topbar">
             <h1 class="lfl-title">LEAF Form Library</h1>
             <a
@@ -356,7 +341,6 @@
             </a>
           </div>
 
-          <!-- Info note -->
           <div class="lfl-info-note" role="note">
             <span class="material-symbols-outlined" aria-hidden="true"
               ><svg viewBox="0 -960 960 960" fill="currentColor">
@@ -372,7 +356,7 @@
             </span>
           </div>
 
-          <!-- Progress (shown during initial library load) -->
+          <!-- Shown during initial library load -->
           <div
             id="lfl-progressArea"
             class="lfl-progress"
@@ -396,9 +380,7 @@
             </div>
           </div>
 
-          <!-- Body: sidebar + content -->
           <div class="lfl-body">
-            <!-- Sidebar -->
             <nav class="lfl-sidebar" aria-label="Filter forms by business line">
               <span
                 class="sr-only"
@@ -433,7 +415,6 @@
               ></div>
             </nav>
 
-            <!-- Content -->
             <div class="lfl-content">
               <div class="lfl-search-label">Search Form Library</div>
               <div id="searchContainer"></div>
@@ -485,16 +466,9 @@
 
       const $id = (id) => document.getElementById(id);
 
-      /* Null-guarded: showProgress/hideProgress are passed as callbacks
-         into query/grid (see below) and formSearch.js, which can still
-         invoke them asynchronously (e.g. a debounced search poll) after
-         the user has navigated away from this page inside the launchpad
-         SPA. leaf_header.js's router doesn't currently tear down a
-         fetched page's async callbacks/timers on navigation — it just
-         clears the swap host's innerHTML — so #lfl-progressArea can be
-         gone from the live DOM by the time a stale callback fires. This
-         guard stops that from throwing; it doesn't stop the callback
-         from firing uselessly in the background. */
+      /* Null-guarded: the SPA router doesn't cancel async callbacks on
+         navigation, so these can still fire after #lfl-progressArea is
+         removed from the DOM. */
       const showProgress = () => {
         const el = $id("lfl-progressArea");
         if (el) el.style.display = "block";
@@ -805,11 +779,8 @@
         });
         leafSearch.init();
 
-        /* Workaround: LeafFormSearch (external widget, not part of this
-           repo) can stamp its search input's value with the literal
-           string "undefined" when it reads an unset default. Clear it
-           if that happens — patches the symptom since we can't fix the
-           widget's own source. */
+        /* Workaround: LeafFormSearch (external widget) can stamp its input
+           with the literal string "undefined" when reading an unset default. */
         const leafSearchInput = $id("searchContainer")?.querySelector(
           'input[type="text"], input[type="search"]',
         );

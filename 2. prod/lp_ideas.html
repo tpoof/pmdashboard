@@ -1,7 +1,6 @@
 <script>
   // Shortened links: '#category=name' in the URL redirects to the
-  // matching mapped URL below. No hash present is the normal case
-  // (most page loads) and is not an error.
+  // matching mapped URL below. No hash present is normal, not an error.
   const SHORT_LINKS = {
     go: {
       home: 'https://leaf.va.gov/platform/ideas/report.php?a=home',
@@ -50,8 +49,7 @@
 
     <style>
       /* Icons: inline <svg fill="currentColor"> (Material Symbols Filled,
-         Apache License 2.0). Sized via .ip-icon, colored via wrapping
-         element's `color`. */
+         Apache 2.0). Sized via .ip-icon, colored via wrapping element's `color`. */
       .ip-icon {
         display: inline-block;
         vertical-align: middle;
@@ -767,10 +765,8 @@
         background: none;
         position: relative;
       }
-      /* Scroll-edge fade shown only while the table can actually
-         scroll further in that direction (see bindTableScrollEdges in
-         ideas_v4.js). Positioned with a negative z-index relative to
-         the table so it can never paint over row content. */
+      /* Scroll-edge fade shown only while the table can scroll further that
+         way (see bindTableScrollEdges in ideas_v4.js); negative z-index keeps it off row content. */
       .ip-table {
         position: relative;
         z-index: 1;
@@ -937,10 +933,8 @@
       .ip-table td.ip-actionsCell {
         display: table-cell;
       }
-      /* Content wrapped in an inner .ip-actionsInner flex row rather
-         than making the <td> itself display:flex — flex table-cells
-         can stop honoring their assigned column width in some
-         browsers, which broke the tbody hover background here. */
+      /* Wrapped in .ip-actionsInner instead of making the <td> itself
+         flex — flex table-cells ignore column width in some browsers, breaking the hover background. */
       .ip-actionsInner {
         display: flex;
         flex-wrap: nowrap;
@@ -1041,11 +1035,8 @@
         max-width: 0;
       }
 
-      /* Card-view-only ID badge inside the title cell (see
-         ip-cardIdBadge markup in buildIdeaRow, ideas_v4.js). Hidden by
-         default since the desktop table already shows ID in its own
-         column; only revealed inside the ≤1110px card-stack rule
-         below. */
+      /* Card-view-only ID badge (see ip-cardIdBadge in buildIdeaRow,
+         ideas_v4.js); hidden here, revealed by the ≤1110px card-stack rule below. */
       .ip-cardIdBadge {
         display: none;
       }
@@ -1062,9 +1053,8 @@
         white-space: nowrap;
         text-align: center;
       }
-      /* Left-aligned (not centered) so ellipsis truncation reads
-         naturally — a fixed left edge with a trailing "…" is clearer
-         than text truncating symmetrically around a centered anchor. */
+      /* Left-aligned (not centered) so ellipsis truncation reads naturally
+         with a fixed left edge, rather than symmetrically around a centered anchor. */
       .ip-table .ip-badge {
         max-width: 100%;
         overflow: hidden;
@@ -1331,9 +1321,8 @@
         width: 0.9rem;
         height: 0.9rem;
       }
-      /* Dual rest/hover markup (see voteButtonInnerHtml in
-         ideas_v4.js): only .ip-upvote__rest shows by default; hover or
-         focus on a voted button swaps to .ip-upvote__hover ("Unvote"). */
+      /* Dual rest/hover markup (see voteButtonInnerHtml in ideas_v4.js):
+         hover/focus on a voted button swaps .ip-upvote__rest for .ip-upvote__hover ("Unvote"). */
       .ip-upvote__rest,
       .ip-upvote__hover {
         display: inline-flex;
@@ -2197,11 +2186,8 @@
         opacity: 0.7;
       }
 
-      /* ── Responsive ──
-         Breakpoints reference the --bp-* custom properties in :root.
-         Media query conditions can't reference custom properties
-         directly, so each value is duplicated in the @media condition
-         itself — update both if a --bp-* value changes. */
+      /* ── Responsive ── Breakpoints mirror the --bp-* custom properties in
+         :root; @media can't reference them directly, so update both if a value changes. */
 
       /* ── --bp-tablet (1110px): sidebar stacks, table becomes cards ── */
       @media (max-width: 1110px) {
@@ -2289,11 +2275,8 @@
         .ip-table tbody tr {
           position: relative;
         }
-        /* ID moves inline before the title instead of being absolutely
-           positioned, which collided with wrapped titles. Rendered as
-           a real element (see ip-cardIdBadge in ideas_v4.js), not a
-           CSS ::before, since attr()-based content has inconsistent
-           screen reader support. */
+        /* ID moves inline before the title (absolute positioning collided
+           with wrapped titles); a real element, not ::before, since attr() content has poor screen-reader support. */
         .ip-table tbody tr td[data-label="ID"] {
           display: none;
         }

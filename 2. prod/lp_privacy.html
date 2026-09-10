@@ -9,16 +9,16 @@
     <link rel="stylesheet" href="/platform/designs/files/smarty_styles.css" />
 
     <style>
-      /* ── Hide legacy shell chrome ── */
+      /* #header/#footer aren't in this file — they're legacy shell chrome
+         from the old site template, hidden here. */
       #header,
       #footer {
         display: none !important;
       }
 
-      /* Icon sizing for icons wrapped in .material-symbols-outlined —
-         launchpad.css only sizes the pre-conversion font-icon version,
-         not the inlined <svg> these use now. Same pattern as
-         claude/lp_cop.html's page-level overrides. */
+      /* launchpad.css only sizes the pre-conversion font-icon version, not
+         the inlined <svg> these use now — these rules restore each icon's
+         pre-conversion size. */
       .btn .material-symbols-outlined svg {
         width: 1.15rem;
         height: 1.15rem;
@@ -36,15 +36,14 @@
         height: 1.25rem;
       }
 
-      /* ── Hero ── */
-      /* Match the lead paragraph's width to the title instead of
+      /* Matches the lead paragraph's width to the title instead of
          launchpad.css's default .sec-sub max-width (620px), which read
          noticeably narrower than the h1 above it. */
       #priv-h1 + .sec-sub {
         max-width: 760px;
       }
 
-      /* ── Card shell, reused across Recent Enhancements / LEAF-S / Resources ── */
+      /* .priv-card is reused across Recent Enhancements / LEAF-S / Resources */
       .priv-card {
         background: var(--c-white);
         border: 1px solid var(--c-blue10);
@@ -158,7 +157,6 @@
         }
       }
 
-      /* ── Recent Enhancements ── */
       .priv-changes-message {
         color: var(--c-muted);
         font-size: 0.95rem;
@@ -198,7 +196,6 @@
         margin-top: 1.25rem;
       }
 
-      /* ── Callouts (info / boundary note) ── */
       .priv-callout {
         display: flex;
         gap: 0.75rem;
@@ -227,7 +224,6 @@
         color: var(--lp-warn-txt);
       }
 
-      /* ── VA Privacy Resources ── */
       .priv-resource-card {
         text-align: left;
       }
@@ -248,9 +244,6 @@
       <a class="lp-skip" href="#lp-main">Skip to main content</a>
 
       <main id="lp-main" tabindex="-1">
-        <!-- ══════════════════════════════════════════
-             HERO
-        ══════════════════════════════════════════ -->
         <section class="section" aria-labelledby="priv-h1">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -268,9 +261,6 @@
           </div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             RECENT ENHANCEMENTS
-        ══════════════════════════════════════════ -->
         <section class="section section-alt" aria-labelledby="priv-recent-h2">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -331,9 +321,6 @@
           </div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             LEAF SECURE (LEAF-S)
-        ══════════════════════════════════════════ -->
         <section class="section" aria-labelledby="priv-leafs-h2">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -462,9 +449,6 @@
           </div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             VA PRIVACY RESOURCES
-        ══════════════════════════════════════════ -->
         <section
           class="section section-alt"
           aria-labelledby="priv-resources-h2"
@@ -638,12 +622,9 @@
       (() => {
         "use strict";
 
-        /* categoryID form_8f7e8 / indicatorIDs 39-41 live on the Privacy
-           LEAF site, not this Launchpad's own site — every LeafFormQuery
-           below must target it explicitly via setRootURL(), or the query
-           resolves against the wrong site and returns nothing.
-           Trailing slash is required: formQuery.js builds the endpoint as
-           `${rootURL}api/form/query?q=...` with no separator inserted. */
+        /* Records live on the Privacy LEAF site, not this Launchpad's own
+           site, so every query below must setRootURL() to it explicitly.
+           Trailing slash required — formQuery.js appends the path directly. */
         const PRIVACY_ROOT_URL = "https://leaf.va.gov/platform/privacy/";
         const RECENT_CHANGES_LIMIT = 5;
         const RECENT_CHANGE_INDICATORS = {
@@ -669,11 +650,9 @@
           return typeof value === "string" ? value.trim() : value;
         }
 
-        // Decodes HTML entities (e.g. "&#039;" -> "'") using the browser's
-        // own parser. A <textarea> (not a <div>/innerHTML on a rendering
-        // element) only ever parses the string for entity decoding — it is
-        // never interpreted as live markup — so this stays safe to use on
-        // untrusted LEAF field values.
+        // Uses a <textarea> (not a <div>/innerHTML) to decode entities —
+        // a textarea only ever parses the string, never as live markup, so
+        // this stays safe on untrusted LEAF field values.
         function decodeHtmlEntities(text) {
           if (!text) return "";
           const textarea = document.createElement("textarea");
@@ -925,7 +904,6 @@
           });
         }
 
-        /* ── Jump to top ── */
         const initJumpBtn = () => {
           const btn = document.getElementById("lpJump");
           if (!btn) return;

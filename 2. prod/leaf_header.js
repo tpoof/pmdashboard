@@ -1,143 +1,90 @@
-/* ============================================================
-   LEAF Universal Header  |  leaf_header.js
-   ─────────────────────────────────────────────────────────────
-   Lives at /launchpad/files/leaf_header.js — every page should
-   point here directly so there's exactly one copy to edit.
+/* LEAF Universal Header — leaf_header.js
+   Lives at /launchpad/files/leaf_header.js — every page should point
+   here directly so there's exactly one copy to edit.
 
-   Renders branding/logo, nav menu, and breadcrumb row as one
-   sticky unit. Hides LEAF's native #header/#footer chrome (see
-   leaf_header.css) since this component owns branding.
+   Renders branding/logo, nav menu, and breadcrumb row as one sticky
+   unit, and hides LEAF's native #header/#footer chrome (see
+   leaf_header.css).
 
-   Self-mounting: auto-injects its own stylesheet and, if the
-   host page doesn't already have one, creates the
-   <div id="lp-header-host"> for itself. A brand-new page only
-   needs ONE line added to it, right before </head> or </body>:
+   Self-mounting: auto-injects its own stylesheet and header host div.
+   A new page only needs one line, right before </head> or </body>:
 
        <script src="/launchpad/files/leaf_header.js"
                data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->">
        </script>
 
    data-is-sysadmin gates the Internal nav bar (Coaches/Team/Leadership/
-   Admin/Users Online) — see IS_SYSADMIN below. It's separate from
-   $is_admin (used elsewhere in the app for broader admin checks);
-   this bar specifically requires Sysadmin group membership (groupID
-   1). Omitting the attribute is safe; the bar simply stays hidden.
+   Admin/Users Online) — see IS_SYSADMIN below. Separate from $is_admin;
+   requires Sysadmin group (groupID 1). Omitting it is safe (bar stays hidden).
 
-   ── Breadcrumb: auto-detected, no per-page flag ─────────────
-   Every real page's URL already matches an entry in NAV_SECTIONS
-   or SUBROUTES (that's how the router looks routes up by hash).
-   On page load, resolveCurrentRoute() matches this page's own
-   URL against that same table:
-     - matches the home route  → breadcrumb hidden
-     - matches any other route → breadcrumb shown, trail built
-       from that route's section/parent/title (same fields the
-       SPA router already used)
-     - matches nothing         → breadcrumb hidden (unknown page)
-   On the launchpad's own hash-routed views, the same trail
-   builder runs off the active route instead of the URL.
+   Breadcrumb is auto-detected, no per-page flag: on load,
+   resolveCurrentRoute() matches this page's URL against NAV_SECTIONS/
+   SUBROUTES — home hides it, a known route shows a trail built from
+   that route, an unknown page hides it.
 
-   ── Option B: Hash router (Launchpad v4) ────────────────────
-   On the launchpad page (report.php?a=lp_home), nav link
-   left-clicks push a hash and trigger a fetch+inject cycle:
-
-   1. Hash is pushed to window.location → hashchange fires
-   2. Router maps hash key → URL from NAV_SECTIONS
-   3. fetch(url) → DOMParser → extract #content
-   4. Chrome suppression strips #header, #footer, nav, etc.
-   5. Safe script re-execution re-appends <script> nodes
-   6. Injected into #lpSwapHost; launchpad <main> hidden
-   7. Header's breadcrumb row updates to reflect current view
-   8. Live region announces new page to screen readers
-
-   A full separate LEAF app (wrong document, wrong scripts, wrong
-   DOM if fetched+spliced) can still be registered with
-   iframe: true in NAV_SECTIONS to mount in an <iframe> instead —
-   still hash-routed so the header stays visible and
-   back-to-launchpad still works. No current nav item needs this
-   (all now live under the same launchpad domain and fetch+splice
-   normally), but the mechanism stays available for a future one
-   that doesn't.
-
-   Back button works natively via hash history.
-   Modifier-key clicks (Ctrl/Cmd/middle) always open real tabs.
-   Pages not on the launchpad get the header only — no router.
+   On the launchpad (report.php?a=lp_home), nav clicks push a hash
+   instead of navigating: fetch the target URL, strip its chrome,
+   extract #content, and splice it into #lpSwapHost — header and
+   breadcrumb stay put, back/forward works via hash history. A full
+   separate LEAF app can instead be mounted in an <iframe> (iframe: true
+   in NAV_SECTIONS) when fetch+splice isn't viable for it.
 
    ── Accessibility (WCAG 2.1 AA / Section 508) ───────────────
    • Skip navigation link auto-injected at top of <body>
-     (targets #main-content; auto-added to first <main> if absent)
-   • Disclosure navigation pattern — aria-expanded only, no
-     aria-haspopup, so there's no role mismatch with the panel
+   • Disclosure navigation pattern (aria-expanded only, no aria-haspopup)
    • External links announce "(opens in new tab)" to screen readers
-   • Mobile toggle aria-label toggles "Open menu" / "Close menu"
    • Mobile panel traps focus while open; Escape returns focus
-   • window.LEAF_NAV_CURRENT = "Section Label" marks active
-     section with aria-current="true" for screen readers
    • SPA view changes announced via #lp-live-region (aria-live)
-   • Focus moved to #lpSwapHost after each view load
-   • document.title updated to fetched page title on each view
    • prefers-reduced-motion: all animations suppressed in CSS
    ============================================================ */
 
 (function () {
   "use strict";
 
-  /* ── Sysadmin gate ───────────────────────────────────────────────
-     document.currentScript is only valid synchronously while this
-     script first executes, so it's captured here, before any other
-     code runs. Reads data-is-sysadmin off this same <script> tag —
-     same host-page pattern lp_home.html uses for multigrid.js's
-     data-is-sysadmin/data-user-id. Sourced from Smarty's
-     $empMembership['groupID'][1] check (Sysadmin group), not the
-     broader $is_admin flag. Any value other than "1"/"true"/"yes"
-     (including the attribute being absent, or an unrendered Smarty
-     tag) is treated as not-sysadmin, so the Internal nav bar fails
-     hidden, never fails open. */
+  /* Smarty here is configured with plain { / } delimiters, not the
+     <!--{ / }--> convention this tag was written assuming (meant to
+     degrade to an HTML comment if ever served unprocessed) — so <!--
+     and --> render as literal static text around the real value
+     regardless of which branch fires, e.g. true renders as the string
+     "<!---->1<!---->", not "1". Strips those literal markers before
+     any attribute using this pattern gets used. */
+  function stripSmartyCommentWrapper(raw) {
+    return typeof raw === "string" ? raw.replace(/<!--|-->/g, "").trim() : raw;
+  }
+
+  /* document.currentScript is only valid synchronously during this
+     script's first execution, so it's captured immediately. Reads
+     data-is-sysadmin off this same <script> tag (from Smarty's
+     $empMembership['groupID'][1], not the broader $is_admin flag).
+     Anything but "1"/"true"/"yes" fails hidden, never fails open. */
   var HEADER_SCRIPT_EL = document.currentScript;
   var IS_SYSADMIN = (function () {
     var raw =
       HEADER_SCRIPT_EL && HEADER_SCRIPT_EL.getAttribute("data-is-sysadmin");
-    return !!raw && /^(1|true|yes)$/i.test(raw.trim());
+    raw = stripSmartyCommentWrapper(raw);
+    return !!raw && /^(1|true|yes)$/i.test(raw);
   })();
 
-  /* ── Announcement banner config ──────────────────────────────────
-     Placeholder record/indicator IDs — swap in real values before
-     promoting to production. Search "REPLACE_ME" to find these and
-     any other unfilled placeholder in this file.
-
-     Sourced from a LEAF form's rawIndicator endpoint:
-       GET {ANNOUNCEMENT_ROOT_URL}api/form/{ANNOUNCEMENT_RECORD_ID}
-           /rawIndicator/{ANNOUNCEMENT_INDICATOR_ID}/{ANNOUNCEMENT_SERIES}
-
-     ANNOUNCEMENT_ROOT_URL      : base URL of the LEAF site/app hosting
-                                  the announcement record, trailing
-                                  slash included (e.g.
-                                  "https://leaf.va.gov/platform/xyz/").
-     ANNOUNCEMENT_RECORD_ID     : the form record ID.
-     ANNOUNCEMENT_INDICATOR_ID  : the rich-text (Trumbowyg) indicator ID
-                                  whose value is the announcement copy.
-     ANNOUNCEMENT_SERIES        : series number — 1 unless the record
-                                  uses a different series. */
+  /* ── Announcement banner config ──
+     Placeholder IDs — search "REPLACE_ME" to find these before
+     promoting to production. Sourced from a LEAF form's rawIndicator
+     endpoint: GET {ROOT_URL}api/form/{RECORD_ID}/rawIndicator/
+     {INDICATOR_ID}/{SERIES}. SERIES is the record's series number
+     (1 unless it uses a different one). */
   var ANNOUNCEMENT_ROOT_URL = "REPLACE_ME_ANNOUNCEMENT_ROOT_URL";
   var ANNOUNCEMENT_RECORD_ID = "REPLACE_ME_ANNOUNCEMENT_RECORD_ID";
   var ANNOUNCEMENT_INDICATOR_ID = "REPLACE_ME_ANNOUNCEMENT_INDICATOR_ID";
   var ANNOUNCEMENT_SERIES = 1;
 
-  /* ── Home route — used for the brand logo link and as the
-     breadcrumb auto-detect's "hide breadcrumb here" match. Absolute
-     to the live host — the header is site-wide now, so this has
-     to bring users on any LEAF page back into the app, not off of
-     it. Kept in sync with the matching entry in
-     HREF_HASH_KEY_OVERRIDES below — that entry must be updated too
-     if this ever changes, since hrefToHashKey() looks it up by exact
-     string match. ── */
+  /* Home route for the brand logo link and breadcrumb auto-detect's
+     "hide breadcrumb here" match. Absolute since the header is
+     site-wide. Keep in sync with the matching entry in
+     HREF_HASH_KEY_OVERRIDES below. */
   var HOME_HREF = "https://leaf.va.gov/launchpad";
 
-  /* ── Nav content (single source of truth for desktop + mobile) ──
-     href values here are the canonical URLs used by the router
-     AND by the breadcrumb auto-detect (a static page's own URL is
-     matched against these same hrefs). Hash keys are derived from
-     the ?a= param value automatically. Placeholder hrefs (#) are
-     skipped by the router. */
+  /* Single source of truth for desktop + mobile nav. href values are
+     also matched against a static page's own URL for breadcrumb
+     auto-detect. Placeholder hrefs (#) are skipped by the router. */
   var NAV_SECTIONS = [
     {
       label: "About LEAF",
@@ -260,10 +207,9 @@
     },
   ];
 
-  /* ── Sub-routes: pages nested under a nav item (not in the dropdown) ──
-     These get registered in ROUTE_MAP at init so the hash router can
-     load them and breadcrumbs get the correct 4-level trail. Also
-     matched against a static page's own URL for breadcrumb auto-detect. */
+  /* Pages nested under a nav item but not shown in its dropdown —
+     registered in ROUTE_MAP at init for hash routing + breadcrumbs,
+     and matched against a static page's own URL for auto-detect. */
   var SUBROUTES = [
     {
       href: "/launchpad/report.php?a=lp_brand_guide",
@@ -276,14 +222,9 @@
     },
   ];
 
-  /* ── Router: hash key → { href, title, section } lookup table ──
-     Built once at init from NAV_SECTIONS. Hash key is the ?a= param
-     value, minus its lp_ prefix per HREF_HASH_KEY_OVERRIDES (e.g.
-     "impact", "find_site"). Also doubles as the
-     breadcrumb auto-detect table for static (non-launchpad) pages —
-     see resolveCurrentRoute(). Leadership is also registered here
-     even though it lives in the separate INTERNAL_SECTION — it
-     still hash-routes. */
+  /* Hash key → { href, title, section } lookup, built once at init
+     from NAV_SECTIONS. Also doubles as the breadcrumb auto-detect
+     table for static pages (see resolveCurrentRoute()). */
   var ROUTE_MAP = {};
 
   /* Static definitions for the Internal section's direct links so the
@@ -306,13 +247,9 @@
 
   function buildRouteMap() {
     /* Registers one item into ROUTE_MAP — shared by top-level items and
-       nested children so both hash-route the same way. External items
-       (real <a target="_blank"> links, not internal launchpad routes)
-       are skipped entirely. parentItem is only passed for nested
-       children (e.g. Community of Practice under Voice of the
-       Customer) — it fills in route.parent so buildTrailHTML() renders
-       the full 3-level breadcrumb (section > parent > title) instead
-       of just section > title. */
+       nested children. External items (real target="_blank" links) are
+       skipped. parentItem (nested children only) fills in route.parent
+       so buildTrailHTML() renders the full 3-level breadcrumb. */
     function registerItem(item, section, parentItem) {
       if (
         item.divider ||
@@ -367,36 +304,23 @@
     }
   }
 
-  /* Derive a hash key from any href.
+  /* Derive a hash key from any href, e.g.
      "/launchpad/report.php?a=lp_find_site" → "find_site" (via override below)
-     "report.php?a=Find_my_site"               → "find_my_site" (lowercased)
-     Absolute URLs with different origin handled gracefully. */
-  /* Explicit hash-key overrides for hrefs whose derived key would
-     otherwise be wrong. Checked first in hrefToHashKey() so every
-     caller (registerItem, wireLinkIntercept's click-time lookup,
-     resolveCurrentRoute) agrees on the same key automatically. */
+     "report.php?a=Find_my_site" → "find_my_site" (lowercased). */
+  /* Explicit overrides for hrefs whose derived key would otherwise be
+     wrong. Checked first so every caller agrees on the same key. */
   var HREF_HASH_KEY_OVERRIDES = {
-    /* HOME_HREF has no ?a= param — the homepage renders for the
-       empty/default action — so it falls back to the last-path-segment
-       rule and derives "launchpad", a key router() doesn't recognize
-       as home (only "", "home", "lp_home" are). Left alone, clicking
-       the brand logo or the breadcrumb's "Launchpad" crumb (real
-       <a href=HOME_HREF> elements that wireLinkIntercept hash-routes)
-       would push "#launchpad" and land on the "page doesn't exist"
-       state instead of home. Pin it to "home" instead: router() then
-       recognizes the pushed hash. Relies on the web server treating
-       report.php as the directory index for /launchpad — flag if that
-       assumption is wrong and the bare URL doesn't resolve. */
+    /* HOME_HREF has no ?a= param, so the derived key ("launchpad")
+       isn't recognized as home — pin it to "home" so the brand logo
+       and breadcrumb links land on the actual homepage. Relies on the
+       web server treating report.php as the directory index for
+       /launchpad — flag if the bare URL doesn't resolve. */
     "https://leaf.va.gov/launchpad": "home",
-    /* window.location.pathname/search never include the origin, so
-       resolveCurrentRoute()'s "here" (a page's own relative URL) is
-       matched against this relative form — needed alongside the
-       absolute entry above so resolveCurrentRoute()'s "here" vs
-       HOME_HREF comparison still agrees and the breadcrumb keeps
-       hiding correctly on a direct load of the actual homepage. */
+    /* Relative form, needed since window.location.pathname/search
+       never include the origin — keeps resolveCurrentRoute()'s
+       comparison against HOME_HREF consistent. */
     "/launchpad": "home",
-    /* lp_* → short-key rename: no backend template aliases exist yet
-       for these action names, so hrefs (and the ?a= values actually
+    /* lp_* → short-key rename: hrefs (and the ?a= values actually
        fetched) are untouched — only the hash key used for in-app
        routing drops the lp_ prefix. Old #lp_* hashes still resolve via
        LEGACY_HASH_KEY_ALIASES in router(). */
@@ -415,10 +339,8 @@
     "/launchpad/report.php?a=lp_brand_guide": "brand_guide",
     "/launchpad/report.php?a=lp_leadership": "leadership",
     "/launchpad/report.php?a=lp_team": "team",
-    /* showSwapError()'s hardcoded "Back to Launchpad" button (below)
-       keeps its literal ?a=lp_home text — same no-backend-alias reason
-       as above — but should still push "#home" like every other home
-       entry point, not the legacy "#lp_home" hash. */
+    /* showSwapError()'s hardcoded "Back to Launchpad" button keeps
+       ?a=lp_home text but should still push "#home", not "#lp_home". */
     "report.php?a=lp_home": "home",
   };
 
@@ -432,11 +354,9 @@
     return pathMatch ? pathMatch[1].toLowerCase() : null;
   }
 
-  /* ── Breadcrumb auto-detect for static pages ──────────────────
-     Matches this page's own URL against ROUTE_MAP/HOME_HREF using
-     the exact same key-derivation the router uses for hashes.
-     Returns "home" (breadcrumb hidden), a route object (breadcrumb
-     shown, trail built from it), or null (unknown page — hidden). */
+  /* Matches this page's own URL against ROUTE_MAP/HOME_HREF using the
+     same key-derivation the router uses for hashes. Returns "home"
+     (hidden), a route (trail shown), or null (unknown page, hidden). */
   function resolveCurrentRoute() {
     var here = window.location.pathname + window.location.search;
     var key = hrefToHashKey(here);
@@ -445,27 +365,20 @@
     return ROUTE_MAP[key] || null;
   }
 
-  /* ── Detect whether we're on the launchpad ──
-     The router only activates on report.php?a=lp_home. All other
-     pages get the header only — no router, no fetch. Detected via
-     the page's own URL, not a DOM marker like #lp-main — every
-     lp_*.html page shares that id on its own <main> (generic
-     page-shell boilerplate, not launchpad-specific), so it can't
-     reliably distinguish the launchpad page from any other. */
+  /* The router only activates on report.php?a=lp_home; all other pages
+     get the header only. Detected via URL, not a DOM marker — every
+     lp_*.html page shares the #lp-main id on its own <main>. */
   function isLaunchpad() {
-    /* Native swap host present in the page's own markup — the
-       launchpad page's own marker, checked before buildRouteMap()
-       could have created one via ensureSwapHost(). */
+    /* Native swap host in the page's own markup — checked before
+       buildRouteMap() could have created one via ensureSwapHost(). */
     if (document.getElementById("lpSwapHost")) return true;
     return resolveCurrentRoute() === "home";
   }
 
   /* ─────────────────────────────────────────────────────────────
      ICON LIBRARY
-     Inline Material Symbols (Filled), sourced once and reused by
-     every render site below — keeps SVG path data out of every
-     template string while still inlining full markup per occurrence
-     (no <use>/sprite references, no network request per icon).
+     Inline Material Symbols, sourced once and reused everywhere below —
+     full markup per occurrence, no <use>/sprite, no per-icon request.
   ───────────────────────────────────────────────────────────── */
   var ICON_SVG = {
     bar_chart:
@@ -540,29 +453,20 @@
     return `<li>${linkRowHTML(item)}</li>`;
   }
 
-  /* Renders one <button class="dd-link">. Shared by plain items (via
-     linkHTML) and nested parent/child rows (via nestedLinkHTML) so both
-     look and behave identically. Use <button data-href> instead of
-     <a href> so the browser status bar never previews the destination
-     URL on hover — navigation is handled by wireLinkIntercept(), which
-     reads data-href. Applies to any future iframe: true item too —
-     it's still hash-routed so the header stays visible; loadView()
-     mounts it in an <iframe> instead of fetching+splicing its HTML,
-     since it's a full separate LEAF app rather than a lightweight
-     content page. */
+  /* Renders one <button class="dd-link">, shared by plain items and
+     nested rows. <button data-href>, not <a href>, so the status bar
+     never previews the destination on hover — wireLinkIntercept()
+     reads data-href for navigation. */
   function linkRowHTML(item, extraClass) {
     var badgeHTML = item.badge
       ? `<span class="dd-badge">${item.badge}</span>`
       : "";
-    /* data-action flags items that trigger in-page behavior (e.g. opening
-       the demo modal) instead of navigating — read by wireLinkIntercept()
-       before it falls through to href-based routing. */
+    /* Flags items that trigger in-page behavior (e.g. opening the demo
+       modal) instead of navigating — read by wireLinkIntercept(). */
     var actionAttr = item.action ? ` data-action="${item.action}"` : "";
     var cls = extraClass ? `dd-link ${extraClass}` : "dd-link";
-    /* Submenu-level items (dd-link--sub, e.g. Community of Practice
-       under Voice of the Customer) render text-only — an icon crowds
-       the already-indented title/description and breaks symmetry with
-       the rest of the submenu. */
+    /* Submenu items (dd-link--sub) render text-only — an icon would
+       crowd the already-indented title/description. */
     var iconHTML =
       extraClass === "dd-link--sub"
         ? ""
@@ -570,13 +474,9 @@
           <span class="dd-link-ico">
             <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG[item.icon] || ""}</span>
           </span>`;
-    /* item.external: true renders a real <a target="_blank"> instead
-       of the <button data-href> every other item uses — same
-       data-nav-external/rel/sr-only pattern already used for Coaches
-       (see buildInternalNavHTML), so wireLinkIntercept() leaves it
-       alone entirely rather than hash-routing or iframe-mounting it.
-       Not currently used by any NAV_SECTIONS item, but kept as a
-       general option for a future genuinely-external nav destination. */
+    /* item.external renders a real <a target="_blank"> instead of the
+       usual <button data-href>, so wireLinkIntercept() leaves it alone.
+       Not used by any current item; kept for a future external link. */
     if (item.external) {
       return `
         <a class="${cls}" href="${item.href}" data-nav-external target="_blank" rel="noopener noreferrer">${iconHTML}
@@ -602,11 +502,9 @@
         </button>`;
   }
 
-  /* Renders a parent item (a real link to its own page) plus its child
-     items as a permanently-visible indented list beneath it — no
-     expand/collapse, no toggle, no user interaction needed to reveal
-     them. Same shape in both the desktop dd-panel and mobile acc-panel,
-     since both call linkHTML() over the same NAV_SECTIONS data. */
+  /* Renders a parent item plus its children as a permanently-visible
+     indented list — no expand/collapse. Shared by desktop dd-panel and
+     mobile acc-panel since both call linkHTML() over NAV_SECTIONS. */
   function nestedLinkHTML(item) {
     var childItemsHTML = item.children
       .map(function (child) {
@@ -667,14 +565,10 @@
 
   /* ─────────────────────────────────────────────────────────────
      INTERNAL NAV SECTION
-     Right-aligned group: [ 🔒 ] Coaches (new tab) → Team → Leadership
-     → Admin → Users Online (live status). Sysadmin-only — gated on
-     IS_SYSADMIN (see top of file). Returns empty markup for non-sysadmins
-     so the section never enters the DOM, rather than being hidden
-     with CSS. data-sysadmin="1" on the wrapper div plus the matching
-     CSS rule in leaf_header.css is defense in depth only — belt and
-     suspenders in case this markup is ever cached or duplicated
-     outside this function; the real gate is the early return below.
+     Right-aligned group: [lock] Coaches (new tab) → Team → Leadership
+     → Admin → Users Online. Sysadmin-only — gated on IS_SYSADMIN, so
+     the section never enters the DOM for non-sysadmins rather than
+     being hidden with CSS (the CSS rule is defense in depth only).
   ───────────────────────────────────────────────────────────── */
   function buildInternalNavHTML() {
     if (!IS_SYSADMIN) {
@@ -684,18 +578,15 @@
     var desktopInternal = `
 <div class="lp-nav-internal" data-sysadmin="1" role="navigation" aria-label="Internal team links">
 
-  <!-- Lock icon is the only visible content — role="img" + aria-label
-       gives it an accessible name since there's no visible text. -->
+  <!-- Lock icon only — role="img" + aria-label gives it an accessible name. -->
   <span class="lp-internal-label" role="img" aria-label="Internal">
     <span class="material-symbols-outlined lp-internal-label-icon" aria-hidden="true">${ICON_SVG.lock}</span>
   </span>
 
   <span class="lp-internal-rule" aria-hidden="true"></span>
 
-  <!-- Coaches: external, opens in a new tab. data-nav-external tells
-       wireLinkIntercept() to leave this <a> alone entirely so its real
-       target="_blank" fires natively instead of being hash-routed.
-       Text-only — no icon, matching Team/Leadership. -->
+  <!-- Coaches: external, new tab. data-nav-external tells
+       wireLinkIntercept() to leave it alone instead of hash-routing it. -->
   <a class="lp-internal-btn" href="https://leaf.va.gov/launchpad/report.php?a=Coaches" data-nav-external target="_blank" rel="noopener noreferrer">
     Coaches
     <span class="lp-sr-only">(opens in new tab)</span>
@@ -709,18 +600,15 @@
     Leadership
   </button>
 
-  <!-- Admin is a real standalone page, not meant to fetch+splice into
-       the launchpad shell like Team/Leadership — data-nav-fullpage tells
+  <!-- Admin is a real standalone page — data-nav-fullpage tells
        wireLinkIntercept() to always navigate here for real. -->
   <button class="lp-internal-btn" data-href="/launchpad/admin" data-nav-fullpage>
     Admin
   </button>
 
-  <!-- Users Online: live count via Server-Sent Events (see
-       wireUsersOnlineBadge()) — not a link, so plain <span>, not
-       <button>. .lp-internal-online-count is a class (not an id)
-       since this markup also renders in the mobile accordion below;
-       one EventSource updates every matching node. -->
+  <!-- Users Online: live count via SSE (see wireUsersOnlineBadge()) —
+       non-interactive, so <span> not <button>. Class, not id, since
+       this also renders in the mobile accordion below. -->
   <span class="lp-internal-btn lp-internal-online">
     <span class="lp-internal-online-dot" aria-hidden="true"></span>
     Users Online:
@@ -731,8 +619,7 @@
 
     var mobileInternal = `
 
-<!-- Mobile separator before Internal section — lock icon only, same
-     role="img"+aria-label treatment as the desktop version. -->
+<!-- Mobile separator before Internal section — same lock icon treatment as desktop. -->
 <li class="lp-internal-mobile-item" data-sysadmin="1" role="separator">
   <div class="lp-mobile-internal-sep" role="img" aria-label="Internal">
     <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.lock}</span>
@@ -788,9 +675,8 @@
   </button>
 </li>
 
-<!-- Users Online: same live count as the desktop badge above (shares
-     .lp-internal-online-count), rendered here as a non-interactive
-     status row matching the Coaches/Team/Leadership row shape. -->
+<!-- Users Online: same live count as the desktop badge (shares
+     .lp-internal-online-count), as a non-interactive status row. -->
 <li class="lp-internal-mobile-item lp-internal-online" data-sysadmin="1">
   <span class="dd-link">
     <span class="dd-link-ico">
@@ -808,10 +694,8 @@
 
   /* ─────────────────────────────────────────────────────────────
      BRAND / LOGO
-     Plain inline-flex link, no padded/bordered container — sits
-     flush at the header's left edge alongside the nav. Fill color
-     is set in leaf_header.css (.lp-brand-logo path), not inline,
-     so it stays themeable in one place.
+     Fill color is set in leaf_header.css (.lp-brand-logo path), not
+     inline, so it stays themeable in one place.
   ───────────────────────────────────────────────────────────── */
   function buildBrandHTML() {
     return `
@@ -834,20 +718,14 @@
 
   /* ─────────────────────────────────────────────────────────────
      REQUEST SUPPORT (nav-level CTA)
-     Single-click form-modal trigger, not a NAV_SECTIONS dropdown — no
-     .dd-panel/children, so it's built and placed separately from
-     desktopSectionHTML()/mobileSectionHTML() rather than folded into
-     that loop. <button>, not <a>, same no-status-bar-preview rationale
-     as .dd-link. data-action="form-modal" already flows through the
-     shared branch in wireLinkIntercept() — no click-handler changes
-     needed. Desktop: last item in .lp-nav-links, right after Knowledge
-     Center. Mobile: pinned at the very top of .lp-accordion so it
-     isn't buried inside a collapsible section.
+     Not a NAV_SECTIONS dropdown item, so built/placed separately.
+     data-action="form-modal" flows through the shared branch in
+     wireLinkIntercept(). Desktop: last item in .lp-nav-links. Mobile:
+     pinned above the accordion so it isn't buried in a section.
   ───────────────────────────────────────────────────────────── */
-  /* &iframe=1 tells the LEAF support app to suppress its own
-     header/nav — without it, the fetched form renders a second full
-     LEAF header inside this modal's iframe, stacked on top of the
-     launchpad's own header behind it. */
+  /* &iframe=1 tells the LEAF support app to suppress its own header/nav
+     — without it, the fetched form renders a second header inside this
+     modal's iframe. */
   var SUPPORT_FORM_URL =
     "https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Help+Library&iframe=1";
 
@@ -907,10 +785,8 @@
 
   /* ─────────────────────────────────────────────────────────────
      HEADER
-     Branding, nav, and breadcrumb as one sticky unit. The
-     breadcrumb row is always present in the DOM (hidden by
-     default) so updateBreadcrumb() only ever toggles/fills it —
-     it never has to re-create or relocate it.
+     Breadcrumb row is always present in the DOM (hidden by default)
+     so updateBreadcrumb() only ever toggles/fills it.
   ───────────────────────────────────────────────────────────── */
   function buildHeaderHTML() {
     return `
@@ -925,9 +801,8 @@
 
   /* ─────────────────────────────────────────────────────────────
      SKIP NAVIGATION LINK
-     Injected as the very first child of <body>. Visually hidden
-     until focused. Targets #main-content (which we reassign
-     depending on current view state in the router).
+     Injected as the first child of <body>, visually hidden until
+     focused. Targets #main-content.
   ───────────────────────────────────────────────────────────── */
   function ensureSkipLink() {
     if (document.getElementById("lp-skip-nav")) return;
@@ -983,11 +858,8 @@
     host = document.createElement("div");
     host.id = "lp-header-host";
     /* Insert right after the skip link (not at body.firstChild) so the
-       skip link — inserted moments earlier by ensureSkipLink(), which
-       itself targets body.firstChild — stays the true first child and
-       first Tab stop. Inserting at body.firstChild here would instead
-       land the header (full of focusable nav buttons) ahead of the
-       skip link, defeating its purpose. */
+       skip link — inserted moments earlier — stays the true first Tab
+       stop; otherwise the header's focusable nav would precede it. */
     var skip = document.getElementById("lp-skip-nav");
     document.body.insertBefore(
       host,
@@ -1057,9 +929,8 @@
     host.outerHTML = buildHeaderHTML();
     ensureMainContentTarget();
 
-    /* Needed on every page now, not just the launchpad — static
-       pages use it to auto-detect their own breadcrumb (see
-       resolveCurrentRoute()), the launchpad uses it for hash routing. */
+    /* Needed on every page now — static pages use it for breadcrumb
+       auto-detect, the launchpad uses it for hash routing. */
     buildRouteMap();
 
     if (isLaunchpad()) {
@@ -1076,36 +947,30 @@
       }
     }
 
-    /* Wired on every page, not just the launchpad — wireLinkIntercept()
-       itself branches on isLaunchpad() to either hash-route (launchpad)
-       or navigate normally (everywhere else). Without this, nav dropdown
-       links — deliberately <button data-href>, not <a href>, so the
-       status bar never previews them — would have no click handler at
-       all on non-launchpad pages. */
+    /* Wired on every page — wireLinkIntercept() itself branches on
+       isLaunchpad() to hash-route or navigate normally. Without this,
+       nav <button data-href> links would have no click handler at all. */
     wireLinkIntercept();
 
     wire();
     ensureJumpToTop();
 
-    /* Available on every page, not just the launchpad — the nav's
-       "Watch a Demo" item (About LEAF dropdown) can be clicked from
-       anywhere. */
+    /* Available on every page — "Watch a Demo" can be clicked from
+       anywhere, not just the launchpad. */
     ensureDemoModal();
     wireDemoModal();
 
     wireUsersOnlineBadge();
 
-    /* Global announcement banner — async; only mounts above the nav
-       once/if the sourced indicator resolves to real content. No-ops
-       until ANNOUNCEMENT_* constants are filled in with real values. */
+    /* Async; only mounts above the nav once/if the sourced indicator
+       resolves to real content. No-ops until ANNOUNCEMENT_* is filled in. */
     initAnnouncementBanner();
   }
 
   /* ─────────────────────────────────────────────────────────────
      CHROME SUPPRESSION LIST
-     Applied to the parsed DOMParser document before extraction.
-     Covers both old Smarty template (DIV#header, DIV#footer) and
-     new template (HEADER#header, FOOTER#footer.noprint).
+     Covers both old Smarty template (DIV#header, DIV#footer) and new
+     template (HEADER#header, FOOTER#footer.noprint).
   ───────────────────────────────────────────────────────────── */
   var CHROME_SELECTORS = [
     "#header",
@@ -1113,13 +978,10 @@
     ".noprint",
     "#lp-skip-nav",
     "#nav-skip-link",
-    /* USWDS's own skip-link component class — LEAF pages follow USWDS
-       conventions elsewhere (.usa-button, .usa-table, etc.), so a real
-       platform page's native skip link (e.g. Leadership, fetch+spliced
-       rather than iframed — see mountContent()) most likely uses this,
-       not one of the two IDs above. Left un-stripped, it renders inside
-       #lpSwapHost with none of its own site's CSS (that stylesheet was
-       never fetched), which is what was overlapping the header. */
+    /* USWDS's own skip-link class — a fetch+spliced platform page
+       (e.g. Leadership) likely uses this, not the two IDs above. Left
+       un-stripped it renders with none of its own site's CSS, which
+       was overlapping the header. */
     ".usa-skipnav",
     "#LeafSession_dialog",
     "#lpInlinePanel",
@@ -1171,13 +1033,10 @@
 
   /* ─────────────────────────────────────────────────────────────
      SAFE SCRIPT RE-EXECUTION
-     Inline scripts: wrapped in new Function() to avoid top-level
-     var declarations stomping outer window globals.
-     External scripts: re-appended to <head> with a new node so
-     the browser fetches and executes them.
-     Guards: document.write calls are skipped (they'd overwrite
-     the outer page). Scripts already loaded by src are tracked
-     in a seen-set to avoid duplicate execution across navigations.
+     Inline scripts run via new Function() so top-level vars don't
+     stomp outer window globals. External scripts are re-appended to
+     <head>. document.write scripts are skipped; already-loaded
+     external scripts are tracked to avoid duplicate execution.
   ───────────────────────────────────────────────────────────── */
   var _seenExternalScripts = {};
 
@@ -1190,15 +1049,14 @@
   var _currentLoadUrl = null;
 
   /* Guard: suppresses the hashchange → router() path while deferred
-     init functions are draining, preventing any hash side-effect
-     inside those inits from re-triggering a full navigation. */
+     init functions drain, so a hash side-effect inside one can't
+     re-trigger navigation. */
   var _routerSuppressed = false;
 
-  /* Scripts that must never re-execute inside a fetched page context.
-     Shell-level scripts (this header, plus any legacy nav/breadcrumb
-     script a fetched page might still reference) manage the outer
-     document — re-running them injects duplicate elements and undoes
-     router state. */
+  /* Scripts that must never re-execute inside a fetched page context —
+     shell-level scripts (this header, any legacy nav/breadcrumb script)
+     manage the outer document; re-running them duplicates elements and
+     undoes router state. */
   var SCRIPT_BLOCKLIST = [
     "leaf_header",
     "leaf-header",
@@ -1216,12 +1074,10 @@
 
   /* ─────────────────────────────────────────────────────────────
      DEPENDENCY LAZY-LOADER
-     Some fetched pages (Help Library, Form Library) require jQuery
-     UI and dialogController.js which aren't on the launchpad page.
-     loadScriptSequential() injects them into <head> in order,
-     waiting for each load event before proceeding.
-     ensureLeafUIDeps() scans the fetched document's <script> tags,
-     detects which deps are needed, and loads only what's missing.
+     Some fetched pages (Help Library, Form Library) need jQuery UI /
+     dialogController.js, which aren't on the launchpad page.
+     ensureLeafUIDeps() scans the fetched doc's scripts and loads only
+     what's missing, in order, before continuing.
   ───────────────────────────────────────────────────────────── */
   function loadScriptSequential(srcs) {
     /* Returns a promise that resolves after all srcs are loaded in order */
@@ -1264,12 +1120,9 @@
     { name: "FacilityHelper", test: /facilityhelper/i },
   ];
 
-  /* Scans a document for known dependency <script src> tags and returns
-     the matched, absolute URLs. Must be called BEFORE suppressChrome()
-     strips #header/#footer/.noprint — those regions are exactly where
-     LEAF's shared global helpers (e.g. VAFacilityHelper.js) tend to be
-     included from, and once suppressChrome removes those nodes the
-     script is gone for good, so this has to run first. */
+  /* Scans for known dependency <script src> tags. Must run BEFORE
+     suppressChrome() strips #header/#footer/.noprint — that's where
+     shared helpers like VAFacilityHelper.js tend to live. */
   function collectLeafUIDepSrcs(doc) {
     var scriptSrcs = Array.prototype.map.call(
       doc.querySelectorAll("script[src]"),
@@ -1333,23 +1186,14 @@
         document.head.appendChild(newScript);
       } else if (oldScript.textContent && oldScript.textContent.trim()) {
         try {
-          /* Pass a mock location reflecting the route URL so any
-             script that reads location.search, location.href, or
-             location.pathname gets the fetched page's URL rather
-             than the launchpad's URL. This prevents "undefined"
-             appearing in search fields that initialise from URL params.
-
-             Also pass a mock document that overrides readyState to
-             "loading" so fetched pages that gate their init on
-             readyState (e.g. ideas_v2.js) take the DOMContentLoaded
-             listener path rather than calling initPortal() immediately
-             before the content is in the DOM.
-
-             DOMContentLoaded listeners registered on mockDoc are
-             captured in window.__lpDeferredInits and drained after
-             mount — NOT dispatched as a real DOMContentLoaded event,
-             which would retrigger the header's own init and cause an
-             infinite re-mount loop. */
+          /* Mock location: scripts reading location.search/href/pathname
+             get the fetched page's URL, not the launchpad's. Mock
+             document: readyState reads "loading" so init-on-readyState
+             pages (e.g. ideas_v2.js) register a DOMContentLoaded
+             listener instead of running immediately — captured in
+             window.__lpDeferredInits and drained after mount, never
+             dispatched as a real event (that would loop the header's
+             own init). */
           window.__lpDeferredInits = window.__lpDeferredInits || [];
 
           var mockDoc = new Proxy(document, {
@@ -1367,8 +1211,7 @@
               }
               var value = target[prop];
               /* Native methods must stay bound to the real document —
-                 returning them unbound through the Proxy's receiver
-                 reintroduces the same "Illegal invocation" failure. */
+                 unbound via the Proxy's receiver reintroduces "Illegal invocation". */
               if (typeof value === "function") {
                 return value.bind(target);
               }
@@ -1376,16 +1219,12 @@
             },
           });
 
-          /* mockLocation: intercepts navigation calls from re-executed inline
-             scripts so that links/buttons using location.href = url,
-             location.assign(url), or location.replace(url) inside fetched
-             pages hash-route to known routes instead of navigating away.
-             Unknown URLs (external links, non-LEAF pages) fall through to
-             the real window.location so normal navigation still works.
-             NOTE: scripts that use window.location.href (not the local
-             location binding) bypass this mock and navigate normally — that
-             is intentional; only inline scripts using the location parameter
-             are intercepted. */
+          /* Intercepts navigation from re-executed inline scripts so
+             location.href = url / .assign() / .replace() hash-route to
+             known routes instead of navigating away. Unknown URLs fall
+             through to the real window.location. Only the local
+             `location` parameter is intercepted — window.location.href
+             bypasses this and navigates normally. */
           function _lpNavigate(url) {
             if (!url) return;
             var key = hrefToHashKey(url);
@@ -1438,10 +1277,9 @@
             enumerable: true,
             configurable: true,
           });
-          /* Wrap the real window so that window.location.href = url
-             and window.location.assign/replace() in re-executed scripts
-             are also intercepted — not just the local `location` binding.
-             All other window properties fall through to the real window. */
+          /* Wraps the real window so window.location.href = url and
+             .assign()/.replace() are also intercepted, not just the
+             local `location` binding. */
           var mockWindow = new Proxy(window, {
             get: function (target, prop) {
               if (prop === "location") return mockLocation;
@@ -1495,12 +1333,8 @@
     host.removeAttribute("hidden");
   }
 
-  /* ── Suggested links for the "missing route" error state ────────
-     One item per top-level NAV_SECTIONS group (the first non-"#" href
-     in each), so the list stays in sync with NAV_SECTIONS automatically
-     rather than needing a second hand-maintained list. Rendered as
-     .dd-link buttons with data-href so wireLinkIntercept() (already
-     listens for .dd-link clicks) hash-routes them with no extra wiring. */
+  /* One item per top-level NAV_SECTIONS group, so the "missing route"
+     error's suggested links stay in sync with NAV_SECTIONS automatically. */
   function buildErrorSuggestedLinksHTML() {
     var items = NAV_SECTIONS.map(function (section) {
       return section.items.find(function (item) {
@@ -1526,16 +1360,10 @@
       .join("");
   }
 
-  /* ── Error state ──────────────────────────────────────────────
-     Two distinct causes get two distinct messages + recovery paths:
-       "missing" — hash has no ROUTE_MAP entry (a true 404, e.g. an
-                   old bookmark to a since-renamed hash key). No
-                   retry makes sense here; offer a way out instead.
-       "fetch"   — route exists but the request failed (network
-                   error, non-2xx, empty content). Likely transient;
-                   offer retry + open-in-new-tab.
-     `url` is the route's href — used for the retry/new-tab actions
-     on the "fetch" state; unused (may be null) for "missing". */
+  /* Two causes, two messages: "missing" — no ROUTE_MAP entry (a true
+     404, e.g. a stale bookmark) — offers a way out, no retry. "fetch" —
+     route exists but the request failed — offers retry + new tab.
+     `url` is used only by the "fetch" state's actions. */
   function showSwapError(url, reason) {
     var host = getSwapHost();
     if (!host) return;
@@ -1601,20 +1429,16 @@
 
   /* ─────────────────────────────────────────────────────────────
      ELEMENT CACHE
-     Resolved once at router init. Using cached references means
-     show/hide never relies on getElementById — so ID reassignment
-     can never break visibility toggling. IDs never change after init.
+     Resolved once at router init so show/hide never relies on
+     getElementById — safe even if an id gets reassigned later.
   ───────────────────────────────────────────────────────────── */
   var _lpMain = null; /* launchpad home <main id="lp-main"> */
   var _swapHost = null; /* swap container [data-lp-swap-host] */
 
   function initElementCache() {
-    /* ensureMainContentTarget() (called earlier in inject()) renames
-       the home <main id="lp-main"> to id="main-content" for the skip
-       link, so "lp-main" is already gone by the time this runs. Fall
-       back to the bare tag selector — it's still the same element,
-       just under its new id — so _lpMain never ends up null and
-       showSwapView()/showLaunchpadHome() can actually hide/show it. */
+    /* ensureMainContentTarget() renames the home <main id="lp-main"> to
+       id="main-content" for the skip link, so fall back to the bare tag
+       selector — still the same element, just under its new id. */
     _lpMain =
       document.getElementById("lp-main") || document.querySelector("main");
     _swapHost =
@@ -1624,9 +1448,8 @@
 
   /* ─────────────────────────────────────────────────────────────
      SHOW / HIDE
-     Explicit inline display style beats any stylesheet rule,
-     including LEAF's own overrides. IDs never change — the skip
-     link always targets #lp-main (home) or #lpSwapHost (fetched).
+     Explicit inline display beats any stylesheet rule. IDs never
+     change — the skip link always targets #lp-main or #lpSwapHost.
   ───────────────────────────────────────────────────────────── */
   function showLaunchpadHome() {
     if (_lpMain) _lpMain.style.display = "";
@@ -1663,11 +1486,9 @@
 
   /* ─────────────────────────────────────────────────────────────
      BREADCRUMB
-     Trail: LEAF Launchpad → [Section] → [Page Title]
-     buildTrailHTML() returns just the crumb spans/links —
-     updateBreadcrumb() owns the persistent #lpBreadcrumb element
-     itself (part of the header, built once by buildHeaderHTML),
-     filling it in or hiding it as the active route changes.
+     Trail: LEAF Launchpad → [Section] → [Page Title]. updateBreadcrumb()
+     owns the persistent #lpBreadcrumb element, filling or hiding it as
+     the active route changes.
   ───────────────────────────────────────────────────────────── */
   function buildTrailHTML(route) {
     var trail = [{ label: "Launchpad", href: HOME_HREF }];
@@ -1711,11 +1532,9 @@
 
   /* ─────────────────────────────────────────────────────────────
      MOUNT IFRAME
-     For full separate LEAF apps (route.iframe === true). Skips
-     fetch/DOMParser/chrome-suppression/script-splicing entirely —
-     the embedded page loads and runs as its own real document, so
-     the base-href and script-re-execution concerns mountContent()
-     has to handle don't apply here.
+     For full separate LEAF apps (route.iframe === true) — skips
+     fetch/DOMParser/chrome-suppression/script-splicing entirely since
+     the embedded page loads and runs as its own real document.
   ───────────────────────────────────────────────────────────── */
   function mountIframe(route) {
     var host = _swapHost;
@@ -1743,22 +1562,15 @@
     frame.src = route.href;
     frame.title = route.title || "Embedded page";
     /* min-height is just the pre-load placeholder — the load handler
-       below grows the frame to its content's real height so the iframe
-       itself never needs to scroll; the outer page scrolls instead.
-       visibility:hidden (not display:none) keeps it participating in
-       layout so the spinner below sits where the frame will end up,
-       and so the frame's own load event still fires normally. */
+       grows the frame to its real content height. visibility:hidden
+       (not display:none) keeps it in layout and its load event firing. */
     frame.style.cssText =
       "width:100%;min-height:75vh;border:0;display:block;overflow:hidden;visibility:hidden;";
 
-    /* Embedded pages (any iframe: true route) are
-       real, separately-rendered LEAF pages — their native #header/#footer
-       chrome is server-rendered directly into the HTML, so it paints
-       before that page's own client-side script has run to hide it.
-       leaf_header.css's hide rule can't reach across the iframe boundary
-       to stop that. Keeping the frame hidden until "load" (and showing
-       our own spinner in its place) hides that flash from the user
-       instead of trying to prevent it inside a document we don't own. */
+    /* iframe: true routes are real LEAF pages whose own #header/#footer
+       renders before their client-side script hides it, and CSS can't
+       reach across the iframe boundary to stop that. Keep the frame
+       hidden until "load" and show our own spinner instead. */
     var spinner = document.createElement("div");
     spinner.className = "lp-swap-loading lp-iframe-loading";
     spinner.setAttribute("aria-hidden", "true");
@@ -1814,21 +1626,13 @@
       return;
     }
 
-    /* ── Base URL injection ───────────────────────────────────────
-       Fetched pages (Ideas, Help Library, etc.) make relative API
-       calls like ./api/form/query. When their scripts re-execute
-       inside the launchpad document, those relative URLs would
-       resolve against the launchpad's own URL instead of the fetched
-       page's origin — causing 404s and empty data — so a <base href>
-       pointing to the fetched page's directory is injected into
-       <head> BEFORE reExecuteScripts() runs, so all relative
-       fetch/XHR calls inside injected scripts resolve correctly. A
-       <base> inside a <div> is invalid and ignored by browsers — it
-       must be in <head>.
-
-       We remove the previous route's <base> first, then add the new
-       one. On return to launchpad home the base is removed entirely
-       so the launchpad's own relative paths aren't affected.
+    /* ── Base URL injection ──
+       Fetched pages make relative API calls (e.g. ./api/form/query)
+       that would resolve against the launchpad's own URL once their
+       scripts re-execute here — so a <base href> pointing at the
+       fetched page's directory is injected into <head> before
+       reExecuteScripts() runs. Must be in <head>; inside a <div> it's
+       ignored. Removed entirely on return to launchpad home.
 
        Derived from route.href:
          /platform/projects/report.php?a=ideas
@@ -1858,10 +1662,9 @@
       document.head.insertBefore(newBase, document.head.firstChild);
     }
 
-    /* Expose the route's original URL on window so fetched page scripts
-       that read window.location.search or URL params get the right values
-       instead of the launchpad's own URL params (which would be empty or
-       wrong, causing "undefined" to appear in search fields). */
+    /* Exposes the route's original URL so fetched-page scripts reading
+       window.location.search/params get the right values instead of
+       the launchpad's own (empty/wrong) ones. */
     window.__lpRouteHref = route ? route.href : "";
     window.__lpRouteSearch =
       route && route.href.indexOf("?") > -1
@@ -1878,30 +1681,19 @@
     host.innerHTML = "";
     host.appendChild(wrapper);
 
-    /* Lazy-load any LEAF UI dependencies the fetched page needs
-       (e.g. jquery-ui, dialogController, VAFacilityHelper) before
-       re-executing its inline scripts. depScriptSrcs was scanned in
-       loadView() BEFORE chrome suppression, so deps that live inside
-       #header/#footer/.noprint are still caught. reExecuteScripts
-       runs only after all deps load. */
+    /* Lazy-loads any LEAF UI deps the fetched page needs before
+       re-executing its inline scripts — depScriptSrcs was scanned
+       before chrome suppression, so deps inside #header/#footer are
+       still caught. */
     ensureLeafUIDeps(depScriptSrcs).then(function () {
       reExecuteScripts(wrapper);
 
-      /* After scripts run, call any deferred page init functions.
-         Fetched pages that gate on readyState (e.g. ideas_v2.js) have
-         their inline scripts executed with mockDoc.readyState="loading"
-         so they register their init as a DOMContentLoaded listener on
-         the real document instead of calling it immediately.
-
-         We do NOT dispatch a synthetic DOMContentLoaded — that would
-         retrigger the header's own DOMContentLoaded listener and cause
-         an infinite re-mount loop.
-
-         Instead, we maintain a registry: each fetched page's inline
-         script can push to window.__lpDeferredInits, and we drain
-         that queue here after mount. ideas_v2.js and similar pages
-         register via document.addEventListener('DOMContentLoaded', fn)
-         which we intercept via the mockDoc proxy. */
+      /* After scripts run, drain any deferred page-init functions.
+         Pages that gate init on readyState (see mockDoc above) register
+         it as a DOMContentLoaded listener, captured into
+         window.__lpDeferredInits. We never dispatch a synthetic
+         DOMContentLoaded — that would retrigger the header's own init
+         and loop — so we call the queued functions directly instead. */
       setTimeout(function () {
         if (window.__lpDeferredInits && window.__lpDeferredInits.length) {
           _routerSuppressed = true;
@@ -1981,12 +1773,9 @@
     updateNavCurrent(route.section);
     updateBreadcrumb(route);
 
-    /* A full separate LEAF app (iframe: true route) can't survive being
-       fetched+spliced into this document — wrong document, wrong
-       scripts, wrong DOM. Mount them in an iframe instead: same
-       hash-routed shell (header stays visible, back-to-launchpad
-       still works), but the embedded page runs in its own real
-       document. */
+    /* A full separate LEAF app (iframe: true) can't survive being
+       fetched+spliced — wrong document, wrong scripts, wrong DOM.
+       Mount it in an iframe instead, same hash-routed shell. */
     if (route.iframe) {
       mountIframe(route);
       _currentLoadUrl = null;
@@ -2021,13 +1810,9 @@
         var parser = new DOMParser();
         var doc = parser.parseFromString(html, "text/html");
 
-        /* Scan for known external UI/helper dependencies BEFORE chrome
-           suppression runs. Some LEAF pages (e.g. lp_find_site) load
-           helpers like VAFacilityHelper.js from inside the header
-           include — suppressChrome() deletes #header/#footer/.noprint
-           wholesale, so scanning after that would miss the dependency
-           entirely and leave content scripts throwing
-           "X is not defined". */
+        /* Scan for known dependencies BEFORE chrome suppression — some
+           pages (e.g. lp_find_site) load helpers from inside the header
+           include, which suppressChrome() deletes wholesale. */
         var depScriptSrcs = collectLeafUIDepSrcs(doc);
 
         /* Suppress chrome elements in the parsed document */
@@ -2060,8 +1845,7 @@
   }
 
   /* Old #lp_* hashes (bookmarks, external links) still resolve to their
-     route under its new short key — same precedent as router()'s
-     "home"/"lp_home" fallback below, generalized to every renamed route. */
+     route's new short key. */
   var LEGACY_HASH_KEY_ALIASES = {
     lp_impact: "impact",
     lp_roadmap: "roadmap",
@@ -2111,13 +1895,10 @@
   ───────────────────────────────────────────────────────────── */
   function wireLinkIntercept() {
     document.addEventListener("click", function (e) {
-      /* ── Plain <a href> links inside fetched page content ───────────
-         Nav buttons (.dd-link etc.) use data-href and are caught below.
-         Links inside loaded pages are regular <a> tags — they bypass
-         the nav-button check entirely and trigger full page navigation.
-         Intercept them here: if the href maps to a known ROUTE_MAP entry,
-         push the hash. Unknown hrefs (external, in-page anchors, API
-         paths) fall through and the browser handles them normally. */
+      /* Nav buttons (.dd-link etc.) use data-href and are caught below.
+         Links inside fetched page content are regular <a> tags that
+         bypass that check — intercept them here: a known ROUTE_MAP href
+         pushes a hash, everything else falls through to the browser. */
       var contentLink = e.target.closest("[data-lp-swap-host] a[href]");
       if (contentLink && !contentLink.hasAttribute("data-nav-external")) {
         if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
@@ -2125,20 +1906,11 @@
         } else {
           var contentHref = contentLink.getAttribute("href");
           if (contentHref && contentHref !== "#") {
-            /* ── Pure in-page anchor (e.g. lp_brand_guide's scrollspy
-               nav, or any page's own #lp-main skip link) ──
-               mountContent() injects a <base href> pointing at the
-               route's directory so relative API calls in a fetched
-               page's scripts resolve correctly (see mountContent()) —
-               untouched here, still needed for that. But the same
-               <base> also gets applied to native anchor resolution,
-               so an unhandled href="#section-id" click no longer
-               resolves against the current document; the browser
-               navigates to {base}/#section-id instead — a real,
-               wrong page. Checked before the ROUTE_MAP lookup below
-               so a genuine same-document element always wins over the
-               (very unlikely) case of a section id colliding with a
-               route key. */
+            /* In-page anchors (e.g. lp_brand_guide's scrollspy nav):
+               mountContent()'s injected <base href> makes an unhandled
+               href="#section-id" resolve to {base}/#section-id — a real,
+               wrong page — instead of the current document. Checked
+               before the ROUTE_MAP lookup so a real anchor always wins. */
             if (contentHref.charAt(0) === "#") {
               var anchorId = contentHref.slice(1);
               var anchorTarget = anchorId
@@ -2152,17 +1924,12 @@
                     block: "start",
                   });
                 } catch (err) {}
-                /* history.replaceState, not location.hash — location.hash
-                   fires hashchange, which router() listens for and would
-                   try to treat the section id as a route key, fail to
-                   find it in ROUTE_MAP, and replace the currently-loaded
-                   page with the "page doesn't exist" error state.
-                   replaceState never fires hashchange, so router() never
-                   sees this. Trade-off: reloading the page while a
-                   section anchor is the active hash won't restore the
-                   loaded route — a limitation most hash-routed SPAs with
-                   in-page anchors accept; reloading the bare route URL
-                   still always works correctly. */
+                /* history.replaceState, not location.hash — the latter
+                   fires hashchange, which router() would treat as an
+                   unknown route key and show the error state. Trade-off:
+                   reloading while a section anchor is active won't
+                   restore the loaded route (reloading the bare route
+                   URL still works). */
                 try {
                   history.replaceState(
                     null,
@@ -2174,11 +1941,8 @@
                   );
                 } catch (err) {}
                 /* Move focus to the target, matching standard in-page-
-                   anchor accessibility practice — this is fixing a
-                   skip-link/scrollspy pattern, so focus needs to land
-                   here for keyboard/AT users, not just scroll past it.
-                   preventScroll avoids fighting the smooth scroll above
-                   with the browser's own default instant-jump-on-focus. */
+                   anchor accessibility practice. preventScroll avoids
+                   fighting the smooth scroll above. */
                 if (!anchorTarget.hasAttribute("tabindex")) {
                   anchorTarget.setAttribute("tabindex", "-1");
                 }
@@ -2202,33 +1966,17 @@
         }
       }
 
-      /* Match nav dropdown links, internal buttons, footer quick-resource
-         links, breadcrumb links, and any [data-action] trigger — the
-         last covers modal triggers wherever they live, nav-generated
-         (Request Support, Watch a Demo) or page-specific markup (e.g. a
-         footer's "Nominate a Spotlight" link), so any page can opt into
-         the demo/form modal system with plain data attributes and no JS
-         of its own.
-         .dd-link elements are now <button data-href> — no href attribute —
-         so the browser status bar never previews the destination URL on hover.
-         .lp-internal-btn elements (Leadership) also use data-href.
-         .lp-breadcrumb a and .lp-brand elements (the "Launchpad" crumb and
-         the header logo) are real <a href> — the data-href fallback below
-         reads their href attribute directly, same as any other real anchor
-         caught here. .lp-brand was missing from this list entirely, so its
-         click fell through to the browser: since HOME_HREF carries no
-         fragment, clicking it while a route hash is already set (e.g.
-         "#impact") isn't the same-document "fragment-only" navigation
-         it looks like — browsers treat the missing fragment as a real
-         navigation and reload the page instead of just clearing the hash,
-         which is slow at best and, depending on how the page got here (a
-         fetch+spliced or iframe-mounted route), can drop the user out of
-         the SPA context entirely instead of landing back on the launchpad.
-         Adding it here routes it through the same hash-push path
-         .lp-breadcrumb a already used, avoiding that inconsistent native
-         behavior instead of just hoping the browser does the right thing.
-         [data-nav-external] marks real <a target="_blank"> tags (e.g.
-         Coaches) that should navigate away natively — left alone. */
+      /* Matches nav dropdown links, internal buttons, breadcrumb links,
+         .lp-brand, and any [data-action] trigger (modal triggers
+         anywhere, nav-generated or page-specific). .dd-link/.lp-internal-btn
+         use data-href (no href, so hover never previews the URL);
+         .lp-breadcrumb a / .lp-brand are real <a href>, read via the
+         data-href fallback below. .lp-brand needs to be caught here too:
+         since HOME_HREF has no fragment, clicking it while a route hash
+         is set triggers a real page reload instead of a same-document
+         nav — this routes it through the same hash-push path instead.
+         [data-nav-external] (e.g. Coaches) is left alone to navigate
+         natively. */
       var link = e.target.closest(
         ".dd-link, .lp-panel-link, .lp-internal-btn, .lp-breadcrumb a, .lp-brand, [data-action]",
       );
@@ -2243,9 +1991,8 @@
         return;
       }
 
-      /* "Watch a Demo" opens the cinematic video-only modal instead of
-         navigating. Its href is deliberately "#" (no route to push), so
-         this must run before the href==="#" early-return just below. */
+      /* "Watch a Demo" opens the video modal instead of navigating. Its
+         href is "#", so this must run before the href==="#" check below. */
       if (link.dataset.action === "demo-modal") {
         e.preventDefault();
         closeAllDropdowns(null);
@@ -2253,10 +2000,8 @@
         return;
       }
 
-      /* Generic form modal (Request Support, Nominate a Spotlight, and
-         any future iframe-form trigger) — src/title come from data
-         attributes on the trigger element itself, so no per-form JS is
-         needed anywhere else. */
+      /* Generic form modal — src/title come from data attributes on the
+         trigger, so no per-form JS is needed elsewhere. */
       if (link.dataset.action === "form-modal") {
         e.preventDefault();
         closeAllDropdowns(null);
@@ -2275,22 +2020,17 @@
       e.preventDefault();
       closeAllDropdowns(null);
 
-      /* data-nav-fullpage: this destination is a real, standalone page
-         (e.g. Admin) that should never be folded into the SPA — unlike
-         Team/Leadership, which are meant to fetch+splice into the
-         launchpad shell so the URL bar shows "#team"/"#leadership".
-         Skip the hash-router entirely, even while on the launchpad, so
-         the browser always lands on the destination's own real URL
-         instead of "{launchpad url}#admin". */
+      /* data-nav-fullpage: a real standalone page (e.g. Admin) that
+         should never fold into the SPA — skip the hash router entirely
+         so the browser lands on its own real URL. */
       if (link.hasAttribute("data-nav-fullpage")) {
         window.location.href = href;
         return;
       }
 
-      /* Off the launchpad there's no router wired (no hashchange
-         listener, no swap host) — pushing a hash here would just leave
-         a dead #fragment in the URL bar and do nothing. Navigate for
-         real instead, same as clicking any other link. */
+      /* Off the launchpad there's no router wired — pushing a hash
+         would just leave a dead #fragment and do nothing. Navigate for
+         real instead. */
       if (!isLaunchpad()) {
         window.location.href = href;
         return;
@@ -2335,11 +2075,9 @@
 
   /* ─────────────────────────────────────────────────────────────
      MODAL COORDINATION
-     Demo modal and form modal are independent singletons that don't
-     know about each other, but share the same fixed inset:0
-     z-index:1000 overlay — opening one without closing the other
-     would stack both visibly. Both open*Modal() functions call this
-     first. Add any future modal's close function here too. */
+     Demo modal and form modal are independent singletons sharing the
+     same fixed overlay — opening one without closing the other would
+     stack both. Both open*Modal() call this first. */
   function closeAnyOpenModal() {
     closeDemoModal();
     closeFormModal();
@@ -2347,11 +2085,9 @@
 
   /* ─────────────────────────────────────────────────────────────
      DEMO MODAL
-     Injected once by the header so the "Watch a Demo" item in the
-     About LEAF dropdown (desktop + mobile) can open it from any page.
-     The iframe's data-src is only copied into src on open (and
-     cleared on close) so the embed doesn't load/keep playing in the
-     background.
+     Injected once so "Watch a Demo" can open it from any page. The
+     iframe's data-src is only copied into src on open (and cleared on
+     close) so the embed doesn't load/play in the background.
   ───────────────────────────────────────────────────────────── */
   var DEMO_VIDEO_SRC =
     "https://dvagov.sharepoint.com/sites/vhaleaf/_layouts/15/embed.aspx?UniqueId=4326d1e5-57b3-4138-92e5-f16bdce8fdb2&embed=%7B%22ust%22%3Afalse%2C%22hv%22%3A%22CopyEmbedCode%22%7D&referrer=StreamWebApp&referrerScenario=EmbedDialog.Create";
@@ -2432,13 +2168,9 @@
 
   /* ─────────────────────────────────────────────────────────────
      FORM MODAL (generic, reusable)
-     Same open/close/focus-trap mechanics as the demo modal above, but
-     with a visible header bar + title instead of the demo modal's
-     cinematic video-only style, and re-populated per use (src/title)
-     instead of one hardcoded video — Request Support (nav button, this
-     file) and Nominate a Spotlight (footer link, this file) both open
-     the same modal element with different content. One shared
-     instance, lazily built on first use.
+     Same open/close/focus-trap mechanics as the demo modal, but with a
+     visible header bar + title, re-populated per use (src/title) —
+     Request Support and Nominate a Spotlight share one lazily-built instance.
   ───────────────────────────────────────────────────────────── */
   var formModalTrigger = null;
 
@@ -2532,9 +2264,7 @@
 
   /* ─────────────────────────────────────────────────────────────
      USERS ONLINE BADGE
-     Live count via Server-Sent Events (online-users/getonlineusers.php,
-     which pushes the count as plain-text messages). Plain JS, no jQuery
-     — matches every other feature in this file.
+     Live count via Server-Sent Events (online-users/getonlineusers.php).
   ───────────────────────────────────────────────────────────── */
   var USERS_ONLINE_SSE_URL = "/online-users/getonlineusers.php";
 
@@ -2560,37 +2290,27 @@
         });
     };
     /* No onerror handling needed — EventSource auto-reconnects per
-       spec, and the last known count staying visible in the meantime
-       is the right behavior (better than blanking to 0 or an error
-       state on a transient network blip). */
+       spec; keeping the last known count visible is the right behavior. */
   }
 
   /* ─────────────────────────────────────────────────────────────
      ANNOUNCEMENT BANNER
-     Global, site-wide notice sourced from a LEAF indicator record
-     (see the ANNOUNCEMENT_* constants near the top of this file).
-     Only ever inserted into the DOM when the record resolves to real,
-     non-empty content — never rendered empty or hidden-but-present,
-     so a page with no active announcement pays zero layout cost.
+     Global notice sourced from a LEAF indicator record (see
+     ANNOUNCEMENT_* constants above). Only inserted when the record
+     resolves to real content — never rendered empty/hidden.
 
      Dismissal is session-only: the close button just removes the DOM
-     node (removeAnnouncementBanner) — nothing is written to a cookie
-     or storage key, so the banner returns on the next full page load.
-     This project's environment restricts browser storage APIs, so no
-     persistence layer is wired up here — flag if a cross-reload "stay
-     dismissed" behavior turns out to be wanted; it would need a
-     mechanism the environment can actually use (e.g. a server-side
-     per-user flag), not localStorage/cookies.
+     node — nothing persists, so the banner returns on next page load.
+     This environment restricts browser storage, so there's no
+     persistence layer; a "stay dismissed" behavior would need a
+     server-side flag instead.
   ───────────────────────────────────────────────────────────── */
   var DOMPURIFY_SRC =
     "https://leaf.va.gov/app/libs/js/dompurify/dompurify.min.js";
 
-  /* Reuses the exact script reference lp_form_library.html already
-     loads DOMPurify from — a confirmed in-domain dependency — rather
-     than adding a second source for the same library. If some other
-     page already has this exact <script src> in the document (e.g.
-     lp_form_library.html itself), waits on that tag's load instead of
-     injecting a duplicate. */
+  /* Reuses the DOMPurify <script src> lp_form_library.html already
+     loads, rather than adding a second source. If that tag already
+     exists in the document, waits on its load instead of duplicating it. */
   function ensureDompurify() {
     if (window.DOMPurify) return Promise.resolve();
     var existing = document.querySelector(
@@ -2764,22 +2484,15 @@
 
   /* ─────────────────────────────────────────────────────────────
      JUMP TO TOP
-     Injected once by the header so every page that loads
-     leaf_header.js gets the button automatically — no per-page
-     markup needed.
+     Injected once so every page gets the button automatically.
 
-     Scroll container: window is ALWAYS used. #lpSwapHost has no
-     overflow set in launchpad.css, so fetched content scrolls the
-     window — not the element itself. Calling swapHost.scrollTo()
-     on an element without overflow silently no-ops, which was the
-     original bug.
+     Scroll container is always window — #lpSwapHost has no overflow
+     set in launchpad.css, so fetched content scrolls the window, not
+     the element (calling swapHost.scrollTo() silently no-ops).
 
-     Click handler uses belt-and-suspenders scrolling so it works in
-     VA iframe contexts and browsers that silently ignore
-     { behavior: "smooth" }:
-       1. document.documentElement.scrollTop = 0  (immediate, universal)
-       2. document.body.scrollTop = 0             (Safari fallback)
-       3. window.scrollTo({ top:0, behavior:'smooth' })  (progressive)
+     Click handler layers three approaches for VA iframe contexts and
+     browsers that ignore { behavior: "smooth" }: direct scrollTop
+     reset (documentElement, then body for Safari), then smooth scrollTo.
   ───────────────────────────────────────────────────────────── */
   function ensureJumpToTop() {
     if (document.getElementById("leaf-jump-top")) return;
@@ -2837,9 +2550,8 @@
     var mobilePanel = document.getElementById("lpMobilePanel");
     var lastFocusedTrigger = null;
 
-    /* Scroll shadow — toggled on the header (the sticky element),
-       not the inner nav, since the header is what owns the sticky
-       border/shadow now that branding + breadcrumb share it. */
+    /* Scroll shadow toggles on the header (the sticky element), not
+       the inner nav, since it owns the sticky border/shadow. */
     if (header) {
       var onScroll = function () {
         header.classList.toggle(

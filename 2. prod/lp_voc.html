@@ -15,7 +15,6 @@
         height: 1.25rem;
       }
 
-      /* ── Stat grid ── */
       .voc-stats {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -53,7 +52,6 @@
         margin: 0;
       }
 
-      /* ── Channel cards (How We Listen) ── */
       .voc-channels {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -114,7 +112,6 @@
         flex: 1;
       }
 
-      /* ── Process cards (How It Works) ── */
       .voc-process {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -192,7 +189,6 @@
         margin: 0;
       }
 
-      /* ── Lifecycle section (What Happens With Your Feedback) ── */
       .voc-lifecycle {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
@@ -295,7 +291,6 @@
         line-height: 1.55;
       }
 
-      /* ── Intro two-column layout ── */
       .voc-intro-text {
         font-family: "Source Sans 3", sans-serif;
         font-size: 1.05rem;
@@ -350,7 +345,6 @@
         line-height: 1.35;
       }
 
-      /* ── CTA band ── */
       .voc-cta-band {
         background: var(--lp-accent);
         color: #fff;
@@ -386,7 +380,6 @@
         line-height: 1.6;
       }
 
-      /* ── UX Program CTA ── */
       .voc-ux-band {
         background: var(--c-white);
         border-top: 1px solid var(--c-blue10);
@@ -460,7 +453,6 @@
         height: 1.1rem;
       }
 
-      /* ── Quote/testimonial pull-quote ── */
       .voc-quote-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -503,7 +495,7 @@
         margin: 0;
       }
 
-      /* ── nl-link icon color fix (matches other pages) ── */
+      /* Matches other pages' nl-link icon color override. */
       .nl-link .material-symbols-outlined {
         color: #fff !important;
       }
@@ -515,9 +507,6 @@
       <div id="lp-nav-host"></div>
 
       <main id="lp-main" tabindex="-1">
-        <!-- ══════════════════════════════════════════
-             PAGE TITLE
-        ══════════════════════════════════════════ -->
         <section class="section" aria-labelledby="voc-page-h1">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -533,9 +522,6 @@
           </div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             WHAT IS VoC?
-        ══════════════════════════════════════════ -->
         <section class="section section-alt" aria-labelledby="voc-intro-h2">
           <div class="wrap">
             <div class="voc-intro-grid">
@@ -611,11 +597,7 @@
           </div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             BY THE NUMBERS
-             TODO: placeholder values below — replace with real VoC
-             program metrics before this page ships.
-        ══════════════════════════════════════════ -->
+        <!-- TODO: placeholder values below — replace with real VoC program metrics before this page ships. -->
         <section class="section" aria-labelledby="voc-stats-h2">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -665,9 +647,6 @@
           </div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             HOW WE LISTEN
-        ══════════════════════════════════════════ -->
         <section class="section section-alt" aria-labelledby="voc-channels-h2">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -773,9 +752,6 @@
           </div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             HOW IT WORKS (3-step process)
-        ══════════════════════════════════════════ -->
         <section class="section" aria-labelledby="voc-process-h2">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -847,9 +823,6 @@
           </div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             WHAT HAPPENS WITH YOUR FEEDBACK
-        ══════════════════════════════════════════ -->
         <section class="section section-alt" aria-labelledby="voc-lifecycle-h2">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -966,9 +939,6 @@
           </div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             TESTIMONIALS / PULL QUOTES
-        ══════════════════════════════════════════ -->
         <section class="section" aria-labelledby="voc-quotes-h2">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -1038,9 +1008,6 @@
           </div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             USER EXPERIENCE PROGRAM CTA
-        ══════════════════════════════════════════ -->
         <section class="voc-ux-band" aria-labelledby="voc-ux-h2">
           <div class="wrap">
             <div class="voc-ux-inner">
@@ -1076,9 +1043,7 @@
           </div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             CTA BAND (awareness only)
-        ══════════════════════════════════════════ -->
+        <!-- Awareness-only CTA band — no action link/button by design. -->
         <section class="voc-cta-band" aria-labelledby="voc-cta-h2">
           <div class="wrap">
             <div class="voc-cta-inner">
@@ -1112,7 +1077,6 @@
         ></span>
       </button>
     </div>
-    <!-- /.lp -->
 
     <!-- Breadcrumb data — must be set before leaf_breadcrumb.js loads -->
     <script>
@@ -1123,7 +1087,6 @@
       (() => {
         "use strict";
 
-        /* ── Jump to top ── */
         const initJumpBtn = () => {
           const btn = document.getElementById("lpJump");
           if (!btn) return;
@@ -1144,7 +1107,6 @@
           update();
         };
 
-        /* ── Init ── */
         initJumpBtn();
       })();
     </script>

@@ -1,78 +1,51 @@
 /*
- * ============================================================
- *  MULTI-SITE LEAF GRID  --  multigrid.js
- * ============================================================
+ * MULTI-SITE LEAF GRID -- multigrid.js
  *
- *  Host this file on your LEAF server (e.g. /custom/multigrid.js)
- *  and embed it on any page with:
+ * Host on the LEAF server and embed with:
+ *   <div id="mst-root"></div>
+ *   <script src="/custom/multigrid.js"
+ *           data-user-id="<!--{$userID}-->" data-mount="mst-root"></script>
  *
- *    <div id="mst-root"></div>
- *    <script src="/custom/multigrid.js"
- *            data-user-id="<!--{$userID}-->"
- *            data-mount="mst-root"></script>
+ * data-user-id carries the Smarty-rendered value from the embedding .tpl --
+ * Smarty placeholders don't render inside this external .js file, so it
+ * must be passed in via the attribute. Omit data-mount to append to <body>.
  *
- *  The data-user-id attribute carries the Smarty-rendered value from the
- *  embedding page. Smarty placeholders only render inside .tpl files parsed
- *  by the Smarty engine -- they will NOT render inside this external .js
- *  file, so they must be passed in this way rather than hardcoded here.
+ * ASCII-only: non-ASCII bytes here have previously been corrupted by
+ * deploy pipelines, silently breaking strings/comments. Keep it ASCII.
  *
- *  If data-mount is omitted, the script appends itself to <body>.
- *
- *  NOTE: This file intentionally uses plain ASCII only (no smart quotes,
- *  em dashes, box-drawing characters, etc.). Non-ASCII bytes in this file
- *  have previously been corrupted by upload/deploy pipelines with
- *  mismatched character encoding, which can silently break string
- *  literals or comment delimiters and cause syntax errors in production
- *  even though the file parses fine in an editor. Keep it ASCII-only.
- *
- *  ARCHITECTURE NOTE (all four tabs render through one table engine):
- *  Every tab -- All Requests, Site Creations, National Support, Ideas --
- *  now renders through the single renderDataTable() below instead of
- *  Site Creations/Ideas going through LeafFormGrid while the merged tabs
- *  got hand-rolled HTML. Two things made that split impossible to reconcile:
- *   1. The merged tabs (National Support, All Requests) combine rows from
- *      more than one LEAF site per table -- LeafFormGrid is bound to a
- *      single setRootURL()/data blob, so it was never going to render
- *      those regardless of its own feature set.
- *   2. Requiring identical chrome (header style, borders, striping, font
- *      sizing, padding) AND identical, keyboard-accessible sort behavior
- *      across a third-party widget's own markup and a hand-rolled table
- *      is not something that can be guaranteed from this repo, since
- *      LeafFormGrid's source isn't vendored here to verify against.
- *  Standardizing on one renderer also drops a conditional external
- *  dependency, per this project's "minimize external dependencies" rule.
- * ============================================================
+ * All four tabs render through the single renderDataTable() below rather
+ * than mixing a third-party grid widget with hand-rolled HTML, so chrome
+ * and sort behavior stay identical across tabs, including the merged ones
+ * (which combine rows from more than one LEAF site).
  */
 (function () {
   "use strict";
 
+  // Smarty here uses plain { / } delimiters, not the <!--{ / }-->
+  // convention data-user-id was written assuming (meant to degrade to
+  // an HTML comment if ever served unprocessed) -- so <!-- and -->
+  // render as literal static text around the real value, e.g. userID 42
+  // renders as "<!---->42<!---->", not "42". Strips those markers
+  // before the value is used.
+  function stripSmartyCommentWrapper(raw) {
+    return typeof raw === "string" ? raw.replace(/<!--|-->/g, "").trim() : raw;
+  }
+
   // -- Resolve config from the embedding <script> tag's data-attributes --
   var thisScript = document.currentScript;
   var cfg = {
-    userID: thisScript ? thisScript.dataset.userId : undefined,
+    userID: stripSmartyCommentWrapper(
+      thisScript ? thisScript.dataset.userId : undefined,
+    ),
     mountId: thisScript ? thisScript.dataset.mount : undefined,
     triggerId: thisScript ? thisScript.dataset.trigger : undefined,
   };
 
   /*
-   *  SOURCE_SITES -- one entry per fetchable LEAF site (independent
-   *  recordID sequence, independent query). This is the fetch layer:
-   *  every entry here gets its own fetchSiteData() call regardless of
-   *  how the tabs above group them.
-   *
-   *  Required per source:
-   *    url         - Full URL to the LEAF_Request_Portal, with trailing slash
-   *    name        - Label used in per-source contexts (error messages, etc.)
-   *    description - Continuation clause used in the single-site summary
-   *                   heading: "<Site Name> -- Showing N <description>"
-   *    allRequestsLabel - The "Site" value this source rolls up to in the
-   *                   All Requests table (3 values total: "Site Creations",
-   *                   "National Support", "Ideas" -- Service Requests and
-   *                   Support both roll up to "National Support" there).
-   *
-   *  Set isLaunchpad: true on a site to use the Date/Project/Status
-   *  (with Site Ready button) column layout instead of the default
-   *  Date Initiated/UID/Title/Status layout.
+   * SOURCE_SITES -- one entry per fetchable LEAF site (own recordID
+   * sequence, own fetchSiteData() call). allRequestsLabel is this source's
+   * "Site" value in the All Requests table; isLaunchpad:true switches to
+   * the Date/Project/Status (Site Ready) column layout.
    */
   var SOURCE_SITES = {
     siteCreations: {
@@ -106,19 +79,9 @@
   };
 
   /*
-   *  TABS -- the visible tablist. Each tab points at one or more
-   *  SOURCE_SITES keys:
-   *    kind: "all"    - aggregates every source below into one table
-   *    kind: "merged" - combines >1 source into one table (National
-   *                     Support); the two sources are no longer tagged
-   *                     per-row (no visible Source column -- each site
-   *                     already has its own dedicated tab for that)
-   *    kind: "single" - one source, one table -- unchanged from the
-   *                     original per-site behavior
-   *
-   *  Order here is tab order. "All Requests" is first and active by
-   *  default; Site Creations, National Support, and Ideas remain as
-   *  full standalone tabs after it (additive, not a replacement).
+   * TABS -- kind "all" aggregates every source into one table, "merged"
+   * combines >1 source into one table (no per-row Source column), "single"
+   * is one source/one table. Order here is tab display order.
    */
   var TABS = [
     {
@@ -149,29 +112,23 @@
     },
   ];
 
-  // -- Current user ---------------------------------------------------------
-  // Prefer the value passed via data-attribute (rendered server-side by Smarty
-  // on the embedding page). Fall back to a `session` global if present.
+  // Prefer data-user-id (Smarty-rendered server-side, comment-wrapper
+  // already stripped above); fall back to a `session` global if
+  // present. A leftover "{$"/"{if" substring means Smarty never ran at
+  // all (a different failure mode than the comment-wrapper one) --
+  // still treated as invalid.
   var CURRENT_USER_ID =
     cfg.userID &&
     cfg.userID.indexOf("{$") === -1 &&
-    cfg.userID.indexOf("<!--") === -1
+    cfg.userID.indexOf("{if") === -1
       ? cfg.userID
       : typeof session !== "undefined" && session && session.userID
         ? session.userID
         : cfg.userID;
 
-  // -- Query ------------------------------------------------------------------
-  // For Site Creations specifically, also request data fields 17/21/22
-  // (server, root directory, site name) via getData -- these populate
-  // rec.s1.id17/id21/id22, which the Status column uses to build the
-  // "Site Ready" link. Mirrors the native Launchpad search widget's
-  // query.getData(17/21/22).
-  //
-  // For Ideas specifically, request data field 12 -- a custom status field
-  // defined on that form -- which the Status column uses instead of the
-  // generic workflow lastStatus field. Also exclude submissions created
-  // from form_57e89 (categoryID), which should never appear in this view.
+  // Site Creations needs getData 17/21/22 (server/dir/site name) for the
+  // Site Ready link. Ideas needs getData 12 (custom status field) and
+  // excludes categoryID form_57e89 submissions, which shouldn't appear here.
   function myRecordsQuery(site) {
     var query = {
       terms: [
@@ -201,11 +158,8 @@
     return query;
   }
 
-  // -- Date formatting -------------------------------------------------------
-  // Shared formatter -- MM/DD/YYYY everywhere a date renders, across all
-  // four tabs. Replaces the old per-tab toLocaleDateString() calls
-  // (locale-dependent) and Site Creations' abbreviated "Sep 8" scheme, so
-  // every tab's Date column matches exactly.
+  // Shared MM/DD/YYYY formatter for all tabs (replaces old locale-dependent
+  // toLocaleDateString() calls, so every tab's Date column matches).
   function formatDateMDY(epochSeconds) {
     if (!epochSeconds) return "";
     var d = new Date(epochSeconds * 1000);
@@ -214,10 +168,8 @@
     return mm + "/" + dd + "/" + String(d.getFullYear());
   }
 
-  // -- Status helpers -----------------------------------------------------
-  // Every per-origin Status rule lives here, once, and is reused by every
-  // column builder below. Routing by origin here rather than duplicating/
-  // rewriting the logic is what makes the merged tabs safe.
+  // Status helpers: all per-origin Status logic lives here once and is
+  // reused by every column builder, which is what keeps merged tabs safe.
 
   // Plain-text status -> HTML, with red-italic styling for "Not Submitted".
   function statusHTMLFor(text) {
@@ -227,17 +179,9 @@
     return "<span>" + text + "</span>";
   }
 
-  // Generic (non-Launchpad) status text, routed by origin:
-  //  - Ideas: its custom status field (indicatorID 12), not lastStatus.
-  //  - everything else (Service Requests, Support): the workflow's own
-  //    lastStatus field.
-  // FLAG: Service Requests and Support both fall through to the plain
-  // lastStatus branch -- correct today because neither has ever needed a
-  // custom status field of its own (unlike Ideas' id12), so merging them
-  // into National Support didn't change their status logic at all. If
-  // either one grows a custom status field later, this is the one place
-  // that would need a per-source branch added -- it can't tell the two
-  // apart once merged.
+  // Ideas uses its custom id12 status field; Service Requests/Support share
+  // lastStatus. FLAG: this can't tell those two apart once merged -- if
+  // either ever needs its own status field, add a per-source branch here.
   function statusTextForSource(sourceKey, rec) {
     var source = SOURCE_SITES[sourceKey];
     if (source.isIdeas) {
@@ -250,10 +194,8 @@
     return rec && rec.lastStatus ? rec.lastStatus : "Not Submitted";
   }
 
-  // Site Creations' "Site Ready" logic: a link once the site's server
-  // fields (s1.id17/id21/id22) are populated, otherwise a dash. Returns
-  // HTML (this column is a button/action, not plain text, so it doesn't
-  // go through statusHTMLFor).
+  // Site Ready link once s1.id17/id21/id22 are populated, else a dash.
+  // Returns HTML directly (not via statusHTMLFor) since this is a button.
   function launchpadStatusHTML(rec) {
     rec = rec || {};
     if (
@@ -282,9 +224,8 @@
     return statusHTMLFor(statusTextForSource(sourceKey, rec));
   }
 
-  // Sort key for a Launchpad-style Status cell -- there's no numeric/text
-  // value to sort, just "has a Site Ready link" or not, so that's what's
-  // compared.
+  // Sort key for Launchpad Status: no numeric/text value exists, just
+  // "has a Site Ready link" or not.
   function launchpadStatusSortValue(rec) {
     return launchpadStatusHTML(rec) === "-" ? "-" : "Site Ready";
   }
@@ -308,34 +249,20 @@
     );
   }
 
-  // Sort direction indicators for sortable table headers -- Material
-  // Symbols arrow_upward/arrow_downward, inline per this codebase's
-  // convention (a bare <svg viewBox/fill="currentColor">, no width/
-  // height/xmlns attributes -- see e.g. the hero-kicker icon in
-  // view_homepage.tpl). Sized via a CSS rule keyed to the containing
-  // .mst-sort-btn class, same technique as .hero-kicker/.btn/.feat-ico
-  // etc. there, rather than sizing the <svg> itself.
+  // Material Symbols arrow icons, inlined per this codebase's convention
+  // (bare svg, sized via CSS on the containing .mst-sort-btn class).
   var SORT_ASC_SVG =
     '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z"/></svg>';
   var SORT_DESC_SVG =
     '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-800v487L216-537l-56 57 320 320 320-320-56-57-224 224v-487h-80Z"/></svg>';
 
-  // ============================================================
-  //  Column definitions -- one builder per table shape
-  // ============================================================
-  // Every column has { name, getValue(row), render(row) }. getValue
-  // returns a plain comparable value (used for sorting); render returns
-  // the cell's HTML. Splitting the two means a column with rich markup
-  // (a link, a badge, a status pill) can still sort on something plain.
+  // -- Column definitions: one builder per table shape --
+  // Each column has getValue(row) (plain value, for sorting) and
+  // render(row) (cell HTML) -- split so richly-marked-up cells can still
+  // sort on plain text.
 
-  // Shared 3-column layout for National Support and Ideas: Date
-  // Initiated, Request, Status. (National Support used to also carry a
-  // Source column tagging Service Requests vs. Support -- removed since
-  // each already has its own dedicated tab to narrow to one. UID and
-  // Title used to be separate columns -- merged into the same "Request"
-  // badge+title-link treatment All Requests and Site Creations already
-  // use, via the shared requestCellHTML(), so all four tabs share
-  // identical column structure.)
+  // Shared 3-column layout (Date Initiated, Request, Status) for National
+  // Support and Ideas, using requestCellHTML() so all four tabs match.
   function buildGenericColumns() {
     return [
       {
@@ -349,12 +276,8 @@
       },
       {
         name: "Request",
-        // Same sort key as the Request column on All Requests and the
-        // Project column on Site Creations: title text, not recordID --
-        // recordID sequences are independent per site, so a numeric sort
-        // wouldn't mean anything once National Support merges two of
-        // them. Date Initiated is the column with real chronological
-        // meaning across sources.
+        // Sorts by title, not recordID -- recordIDs are independent per
+        // site, so a numeric sort is meaningless once sources are merged.
         getValue: function (row) {
           return (row.rec.title || "").toLowerCase();
         },
@@ -374,13 +297,9 @@
     ];
   }
 
-  // Site Creations-only layout: Date, Project (badge+title), Status.
-  // FLAG: Status here is a "Site Ready" link/dash, not plain status text
-  // -- the one cell that can't match the other tabs' Status column
-  // content, because Site Creations records carry server-provisioning
-  // fields (s1.id17/21/22) nothing else does. The table chrome (header
-  // style, sort mechanics, borders, striping, padding) is identical to
-  // every other tab; only this cell's content legitimately differs.
+  // Site Creations layout: Date, Project, Status. FLAG: Status here is a
+  // "Site Ready" link/dash, not status text -- the one cell that
+  // legitimately differs in content from the other tabs' Status column.
   function buildLaunchpadColumns() {
     return [
       {
@@ -413,9 +332,8 @@
     ];
   }
 
-  // All Requests layout: Date, Site, Request (merged UID+Title badge),
-  // Status. Status routes by source origin (see allRequestsStatusHTML)
-  // rather than re-deriving per-origin logic here.
+  // All Requests layout: Date, Site, Request, Status -- Status routes by
+  // source origin via allRequestsStatusHTML() rather than re-deriving logic here.
   function buildAllRequestsColumns() {
     return [
       {
@@ -460,9 +378,7 @@
     ];
   }
 
-  // ============================================================
-  //  Runtime
-  // ============================================================
+  // -- Runtime --
 
   var siteState = {}; // keyed by source.url -- { data, rendered, error }
   var mstRootEl = null; // set by buildShell -- the container passed to buildAndLoadGrid
@@ -495,9 +411,8 @@
       if (query.sort && query.sort.column) {
         q.sort(query.sort.column, query.sort.direction || "DESC");
       }
-      // `limit` is also dropped by importQuery(), but that's fine: execute()
-      // treats limit as undefined and falls through to getBulkData(), which
-      // paginates internally using its own batchSize (500).
+      // `limit` is also dropped by importQuery(), but that's fine -- execute()
+      // falls through to getBulkData(), which paginates internally (batchSize 500).
       if (extraParams) {
         q.setExtraParams(extraParams);
       }
@@ -547,13 +462,8 @@
     return results;
   }
 
-  // -- Row view-models -----------------------------------------------------
-  // Every row carries a composite `key` of `${site.url}__${recordID}`
-  // (per-source recordIDs are NOT globally unique -- Site Creations,
-  // Service Requests, Support, and Ideas are four independent LEAF
-  // sites, each with their own recordID sequence, so two different
-  // sources can easily produce the same numeric ID). This is kept as an
-  // internal row identifier even where it's not shown as a column.
+  // Row key is `${site.url}__${recordID}` -- recordIDs aren't globally
+  // unique since each LEAF site has its own independent sequence.
   function rowsForSource(sourceKey) {
     var source = SOURCE_SITES[sourceKey];
     var state = siteState[stateKey(source)];
@@ -580,14 +490,10 @@
     return rows;
   }
 
-  // -- Shared table renderer (used by all four tabs) -----------------------
-  // Every column is sortable: clicking its header button toggles
-  // ascending/descending for that column; aria-sort on the <th> tracks
-  // state ("ascending"/"descending"/"none"), and the header control is a
-  // real <button>, so Enter/Space activate it the same as a click with
-  // no extra keyboard handling needed. Sort state is kept per tab.id so
-  // switching tabs and back, or a merged tab re-rendering as more data
-  // arrives, doesn't reset the user's chosen sort.
+  // Shared table renderer used by all four tabs. Header is a real <button>
+  // (Enter/Space work without extra keyboard handling); aria-sort on the
+  // <th> tracks state. Sort state persists per tab.id so switching tabs
+  // doesn't reset the user's chosen sort.
   function renderDataTable(bodyEl, tableId, columns, rows, opts) {
     opts = opts || {};
     var state = sortState[tableId];
@@ -620,10 +526,8 @@
           var dir = i === state.columnIndex ? state.direction : null;
           var ariaSort =
             dir === "asc" ? "ascending" : dir === "desc" ? "descending" : "none";
-          // No icon at all for the unsorted state -- aria-sort="none" on
-          // the <th> is the source of truth for AT users either way; the
-          // icon here is purely a decorative, sighted-user affordance for
-          // whichever single column is currently sorted.
+          // No icon for unsorted state -- aria-sort on the <th> is the
+          // source of truth for AT users; the icon is sighted-user only.
           var iconHTML = "";
           if (dir === "asc") {
             iconHTML =
@@ -730,7 +634,6 @@
     });
   }
 
-  // -- Merged tabs (National Support, All Requests) ------------------------
   // Renders whatever's already resolved per source and appends a
   // pending/error banner, rather than blocking on the slowest fetch.
   function renderMergedTab(tab, bodyEl, columns) {
@@ -796,12 +699,9 @@
     renderTabContent(idx);
   }
 
-  // -- Summary line: "<Tab Name> -- Showing N <description>" -----------
-  // For single-source tabs this is exact (one fetch, one count). For
-  // merged/all tabs the count is a running total of whatever's resolved
-  // so far, with a "+" suffix while any of that tab's sources are still
-  // pending -- consistent with rendering partial results rather than
-  // blocking on the slowest fetch.
+  // Summary line: "<Tab Name> -- Showing N <description>". Single-source
+  // tabs show an exact count; merged/all tabs show a running total with a
+  // "+" suffix while sources are still pending.
   function updateSiteSummaryForTab(idx) {
     var el = mstRootEl && mstRootEl.querySelector("#mst-site-summary");
     if (!el) return;
@@ -852,7 +752,7 @@
     rootEl.innerHTML =
       '<div class="smarty-root">' +
       '<div class="ip-wrap">' +
-      '<p class="mst-help-text mst-help-sites">Select a tab to view your requests. All Requests combines every LEAF site you use.</p>' +
+      '<p class="mst-help-text mst-help-sites">Select a tab to view your LEAF National requests.</p>' +
       '<div class="ip-tabsRow"><ul class="ip-tabs" id="mst-tablist" role="tablist" aria-label="LEAF Sites" style="list-style:none; margin:0;"></ul></div>' +
       '<p class="mst-site-summary" id="mst-site-summary"></p>' +
       '<div id="mst-panels"></div>' +
@@ -1052,8 +952,7 @@
       ".mst-container .ip-panel.is-active{display:block;}",
       ".mst-container .ip-tableWrap{background:var(--lp-bg,#fff);border-radius:var(--r-lg,8px);padding:20px;box-shadow:0 2px 8px rgba(0,10,40,.06);border:1px solid var(--c-blue10,#d9e8f6);overflow-x:auto;width:100%;}",
 
-      // -- Shared table chrome: identical header style, borders, font
-      // sizing, cell padding, striping and hover across all four tabs. --
+      // Shared table chrome -- identical header, borders, padding, striping across tabs.
       ".mst-container .ip-table{width:100%;border-collapse:collapse;table-layout:auto;background:#fff;min-width:840px;font-size:16px;}",
       ".mst-container .ip-table td{border:1px solid var(--c-gray20,#c9c9c9);padding:10px;vertical-align:top;word-wrap:break-word;overflow-wrap:anywhere;text-align:left;}",
       '.mst-container .ip-table th{border:1px solid var(--c-gray20,#c9c9c9);padding:0;vertical-align:top;text-align:left;background:var(--c-blue10,#d9e8f6);font-family:"Public Sans",sans-serif;font-weight:700;color:var(--lp-hl,#1a4480);user-select:none;}',
@@ -1065,16 +964,12 @@
       ".mst-container .mst-status-not-submitted{color:#b91c1c;font-style:italic;font-size:0.875em;}",
       ".mst-container .mst-empty{text-align:center;color:var(--c-muted,#3d4551);}",
 
-      // -- Sortable column headers: real <button> per header, so
-      // Enter/Space activate it exactly like a click (no separate
-      // keyboard handling needed). aria-sort lives on the <th>. --
+      // Real <button> header controls handle Enter/Space activation natively.
       '.mst-container .mst-sort-btn{display:flex;align-items:center;gap:4px;width:100%;border:0;background:transparent;color:inherit;font:inherit;font-weight:700;text-align:left;cursor:pointer;padding:10px;}',
       ".mst-container .mst-sort-btn:hover{background:var(--c-blue20,#aacdec);}",
       ".mst-container .mst-sort-btn:focus-visible{outline:3px solid var(--lp-accent,#005ea2);outline-offset:-3px;}",
-      // Sized via the containing .mst-sort-btn class, same technique as
-      // .hero-kicker/.btn/.feat-ico .material-symbols-outlined svg
-      // elsewhere in this codebase (e.g. view_homepage.tpl), rather than
-      // sizing the <svg> itself.
+      // Sized via the containing .mst-sort-btn class (same technique as
+      // .hero-kicker/.btn/.feat-ico icons in view_homepage.tpl).
       ".mst-container .mst-sort-btn .material-symbols-outlined svg{width:1rem;height:1rem;}",
 
       /* -- Launchpad-specific column styling -- */
@@ -1084,10 +979,8 @@
       ".mst-container .mst-site-ready-btn:hover{background:var(--c-blue10,#d9e8f6);text-decoration:none;}",
       ".mst-container .mst-site-ready-btn:focus-visible{outline:3px solid var(--lp-accent,#005ea2);outline-offset:2px;}",
 
-      // -- All Requests column widths: Date/Site/Status fixed and
-      // non-wrapping, Request flexible and allowed to wrap. Same
-      // nth-child + width/white-space technique already used elsewhere
-      // in this codebase's .ip-table styling. --
+      // Date/Site/Status fixed-width & non-wrapping, Request flexible & wraps --
+      // same nth-child + width/white-space technique used elsewhere in .ip-table.
       ".mst-container .mst-table-all th:nth-child(1),.mst-container .mst-table-all td:nth-child(1){width:110px;white-space:nowrap;}",
       ".mst-container .mst-table-all th:nth-child(2),.mst-container .mst-table-all td:nth-child(2){width:140px;white-space:nowrap;}",
       ".mst-container .mst-table-all th:nth-child(3),.mst-container .mst-table-all td:nth-child(3){width:auto;white-space:normal;word-wrap:break-word;overflow-wrap:break-word;}",
@@ -1107,18 +1000,12 @@
       ".mst-modal-close{border:0;background:transparent;cursor:pointer;color:var(--c-muted,#3d4551);padding:8px;border-radius:999px;line-height:0;flex:0 0 auto;}",
       ".mst-modal-close:hover{background:var(--lp-bg-alt,#eff6fb);}",
       ".mst-modal-close:focus-visible{outline:3px solid var(--lp-accent,#005ea2);outline-offset:2px;}",
-      // Sized via the containing .mst-modal-close class, same mechanism
-      // as the sort-icon svg above, rather than the width/height
-      // attributes this used to carry directly on the <svg>. 24px keeps
-      // the rendered size identical to before (px, not rem, so this
-      // can't shift with a different root font-size).
+      // Sized via .mst-modal-close (not the <svg> itself); px not rem so it
+      // can't shift with a different root font-size.
       ".mst-modal-close svg{width:24px;height:24px;}",
       ".mst-modal-body{padding:20px 24px 28px;overflow-y:auto;flex:1 1 auto;position:relative;}",
-      /* LeafFormGrid's base stylesheet applies position:sticky;top:0 directly
-         to its <thead>/<th> elements. This widget no longer renders through
-         LeafFormGrid, but this override is kept in case a page embedding
-         this modal also loads LeafFormGrid's CSS for something else on the
-         same page, which would otherwise still leak into .ip-table here. */
+      /* Defensive: if a page embedding this modal also loads LeafFormGrid's
+         CSS elsewhere, its thead sticky positioning would otherwise leak in. */
       ".mst-modal-body table thead,",
       ".mst-modal-body table thead tr,",
       ".mst-modal-body table thead th,",
@@ -1167,8 +1054,8 @@
       };
     });
 
-    // Paint whatever's already known (nothing yet, but this also covers
-    // modal re-entry) before kicking off the fetches below.
+    // Paint whatever's already known (covers modal re-entry) before
+    // kicking off the fetches below.
     updateSiteSummaryForTab(getActiveTabIndex());
     renderTabContent(getActiveTabIndex());
 
@@ -1200,8 +1087,8 @@
       return;
     }
 
-    // Fallback: no trigger button configured -- mount inline exactly where
-    // data-mount points (or append to body), same as before.
+    // Fallback: no trigger configured -- mount inline at data-mount (or
+    // append to body).
     var rootEl = cfg.mountId ? document.getElementById(cfg.mountId) : null;
     if (!rootEl) {
       rootEl = document.createElement("div");

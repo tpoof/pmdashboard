@@ -8,9 +8,8 @@
     <link rel="stylesheet" href="./files/launchpad.css" />
 
     <style>
-      /* Local LEAF fonts (self-hosted) — same source as leaf_header.css,
-       declared here since this page can load standalone. Only the
-       weights actually used on this page are included. */
+      /* Local LEAF fonts (self-hosted), same source as leaf_header.css —
+       declared here since this page can load standalone. */
       @font-face {
         font-family: "PublicSans-Bold";
         src:
@@ -58,14 +57,12 @@
         display: block;
       }
 
-      /* ── Page shell ── */
       .thb-page {
         max-width: 1200px;
         margin: 0 auto;
         padding: 3rem 1.5rem 5rem;
       }
 
-      /* ── Header ── */
       .thb-header {
         margin-bottom: 1.5rem;
       }
@@ -93,7 +90,6 @@
         margin: 0;
       }
 
-      /* ── Search / filter ── */
       .thb-toolbar {
         display: flex;
         align-items: center;
@@ -205,7 +201,6 @@
         display: none;
       }
 
-      /* ── Admin banner ── */
       .thb-admin {
         display: flex;
         align-items: center;
@@ -275,7 +270,6 @@
         outline-offset: 2px;
       }
 
-      /* ── Sections ── */
       .thb-sec {
         margin-bottom: 1.5rem;
         background: #fff;
@@ -351,7 +345,6 @@
         padding: 1.15rem 1.25rem;
       }
 
-      /* ── Access restricted state ── */
       .lp-gate {
         max-width: 460px;
         margin: 4rem auto;
@@ -409,7 +402,6 @@
         outline-offset: 2px;
       }
 
-      /* accent variants */
       .thb-sec--submit .thb-sec-icon {
         border-color: #b6e0c2;
         background: #eafaf0;
@@ -425,7 +417,6 @@
         color: var(--lp-accent);
       }
 
-      /* ── Link grid ── */
       .thb-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -509,7 +500,6 @@
         display: none;
       }
 
-      /* ── View sub-groups ── */
       .thb-subgroup {
         margin-bottom: 1.25rem;
       }
@@ -536,7 +526,6 @@
         display: none;
       }
 
-      /* empty state */
       .thb-empty {
         font-family: "Source Sans Pro Web", sans-serif;
         font-size: 0.9rem;
@@ -557,7 +546,6 @@
         display: none;
       }
 
-      /* ── Footer ── */
       .thb-footer {
         margin-top: 2.5rem;
         padding-top: 1.25rem;
@@ -567,9 +555,8 @@
         color: var(--c-muted);
       }
 
-      /* ── Admin modal ── */
-      /* Global header (launchpad.css) is fixed with a high z-index and paints
-       over centered overlays. We push the dialog down below the header via
+      /* Global header (launchpad.css) is fixed with a high z-index and
+       paints over centered overlays — push the dialog down below it via
        --thb-header-offset instead of relying on z-index alone. */
       .thb-modal {
         --thb-header-offset: 120px;
@@ -681,7 +668,6 @@
             <p class="thb-sub">Your hub for internal team links and inbox.</p>
           </header>
 
-          <!-- Search / filter -->
           <div class="thb-toolbar">
             <div class="thb-search">
               <span class="material-symbols-outlined" aria-hidden="true"
@@ -754,7 +740,6 @@
             ></span>
           </div>
 
-          <!-- Admin inbox -->
           <div
             class="thb-admin"
             id="thbAdmin"
@@ -786,7 +771,6 @@
             </button>
           </div>
 
-          <!-- Submit Reports -->
           <section
             class="thb-sec thb-sec--submit"
             id="secSubmit"
@@ -827,7 +811,6 @@
             </div>
           </section>
 
-          <!-- View Reports -->
           <section class="thb-sec thb-sec--view" id="secView" data-type="view">
             <button
               class="thb-sec-head"
@@ -870,8 +853,6 @@
         </div>
       </main>
 
-      <!-- Admin Inbox Modal -->
-
       <button
         class="lp-jump"
         id="lpJump"
@@ -896,14 +877,7 @@
           const $id = (id) => document.getElementById(id);
 
           /* Inline SVGs (viewBox 0 -960 960 960, fill=currentColor) — same
-         pattern as leaf_header.js, no external icon font. Material
-         Symbols (Filled): search, close, edit_document, inbox,
-         upload_file, monitoring (used for "insights"), keyboard_arrow_down
-         (used for "expand_more"), arrow_upward, lock, bug_report, school,
-         schedule, flag, build, trending_up, trophy (used for
-         "emoji_events"), lightbulb, payments, analytics, ac_unit,
-         support_agent, sensors, rate_review, monitor_heart, timer,
-         medical_services, savings, menu_book, design_services. */
+         pattern as leaf_header.js, no external icon font dependency. */
           const ICON_SVG = {
             search:
               '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M796-121 533-384q-30 26-70 40.5T378-329q-108 0-183-75t-75-181q0-106 75-181t182-75q106 0 180.5 75T632-585q0 43-14 83t-42 75l264 262-44 44ZM377-389q81 0 138-57.5T572-585q0-81-57-138.5T377-781q-82 0-139.5 57.5T180-585q0 81 57.5 138.5T377-389Z"/></svg>',
@@ -964,8 +938,7 @@
           };
           const icon = (name) => ICON_SVG[name] || "";
 
-          /* ── Link data — replace href with real URLs ──
-         Add/remove items here; counts update automatically. */
+          /* Link data — add/remove items here; counts update automatically. */
           const submitLinks = [
             {
               label: "Report an Issue with LEAF",
@@ -1131,14 +1104,12 @@
           $id("secView").querySelector("[data-count]").textContent =
             `${viewCount} reports`;
 
-          /* ── Collapse / expand ── */
           window.thbToggle = (secId, btn) => {
             const sec = $id(secId);
             const collapsed = sec.classList.toggle("collapsed");
             btn.setAttribute("aria-expanded", String(!collapsed));
           };
 
-          /* ── Search + type filter ── */
           const search = $id("thbSearch");
           const clearBtn = $id("thbClear");
           const admin = $id("thbAdmin");
@@ -1223,7 +1194,6 @@
             });
           });
 
-          /* ── Admin inbox modal ── */
           (() => {
             const modal = $id("thbModal");
             const frame = $id("thbModalFrame");
@@ -1307,7 +1277,6 @@
             });
           })();
 
-          /* ── Jump to top ── */
           (() => {
             const btn = $id("lpJump");
             if (!btn) return;

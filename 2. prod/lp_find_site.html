@@ -21,7 +21,6 @@
         padding: 2rem 1.5rem;
       }
 
-      /* ── Icon sizing for icons wrapped in .material-symbols-outlined ── */
       .leaf-find .material-symbols-outlined svg {
         width: 1rem;
         height: 1rem;
@@ -36,13 +35,11 @@
         height: 2rem;
       }
 
-      /* ── Main container ── */
       .leaf-find .lf-container {
         max-width: 900px;
         margin: 0 auto;
       }
 
-      /* ── Header ── */
       .leaf-find .lf-header {
         text-align: center;
         margin-bottom: 1.25rem;
@@ -64,7 +61,6 @@
         margin: 0;
       }
 
-      /* ── Unified card ── */
       .leaf-find .lf-card {
         background: var(--c-white);
         border: 1px solid var(--c-blue10);
@@ -73,7 +69,6 @@
         overflow: hidden;
       }
 
-      /* ── Search toggle bar ── */
       .leaf-find .lf-search-toggle {
         display: flex;
         align-items: center;
@@ -151,7 +146,6 @@
         transform: rotate(180deg);
       }
 
-      /* ── Search form panel ── */
       .leaf-find .lf-search-panel {
         overflow: hidden;
         max-height: 600px;
@@ -237,7 +231,6 @@
         border-color: var(--lp-sec-bdr, #005ea2);
       }
 
-      /* ── Progress ── */
       .leaf-find .lf-progress-area {
         padding: 1.5rem 1.25rem;
       }
@@ -266,7 +259,6 @@
         transition: width 0.2s ease;
       }
 
-      /* ── Results meta bar ── */
       .leaf-find .lf-meta-bar {
         display: flex;
         align-items: center;
@@ -290,7 +282,6 @@
         color: #8a0000;
       }
 
-      /* ── Split panel ── */
       .leaf-find .lf-split {
         display: flex;
         height: calc(100vh - 280px);
@@ -422,7 +413,6 @@
         padding: 1.25rem 1.5rem;
       }
 
-      /* Prompt */
       .leaf-find .lf-prompt {
         height: 100%;
         display: flex;
@@ -445,7 +435,6 @@
         margin: 0;
       }
 
-      /* Detail content */
       .leaf-find .lf-detail__header {
         margin-bottom: 1.25rem;
         padding-bottom: 1rem;
@@ -556,7 +545,6 @@
         margin: 0.5rem 0 0;
       }
 
-      /* ── Notice ── */
       .leaf-find .lf-notice {
         padding: 1.25rem 1.5rem;
         border-bottom: 1px solid var(--lp-warn-bdr);
@@ -628,8 +616,7 @@
             "use strict";
 
             /* Inline Material Symbols (Filled) — same convention as
-               leaf_header.js: no external icon font, no per-icon network
-               request. */
+               leaf_header.js: no external icon font, no per-icon request. */
             const ICON_SVG = {
               search:
                 '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M796-121 533-384q-30 26-70 40.5T378-329q-108 0-183-75t-75-181q0-106 75-181t182-75q106 0 180.5 75T632-585q0 43-14 83t-42 75l264 262-44 44ZM377-389q81 0 138-57.5T572-585q0-81-57-138.5T377-781q-82 0-139.5 57.5T180-585q0 81 57.5 138.5T377-389Z"/></svg>',
@@ -730,9 +717,8 @@
               return "adm-" + url.replace(/[^a-z0-9]/gi, "-");
             }
 
-            // Rows are role="option" children of the role="listbox" list —
-            // not <button>, so activation and roving tabindex are wired up
-            // by hand below (click, Enter/Space, and arrow-key navigation).
+            // Rows are role="option", not <button> — activation and roving
+            // tabindex are wired up by hand (click, Enter/Space, arrow keys).
             function insertRow(siteURL, label) {
               const html = `
               <div class="lf-site-row"
@@ -805,7 +791,6 @@
                 return;
               }
 
-              // Admin section
               let adminHtml = "";
               if (!d.adminLoaded) {
                 adminHtml = `
@@ -825,7 +810,6 @@
                 <p class="lf-detail__admin-value is-muted">No administrator set</p>`;
               }
 
-              // Forms section
               let formsHtml = "";
               if (!d.formsLoaded) {
                 formsHtml = `<p class="lf-no-forms" aria-live="polite">Loading forms…</p>`;
@@ -880,10 +864,8 @@
 
               let queue = new intervalQueue();
               queue.setConcurrency(2);
-              // A search can return more than one facility record pointing
-              // at the same underlying site (e.g. two station numbers under
-              // one VISN) — dedupe so that site is only ever checked once,
-              // instead of two concurrent workers racing to insert its row.
+              // A search can return multiple facility records pointing at
+              // the same site — dedupe so it's only checked once, avoiding a race to insert its row.
               const queuedSites = new Set();
               keys.forEach((i) => {
                 const rootURL = sites[i].s1.id22;
@@ -913,9 +895,8 @@
                     }).then((r) => {
                       const label = r.heading || siteURL;
 
-                      // Tolerant of API drift: treats a non-array response,
-                      // string-typed flags, or blank names as "no forms"
-                      // instead of letting bad data pass the filter below.
+                      // Tolerant of API drift — treats a non-array response,
+                      // string-typed flags, or blank names as "no forms" rather than passing bad data through.
                       const formsP = $.ajax({
                         type: "GET",
                         url:
@@ -939,9 +920,8 @@
                         })
                         .catch(() => []);
 
-                      // Only counts as "has an admin" if it's a real-looking
-                      // email — a malformed/empty field from the API can't
-                      // let a dead-end row through.
+                      // Only counts as "has an admin" if it looks like a real
+                      // email — prevents a malformed field from creating a dead-end row.
                       const adminP = fetch(`${siteURL}/api/system/primaryadmin`)
                         .then((r) => r.json())
                         .then((d) => {
@@ -989,7 +969,6 @@
                 return;
               }
 
-              // Sort rows alphabetically
               const sorted = Object.entries(siteData).sort((a, b) =>
                 a[1].label.localeCompare(b[1].label),
               );
@@ -1151,7 +1130,6 @@
 
             // --- Init ---
             $(function () {
-              // Search toggle
               $("#lf-searchToggle").on("click", function () {
                 const isExpanded = $(this).attr("aria-expanded") === "true";
                 if (isExpanded) {
@@ -1261,7 +1239,6 @@
 
         <div class="lp-scope leaf-find">
           <div class="lf-container">
-            <!-- Header -->
             <div class="lf-header">
               <h1>Find a LEAF Site</h1>
               <p class="lead">
@@ -1273,9 +1250,7 @@
               </p>
             </div>
 
-            <!-- Unified card -->
             <div class="lf-card">
-              <!-- Search toggle bar -->
               <button
                 class="lf-search-toggle"
                 id="lf-searchToggle"
@@ -1314,7 +1289,6 @@
                 </span>
               </button>
 
-              <!-- Search form -->
               <div class="lf-search-panel" id="lf-searchPanel">
                 <div class="lf-search-inner">
                   <div class="lp-field">
@@ -1384,7 +1358,6 @@
                 </div>
               </div>
 
-              <!-- Progress (inside card) -->
               <div id="lf-progressArea" style="display: none">
                 <div class="lf-progress-area">
                   <p class="lp-progress-label">
@@ -1397,15 +1370,12 @@
                 </div>
               </div>
 
-              <!-- Results -->
               <div id="lf-resultsArea" style="display: none">
-                <!-- Meta bar -->
                 <div class="lf-meta-bar">
                   <p id="lf-resultsMeta"></p>
                   <div id="lf-errorNotice"></div>
                 </div>
 
-                <!-- Split panel -->
                 <div
                   class="lf-split"
                   id="lf-split"

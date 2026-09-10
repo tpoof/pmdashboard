@@ -74,23 +74,14 @@
     </script>
     {/if}
 
-    {* ── Universal header (site-wide) ──
-       Replaces the legacy #header/#footer/menu.tpl chrome everywhere.
-       See leaf_header.js/.css for the header/nav implementation. *}
-    <link rel="stylesheet" href="/launchpad/files/leaf_header.css" />
+    {* Universal header (site-wide) — replaces the legacy #header/#footer/menu.tpl chrome; see leaf_header.js/.css. *}
+    <link rel="stylesheet" href="./files/leaf_header.css" />
     <script
-      src="/launchpad/files/leaf_header.js"
+      src="./files/leaf_header.js"
       data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
     ></script>
 
-    {* TODO(header revisit): launchpad.css is currently linked from inside
-       view_homepage.tpl's own body content (it lost its <head> when that
-       file was stripped down to a body-only fragment for main.tpl's
-       {$body} slot — see view_homepage.tpl history). A <link> tag in the
-       body still loads/applies fine, but it's non-standard placement and
-       can cause a brief flash-of-unstyled-content. Move it here instead,
-       alongside the other global stylesheet imports above, next time the
-       header/launchpad styling is revisited. *}
+    {* TODO: launchpad.css is linked from view_homepage.tpl's body content (non-standard, can cause a FOUC) — move it here when header is revisited. *}
 
     <link rel="icon" href="vafavicon.ico" type="image/x-icon" />
 </head>
@@ -107,12 +98,7 @@
 {if $smarty.server.HTTP_HOST === 'leaf.apps.vapo-aws-ppd.va.gov'}
     <div style="position: fixed; z-index: 9999; width: 100%; background-color: rgba(255,255,100,0.75); text-align: center;">VAPO TESTING</div>
 {/if}
-{* ── Session / print plumbing kept outside the legacy header ──
-   $login and #qrcode-js were previously rendered inside <header id="header">.
-   The legacy header markup is removed site-wide, but these two aren't
-   decorative — $login drives session/logout state and #qrcode-js is the
-   mount point the QRCode script in <head> targets. leaf_header_preprod.css
-   needs a rule for #lp-login-slot (currently unstyled, renders inline). *}
+{* $login and #qrcode-js were previously inside the (now-removed) legacy header: $login drives session/logout state, #qrcode-js is the mount point the QRCode script in <head> targets. *}
 {if $login != ''}
 <div id="lp-login-slot" class="noprint">{$login}</div>
 {/if}

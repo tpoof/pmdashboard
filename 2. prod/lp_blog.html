@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Blog — LEAF Launchpad</title>
 
-    <!-- Confirmed against main.tpl's own header/nav include. -->
     <link rel="stylesheet" href="./files/launchpad.css" />
     <link rel="stylesheet" href="./files/leaf_header.css" />
     <link
@@ -14,12 +13,8 @@
     />
 
     <style>
-      /* Icon sizing for classes defined in launchpad.css (out of scope
-         for this edit) — that file still sizes .material-symbols-outlined
-         via font-size, which no longer affects the inlined <svg>. This
-         restores the "Load more" button's icon to its pre-conversion
-         size without touching launchpad.css; everything else (color,
-         layout) still cascades correctly from the original rule there. */
+      /* launchpad.css sizes .material-symbols-outlined via font-size,
+         which doesn't affect inlined <svg> — this restores this icon's size without touching that file. */
       .btn .material-symbols-outlined svg {
         width: 1.15rem;
         height: 1.15rem;
@@ -29,7 +24,6 @@
         height: 32px;
       }
 
-      /* ── Post grid ── */
       .blog-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -54,9 +48,8 @@
         display: flex;
         flex-direction: column;
         gap: 0.6rem;
-        /* Brand accent rule, top edge only — same treatment established
-           for the reader page's article card (BlogPost.html), not
-           voc-channel-card's solid var(--color-primary) top border. */
+        /* Brand-gradient top border, matching the reader page's article
+           card (BlogPost.html) rather than voc-channel-card's solid border. */
         border-top: 4px solid transparent;
         border-image: linear-gradient(90deg, #7bc143, #0071bd) 1;
       }
@@ -164,12 +157,8 @@
         margin-top: 2.5rem;
       }
 
-      /* .blog-status and .blog-load-more-wrap both set display:flex,
-         which — being an author rule — always wins over the browser's
-         own [hidden]{display:none} default, regardless of selector
-         order or specificity (user-agent styles are the lowest-priority
-         cascade origin). Setting the hidden attribute via JS alone
-         doesn't actually hide either element without this. */
+      /* display:flex here always beats the browser's default [hidden]
+         style, so JS alone can't hide these — this override is required. */
       .blog-status[hidden],
       .blog-load-more-wrap[hidden] {
         display: none;
@@ -180,20 +169,14 @@
         height: 1.25rem;
       }
 
-      /* Defensive — same [hidden]-vs-display trap as .blog-status above.
-         blog.css (external, not owned by this edit) may give .bp-image an
-         explicit display; this guarantees figureEl.hidden actually hides
-         it regardless of what that rule turns out to be. */
+      /* Same [hidden]-vs-display trap as .blog-status above — guards
+         against blog.css giving .bp-image an explicit display. */
       .bp-image[hidden] {
         display: none;
       }
 
-      /* Replicates blog.css's #blogPost main rule (max-width/centering/
-         padding) — that selector targets an actual <main> element, but
-         this content sits inside the page's own <main id="lp-main">, so
-         a second nested <main> would be an invalid, inaccessible
-         landmark. This div carries the same layout instead, using the
-         same design tokens blog.css already defines. */
+      /* Replicates blog.css's #blogPost main-element layout on a div
+         instead — a nested <main> inside #lp-main would be an invalid landmark. */
       #blogPost .bp-content-inner {
         max-width: 840px;
         margin: 0 auto;
@@ -221,7 +204,6 @@
         ></div>
 
         <div id="blog-index-view">
-          <!-- ── PAGE TITLE ── -->
           <section class="section" aria-labelledby="blog-page-h1">
             <div class="wrap">
               <div class="sec-hd ctr">
@@ -234,7 +216,6 @@
             </div>
           </section>
 
-          <!-- ── POST GRID ── -->
           <section class="section section-alt" aria-labelledby="blog-grid-h2">
             <div class="wrap">
               <div class="sec-hd ctr">
@@ -273,7 +254,7 @@
           </section>
         </div>
 
-        <!-- ── POST READER (shown via #<recordID> hash — see route() below) ── -->
+        <!-- Post reader — shown via #<recordID> hash, see route() below. -->
         <div id="blog-post-view" style="display: none">
           <div id="blogPost" lang="en">
             <a class="bp-skip-link" href="#bp-article">Skip to article</a>
@@ -358,7 +339,6 @@
     </div>
     <!-- /.lp -->
 
-    <!-- Confirmed against main.tpl's own header/nav include. -->
     <script
       src="./files/leaf_header.js"
       data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
@@ -368,28 +348,18 @@
       (() => {
         "use strict";
 
-        // Mirrors BlogPost.js's CONFIG.indicators pattern: name every
-        // indicatorID by purpose instead of scattering raw numbers through
-        // the code. Verify these against the "Blog Post" form in LEAF Form
-        // Editor before changing them — kept in sync with blog/files/blog.js.
+        // Named indicatorIDs, mirroring BlogPost.js's CONFIG.indicators
+        // pattern. Verify against the "Blog Post" form in LEAF Form Editor
+        // before changing — kept in sync with blog/files/blog.js.
         const CONFIG = {
-          // Site root — this page is served from /launchpad/, a different
-          // directory than the Blog Post form's own site, so the query
-          // below builds an absolute path from this rather than a relative
-          // one. "files/" (where blog.js itself lives) is just the assets
-          // subfolder, same pattern as /launchpad/files/leaf_header.js —
-          // the API hangs off the site root, not files/.
+          // Absolute path — this page lives in /launchpad/, a different
+          // directory than the Blog Post form's own site, so a relative path wouldn't reach the API.
           apiBase: "/platform/blog/",
-          // No categoryID/formID filter — confirmed against a real record
-          // that /platform/blog/api/form/query is already scoped to this
-          // one form; categoryID isn't a real filterable field (blog.js's
-          // own working query doesn't use one either). Publish status is
-          // the string field lastStatus, not a numeric stepID — confirmed
-          // against a live "Published" record's actual response.
+          // No categoryID filter needed — the API is already scoped to this
+          // form. Publish status is the string field lastStatus, not a numeric stepID.
           publishedStatus: "Published",
           // Full field set — the grid only fetches title/category/
-          // publishDate/excerpt (see loadBatch's getData call below); the
-          // reader fetches all of these for a single post.
+          // publishDate/excerpt; the reader fetches all for a single post.
           indicators: {
             title: 2,
             category: 3,
@@ -402,9 +372,8 @@
           batchSize: 12,
         };
 
-        // Same self-hosted build leaf_header.js already uses to sanitize
-        // its announcement banner — reusing it here rather than adding a
-        // second copy of the same dependency.
+        // Same self-hosted DOMPurify build leaf_header.js already uses —
+        // reused rather than adding a duplicate dependency.
         const DOMPURIFY_SRC =
           "https://leaf.va.gov/app/libs/js/dompurify/dompurify.min.js";
 
@@ -412,10 +381,8 @@
 
         let currentOffset = 0;
 
-        // ── Duplicated from blog/files/blog.js rather than shared, since
-        // this page and the reader page live in separate deployed
-        // directories with no common relative path between them. Keep
-        // these two copies in sync if the form's fields ever change. ──
+        // Duplicated from blog/files/blog.js — no shared relative path
+        // between the two deployed directories. Keep both copies in sync if form fields change.
         function decodeEntities(str) {
           if (!str || typeof str !== "string") return str;
           return str
@@ -480,9 +447,8 @@
           }, 60);
         }
 
-        // Returns { card, heading } so the caller can move focus to the
-        // heading of the first newly-appended card after "Load more",
-        // same accessible-focus pattern as BlogPost.js's byId("bp-title").
+        // Returns { card, heading } so the caller can move focus to the new
+        // card's heading after "Load more" — same pattern as BlogPost.js's byId("bp-title").
         function createCard(recordID, s1) {
           const title =
             getField(s1, CONFIG.indicators.title) || "Untitled post";
@@ -545,22 +511,15 @@
           }
 
           try {
-            // Bypasses LeafFormQuery/formQuery.js entirely — confirmed its
-            // execute() builds request URLs via a lossy custom encoder
-            // (encodeReadableURI, which doesn't properly escape {}/[]/etc.)
-            // that this API silently mishandles, always returning []. A
-            // manually-built fetch with encodeURIComponent — the same
-            // approach blog/files/blog.js already uses successfully for
-            // the single-post query — returns real data. recordID > 0
-            // rather than an empty terms array, since this API treats an
-            // empty array as unmatchable rather than "no filter."
+            // Bypasses LeafFormQuery — its URL encoder mishandles {}/[]/etc.
+            // and this API silently returns []. Manual fetch + encodeURIComponent
+            // works instead (as blog.js does); recordID > 0 avoids an empty
+            // terms array, which this API treats as unmatchable.
             const q = {
               terms: [{ id: "recordID", operator: ">", match: 0, gate: "AND" }],
               joins: [],
-              // No server-side sort — confirmed it breaks this endpoint:
-              // {column: <indicatorID>, direction} silently returns [],
-              // even though {} alone works. Sorting entirely client-side
-              // below instead (by the real publishDate field values).
+              // No server-side sort — {column, direction} silently breaks
+              // this endpoint (returns []), so sorting is done client-side below.
               sort: {},
               getData: [
                 CONFIG.indicators.title,
@@ -603,9 +562,8 @@
 
             status.hidden = true;
 
-            // Based on the raw (pre-filter) count, not entries.length —
-            // a full raw batch means the server may have more records to
-            // page through even if few/none of this batch were published.
+            // Based on the raw (pre-filter) count, not entries.length — a
+            // full raw batch may mean more records exist even if few published.
             const gotFullBatch = rawEntries.length === CONFIG.batchSize;
             loadMoreWrap.hidden = !gotFullBatch;
             if (loadMoreBtn) loadMoreBtn.disabled = false;
@@ -640,12 +598,8 @@
           loadBatch(0, false);
         }
 
-        // ── Post reader — merged in from blog/files/blog.js so posts open
-        // inline via #<recordID> instead of navigating to the standalone
-        // reader page (leaf.va.gov/platform/blog/...), which would expose
-        // that internal URL to the user. Keep in sync with blog.js if the
-        // form's fields change; that page is still the source of truth
-        // for anyone opening a shared post link directly. ──
+        // Post reader merged in from blog/files/blog.js so posts open inline
+        // via #<recordID> rather than linking to the standalone reader page. Keep in sync with blog.js.
 
         function ensureDompurify() {
           if (window.DOMPurify) return Promise.resolve();
@@ -704,8 +658,7 @@
         }
 
         // Featured image is a File Upload indicator — api/form/query
-        // doesn't return a plain URL for those, so this reads the <img>
-        // LEAF's own print-view HTML already contains for it instead.
+        // doesn't return a plain URL, so this reads the <img> from LEAF's own print-view HTML instead.
         async function fetchIndicatorHTML(recordID, indicatorID) {
           return fetch(
             `${CONFIG.apiBase}ajaxIndex.php?a=getprintindicator&recordID=${encodeURIComponent(recordID)}&indicatorID=${encodeURIComponent(indicatorID)}&series=1`,
@@ -874,7 +827,7 @@
           });
         }
 
-        // ── Jump to top — copied verbatim from the other Launchpad pages ──
+        // Jump to top — copied verbatim from the other Launchpad pages.
         const initJumpBtn = () => {
           const btn = document.getElementById("lpJump");
           if (!btn) return;

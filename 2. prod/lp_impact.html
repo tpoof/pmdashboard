@@ -8,12 +8,9 @@
     <link rel="stylesheet" href="./files/launchpad.css" />
 
     <style>
-      /* Icon sizing for classes defined in launchpad.css (out of scope
-         for this edit) — that file still sizes .material-symbols-outlined
-         via font-size, which no longer affects the inlined <svg>. These
-         restore each icon's pre-conversion size without touching
-         launchpad.css; everything else (color, layout) still cascades
-         correctly from the original rules there. */
+      /* launchpad.css sizes .material-symbols-outlined via font-size, which
+         doesn't affect these inlined <svg> icons — these rules restore
+         each icon's pre-conversion size without touching launchpad.css. */
       .scale-hd .material-symbols-outlined svg {
         width: 2rem;
         height: 2rem;
@@ -26,15 +23,13 @@
         width: 1.25rem;
         height: 1.25rem;
       }
-      /* .btn-cta has no dedicated icon rule anywhere (not in launchpad.css
-         either) — its icon always just inherited the button's own 1rem
-         text size ambiently, which SVG doesn't do automatically. */
+      /* .btn-cta has no dedicated icon rule elsewhere — SVG doesn't inherit
+         the button's font-size the way the old icon font did. */
       .btn-cta .material-symbols-outlined svg {
         width: 1rem;
         height: 1rem;
       }
 
-      /* ── Stat card entrance ── */
       @media (prefers-reduced-motion: no-preference) {
         .stat-card {
           opacity: 0;
@@ -57,7 +52,6 @@
         }
       }
 
-      /* ── Stat grid ── */
       .stats {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -97,7 +91,6 @@
         margin: 0;
       }
 
-      /* ── Step images ── */
       .step-img img {
         width: 100%;
         height: 100%;
@@ -110,7 +103,6 @@
         background: #fff;
       }
 
-      /* ── User types definition list ── */
       .user-types {
         margin: 1rem 0 1.25rem;
         display: flex;
@@ -131,7 +123,6 @@
         line-height: 1.55;
       }
 
-      /* ── CTA band ── */
       .cta-band {
         background: var(--color-primary, #005ea2);
         color: #fff;
@@ -179,11 +170,9 @@
         color: #fff !important;
       }
 
-      /* ── Demo modal ──
-         Normally supplied by leaf_header.css, injected site-wide by
-         leaf_header.js. That include is still commented out on this
-         page (see nav TODO below), so the modal has no positioning —
-         mirrored locally here so it centers and overlays correctly. */
+      /* Demo modal positioning normally comes from leaf_header.css
+         (site-wide nav include), which is disabled on this page — mirrored
+         locally here so it still centers and overlays correctly. */
       .lp-modal {
         position: fixed;
         inset: 0;
@@ -242,8 +231,8 @@
       }
     </style>
 
-    <!-- Universal nav — not yet enabled on this page; leaf_header.js
-         self-mounts into #lp-nav-host below once wired up. -->
+    <!-- Universal nav — not yet enabled here; leaf_header.js self-mounts
+         into #lp-nav-host below once wired up. -->
     <!-- <link rel="stylesheet" href="/launchpad/files/leaf_header.css" /> -->
     <!-- <script src="/launchpad/files/leaf_header.js"></script> -->
   </head>
@@ -253,7 +242,6 @@
       <div id="lp-nav-host"></div>
 
       <main id="lp-main" tabindex="-1">
-        <!-- ── PAGE TITLE ── -->
         <section class="section" aria-labelledby="page-h1">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -268,7 +256,6 @@
           </div>
         </section>
 
-        <!-- ── STATS ── -->
         <section class="section section-alt" aria-labelledby="stats-h2">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -308,7 +295,6 @@
           </div>
         </section>
 
-        <!-- ── EMPOWERING ALL USERS ── -->
         <section class="section section-alt" aria-labelledby="empower-h2">
           <div class="wrap">
             <div class="step" aria-labelledby="empower-h2">
@@ -354,9 +340,6 @@
           </div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             ENTERPRISE SCALE
-        ══════════════════════════════════════════ -->
         <section class="section" aria-labelledby="scale-h2">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -434,7 +417,6 @@
           </div>
         </section>
 
-        <!-- ── CTA ── -->
         <section class="cta-band" aria-labelledby="cta-heading">
           <div class="wrap">
             <div class="cta-inner">
@@ -472,7 +454,6 @@
       </button>
     </div>
 
-    <!-- ── DEMO MODAL ── -->
     <div
       id="lpDemoModal"
       class="lp-modal"
@@ -507,7 +488,6 @@
       (() => {
         "use strict";
 
-        // ── Image protection ──
         document.addEventListener("contextmenu", (e) => {
           if (e.target.tagName === "IMG") e.preventDefault();
         });
@@ -516,7 +496,6 @@
           if (e.target.tagName === "IMG") e.preventDefault();
         });
 
-        // ── Jump to top ──
         const initJumpBtn = () => {
           const btn = document.getElementById("lpJump");
           if (!btn) return;
@@ -537,7 +516,6 @@
           update();
         };
 
-        // ── Demo modal ──
         const initDemoModal = () => {
           const modal = document.getElementById("lpDemoModal");
           const frame = document.getElementById("lpDemoFrame");
@@ -581,7 +559,6 @@
           });
         };
 
-        // ── Stat count-up animation ──
         const initStatCountUp = () => {
           const prefersReducedMotion = window.matchMedia(
             "(prefers-reduced-motion: reduce)",
@@ -649,7 +626,6 @@
           cards.forEach((c) => observer.observe(c));
         };
 
-        // ── Boot ──
         initJumpBtn();
         initDemoModal();
         initStatCountUp();

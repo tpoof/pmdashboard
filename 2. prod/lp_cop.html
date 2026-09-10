@@ -15,10 +15,8 @@
         display: none !important;
       }
 
-      /* Icon sizing for icons wrapped in .material-symbols-outlined —
-         launchpad.css only sizes the pre-conversion font-icon version,
-         not the inlined <svg> these use now. Same pattern as
-         lp_home_preprod.html's page-level overrides. */
+      /* launchpad.css only sizes the pre-conversion font-icon version, not
+         inlined <svg> — same override pattern as lp_home_preprod.html. */
       .btn .material-symbols-outlined svg {
         width: 1.15rem;
         height: 1.15rem;
@@ -89,8 +87,8 @@
         margin: 0;
         line-height: 1.55;
       }
-      /* Rich-text (Trumbowyg) fields render their own <p>/<ul>/etc. — reset the
-         first/last child margin so they don't add extra spacing above/below. */
+      /* Rich-text (Trumbowyg) fields render their own <p>/<ul>/etc. — reset
+         first/last child margin so they don't add extra spacing. */
       .cop-session-value > :first-child {
         margin-top: 0;
       }
@@ -217,10 +215,8 @@
         line-height: 1.5;
         margin: 0;
       }
-      /* Rich-text (Trumbowyg) content — reset spacing on its own child
-         elements so it doesn't add unexpected gaps inside the row, and
-         force regular weight since the CMS content often comes through
-         wrapped in <strong>/<b> tags. */
+      /* Rich-text (Trumbowyg) content — reset child margins, and force
+         regular weight since CMS content often arrives wrapped in <strong>/<b>. */
       .cop-session-topic > :first-child {
         margin-top: 0;
       }
@@ -237,8 +233,7 @@
         gap: 0.5rem;
         flex-shrink: 0;
       }
-      /* Watch Session / Download Presentation reuse launchpad.css's
-         .btn/.btn-sec — this just sizes them down to fit a condensed
+      /* Sizes launchpad.css's .btn/.btn-sec down to fit this condensed
          row and keeps their icons aligned. */
       .cop-session-links .btn {
         padding: 0.5rem 1rem;
@@ -262,9 +257,6 @@
       <a class="lp-skip" href="#lp-main">Skip to main content</a>
 
       <main id="lp-main" tabindex="-1">
-        <!-- ══════════════════════════════════════════
-             HERO
-        ══════════════════════════════════════════ -->
         <section class="section" aria-labelledby="cop-h1">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -278,9 +270,6 @@
           </div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             UPCOMING SESSION
-        ══════════════════════════════════════════ -->
         <section class="section section-alt" aria-labelledby="cop-upcoming-h2">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -362,9 +351,6 @@
           </div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             PAST SESSIONS
-        ══════════════════════════════════════════ -->
         <section class="section" aria-labelledby="cop-past-h2">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -429,16 +415,10 @@
       (() => {
         "use strict";
 
-        /* categoryIDs/indicatorIDs referenced below (form_605bd, form_8fc8b,
-           id16/17, id25/26/27/35) live on the CoP LEAF site, not this
-           Launchpad's own site — every LeafFormQuery here must target it
-           explicitly via setRootURL(), or the query resolves against the
-           wrong site and returns nothing.
-           Trailing slash is required: formQuery.js builds the endpoint as
-           `${rootURL}api/form/query?q=...` with no separator inserted. */
+        /* categoryIDs/indicatorIDs below live on the CoP LEAF site — every
+           query must target it via setRootURL() (trailing slash required) or it resolves against the wrong site. */
         const COP_ROOT_URL = "https://leaf.va.gov/platform/CoP/";
 
-        /* ── Upcoming session details ── */
         const loadUpcomingSession = async () => {
           const idWhen = "16";
           const idWhat = "17";
@@ -471,15 +451,11 @@
           }
         };
 
-        /* ── Init ── */
         loadUpcomingSession();
       })();
     </script>
 
-    <!-- ═══════════════════════════════════════════════
-         PAST SESSIONS — search & card grid
-         Requires LeafFormQuery (site-wide lib)
-    ════════════════════════════════════════════════ -->
+    <!-- Past sessions search/grid — requires LeafFormQuery (site-wide lib), not loaded in this file. -->
     <script type="text/javascript">
       const COP_PAGE_SIZE = 5;
 
@@ -519,16 +495,10 @@
           </a>`;
         }
         if (file) {
-          // Opens the presentation in a new tab for viewing rather than
-          // forcing a download — the download attribute is ignored on
-          // cross-origin links anyway, which is why this previously
-          // appeared broken instead of downloading.
           // Prefixed with COP_ROOT_URL — the file lives on the CoP LEAF
-          // site, so a bare relative "file.php" URL resolves against this
-          // Launchpad's own domain instead and 404s/"invalid file"s.
-          // file.php currently forces a download (Content-Disposition:
-          // attachment) regardless of target/rel — revisit as "View
-          // Presentation" once inline viewing is confirmed with backend.
+          // site, so a bare relative path would 404 against this Launchpad's domain.
+          // file.php currently forces a download regardless of target/rel —
+          // revisit as "View Presentation" once inline viewing is confirmed with backend.
           links += `<a href="${COP_ROOT_URL}file.php?form=${item.recordID}&amp;id=35&amp;series=1&amp;file=0" download rel="noopener noreferrer" class="btn btn-sec">
             <span class="material-symbols-outlined" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-313 287-506l43-43 120 120v-371h60v371l120-120 43 43-193 193ZM220-160q-24 0-42-18t-18-42v-143h60v143h520v-143h60v143q0 24-18 42t-42 18H220Z"/></svg></span>
             Download Presentation
@@ -588,10 +558,8 @@
           ...resultData[recordID],
         }));
 
-        // The server already filtered to matching records (or returned the
-        // full set when there's no search text) — client-side ranking here
-        // only controls sort order, it must not remove results the server
-        // already decided were a match.
+        // The server already filtered matches — this only controls sort
+        // order and must not remove results itself.
         if (searchWords?.length > 0) {
           list = list.sort(rankResults);
         } else {
@@ -638,11 +606,8 @@
 
       var searchWords;
 
-      // A "data" / indicatorID "0" / MATCH ALL term searches every field on
-      // the form server-side (not just the ones we display). An empty match
-      // string is NOT the same as "no filter" to the query engine, so that
-      // term is only added when there's actual search text — otherwise it
-      // returns zero results instead of the full list.
+      // MATCH ALL term searches every form field server-side; an empty match
+      // string isn't "no filter" to the query engine, so it's only added when there's real search text.
       function buildPastSessionsQuery(searchText) {
         const terms = [
           { id: "categoryID", operator: "=", match: "form_8fc8b", gate: "AND" },
@@ -665,11 +630,8 @@
         };
       }
 
-      // categoryID form_8fc8b lives on the CoP LEAF site, not this
-      // Launchpad's own site — must target it explicitly (see the matching
-      // COP_ROOT_URL note in the upcoming-session script above). Trailing
-      // slash required — formQuery.js concatenates rootURL + "api/form/query"
-      // with no separator.
+      // categoryID form_8fc8b lives on the CoP LEAF site — see the
+      // COP_ROOT_URL note above; trailing slash required.
       const COP_ROOT_URL = "https://leaf.va.gov/platform/CoP/";
 
       function runPastSessionsQuery(searchText) {

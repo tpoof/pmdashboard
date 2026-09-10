@@ -25,7 +25,6 @@
         id="srAnnounce"
       ></div>
 
-      <!-- Video Modal -->
       <div
         class="hl-modal hl-modal-vid"
         id="vidModal"
@@ -57,7 +56,6 @@
         </div>
       </div>
 
-      <!-- PDF Modal -->
       <div
         class="hl-modal hl-modal-pdf"
         id="pdfModal"
@@ -100,7 +98,6 @@
         </div>
       </div>
 
-      <!-- Consultation Modal -->
       <div
         class="hl-modal hl-modal-consult"
         id="consultModal"
@@ -290,19 +287,12 @@
     </div>
 
     <script>
-      // Resolves LEAF's shared JS libs path at runtime, since this is a
-      // standalone page (not PHP-template-rendered) and can't rely on a
-      // server-injected constant. Falls back to the platform's documented
-      // default location if APP_JS_PATH hasn't been set elsewhere.
-      // Loaded via dynamic script injection (not document.write) to avoid
-      // blocking the HTML parser; help_library.js is deferred until this
-      // finishes loading so sanitization is always available first.
+      // Standalone page (not PHP-rendered), so APP_JS_PATH isn't
+      // server-injected; falls back to the default libs path.
       window.APP_JS_PATH = window.APP_JS_PATH || "/app/libs/js";
 
-      // Config needed by the "Was this resource helpful?" feedback widget
-      // (logs new records to the dedicated feedback form, form_35f88) —
-      // same Smarty-injection pattern as window.leafIdeaPortal in
-      // ideas_v4.html. userID/CSRFToken variables confirmed working.
+      // Feedback widget config (logs to form_35f88); same Smarty-injection
+      // pattern as window.leafIdeaPortal in ideas_v4.html.
       window.helpLibConfig = {
         userID: '<!--{$userID|unescape|escape:"quotes"}-->',
         csrfToken: '<!--{$CSRFToken|unescape|escape:"quotes"}-->',
@@ -316,6 +306,8 @@
         document.head.appendChild(s);
       }
 
+      // dompurify must finish loading before help_library.js runs, so
+      // sanitization is always available.
       loadAppScript(
         window.APP_JS_PATH + "/dompurify/dompurify.min.js",
         function () {

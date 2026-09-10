@@ -1,24 +1,17 @@
-<!-- Design system -->
 <link rel="stylesheet" href="./files/launchpad.css" />
 
 <style>
-      /* Icon sizing for classes defined in launchpad.css (out of scope
-         for this edit) — that file still sizes .material-symbols-outlined
-         via font-size, which no longer affects the inlined <svg>. These
-         restore each icon's pre-conversion size without touching
-         launchpad.css; everything else (color, layout) still cascades
-         correctly from the original rules there. */
+      /* launchpad.css sizes .material-symbols-outlined via font-size,
+         which no longer affects these inlined <svg> icons; these rules
+         restore each icon's size directly. */
       /* launchpad.css sets its own color on .material-symbols-outlined
-         directly, which beats an inherited color from a parent no matter
-         how specific the parent rule is. This scopes icons inside the
-         Finder widget back to inherit so they pick up white/navy correctly
-         depending on where they sit (navy card vs. white tray). */
+         directly, beating any inherited color regardless of specificity --
+         scope icons here back to inherit white/navy from their container. */
       #lp-finder .material-symbols-outlined,
       #finderNextSteps .material-symbols-outlined {
         color: inherit;
       }
-      /* Section itself stays plain white — only the navy card carries
-         color, now that the card no longer spans the full section width. */
+      /* Section stays plain white -- only the navy card carries color. */
       #lp-finder {
         background: #fff;
       }
@@ -172,13 +165,8 @@
         filter: grayscale(0%);
       }
 
-      /* ── "View My Requests" tooltip ──
-         CSS-only, shown on :hover and :focus-within so keyboard users
-         get it too — dismissal is just moving focus/pointer away, no
-         JS needed. The accessible name/description doesn't depend on
-         visibility at all: aria-describedby on the button (see markup)
-         reaches screen readers on focus regardless of whether this is
-         visually shown. */
+      /* CSS-only tooltip (:hover + :focus-within, no JS) -- aria-describedby
+         on the button reaches screen readers regardless of visual state. */
       .lp-tooltip-wrap {
         position: relative;
         display: inline-flex;
@@ -584,9 +572,8 @@
         content: none !important;
       }
 
-      /* Next-step bar: slides open below the finder container once a
-         match is found. White background so button/link colors below
-         are guaranteed high contrast, independent of the navy card above. */
+      /* Slides open below the finder once a match is found; white
+         background guarantees contrast independent of the navy card above. */
       .finder-next-steps {
         width: 80%;
         max-width: 1800px;
@@ -595,10 +582,9 @@
         overflow: hidden;
         max-height: 0;
         opacity: 0;
-        /* Shadow lives on the outer element; the shape (clip-path) lives
-           on .finder-next-steps-inner below. Combining filter and
-           clip-path on the same element is unreliable across browser
-           rendering engines — splitting them is the robust pattern. */
+        /* Shadow (filter) lives here, shape (clip-path) on
+           .finder-next-steps-inner -- combining both on one element is
+           unreliable across browsers. */
         filter: drop-shadow(0 6px 14px rgba(10, 37, 64, 0.18))
           drop-shadow(0 0 24px rgba(10, 37, 64, 0.12));
         transition:
@@ -614,9 +600,8 @@
         height: 100%;
         background: #fff;
         border: 1px solid rgba(10, 37, 64, 0.15);
-        /* Wide at the top (flush with the box above), tapering narrower
-           toward the bottom — an upside-down trapezoid "pull tab" rather
-           than a plain rectangle. */
+        /* Upside-down trapezoid "pull tab" -- wide at top, tapering
+           narrower toward the bottom. */
         clip-path: polygon(0% 0%, 100% 0%, 91% 100%, 9% 100%);
         padding: 1.5rem 3rem 2rem;
       }
@@ -650,9 +635,9 @@
         height: 1.1rem;
       }
       /* Navy on white ≈ 14:1 contrast; white on navy ≈ 14:1 — both AAA. */
-      /* ".lp a" in launchpad.css (class+element = higher specificity than
-         a single class here) was winning over these button text colors
-         regardless of source order — scope to the container id to beat it. */
+      /* ".lp a" in launchpad.css outranks a single class here on
+         specificity regardless of source order -- scope to the container
+         id to beat it. */
       #finderNextSteps .finder-cta-primary {
         background: #0a2540;
         color: #fff;
@@ -826,11 +811,9 @@
                     ></span>
                     View My Requests
                   </button>
-                  <!-- role="tooltip" + aria-describedby (on the button
-                       above) means screen readers announce this on
-                       focus even without the visual hover state; the
-                       CSS below only handles sighted-hover/focus
-                       visibility. -->
+                  <!-- role="tooltip" + aria-describedby on the button means
+                       screen readers announce this on focus; the CSS below
+                       only handles sighted visibility. -->
                   <span class="lp-tooltip" id="mst-open-btn-tip" role="tooltip"
                     >View My LEAF National Requests</span
                   >
@@ -1042,7 +1025,6 @@
               </p>
             </div>
 
-            <!-- Step 1 -->
             <div class="step" aria-labelledby="step1-h3">
               <div>
                 <span class="step-tag">Step 01 — Design</span>
@@ -1074,7 +1056,6 @@
               </div>
             </div>
 
-            <!-- Step 2 -->
             <div class="step rev" aria-labelledby="step2-h3">
               <div>
                 <span class="step-tag">Step 02 — Automate</span>
@@ -1106,7 +1087,6 @@
               </div>
             </div>
 
-            <!-- Step 3 -->
             <div class="step" aria-labelledby="step3-h3">
               <div>
                 <span class="step-tag">Step 03 — Analyze</span>
@@ -1460,24 +1440,16 @@
       });
 
       /* ── Newsletter form (silent AJAX submission) ──
-         Creates a record on form_9015b at service_requests_launchpad --
-         a different LEAF site than this page (this page lives at
-         /launchpad/, confirmed by lp_blog.html's own cross-site apiBase
-         comment) -- with the email address written to indicator 487.
-         No LeafFormQuery-adjacent save/create helper exists site-wide;
-         formQuery.js (LeafFormQuery) is a read-only query builder (see
-         repo_report.md's "Form Query + Search" entry), so this hand-
-         rolls a raw fetch. Shape mirrors calendar.js's feedback widget,
-         the only other from-scratch record-creation example in this
-         codebase: create -> write indicator -> best-effort submit.
+         Creates a record on form_9015b at service_requests_launchpad (a
+         different LEAF site than this page), writing the email to
+         indicator 487. Hand-rolled fetch since no create/save helper
+         exists site-wide; mirrors calendar.js's feedback widget's
+         create -> write indicator -> best-effort submit shape.
 
-         NOTE: this is a genuine cross-site write -- this page's own
-         CSRFToken is sent to a different LEAF instance's API. These
-         portal instances share one VA-SSO session under leaf.va.gov, so
-         the token should validate there too, but that assumption hasn't
-         been confirmed against a live submission. Worth a real test
-         (and a look at LEAF's CSRF middleware) if subscriptions start
-         failing silently. */
+         NOTE: this is a cross-site write -- this page's own CSRFToken is
+         sent to a different LEAF instance. Assumed valid via shared
+         VA-SSO but unconfirmed against a live submission -- check this
+         first if subscriptions start failing silently. */
       (() => {
         const form = document.getElementById("lpNlForm");
         const input = document.getElementById("lpNlEmail");
@@ -1489,9 +1461,8 @@
           "https://leaf.va.gov/platform/service_requests_launchpad/";
         const NL_FORM_ID = "form_9015b";
         const NL_INDICATOR_ID = "487";
-        // Single-step workflow assumed (mirrors the feedback widget
-        // pattern) -- verify against form_9015b's real workflow if
-        // subscriptions aren't showing up as submitted.
+        // Single-step workflow assumed (mirrors the feedback widget) --
+        // verify against form_9015b's real workflow if signups don't show as submitted.
         const NL_STEP_ID = "1";
 
         function encodeBody(obj) {
@@ -1531,9 +1502,8 @@
         }
 
         async function subscribe(email) {
-          // Step 1: create the record (field name confirmed against
-          // calendar.js's createRecord() -- `num{categoryID}` with the
-          // "form_" prefix intact).
+          // Step 1: create the record -- field name confirmed against
+          // calendar.js's createRecord() (`num{categoryID}`, "form_" prefix intact).
           const createRes = await apiPost("api/form/new", {
             CSRFToken: CSRF,
             title: "Newsletter Subscription",
@@ -1554,11 +1524,9 @@
             [NL_INDICATOR_ID]: email,
           });
 
-          // Step 3: submit into the workflow, best-effort. Mirrors
-          // calendar.js's own submitRecord() (not the feedback widget's
-          // stricter inline version) -- the record + indicator write is
-          // what actually matters here, so a wrong step-ID guess
-          // shouldn't turn an otherwise-successful signup into an error.
+          // Step 3: submit into the workflow, best-effort -- the record +
+          // indicator write is what matters, so a wrong step-ID guess
+          // shouldn't turn a successful signup into an error.
           try {
             await apiPost(`api/form/${encodeURIComponent(recordID)}/submit`, {
               CSRFToken: CSRF,
@@ -1885,11 +1853,9 @@
             if (reduceMotion) {
               nextSteps.classList.add("is-open");
             } else {
-              // Toggle hidden first so the browser registers the starting
-              // state, then add the class on the next frame so the
-              // max-height/opacity transition actually plays. Re-check
-              // intent before applying in case it was closed again in
-              // the meantime (fast repeated clicks).
+              // Double rAF so the starting state registers before the
+              // transition class is added (otherwise it won't animate);
+              // re-check intent in case it was closed again by a fast click.
               requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                   if (nextStepsWantOpen) nextSteps.classList.add("is-open");
@@ -1905,10 +1871,9 @@
               nextSteps.addEventListener(
                 "transitionend",
                 () => {
-                  // If it was reopened before this fired (e.g. clicking a
-                  // different pill right after closing), this transitionend
-                  // belongs to the *reopen* animation, not the close — skip
-                  // hiding or the drawer flashes open then instantly shut.
+                  // If reopened before this fires, this transitionend
+                  // belongs to the reopen animation, not the close -- skip
+                  // hiding or the drawer flashes shut.
                   if (!nextStepsWantOpen) {
                     nextSteps.hidden = true;
                   }
