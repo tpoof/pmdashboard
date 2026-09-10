@@ -1,21 +1,10 @@
-I need to add (or fix) support for suppressing this app's own header/nav when it's loaded inside an iframe from another site.
-
-Context: report.php is loaded inside a modal iframe from a separate front-end (LEAF Launchpad). The launchpad passes a query param, &iframe=1, on the URL when it embeds this page in a modal — the intent is that report.php should detect this param and skip rendering its own header/nav, since the launchpad already has its own header and the embedded page's header renders as a redundant duplicate inside the modal.
-
-Currently, &iframe=1 has no effect — I confirmed by opening the exact URLs directly in a browser (not even inside an iframe) and the header/nav renders regardless of the param being present. So either:
-1. iframe=1 was never actually implemented as a real flag in this app, or
-2. it's being read but not wired to anything that actually suppresses header rendering, or
-3. there's a different existing mechanism in this codebase (a different param name, a session flag, a layout/template variable) meant for this exact purpose that I should be using instead of iframe=1.
-
-URLs I'm testing against:
-- report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Help+Library&iframe=1
-- report.php?a=spotlight_direct&iframe=1
+Continuing from the previous investigation: report.php in LEAF_Request_Portal correctly branches on $_GET['iframe'] and renders main_iframe.tpl instead of main.tpl when the param is present. But the header/nav is still visibly rendering even when main_iframe.tpl is used — so the bug is inside main_iframe.tpl itself, not in report.php's routing.
 
 Please:
-1. Search this codebase for how report.php currently reads $_GET params and decides what to render (header/nav include, layout wrapper, etc.) — show me where the header/nav gets included so I can see the decision point.
-2. Check whether $_GET['iframe'] (or any similarly-named param) is referenced anywhere already, even if unused/dead code.
-3. Check whether there's an existing, different mechanism already used elsewhere in this app or platform for suppressing header/nav in an embedded/iframe context (some apps use a template variable, a layout override, or check $_SERVER['HTTP_REFERER'] / a sec-fetch-dest header instead of a query param) — I'd rather reuse an existing pattern than invent a new one.
-4. If no such mechanism exists, suggest the minimal, safest way to add one: reading $_GET['iframe'] === '1' (or whatever the existing convention is) and conditionally skipping the header/nav include, without breaking the page for normal (non-embedded) visitors who load it directly.
-5. Flag anything about the header/nav include that would make this tricky (e.g., if header markup and page content aren't cleanly separable, or if there's shared state/session logic in the header include that other parts of the page depend on).
+1. Show me the full contents of main_iframe.tpl (LEAF_Request_Portal) and compare it side-by-side against main.tpl from the same directory — specifically, identify every {include} or template block related to header, nav, menu, or login that appears in main.tpl but should be absent (or conditionally excluded) from main_iframe.tpl.
+2. Check whether main_iframe.tpl includes a shared partial (e.g. header.tpl, nav.tpl, menu.tpl) that itself doesn't check for iframe context — i.e., main_iframe.tpl might correctly skip an include that main.tpl has, but if header/nav markup lives in something ALSO included by main_iframe.tpl (like a shared layout wrapper both templates extend), that would explain the leak.
+3. Check whether the $menu / $login template variables (confirmed assigned unconditionally in report.php before template selection, per the earlier findings) are used inside main_iframe.tpl to render header/nav markup even though the template is supposed to be the "no chrome" version — if so, that's likely the actual bug: the variables are present so the template renders them regardless of context.
+4. If you find the leak, propose the minimal fix to main_iframe.tpl (or the shared partial it includes) to exclude header/nav rendering, while preserving whatever body content, forms, and scripts are required for the embedded report/form to function.
+5. Also check LEAF_Nexus/report.php and its equivalent main_iframe.tpl (mentioned as using the same iframe pattern) — confirm whether it has the same bug or if it correctly suppresses header/nav, since that would tell us whether this is a LEAF_Request_Portal-specific regression or a platform-wide template issue.
 
-Don't make changes yet — just show me what you find and propose an approach so I can review before anything is edited.
+Don't make changes yet — show me the template diffs and your proposed fix location first.
