@@ -183,9 +183,13 @@
           /* iframe: true — Help Library has its own internal hash routing
              (e.g. #article-162), which needs its own real window/document
              to not collide with the launchpad's router(). Ideas has no
-             internal routing, so it stays fetch+splice. */
+             internal routing, so it stays fetch+splice.
+             fixedHeight: true — its contentDocument can't be measured
+             reliably for the auto-grow strategy other iframe routes use,
+             so it gets a viewport-relative height instead (mountIframe()). */
           href: "https://leaf.va.gov/platform/help_library/report.php?a=homepage",
           iframe: true,
+          fixedHeight: true,
         },
         {
           icon: "article",
@@ -271,6 +275,7 @@
           title: item.title,
           section: section.label,
           iframe: !!item.iframe,
+          fixedHeight: !!item.fixedHeight,
         };
         if (parentItem) {
           ROUTE_MAP[key].parent = {
@@ -1602,13 +1607,17 @@
      one instead of leaking an observer on a detached document. */
   var _iframeResizeObserver = null;
 
+  /* Same idea for route.fixedHeight routes' window "resize" listener
+     (no ResizeObserver involved there — see fitFrameToViewport()). */
+  var _iframeFixedHeightResizeFn = null;
+
   /* ─────────────────────────────────────────────────────────────
      MOUNT IFRAME
      For full separate LEAF apps (route.iframe === true) — skips
      fetch/DOMParser/chrome-suppression/script-splicing entirely since
      the embedded page loads and runs as its own real document.
   ───────────────────────────────────────────────────────────── */
-  function mountIframe(route) {
+  function mountIframe(route, deepLinkId) {
     var host = _swapHost;
     if (!host) {
       console.error("[LP] mountIframe: swap host not found");
@@ -1618,6 +1627,10 @@
     if (_iframeResizeObserver) {
       _iframeResizeObserver.disconnect();
       _iframeResizeObserver = null;
+    }
+    if (_iframeFixedHeightResizeFn) {
+      window.removeEventListener("resize", _iframeFixedHeightResizeFn);
+      _iframeFixedHeightResizeFn = null;
     }
 
     /* Remove any <base> left over from a previous non-iframe route —
@@ -1631,7 +1644,11 @@
 
     var frame = document.createElement("iframe");
     frame.className = "lp-swap-iframe";
-    frame.src = route.href;
+    /* deepLinkId (from a #help_library-article-<id> hash) jumps the
+       embedded app straight to that article on load — see router(). */
+    frame.src = deepLinkId
+      ? route.href + "#article-" + deepLinkId
+      : route.href;
     frame.title = route.title || "Embedded page";
     /* min-height is just the pre-load placeholder — the load handler
        grows the frame to its real content height. visibility:hidden
@@ -1648,9 +1665,32 @@
     spinner.setAttribute("aria-hidden", "true");
     spinner.innerHTML = '<span class="lp-swap-spinner"></span>';
 
+    /* route.fixedHeight: size to the viewport below the sticky header
+       instead of the contentDocument.scrollHeight strategy below —
+       for routes whose contentDocument height can't be read/fit
+       reliably, so there's exactly one scrollable region (inside the
+       iframe) instead of a stuck placeholder height. */
+    function fitFrameToViewport() {
+      var header = document.getElementById("lpHeader");
+      var offset = header ? header.getBoundingClientRect().bottom : 0;
+      frame.style.height = "calc(100vh - " + Math.max(offset, 0) + "px)";
+    }
+
+    if (route.fixedHeight) {
+      frame.style.overflow = "auto";
+      fitFrameToViewport();
+    }
+
     frame.addEventListener("load", function () {
       frame.style.visibility = "visible";
       if (spinner.parentNode) spinner.remove();
+
+      if (route.fixedHeight) {
+        fitFrameToViewport();
+        window.addEventListener("resize", fitFrameToViewport);
+        _iframeFixedHeightResizeFn = fitFrameToViewport;
+        return;
+      }
 
       var doc;
       try {
@@ -1825,7 +1865,7 @@
      Core router action. Fetches url, parses, suppresses chrome,
      extracts #content, mounts into swap host.
   ───────────────────────────────────────────────────────────── */
-  function loadView(hash, route) {
+  function loadView(hash, route, deepLinkId) {
     if (!route) {
       console.warn("[LP Router] No route found for hash:", hash);
       showSwapView();
@@ -1849,7 +1889,7 @@
        fetched+spliced — wrong document, wrong scripts, wrong DOM.
        Mount it in an iframe instead, same hash-routed shell. */
     if (route.iframe) {
-      mountIframe(route);
+      mountIframe(route, deepLinkId);
       _currentLoadUrl = null;
       var iframeHost = getSwapHost();
       if (iframeHost) iframeHost.scrollTop = 0;
@@ -1947,6 +1987,16 @@
     if (_routerSuppressed) return;
 
     var raw = window.location.hash; /* e.g. "#find_site" or "" */
+
+    /* Help Library deep links carry the article id in the hash itself
+       (#help_library-article-162), written by handleHelpLibraryMessage()
+       below — jump the iframe straight to that article on load. */
+    var articleLink = raw.match(/^#help_library-article-(\d+)$/i);
+    if (articleLink) {
+      loadView("help_library", ROUTE_MAP.help_library, articleLink[1]);
+      return;
+    }
+
     var key = raw.replace(/^#/, "").toLowerCase();
     key = LEGACY_HASH_KEY_ALIASES[key] || key;
 
@@ -2128,6 +2178,21 @@
     });
   }
 
+  var HELP_LIBRARY_ORIGIN = "https://leaf.va.gov";
+
+  /* Help Library's iframe posts its current article id here on every
+     internal navigation (see help_library.js's open()). Never trust
+     the payload until both origin and message type are verified.
+     Written via replaceState, not a real hash assignment, so this
+     doesn't re-trigger router() through hashchange. */
+  function handleHelpLibraryMessage(e) {
+    if (e.origin !== HELP_LIBRARY_ORIGIN) return;
+    if (!e.data || e.data.type !== "lp-help-library-nav") return;
+    var id = String(e.data.articleId || "");
+    if (!/^\d+$/.test(id)) return;
+    history.replaceState(null, "", "#help_library-article-" + id);
+  }
+
   /* ─────────────────────────────────────────────────────────────
      WIRE ROUTER
      Called only on the launchpad page.
@@ -2140,6 +2205,8 @@
     window.addEventListener("hashchange", function () {
       router();
     });
+
+    window.addEventListener("message", handleHelpLibraryMessage);
 
     /* Run router on init to handle deep-linked URLs */
     router();

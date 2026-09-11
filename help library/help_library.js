@@ -1237,6 +1237,17 @@ ${state.q ? '<button class="hl-empty-reset" type="button" data-clearsearch>Clear
     document.title = `${r.title} — VA LEAF Help Library`;
     window.location.hash = `article-${id}`;
 
+    /* Lets an embedding launchpad reflect the article in its own
+       address bar. Skipped when loaded standalone (window.parent is
+       just window itself there). Real origin, not "*" — this app is
+       only ever served from leaf.va.gov. */
+    if (window.parent !== window) {
+      window.parent.postMessage(
+        { type: "lp-help-library-nav", articleId: String(id) },
+        "https://leaf.va.gov",
+      );
+    }
+
     const crumbCat = r.cats.find((c) => !HIDDEN_CATS.includes(c));
     const catCrumb = crumbCat
       ? `<span class="hl-dsep" aria-hidden="true">/</span>
