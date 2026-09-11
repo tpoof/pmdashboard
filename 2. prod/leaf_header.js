@@ -10,12 +10,20 @@
    A new page only needs one line, right before </head> or </body>:
 
        <script src="/launchpad/files/leaf_header.js"
-               data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->">
+               data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
+               data-csrf-token="<!--{$CSRFToken}-->">
        </script>
 
    data-is-sysadmin gates the Internal nav bar (Coaches/Team/Leadership/
-   Admin/Users Online) — see IS_SYSADMIN below. Separate from $is_admin;
-   requires Sysadmin group (groupID 1). Omitting it is safe (bar stays hidden).
+   Admin/Users Online/Feedback) — see IS_SYSADMIN below. Separate from
+   $is_admin; requires Sysadmin group (groupID 1). Omitting it is safe
+   (bar stays hidden).
+
+   data-csrf-token is required for the Feedback button's writes (see
+   FEEDBACK_* below) — one LEAF session token, valid platform-wide,
+   posted with every api/form/* call regardless of which LEAF site
+   owns the target form. Omitting it is safe (Feedback button still
+   renders, but every submission fails with a clear inline error).
 
    Breadcrumb is auto-detected, no per-page flag: on load,
    resolveCurrentRoute() matches this page's URL against NAV_SECTIONS/
@@ -65,6 +73,16 @@
     return !!raw && /^(1|true|yes)$/i.test(raw);
   })();
 
+  /* Read the same way as IS_SYSADMIN, off the same <script> tag. Used only
+     by the Feedback button's writes (see FEEDBACK_* below) — one token,
+     valid for api/form/* calls to any LEAF site regardless of which site
+     leaf_header.js happens to be running on. */
+  var CSRF_TOKEN = (function () {
+    var raw =
+      HEADER_SCRIPT_EL && HEADER_SCRIPT_EL.getAttribute("data-csrf-token");
+    return stripSmartyCommentWrapper(raw) || "";
+  })();
+
   /* ── Announcement banner config ──
      Placeholder IDs — search "REPLACE_ME" to find these before
      promoting to production. Sourced from a LEAF form's rawIndicator
@@ -75,6 +93,22 @@
   var ANNOUNCEMENT_RECORD_ID = "REPLACE_ME_ANNOUNCEMENT_RECORD_ID";
   var ANNOUNCEMENT_INDICATOR_ID = "REPLACE_ME_ANNOUNCEMENT_INDICATOR_ID";
   var ANNOUNCEMENT_SERIES = 1;
+
+  /* ── Feedback button config ──
+     Internal-nav-only (IS_SYSADMIN) button that lets an admin file
+     quick feedback from any page. Each submission: creates a new
+     record on FEEDBACK_FORM_ID, writes the admin's text to
+     FEEDBACK_INDICATOR_ID, then advances it straight to
+     FEEDBACK_STEP_ID. Same 3-call pattern as an existing, working
+     implementation on the Team Command Center calendar app
+     (calendar.js — createRecord/writeIndicators/submitRecord), just
+     pointed at this form/indicator/step and running from the shared
+     header instead of a single page's own script. */
+  var FEEDBACK_ROOT_URL =
+    "https://leaf.va.gov/platform/service_requests_launchpad/";
+  var FEEDBACK_FORM_ID = "form_6ecbe";
+  var FEEDBACK_INDICATOR_ID = "488";
+  var FEEDBACK_STEP_ID = "105";
 
   /* Home route for the brand logo link and breadcrumb auto-detect's
      "hide breadcrumb here" match. Absolute since the header is
@@ -455,6 +489,10 @@
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M200-280v-280h80v280h-80Zm240 0v-280h80v280h-80ZM80-120v-80h800v80H80Zm600-160v-280h80v280h-80ZM80-640v-80l400-200 400 200v80H80Z"/></svg>',
     support:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m480-80-10-120h-10q-142 0-241-99t-99-241q0-142 99-241t241-99q71 0 132.5 26.5t108 73q46.5 46.5 73 108T800-540q0 75-24.5 144t-67 128q-42.5 59-101 107T480-80Zm-21-241q17 0 29-12t12-29q0-17-12-29t-29-12q-17 0-29 12t-12 29q0 17 12 29t29 12Zm-29-127h60q0-30 6-42t38-44q18-18 30-39t12-45q0-51-34.5-76.5T460-720q-44 0-74 24.5T344-636l56 22q5-17 19-33.5t41-16.5q27 0 40.5 15t13.5 33q0 17-10 30.5T480-558q-35 30-42.5 47.5T430-448Z"/></svg>',
+    /* Material Symbols (Filled) "add_comment" — download/upload this
+       exact icon in the icon library if it isn't there yet. */
+    add_comment:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M800-680v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80ZM620-520q25 0 42.5-17.5T680-580q0-25-17.5-42.5T620-640q-25 0-42.5 17.5T560-580q0 25 17.5 42.5T620-520Zm-280 0q25 0 42.5-17.5T400-580q0-25-17.5-42.5T340-640q-25 0-42.5 17.5T280-580q0 25 17.5 42.5T340-520Zm263.5 221.5Q659-337 684-400H276q25 63 80.5 101.5T480-260q68 0 123.5-38.5ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q43 0 83 8.5t77 24.5v167h80v80h142q9 29 13.5 58.5T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg>',
   };
 
   /* ─────────────────────────────────────────────────────────────
@@ -629,6 +667,11 @@
     <span class="lp-internal-online-count" aria-live="polite" aria-atomic="true">0</span>
   </span>
 
+  <!-- Feedback: icon-only, opens lpFeedbackModal (see wireFeedbackWidget). -->
+  <button class="lp-internal-feedback-btn" type="button" data-action="feedback-modal" aria-label="Send feedback">
+    <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.add_comment}</span>
+  </button>
+
 </div>`;
 
     var mobileInternal = `
@@ -701,6 +744,18 @@
       <span class="dd-link-desc">Currently active on LEAF: <span class="lp-internal-online-count" aria-live="polite" aria-atomic="true">0</span></span>
     </span>
   </span>
+</li>
+
+<li class="lp-internal-mobile-item" data-sysadmin="1">
+  <button class="dd-link" type="button" data-action="feedback-modal">
+    <span class="dd-link-ico">
+      <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.add_comment}</span>
+    </span>
+    <span class="dd-link-text">
+      <strong>Send Feedback</strong>
+      <span class="dd-link-desc">Report an issue or share a quick note</span>
+    </span>
+  </button>
 </li>`;
 
     return { desktop: desktopInternal, mobile: mobileInternal };
@@ -1222,7 +1277,6 @@
 
     if (!toLoad.length) return Promise.resolve();
 
-    console.warn("[LP] Lazy-loading LEAF UI deps for fetched page:", toLoad);
     return loadScriptSequential(toLoad).then(function () {
       toLoad.forEach(function (src) {
         _loadedDepSrcs.add(src);
@@ -1646,9 +1700,7 @@
     frame.className = "lp-swap-iframe";
     /* deepLinkId (from a #help_library-article-<id> hash) jumps the
        embedded app straight to that article on load — see router(). */
-    frame.src = deepLinkId
-      ? route.href + "#article-" + deepLinkId
-      : route.href;
+    frame.src = deepLinkId ? route.href + "#article-" + deepLinkId : route.href;
     frame.title = route.title || "Embedded page";
     /* min-height is just the pre-load placeholder — the load handler
        grows the frame to its real content height. visibility:hidden
@@ -2135,6 +2187,15 @@
         return;
       }
 
+      /* Feedback button (internal nav, sysadmin-only) opens a small modal
+         with a textarea instead of navigating. */
+      if (link.dataset.action === "feedback-modal") {
+        e.preventDefault();
+        closeAllDropdowns(null);
+        openFeedbackModal(link);
+        return;
+      }
+
       /* Read href from data-href (buttons) or href attribute (plain <a> fallback) */
       var href = link.getAttribute("data-href") || link.getAttribute("href");
       if (!href || href === "#") return;
@@ -2220,6 +2281,7 @@
   function closeAnyOpenModal() {
     closeDemoModal();
     closeFormModal();
+    closeFeedbackModal();
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -2398,6 +2460,208 @@
     if (formModalTrigger) {
       formModalTrigger.focus();
       formModalTrigger = null;
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     FEEDBACK WIDGET (internal nav, sysadmin-only)
+     Small modal with a textarea. On submit: creates a record on
+     FEEDBACK_FORM_ID, writes the text to FEEDBACK_INDICATOR_ID, then
+     advances it to FEEDBACK_STEP_ID. Same 3-call shape as the working
+     calendar.js feedback widget (createRecord/writeIndicators/
+     submitRecord), reusing CSRF_TOKEN read off this script's own tag
+     (see CSRF_TOKEN above) instead of a page-local Smarty config —
+     leaf_header.js runs on every page, not just one.
+  ───────────────────────────────────────────────────────────── */
+  function feedbackEncodeBody(obj) {
+    var body = new URLSearchParams();
+    Object.keys(obj || {}).forEach(function (k) {
+      var v = obj[k];
+      if (v === undefined || v === null) return;
+      body.append(String(k), String(v));
+    });
+    return body.toString();
+  }
+
+  function feedbackApiPost(url, dataObj) {
+    return fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "x-requested-with": "XMLHttpRequest",
+      },
+      body: feedbackEncodeBody(dataObj),
+    }).then(function (res) {
+      if (!res.ok) throw new Error("POST " + url + " → HTTP " + res.status);
+      return res.text().then(function (text) {
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          return text;
+        }
+      });
+    });
+  }
+
+  function submitFeedback(text) {
+    var createURL = FEEDBACK_ROOT_URL + "api/form/new";
+    return feedbackApiPost(createURL, {
+      CSRFToken: CSRF_TOKEN,
+      title: "Launchpad Feedback",
+      ["num" + FEEDBACK_FORM_ID]: "on",
+    }).then(function (createRes) {
+      var recordID = parseInt(
+        String(createRes).trim().replace(/^"|"$/g, ""),
+        10,
+      );
+      if (!recordID || recordID <= 0) {
+        throw new Error("Record creation returned no ID: " + createRes);
+      }
+      var writeURL =
+        FEEDBACK_ROOT_URL + "api/form/" + encodeURIComponent(recordID);
+      var writePayload = { recordID: recordID, CSRFToken: CSRF_TOKEN };
+      writePayload[FEEDBACK_INDICATOR_ID] = text;
+      return feedbackApiPost(writeURL, writePayload).then(function () {
+        var submitURL =
+          FEEDBACK_ROOT_URL +
+          "api/form/" +
+          encodeURIComponent(recordID) +
+          "/submit";
+        return feedbackApiPost(submitURL, {
+          CSRFToken: CSRF_TOKEN,
+          stepID: FEEDBACK_STEP_ID,
+        });
+      });
+    });
+  }
+
+  var feedbackModalTrigger = null;
+
+  function ensureFeedbackModal() {
+    if (document.getElementById("lpFeedbackModal")) return;
+    var modal = document.createElement("div");
+    modal.id = "lpFeedbackModal";
+    modal.className = "lp-modal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "lpFeedbackModalTitle");
+    modal.setAttribute("hidden", "");
+    modal.innerHTML =
+      '<div class="modal-box modal-box--feedback">' +
+      '<div class="modal-hd">' +
+      '<p class="modal-hd-title" id="lpFeedbackModalTitle">Send Feedback</p>' +
+      '<button class="modal-close modal-close--inline" id="lpFeedbackModalClose" aria-label="Close">' +
+      '<span class="material-symbols-outlined" aria-hidden="true">' +
+      ICON_SVG.close +
+      "</span>" +
+      "</button>" +
+      "</div>" +
+      '<div class="feedback-body">' +
+      '<label class="feedback-label" for="lpFeedbackText">What\'s on your mind?</label>' +
+      '<textarea class="feedback-textarea" id="lpFeedbackText" rows="5" maxlength="4000"></textarea>' +
+      '<p class="feedback-status" id="lpFeedbackStatus" role="status" aria-live="polite"></p>' +
+      '<div class="feedback-actions">' +
+      '<button class="btn btn-sec" type="button" id="lpFeedbackCancel">Cancel</button>' +
+      '<button class="btn btn-primary" type="button" id="lpFeedbackSubmit">Submit</button>' +
+      "</div>" +
+      "</div>" +
+      "</div>";
+    document.body.appendChild(modal);
+
+    var closeBtn = document.getElementById("lpFeedbackModalClose");
+    var cancelBtn = document.getElementById("lpFeedbackCancel");
+    closeBtn.addEventListener("click", closeFeedbackModal);
+    cancelBtn.addEventListener("click", closeFeedbackModal);
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal) closeFeedbackModal();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !modal.hasAttribute("hidden")) {
+        closeFeedbackModal();
+      }
+    });
+    modal.addEventListener("keydown", function (e) {
+      if (e.key !== "Tab" || modal.hasAttribute("hidden")) return;
+      var focusable = getFocusableElements(modal);
+      if (!focusable.length) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
+
+    var submitBtn = document.getElementById("lpFeedbackSubmit");
+    submitBtn.addEventListener("click", function () {
+      var textarea = document.getElementById("lpFeedbackText");
+      var statusEl = document.getElementById("lpFeedbackStatus");
+      var text = textarea.value.trim();
+      if (!text) {
+        statusEl.textContent = "Please enter some feedback first.";
+        statusEl.classList.add("is-error");
+        textarea.focus();
+        return;
+      }
+      if (!CSRF_TOKEN) {
+        statusEl.textContent =
+          "Feedback can't be submitted right now (missing session token). Please try again later.";
+        statusEl.classList.add("is-error");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      cancelBtn.disabled = true;
+      statusEl.classList.remove("is-error");
+      statusEl.textContent = "Submitting…";
+
+      submitFeedback(text)
+        .then(function () {
+          statusEl.classList.remove("is-error");
+          statusEl.textContent = "Thank you for your feedback!";
+          textarea.value = "";
+          setTimeout(closeFeedbackModal, 1500);
+        })
+        .catch(function (err) {
+          console.error("[LP] Feedback submission failed:", err.message);
+          statusEl.classList.add("is-error");
+          statusEl.textContent = "Submission failed. Please try again.";
+        })
+        .finally(function () {
+          submitBtn.disabled = false;
+          cancelBtn.disabled = false;
+        });
+    });
+  }
+
+  function openFeedbackModal(trigger) {
+    ensureFeedbackModal();
+    var modal = document.getElementById("lpFeedbackModal");
+    var textarea = document.getElementById("lpFeedbackText");
+    var statusEl = document.getElementById("lpFeedbackStatus");
+    if (!modal || !textarea || !statusEl) return;
+    closeAnyOpenModal();
+    feedbackModalTrigger = trigger || document.activeElement;
+    statusEl.textContent = "";
+    statusEl.classList.remove("is-error");
+    textarea.value = "";
+    modal.removeAttribute("hidden");
+    document.body.style.overflow = "hidden";
+    textarea.focus();
+  }
+
+  function closeFeedbackModal() {
+    var modal = document.getElementById("lpFeedbackModal");
+    if (!modal || modal.hasAttribute("hidden")) return;
+    modal.setAttribute("hidden", "");
+    document.body.style.overflow = "";
+    if (feedbackModalTrigger) {
+      feedbackModalTrigger.focus();
+      feedbackModalTrigger = null;
     }
   }
 

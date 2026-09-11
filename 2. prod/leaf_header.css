@@ -1,10 +1,20 @@
-/* LEAF Universal Header — leaf_header.css
-   Pairs with leaf_header.js, which injects the header HTML and
-   self-injects this stylesheet if a page forgets to link it. */
+/* ============================================================
+   LEAF Universal Header  |  leaf_header.css
+   ─────────────────────────────────────────────────────────────
+   Lives at /launchpad/files/leaf_header.css. Pair with
+   leaf_header.js, which injects the header HTML and self-injects
+   this stylesheet if a page forgets to link it.
 
-/* Self-hosted fonts from LEAF's own server (app/libs/css/fonts/).
-   Bold path verified live; others follow the same bundle/naming
-   convention but weren't individually spot-checked. */
+   Styles branding, nav, and breadcrumb as one sticky .lp-header
+   unit.
+   ============================================================ */
+
+/* ── Local fonts (self-hosted, LEAF's own server) ──
+   Source: app/libs/css/fonts/ — confirmed live at
+   https://leaf.va.gov/app/libs/css/fonts/public-sans/PublicSans-Bold.woff2
+   (manually verified). Regular/Medium and the Source Sans Pro
+   pair follow the same documented bundle and naming convention
+   but weren't individually spot-checked — flag if any 404s. */
 @font-face {
   font-family: "PublicSans-Regular";
   src:
@@ -58,7 +68,9 @@
   font-display: swap;
 }
 
-/* This header replaces LEAF's default header/footer, so hide them site-wide. */
+/* ── Hide legacy shell chrome ──
+   This header now owns branding, nav, and breadcrumb — LEAF's
+   default header/footer are redundant and hidden site-wide. */
 #header,
 #footer {
   display: none !important;
@@ -79,10 +91,22 @@
   --nav-r-lg: 8px;
 }
 
-/* Fetch+spliced external routes (Team, Leadership) can leak a foreign
-   global style reset (e.g. line-height on *) into this document, since
-   suppressChrome() only strips known chrome, not stylesheets. Pin
-   line-height directly on every header element so it stays immune. */
+/* ── Defensive baseline ──
+   Fetch+spliced routes (Team, Leadership, and any other external page
+   mounted via mountContent()) can bring their own style or stylesheet
+   link elements inside the region leaf_header.js extracts —
+   suppressChrome() only strips known chrome selectors, not
+   stylesheets, so a spliced page's
+   global reset (e.g. line-height on *) can leak into this document and
+   apply to the persistent header too, since it isn't isolated in its
+   own stacking/style context. Confirmed via DevTools on the Leadership
+   page: .lp-internal-label was inheriting line-height: 1.65 from a
+   foreign stylesheet, which shifted the lock icon inside it. Pinning
+   line-height back to the browser default here — directly on every
+   header element, not just via inheritance from .lp-header, since a
+   leaked `* { line-height }` rule would otherwise still win — makes
+   the header's own layout immune to it regardless of what a spliced
+   route brings with it. */
 .lp-header,
 .lp-header * {
   line-height: normal;
@@ -135,9 +159,14 @@
 }
 
 /* ── Header shell ──
-   Sticky position/bg/blur/shadow for the header+nav+breadcrumb unit.
-   top: var(--lp-announcement-h) is set by leaf_header.js so the header
-   sticks below the announcement banner when present (0px otherwise). */
+   Owns the sticky position, background, blur, and scroll shadow —
+   branding, nav, and breadcrumb scroll and stick together as one unit.
+
+   top: var(--lp-announcement-h, 0px) — when the announcement banner
+   (see .lp-announcement below) is present, leaf_header.js sets this
+   custom property to the banner's live-measured height so the header
+   sticks directly below it instead of underneath it. Defaults to 0px
+   (header sticks to the very top, as before) when no banner exists. */
 .lp-header {
   position: sticky;
   top: var(--lp-announcement-h, 0px);
@@ -165,8 +194,9 @@
 }
 
 /* ── Brand / logo ──
-   No padded/bordered container — sits flush at the header's left edge,
-   sized to bar height. */
+   No padded or bordered container — sits flush at the header's
+   left edge, sized to the bar height, with just enough margin to
+   separate it from the first nav item. */
 .lp-brand {
   display: inline-flex;
   align-items: center;
@@ -237,6 +267,7 @@
   outline: 3px solid var(--nav-accent);
   outline-offset: 2px;
 }
+/* Active section indicator */
 .dd-trigger[aria-current="true"] {
   color: var(--nav-accent);
   font-family: "PublicSans-Bold", sans-serif;
@@ -272,8 +303,14 @@
   border: 1px solid var(--nav-panel-bd);
   border-radius: var(--nav-r-lg);
   box-shadow: 0 8px 32px rgba(0, 10, 60, 0.14);
-  /* width:max-content, not min-width — .dd-link below is width:100%, so a
-     percentage width can't size this panel; max-width caps runaway content. */
+  /* width: max-content, not just min-width, because button.dd-link below
+     is width:100% — a percentage width can't drive this panel's own
+     shrink-to-fit sizing (that's a circular dependency: panel width
+     depends on button width depends on panel width), so without an
+     explicit width some title+badge combos (e.g. "Use Cases" +
+     "Coming Soon") could wrap even though the panel had room. The
+     max-width caps it so a long description can't blow the panel past
+     a sane width or off-screen on a narrow viewport. */
   width: max-content;
   max-width: min(90vw, 340px);
   min-width: 260px;
@@ -291,8 +328,9 @@
   padding: 0;
 }
 
-/* .dd-link is a <button>, not an anchor, so hover doesn't show a URL in
-   the status bar. Reset to look/behave like the anchor it replaces. */
+/* .dd-link is a button element, not an anchor — so the browser status
+   bar never shows the destination URL on hover. Reset it to look/behave like
+   the anchor it visually replaces. */
 button.dd-link {
   width: 100%;
   text-align: left;
@@ -336,16 +374,23 @@ button.dd-link {
   height: 1.1rem;
 }
 
-/* Holds label + status badge on one line. Badge slot renders empty when
-   absent, so the DOM shape stays uniform across items. */
+/* Title row — holds the bold label and, when present, the
+   status badge, side by side on one line. Every dd-link uses this
+   wrapper (badge slot just renders empty when there's no badge)
+   so the DOM shape stays uniform across items. */
 .dd-link-title-row {
   display: flex;
   align-items: center;
   gap: 6px;
   margin-bottom: 2px;
 }
-/* Desktop panels grow to fit content, so nowrap is safe. Mobile
-   accordion is width:100% (see .lp-mobile-panel), so wrap only there. */
+/* Nowrap by default — desktop dropdown panels have no fixed width
+   and grow to fit their content, so title + badge always have room.
+   The mobile accordion panel is width:100% of the nav (see
+   .lp-mobile-panel), so on narrow phones "Learn" + "Coming Soon"
+   can genuinely run out of room — wrap only there, so the badge
+   drops to its own line under the label instead of overflowing
+   or getting squished. */
 @media (max-width: 640px) {
   .dd-link-title-row {
     flex-wrap: wrap;
@@ -364,9 +409,14 @@ button.dd-link {
   line-height: 1.4;
 }
 
-/* Status pill for not-yet-live items (e.g. "Coming Soon"). Neutral gray,
-   not brand color, so it reads as secondary. Contrast 8.48:1 (WCAG AA
-   needs 4.5:1). */
+/* Small status pill for not-yet-live destinations (e.g. "Coming
+   Soon" on Learn) — sits inline next to the item's title, same
+   visual weight as a status tag rather than overwhelming the link.
+   Neutral gray, deliberately not the accent/brand color, and both
+   smaller and lighter-weight than the label so it reads as
+   secondary. Text/background contrast: 8.48:1 (WCAG AA requires
+   4.5:1 for normal text — well clear even without invoking the
+   large-text 3:1 exception). */
 .dd-badge {
   display: inline-flex;
   align-items: center;
@@ -389,9 +439,11 @@ button.dd-link {
   margin: 6px 0;
 }
 
-/* ── Nested submenu (e.g. Community of Practice under Voice of the Customer) ──
-   Permanently visible, indented under its parent — no expand/collapse.
-   Desktop dd-panel and mobile acc-panel share this markup/shape. */
+/* ── Nested submenu (e.g. Community of Practice under Voice of the
+   Customer) ── Permanently visible, indented under its parent item —
+   no expand/collapse. Same shape in the desktop dd-panel and the
+   mobile acc-panel — both render from linkHTML()'s shared
+   nestedLinkHTML() output, so one set of rules covers both. */
 .dd-sub-list {
   list-style: none;
   display: grid;
@@ -405,8 +457,17 @@ button.dd-link {
 }
 
 /* ── Request Support nav button ──
-   Outlined CTA using a darker green (#3d6e1c, 5.96:1) since brand green
-   #7bc143 fails WCAG contrast (2.2:1) for text/border. */
+   Outlined treatment, unlike .dd-trigger's plain borderless text — the
+   colored border + label reads as a distinct call-to-action without
+   the visual weight of a solid fill. <button>, not <a>, same
+   no-status-bar-preview rationale as .dd-link. Padding is 1px less
+   than .dd-trigger's 7px/13px on each side to offset the added
+   border, so the total box size and nav row height still match.
+   #7bc143 (the brand green asked for) fails contrast outright at
+   2.2:1 for both text and border, so this uses a deeper shade of the
+   same green instead: #3d6e1c text/border on the tint background =
+   5.96:1 (WCAG AA needs 4.5:1 text / 3:1 non-text UI) — comfortable
+   margin on both, and 6.67:1 on hover against white. */
 .lp-nav-support-btn {
   display: inline-flex;
   align-items: center;
@@ -431,15 +492,21 @@ button.dd-link {
 .lp-nav-support-btn:hover {
   background: #fff;
 }
-/* Ring sits on the header bg, not the button, so it stays --nav-accent
-   (consistent with every other focus ring in this file) rather than green. */
+/* outline-offset pushes the ring clear of the button's own border,
+   onto the header's near-white background instead — var(--nav-accent)
+   there still measures 6.72:1, clearing the 3:1 non-text UI minimum.
+   Kept as --nav-accent (not green) for consistency with every other
+   focus-visible ring in this file — the ring sits on the page
+   background, not the button itself, so it doesn't need to match the
+   button's own color. */
 .lp-nav-support-btn:focus-visible {
   outline: 3px solid var(--nav-accent);
   outline-offset: 2px;
 }
 
-/* Mobile: pinned above the accordion, full-width row matching
-   .acc-trigger's touch target. */
+/* Mobile: pinned above the accordion sections, not inside one — full-
+   width row matching .acc-trigger's touch target, same outlined
+   treatment as the desktop button above. */
 .lp-mobile-support-item {
   padding: 8px 8px 4px;
 }
@@ -570,14 +637,8 @@ button.dd-link {
 }
 
 /* ── Internal section (Coaches / Team / Leadership) ──
-   Built by buildInternalNavHTML() in leaf_header.js, gated there via
-   data-sysadmin="1". This CSS rule is defense in depth only — not the real gate. */
-.lp-nav-internal:not([data-sysadmin="1"]) {
-  display: none !important;
-}
-.lp-internal-mobile-item:not([data-sysadmin="1"]) {
-  display: none !important;
-}
+   Right-aligned group built in leaf_header.js's buildInternalNavHTML()
+   — renders unconditionally for now (see that function's gating note). */
 .lp-nav-internal {
   display: flex;
   align-items: center;
@@ -591,8 +652,9 @@ button.dd-link {
   box-shadow: inset 0 1px 2px rgba(0, 10, 60, 0.04); /* very subtle depth */
 }
 
-/* Lock icon only, no text — role="img" + aria-label on the markup
-   gives it an accessible name. */
+/* Lock icon only — no visible "Internal" text. role="img" + aria-label
+   on the markup gives it a real accessible name since there's no text
+   left to provide one. */
 .lp-internal-label {
   display: inline-flex;
   align-items: center;
@@ -625,18 +687,20 @@ button.dd-link {
   flex-shrink: 0;
 }
 
-/* Matches .dd-trigger's shape/font. Underlined since these plain-text
-   links have no icon/color to signal "clickable" otherwise — matches the
-   existing underline convention used by .lp-breadcrumb a.
-   #lp-login-slot's button rules are scoped to .lp-nav-account/
-   .lp-mobile-account-item — see the "Account slot" block below for why
-   (the node defaults to display:none until it's actually relocated
-   there, so these rules only ever apply once it's in the nav). */
-.lp-internal-btn,
-.lp-nav-account #lp-login-slot a,
-.lp-nav-account #lp-login-slot input[type="submit"],
-.lp-mobile-account-item #lp-login-slot-mobile a,
-.lp-mobile-account-item #lp-login-slot-mobile input[type="submit"] {
+/* Shared button style (Coaches, Team, Leadership). Matches .dd-trigger
+   shape exactly: border-radius 5px (--nav-r), no border, transparent
+   background — the container background provides the visual
+   distinction. Font values copied verbatim from .dd-trigger.
+
+   text-decoration: underline — these are real links/nav actions sitting
+   in a flat toolbar row next to the non-interactive Users Online status
+   pill, with no icon and no distinct color until hover, so nothing
+   previously signaled "clickable" at rest. Matches the underline already
+   used for breadcrumb links (.lp-breadcrumb a) elsewhere in this file —
+   this file's existing link-underline convention — rather than
+   introducing a new visual language. Underlining doesn't touch color, so
+   it has no effect on the existing 4.5:1+ contrast ratios below. */
+.lp-internal-btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -655,38 +719,22 @@ button.dd-link {
     background 0.15s;
   line-height: 1.4;
 }
-.lp-internal-btn:hover,
-.lp-nav-account #lp-login-slot a:hover,
-.lp-nav-account #lp-login-slot input[type="submit"]:hover,
-.lp-mobile-account-item #lp-login-slot-mobile a:hover,
-.lp-mobile-account-item #lp-login-slot-mobile input[type="submit"]:hover {
+.lp-internal-btn:hover {
   background: #ffffff;
   color: #005ea2;
   text-decoration: underline;
 }
-.lp-internal-btn:focus-visible,
-.lp-nav-account #lp-login-slot a:focus-visible,
-.lp-nav-account #lp-login-slot input[type="submit"]:focus-visible,
-.lp-mobile-account-item #lp-login-slot-mobile a:focus-visible,
-.lp-mobile-account-item
-  #lp-login-slot-mobile
-  input[type="submit"]:focus-visible {
+.lp-internal-btn:focus-visible {
   outline: 3px solid #005ea2;
   outline-offset: 2px;
 }
-/* <input type="submit"> keeps native OS button chrome (border,
-   background, box-sizing) in some browsers even with border:none/
-   background:transparent set above -- strip it so the shared rule
-   above is what actually renders. */
-.lp-nav-account #lp-login-slot input[type="submit"],
-.lp-mobile-account-item #lp-login-slot-mobile input[type="submit"] {
-  appearance: none;
-  -webkit-appearance: none;
-  box-sizing: border-box;
-}
 
-/* Muted pill, not a button — reads as a live stat, not a link, so
-   hover/underline affordances are suppressed. */
+/* Users Online — muted pill/status treatment (not the toolbar-button
+   look Coaches/Team/Leadership use) so it reads as a live stat, not a
+   link. Non-interactive: underline, pointer cursor, and hover "this is
+   clickable" cue are all suppressed. Background/border match the
+   Coming Soon badge's neutral gray (.dd-badge) rather than inventing a
+   new color for the same "informational, not actionable" meaning. */
 .lp-internal-online {
   text-decoration: none;
   cursor: default;
@@ -714,6 +762,41 @@ button.dd-link {
   font-family: "PublicSans-Bold", sans-serif;
 }
 
+/* Feedback button — icon-only, sits right after Users Online in the
+   internal pill. Circular icon-button treatment (matches
+   .modal-close--inline / #leaf-jump-top sizing conventions elsewhere
+   in this file) rather than the underlined-text .lp-internal-btn
+   style, since there's no label here for underline to attach to. */
+.lp-internal-feedback-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #3d4551; /* --nav-muted */
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.lp-internal-feedback-btn:hover {
+  background: #ffffff;
+  color: #005ea2;
+}
+.lp-internal-feedback-btn:focus-visible {
+  outline: 3px solid #005ea2;
+  outline-offset: 2px;
+}
+.lp-internal-feedback-btn .material-symbols-outlined svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
 @keyframes lp-spin {
   to {
     transform: rotate(360deg);
@@ -739,89 +822,26 @@ button.dd-link {
   height: 14px;
 }
 
-/* Reuses .dd-link's layout for visual consistency, but on a
-   non-interactive span — hover affordance toned down accordingly. */
+/* Mobile Users Online row — reuses .dd-link's layout/icon/text
+   treatment for visual consistency with Coaches/Leadership/Team, but
+   on a non-interactive span element (no data-href, nothing to
+   activate), so the affordance hover is toned down to a status-row
+   highlight. */
 .lp-internal-mobile-item.lp-internal-online .dd-link {
   cursor: default;
 }
 
-/* ── Account slot (#lp-login-slot) ──
-   Real Smarty-rendered content from main.tpl ($login, see login.tpl) —
-   moved/cloned in here by leaf_header.js's inject(), not built by this
-   file. Mirror of .lp-nav-internal above: built by buildAccountSlotHTML()
-   only when IS_SYSADMIN is false, gated there via data-sysadmin="0" —
-   mutually exclusive with .lp-nav-internal, never both in the DOM at
-   once, so it never needs to share space with it. This CSS rule is
-   defense in depth only, matching the existing pattern above — not the
-   real gate. */
-.lp-nav-account:not([data-sysadmin="0"]) {
-  display: none !important;
-}
-.lp-mobile-account-item:not([data-sysadmin="0"]) {
-  display: none !important;
-}
-.lp-nav-account {
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-/* #lp-login-slot is main.tpl's own markup, present in the DOM for every
-   user (admin or not) from first paint — inject() only *moves* it for
-   non-admins (see leaf_header.js), it never creates or removes it. For
-   a sysadmin it's never relocated, so it's left sitting in its original
-   position in the body. Defaulting it to display:none here — before any
-   scoped override below — is what actually keeps it invisible there;
-   without this, it would render unstyled at that original spot for
-   sysadmins instead of not rendering at all. This rule loads with the
-   rest of the stylesheet (before leaf_header.js's DOMContentLoaded-
-   deferred inject() ever runs), so there's no unstyled-but-visible
-   flash for anyone between first paint and the JS move — non-admins
-   never see it in its default-hidden state, only in its final, already
-   -styled, already-moved one. */
-#lp-login-slot,
-#lp-login-slot-mobile {
-  display: none;
-}
-/* Overrides the display:none above -- only matches once the real node
-   (or its mobile clone) has actually been moved into the account-slot
-   mount, which only happens for non-admins. */
-.lp-nav-account #lp-login-slot,
-.lp-mobile-account-item #lp-login-slot-mobile {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  font-family: "PublicSans-Medium", sans-serif;
-  font-size: 0.9rem;
-  color: #3d4551; /* --nav-muted */
-}
-/* "Welcome, Name!" — plain nav text, not a button. */
-.lp-nav-account #lp-login-slot b,
-.lp-mobile-account-item #lp-login-slot-mobile b {
-  font-family: "PublicSans-Bold", sans-serif;
-  color: #1b1b1b; /* --nav-text */
-}
-/* Logged-out form's status message — left at its site-wide .alert
-   color, just sized to fit the nav row. */
-.lp-nav-account #lp-login-slot .alert,
-.lp-mobile-account-item #lp-login-slot-mobile .alert {
-  font-size: 0.85rem;
-}
-
-/* Mobile: account section separator — same treatment as
-   .lp-mobile-internal-sep above. */
-.lp-mobile-account-item {
-  padding: 10px 16px;
-  border-top: 1px solid #d9e8f6; /* --nav-panel-bd */
-  margin-top: 4px;
-}
-
 /* ── Announcement banner ──
-   Sourced from a LEAF indicator record (see leaf_header.js's
-   ANNOUNCEMENT_* / renderAnnouncementBanner()); only ever inserted with
-   real content. Amber treatment reuses help_library.html's "Start Here" band colors. */
+   Sourced from a LEAF indicator record (see leaf_header.js
+   ANNOUNCEMENT_* constants + renderAnnouncementBanner()). Only ever
+   inserted into the DOM when there's real, non-empty content — never
+   left as an empty/hidden placeholder.
+
+   Amber "notice" treatment: same bg/border/text values as the Help
+   Library's --hl-start-bg / --hl-start-border / --hl-start-icon
+   "Start Here" band (help_library.html) — an attention-getting-but-
+   not-alarming pattern already validated elsewhere in LEAF, reused
+   here rather than introducing a new color language for one banner. */
 .lp-announcement {
   position: sticky;
   top: 0;
@@ -905,9 +925,6 @@ button.dd-link {
   .lp-nav-internal {
     display: none !important;
   }
-  .lp-nav-account {
-    display: none !important;
-  }
 }
 @media (min-width: 641px) {
   .lp-nav-toggle,
@@ -917,14 +934,13 @@ button.dd-link {
   .lp-internal-mobile-item {
     display: none !important;
   }
-  .lp-mobile-account-item {
-    display: none !important;
-  }
 }
 
 /* ── Breadcrumb ──
-   Sits below the header bar inside the same sticky .lp-header, always
-   in the DOM (see buildHeaderHTML) and toggled via [hidden]. */
+   Sits directly below the header bar, inside the same sticky
+   .lp-header. Always present in the DOM (see leaf_header.js
+   buildHeaderHTML) and toggled via the native hidden attribute;
+   [hidden] here beats the plain-class display:flex below it. */
 .lp-breadcrumb[hidden] {
   display: none;
 }
@@ -982,10 +998,21 @@ button.dd-link {
 }
 
 /* ── SPA swap loading state ──
-   Shown by showSwapLoading()/mountIframe() while a route loads (see
-   leaf_header.js). #lpSwapHost's own stacking context (z-index:1)
-   contains whatever a spliced external route brings, so it can never
-   paint above the header (300) or dropdown panels (400). */
+   Shown by showSwapLoading() (fetch+splice routes) and mountIframe()
+   (iframe routes, see loadView()/mountIframe() in leaf_header.js) while
+   a route's content is still loading. #lpSwapHost needs position:relative
+   so .lp-iframe-loading can center over the still-hidden iframe below it.
+
+   position:relative + a real z-index also gives #lpSwapHost its own
+   stacking context — every fetch+splice route's content lands here, and
+   some of those routes (e.g. Leadership) are real external LEAF pages
+   we don't own or edit. If one of them ships its own positioned element
+   (its own skip link, a sticky bar, anything with an aggressive z-index)
+   that suppressChrome() didn't know to strip, containing it in this
+   stacking context means it can never paint above .lp-header (z-index
+   300) or the dropdown panels (400) no matter what z-index it claims —
+   that comparison only happens within a shared stacking context, and
+   this one tops out at 1. */
 #lpSwapHost {
   position: relative;
   z-index: 1;
@@ -1011,8 +1038,9 @@ button.dd-link {
 }
 
 /* ── Jump to top ──
-   Injected by leaf_header.js on every page. z-index 200 sits below
-   the header/dropdowns but above page content. */
+   Injected by leaf_header.js into every page that loads it.
+   z-index: 200 sits below the header (300) and dropdown panels
+   (400) but above normal page content. */
 #leaf-jump-top {
   position: fixed;
   right: 20px;
@@ -1050,7 +1078,8 @@ button.dd-link {
 }
 
 /* ── Demo modal ──
-   Injected by leaf_header.js so "Watch a Demo" works from any page. */
+   Injected by leaf_header.js into every page that loads it, so the
+   "Watch a Demo" item in the About LEAF dropdown works from any page. */
 .lp-modal {
   position: fixed;
   inset: 0;
@@ -1110,7 +1139,9 @@ button.dd-link {
 
 /* ── Form modal ──
    Generic iframe modal (Request Support, Nominate a Spotlight) — a
-   visible header bar version of .lp-modal, unlike the demo modal's video-on-black style. */
+   visible white header bar + title, unlike the demo modal's cinematic
+   video-on-black style above. Reuses .lp-modal/.modal-box/.modal-close
+   as its base and overrides what needs to differ. */
 .modal-box--form {
   background: #fff;
   width: min(1200px, 95vw);
@@ -1173,15 +1204,79 @@ button.dd-link {
   }
 }
 
+/* ── Feedback modal ──
+   Small dialog for the internal-nav Feedback button (see
+   leaf_header.js wireFeedbackWidget-equivalent functions). Reuses
+   .lp-modal/.modal-box/.modal-hd/.modal-close--inline from the form
+   modal above — this only adds the compact width and the
+   textarea/status/actions layout, since there's no iframe here. */
+.modal-box--feedback {
+  background: #fff;
+  width: min(480px, 92vw);
+  display: flex;
+  flex-direction: column;
+}
+.feedback-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.feedback-label {
+  font-family: "PublicSans-Medium", sans-serif;
+  font-size: 0.875rem;
+  color: var(--nav-text);
+}
+.feedback-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px 12px;
+  font-family: "PublicSans-Regular", sans-serif;
+  font-size: 0.9rem;
+  color: var(--nav-text);
+  border: 1px solid var(--nav-panel-bd);
+  border-radius: var(--nav-r);
+  resize: vertical;
+}
+.feedback-textarea:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 1px;
+}
+.feedback-status {
+  min-height: 1.2em;
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #2e8b57; /* success tone, matches .lp-internal-online-dot */
+}
+.feedback-status.is-error {
+  color: #b91c1c;
+}
+.feedback-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+@media (max-width: 640px) {
+  .modal-box--feedback {
+    width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+}
+
 /* ── SPA swap-error icon ──
    Used by loadView()'s error states (leaf_header.js). Inline font-size
-   doesn't size these SVG icons, so width/height is set explicitly. */
+   on these spans doesn't size the SVG icons inside them, so explicit
+   width/height rules here handle sizing instead. */
 .lp-swap-error-ico svg {
   width: 32px;
   height: 32px;
 }
-/* Same error states also reuse launchpad.css's .btn — its icon sizing
-   doesn't reach these inlined SVGs either. */
+/* Same loadView() error states also reuse launchpad.css's .btn class
+   for their action buttons (Back to Launchpad / Try again / Open in a
+   new tab) — launchpad.css sizes .btn .material-symbols-outlined via
+   font-size, which doesn't reach these inlined SVG icons either. */
 .btn .material-symbols-outlined svg {
   width: 1.15rem;
   height: 1.15rem;
