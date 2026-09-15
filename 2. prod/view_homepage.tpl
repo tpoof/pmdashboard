@@ -1331,24 +1331,6 @@
                   <li>
                     <a
                       class="nl-footer-link"
-                      href="https://dvagov.sharepoint.com/sites/vhaleaf"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <span class="material-symbols-outlined" aria-hidden="true"
-                        ><svg viewBox="0 -960 960 960" fill="currentColor">
-                          <path
-                            d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640v400q0 33-23.5 56.5T800-160H160Zm280-120h320v-22q0-45-44-71.5T600-400q-72 0-116 26.5T440-302v22Zm160-160q33 0 56.5-23.5T680-520q0-33-23.5-56.5T600-600q-33 0-56.5 23.5T520-520q0 33 23.5 56.5T600-440Z"
-                          /></svg
-                      ></span>
-                      LEAF SharePoint
-                      <span class="sr-only">(opens in new tab)</span>
-                    </a>
-                  </li>
-
-                  <li>
-                    <a
-                      class="nl-footer-link"
                       href="https://leaf.va.gov/launchpad/report.php?a=Cost_Estimator"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -1369,9 +1351,9 @@
                          &iframe=1 so the LEAF app suppresses its own header inside the modal. -->
                     <a
                       class="nl-footer-link"
-                      href="https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=spotlight_direct"
+                      href="https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=LEAF_Start_Request&id=form_21163&title=LEAF+Spotlight+Nomination"
                       data-action="form-modal"
-                      data-modal-src="https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=spotlight_direct&iframe=1"
+                      data-modal-src="https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=LEAF_Start_Request&id=form_21163&title=LEAF+Spotlight+Nomination&iframe=1"
                       data-modal-title="Nominate a Spotlight"
                     >
                       <span class="material-symbols-outlined" aria-hidden="true"

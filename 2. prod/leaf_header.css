@@ -766,7 +766,11 @@ button.dd-link {
    internal pill. Circular icon-button treatment (matches
    .modal-close--inline / #leaf-jump-top sizing conventions elsewhere
    in this file) rather than the underlined-text .lp-internal-btn
-   style, since there's no label here for underline to attach to. */
+   style, since there's no label here for underline to attach to.
+   Colored to match the Request Support button's green (#3d6e1c —
+   same deeper shade used there because the brand green #7bc143 fails
+   contrast on its own): 3d6e1c on this pill's #eff6fb background
+   measures 5.8:1 (WCAG AA needs 4.5:1 for text), comfortably clear. */
 .lp-internal-feedback-btn {
   display: inline-flex;
   align-items: center;
@@ -777,16 +781,19 @@ button.dd-link {
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: #3d4551; /* --nav-muted */
+  color: #3d6e1c;
   cursor: pointer;
   flex-shrink: 0;
   transition:
     color 0.15s,
     background 0.15s;
 }
+.lp-internal-feedback-btn .material-symbols-outlined svg {
+  fill: #3d6e1c !important;
+}
 .lp-internal-feedback-btn:hover {
-  background: #ffffff;
-  color: #005ea2;
+  background: #eaf6e1;
+  color: #3d6e1c;
 }
 .lp-internal-feedback-btn:focus-visible {
   outline: 3px solid #005ea2;

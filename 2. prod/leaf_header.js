@@ -2550,7 +2550,7 @@
     modal.innerHTML =
       '<div class="modal-box modal-box--feedback">' +
       '<div class="modal-hd">' +
-      '<p class="modal-hd-title" id="lpFeedbackModalTitle">Send Feedback</p>' +
+      '<p class="modal-hd-title" id="lpFeedbackModalTitle">Send Launchpad v2 Feedback</p>' +
       '<button class="modal-close modal-close--inline" id="lpFeedbackModalClose" aria-label="Close">' +
       '<span class="material-symbols-outlined" aria-hidden="true">' +
       ICON_SVG.close +
@@ -2558,7 +2558,7 @@
       "</button>" +
       "</div>" +
       '<div class="feedback-body">' +
-      '<label class="feedback-label" for="lpFeedbackText">What\'s on your mind?</label>' +
+      '<label class="feedback-label" for="lpFeedbackText">Share your feedback on Launchpad v2</label>' +
       '<textarea class="feedback-textarea" id="lpFeedbackText" rows="5" maxlength="4000"></textarea>' +
       '<p class="feedback-status" id="lpFeedbackStatus" role="status" aria-live="polite"></p>' +
       '<div class="feedback-actions">' +
