@@ -1291,6 +1291,7 @@
     var scripts = Array.prototype.slice.call(
       container.querySelectorAll("script"),
     );
+    var loadPromises = [];
 
     scripts.forEach(function (oldScript) {
       /* Match an actual call (the ( is required), not just the words
@@ -1314,6 +1315,25 @@
         newScript.src = src;
         newScript.async = false;
         if (oldScript.type) newScript.type = oldScript.type;
+
+        /* Track load completion so callers can wait for this script to
+           actually run before assuming anything it registers (e.g. a
+           DOMContentLoaded-gated init captured into
+           window.__lpDeferredInits) is ready to use. Without this,
+           draining that queue right after appendChild() races the
+           network fetch — the fetch usually wins on a fast/cached
+           connection but not always, which is why this bug was
+           intermittent. */
+        loadPromises.push(
+          new Promise(function (resolve) {
+            newScript.onload = function () { resolve(); };
+            newScript.onerror = function () {
+              console.warn("[LP] Failed to load re-executed script:", src);
+              resolve();
+            };
+          }),
+        );
+
         document.head.appendChild(newScript);
       } else if (oldScript.textContent && oldScript.textContent.trim()) {
         try {
@@ -1439,6 +1459,8 @@
         }
       }
     });
+
+    return Promise.all(loadPromises);
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -1860,8 +1882,8 @@
        before chrome suppression, so deps inside #header/#footer are
        still caught. */
     ensureLeafUIDeps(depScriptSrcs).then(function () {
-      reExecuteScripts(wrapper);
-
+      return reExecuteScripts(wrapper);
+    }).then(function () {
       /* After scripts run, drain any deferred page-init functions.
          Pages that gate init on readyState (see mockDoc above) register
          it as a DOMContentLoaded listener, captured into

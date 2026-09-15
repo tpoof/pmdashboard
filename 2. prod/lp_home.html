@@ -744,7 +744,7 @@
     <link rel="stylesheet" href="/launchpad/files/leaf_header.css" />
     <script
       src="/launchpad/files/leaf_header.js"
-      data-is-sysadmin="0"
+      data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
     ></script>
   </head>
   <body>
