@@ -1155,7 +1155,8 @@
                 </div>
                 <h3 class="feat-h3">Integrated form library</h3>
                 <p class="feat-desc">
-                  One-click option to use or import VA-approved form templates.
+                  Import ready-to-use form templates other VA teams have
+                  built and shared.
                 </p>
               </article>
 
@@ -1185,8 +1186,9 @@
                 </div>
                 <h3 class="feat-h3">User access groups</h3>
                 <p class="feat-desc">
-                  Manage roles and permissions for your team without an IT
-                  ticket.
+                  Built-in user access groups handle approval processes of
+                  any size, from simple sign-offs to complex multi-part
+                  workflows.
                 </p>
               </article>
 
@@ -1232,8 +1234,7 @@
                 </div>
                 <h3 class="feat-h3">Built-in data protections</h3>
                 <p class="feat-desc">
-                  LEAF-S certified safeguards for PHI/PII — Section 508
-                  compliant out of the box.
+                  LEAF-S certified safeguards for PHI/PII.
                 </p>
               </article>
             </div>
@@ -1247,7 +1248,7 @@
               <span class="eyebrow">Recognition</span>
               <h2 class="sec-h2" id="awards-h2">Our Award-Winning Journey</h2>
               <p class="sec-sub">
-                Recognized nationally for innovation, impact, and excellence in
+                Recognized nationally for innovation and impact in
                 public-sector technology.
               </p>
             </div>
@@ -1608,7 +1609,7 @@
             ],
             title: "a fully digital, no-code way to replace paper processes",
             bullets: [
-              "Drag-and-drop form editor — no developers needed",
+              "Drag-and-drop form editor",
               "Import ready-to-use form templates other VA teams have built and shared",
               "Turns paper forms into a digital, trackable process",
               "Nothing to lose — every submission is stored and searchable",
@@ -1678,10 +1679,10 @@
             title:
               "full visibility with built-in reporting and data protection",
             bullets: [
-              "Report Builder, Timeline Explorer, and Data Visualizer",
+              "Powerful analytic tools like Report Builder, Timeline Explorer, and Data Visualizer",
               "See exactly where every request stands, in real time",
               "LEAF-S certified safeguards for PHI/PII",
-              "Full audit trail of who did what, and when",
+              "Full history log of who did what, and when",
             ],
           },
           {
@@ -1709,7 +1710,7 @@
             title: "self-managed access and admin oversight",
             bullets: [
               "Manage roles and permissions for your team",
-              "No IT ticket required to update access",
+              "Built-in user access groups handle approval processes of any size — from a single sign-off to complex, multi-part workflows",
               "Monitor site performance in one dashboard",
             ],
           },

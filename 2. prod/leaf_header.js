@@ -1608,7 +1608,17 @@
 
   function showSwapView() {
     if (_lpMain) _lpMain.style.display = "none";
-    if (_swapHost) _swapHost.style.display = "";
+    if (_swapHost) {
+      _swapHost.style.display = "";
+      /* Every route type funnels through here to reveal the swap
+         host — iframe: true routes (e.g. Help Library) never call
+         showSwapLoading(), which was the only other place this got
+         cleared. Without this, the host's original `hidden` attribute
+         keeps winning over the inline display style, so the first
+         iframe route visited in a session mounts but stays invisible
+         until some other, non-iframe route clears `hidden` first. */
+      _swapHost.removeAttribute("hidden");
+    }
 
     /* Skip link → fetched content */
     var skip = document.getElementById("lp-skip-nav");

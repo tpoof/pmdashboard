@@ -1,24 +1,23 @@
 <!--
-  Standalone test copy of view_homepage.tpl (Smarty tags resolved to
-  static defaults) — not for production. Edit view_homepage.tpl and
-  regenerate this copy; don't edit this file expecting it to reach prod.
+  Interim homepage, currently live at report.php?a=lp_home. Content and
+  design here are expected to diverge intentionally from view_homepage.tpl
+  over time -- view_homepage.tpl remains the version intended for eventual
+  full cutover.
 
-  Smarty placeholders resolved here:
-    - data-user-id -> "test-user" (multigrid.js needs a plain string,
-      not raw Smarty, to trigger its session.userID fallback)
-    - data-is-sysadmin -> "0" (gates the Internal nav in leaf_header.js)
-    - $CSRFToken (newsletter) -> "test-csrf-token" (subscribe POST will
-      fail here; caught by the existing .catch())
+  data-user-id and data-is-sysadmin on the multigrid.js script tag below
+  are real Smarty tags (match view_homepage.tpl:831-832), resolved
+  server-side per request same as any other session-dependent value on
+  this page.
+
+  Not yet converted to real Smarty tags (separate follow-up):
+    - leaf_header.js's own data-is-sysadmin, still hardcoded "0" -- hides
+      the Internal nav for everyone regardless of real group membership.
+    - Newsletter signup's CSRF const, still the literal "test-csrf-token"
+      -- the subscribe POST will fail (caught by the existing .catch()).
 
   leaf_header.css/.js and the #lp-nav-host/#lpSwapHost/#lp-live-region
-  mount points are normally supplied by main.tpl — added back here so
-  the header/nav still mounts standalone.
-
-  Known limitations standalone (not bugs — see multigrid.js/
-  leaf_header.js/main_iframe.tpl):
-    - View My Requests: needs a real leaf.va.gov session, won't work locally.
-    - Internal admin nav: hidden (flip data-is-sysadmin to "1" to test, then revert).
-    - Submit an Idea / Help Library: only resolve from https://leaf.va.gov/launchpad/.
+  mount points are included directly here rather than via main.tpl, same
+  as lp_blog.html.
 -->
 <!doctype html>
 <html lang="en">
@@ -855,8 +854,8 @@
         <div id="mst-root"></div>
         <script
           src="./files/multigrid.js"
-          data-user-id="test-user"
-          data-is-sysadmin="0"
+          data-user-id="<!--{$userID}-->"
+          data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
           data-mount="mst-root"
           data-trigger="mst-open-btn"
         ></script>
@@ -1176,7 +1175,8 @@
                 </div>
                 <h3 class="feat-h3">Integrated form library</h3>
                 <p class="feat-desc">
-                  One-click option to use or import VA-approved form templates.
+                  Import ready-to-use form templates other VA teams have
+                  built and shared.
                 </p>
               </article>
 
@@ -1206,8 +1206,9 @@
                 </div>
                 <h3 class="feat-h3">User access groups</h3>
                 <p class="feat-desc">
-                  Manage roles and permissions for your team without an IT
-                  ticket.
+                  Built-in user access groups handle approval processes of
+                  any size, from simple sign-offs to complex multi-part
+                  workflows.
                 </p>
               </article>
 
@@ -1253,8 +1254,7 @@
                 </div>
                 <h3 class="feat-h3">Built-in data protections</h3>
                 <p class="feat-desc">
-                  LEAF-S certified safeguards for PHI/PII — Section 508
-                  compliant out of the box.
+                  LEAF-S certified safeguards for PHI/PII.
                 </p>
               </article>
             </div>
@@ -1268,7 +1268,7 @@
               <span class="eyebrow">Recognition</span>
               <h2 class="sec-h2" id="awards-h2">Our Award-Winning Journey</h2>
               <p class="sec-sub">
-                Recognized nationally for innovation, impact, and excellence in
+                Recognized nationally for innovation and impact in
                 public-sector technology.
               </p>
             </div>
@@ -1619,7 +1619,7 @@
             ],
             title: "a fully digital, no-code way to replace paper processes",
             bullets: [
-              "Drag-and-drop form editor — no developers needed",
+              "Drag-and-drop form editor",
               "Import ready-to-use form templates other VA teams have built and shared",
               "Turns paper forms into a digital, trackable process",
               "Nothing to lose — every submission is stored and searchable",
@@ -1689,10 +1689,10 @@
             title:
               "full visibility with built-in reporting and data protection",
             bullets: [
-              "Report Builder, Timeline Explorer, and Data Visualizer",
+              "Powerful analytic tools like Report Builder, Timeline Explorer, and Data Visualizer",
               "See exactly where every request stands, in real time",
               "LEAF-S certified safeguards for PHI/PII",
-              "Full audit trail of who did what, and when",
+              "Full history log of who did what, and when",
             ],
           },
           {
@@ -1720,7 +1720,7 @@
             title: "self-managed access and admin oversight",
             bullets: [
               "Manage roles and permissions for your team",
-              "No IT ticket required to update access",
+              "Built-in user access groups handle approval processes of any size — from a single sign-off to complex, multi-part workflows",
               "Monitor site performance in one dashboard",
             ],
           },
