@@ -1264,6 +1264,24 @@ button.dd-link {
   gap: 8px;
   margin-top: 4px;
 }
+/* Submit uses launchpad.css's .btn for shape/padding but launchpad.css
+   only defines .btn-pri/.btn-sec color modifiers, not .btn-primary (the
+   class actually applied here) — so without this rule Submit falls back
+   to unstyled defaults. Matches launchpad.css's .btn-pri treatment,
+   which itself resolves to --nav-accent's blue (#005ea2). */
+.btn-primary {
+  background: var(--nav-accent);
+  color: #fff;
+  border-color: var(--nav-accent);
+}
+.btn-primary:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+}
+.btn-primary:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 3px;
+}
 @media (max-width: 640px) {
   .modal-box--feedback {
     width: 100vw;

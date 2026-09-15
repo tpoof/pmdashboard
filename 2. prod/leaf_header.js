@@ -2656,14 +2656,16 @@
           statusEl.classList.remove("is-error");
           statusEl.textContent = "Thank you for your feedback!";
           textarea.value = "";
-          setTimeout(closeFeedbackModal, 1500);
+          /* Leave submitBtn disabled so the user can't double-submit the
+             same feedback while the confirmation is showing. Cancel stays
+             enabled as the obvious way to close out; the modal no longer
+             auto-closes. */
+          cancelBtn.disabled = false;
         })
         .catch(function (err) {
           console.error("[LP] Feedback submission failed:", err.message);
           statusEl.classList.add("is-error");
           statusEl.textContent = "Submission failed. Please try again.";
-        })
-        .finally(function () {
           submitBtn.disabled = false;
           cancelBtn.disabled = false;
         });
@@ -2675,12 +2677,19 @@
     var modal = document.getElementById("lpFeedbackModal");
     var textarea = document.getElementById("lpFeedbackText");
     var statusEl = document.getElementById("lpFeedbackStatus");
+    var submitBtn = document.getElementById("lpFeedbackSubmit");
+    var cancelBtn = document.getElementById("lpFeedbackCancel");
     if (!modal || !textarea || !statusEl) return;
     closeAnyOpenModal();
     feedbackModalTrigger = trigger || document.activeElement;
     statusEl.textContent = "";
     statusEl.classList.remove("is-error");
     textarea.value = "";
+    /* A prior successful submit leaves Submit disabled (see the click
+       handler above) to block double-submits while the confirmation is
+       showing. Reset both buttons here so a reopened modal is fresh. */
+    if (submitBtn) submitBtn.disabled = false;
+    if (cancelBtn) cancelBtn.disabled = false;
     modal.removeAttribute("hidden");
     document.body.style.overflow = "hidden";
     textarea.focus();
