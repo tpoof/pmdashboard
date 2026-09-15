@@ -151,7 +151,7 @@
         {
           icon: "description",
           title: "Form Library",
-          desc: "Forms and templates built by VA teams",
+          desc: "Ready-to-use forms shared by other VA teams",
           href: "/launchpad/report.php?a=lp_form_library",
         },
         {
@@ -196,13 +196,13 @@
         {
           icon: "lightbulb",
           title: "Submit an Idea",
-          desc: "Submit an idea to improve LEAF",
+          desc: "Suggest a feature or improvement for LEAF",
           href: "https://leaf.va.gov/platform/ideas/",
         },
         {
           icon: "privacy_tip",
-          title: "Privacy",
-          desc: "LEAF privacy resources",
+          title: "Privacy Resources",
+          desc: "Guidance for protecting PHI/PII on your site",
           href: "/launchpad/report.php?a=lp_privacy",
         },
       ],
@@ -213,7 +213,7 @@
         {
           icon: "menu_book",
           title: "Help Library",
-          desc: "Guides and documentation",
+          desc: "Find answers and how-to guides for LEAF",
           /* iframe: true — Help Library has its own internal hash routing
              (e.g. #article-162), which needs its own real window/document
              to not collide with the launchpad's router(). Ideas has no
@@ -235,7 +235,7 @@
         {
           icon: "school",
           title: "Learn",
-          desc: "Training, videos, and resources to get the most out of LEAF",
+          desc: "Self-paced courses and live training for LEAF",
           href: "/launchpad/report.php?a=lp_learn",
           badge: "Coming Soon",
         },
