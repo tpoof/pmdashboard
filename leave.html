@@ -6,8 +6,8 @@
     <title>Coverage &amp; Handoff Reference</title>
     <style>
       /* ============================================================
-   LEAF Launchpad Design System  |  launchpad-styles.css
-   ============================================================ */
+            LEAF Launchpad Design System  |  launchpad-styles.css
+            ============================================================ */
 
       :root {
         --c-white: #fff;
@@ -397,6 +397,30 @@
         color: var(--lp-hl);
       }
 
+      .lref-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9375rem;
+      }
+      .lref-table th {
+        text-align: left;
+        padding: 10px 12px;
+        color: var(--lp-hl);
+        font-family: "Public Sans", sans-serif;
+        border-bottom: 2px solid var(--c-blue20);
+      }
+      .lref-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--c-blue10);
+        vertical-align: top;
+      }
+      .lref-table tr:last-child td {
+        border-bottom: none;
+      }
+      .lref-table td.notes {
+        color: var(--c-muted);
+      }
+
       @media (max-width: 900px) {
         .feats {
           grid-template-columns: 1fr 1fr;
@@ -408,6 +432,9 @@
       @media (max-width: 640px) {
         .feats {
           grid-template-columns: 1fr;
+        }
+        .lref-table {
+          font-size: 0.8rem;
         }
       }
 
@@ -428,9 +455,11 @@
           <h1 class="hero-h1">Coverage &amp; Handoff <em>Reference</em></h1>
           <p class="hero-sub">
             A single place to find active project code, shared resources, and
-            documentation while I'm on extended leave (October 26 – March 22).
-            This page is not actively monitored, but everything linked below
-            should be self-serve.
+            documentation while I'm on extended leave. This page is not actively
+            monitored, but everything linked below should be self-serve. If
+            something you're looking for isn't listed here, check the GitHub
+            repo or SharePoint folders directly, as they may contain additional
+            context not summarized on this page.
           </p>
         </div>
       </header>
@@ -450,6 +479,125 @@
                   >github.com/stephluma/LEAF</a
                 >
               </p>
+            </div>
+
+            <div class="scale-card">
+              <div class="scale-hd">
+                <span class="scale-title"
+                  >LEAF Site Access — Quick Reference</span
+                >
+              </div>
+              <div class="scale-body" style="overflow-x: auto">
+                <table class="lref-table">
+                  <thead>
+                    <tr>
+                      <th>Site</th>
+                      <th>URL</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Launchpad</td>
+                      <td>
+                        <a
+                          href="https://leaf.va.gov"
+                          target="_blank"
+                          rel="noopener"
+                          >leaf.va.gov</a
+                        >
+                      </td>
+                      <td class="notes">
+                        A copy of everything is also in leaf-preprod.va.gov for
+                        testing. Team improvement feedback modal workflow is in
+                        the Service Request Launchpad.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Votes</td>
+                      <td>
+                        <a
+                          href="https://leaf.va.gov/platform/votes"
+                          target="_blank"
+                          rel="noopener"
+                          >leaf.va.gov/platform/votes</a
+                        >
+                      </td>
+                      <td class="notes">
+                        Stores user Idea Portal votes and Help Library feedback.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Idea Portal</td>
+                      <td>
+                        <a
+                          href="https://leaf.va.gov/platform/ideas"
+                          target="_blank"
+                          rel="noopener"
+                          >leaf.va.gov/platform/ideas</a
+                        >
+                      </td>
+                      <td class="notes">—</td>
+                    </tr>
+                    <tr>
+                      <td>Privacy</td>
+                      <td>
+                        <a
+                          href="https://leaf.va.gov/platform/privacy"
+                          target="_blank"
+                          rel="noopener"
+                          >leaf.va.gov/platform/privacy</a
+                        >
+                      </td>
+                      <td class="notes">
+                        Repository for PHI/PII data elements and SORN in LEAF's
+                        PIA.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Project Dashboard</td>
+                      <td>
+                        <a
+                          href="https://leaf.va.gov/platform/projects"
+                          target="_blank"
+                          rel="noopener"
+                          >leaf.va.gov/platform/projects</a
+                        >
+                      </td>
+                      <td class="notes">
+                        Team improvement feedback modal workflow is within the
+                        portal.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Command Center</td>
+                      <td>
+                        <a
+                          href="https://leaf.va.gov/platform/calendar"
+                          target="_blank"
+                          rel="noopener"
+                          >leaf.va.gov/platform/calendar</a
+                        >
+                      </td>
+                      <td class="notes">
+                        Outlook sync with LEAF@va.gov for team members with
+                        read/write access to the shared mailbox. Team
+                        improvement feedback modal workflow is within the
+                        portal.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div
+                  class="note-box"
+                  style="margin-top: 16px; margin-bottom: 0"
+                >
+                  <strong>Admin access:</strong> If you need admin access to any
+                  of the sites above and don't already have it, please reach out
+                  to Su Gardner — she has admin access to all of the sites
+                  listed.
+                </div>
+              </div>
             </div>
 
             <div class="feats">
@@ -528,7 +676,13 @@
                   </li>
                 </ul>
                 <p style="margin-top: 12px">
-                  <strong>Link:</strong> <em>[placeholder — to be added]</em>
+                  <strong>Link:</strong>
+                  <a
+                    href="https://dvagov.sharepoint.com/:f:/r/sites/LEAFTO/Shared%20Documents/General/Branding%20%26%20Designs?d=w704d45a8f73044b1915edb8275bbfee1&csf=1&web=1&e=wp7Cfn"
+                    target="_blank"
+                    rel="noopener"
+                    >https://dvagov.sharepoint.com/:f:/r/sites/LEAFTO/Shared%20Documents/General/Branding%20%26%20Designs?d=w704d45a8f73044b1915edb8275bbfee1&csf=1&web=1&e=wp7Cfn</a
+                  >
                 </p>
               </div>
             </div>
@@ -558,6 +712,7 @@
                   <li>
                     To install Axure: submit a YourIT ticket (general software
                     request) with the TRM-approved Axure URL
+                    [https://www.oit.va.gov/Services/TRM/ToolPage.aspx?tid=6891#results]
                   </li>
                 </ul>
               </div>
@@ -567,13 +722,6 @@
 
         <section class="section">
           <div class="wrap">
-            <div class="note-box">
-              <strong>Note:</strong> This page will be updated as needed. If
-              something you're looking for isn't listed here, check the GitHub
-              repo or SharePoint folders directly, as they may contain
-              additional context not summarized on this page.
-            </div>
-
             <div class="note-box">
               <strong>Urgent contact:</strong> If you need to reach me urgently,
               you can text my VA mobile phone at 415-860-9452.
