@@ -1,19 +1,6 @@
-// Tracks record IDs already attempted for the one-time status repair
-// (see fetchUserSubmissions()), regardless of success or failure, so a
-// record whose repair write fails (network error, permissions, etc.)
-// can't trigger a retry loop every time this function re-runs within the
-// same page session — the repair path re-fetches data after writing,
-// which itself re-invokes this same function, so this guard is required
-// to guarantee termination.
-const statusRepairAttempted = new Set(); // Uploads a file for the given record and returns a definitive
-// success/failure result rather than fire-and-forget. Previously this
-// upload was kicked off with only a .catch() that logged to console —
-// nothing checked res.ok or the response body, and the overall
-// "submitted/saved successfully" toast fired immediately regardless of
-// this upload's outcome. That is the root cause of the reported bug: an
-// unsupported file type (or any other upload failure) would silently do
-// nothing server-side while the user still saw a generic success
-// message with no indication the attachment didn't attach.
+const statusRepairAttempted = new Set();
+const sendBackRepairFailed = new Set();
+
 async function uploadIdeaAttachment(recordID, files) {
   const fd = new FormData();
   fd.append("CSRFToken", csrfToken);
@@ -31,20 +18,13 @@ async function uploadIdeaAttachment(recordID, files) {
     return { success: false, responseText: "" };
   }
 }
+
 const PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 200;
 const RECORD_VIEW_URL = `${window.location.origin}/platform/ideas/index.php?a=printview&recordID=`;
+const TITLE_MAX_LENGTH = 100;
+const MODAL_HEADER_TITLE_MAX_LENGTH = 60;
 
-// Accepted attachment types — sourced from LEAF's own backend allow-list
-// (System.php's $mimeTypeMap / CommonConfig.php's fileManagerWhitelist),
-// not just the form's "Upload Images" label. Matching the server's real
-// allow-list here matters in both directions: too narrow and this client
-// check would falsely reject files LEAF would actually accept; too wide
-// and a "validated" file could still be rejected server-side with no
-// warning shown up front. Checked against both MIME type and file
-// extension — file.type can come back empty or inconsistent across
-// OS/browser combinations (this is especially true for bmp and tif),
-// so the extension is a necessary fallback, not a redundant check.
 const ACCEPTED_ATTACHMENT_MIME_TYPES = new Set([
   "image/png",
   "image/jpeg",
@@ -98,6 +78,7 @@ const IDEA_FIELDS = {
   attachment: 10,
   status: 12,
   other_category: 13,
+  comment: 20,
   date_submitted: 15,
   imported_votes: 23,
   implemented: 21,
@@ -118,6 +99,7 @@ const IDEA_INDICATORS = {
   attachment: `id${IDEA_FIELDS.attachment}`,
   status: `id${IDEA_FIELDS.status}`,
   other_category: `id${IDEA_FIELDS.other_category}`,
+  comment: `id${IDEA_FIELDS.comment}`,
   imported_votes: `id${IDEA_FIELDS.imported_votes}`,
   implemented: `id${IDEA_FIELDS.implemented}`,
   implemented_url: `id${IDEA_FIELDS.implemented_url}`,
@@ -128,20 +110,17 @@ const VOTE_INDICATORS = {
   user: `id${VOTE_FIELDS.user}`,
 };
 
-// Fields to retrieve for idea records
 const IDEA_GETDATA = [
   String(IDEA_FIELDS.category),
   String(IDEA_FIELDS.title),
   String(IDEA_FIELDS.status),
   String(IDEA_FIELDS.imported_votes),
   String(IDEA_FIELDS.date_submitted),
+  String(IDEA_FIELDS.comment),
 ];
 
-// Fields to retrieve for vote records
 const VOTE_GETDATA = [String(VOTE_FIELDS.idea), String(VOTE_FIELDS.user)];
 
-// x-filterData values — keep s1 so indicator data is preserved,
-// drop unused top-level metadata for bandwidth savings
 const IDEA_FILTER_DATA = "recordID,title,created_date,userID,s1";
 const VOTE_FILTER_DATA = "recordID,s1";
 
@@ -173,12 +152,11 @@ const PUBLIC_VISIBLE_STATUS_KEYS = new Set([
   "completed",
   "already_exists",
   "duplicate",
+  "backlog",
+  "in_development",
+  "need_more_info",
+  "unlikely",
 ]);
-
-// (ICON_FILL removed — was the font-variation-settings string applied to
-// Material Symbols glyphs; no longer needed now that vote/share icons
-// are inline SVGs using fill="currentColor", styled via .ip-icon in
-// idea.html rather than font-variation-settings.)
 
 let ideas = [];
 let ideasRaw = [];
@@ -186,9 +164,6 @@ let ideasById = {};
 let ideasVMById = {};
 let ideaOwnerMap = {};
 let voteCounts = {};
-// Known valid category labels (populated from the live indicator-8 select,
-// or CATEGORY_FALLBACK). Used to split multi-select values that come back
-// concatenated with no delimiter (e.g. legacy-imported records).
 let categoryOptionsList = [];
 
 const portalConfig = window.leafIdeaPortal || {};
@@ -212,38 +187,15 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-// Inline SVG icon markup — replaces the old Material Symbols icon-font
-// glyphs (<span class="material-symbols-outlined">name</span>) used for
-// the vote (thumb_up) and share icons, the two icon names that only ever
-// appear in this file's dynamically-generated row/detail-modal markup
-// rather than in idea.html's static markup. Each SVG uses
-// fill="currentColor" so it responds to every existing dynamic-color CSS
-// rule (hover, voted, own, unavailable, disabled states) exactly the way
-// the font glyphs did — no CSS color-rule changes were needed elsewhere,
-// only sizing (font-size -> width/height, see .ip-icon in idea.html).
-// Centralized here as the single source of truth for these two icons'
-// markup, rather than duplicating the raw <svg> in every render site.
+// Icon path data sourced from Google's Material Symbols (Filled) set.
 const ICON_SVG = {
   thumb_up:
     '<path d="M720-120H320v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h218q32 0 56 24t24 56v80q0 7-1.5 15t-4.5 15L794-168q-9 20-30 34t-44 14ZM240-640v520H80v-520h160Z"/>',
+  thumb_down:
+    '<path d="M240-840h400v520L360-40l-50-50q-7-7-11.5-19t-4.5-23v-14l44-174H120q-32 0-56-24t-24-56v-80q0-7 1.5-15t4.5-15l120-282q9-20 30-34t44-14Zm480 520v-520h160v520H720Z"/>',
   share:
     '<path d="M680-80q-50 0-85-35t-35-85q0-6 3-28L282-392q-16 15-37 23.5t-45 8.5q-50 0-85-35t-35-85q0-50 35-85t85-35q24 0 45 8.5t37 23.5l281-164q-2-7-2.5-13.5T560-760q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35q-24 0-45-8.5T598-672L317-508q2 7 2.5 13.5t.5 14.5q0 8-.5 14.5T317-452l281 164q16-15 37-23.5t45-8.5q50 0 85 35t35 85q0 50-35 85t-85 35Z"/>',
-  // "send" is used by the Submit/Retry Submit button rendered by
-  // buildIdeaRow() and buildDetailSkeleton() — a THIRD icon (beyond
-  // thumb_up/share) that also needed conversion in this file's
-  // dynamically-generated markup, missed in the first pass because that
-  // pass only searched for thumb_up/share specifically. "send" was
-  // already converted separately in idea.html's STATIC markup (the Save/
-  // Submit Idea modal buttons), but this dynamic row/detail-modal usage
-  // is a distinct code path that still referenced the now-removed
-  // ICON_FILL constant, causing a ReferenceError on every row render.
   send: '<path d="M120-160v-240l320-80-320-80v-240l760 320-760 320Z"/>',
-  // check_circle/error/close — used exclusively by showToast()'s
-  // dynamically-injected toast banner markup. These three were never
-  // part of the original 14-icon list, the thumb_up/share pair, or the
-  // "send" fix — they were missed entirely across every prior pass in
-  // this conversion, since showToast() wasn't checked for icon-font
-  // usage until this gap was noticed directly in the deployed UI.
   check_circle:
     '<path d="m424-296 282-282-56-56-226 226-114-114-56 56 170 170Zm56 216q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/>',
   error:
@@ -253,6 +205,11 @@ const ICON_SVG = {
   edit: '<path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>',
   open_in_new:
     '<path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>',
+  sort: '<path d="M120-240v-80h240v80H120Zm0-200v-80h480v80H120Zm0-200v-80h720v80H120Z"/>',
+  comment:
+    '<path d="M240-400h320v-80H240v80Zm0-120h480v-80H240v80Zm0-120h480v-80H240v80ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Z"/>',
+  close_small:
+    '<path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>',
 };
 
 function iconSvg(name, opts = {}) {
@@ -261,17 +218,6 @@ function iconSvg(name, opts = {}) {
   const hidden = opts.ariaHidden === false ? "" : ' aria-hidden="true"';
   const extraClass = opts.extraClass ? ` ${opts.extraClass}` : "";
   const style = opts.style ? ` style="${opts.style}"` : "";
-  // BUGFIX: this template previously had no fill attribute at all on the
-  // generated <svg> tag. The individual path strings in ICON_SVG were
-  // extracted from the user's uploaded files by stripping the outer
-  // <svg fill="currentColor"> wrapper down to just the inner <path>
-  // markup — but fill="currentColor" was never re-added to THIS new
-  // wrapper <svg>. SVG's actual default fill (per spec, when no fill is
-  // set anywhere) is black, not "inherit color from CSS" — so every icon
-  // rendered via this helper was silently rendering as solid black
-  // regardless of any .ip-icon { color: ... } CSS rule, since those
-  // rules only affect currentColor, which was never actually wired up.
-  // This affected every icon, not just the ones visibly reported.
   return `<svg class="ip-icon${extraClass}" viewBox="0 -960 960 960" fill="currentColor" focusable="false"${hidden}${style}>${inner}</svg>`;
 }
 
@@ -282,18 +228,12 @@ function truncateTitle(title, max = 100) {
 
 /* ─────────────────────────────────────────────────────────────
    Multi-select category parsing
-   Handles both delimited values (comma/semicolon/newline — the
-   normal case for values entered through the app) and legacy
-   imported values that come back as selected labels concatenated
-   with no delimiter at all, by greedily matching against the
-   known category option list (longest labels first).
 ───────────────────────────────────────────────────────────── */
 
 function parseCategoryValue(raw) {
   const str = String(raw || "").trim();
   if (!str) return [];
 
-  // Normal case — an explicit delimiter is present.
   if (/[,;\n]/.test(str)) {
     return str
       .split(/[,;\n]+/)
@@ -301,7 +241,6 @@ function parseCategoryValue(raw) {
       .filter(Boolean);
   }
 
-  // No delimiter — try to greedily split using known category labels.
   const known = (categoryOptionsList || [])
     .filter(Boolean)
     .slice()
@@ -320,21 +259,43 @@ function parseCategoryValue(raw) {
       out.push(match);
       remaining = remaining.slice(match.length);
     }
-    // Only trust the greedy split if it consumed the whole string —
-    // otherwise fall back to treating it as a single value below.
     if (out.length && !remaining.trim()) return out;
   }
 
   return [str];
 }
 
-function renderCategoryPills(categories) {
+let categoryPillPopoverSeq = 0;
+
+// "+N" overflow indicator: a real button with an attached popover
+// (not a title tooltip) so the full category list is keyboard- and
+// screen-reader-reachable.
+function renderCategoryPills(categories, opts = {}) {
   const list = Array.isArray(categories) ? categories : [categories];
   const clean = list.map((c) => String(c || "").trim()).filter(Boolean);
   if (!clean.length) return "";
-  return `<span class="ip-cat-pills">${clean
-    .map((c) => `<span class="ip-cat-pill">${escapeHtml(c)}</span>`)
-    .join("")}</span>`;
+  if (opts.showAll || clean.length === 1) {
+    return `<span class="ip-cat-pills">${clean
+      .map(
+        (c) =>
+          `<span class="ip-cat-pill" title="${escapeHtml(c)}" aria-label="${escapeHtml(c)}">${escapeHtml(c)}</span>`,
+      )
+      .join("")}</span>`;
+  }
+  const [first, ...rest] = clean;
+  const popoverId = `ip-cat-pop-${++categoryPillPopoverSeq}`;
+  const restLabel = rest.join(", ");
+  return `<span class="ip-cat-pills">
+    <span class="ip-cat-pill" title="${escapeHtml(first)}" aria-label="${escapeHtml(first)}">${escapeHtml(first)}</span>
+    <button type="button" class="ip-cat-pill ip-cat-pill--more"
+      data-cat-more-toggle="${popoverId}"
+      aria-expanded="false"
+      aria-controls="${popoverId}"
+      aria-label="Show ${rest.length} more ${rest.length === 1 ? "category" : "categories"}: ${escapeHtml(restLabel)}">+${rest.length}</button>
+    <span class="ip-cat-pill--more-popover" id="${popoverId}" role="group" aria-label="Additional categories">
+      ${rest.map((c) => `<span class="ip-cat-pill" title="${escapeHtml(c)}" aria-label="${escapeHtml(c)}">${escapeHtml(c)}</span>`).join("")}
+    </span>
+  </span>`;
 }
 
 function debounce(fn, delay) {
@@ -383,20 +344,7 @@ async function apiPostJson(url, data) {
 const userID = sanitizeLeafValue(portalConfig.userID);
 const csrfToken = sanitizeLeafValue(portalConfig.csrfToken);
 
-// Server-confirmed vote state only (populated by fetchVotesData()). No
-// localStorage fallback — a client-side cache here previously masked a
-// broken server-side unvote by silently re-adding votes on refresh, and
-// it was never visible to print_form_ideas.tpl anyway (different page,
-// own vote-state fetch), so it couldn't keep the two views in sync. The
-// server is now the single source of truth everywhere.
 let userVotes = {};
-
-// Maps ideaID -> the current user's own vote record's recordID (the vote
-// FORM record's own recordID, distinct from the idea it points at).
-// Populated from fetchVotesData() (server-confirmed) and immediately on a
-// fresh IdeaVotes() call. Required to target a specific vote record for
-// un-voting. CONFIRMED WORKING as of the field shape `recordID` (numeric,
-// coerced to string) returned by this LEAF instance's form/query endpoint.
 let myVoteRecordIdByIdea = {};
 
 let votingInProgress = false;
@@ -407,23 +355,12 @@ let lastFocusedElement = null;
 let lastRecordFocusedElement = null;
 let resolvedVoterEmail = "";
 
-// Tracks whether the Add/Edit Idea modal is currently in "edit an existing
-// draft" mode vs. "create new idea" mode. When set, NewIdea() updates this
-// record in place instead of creating a new one via form/new.
 let editingDraftRecordID = null;
-// Filename of a draft's existing attachment, shown in the edit form so
-// users don't think re-opening a draft silently dropped their upload.
 let editingDraftAttachmentLabel = "";
 
 const state = {
   search: "",
   categoryFilter: "all",
-  // Tracks which tab is currently visible so shared UI that has to act
-  // differently per-tab (currently just the category sidebar's counts
-  // and click-to-filter target) knows which dataset to use. Re-added in
-  // scoped form after the broader "personal stats strip" version of this
-  // was reverted — this only drives the category sidebar now, nothing
-  // else. Defaults to "all" to match the default active tab in markup.
   activeTab: "all",
   pagination: {
     all: { page: 1, showAll: false },
@@ -432,9 +369,9 @@ const state = {
 };
 
 const sortState = {
-  tblIdeas: { key: "", dir: "asc" },
+  tblIdeas: { key: "id", dir: "desc" },
   tblTopIdeas: { key: "", dir: "desc" },
-  tblMyIdeas: { key: "", dir: "asc" },
+  tblMyIdeas: { key: "id", dir: "desc" },
 };
 
 const ui = {
@@ -448,11 +385,52 @@ const ui = {
   pageInfo: { all: null, my: null },
   pageHint: { all: null, my: null },
   panels: { all: null, my: null },
+  tabCount: { all: null, my: null },
 };
 
 /* ─────────────────────────────────────────────────────────────
-   DOM cache
+   Table scroll-edge fade
+   Toggles can-scroll-left/can-scroll-right based on actual scroll
+   position, so the fade only shows when there's real content to
+   scroll to.
 ───────────────────────────────────────────────────────────── */
+
+function updateTableScrollEdges(el) {
+  if (!el) return;
+  // Tolerance avoids sub-pixel rounding from falsely registering as
+  // "has more to scroll," which would permanently reapply the fade and
+  // mask the row hover background beneath it.
+  const SCROLL_TOLERANCE_PX = 4;
+  const max = el.scrollWidth - el.clientWidth;
+  if (max <= SCROLL_TOLERANCE_PX) {
+    el.classList.remove("can-scroll-left", "can-scroll-right");
+    return;
+  }
+  const atStart = el.scrollLeft <= SCROLL_TOLERANCE_PX;
+  const atEnd = el.scrollLeft >= max - SCROLL_TOLERANCE_PX;
+  el.classList.toggle("can-scroll-left", !atStart);
+  el.classList.toggle("can-scroll-right", !atEnd);
+}
+
+function bindTableScrollEdges() {
+  const containers = Array.from(document.querySelectorAll(".ip-tableScroll"));
+  containers.forEach((el) => {
+    updateTableScrollEdges(el);
+    el.addEventListener("scroll", () => updateTableScrollEdges(el), {
+      passive: true,
+    });
+  });
+  const onResize = debounce(() => {
+    containers.forEach((el) => updateTableScrollEdges(el));
+  }, 150);
+  window.addEventListener("resize", onResize);
+
+  // Table content re-renders often (sort, page, filter, tab switch),
+  // which can change scrollWidth without a scroll/resize event firing.
+  setInterval(() => {
+    containers.forEach((el) => updateTableScrollEdges(el));
+  }, 1000);
+}
 
 function cacheElements() {
   ui.results = document.getElementById("results");
@@ -470,13 +448,13 @@ function cacheElements() {
   ui.pageHint.my = document.getElementById("myPageHint");
   ui.panels.all = document.getElementById("panel-all");
   ui.panels.my = document.getElementById("panel-my");
+  ui.tabCount.all = document.getElementById("allTabCount");
+  ui.tabCount.my = document.getElementById("myTabCount");
 }
 
 /* ─────────────────────────────────────────────────────────────
    Toast → sticky top banner
    Manual-dismiss only (no auto-hide timer) per WCAG 2.2.1/2.2.3.
-   CONFIRMED: top banner position + forced white text now display
-   correctly.
 ───────────────────────────────────────────────────────────── */
 
 function showToast(msg, isError = false) {
@@ -494,6 +472,19 @@ function showToast(msg, isError = false) {
   toast
     .querySelector(".ip-toast__close")
     ?.addEventListener("click", hideToast, { once: true });
+
+  const computed = window.getComputedStyle(toast);
+  if (computed.position !== "fixed") {
+    console.warn(
+      "[Toast] Unexpected computed styles — CSS may not have applied:",
+      {
+        position: computed.position,
+        top: computed.top,
+        zIndex: computed.zIndex,
+        display: computed.display,
+      },
+    );
+  }
 }
 
 function hideToast() {
@@ -538,6 +529,15 @@ function renderStatsStrip(totalIdeas, implemented, totalVotes) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Tab count pills
+───────────────────────────────────────────────────────────── */
+
+function updateTabCount(scope, count) {
+  const el = ui.tabCount[scope];
+  if (el) el.textContent = `(${count})`;
+}
+
+/* ─────────────────────────────────────────────────────────────
    Category sidebar
 ───────────────────────────────────────────────────────────── */
 
@@ -562,12 +562,8 @@ function buildCategorySidebar(ideaList) {
   const allCountEl = document.getElementById("ip-cat-count-all");
   if (allCountEl) allCountEl.textContent = total;
 
-  // Preserve which category is currently selected across a rebuild (e.g.
-  // switching tabs shouldn't silently reset an active category filter
-  // back to "All Categories").
   const previouslyActiveCat = state.categoryFilter || "all";
 
-  // Remove previously injected items
   catList.querySelectorAll("li[data-cat]").forEach((li) => {
     if (!li.querySelector("[data-cat='all']")) catList.removeChild(li);
   });
@@ -585,13 +581,12 @@ function buildCategorySidebar(ideaList) {
       catList.appendChild(li);
     });
 
-  // Keep "All Categories" highlighted correctly too, since the rebuild
-  // above regenerates every button including the static "all" one's
-  // sibling state.
   const allBtn = catList.querySelector('[data-cat="all"]');
   if (allBtn) {
     allBtn.classList.toggle("is-active", previouslyActiveCat === "all");
   }
+
+  applyCategorySidebarInertState(state.activeTab === "top");
 
   if (!catList.dataset.boundClick) {
     catList.dataset.boundClick = "true";
@@ -606,12 +601,6 @@ function buildCategorySidebar(ideaList) {
         .querySelectorAll(".ip-catItem")
         .forEach((b) => b.classList.remove("is-active"));
       btn.classList.add("is-active");
-      // Re-render whichever list is actually the active tab. Top 10 is
-      // intentionally excluded — it's a fixed top-10-by-votes ranking
-      // across all categories, not a filterable list, so category clicks
-      // while on that tab fall back to re-rendering All Ideas' data
-      // (which is what the sidebar counts also reflect while on Top 10 —
-      // see refreshCategorySidebarForActiveTab()).
       if (state.activeTab === "my") {
         renderMyIdeas();
       } else {
@@ -621,15 +610,21 @@ function buildCategorySidebar(ideaList) {
   }
 }
 
-// Rebuilds the category sidebar using whichever dataset matches the
-// currently active tab, so both the displayed counts AND the
-// click-to-filter behavior are scoped consistently to what's actually on
-// screen. On Top 10 specifically, the sidebar is made visually inert
-// instead of falling back to All Ideas' counts — Top 10 is a fixed
-// top-10-by-votes ranking across all categories, not a filterable list,
-// so a category click there has never actually changed what's shown;
-// showing live-looking counts and clickable buttons for a control that
-// doesn't apply was more confusing than showing nothing.
+// Applies/removes keyboard-inert state on category buttons. CSS
+// already blocks pointer interaction visually via .is-inert, but
+// buttons stayed in the tab order — tabindex="-1" removes them fully.
+function applyCategorySidebarInertState(isInert) {
+  const catList = document.getElementById("catList");
+  if (!catList) return;
+  catList.querySelectorAll(".ip-catItem").forEach((btn) => {
+    if (isInert) {
+      btn.setAttribute("tabindex", "-1");
+    } else {
+      btn.removeAttribute("tabindex");
+    }
+  });
+}
+
 function refreshCategorySidebarForActiveTab() {
   const catList = document.getElementById("catList");
   const note = document.getElementById("ipCatSidebarNote");
@@ -639,6 +634,7 @@ function refreshCategorySidebarForActiveTab() {
       catList.setAttribute("aria-disabled", "true");
     }
     if (note) note.hidden = false;
+    applyCategorySidebarInertState(true);
     return;
   }
   if (catList) {
@@ -646,6 +642,7 @@ function refreshCategorySidebarForActiveTab() {
     catList.removeAttribute("aria-disabled");
   }
   if (note) note.hidden = true;
+  applyCategorySidebarInertState(false);
 
   if (state.activeTab === "my") {
     buildCategorySidebar(myIdeasCache);
@@ -665,9 +662,6 @@ function updateMyActivity(myCount, votedCount) {
   if (votesEl) votesEl.textContent = votedCount;
 }
 
-// Count of the user's votes that still point at an available (non-deleted)
-// idea — mirrors the filtering used to build the "Ideas I've voted for"
-// list, so the sidebar count and the list it summarizes always agree.
 function getAvailableVotedCount() {
   return Object.keys(userVotes).filter(
     (id) => userVotes[id] === true && ideasVMById[id] != null,
@@ -675,31 +669,90 @@ function getAvailableVotedCount() {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Status messages
+   Category "+N" popover
 ───────────────────────────────────────────────────────────── */
 
-function setPanelBusy(scope, isBusy) {
-  ui.panels[scope]?.setAttribute("aria-busy", isBusy ? "true" : "false");
+function closeAllCategoryPopovers(exceptId) {
+  document
+    .querySelectorAll(".ip-cat-pill--more-popover.is-open")
+    .forEach((pop) => {
+      if (pop.id === exceptId) return;
+      pop.classList.remove("is-open");
+      const toggle = document.querySelector(
+        `[data-cat-more-toggle="${pop.id}"]`,
+      );
+      toggle?.setAttribute("aria-expanded", "false");
+    });
 }
 
-function setStatus(scope, message, type) {
-  const el = ui.status[scope];
-  if (!el) return;
-  if (!message) {
-    el.hidden = true;
-    el.textContent = "";
-    el.classList.remove("is-error", "is-loading");
-    return;
+// Popover uses position:fixed (see CSS) so it escapes any ancestor's
+// overflow:hidden clipping — table cells clip content for ellipsis
+// truncation, which would otherwise hide this popover too. Position is
+// computed here relative to the toggle button instead of via CSS
+// anchoring, and re-clamped to stay within the viewport.
+function positionCategoryPopover(popover, toggle) {
+  const rect = toggle.getBoundingClientRect();
+  const popRect = popover.getBoundingClientRect();
+  let left = rect.left;
+  let top = rect.bottom + 6;
+  const maxLeft = window.innerWidth - popRect.width - 8;
+  if (left > maxLeft) left = Math.max(8, maxLeft);
+  if (top + popRect.height > window.innerHeight - 8) {
+    top = rect.top - popRect.height - 6;
   }
-  el.textContent = message;
-  el.hidden = false;
-  el.classList.toggle("is-error", type === "error");
-  el.classList.toggle("is-loading", type === "loading");
+  popover.style.left = `${left}px`;
+  popover.style.top = `${top}px`;
+}
+
+function bindCategoryPillPopovers() {
+  document.addEventListener("click", (e) => {
+    const toggle = e.target.closest("[data-cat-more-toggle]");
+    if (toggle) {
+      const popoverId = toggle.getAttribute("data-cat-more-toggle");
+      const popover = document.getElementById(popoverId);
+      if (!popover) return;
+      const willOpen = !popover.classList.contains("is-open");
+      closeAllCategoryPopovers(willOpen ? popoverId : null);
+      popover.classList.toggle("is-open", willOpen);
+      toggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+      if (willOpen) positionCategoryPopover(popover, toggle);
+      return;
+    }
+    if (!e.target.closest(".ip-cat-pill--more-popover")) {
+      closeAllCategoryPopovers(null);
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeAllCategoryPopovers(null);
+  });
+  window.addEventListener("scroll", () => closeAllCategoryPopovers(null), true);
+  window.addEventListener("resize", () => closeAllCategoryPopovers(null));
 }
 
 /* ─────────────────────────────────────────────────────────────
    Modal helpers
 ───────────────────────────────────────────────────────────── */
+
+// Measures the live height of any fixed/sticky header/nav bar so the
+// modal's dialog renders below it instead of underneath it. Falls
+// back to the CSS default if nothing is found (mirrors lp_team.html's
+// thb-modal pattern).
+function measureHeaderOffset(modalEl, cssVarName) {
+  if (!modalEl) return;
+  let bottom = 0;
+  document
+    .querySelectorAll('header, nav, [class*="breadcrumb"], [class*="nav"]')
+    .forEach((el) => {
+      const cs = getComputedStyle(el);
+      if (cs.position === "fixed" || cs.position === "sticky") {
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= 4 && rect.bottom > bottom) bottom = rect.bottom;
+      }
+    });
+  if (bottom > 0) {
+    modalEl.style.setProperty(cssVarName, `${Math.ceil(bottom) + 16}px`);
+  }
+}
 
 function getFocusableElements(container) {
   return Array.from(
@@ -738,8 +791,6 @@ function bindFocusTrap(container) {
 }
 
 function setBackgroundHidden(hidden) {
-  // Use `inert` to block both keyboard focus and screen reader access on
-  // background content. `aria-hidden` alone doesn't stop keyboard Tab.
   const targets = [
     document.getElementById("lp-main"),
     document.getElementById("lp-nav-host"),
@@ -762,6 +813,7 @@ function openModal(modalId) {
   const modal = document.getElementById(modalId);
   if (!modal) return;
   lastFocusedElement = document.activeElement;
+  measureHeaderOffset(modal, "--ip-header-offset");
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
   setBackgroundHidden(true);
@@ -780,9 +832,6 @@ function closeModal(modalId) {
   setBackgroundHidden(false);
   lastFocusedElement?.focus();
   lastFocusedElement = null;
-  // Leaving edit mode whenever the Add/Edit Idea modal closes, regardless
-  // of how it was closed, so a later "Add Idea" from the hero CTA never
-  // accidentally inherits a stale edit target.
   if (modalId === "addIdeaModal") {
     editingDraftRecordID = null;
     editingDraftAttachmentLabel = "";
@@ -793,9 +842,6 @@ function closeModal(modalId) {
 function bindModalEvents() {
   document.querySelectorAll("[data-ip-open]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      // Opening via any generic [data-ip-open] trigger (e.g. hero CTA) is
-      // always a "create new" entry point — make sure edit-mode state from
-      // a previous "Submit" click doesn't leak in.
       if (btn.dataset.ipOpen === "addIdeaModal" && !btn.dataset.editRecordId) {
         editingDraftRecordID = null;
         editingDraftAttachmentLabel = "";
@@ -843,11 +889,6 @@ function bindTabs() {
       panel.classList.add("is-active");
       panel.setAttribute("aria-hidden", "false");
     }
-    // Track active tab and refresh the category sidebar's counts to match
-    // — previously the sidebar was built exactly once from the global
-    // All Ideas list and never rebuilt on tab switch, so its counts never
-    // reflected My Ideas' own categories even after the click-to-filter
-    // behavior was fixed to target the right list.
     const tabKey = active.dataset.ipTab || "all";
     if (state.activeTab !== tabKey) {
       state.activeTab = tabKey;
@@ -877,29 +918,26 @@ function bindTabs() {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Status resolution — single source of truth
+   Status messages
 ───────────────────────────────────────────────────────────── */
 
-function resolveDisplayStatus(idea) {
-  if (!idea) return "";
-  if (!isSubmittedIdea(idea)) return "Draft";
-  // BUGFIX: previously this fell through to the literal string "Draft"
-  // whenever a submitted record's status field (indicator 12) was blank
-  // — using the exact same fallback text as the "never submitted at all"
-  // case above, even though these are two entirely different situations.
-  // This happened for real: writeDraftStatus() intentionally blanks
-  // indicator 12 to "" whenever a draft is saved (so LEAF's own native
-  // printview wouldn't show a stale "Submitted"-looking default on an
-  // unsubmitted draft) — but if that same record was saved as a draft
-  // first and only later actually submitted, nothing ever re-populates
-  // indicator 12 with a real status value. The record IS genuinely
-  // submitted (date_submitted is present, needsSubmitAction() correctly
-  // hides the Submit button) — it was just showing the word "Draft" in
-  // the status column by coincidence of a shared fallback string, not
-  // because it was actually still a draft. "Submitted" is now used for
-  // this case instead, so the two situations can never be confused again.
-  const statusRaw = getIdeaStatusRaw(idea);
-  return normalizeStatusLabel(sanitizeLeafValue(statusRaw)) || "Submitted";
+function setPanelBusy(scope, isBusy) {
+  ui.panels[scope]?.setAttribute("aria-busy", isBusy ? "true" : "false");
+}
+
+function setStatus(scope, message, type) {
+  const el = ui.status[scope];
+  if (!el) return;
+  if (!message) {
+    el.hidden = true;
+    el.textContent = "";
+    el.classList.remove("is-error", "is-loading");
+    return;
+  }
+  el.textContent = message;
+  el.hidden = false;
+  el.classList.toggle("is-error", type === "error");
+  el.classList.toggle("is-loading", type === "loading");
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -967,7 +1005,7 @@ function renderAttachmentsHTML(html) {
     out += `<figure style="margin:0;display:flex;flex-direction:column;gap:6px">
       <button type="button" class="ip-detail__attach-btn"
         onclick="window.open('${src}','pv_img_${i}','width=750,height=750,resizable=yes,scrollbars=yes')"
-        aria-label="View full size: ${filename}">
+        aria-label="View full size: ${filename} (opens in new window)">
         <img src="${src}" alt="${filename}" class="ip-detail__attach-thumb" />
       </button>
       <span class="ip-detail__attach-caption" aria-hidden="true" title="${filename}">${filename}</span>
@@ -1009,10 +1047,8 @@ function extractAttachmentLabel(html) {
   return "";
 }
 
-// Renders a vote button's visible state (icon/label/classes/aria) for
-// either row-table buttons or the detail-modal button, so IdeaVotes(),
-// unvoteIdea(), and initial row rendering all produce an identical result
-// and never drift out of sync with each other.
+// Single source of truth for a vote button's visible state, reused by
+// every render path (table rows, detail modal, voted modal).
 function voteButtonStateHtml(recordID, isVoted, isOwn, hasVoteRecordId) {
   const unavailable = isVoted && !isOwn && !hasVoteRecordId;
   if (isOwn) {
@@ -1022,7 +1058,7 @@ function voteButtonStateHtml(recordID, isVoted, isOwn, hasVoteRecordId) {
       ariaLabel: "You can't vote on your own idea",
       title: "You can't vote on your own idea",
       icon: "thumb_up",
-      label: "Your idea",
+      label: "",
     };
   }
   if (unavailable) {
@@ -1044,6 +1080,8 @@ function voteButtonStateHtml(recordID, isVoted, isOwn, hasVoteRecordId) {
       title: "Click to remove your vote",
       icon: "thumb_up",
       label: "Voted",
+      hoverIcon: "thumb_down",
+      hoverLabel: "Unvote",
     };
   }
   return {
@@ -1054,6 +1092,17 @@ function voteButtonStateHtml(recordID, isVoted, isOwn, hasVoteRecordId) {
     icon: "thumb_up",
     label: "",
   };
+}
+
+// Both spans exist in the DOM at once (CSS toggles visibility on
+// hover/focus) — aria-hidden on both prevents "Voted Unvote" being
+// announced together. The button's own aria-label is the sole
+// accessible name.
+function voteButtonInnerHtml(state) {
+  if (state.hoverIcon) {
+    return `<span class="ip-upvote__rest" aria-hidden="true">${iconSvg(state.icon)}${state.label ? ` ${state.label}` : ""}</span><span class="ip-upvote__hover" aria-hidden="true">${iconSvg(state.hoverIcon)} ${state.hoverLabel}</span>`;
+  }
+  return `${iconSvg(state.icon)}${state.label ? ` ${state.label}` : ""}`;
 }
 
 function buildDetailSkeleton(
@@ -1074,13 +1123,6 @@ function buildDetailSkeleton(
     hasVoteRecordId,
   );
   const votesText = `${escapeHtml(String(votes))} ${votes === 1 ? "vote" : "votes"}`;
-  // "Retry Submit" — shown for the submitter's own record when a
-  // previously-attempted submission's workflow step failed. True drafts
-  // (isDraft) no longer reach this modal at all — clicking a draft's
-  // title now opens the edit form directly (see bindRecordModal()) — but
-  // the isDraft guard stays here defensively in case some other path
-  // still opens this modal for one; a read-only preview isn't the right
-  // place to offer submitting an unedited draft either way.
   const submitBtnHtml =
     isOwn && needsSubmit && !isDraft
       ? `<button type="button"
@@ -1093,15 +1135,13 @@ function buildDetailSkeleton(
       : "";
   return `<div class="ip-detail" id="ipDetailRoot">
 
-    <!-- Title row: #ID + h2 side by side -->
     <div class="ip-detail__title-row">
       <span class="ip-detail__id" aria-label="Idea number ${escapeHtml(recordID)}">#${escapeHtml(recordID)}</span>
       <h2 class="ip-detail__title" id="ip-detail-title" tabindex="-1">${escapeHtml(title || "Idea Details")}</h2>
     </div>
 
-    <!-- Info row: Status · Votes -->
     <div class="ip-detail__info-row" role="group" aria-label="Idea metadata">
-      ${statusLabel ? `<span class="ip-detail__info-item"><span class="ip-detail__info-label">Status</span><span class="ip-detail__info-val ip-detail__info-val--status" id="ip-detail-status-text">${escapeHtml(statusLabel)}</span></span><span class="ip-detail__info-sep" aria-hidden="true">·</span>` : ""}
+      ${statusLabel ? `<span class="ip-detail__info-item"><span class="ip-detail__info-label">Status</span><span class="ip-badge ${getStatusBadgeClass(statusLabel)}" id="ip-detail-status-text">${escapeHtml(statusLabel)}</span></span><span class="ip-detail__info-sep" aria-hidden="true">·</span>` : ""}
       <span class="ip-detail__info-item"><span class="ip-detail__info-label">Votes</span><span class="ip-detail__info-val ip-detail__info-val--votes" id="ip-detail-votes-text">${iconSvg("thumb_up")}${votesText}</span></span>
     </div>
 
@@ -1143,7 +1183,11 @@ function buildDetailSkeleton(
       <div id="ip-dv-10" aria-live="polite"><span class="ip-detail__loading">Loading\u2026</span></div>
     </section>
 
-    <!-- Actions -->
+    <section class="ip-detail__card" id="ip-detail-comment-card" aria-labelledby="ip-dl-comment" hidden>
+      <span class="ip-detail__card-label" id="ip-dl-comment">Comments</span>
+      <div class="ip-detail__card-body" id="ip-detail-comment-body"></div>
+    </section>
+
     <div class="ip-detail__actions" role="group" aria-label="Idea actions">
       <span class="ip-detail__meta-label">Actions</span>
       ${submitBtnHtml}
@@ -1156,7 +1200,7 @@ function buildDetailSkeleton(
         aria-label="${escapeHtml(voteState.ariaLabel)}"
         title="${escapeHtml(voteState.title)}"
         ${voteState.disabled ? "disabled" : ""}>
-        ${iconSvg(voteState.icon)}${voteState.label ? ` ${voteState.label}` : ""}
+        ${voteButtonInnerHtml(voteState)}
       </button>
       <button type="button"
         class="ip-share"
@@ -1217,7 +1261,9 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
       String(ideaOwnerMap[ridStr]) === String(userID),
     );
 
-  if (header) header.textContent = title || "Idea Details";
+  if (header)
+    header.textContent =
+      truncateTitle(title, MODAL_HEADER_TITLE_MAX_LENGTH) || "Idea Details";
   if (openBtn) {
     openBtn.setAttribute("data-url", openTabUrl || "");
     openBtn.hidden = !openTabUrl;
@@ -1234,6 +1280,20 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
     Boolean(myVoteRecordIdByIdea[ridStr]),
     needsSubmit,
   );
+
+  const commentText =
+    vm?.comment ||
+    sanitizeLeafValue(
+      getIdeaField(rawIdea, IDEA_INDICATORS.comment, "comment"),
+    );
+  if (commentText && commentText.trim()) {
+    const commentCard = document.getElementById("ip-detail-comment-card");
+    const commentBody = document.getElementById("ip-detail-comment-body");
+    if (commentCard && commentBody) {
+      commentBody.textContent = commentText;
+      commentCard.hidden = false;
+    }
+  }
 
   body
     .querySelector("[data-detail-vote]")
@@ -1257,7 +1317,7 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
       btn.disabled = state.disabled;
       btn.setAttribute("aria-label", state.ariaLabel);
       btn.setAttribute("title", state.title);
-      btn.innerHTML = `${iconSvg(state.icon)}${state.label ? ` ${state.label}` : ""}`;
+      btn.innerHTML = voteButtonInnerHtml(state);
       const votesText = body.querySelector("#ip-detail-votes-text");
       if (votesText) {
         votesText.innerHTML = `${iconSvg("thumb_up")}${newCount} ${newCount === 1 ? "vote" : "votes"}`;
@@ -1272,25 +1332,32 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
     });
 
   lastRecordFocusedElement = document.activeElement;
+  measureHeaderOffset(modal, "--ip-header-offset");
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
   setBackgroundHidden(true);
   bindFocusTrap(modal);
-  document.getElementById("ipRecordModalCloseBtn")?.focus();
+  // Focus the title so a screen reader announces the idea being viewed
+  // first, rather than landing on "Close" with no context.
+  document.getElementById("ip-detail-title")?.focus();
 
   await Promise.allSettled([
     populateDetailField(ridStr, 5, {
       onValue(val) {
         const h2 = document.getElementById("ip-detail-title");
         if (h2 && val) h2.textContent = val;
-        if (header && val) header.textContent = val;
+        if (header && val)
+          header.textContent = truncateTitle(
+            val,
+            MODAL_HEADER_TITLE_MAX_LENGTH,
+          );
       },
     }),
     populateDetailField(ridStr, 6),
     populateDetailField(ridStr, 7),
     populateDetailField(ridStr, 8, {
       renderHtml(val) {
-        return renderCategoryPills(parseCategoryValue(val));
+        return renderCategoryPills(parseCategoryValue(val), { showAll: true });
       },
       onValue(val) {
         const cats = parseCategoryValue(val).map((c) => c.toLowerCase());
@@ -1367,16 +1434,6 @@ function bindRecordModal() {
       }
       if (!recordID) return;
 
-      // True drafts (never submitted) skip the read-only record modal
-      // entirely and go straight to the editable form — there's nothing
-      // useful to preview read-only for something that was never
-      // submitted, and the extra hop just delayed getting to Edit.
-      //
-      // ideasVMById is only populated from the public All Ideas list, so
-      // a draft that isn't public yet won't be found there — fall back
-      // to myIdeasCache (which always has .isDraft set correctly for the
-      // current user's own records) so drafts clicked from My Ideas are
-      // detected too.
       const isDraftRecord =
         ideasVMById[recordID]?.isDraft ??
         myIdeasCache.find((i) => String(i.recordID) === String(recordID))
@@ -1431,36 +1488,41 @@ function normalizeStatusLabel(status) {
 function canonicalStatusKey(statusRaw) {
   const s = normalizeStatusLabel(sanitizeLeafValue(statusRaw)).toLowerCase();
   if (!s) return "";
+
+  const resolve = (norm) => {
+    if (["new submission", "submitted", "new"].includes(norm)) return "new";
+    if (["under review", "review", "in review"].includes(norm)) return "review";
+    if (["in progress", "progress", "working"].includes(norm))
+      return "progress";
+    if (["completed", "complete", "implemented", "done"].includes(norm))
+      return "completed";
+    if (["already exists", "already_exist", "exists"].includes(norm))
+      return "already_exists";
+    if (["duplicate", "dupe"].includes(norm)) return "duplicate";
+    if (["discarded"].includes(norm)) return "discarded";
+    if (["in backlog", "backlog"].includes(norm)) return "backlog";
+    if (["in development", "in-development", "development"].includes(norm))
+      return "in_development";
+    if (
+      [
+        "need more information",
+        "needs more information",
+        "need more info",
+      ].includes(norm)
+    )
+      return "need_more_info";
+    if (["unlikely to implement", "unlikely"].includes(norm)) return "unlikely";
+    return norm;
+  };
+
   if (statusOptionsList.length) {
     const exact = statusOptionsList.find(
       (opt) => normalizeStatusLabel(opt).toLowerCase() === s,
     );
-    if (exact) {
-      const norm = normalizeStatusLabel(exact).toLowerCase();
-      if (["new submission", "submitted", "new"].includes(norm)) return "new";
-      if (["under review", "review", "in review"].includes(norm))
-        return "review";
-      if (["in progress", "progress", "working"].includes(norm))
-        return "progress";
-      if (["completed", "complete", "implemented", "done"].includes(norm))
-        return "completed";
-      if (["already exists", "already_exist", "exists"].includes(norm))
-        return "already_exists";
-      if (["duplicate", "dupe"].includes(norm)) return "duplicate";
-      if (["discarded"].includes(norm)) return "discarded";
-      return norm;
-    }
+    if (exact) return resolve(normalizeStatusLabel(exact).toLowerCase());
   }
-  if (["new submission", "submitted", "new"].includes(s)) return "new";
-  if (["under review", "review", "in review"].includes(s)) return "review";
-  if (["in progress", "progress", "working"].includes(s)) return "progress";
-  if (["completed", "complete", "implemented", "done"].includes(s))
-    return "completed";
-  if (["already exists", "already_exist", "exists"].includes(s))
-    return "already_exists";
-  if (["duplicate", "dupe"].includes(s)) return "duplicate";
-  if (["discarded"].includes(s)) return "discarded";
-  return s;
+
+  return resolve(s);
 }
 
 function getIdeaStatusRaw(idea) {
@@ -1474,17 +1536,142 @@ function isSubmittedIdea(idea) {
   return Boolean(dateSubmitted);
 }
 
-// Tracks recordIDs where writeDateSubmitted() succeeded (date_submitted
-// was written) but advanceWorkflow()'s /apply call failed in the SAME
-// browser session. Populated live in NewIdea(); does not persist across
-// page loads.
-let workflowIncompleteRecordIds = new Set();
+// LEAF's "Send back to requestor" workflow action only emails the
+// requestor — it never touches status/date_submitted. The reliable
+// signal is the workflow step: sendback always returns to stepID -1,
+// the same sentinel step a never-submitted draft starts at.
+async function isSentBackToRequestor(recordID) {
+  try {
+    const res = await fetch(
+      `./api/formWorkflow/${encodeURIComponent(recordID)}/currentStep`,
+      { credentials: "same-origin", cache: "no-store" },
+    );
+    if (!res.ok) return false;
+    const data = await res.json().catch(() => null);
+    const steps = Array.isArray(data)
+      ? data
+      : data && typeof data === "object"
+        ? Object.values(data)
+        : [];
+    if (!steps.length) return true;
+    return steps.some((s) => Number(s?.stepID ?? s?.dependencyID) === -1);
+  } catch (err) {
+    console.warn("[SendBack] Could not check current step:", err);
+    return false;
+  }
+}
+
+// Reverts a sent-back record to draft: blanks status (12) and
+// date_submitted (15). isSentBackToRequestor()'s stepID -1 signal can
+// false-positive on normal submitted records, so this re-checks each
+// field's current value first and only clears a field that is already
+// blank — it never overwrites existing data. Returns false both on
+// fetch failure and when nothing needed clearing (record was already
+// fine), so the caller can distinguish "no repair happened" from "a
+// repair succeeded."
+async function repairSentBackRecord(recordID) {
+  const postField = async (fieldNum, value, label) => {
+    const body = new URLSearchParams({
+      CSRFToken: csrfToken,
+      recordID: String(recordID),
+      series: "1",
+      [fieldNum]: value,
+    });
+    try {
+      const res = await fetch(`./api/form/${encodeURIComponent(recordID)}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        body: body.toString(),
+      });
+      if (!res.ok) {
+        console.warn(
+          `[SendBack] ${label} write failed for ${recordID} (HTTP ${res.status})`,
+        );
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.warn(`[SendBack] Network error writing ${label}:`, err);
+      return false;
+    }
+  };
+
+  let currentStatus = "";
+  let currentDate = "";
+  try {
+    const data = await leafFetchQuery(
+      {
+        terms: [
+          {
+            id: "recordID",
+            operator: "=",
+            match: String(recordID),
+            gate: "AND",
+          },
+        ],
+        joins: [],
+        sort: {},
+        getData: [
+          String(IDEA_FIELDS.status),
+          String(IDEA_FIELDS.date_submitted),
+        ],
+      },
+      "recordID,s1",
+    );
+    const record = Object.values(data || {})[0];
+    currentStatus = sanitizeLeafValue(
+      getIdeaField(record, IDEA_INDICATORS.status, "status"),
+    );
+    currentDate = sanitizeLeafValue(
+      getIdeaField(record, `id${IDEA_FIELDS.date_submitted}`, "date_submitted"),
+    );
+  } catch (err) {
+    console.warn(
+      `[SendBack] Could not fetch current field values for record ${recordID} — skipping clear to avoid overwriting real data:`,
+      err,
+    );
+    return false;
+  }
+
+  let dateCleared = true;
+  if (!currentDate) {
+    dateCleared = await postField(
+      IDEA_FIELDS.date_submitted,
+      "",
+      "date_submitted",
+    );
+  }
+
+  let statusCleared = true;
+  if (!currentStatus) {
+    statusCleared = await postField(IDEA_FIELDS.status, "", "status");
+  }
+
+  if (currentDate && currentStatus) {
+    // Both fields already had values — nothing was actually cleared.
+    return false;
+  }
+
+  if (!dateCleared) {
+    console.warn(
+      `[SendBack] Record ${recordID} still has date_submitted set — it will keep showing as submitted until this is retried.`,
+    );
+  }
+  return dateCleared || statusCleared;
+}
 
 function needsSubmitAction(idea) {
   if (!isSubmittedIdea(idea)) return true;
   const recordID = idea?.recordID ? String(idea.recordID) : "";
   return recordID ? workflowIncompleteRecordIds.has(recordID) : false;
 }
+
+// Tracks recordIDs where writeDateSubmitted() succeeded but
+// advanceWorkflow()'s /apply call failed in the same browser session.
+let workflowIncompleteRecordIds = new Set();
 
 function buildIdeaViewModel(idea) {
   if (!idea?.recordID) return null;
@@ -1498,6 +1685,9 @@ function buildIdeaViewModel(idea) {
   const categories = parseCategoryValue(categoryRaw);
   const category = categories.join(", ");
   const status = resolveDisplayStatus(idea);
+  const comment = sanitizeLeafValue(
+    getIdeaField(idea, IDEA_INDICATORS.comment, "comment"),
+  );
   const votes = voteCounts[recordID] || 0;
   const isVoted = userVotes[recordID] === true;
   const isOwn = Boolean(
@@ -1509,6 +1699,7 @@ function buildIdeaViewModel(idea) {
     category,
     categories,
     status,
+    comment,
     votes,
     isVoted,
     isOwn,
@@ -1540,6 +1731,17 @@ function buildIdeasViewModelList(rawIdeas, updateMaps = false) {
 
   if (updateMaps) ideasVMById = vmMap;
   return list;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Status resolution — single source of truth
+───────────────────────────────────────────────────────────── */
+
+function resolveDisplayStatus(idea) {
+  if (!idea) return "";
+  if (!isSubmittedIdea(idea)) return "Draft";
+  const statusRaw = getIdeaStatusRaw(idea);
+  return normalizeStatusLabel(sanitizeLeafValue(statusRaw)) || "Submitted";
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1618,9 +1820,13 @@ const STATUS_BADGE_CLASS_BY_KEY = {
   progress: "ip-badge--progress",
   completed: "ip-badge--done",
   already_exists: "ip-badge--done",
-  duplicate: "ip-badge--discarded",
-  discarded: "ip-badge--discarded",
+  duplicate: "ip-badge--unlikely",
+  discarded: "ip-badge--unlikely",
   draft: "ip-badge--draft",
+  backlog: "ip-badge--backlog",
+  in_development: "ip-badge--progress",
+  need_more_info: "ip-badge--unlikely",
+  unlikely: "ip-badge--unlikely",
 };
 
 function getStatusBadgeClass(status) {
@@ -1642,7 +1848,7 @@ function buildIdeaRow(idea) {
 
   const statusLabel = idea.status || "Draft";
   const statusBadgeClass = getStatusBadgeClass(statusLabel);
-  const statusMarkup = `<span class="ip-badge ${statusBadgeClass}">${statusLabel}</span>`;
+  const statusMarkup = `<span class="ip-badge ${statusBadgeClass}" title="${escapeHtml(statusLabel)}" aria-label="${escapeHtml(statusLabel)}">${escapeHtml(statusLabel)}</span>`;
 
   const votes = idea.votes || 0;
   const isVoted = idea.isVoted === true;
@@ -1659,9 +1865,6 @@ function buildIdeaRow(idea) {
     hasVoteRecordId,
   );
 
-  // Share button markup — only ever rendered for non-draft rows now (see
-  // votingAndSharingHtml below, which omits both Vote and Share entirely
-  // for drafts), so this no longer needs its own disabled/draft branch.
   const shareBtnHtml = `<button class="ip-share"
         data-record-link="${escapeHtml(recordLink)}"
         aria-label="Copy link for ${labelTitle}"
@@ -1670,10 +1873,20 @@ function buildIdeaRow(idea) {
         Share
       </button>`;
 
-  // Draft rows get a compact Edit button (nothing to submit yet — the
-  // idea is finished being drafted via the same edit form this opens).
-  // Retry Submit is a different situation (already attempted; the
-  // workflow /apply step failed) and keeps the original one-click retry.
+  const comment = idea.comment || "";
+  const commentCellHtml = comment
+    ? `<button type="button" class="ip-commentBtn"
+        data-comment-view="${recordID}"
+        data-comment-text="${escapeHtml(comment)}"
+        data-comment-title="${labelTitle}"
+        aria-label="View LEAF team comment for ${labelTitle}"
+        aria-haspopup="dialog"
+        title="${escapeHtml(truncateTitle(comment, 160))}">
+        ${iconSvg("comment")}
+        View
+      </button>`
+    : "";
+
   const submitBtnHtml =
     isOwn && needsSubmit
       ? isDraft
@@ -1692,10 +1905,6 @@ function buildIdeaRow(idea) {
           </button>`
       : "";
 
-  // Draft rows show ONLY the Submit action — no Vote, no Share. A draft
-  // isn't a real, visible-to-others idea yet, so voting or sharing it
-  // doesn't make sense; previously Share was disabled-but-visible and
-  // Vote was fully enabled even on the owner's own unsubmitted draft.
   const votingAndSharingHtml = isDraft
     ? ""
     : `        <button class="ip-upvote${voteState.classes ? " " + voteState.classes : ""}"
@@ -1704,7 +1913,7 @@ function buildIdeaRow(idea) {
           aria-label="${escapeHtml(voteState.ariaLabel)}"
           aria-disabled="${voteState.disabled}"
           title="${escapeHtml(voteState.title)}">
-          ${iconSvg(voteState.icon)}${voteState.label ? ` ${voteState.label}` : ""}
+          ${voteButtonInnerHtml(voteState)}
         </button>
         ${shareBtnHtml}`;
 
@@ -1728,10 +1937,13 @@ function buildIdeaRow(idea) {
       <td data-label="Status">${statusMarkup}</td>
       <td class="ip-votes" data-label="Votes">${votes}</td>
       <td class="ip-actionsCell" data-label="Actions">
-        ${submitBtnHtml}
-        ${votingAndSharingHtml}
-        ${!submitBtnHtml && !votingAndSharingHtml ? `<span class="ip-actionsEmpty">No actions available</span>` : ""}
+        <div class="ip-actionsInner">
+          ${submitBtnHtml}
+          ${votingAndSharingHtml}
+          ${!submitBtnHtml && !votingAndSharingHtml ? `<span class="ip-actionsEmpty">No actions available</span>` : ""}
+        </div>
       </td>
+      <td class="ip-commentCell" data-label="Comment">${commentCellHtml}</td>
     </tr>`;
 }
 
@@ -1786,7 +1998,7 @@ function paginateList(list, page, pageSize, showAll) {
 
 function renderRows(tbody, rowsHtml, emptyMessage) {
   if (!tbody) return;
-  tbody.innerHTML = rowsHtml || `<tr><td colspan="6">${emptyMessage}</td></tr>`;
+  tbody.innerHTML = rowsHtml || `<tr><td colspan="7">${emptyMessage}</td></tr>`;
 }
 
 function renderTableMessage(tbody, message, opts = {}) {
@@ -1794,7 +2006,7 @@ function renderTableMessage(tbody, message, opts = {}) {
   const btn = opts.retry
     ? ` <button type="button" class="ip-btn ip-btn--ghost ip-retry">Retry</button>`
     : "";
-  tbody.innerHTML = `<tr><td colspan="6">${escapeHtml(message || "")}${btn}</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="7">${escapeHtml(message || "")}${btn}</td></tr>`;
 }
 
 function updatePaginationUI(
@@ -1829,7 +2041,7 @@ function updatePaginationUI(
   if (ui.pageHint[scope]) {
     ui.pageHint[scope].textContent = showAll
       ? "Showing all results. Large lists may be slow."
-      : `Showing ${PAGE_SIZE} per page.`;
+      : `Showing ${PAGE_SIZE} per page`;
   }
 }
 
@@ -1869,18 +2081,10 @@ function renderAllIdeas() {
     showAll,
     shouldPaginate,
   );
+  updateTabCount("all", filtered.length);
 }
 
 function renderMyIdeas() {
-  // Apply the same category filter used by All Ideas, now that category
-  // filtering is confirmed to apply to My Ideas too — previously
-  // myIdeasCache was sorted but never filtered by state.categoryFilter at
-  // all, so even once the re-render bug above is fixed, selecting a
-  // category here would still show every personal idea regardless of
-  // category. filterIdeasList() also applies state.search, which My
-  // Ideas already has its own separate search box for (bindMySearch()) —
-  // that box filters via direct DOM row hiding rather than state.search,
-  // so passing "" here avoids double-filtering against unrelated state.
   const filteredByCategory = filterIdeasList(myIdeasCache, "");
   const sorted = sortIdeasList(filteredByCategory, sortState.tblMyIdeas);
   applySortClasses("tblMyIdeas");
@@ -1914,6 +2118,7 @@ function renderMyIdeas() {
     showAll,
     shouldPaginate,
   );
+  updateTabCount("my", filteredByCategory.length);
 }
 
 function renderTop10Ideas() {
@@ -1965,7 +2170,7 @@ function setVotedState(recordID, isVoted, opts = {}) {
       btn.setAttribute("aria-disabled", state.disabled ? "true" : "false");
       btn.setAttribute("aria-label", state.ariaLabel);
       btn.setAttribute("title", state.title);
-      btn.innerHTML = `${iconSvg(state.icon)}${state.label ? ` ${state.label}` : ""}`;
+      btn.innerHTML = voteButtonInnerHtml(state);
     });
 }
 
@@ -2072,6 +2277,11 @@ async function IdeaVotes(recordID) {
       renderTop10Ideas();
       if (sortState.tblIdeas.key === "votes") renderAllIdeas();
       if (sortState.tblMyIdeas.key === "votes") renderMyIdeas();
+      if (
+        document.getElementById("ipVotedModal")?.classList.contains("is-open")
+      ) {
+        refreshVotedRowActions(key);
+      }
 
       const totalVotes = Object.values(voteCounts).reduce((s, n) => s + n, 0);
       renderStatsStrip(ideas.length, implementedCount, totalVotes);
@@ -2099,19 +2309,9 @@ async function IdeaVotes(recordID) {
 
 /* ─────────────────────────────────────────────────────────────
    Vote delete (un-vote)
-
-   Uses LEAF's real record soft-delete route: POST
-   ./api/form/{recordID}/cancel, which invokes Form::cancelRecord()
-   server-side (sets the deleted timestamp, clears workflow state/tags/
-   dependencies, logs to action_history). This replaced an earlier
-   attempt that POSTed `deleted=1` directly to ./api/form/{recordID} —
-   `deleted` is a system-managed timestamp column, not a writable
-   indicator, so that POST returned HTTP 200 without persisting
-   anything, and the vote silently reappeared on refresh.
-
-   suppressNotification=1 is passed since vote records don't go
-   through a workflow and have no "prior approvers" — this avoids
-   cancelRecord() firing stray notification emails on every unvote.
+   Uses LEAF's soft-delete route (POST .../cancel → Form::cancelRecord())
+   with suppressNotification=1 to avoid stray emails, since vote records
+   don't go through a workflow.
 ───────────────────────────────────────────────────────────── */
 
 async function deleteVoteRecord(voteRecordID) {
@@ -2133,12 +2333,10 @@ async function deleteVoteRecord(voteRecordID) {
       },
     );
     if (!res.ok) return false;
-    // cancelRecord() returns 1 on success, or an error string on failure —
-    // treat anything else as a failed delete even though HTTP status was OK.
     const text = (await res.text()).trim();
     return text === "1" || text === '"1"';
   } catch (err) {
-    console.warn("[UnVote] ❌ Network error deleting vote record:", err);
+    console.warn("[UnVote] Network error deleting vote record:", err);
     return false;
   }
 }
@@ -2151,7 +2349,7 @@ async function unvoteIdea(recordID) {
   const voteRecordID = myVoteRecordIdByIdea[key];
   if (!voteRecordID) {
     console.warn(
-      `[UnVote] No tracked vote record ID for idea ${key} — cannot un-vote. userVotes[key]=${userVotes[key]}, myVoteRecordIdByIdea keys=${Object.keys(myVoteRecordIdByIdea).join(",")}`,
+      `[UnVote] No tracked vote record ID for idea ${key} — cannot un-vote.`,
     );
     showToast(
       "Couldn't find your vote record to remove it. Try refreshing the page.",
@@ -2197,7 +2395,7 @@ async function unvoteIdea(recordID) {
       detailVoteBtn.className = `ip-upvote${state.classes ? " " + state.classes : ""}`;
       detailVoteBtn.disabled = state.disabled;
       detailVoteBtn.setAttribute("aria-label", state.ariaLabel);
-      detailVoteBtn.innerHTML = `${iconSvg(state.icon)}${state.label ? ` ${state.label}` : ""}`;
+      detailVoteBtn.innerHTML = voteButtonInnerHtml(state);
       const votesText = document.getElementById("ip-detail-votes-text");
       if (votesText) {
         const newCount = voteCounts[key] || 0;
@@ -2320,7 +2518,7 @@ async function fetchVotesData() {
             myVoteRecordIdByIdea[key] = String(voteRecId);
           } else {
             console.warn(
-              `[UnVote] Could not resolve a vote record ID for idea ${key} — un-voting will be unavailable for this vote until this is fixed. Full record:`,
+              `[UnVote] Could not resolve a vote record ID for idea ${key} — un-voting will be unavailable until this is fixed.`,
               vote,
             );
           }
@@ -2385,22 +2583,6 @@ async function fetchUserSubmissions() {
         };
       });
 
-    // BUGFIX: openDraftForEditing() (used by the My Ideas / detail-modal
-    // "Submit" and "Retry Submit" buttons) looks up the raw record via
-    // ideasById[recordID] to pre-fill the edit form. ideasById was
-    // previously only ever populated from the PUBLIC "All Ideas" query
-    // (buildIdeasViewModelList(ideasRaw, true) in loadIdeasAndVotes()) —
-    // but a genuine draft that has never been submitted is, by design,
-    // excluded from that public query entirely (fetchIdeasData() filters
-    // on isSubmittedIdea()). That meant ideasById[recordID] was always
-    // undefined for a never-submitted draft, so openDraftForEditing()
-    // silently failed with just an error toast and never called
-    // openModal() — this is why the Submit button appeared to do
-    // nothing. My Ideas is a legitimate source of truth for the current
-    // user's own records (submitted or not), so register these raw
-    // records into ideasById/ideaOwnerMap here as well, without
-    // overwriting an already-present (enriched) public-query entry for
-    // the same record.
     userIdeas.forEach((idea) => {
       if (!idea?.recordID) return;
       const key = String(idea.recordID);
@@ -2416,29 +2598,12 @@ async function fetchUserSubmissions() {
     renderMyIdeas();
     setStatus("my", "", "");
     updateMyActivity(myIdeasCache.length, getAvailableVotedCount());
-    // Keep the category sidebar's counts correct if My Ideas is the
-    // active tab when this data refreshes (e.g. after submitting,
-    // voting, or any other reload) — without this, the sidebar could
-    // show stale personal counts until the next manual tab switch.
     if (state.activeTab === "my") refreshCategorySidebarForActiveTab();
 
-    // One-time silent repair for records stuck in the "genuinely
-    // submitted but indicator 12 is blank" state (see
-    // writeSubmittedStatus()'s comment for the full history). This only
-    // matters for records submitted before that fix existed — going
-    // forward, NewIdea() writes a real status at submit time so new
-    // records can't end up here. Scoped tightly to the CURRENT USER's
-    // OWN records only, and only records that are unambiguously
-    // genuinely submitted (date_submitted present) with a blank
-    // canonical status — there's no judgment call being made here, the
-    // correct value is already known with certainty, so this repairs
-    // itself quietly rather than asking the user to notice and act on a
-    // bug that wasn't their doing. No toast/interruption; this is
-    // invisible cleanup.
     const recordsNeedingStatusRepair = userIdeas.filter((idea) => {
       if (!isSubmittedIdea(idea)) return false;
       const key = canonicalStatusKey(getIdeaStatusRaw(idea));
-      if (key) return false; // has a real, recognized status already
+      if (key) return false;
       return !statusRepairAttempted.has(String(idea.recordID));
     });
     if (recordsNeedingStatusRepair.length) {
@@ -2453,6 +2618,42 @@ async function fetchUserSubmissions() {
       if (repairResults.some(Boolean)) {
         await fetchUserSubmissions();
         await loadIdeasAndVotes();
+      }
+    }
+
+    // Ideas with a real status already recorded are done being
+    // reviewed and can't legitimately be in a sent-back state, so
+    // skip the /currentStep check for them entirely.
+    const recordsToCheckForSendBack = userIdeas.filter((idea) => {
+      if (!isSubmittedIdea(idea)) return false;
+      if (canonicalStatusKey(getIdeaStatusRaw(idea))) return false;
+      return !sendBackRepairFailed.has(String(idea.recordID));
+    });
+    if (recordsToCheckForSendBack.length) {
+      const sendBackFlags = await Promise.all(
+        recordsToCheckForSendBack.map((idea) =>
+          isSentBackToRequestor(idea.recordID),
+        ),
+      );
+      const sentBackRecords = recordsToCheckForSendBack.filter(
+        (_, i) => sendBackFlags[i],
+      );
+      if (sentBackRecords.length) {
+        const repairResults = await Promise.all(
+          sentBackRecords.map((idea) => repairSentBackRecord(idea.recordID)),
+        );
+        sentBackRecords.forEach((idea, i) => {
+          const key = String(idea.recordID);
+          if (repairResults[i]) {
+            sendBackRepairFailed.delete(key);
+          } else {
+            sendBackRepairFailed.add(key);
+          }
+        });
+        if (repairResults.some(Boolean)) {
+          await fetchUserSubmissions();
+          await loadIdeasAndVotes();
+        }
       }
     }
   } catch (err) {
@@ -2477,8 +2678,6 @@ async function loadIdeasAndVotes() {
   renderTableMessage(ui.topResults, "Loading…");
   setVoteButtonsDisabled(true);
 
-  const fetchStart = performance.now();
-
   await resolveVoterEmail();
 
   try {
@@ -2486,7 +2685,6 @@ async function loadIdeasAndVotes() {
 
     ideasRaw = ideasData;
 
-    let loggedImportDebug = false;
     ideasRaw.forEach((idea) => {
       const key = String(idea.recordID);
       const fieldNum = String(IDEA_FIELDS.imported_votes);
@@ -2535,6 +2733,12 @@ async function loadIdeasAndVotes() {
 
 /* ─────────────────────────────────────────────────────────────
    Workflow advance (idea submission)
+   Calls only LEAF's /submit route, which places a newly-submitted
+   record at the workflow's first step automatically. No separate
+   /apply call — that's for a reviewer acting on an existing step, and
+   calling it at submission time was firing whichever reviewer action
+   happened to be first in the response, auto-returning ideas to the
+   requestor on submit.
 ───────────────────────────────────────────────────────────── */
 
 async function advanceWorkflow(recordID) {
@@ -2549,61 +2753,9 @@ async function advanceWorkflow(recordID) {
       console.warn(`[Workflow] submit failed (${submitRes.status})`);
       return false;
     }
-
-    const stepRes = await fetch(`./api/formWorkflow/${recordID}/currentStep`, {
-      credentials: "same-origin",
-    });
-    const stepText = await stepRes.text();
-
-    let stepData;
-    try {
-      stepData = JSON.parse(stepText);
-    } catch {
-      stepData = null;
-    }
-
-    // currentStep's response is an OBJECT keyed by dependencyID — e.g.
-    //   {"9": {dependencyID:9, dependencyActions:[{actionType:"approve",...}], ...}}
-    // NOT an array. Unwrap the first value regardless of what the
-    // numeric key is, rather than assuming an array shape.
-    let firstStep = null;
-    if (Array.isArray(stepData)) {
-      firstStep = stepData[0] || null;
-    } else if (stepData && typeof stepData === "object") {
-      const keys = Object.keys(stepData);
-      firstStep = keys.length ? stepData[keys[0]] : null;
-    }
-
-    const depID = firstStep?.dependencyID ?? firstStep?.id ?? null;
-    const actionType =
-      firstStep?.dependencyActions?.[0]?.actionType ||
-      firstStep?.actions?.[0]?.actionType ||
-      "submit";
-
-    const applyBody = new URLSearchParams({ CSRFToken: csrfToken, actionType });
-    if (depID !== null && depID !== undefined) {
-      applyBody.set("dependencyID", String(depID));
-    }
-
-    const applyRes = await fetch(`./api/formWorkflow/${recordID}/apply`, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: applyBody,
-    });
-
-    if (!applyRes.ok) {
-      const applyText = await applyRes.text();
-      console.warn(
-        `[Workflow] apply failed (${applyRes.status}) — record may still be draft:`,
-        applyText,
-      );
-      return false;
-    }
-
     return true;
   } catch (err) {
-    console.warn("[Workflow] advance failed:", err);
+    console.warn("[Workflow] submit failed:", err);
     return false;
   }
 }
@@ -2641,10 +2793,10 @@ async function writeDateSubmitted(recordID, dateStr) {
     if (res.ok) {
       return true;
     }
-    console.warn(`[DateSubmit] ❌ HTTP ${res.status}:`, text);
+    console.warn(`[DateSubmit] HTTP ${res.status}:`, text);
     return false;
   } catch (err) {
-    console.warn("[DateSubmit] ❌ Network error:", err);
+    console.warn("[DateSubmit] Network error:", err);
     return false;
   }
 }
@@ -2675,28 +2827,8 @@ async function writeDraftStatus(recordID) {
   }
 }
 
-// Writes a real status value ("Submitted", matching the live LEAF
-// indicator-12 dropdown option confirmed via loadStatusOptions()) to a
-// record that has just been genuinely submitted.
-//
-// BUGFIX CONTEXT: writeDraftStatus() (above) intentionally blanks
-// indicator 12 on every draft save, so LEAF's own native printview
-// wouldn't show a stale "Submitted"-looking default on an unsubmitted
-// draft. That was correct for drafts. But nothing ever reversed it: if a
-// record was saved as a draft first (blanking indicator 12) and only
-// later actually submitted via NewIdea(true), indicator 12 stayed blank
-// forever — even though date_submitted was correctly written. This had
-// two compounding effects: (1) the status badge fell back to a
-// coincidentally-reused "Draft" string (fixed separately in
-// resolveDisplayStatus()), and (2) more importantly, fetchIdeasData()'s
-// public All Ideas visibility filter requires BOTH a recognized
-// non-blank canonical status key AND date_submitted — canonicalStatusKey
-// of a blank status is itself blank, which is not in
-// PUBLIC_VISIBLE_STATUS_KEYS, so a genuinely, fully submitted record
-// could be permanently excluded from All Ideas with no way to recover
-// short of a manual database edit. Writing a real status value at the
-// moment of successful submission closes this gap at the source, rather
-// than trying to special-case a blank status further down the read path.
+// Writes a real "Submitted" status so a newly-submitted record isn't
+// permanently excluded from the public All Ideas list by a blank status.
 async function writeSubmittedStatus(recordID) {
   const body = new URLSearchParams({
     CSRFToken: csrfToken,
@@ -2717,10 +2849,10 @@ async function writeSubmittedStatus(recordID) {
     if (res.ok) {
       return true;
     }
-    console.warn(`[SubmitStatus] ❌ HTTP ${res.status}:`, text);
+    console.warn(`[SubmitStatus] HTTP ${res.status}:`, text);
     return false;
   } catch (err) {
-    console.warn("[SubmitStatus] ❌ Network error:", err);
+    console.warn("[SubmitStatus] Network error:", err);
     return false;
   }
 }
@@ -2754,7 +2886,7 @@ async function openDraftForEditing(recordID) {
   const raw = ideasById[ridStr];
   if (!raw) {
     console.warn(
-      `[SubmitDraft] No raw record found for ${ridStr} in ideasById — cannot open edit form. Known ideasById keys: ${Object.keys(ideasById).join(",")}`,
+      `[SubmitDraft] No raw record found for ${ridStr} in ideasById — cannot open edit form.`,
     );
     showToast("Could not load this draft for editing.", true);
     return;
@@ -2772,6 +2904,7 @@ async function openDraftForEditing(recordID) {
     "inpTitle",
     sanitizeLeafValue(getIdeaField(raw, IDEA_INDICATORS.title, "title")),
   );
+  updateTitleCharCount();
 
   openModal("addIdeaModal");
 
@@ -2866,7 +2999,7 @@ async function NewIdea(advanceOnSuccess) {
   const fileInputEl = document.getElementById("fileInput");
 
   const val = (id) => document.getElementById(id)?.value.trim() || "";
-  const titleValue = val("inpTitle");
+  const titleValue = val("inpTitle").slice(0, TITLE_MAX_LENGTH);
   const descValue = val("inpDescription");
   const benefitValue = val("inpBenefit");
   const categoryValue = val("inpCategory");
@@ -2939,14 +3072,6 @@ async function NewIdea(advanceOnSuccess) {
     }
 
     if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
-      // Validate one more time immediately before upload, as a second
-      // layer behind bindFileInput()'s selection-time check — guards
-      // against a file somehow reaching this point despite that check
-      // (e.g. files set programmatically, or a future code path that
-      // populates fileInputEl without going through the change handler).
-      // Invalid files are dropped from what gets uploaded; the idea
-      // record itself is never blocked on this, per the decision that a
-      // bad attachment should not prevent the idea from saving/submitting.
       const allFiles = fileInputEl?.files ? Array.from(fileInputEl.files) : [];
       const files = allFiles.filter(isAcceptedAttachmentFile);
       const rejectedFiles = allFiles.filter(
@@ -2967,6 +3092,7 @@ async function NewIdea(advanceOnSuccess) {
       form?.reset();
       form?.classList.remove("was-validated");
       resetImplementedField();
+      updateTitleCharCount();
       if (fileInputEl) fileInputEl.value = "";
       const fileList = document.getElementById("fileList");
       if (fileList) fileList.innerHTML = "";
@@ -2981,12 +3107,6 @@ async function NewIdea(advanceOnSuccess) {
       setIdeaModalMode(false);
       closeModal("addIdeaModal");
 
-      // Build a suffix describing the attachment outcome, appended to
-      // whichever idea-level success/failure message ends up showing
-      // below — the idea record's own success/failure is independent of
-      // and takes priority over the attachment's, per the decision that
-      // an attachment problem should never block or overshadow the idea
-      // itself having saved/submitted correctly.
       let attachmentNote = "";
       if (rejectedFiles.length && !files.length) {
         attachmentNote = ` Note: the file you selected (${rejectedFiles.map((f) => f.name).join(", ")}) is not a supported type (${ACCEPTED_ATTACHMENT_LABEL}) and was not attached.`;
@@ -2997,11 +3117,6 @@ async function NewIdea(advanceOnSuccess) {
 
       if (advanceOnSuccess) {
         const dateWritten = await writeDateSubmitted(newID, todayStr);
-        // Write a real status value alongside date_submitted — see
-        // writeSubmittedStatus()'s comment for why this matters: without
-        // it, a record that started life as a draft (which blanks
-        // indicator 12) could stay permanently invisible on the public
-        // All Ideas list even after being fully, genuinely submitted.
         await writeSubmittedStatus(newID);
         const workflowAdvanced = await advanceWorkflow(newID);
 
@@ -3144,7 +3259,7 @@ async function loadStatusOptions() {
     statusOptionsList = options;
   } catch (err) {
     console.warn(
-      "[IdeaPortal v3] Could not load live status options for indicator 12:",
+      "[IdeaPortal] Could not load live status options for indicator 12:",
       err,
     );
   }
@@ -3190,6 +3305,37 @@ function bindImplementedChange() {
       }
     });
   });
+}
+
+function bindTitleCharCount() {
+  const input = document.getElementById("inpTitle");
+  const countValue = document.getElementById("titleCharCountValue");
+  const countWrap = document.getElementById("titleCharCount");
+  if (!input || !countValue || !countWrap) return;
+
+  input.addEventListener("input", () => {
+    if (input.value.length > TITLE_MAX_LENGTH) {
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+      input.value = input.value.slice(0, TITLE_MAX_LENGTH);
+      if (start !== null && end !== null) {
+        const pos = Math.min(start, TITLE_MAX_LENGTH);
+        input.setSelectionRange(pos, pos);
+      }
+    }
+    updateTitleCharCount();
+  });
+  updateTitleCharCount();
+}
+
+function updateTitleCharCount() {
+  const input = document.getElementById("inpTitle");
+  const countValue = document.getElementById("titleCharCountValue");
+  const countWrap = document.getElementById("titleCharCount");
+  if (!input || !countValue || !countWrap) return;
+  const len = input.value.length;
+  countValue.textContent = len;
+  countWrap.classList.toggle("is-limit", len >= TITLE_MAX_LENGTH);
 }
 
 function resetImplementedField() {
@@ -3343,21 +3489,13 @@ function bindSearch() {
   );
 }
 
-// Clears the All Ideas search box, sort, and pagination back to their
-// initial state and re-renders — a single control to undo any
-// combination of search/sort/paging without hunting down each one.
 function bindClearAll() {
   const btn = document.getElementById("clearAllBtn");
   if (!btn) return;
   btn.addEventListener("click", () => {
-    if (ui.searchInput) ui.searchInput.value = "";
-    state.search = "";
-    sortState.tblIdeas = { key: "", dir: "asc" };
+    sortState.tblIdeas = { key: "id", dir: "desc" };
     applySortClasses("tblIdeas");
-    state.pagination.all.page = 1;
-    state.pagination.all.showAll = false;
     renderAllIdeas();
-    ui.searchInput?.focus();
   });
 }
 
@@ -3392,20 +3530,13 @@ function bindMySearch() {
   btn?.addEventListener("click", handler);
 }
 
-// Clears the My Ideas search box, sort, and pagination back to their
-// initial state and re-renders.
 function bindClearMy() {
   const clearBtn = document.getElementById("clearMyBtn");
-  const input = document.getElementById("mySearchInput");
   if (!clearBtn) return;
   clearBtn.addEventListener("click", () => {
-    if (input) input.value = "";
-    sortState.tblMyIdeas = { key: "", dir: "asc" };
+    sortState.tblMyIdeas = { key: "id", dir: "desc" };
     applySortClasses("tblMyIdeas");
-    state.pagination.my.page = 1;
-    state.pagination.my.showAll = false;
     renderMyIdeas();
-    input?.focus();
   });
 }
 
@@ -3431,11 +3562,38 @@ const votedModalState = {
   allRows: [],
 };
 
+function buildVotedActionsCell(id, idea) {
+  if (!idea) return "";
+  const isVoted = userVotes[id] === true;
+  const isOwn = idea.isOwn === true;
+  const hasVoteRecordId = Boolean(myVoteRecordIdByIdea[id]);
+  const voteState = voteButtonStateHtml(id, isVoted, isOwn, hasVoteRecordId);
+  const recordLink = idea.recordLink || `${RECORD_VIEW_URL}${id}`;
+  const labelTitle = idea.title || `Idea ${id}`;
+  return `<div class="ip-actionsInner">
+    <button class="ip-upvote${voteState.classes ? " " + voteState.classes : ""}"
+      data-record-id="${escapeHtml(id)}"
+      ${voteState.disabled ? "disabled" : ""}
+      aria-label="${escapeHtml(voteState.ariaLabel)}"
+      aria-disabled="${voteState.disabled}"
+      title="${escapeHtml(voteState.title)}">
+      ${voteButtonInnerHtml(voteState)}
+    </button>
+    <button class="ip-share"
+      data-record-link="${escapeHtml(recordLink)}"
+      aria-label="Copy link for ${escapeHtml(labelTitle)}"
+      title="Copy shareable link">
+      ${iconSvg("share")}
+      Share
+    </button>
+  </div>`;
+}
+
 function buildVotedRow(id, idea) {
   if (!idea) {
     return `<tr data-voted-id="${escapeHtml(id)}">
       <td data-label="ID"><span style="color:var(--ip-muted)">#${escapeHtml(id)}</span></td>
-      <td class="ip-cardHeading" style="color:var(--ip-muted);font-style:italic" colspan="4">Idea not available</td>
+      <td class="ip-cardHeading" data-label="Idea" style="color:var(--ip-muted);font-style:italic" colspan="5">Idea not available</td>
     </tr>`;
   }
   const titleFull = escapeHtml(idea.title || `Idea ${id}`);
@@ -3449,13 +3607,22 @@ function buildVotedRow(id, idea) {
   const recordLink = escapeHtml(idea.recordLink || `${RECORD_VIEW_URL}${id}`);
   return `<tr data-voted-id="${escapeHtml(id)}">
     <td data-label="ID"><a class="ip-recordLink" href="${recordLink}" data-record-id="${escapeHtml(id)}" data-title="${titleFull}" aria-haspopup="dialog">#${escapeHtml(id)}</a></td>
-    <td class="ip-col-title ip-cardHeading" title="${titleFull}">
+    <td class="ip-col-title ip-cardHeading" data-label="Title" title="${titleFull}">
       <a class="ip-recordLink ip-recordLink--title" href="${recordLink}" data-record-id="${escapeHtml(id)}" data-title="${titleFull}" aria-haspopup="dialog">${titleDisplay}</a>
     </td>
     <td data-label="Category">${category}</td>
-    <td data-label="Status"><span class="ip-badge ${statusBadgeClass}">${escapeHtml(statusLabel)}</span></td>
+    <td data-label="Status"><span class="ip-badge ${statusBadgeClass}" title="${escapeHtml(statusLabel)}" aria-label="${escapeHtml(statusLabel)}">${escapeHtml(statusLabel)}</span></td>
     <td data-label="Votes">${votes}</td>
+    <td class="ip-actionsCell" data-label="Actions">${buildVotedActionsCell(id, idea)}</td>
   </tr>`;
+}
+
+function refreshVotedRowActions(id) {
+  const row = document.querySelector(`tr[data-voted-id="${id}"]`);
+  if (!row) return;
+  const idea = votedModalState.allRows.find((r) => r.id === id)?.idea;
+  const cell = row.querySelector(".ip-actionsCell");
+  if (cell && idea) cell.innerHTML = buildVotedActionsCell(id, idea);
 }
 
 function getVotedSortValue(row, key) {
@@ -3527,6 +3694,8 @@ function renderVotedTable() {
     }
   });
 
+  // Empty/no-results states use role="status" (in the markup) so a
+  // screen reader is told when a search comes back empty.
   if (!votedModalState.allRows.length) {
     table.hidden = true;
     empty.hidden = false;
@@ -3571,6 +3740,7 @@ function openVotedModal() {
   renderVotedTable();
 
   lastFocusedElement = document.activeElement;
+  measureHeaderOffset(modal, "--ip-header-offset");
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
   setBackgroundHidden(true);
@@ -3587,6 +3757,15 @@ function closeVotedModal() {
   setBackgroundHidden(false);
   lastFocusedElement?.focus();
   lastFocusedElement = null;
+}
+
+function bindClearVoted() {
+  const btn = document.getElementById("clearVotedBtn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    votedModalState.sort = { key: "id", dir: "asc" };
+    renderVotedTable();
+  });
 }
 
 function bindVotedModal() {
@@ -3632,6 +3811,8 @@ function bindVotedModal() {
     renderVotedTable();
   });
 
+  bindClearVoted();
+
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       const modal = document.getElementById("ipVotedModal");
@@ -3649,6 +3830,67 @@ function bindActivityButtons() {
     ?.addEventListener("click", openVotedModal);
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Comment modal
+───────────────────────────────────────────────────────────── */
+
+let lastCommentFocusedElement = null;
+
+function openCommentModal(title, commentText) {
+  const modal = document.getElementById("ipCommentModal");
+  const body = document.getElementById("ipCommentModalBody");
+  const heading = document.getElementById("ipCommentModalTitle");
+  if (!modal || !body) return;
+
+  if (heading)
+    heading.textContent = title
+      ? `LEAF Team Comment: ${title}`
+      : "LEAF Team Comment";
+  body.textContent = commentText || "";
+
+  lastCommentFocusedElement = document.activeElement;
+  measureHeaderOffset(modal, "--ip-header-offset");
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
+  setBackgroundHidden(true);
+  bindFocusTrap(modal);
+  document.getElementById("ipCommentModalCloseBtn")?.focus();
+}
+
+function closeCommentModal() {
+  const modal = document.getElementById("ipCommentModal");
+  if (!modal) return;
+  modal.classList.remove("is-open");
+  modal.setAttribute("aria-hidden", "true");
+  delete modal.dataset.focusTrap;
+  setBackgroundHidden(false);
+  lastCommentFocusedElement?.focus();
+  lastCommentFocusedElement = null;
+}
+
+function bindCommentModal() {
+  document
+    .getElementById("ipCommentModalCloseBtn")
+    ?.addEventListener("click", closeCommentModal);
+  document
+    .getElementById("ipCommentModalOverlay")
+    ?.addEventListener("click", closeCommentModal);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const modal = document.getElementById("ipCommentModal");
+      if (modal?.classList.contains("is-open")) closeCommentModal();
+    }
+  });
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-comment-view]");
+    if (!btn) return;
+    openCommentModal(
+      btn.getAttribute("data-comment-title") || "",
+      btn.getAttribute("data-comment-text") || "",
+    );
+  });
+}
+
 const HOW_IT_WORKS_SEEN_KEY = "leafIdeaPortalHowItWorksSeen";
 
 function openHowItWorksModal() {
@@ -3661,6 +3903,10 @@ function bindHowItWorksModal() {
     ?.addEventListener("click", openHowItWorksModal);
 }
 
+// Runs in a real browser (not the artifacts sandbox), so localStorage is
+// available. Falls through silently if storage is blocked (private
+// browsing, org policy, etc.) rather than showing the modal on a lookup
+// failure.
 function maybeShowHowItWorksOnFirstVisit() {
   let alreadySeen = false;
   try {
@@ -3673,8 +3919,34 @@ function maybeShowHowItWorksOnFirstVisit() {
   try {
     localStorage.setItem(HOW_IT_WORKS_SEEN_KEY, "true");
   } catch {
-    // Non-fatal.
+    // Non-fatal — modal will just show again next visit.
   }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Background sendback recheck
+───────────────────────────────────────────────────────────── */
+
+const SENDBACK_POLL_MS = 3 * 60 * 1000;
+let sendBackRecheckInProgress = false;
+
+async function recheckMyIdeasForSendBack() {
+  if (sendBackRecheckInProgress || document.hidden) return;
+  sendBackRecheckInProgress = true;
+  try {
+    await fetchUserSubmissions();
+  } catch (err) {
+    console.warn("[SendBack] Background recheck failed:", err);
+  } finally {
+    sendBackRecheckInProgress = false;
+  }
+}
+
+function bindSendBackRecheck() {
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) recheckMyIdeasForSendBack();
+  });
+  setInterval(recheckMyIdeasForSendBack, SENDBACK_POLL_MS);
 }
 
 function initPortal() {
@@ -3683,6 +3955,7 @@ function initPortal() {
   bindTabs();
   bindRecordModal();
   bindVotedModal();
+  bindCommentModal();
   bindActivityButtons();
   bindHowItWorksModal();
   bindDelegatedEvents();
@@ -3693,6 +3966,10 @@ function initPortal() {
   bindFileInput();
   bindCategoryChange();
   bindImplementedChange();
+  bindTitleCharCount();
+  bindSendBackRecheck();
+  bindCategoryPillPopovers();
+  bindTableScrollEdges();
   loadCategoryOptions();
   loadImpactOptions();
   loadStatusOptions();

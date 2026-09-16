@@ -8,19 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- TODO: verify path before production -->
     <link rel="stylesheet" href="/platform/designs/files/launchpad.css" />
 
     <style>
-      /* Icons render as inline <svg fill="currentColor"> elements, sized
-         via width/height on the .ip-icon class (or overridden per
-         instance) and colored via the wrapping element's `color`.
-
-         Icon attribution: SVG path data is sourced from Google's
-         Material Symbols icon set (https://fonts.google.com/icons),
-         licensed under the Apache License, Version 2.0
-         (https://www.apache.org/licenses/LICENSE-2.0).
-      */
+      /* Icons: inline <svg fill="currentColor"> (Material Symbols Filled,
+         Apache License 2.0). Sized via .ip-icon, colored via wrapping
+         element's `color`. */
       .ip-icon {
         display: inline-block;
         vertical-align: middle;
@@ -32,7 +25,6 @@
         display: none !important;
       }
 
-      /* ── Idea Portal tokens (mapped to launchpad.css vars) ── */
       :root {
         --ip-navy: var(--lp-hl);
         --ip-blue: var(--lp-accent);
@@ -49,22 +41,17 @@
         --ip-r: var(--r);
         --ip-r-lg: var(--r-lg);
         --ip-max: 1200px;
-        /* Hero palette */
         --ip-hero-deep: #2d5a27;
         --ip-hero-mid: #4a8c3f;
         --ip-hero-accent: #b8eb8a;
       }
 
-      /* ── Wrap ── */
       .ip-wrap {
         max-width: var(--ip-max);
         margin: 0 auto;
         padding: 0;
       }
 
-      /* ── Hero banner ──
-         Dark scrim behind the text (via .ip-hero-inner/::after below)
-         ensures white text meets WCAG AA contrast against the gradient. */
       .ip-hero {
         position: relative;
         overflow: hidden;
@@ -100,7 +87,6 @@
         inset: 0;
         z-index: 1;
         pointer-events: none;
-        /* Same contrast scrim as .ip-hero-inner, sized to the full hero. */
         background: radial-gradient(
           ellipse at center,
           rgba(0, 0, 0, 0.28) 0%,
@@ -150,8 +136,6 @@
         display: inline-flex;
         align-items: center;
         gap: 7px;
-        /* Dark overlay (not a light pill) so white badge text meets
-           WCAG AA contrast. */
         background: rgba(0, 0, 0, 0.35);
         border: 1px solid rgba(255, 255, 255, 0.25);
         border-radius: 50px;
@@ -255,10 +239,6 @@
       .ip-hero-cta:hover .ip-hero-cta__arrow {
         transform: translateX(3px);
       }
-      /* "How it works" trigger — secondary styling so it doesn't compete
-         with "Share Your Idea". Opens the same modal as the automatic
-         first-visit trigger (maybeShowHowItWorksOnFirstVisit() in
-         ideas_v4.js). */
       .ip-hero-actions {
         display: flex;
         align-items: center;
@@ -306,7 +286,6 @@
         }
       }
 
-      /* ── Stats strip ── */
       .ip-statsNew {
         background: #fff;
         border-bottom: 1px solid rgba(0, 0, 0, 0.07);
@@ -389,19 +368,17 @@
         letter-spacing: 0.01em;
       }
 
-      /* ── Main layout ── */
       .ip-mainLayout {
         display: grid;
-        grid-template-columns: 220px 1fr;
+        grid-template-columns: 220px minmax(0, 1fr);
         gap: 20px;
-        padding: 20px 32px 20px 103px;
+        padding: 20px 32px 20px 32px;
         align-items: start;
         background: #eef2f6;
         width: 100%;
         box-sizing: border-box;
       }
 
-      /* ── Sidebar ── */
       .ip-sidebar {
         display: grid;
         gap: 14px;
@@ -473,9 +450,9 @@
         background: var(--ip-blue);
         color: #fff;
       }
-      /* Category sidebar is inert on the Top 10 tab (a fixed ranking,
-         not filterable). Grayscale + pointer-events:none instead of
-         opacity, which would drop text contrast below WCAG AA. */
+      /* Category sidebar is inert on the Top 10 tab (fixed ranking, not
+         filterable). Grayscale + pointer-events:none rather than opacity,
+         which would drop text below WCAG AA contrast. */
       .ip-catList.is-inert {
         filter: grayscale(1);
         pointer-events: none;
@@ -498,15 +475,25 @@
         gap: 2px;
       }
 
-      /* ── Voted modal ── */
+      /* All idea-portal modals share the same launchpad-header
+         clearance pattern as lp_team.html's .thb-modal:
+         --ip-header-offset is measured live at open time (see
+         measureHeaderOffset in ideas_v4.js) so the dialog always
+         renders below the sticky global header, regardless of
+         whether the announcement banner is present. */
       .ip-votedModal {
+        --ip-header-offset: 120px;
         display: none;
         position: fixed;
         inset: 0;
-        z-index: 500;
+        align-items: flex-start;
+        justify-content: center;
+        padding: var(--ip-header-offset) 20px 24px;
+        z-index: 2147483000;
+        box-sizing: border-box;
       }
       .ip-votedModal.is-open {
-        display: block;
+        display: flex;
       }
       .ip-votedModal__backdrop {
         position: absolute;
@@ -514,15 +501,12 @@
         background: rgba(10, 20, 60, 0.45);
       }
       .ip-votedModal__dialog {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        position: relative;
         background: #fff;
         border-radius: var(--ip-r-lg);
         width: 90vw;
-        max-width: 800px;
-        max-height: 80vh;
+        max-width: 900px;
+        max-height: calc(100vh - var(--ip-header-offset) - 24px);
         display: flex;
         flex-direction: column;
         box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
@@ -560,69 +544,92 @@
         border-bottom: 1px solid var(--ip-blue-10);
         flex-shrink: 0;
         background: #fff;
+        display: flex;
+        gap: 8px;
+        align-items: center;
       }
 
-      /* ── Main content ── */
       .ip-main {
         min-width: 0;
       }
 
-      /* ── Tab bar ── */
       .ip-tabBar {
-        background: #fff;
-        border: 1px solid var(--ip-blue-10);
-        border-radius: var(--ip-r-lg);
-        overflow: hidden;
+        background: transparent;
+        border: none;
+        overflow: visible;
       }
       .ip-tabsRow {
         display: flex;
-        align-items: center;
-        border-bottom: 1px solid var(--ip-blue-10);
-        padding-right: 16px;
+        align-items: flex-end;
+        border-bottom: none;
+        padding: 8px 16px 0;
+        gap: 4px;
+        background: var(--ip-blue-lt);
+        border: 1px solid var(--ip-blue-10);
+        border-bottom: none;
+        border-radius: var(--ip-r-lg) var(--ip-r-lg) 0 0;
       }
       .ip-tabs {
         display: flex;
         flex: 1;
+        gap: 4px;
       }
       .ip-tab {
         display: flex;
         align-items: center;
         gap: 6px;
-        padding: 12px 20px;
+        padding: 11px 20px;
         font-family: "PublicSans-Medium", sans-serif;
         font-size: 0.93rem;
         color: var(--ip-muted);
-        background: transparent;
-        border: none;
-        border-bottom: 2px solid transparent;
+        background: var(--ip-blue-10);
+        border: 1px solid var(--ip-blue-20);
+        border-bottom: none;
+        border-radius: var(--ip-r-lg) var(--ip-r-lg) 0 0;
         cursor: pointer;
         transition:
           color 0.15s,
-          border-color 0.15s;
-        margin-bottom: -1px;
+          background 0.15s;
         white-space: nowrap;
+        position: relative;
+        top: 1px;
       }
       .ip-tab.is-active {
-        color: var(--ip-blue);
-        border-bottom-color: var(--ip-blue);
+        color: var(--ip-navy);
+        background: #fff;
+        border-color: var(--ip-blue-10);
+        font-family: "PublicSans-Bold", sans-serif;
+        z-index: 1;
       }
       .ip-tab:hover:not(.is-active) {
         color: var(--ip-navy);
-        background: var(--ip-blue-lt);
+        background: var(--c-blue5);
       }
       .ip-tab:focus-visible {
         outline: 2px solid var(--ip-blue);
         outline-offset: -2px;
       }
-
-      /* Tab icons — Filled at all times per org icon preference; sizing
-         now via width/height on .ip-icon rather than font-size. */
       .ip-tab .ip-icon {
         width: 20px;
         height: 20px;
       }
+      .ip-tabCount {
+        font-size: 0.78rem;
+        font-family: "PublicSans-Bold", sans-serif;
+        color: var(--ip-muted);
+        margin-left: 2px;
+      }
+      .ip-tab.is-active .ip-tabCount {
+        color: var(--ip-blue);
+      }
 
-      /* ── Panels ── */
+      .ip-tabPanels {
+        background: #fff;
+        border: 1px solid var(--ip-blue-10);
+        border-radius: 0 var(--ip-r-lg) var(--ip-r-lg) var(--ip-r-lg);
+        overflow: hidden;
+      }
+
       .ip-panel {
         display: none;
       }
@@ -636,18 +643,13 @@
         margin: 0;
       }
 
-      /* ── Recently added ── */
-
-      /* ── Search ──
-         .ip-searchInner is capped at a max-width and left-aligned so the
-         button sits next to the input rather than stretching full-width.
-         Falls back to full width below the tablet breakpoint. */
       .ip-searchWrap {
         padding: 12px 16px;
         border-bottom: 1px solid var(--ip-blue-10);
         display: flex;
         gap: 8px;
         align-items: center;
+        flex-wrap: wrap;
       }
       .ip-searchInner {
         display: flex;
@@ -696,9 +698,6 @@
         height: 1.1rem;
         color: #fff !important;
       }
-      /* ── Clear search/sort button ──
-         Sits next to .ip-searchInner (a flex sibling in .ip-searchWrap),
-         sized to visually match the ~36px-tall search bar it sits beside. */
       .ip-clearBtn {
         display: inline-flex;
         align-items: center;
@@ -726,16 +725,10 @@
         border: 0;
       }
 
-      /* ── Table scroll wrapper (horizontal scroll fallback for narrow
-           viewports). Wraps .ip-table so columns never get crushed below
-           a usable width — users scroll horizontally on small screens
-           instead of content being clipped or overlapping. ── */
       .ip-tableScroll {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         border-radius: var(--ip-r);
-        /* Subtle edge-fade cue so users notice the table scrolls when it
-           overflows; fades disappear automatically once fully scrolled. */
         background:
           linear-gradient(to right, #fff 30%, rgba(255, 255, 255, 0)),
           linear-gradient(to right, rgba(255, 255, 255, 0), #fff 70%) 100% 0,
@@ -759,16 +752,12 @@
         background-attachment: local, local, scroll, scroll;
       }
 
-      /* ── Table ── */
       .ip-table {
         width: 100%;
         border-collapse: collapse;
         font-size: 0.9rem;
         table-layout: fixed;
       }
-      /* Only enforce a minimum table width below the point where fixed
-         percentage columns would crush content illegibly. Above that,
-         the table simply fills its container — no forced overflow. */
       @media (max-width: 680px) {
         .ip-table {
           min-width: 640px;
@@ -786,7 +775,6 @@
         border-bottom: 2px solid var(--ip-blue-10);
         white-space: nowrap;
       }
-      /* Non-sortable headers (e.g. Actions) keep their own padding */
       .ip-table thead th:not(.ip-sortable) {
         padding: 10px 12px;
       }
@@ -813,7 +801,6 @@
         text-transform: uppercase;
         color: var(--ip-muted);
         cursor: pointer;
-        /* Fill the full th cell so any click in the header triggers sort */
         width: 100%;
         display: flex;
         align-items: center;
@@ -860,9 +847,6 @@
         outline-offset: 2px;
         border-radius: 2px;
       }
-      /* Title text is clickable like the ID link, but uses inherited
-         (not link-blue) color at rest so the table doesn't read as a
-         wall of blue links. */
       .ip-recordLink--title {
         color: inherit;
         text-decoration: none;
@@ -885,6 +869,8 @@
         font-size: 0.9rem;
         color: var(--ip-muted);
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .ip-votes {
         text-align: left;
@@ -897,63 +883,105 @@
         text-align: left;
         white-space: nowrap;
       }
-      /* Fallback for a draft row with no available actions (rare/never
-         in practice), so the cell doesn't look visually broken. */
       .ip-actionsEmpty {
         font-size: 0.85rem;
         color: var(--ip-muted);
         font-style: italic;
       }
 
-      /* ── Column widths (requires table-layout: fixed on .ip-table) ── */
+      .ip-commentCell {
+        text-align: left;
+        white-space: nowrap;
+        padding-left: 0;
+      }
+      .ip-commentBtn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        height: 32px;
+        padding: 0 8px;
+        border: 1.5px solid var(--ip-blue-20);
+        border-radius: var(--ip-r);
+        background: #fff;
+        color: var(--ip-blue);
+        font-size: 0.78rem;
+        font-family: "PublicSans-Bold", sans-serif;
+        cursor: pointer;
+        transition: all 0.15s;
+        box-sizing: border-box;
+        white-space: nowrap;
+      }
+      .ip-commentBtn .ip-icon {
+        width: 0.85rem;
+        height: 0.85rem;
+      }
+      .ip-commentBtn:hover,
+      .ip-commentBtn:focus-visible {
+        background: var(--ip-blue);
+        color: #fff;
+        border-color: var(--ip-blue);
+      }
+      .ip-commentBtn:hover .ip-icon,
+      .ip-commentBtn:focus-visible .ip-icon {
+        color: #fff !important;
+      }
+      .ip-commentBtn:focus-visible {
+        outline: 2px solid #000;
+        outline-offset: 2px;
+      }
+
       .ip-table th:nth-child(1),
       .ip-table td:nth-child(1) {
-        width: 8%;
-      } /* ID       */
-
+        width: 6%;
+      }
       .ip-table th:nth-child(2),
       .ip-table td:nth-child(2) {
-        width: 30%;
-      } /* Title    */
-
+        width: 38%;
+      }
       .ip-table th:nth-child(3),
       .ip-table td:nth-child(3) {
-        width: 16%;
-      } /* Category */
-
+        width: 13%;
+      }
       .ip-table th:nth-child(4),
       .ip-table td:nth-child(4) {
-        width: 14%;
-      } /* Status   */
-
+        width: 15%;
+      }
       .ip-table th:nth-child(5),
       .ip-table td:nth-child(5) {
-        width: 9%;
-      } /* Votes    */
-
+        width: 6%;
+      }
       .ip-table th:nth-child(6),
       .ip-table td:nth-child(6) {
-        width: 23%;
-      } /* Actions  */
+        width: 14%;
+      }
+      .ip-table th:nth-child(7),
+      .ip-table td:nth-child(7) {
+        width: 8%;
+      }
 
-      /* ── Title column ellipsis ── */
+      /* overflow/text-overflow set on the <td> itself, not just the
+         inner <a> — under table-layout:fixed, a cell needs its own
+         clipping to respect fixed column width. */
       .ip-col-title {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
         cursor: default;
+        max-width: 0;
       }
 
-      /* ── Status badges ── */
       .ip-badge {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 4px;
         padding: 3px 9px;
         border-radius: 999px;
         font-size: 0.875rem;
         font-family: "PublicSans-Bold", sans-serif;
         white-space: nowrap;
+        text-align: center;
       }
       .ip-badge--new {
         background: #edf7ee;
@@ -979,8 +1007,15 @@
         background: #f1f5f9;
         color: #475569;
       }
+      .ip-badge--backlog {
+        background: #e2e8f0;
+        color: #334155;
+      }
+      .ip-badge--unlikely {
+        background: #fdece5;
+        color: #b3401a;
+      }
 
-      /* ── Category pills (multi-select category display) ── */
       .ip-cat-pills {
         display: inline-flex;
         flex-wrap: wrap;
@@ -997,8 +1032,34 @@
         background: var(--c-blue5, #eaf1fd);
         color: var(--lp-accent, #16548c);
       }
+      .ip-cat-pill--more {
+        background: var(--ip-blue-10);
+        color: var(--ip-muted);
+        font-family: "PublicSans-Bold", sans-serif;
+        cursor: default;
+        border: none;
+      }
+      .ip-cat-pill--more:focus-visible {
+        outline: 2px solid var(--ip-blue);
+        outline-offset: 2px;
+      }
+      .ip-cat-pill--more-popover {
+        display: none;
+        position: fixed;
+        z-index: 600;
+        background: #fff;
+        border: 1px solid var(--ip-blue-20);
+        border-radius: var(--ip-r);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        padding: 8px;
+        max-width: 260px;
+      }
+      .ip-cat-pill--more-popover.is-open {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
 
-      /* ── Buttons ── */
       .ip-btn {
         display: inline-flex;
         align-items: center;
@@ -1054,12 +1115,6 @@
         border-radius: var(--ip-r);
       }
 
-      /* ── Submit-draft button (compact, inline with Vote/Share) ──
-         Reuses .ip-btn--primary's color tokens but sized to match the
-         32px-tall row-action buttons (.ip-upvote / .ip-share) so all
-         three sit flush in .ip-actionsCell. White text on --ip-blue
-         (#005ea2-equivalent token) is >4.5:1 contrast, meeting WCAG AA
-         for normal-size text. */
       .ip-submitDraftBtn {
         display: inline-flex;
         align-items: center;
@@ -1070,17 +1125,11 @@
         font-size: 0.8rem;
         border-radius: var(--ip-r);
         box-sizing: border-box;
-        margin-right: 4px;
       }
       .ip-submitDraftBtn .ip-icon {
         width: 0.9rem;
         height: 0.9rem;
       }
-      /* ── Edit-draft button (compact, icon + label, inline with Vote/Share) ──
-         Same 32px-tall row-action sizing as .ip-submitDraftBtn/.ip-upvote/
-         .ip-share. Auto-width (not square) so the "Edit" label fits
-         alongside the icon — a bare icon here wasn't clearly labeled as
-         an edit action. */
       .ip-editDraftBtn {
         display: inline-flex;
         align-items: center;
@@ -1091,26 +1140,24 @@
         font-size: 0.8rem;
         border-radius: var(--ip-r);
         box-sizing: border-box;
-        margin-right: 4px;
       }
       .ip-editDraftBtn .ip-icon {
         width: 0.9rem;
         height: 0.9rem;
       }
 
-      /* ── Vote button ── */
       .ip-upvote {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 4px;
         height: 32px;
-        padding: 0 10px;
+        padding: 0 8px;
         border: 1.5px solid var(--ip-blue-20);
         border-radius: var(--ip-r);
         background: #fff;
         color: var(--ip-blue);
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         font-family: "PublicSans-Bold", sans-serif;
         cursor: pointer;
         transition: all 0.15s;
@@ -1134,9 +1181,6 @@
       .ip-upvote.is-voted .ip-icon {
         color: #666 !important;
       }
-      /* Click on a "Voted" button removes the vote (single click, no
-         confirm step) — hover/focus shift to the red/error palette to
-         signal the destructive action before the click. */
       .ip-upvote.is-voted:hover:not(:disabled),
       .ip-upvote.is-voted:focus-visible:not(:disabled) {
         background: #fce8e3;
@@ -1151,9 +1195,6 @@
         outline: 2px solid var(--ip-red);
         outline-offset: 3px;
       }
-      /* Vote exists but its record ID couldn't be resolved for deletion.
-         Non-interactive and visually distinct so it doesn't look like a
-         clickable button that silently does nothing. */
       .ip-upvote.is-unavailable {
         cursor: not-allowed;
         opacity: 0.75;
@@ -1189,14 +1230,35 @@
         width: 0.9rem;
         height: 0.9rem;
       }
+      /* Dual rest/hover state markup (see voteButtonInnerHtml() in
+         ideas_v4.js): only .ip-upvote__rest shows by default; hovering
+         or focusing a voted button swaps to .ip-upvote__hover ("Unvote")
+         so both mouse and keyboard users get the same affordance. */
+      .ip-upvote__rest,
+      .ip-upvote__hover {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .ip-upvote.is-voted .ip-upvote__hover {
+        display: none;
+      }
+      .ip-upvote.is-voted:hover:not(:disabled) .ip-upvote__rest,
+      .ip-upvote.is-voted:focus-visible:not(:disabled) .ip-upvote__rest {
+        display: none;
+      }
+      .ip-upvote.is-voted:hover:not(:disabled) .ip-upvote__hover,
+      .ip-upvote.is-voted:focus-visible:not(:disabled) .ip-upvote__hover {
+        display: inline-flex;
+      }
       .ip-share {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 4px;
         height: 32px;
-        padding: 0 10px;
-        font-size: 0.8rem;
+        padding: 0 8px;
+        font-size: 0.78rem;
         background: transparent;
         border: 1.5px solid var(--ip-blue-20);
         border-radius: var(--ip-r);
@@ -1204,7 +1266,6 @@
         cursor: pointer;
         font-family: "PublicSans-Medium", sans-serif;
         transition: all 0.15s;
-        margin-left: 4px;
         box-sizing: border-box;
       }
       .ip-share:hover {
@@ -1222,10 +1283,6 @@
       .ip-share:disabled:hover .ip-icon {
         color: var(--ip-muted) !important;
       }
-      /* Disabled state — drafts can't be shared (see buildIdeaRow()'s
-         shareBtnHtml gating on isDraft). Kept visually distinct from the
-         normal/hover states so it doesn't look interactive, while the
-         title/aria-label carry the explanation on hover/focus. */
       .ip-share:disabled {
         opacity: 0.5;
         cursor: not-allowed;
@@ -1241,7 +1298,6 @@
         outline-offset: 2px;
       }
 
-      /* ── Pagination ── */
       .ip-pagination {
         display: flex;
         align-items: center;
@@ -1257,7 +1313,11 @@
       }
       .ip-pageHint {
         font-size: 0.875rem;
-        color: var(--c-gray20);
+        /* --c-gray20 (#c9c9c9) fails WCAG AA contrast on white (1.66:1);
+           overridden here with a value that passes (4.54:1) rather than
+           changing the shared token, which may be used elsewhere for
+           non-text purposes. */
+        color: #767676;
         margin-left: auto;
       }
       .ip-pageBtn,
@@ -1266,7 +1326,6 @@
         padding: 5px 12px;
       }
 
-      /* ── Status messages ── */
       .ip-status {
         padding: 8px 16px;
         font-size: 0.9rem;
@@ -1279,15 +1338,19 @@
         color: var(--ip-muted);
       }
 
-      /* ── Add Idea modal ── */
       .ip-modal {
+        --ip-header-offset: 120px;
         display: none;
         position: fixed;
         inset: 0;
-        z-index: 500;
+        align-items: flex-start;
+        justify-content: center;
+        padding: var(--ip-header-offset) 20px 24px;
+        z-index: 2147483000;
+        box-sizing: border-box;
       }
       .ip-modal.is-open {
-        display: block;
+        display: flex;
       }
       .ip-modal__overlay {
         position: absolute;
@@ -1295,16 +1358,15 @@
         background: rgba(10, 20, 60, 0.45);
       }
       .ip-modal__content {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        position: relative;
         background: #fff;
         border-radius: var(--ip-r-lg);
         width: 100%;
         max-width: 800px;
-        max-height: 90vh;
-        overflow-y: auto;
+        max-height: calc(100vh - var(--ip-header-offset) - 24px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
         box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
       }
       .ip-modal__header {
@@ -1313,11 +1375,9 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        position: sticky;
-        top: 0;
         background: #fff;
-        z-index: 1;
         border-radius: var(--ip-r-lg) var(--ip-r-lg) 0 0;
+        flex-shrink: 0;
       }
       .ip-modal__title {
         font-family: "PublicSans-Bold", sans-serif;
@@ -1329,11 +1389,27 @@
         padding: 20px 24px;
         display: grid;
         gap: 14px;
+        overflow-y: auto;
+        flex: 1 1 auto;
+        min-height: 0;
       }
 
-      /* ── How It Works modal ──
-         Static explainer panel (not a step-by-step tour), reusing the
-         .feat/.step card/icon visual language used elsewhere. */
+      .ip-requiredNote {
+        font-size: 0.78rem;
+        color: var(--ip-muted);
+        text-align: right;
+        margin: -8px 0 4px;
+        font-style: italic;
+      }
+      .ip-requiredNote .ip-req {
+        color: var(--ip-red);
+        font-style: normal;
+      }
+      .ip-req {
+        color: var(--ip-red);
+        margin-left: 2px;
+      }
+
       .ip-howItWorks__content {
         max-width: 900px;
       }
@@ -1411,8 +1487,6 @@
         width: 1.4rem;
         height: 1.4rem;
       }
-      /* Stacked layout on narrow viewports — arrows rotate to point down
-         between stacked cards instead of sideways between columns. */
       @media (max-width: 720px) {
         .ip-howItWorks__stages {
           grid-template-columns: 1fr;
@@ -1424,7 +1498,6 @@
         }
       }
 
-      /* ── Form fields ── */
       #ideaForm {
         display: flex;
         flex-direction: column;
@@ -1470,20 +1543,17 @@
         color: var(--ip-red);
         display: none;
       }
-      /* Only show error text when the preceding field is actually invalid */
       .was-validated .ip-field input:invalid ~ .ip-error,
       .was-validated .ip-field textarea:invalid ~ .ip-error,
       .was-validated .ip-field select:invalid ~ .ip-error {
         display: block;
       }
-      /* Highlight invalid fields with a red border */
       .was-validated .ip-field input:invalid,
       .was-validated .ip-field textarea:invalid,
       .was-validated .ip-field select:invalid {
         border-color: var(--ip-red);
         box-shadow: 0 0 0 3px rgba(213, 67, 9, 0.1);
       }
-      /* ── Radio group (implemented-on-LEAF question) ── */
       .ip-radioGroup {
         display: flex;
         gap: 18px;
@@ -1519,10 +1589,6 @@
         font-size: 0.875rem;
         color: var(--ip-muted);
       }
-      /* "Currently attached: filename" hint shown when editing a draft
-         with an existing upload (see openDraftForEditing() in
-         ideas_v4.js). Informational only — new upload replaces, blank
-         keeps the existing file. */
       .ip-labelRow {
         display: flex;
         align-items: center;
@@ -1554,6 +1620,7 @@
         align-items: center;
         flex-wrap: wrap;
         gap: 10px;
+        flex-shrink: 0;
       }
       @media (max-width: 400px) {
         .ip-actions {
@@ -1565,15 +1632,19 @@
         }
       }
 
-      /* ── Record modal ── */
       .ip-recordModal {
+        --ip-header-offset: 120px;
         display: none;
         position: fixed;
         inset: 0;
-        z-index: 500;
+        align-items: flex-start;
+        justify-content: center;
+        padding: var(--ip-header-offset) 20px 24px;
+        z-index: 2147483000;
+        box-sizing: border-box;
       }
       .ip-recordModal.is-open {
-        display: block;
+        display: flex;
       }
       .ip-recordModal__backdrop {
         position: absolute;
@@ -1581,15 +1652,12 @@
         background: rgba(10, 20, 60, 0.45);
       }
       .ip-recordModal__dialog {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        position: relative;
         background: #fff;
         border-radius: var(--ip-r-lg);
         width: 90vw;
         max-width: 900px;
-        height: 80vh;
+        height: calc(100vh - var(--ip-header-offset) - 24px);
         display: flex;
         flex-direction: column;
         box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
@@ -1645,7 +1713,6 @@
         border: none;
       }
 
-      /* ── Inline idea detail view ── */
       .ip-detail {
         padding: 24px 28px 40px;
         font-family: "Source Sans Pro Web", "PublicSans-Regular", sans-serif;
@@ -1653,7 +1720,6 @@
         max-width: 820px;
         margin: 0 auto;
       }
-      /* ── Inline detail: title + info row ── */
       .ip-detail__title-row {
         display: flex;
         align-items: baseline;
@@ -1719,13 +1785,6 @@
         color: #cbd5e1;
         font-size: 0.9rem;
         user-select: none;
-      }
-      .ip-detail__actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
       }
       @media (max-width: 560px) {
         .ip-detail__info-row {
@@ -1827,7 +1886,6 @@
         font-style: italic;
         font-size: 0.95rem;
       }
-      /* Attachment styles */
       .ip-detail__attach-grid {
         display: flex;
         flex-wrap: wrap;
@@ -1911,9 +1969,6 @@
         }
       }
 
-      /* ── PHI/PII disclaimer banner ──
-         Static, non-dismissible notice at the top of the Share/Continue
-         Your Idea modal, reusing the toast's warning styling. */
       .ip-phiNotice {
         display: flex;
         align-items: flex-start;
@@ -1939,23 +1994,12 @@
         font-weight: 700;
       }
 
-
-         Background changed from solid green/red to a neutral cream base
-         per feedback — the hero banner below it is green, so a solid
-         green toast blended in and was easy to miss. Cream provides
-         strong contrast against the hero without introducing a new
-         saturated color, and a colored left border + icon still carries
-         the success/error distinction at a glance so that information
-         isn't lost by flattening to one neutral color. Text is a dark,
-         high-contrast color (not white) since the background is now
-         light — this also sidesteps the earlier LEAF-inherited-black-text
-         bug entirely, since dark text is now the intended, correct color
-         rather than something to override. */
       .ip-toast {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: auto !important;
         transform: translateY(-100%);
         background: #fdf8ee;
         border-bottom: 1px solid #e8dfc8;
@@ -1964,9 +2008,9 @@
         border-radius: 0 0 10px 10px;
         font-family: "PublicSans-Bold", sans-serif;
         font-size: 0.95rem;
-        z-index: 900;
+        z-index: 2147483000 !important;
         transition: transform 0.3s ease;
-        display: flex;
+        display: flex !important;
         align-items: center;
         justify-content: center;
         gap: 14px;
@@ -1974,9 +2018,6 @@
         pointer-events: none;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
       }
-      /* Force a single, consistent dark text color on every descendant so
-         nothing (including any LEAF page-level rule) can override it to
-         something illegible against the cream background. */
       .ip-toast,
       .ip-toast * {
         color: #3d2f0f !important;
@@ -1986,9 +2027,6 @@
         line-height: 1.4;
         max-width: 900px;
       }
-      /* Status icon — reinforces success/error at a glance alongside the
-         left border color, since the background is now the same neutral
-         cream for both states. */
       .ip-toast__icon {
         flex-shrink: 0;
         display: inline-flex;
@@ -2031,10 +2069,6 @@
         width: 1.1rem;
         height: 1.1rem;
       }
-      /* Error state keeps the same cream base for consistency, but swaps
-         the accent border/icon color to red so a failure is still
-         immediately distinguishable from a success message without
-         relying on a full-color background swap. */
       .ip-toast.is-error {
         background: #fdf8ee;
         border-left-color: var(--ip-red);
@@ -2044,7 +2078,6 @@
         pointer-events: auto;
       }
 
-      /* ── Credit badge ── */
       .ip-creditBadge {
         display: flex;
         align-items: center;
@@ -2067,8 +2100,13 @@
         height: 24px;
       }
 
-      /* ── Responsive ── */
-      @media (max-width: 860px) {
+      /* ── Responsive ──
+         Sidebar-stack and table card-stack breakpoints are aligned at
+         1110px per direct testing. Actions stays nowrap (Vote+Share on
+         one line); Status/Category badges wrap when needed (see
+         .ip-badge); Actions column widened slightly (17%→21%) to give
+         nowrap buttons more room before the breakpoint kicks in. */
+      @media (max-width: 1110px) {
         .ip-mainLayout {
           grid-template-columns: 1fr;
           padding: 16px 16px 20px;
@@ -2080,7 +2118,7 @@
       @media (max-width: 640px) {
         .ip-tabsRow {
           flex-wrap: wrap;
-          padding-right: 0;
+          padding: 8px 8px 0;
         }
         .ip-tabs {
           flex-wrap: wrap;
@@ -2133,13 +2171,14 @@
         }
       }
 
-      /* ── Stacked card layout for tables (phones only, ≤480px) ──
-         Below this width, horizontal scrolling is replaced with a
-         vertical card list: title becomes the card heading, remaining
-         cells become labeled rows via data-label + ::before. Table
-         semantics are preserved (thead/th/scope untouched) for
-         screen readers; only the visual presentation changes. */
-      @media (max-width: 480px) {
+      /* Stacked card layout for tables (phones + tablets + narrow
+         laptops, ≤1110px). Below 600px every field stacks full-width
+         (phone). Between 601–1110px (tablet), Category/Status/Votes are
+         grouped into one horizontal row since they're short values that
+         would otherwise waste vertical space one-per-line — Title,
+         Actions, and Comment stay full-width at every size since their
+         content (wrapping text, buttons) doesn't compress well. */
+      @media (max-width: 1110px) {
         .ip-tableScroll {
           overflow-x: visible;
           background: none;
@@ -2147,7 +2186,7 @@
         .ip-table {
           min-width: 0;
           width: 100%;
-          table-layout: auto;
+          table-layout: fixed;
           font-size: 0.92rem;
         }
         .ip-table thead {
@@ -2205,12 +2244,10 @@
           white-space: normal;
           overflow: visible;
           text-overflow: clip;
+          max-width: none;
           padding-bottom: 8px;
           margin-bottom: 4px;
           border-bottom: 1px solid var(--ip-blue-10);
-        }
-        .ip-table td:first-child {
-          /* ID badge stays inline, top-right of card via flex on the row */
         }
         .ip-table tbody tr {
           position: relative;
@@ -2246,6 +2283,52 @@
           justify-content: center;
           margin: 0;
         }
+        .ip-table td.ip-commentCell {
+          border-bottom: none;
+        }
+        .ip-table td.ip-commentCell:empty {
+          display: none;
+        }
+      }
+      /* Tablet tier only (601–1110px): group Category/Status/Votes into
+         one row using flexbox on the <tr>. Title/ID/Actions/Comment get
+         flex-basis:100% so they still force their own line; Category/
+         Status/Votes get partial flex-basis so they wrap onto a shared
+         row together. */
+      @media (min-width: 601px) and (max-width: 1110px) {
+        .ip-table tbody tr {
+          display: flex;
+          flex-wrap: wrap;
+        }
+        .ip-table td.ip-cardHeading,
+        .ip-table td.ip-actionsCell,
+        .ip-table td.ip-commentCell,
+        .ip-table td[data-label="ID"] {
+          flex: 1 1 100%;
+        }
+        .ip-table td[data-label="Category"],
+        .ip-table td[data-label="Status"],
+        .ip-table td[data-label="Votes"] {
+          box-sizing: border-box;
+          padding-right: 12px;
+        }
+        .ip-table td[data-label="Category"] {
+          flex: 0 0 45%;
+        }
+        .ip-table td[data-label="Status"] {
+          flex: 0 0 35%;
+        }
+        .ip-table td[data-label="Votes"] {
+          flex: 0 0 20%;
+          padding-right: 0;
+        }
+        .ip-table td[data-label="Category"],
+        .ip-table td[data-label="Status"] {
+          border-bottom: none;
+        }
+        .ip-table td[data-label="Votes"] {
+          border-bottom: 1px solid var(--c-gray5);
+        }
       }
       @media (max-width: 480px) {
         .ip-toast {
@@ -2275,28 +2358,13 @@
         }
       }
     </style>
-
-    <!-- TODO: verify path before production -->
-    <!-- <script src="/platform/designs/files/leaf_nav.js"></script> -->
   </head>
   <body>
     <div class="lp" id="lp-root">
       <a class="lp-skip" href="#lp-main">Skip to main content</a>
       <div id="lp-nav-host"></div>
 
-      <!-- Breadcrumb guard — only render standalone, not when hash-routed.
-           When hash-routed, leaf_nav.js injects its own breadcrumb into #lpSwapHost
-           and leaf_breadcrumb.js is blocklisted from re-execution. -->
-      <!--
-      <script>
-        if (!document.getElementById("lpSwapHost")) {
-          window.LEAF_BREADCRUMB = ["resources", { label: "Idea Portal" }];
-        }
-      </script>
-      -->
-
       <main id="lp-main" tabindex="-1">
-        <!-- ── Hero ── -->
         <div class="ip-hero">
           <div class="ip-leaf-deco ip-leaf-deco--tl" aria-hidden="true">
             <svg width="200" height="180" viewBox="0 0 200 180">
@@ -2404,7 +2472,6 @@
           </div>
         </div>
 
-        <!-- ── Stats strip ── -->
         <div class="ip-statsNew" role="region" aria-label="Portal statistics">
           <div class="ip-statNew">
             <div
@@ -2472,7 +2539,6 @@
         </div>
 
         <div class="ip-mainLayout">
-          <!-- Sidebar -->
           <aside class="ip-sidebar" aria-label="Filters">
             <div class="ip-sideCard">
               <div class="ip-sideCard__hd">Categories</div>
@@ -2521,7 +2587,6 @@
             </div>
           </aside>
 
-          <!-- Main content -->
           <div class="ip-main">
             <div class="ip-tabBar">
               <div class="ip-tabsRow">
@@ -2547,6 +2612,7 @@
                       />
                     </svg>
                     All Ideas
+                    <span class="ip-tabCount" id="allTabCount">(0)</span>
                   </button>
                   <button
                     class="ip-tab"
@@ -2591,39 +2657,60 @@
                       />
                     </svg>
                     My Ideas
+                    <span class="ip-tabCount" id="myTabCount">(0)</span>
                   </button>
                 </div>
               </div>
 
-              <!-- Panel: All Ideas -->
-              <div
-                class="ip-panel is-active"
-                id="panel-all"
-                role="tabpanel"
-                aria-labelledby="all-tab"
-              >
-                <div class="ip-tableWrap">
-                  <p class="ip-panelDesc">
-                    Browse all submitted ideas from across the organization.
-                    Vote for ideas you support.
-                  </p>
-                  <div class="ip-searchWrap">
-                    <label class="ip-srOnly" for="searchInput"
-                      >Search ideas</label
-                    >
-                    <div class="ip-searchInner">
-                      <input
-                        type="search"
-                        id="searchInput"
-                        class="ip-searchInput"
-                        placeholder="Search by title, category, or idea #…"
-                        autocomplete="off"
-                      />
+              <div class="ip-tabPanels">
+                <div
+                  class="ip-panel is-active"
+                  id="panel-all"
+                  role="tabpanel"
+                  aria-labelledby="all-tab"
+                >
+                  <div class="ip-tableWrap">
+                    <p class="ip-panelDesc">
+                      Browse all submitted ideas from across the organization.
+                      Vote for ideas you support.
+                    </p>
+                    <div class="ip-searchWrap">
+                      <label class="ip-srOnly" for="searchInput"
+                        >Search ideas</label
+                      >
+                      <div class="ip-searchInner">
+                        <input
+                          type="search"
+                          id="searchInput"
+                          class="ip-searchInput"
+                          placeholder="Search by title, category, or idea #…"
+                          autocomplete="off"
+                        />
+                        <button
+                          type="button"
+                          id="searchBtn"
+                          class="ip-searchIconBtn"
+                          aria-label="Search"
+                        >
+                          <svg
+                            class="ip-icon"
+                            viewBox="0 -960 960 960"
+                            fill="currentColor"
+                            aria-hidden="true"
+                            focusable="false"
+                          >
+                            <path
+                              d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        id="searchBtn"
-                        class="ip-searchIconBtn"
-                        aria-label="Search"
+                        id="clearAllBtn"
+                        class="ip-btn ip-btn--ghost ip-clearBtn"
+                        aria-label="Clear sorting"
+                        title="Clear sorting"
                       >
                         <svg
                           class="ip-icon"
@@ -2633,238 +2720,278 @@
                           focusable="false"
                         >
                           <path
-                            d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"
+                            d="M120-240v-80h240v80H120Zm0-200v-80h480v80H120Zm0-200v-80h720v80H120Z"
                           />
                         </svg>
+                        Clear Sorting
                       </button>
                     </div>
-                    <button
-                      type="button"
-                      id="clearAllBtn"
-                      class="ip-btn ip-btn--ghost ip-clearBtn"
-                      aria-label="Clear search and sorting"
-                      title="Clear search and sorting"
+                    <div
+                      class="ip-status"
+                      id="allStatus"
+                      role="status"
+                      aria-live="polite"
+                      hidden
+                    ></div>
+                    <div class="ip-tableScroll">
+                      <table id="tblIdeas" class="ip-table">
+                        <caption class="ip-srOnly">
+                          All ideas table
+                        </caption>
+                        <thead>
+                          <tr>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="descending"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="id"
+                              >
+                                ID
+                              </button>
+                            </th>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="none"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="title"
+                              >
+                                Title
+                              </button>
+                            </th>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="none"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="category"
+                              >
+                                Category
+                              </button>
+                            </th>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="none"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="status"
+                              >
+                                Status
+                              </button>
+                            </th>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="none"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="votes"
+                              >
+                                Votes
+                              </button>
+                            </th>
+                            <th class="ip-col-actions" scope="col">Actions</th>
+                            <th class="ip-col-actions" scope="col">Comment</th>
+                          </tr>
+                        </thead>
+                        <tbody id="results"></tbody>
+                      </table>
+                    </div>
+                    <div
+                      class="ip-pagination"
+                      id="allPagination"
+                      aria-label="All ideas pagination"
                     >
-                      <svg
-                        class="ip-icon"
-                        viewBox="0 -960 960 960"
-                        fill="currentColor"
-                        aria-hidden="true"
-                        focusable="false"
-                      >
-                        <path
-                          d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
-                        />
-                      </svg>
-                      Clear
-                    </button>
-                  </div>
-                  <div
-                    class="ip-status"
-                    id="allStatus"
-                    role="status"
-                    aria-live="polite"
-                    hidden
-                  ></div>
-                  <div class="ip-tableScroll">
-                    <table id="tblIdeas" class="ip-table">
-                      <caption class="ip-srOnly">
-                        All ideas table
-                      </caption>
-                      <thead>
-                        <tr>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="id"
-                            >
-                              ID
-                            </button>
-                          </th>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="title"
-                            >
-                              Title
-                            </button>
-                          </th>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="category"
-                            >
-                              Category
-                            </button>
-                          </th>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="status"
-                            >
-                              Status
-                            </button>
-                          </th>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="votes"
-                            >
-                              Votes
-                            </button>
-                          </th>
-                          <th class="ip-col-actions" scope="col">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody id="results"></tbody>
-                    </table>
-                  </div>
-                  <div
-                    class="ip-pagination"
-                    id="allPagination"
-                    aria-label="All ideas pagination"
-                  >
-                    <button
-                      type="button"
-                      class="ip-btn ip-btn--ghost ip-pageBtn"
-                      data-page-scope="all"
-                      data-page-action="prev"
-                    >
-                      Prev
-                    </button>
-                    <span class="ip-pageInfo" id="allPageInfo"
-                      >Page 1 of 1</span
-                    >
-                    <button
-                      type="button"
-                      class="ip-btn ip-btn--ghost ip-pageBtn"
-                      data-page-scope="all"
-                      data-page-action="next"
-                    >
-                      Next
-                    </button>
-                    <button
-                      type="button"
-                      class="ip-btn ip-btn--ghost ip-pageToggle"
-                      data-page-scope="all"
-                      data-page-action="toggle"
-                      aria-pressed="false"
-                    >
-                      Show all
-                    </button>
-                    <span class="ip-pageHint" id="allPageHint"
-                      >Showing 50 per page.</span
-                    >
-                  </div>
-                </div>
-              </div>
-
-              <!-- Panel: Top 10 -->
-              <div
-                class="ip-panel"
-                id="panel-top"
-                role="tabpanel"
-                aria-labelledby="top-tab"
-              >
-                <div class="ip-tableWrap">
-                  <p class="ip-panelDesc">
-                    The 10 most voted ideas, ranked by votes. Cast your vote to
-                    help the best ideas rise to the top.
-                  </p>
-                  <div class="ip-tableScroll">
-                    <table id="tblTopIdeas" class="ip-table">
-                      <caption class="ip-srOnly">
-                        Top 10 ideas table
-                      </caption>
-                      <thead>
-                        <tr>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="id"
-                            >
-                              ID
-                            </button>
-                          </th>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="title"
-                            >
-                              Title
-                            </button>
-                          </th>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="category"
-                            >
-                              Category
-                            </button>
-                          </th>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="status"
-                            >
-                              Status
-                            </button>
-                          </th>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="votes"
-                            >
-                              Votes
-                            </button>
-                          </th>
-                          <th class="ip-col-actions" scope="col">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody id="topResults"></tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Panel: My Ideas -->
-              <div
-                class="ip-panel"
-                id="panel-my"
-                role="tabpanel"
-                aria-labelledby="my-tab"
-              >
-                <div class="ip-tableWrap">
-                  <p class="ip-panelDesc">
-                    A personal view of all your submitted ideas.
-                  </p>
-                  <div class="ip-searchWrap">
-                    <label class="ip-srOnly" for="mySearchInput"
-                      >Search my ideas</label
-                    >
-                    <div class="ip-searchInner">
-                      <input
-                        type="search"
-                        id="mySearchInput"
-                        class="ip-searchInput"
-                        placeholder="Search my ideas"
-                        autocomplete="off"
-                      />
                       <button
                         type="button"
-                        id="mySearchBtn"
-                        class="ip-searchIconBtn"
-                        aria-label="Search"
+                        class="ip-btn ip-btn--ghost ip-pageBtn"
+                        data-page-scope="all"
+                        data-page-action="prev"
+                      >
+                        Prev
+                      </button>
+                      <span class="ip-pageInfo" id="allPageInfo"
+                        >Page 1 of 1</span
+                      >
+                      <button
+                        type="button"
+                        class="ip-btn ip-btn--ghost ip-pageBtn"
+                        data-page-scope="all"
+                        data-page-action="next"
+                      >
+                        Next
+                      </button>
+                      <button
+                        type="button"
+                        class="ip-btn ip-btn--ghost ip-pageToggle"
+                        data-page-scope="all"
+                        data-page-action="toggle"
+                        aria-pressed="false"
+                      >
+                        Show all
+                      </button>
+                      <span class="ip-pageHint" id="allPageHint"
+                        >Showing 50 per page.</span
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  class="ip-panel"
+                  id="panel-top"
+                  role="tabpanel"
+                  aria-labelledby="top-tab"
+                >
+                  <div class="ip-tableWrap">
+                    <p class="ip-panelDesc">
+                      The 10 most voted ideas, ranked by votes. Cast your vote
+                      to help the best ideas rise to the top.
+                    </p>
+                    <div class="ip-tableScroll">
+                      <table id="tblTopIdeas" class="ip-table">
+                        <caption class="ip-srOnly">
+                          Top 10 ideas table
+                        </caption>
+                        <thead>
+                          <tr>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="none"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="id"
+                              >
+                                ID
+                              </button>
+                            </th>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="none"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="title"
+                              >
+                                Title
+                              </button>
+                            </th>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="none"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="category"
+                              >
+                                Category
+                              </button>
+                            </th>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="none"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="status"
+                              >
+                                Status
+                              </button>
+                            </th>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="none"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="votes"
+                              >
+                                Votes
+                              </button>
+                            </th>
+                            <th class="ip-col-actions" scope="col">Actions</th>
+                            <th class="ip-col-actions" scope="col">Comment</th>
+                          </tr>
+                        </thead>
+                        <tbody id="topResults"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  class="ip-panel"
+                  id="panel-my"
+                  role="tabpanel"
+                  aria-labelledby="my-tab"
+                >
+                  <div class="ip-tableWrap">
+                    <p class="ip-panelDesc">
+                      A personal view of all your submitted ideas.
+                    </p>
+                    <div class="ip-searchWrap">
+                      <label class="ip-srOnly" for="mySearchInput"
+                        >Search my ideas</label
+                      >
+                      <div class="ip-searchInner">
+                        <input
+                          type="search"
+                          id="mySearchInput"
+                          class="ip-searchInput"
+                          placeholder="Search my ideas"
+                          autocomplete="off"
+                        />
+                        <button
+                          type="button"
+                          id="mySearchBtn"
+                          class="ip-searchIconBtn"
+                          aria-label="Search"
+                        >
+                          <svg
+                            class="ip-icon"
+                            viewBox="0 -960 960 960"
+                            fill="currentColor"
+                            aria-hidden="true"
+                            focusable="false"
+                          >
+                            <path
+                              d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        id="clearMyBtn"
+                        class="ip-btn ip-btn--ghost ip-clearBtn"
+                        aria-label="Clear sorting"
+                        title="Clear sorting"
                       >
                         <svg
                           class="ip-icon"
@@ -2874,142 +3001,142 @@
                           focusable="false"
                         >
                           <path
-                            d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"
+                            d="M120-240v-80h240v80H120Zm0-200v-80h480v80H120Zm0-200v-80h720v80H120Z"
                           />
                         </svg>
+                        Clear Sorting
                       </button>
                     </div>
-                    <button
-                      type="button"
-                      id="clearMyBtn"
-                      class="ip-btn ip-btn--ghost ip-clearBtn"
-                      aria-label="Clear search and sorting"
-                      title="Clear search and sorting"
+                    <div
+                      class="ip-status"
+                      id="myStatus"
+                      role="status"
+                      aria-live="polite"
+                      hidden
+                    ></div>
+                    <div class="ip-tableScroll">
+                      <table id="tblMyIdeas" class="ip-table">
+                        <caption class="ip-srOnly">
+                          My ideas table
+                        </caption>
+                        <thead>
+                          <tr>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="descending"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="id"
+                              >
+                                ID
+                              </button>
+                            </th>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="none"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="title"
+                              >
+                                Title
+                              </button>
+                            </th>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="none"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="category"
+                              >
+                                Category
+                              </button>
+                            </th>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="none"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="status"
+                              >
+                                Status
+                              </button>
+                            </th>
+                            <th
+                              class="ip-sortable"
+                              scope="col"
+                              aria-sort="none"
+                            >
+                              <button
+                                class="ip-sortBtn"
+                                type="button"
+                                data-sort="votes"
+                              >
+                                Votes
+                              </button>
+                            </th>
+                            <th class="ip-col-actions" scope="col">Actions</th>
+                            <th class="ip-col-actions" scope="col">Comment</th>
+                          </tr>
+                        </thead>
+                        <tbody id="myResults"></tbody>
+                      </table>
+                    </div>
+                    <div
+                      class="ip-pagination"
+                      id="myPagination"
+                      aria-label="My ideas pagination"
                     >
-                      <svg
-                        class="ip-icon"
-                        viewBox="0 -960 960 960"
-                        fill="currentColor"
-                        aria-hidden="true"
-                        focusable="false"
+                      <button
+                        type="button"
+                        class="ip-btn ip-btn--ghost ip-pageBtn"
+                        data-page-scope="my"
+                        data-page-action="prev"
                       >
-                        <path
-                          d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
-                        />
-                      </svg>
-                      Clear
-                    </button>
-                  </div>
-                  <div
-                    class="ip-status"
-                    id="myStatus"
-                    role="status"
-                    aria-live="polite"
-                    hidden
-                  ></div>
-                  <div class="ip-tableScroll">
-                    <table id="tblMyIdeas" class="ip-table">
-                      <caption class="ip-srOnly">
-                        My ideas table
-                      </caption>
-                      <thead>
-                        <tr>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="id"
-                            >
-                              ID
-                            </button>
-                          </th>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="title"
-                            >
-                              Title
-                            </button>
-                          </th>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="category"
-                            >
-                              Category
-                            </button>
-                          </th>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="status"
-                            >
-                              Status
-                            </button>
-                          </th>
-                          <th class="ip-sortable" scope="col" aria-sort="none">
-                            <button
-                              class="ip-sortBtn"
-                              type="button"
-                              data-sort="votes"
-                            >
-                              Votes
-                            </button>
-                          </th>
-                          <th class="ip-col-actions" scope="col">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody id="myResults"></tbody>
-                    </table>
-                  </div>
-                  <div
-                    class="ip-pagination"
-                    id="myPagination"
-                    aria-label="My ideas pagination"
-                  >
-                    <button
-                      type="button"
-                      class="ip-btn ip-btn--ghost ip-pageBtn"
-                      data-page-scope="my"
-                      data-page-action="prev"
-                    >
-                      Prev
-                    </button>
-                    <span class="ip-pageInfo" id="myPageInfo">Page 1 of 1</span>
-                    <button
-                      type="button"
-                      class="ip-btn ip-btn--ghost ip-pageBtn"
-                      data-page-scope="my"
-                      data-page-action="next"
-                    >
-                      Next
-                    </button>
-                    <button
-                      type="button"
-                      class="ip-btn ip-btn--ghost ip-pageToggle"
-                      data-page-scope="my"
-                      data-page-action="toggle"
-                      aria-pressed="false"
-                    >
-                      Show all
-                    </button>
-                    <span class="ip-pageHint" id="myPageHint"
-                      >Showing 50 per page.</span
-                    >
+                        Prev
+                      </button>
+                      <span class="ip-pageInfo" id="myPageInfo"
+                        >Page 1 of 1</span
+                      >
+                      <button
+                        type="button"
+                        class="ip-btn ip-btn--ghost ip-pageBtn"
+                        data-page-scope="my"
+                        data-page-action="next"
+                      >
+                        Next
+                      </button>
+                      <button
+                        type="button"
+                        class="ip-btn ip-btn--ghost ip-pageToggle"
+                        data-page-scope="my"
+                        data-page-action="toggle"
+                        aria-pressed="false"
+                      >
+                        Show all
+                      </button>
+                      <span class="ip-pageHint" id="myPageHint"
+                        >Showing 50 per page.</span
+                      >
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-            <!-- /.ip-tabBar -->
           </div>
-          <!-- /.ip-main -->
         </div>
-        <!-- /.ip-mainLayout -->
 
-        <!-- Subtle page footer credit -->
         <div class="ip-creditBadge" aria-label="Credit">
           <svg
             class="ip-icon"
@@ -3027,17 +3154,9 @@
 
         <div class="lp-bottom-safe" aria-hidden="true"></div>
       </main>
-      <!-- /#lp-main -->
 
-      <!-- Toast — outside main so aria-hidden on main doesn't suppress it.
-           Content injected by showToast() in ideas_v4.js; manual close
-           only, no auto-dismiss timer. -->
       <div id="ipToast" class="ip-toast" role="alert" aria-live="polite"></div>
 
-      <!-- Add Idea modal — outside main so focus trap works correctly.
-           Also reused for editing a draft (see openDraftForEditing() in
-           ideas_v4.js); setIdeaModalMode() swaps header/button copy
-           between "Add Idea" and "Continue Your Idea". -->
       <div
         class="ip-modal"
         id="addIdeaModal"
@@ -3095,21 +3214,34 @@
               <span><strong>Do not include PHI or PII.</strong></span>
             </div>
             <form id="ideaForm" class="ip-form needs-validation" novalidate>
+              <p class="ip-requiredNote">
+                <span class="ip-req" aria-hidden="true">*</span> Required
+              </p>
               <div class="ip-field">
-                <label for="inpTitle" class="ip-label">Idea Title</label>
+                <label for="inpTitle" class="ip-label"
+                  >Idea Title<span class="ip-req" aria-hidden="true"
+                    >*</span
+                  ></label
+                >
                 <input
                   type="text"
                   id="inpTitle"
                   required
-                  aria-describedby="errTitle"
+                  maxlength="100"
+                  aria-describedby="errTitle titleCharCount"
                 />
-                <div class="ip-error" id="errTitle">
+                <p class="ip-charCount" id="titleCharCount" aria-live="polite">
+                  <span id="titleCharCountValue">0</span>/100 characters
+                </p>
+                <div class="ip-error" id="errTitle" role="alert">
                   Please provide a title for your idea.
                 </div>
               </div>
               <div class="ip-field">
                 <label for="inpDescription" class="ip-label"
-                  >Idea Description</label
+                  >Idea Description<span class="ip-req" aria-hidden="true"
+                    >*</span
+                  ></label
                 >
                 <textarea
                   class="ip-input ip-textarea"
@@ -3118,12 +3250,16 @@
                   required
                   aria-describedby="errDescription"
                 ></textarea>
-                <div class="ip-error" id="errDescription">
+                <div class="ip-error" id="errDescription" role="alert">
                   Please provide a description of your idea.
                 </div>
               </div>
               <div class="ip-field">
-                <label for="inpBenefit" class="ip-label">Idea Benefit(s)</label>
+                <label for="inpBenefit" class="ip-label"
+                  >Idea Benefit(s)<span class="ip-req" aria-hidden="true"
+                    >*</span
+                  ></label
+                >
                 <textarea
                   class="ip-input ip-textarea"
                   id="inpBenefit"
@@ -3131,7 +3267,7 @@
                   required
                   aria-describedby="errBenefit"
                 ></textarea>
-                <div class="ip-error" id="errBenefit">
+                <div class="ip-error" id="errBenefit" role="alert">
                   Briefly describe the benefit of your idea.
                 </div>
               </div>
@@ -3171,7 +3307,7 @@
                 >
                   <label for="inpImplementedUrl"
                     >Please provide the LEAF site's URL this is implemented
-                    in:</label
+                    in:<span class="ip-req" aria-hidden="true">*</span></label
                   >
                   <input
                     type="url"
@@ -3180,13 +3316,17 @@
                     placeholder="https://…"
                     aria-describedby="errImplementedUrl"
                   />
-                  <div class="ip-error" id="errImplementedUrl">
+                  <div class="ip-error" id="errImplementedUrl" role="alert">
                     Please provide the URL where this is implemented.
                   </div>
                 </div>
               </div>
               <div class="ip-field">
-                <label for="inpCategory" class="ip-label">Idea Category</label>
+                <label for="inpCategory" class="ip-label"
+                  >Idea Category<span class="ip-req" aria-hidden="true"
+                    >*</span
+                  ></label
+                >
                 <select
                   id="inpCategory"
                   name="inpCategory"
@@ -3202,7 +3342,13 @@
                   style="display: none; margin-top: 0.5rem"
                   aria-live="polite"
                 >
-                  <label for="inpOtherCategory">Please specify category:</label>
+                  <label for="inpOtherCategory"
+                    >Please specify category:<span
+                      class="ip-req"
+                      aria-hidden="true"
+                      >*</span
+                    ></label
+                  >
                   <input
                     type="text"
                     id="inpOtherCategory"
@@ -3210,12 +3356,16 @@
                     placeholder="Enter custom category…"
                   />
                 </div>
-                <div class="ip-error" id="errCategory">
+                <div class="ip-error" id="errCategory" role="alert">
                   Please select a category.
                 </div>
               </div>
               <div class="ip-field">
-                <label for="inpImpact" class="ip-label">Idea Impact</label>
+                <label for="inpImpact" class="ip-label"
+                  >Idea Impact<span class="ip-req" aria-hidden="true"
+                    >*</span
+                  ></label
+                >
                 <select
                   id="inpImpact"
                   name="inpImpact"
@@ -3226,16 +3376,12 @@
                     Click here to select the impact
                   </option>
                 </select>
-                <div class="ip-error" id="errImpact">
+                <div class="ip-error" id="errImpact" role="alert">
                   Please select an impact level.
                 </div>
               </div>
               <div class="ip-field">
                 <div class="ip-labelRow">
-                  <!-- Shown when editing a draft with an existing
-                       attachment (see openDraftForEditing() in
-                       ideas_v4.js). New upload replaces it; blank keeps
-                       it as-is. -->
                   <span
                     class="ip-currentAttachment"
                     id="currentAttachmentHint"
@@ -3316,7 +3462,6 @@
         </div>
       </div>
 
-      <!-- Record detail modal -->
       <div class="ip-recordModal" id="ipRecordModal" aria-hidden="true">
         <div class="ip-recordModal__backdrop" data-ip-record-close="1"></div>
         <div
@@ -3359,13 +3504,10 @@
               </button>
             </div>
           </div>
-          <div class="ip-recordModal__body" id="ipRecordModalBody">
-            <!-- Populated by openIdeaDetailModal() -->
-          </div>
+          <div class="ip-recordModal__body" id="ipRecordModalBody"></div>
         </div>
       </div>
 
-      <!-- Voted ideas modal -->
       <div class="ip-votedModal" id="ipVotedModal" aria-hidden="true">
         <div class="ip-votedModal__backdrop" id="ipVotedModalBackdrop"></div>
         <div
@@ -3416,12 +3558,44 @@
                 </svg>
               </button>
             </div>
+            <button
+              type="button"
+              id="clearVotedBtn"
+              class="ip-btn ip-btn--ghost ip-clearBtn"
+              aria-label="Clear sorting"
+              title="Clear sorting"
+            >
+              <svg
+                class="ip-icon"
+                viewBox="0 -960 960 960"
+                fill="currentColor"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M120-240v-80h240v80H120Zm0-200v-80h480v80H120Zm0-200v-80h720v80H120Z"
+                />
+              </svg>
+              Clear Sorting
+            </button>
           </div>
           <div class="ip-votedModal__body">
-            <div class="ip-votedModal__empty" id="ipVotedModalEmpty" hidden>
+            <div
+              class="ip-votedModal__empty"
+              id="ipVotedModalEmpty"
+              role="status"
+              aria-live="polite"
+              hidden
+            >
               You haven't voted for any ideas yet.
             </div>
-            <div class="ip-votedModal__empty" id="ipVotedModalNoResults" hidden>
+            <div
+              class="ip-votedModal__empty"
+              id="ipVotedModalNoResults"
+              role="status"
+              aria-live="polite"
+              hidden
+            >
               No ideas match your search.
             </div>
             <div class="ip-tableScroll">
@@ -3469,6 +3643,7 @@
                         Votes
                       </button>
                     </th>
+                    <th class="ip-col-actions" scope="col">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="ipVotedTableBody"></tbody>
@@ -3477,10 +3652,6 @@
           </div>
         </div>
       </div>
-      <!-- How It Works modal — static explainer, shown automatically once
-           per browser on first visit (see
-           maybeShowHowItWorksOnFirstVisit() in ideas_v4.js), and
-           reachable anytime via the hero's "How it works" button. -->
       <div
         class="ip-modal"
         id="howItWorksModal"
@@ -3630,14 +3801,44 @@
           </div>
         </div>
       </div>
+
+      <div
+        class="ip-modal"
+        id="ipCommentModal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ipCommentModalTitle"
+        aria-hidden="true"
+      >
+        <div class="ip-modal__overlay" id="ipCommentModalOverlay"></div>
+        <div class="ip-modal__content" style="max-width: 560px" role="document">
+          <div class="ip-modal__header">
+            <h3 class="ip-modal__title" id="ipCommentModalTitle">Comment</h3>
+            <button
+              type="button"
+              class="ip-btn ip-btn--icon"
+              aria-label="Close"
+              id="ipCommentModalCloseBtn"
+            >
+              <span aria-hidden="true" style="font-size: 1.3rem">×</span>
+            </button>
+          </div>
+          <div class="ip-modal__body">
+            <p
+              id="ipCommentModalBody"
+              style="
+                white-space: pre-wrap;
+                margin: 0;
+                font-size: 0.95rem;
+                line-height: 1.6;
+                color: var(--ip-text);
+              "
+            ></p>
+          </div>
+        </div>
+      </div>
     </div>
-    <!-- /.lp -->
 
-    <!-- Breadcrumb — loaded at end of body so DOM is ready -->
-    <!-- TODO: verify path before production -->
-    <!-- <script src="/platform/designs/files/leaf_breadcrumb.js"></script> -->
-
-    <!-- Smarty config — processed server-side -->
     <script>
       window.leafIdeaPortal = {
         userID: '<!--{$userID|unescape|escape:"quotes"}-->',
@@ -3645,7 +3846,6 @@
       };
     </script>
 
-    <!-- TODO: verify path before production -->
     <script src="./files/ideas_v4.js"></script>
   </body>
 </html>

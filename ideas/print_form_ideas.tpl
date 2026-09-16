@@ -12,16 +12,25 @@
 <!--{if $empMembership['groupID'][12]}--><div class="pv-layout-row"><!--{/if}-->
 <div id="public-view">
 <a href="#pv-main" class="pv-skip-link">Skip to main content</a>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,1,0" />
 
 <style>
 #public-view *, #public-view *::before, #public-view *::after { box-sizing: border-box; }
+/* Local breakpoints for this template only — not shared with the idea
+   portal (ideas_v4.html), which is a separate page with its own
+   --bp-* system. */
+#public-view {
+  --pv-bp-stack: 700px;
+  --pv-bp-narrow: 560px;
+  --pv-bp-transfer-stack: 480px;
+}
 .pv-skip-link { position: absolute; top: -9999px; left: 0; z-index: 9999; background: #1f2937; color: #fff; padding: 10px 16px; font-size: 15px; font-weight: 600; border-radius: 0 0 8px 0; text-decoration: none; }
 .pv-skip-link:focus { top: 0; outline: 3px solid #005ea2; outline-offset: 2px; }
+.pv-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 #public-view { font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif; color: #0f172a; padding: 0 0 64px; }
 .pv-layout-row { display: flex; align-items: flex-start; min-height: 100vh; }
 .pv-layout-row #public-view { flex: 1 1 0; min-width: 0; padding-bottom: 64px; }
 .pv-layout-row #toolbar12 { flex: 0 0 220px; width: 220px; align-self: flex-start; }
+/* Matches --pv-bp-stack (700px) above. */
 @media (max-width: 700px) { .pv-layout-row { flex-direction: column; } .pv-layout-row #toolbar12 { position: static; width: 100%; max-height: none; } }
 .pv-topbar { border-bottom: 1px solid #cfd7e3; padding: 10px 20px; }
 .pv-back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; color: #005ea2; text-decoration: none; border-radius: 6px; padding: 4px 2px; }
@@ -30,7 +39,17 @@
 .pv-back-link svg { width: 16px; height: 16px; flex-shrink: 0; }
 .pv-main { max-width: 820px; margin: 32px auto 0; padding: 0 20px; box-sizing: border-box; }
 
-/* ── Record ID row ── */
+/* All icons are inline <svg fill="currentColor"> — same Material
+   Symbols path data as ICON_SVG in ideas_v4.js. Sized via .pv-icon,
+   colored via the wrapping element's `color`. */
+.pv-icon { display: inline-block; vertical-align: middle; flex-shrink: 0; width: 1em; height: 1em; }
+
+/* #workflowcontent is populated by LeafWorkflow's own draw functions
+   (see init script below) — no visual overrides here by design, only
+   spacing around the widget. */
+#workflowcontent { margin-bottom: 20px; }
+#workflowcontent:empty { margin-bottom: 0; }
+
 .pv-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .pv-cancel-row { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 6px; }
 .pv-cancel-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; font-size: 13px; font-weight: 600; color: #b91c1c; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; line-height: 1.4; }
@@ -38,42 +57,55 @@
 .pv-submit-btn:hover, .pv-submit-btn:focus { background: #166534; color: #fff; outline: none; }
 .pv-submit-btn:focus-visible { outline: 3px solid #166534; outline-offset: 2px; }
 .pv-submit-btn:disabled { opacity: 0.65; cursor: default; }
+/* "Sent back for edits" notice injected client-side (see
+   pvRepairSentBackRecord) — amber/warning palette so it doesn't read
+   as a same-page action like the green Submit button. */
+.pv-sentback-notice { color: #92400e; background: #fef3c7; border-color: #fde68a; text-decoration: none; }
+.pv-sentback-notice:hover, .pv-sentback-notice:focus { background: #92400e; color: #fff; }
+.pv-sentback-notice:focus-visible { outline: 3px solid #92400e; outline-offset: 2px; }
 .pv-cancel-btn:hover, .pv-cancel-btn:focus { background: #b91c1c; color: #fff; outline: none; }
 .pv-cancel-btn:focus-visible { outline: 3px solid #b91c1c; outline-offset: 2px; }
 .pv-id-badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 12px; background: #1f1f1f; color: #fff; border-radius: 4px; font-size: 22px; font-weight: 700; letter-spacing: 0.01em; line-height: 1.25; flex-shrink: 0; }
 
-/* ── Info row: Status · Votes ── */
 .pv-info-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 16px; padding-bottom: 14px; border-bottom: 1px solid #e2e8f0; }
 .pv-info-item { display: inline-flex; align-items: center; gap: 5px; }
 .pv-info-label { font-size: 0.75rem; font-weight: 700; color: #475569; font-family: 'Public Sans', 'Source Sans 3', sans-serif; letter-spacing: 0.05em; text-transform: uppercase; }
 .pv-info-val { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 0.8rem; font-family: 'Public Sans', 'Source Sans 3', sans-serif; font-weight: 600; line-height: 1.5; }
 .pv-info-val--status { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+.pv-info-val--status.pv-status--new { background: #eff6fb; color: #005ea2; border-color: #aacdec; }
+.pv-info-val--status.pv-status--review { background: #fdf0d5; color: #a15c00; border-color: #f3d9a8; }
+.pv-info-val--status.pv-status--progress { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.pv-info-val--status.pv-status--done { background: #edf7ee; color: #1a6b2a; border-color: #b8ddbb; }
+.pv-info-val--status.pv-status--unlikely { background: #f0f0f0; color: #5c5c5c; border-color: #d4d4d4; }
+.pv-info-val--status.pv-status--draft { background: #fdece5; color: #b3401a; border-color: #f5c6b0; }
+.pv-info-val--status.pv-status--backlog { background: #fae8c8; color: #78350f; border-color: #f0cf9a; }
 .pv-info-val--votes { background: #d9e8f6; color: #004a82; border: 1px solid #aacdec; gap: 3px; }
-.pv-info-val--votes .material-symbols-outlined { font-size: 0.8rem; line-height: 1; font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 20, 'GRAD' 0; }
+.pv-info-val--votes .pv-icon { font-size: 0.8rem; }
 .pv-info-sep { color: #cbd5e1; font-size: 0.9rem; user-select: none; }
 @media (max-width: 560px) { .pv-info-row { gap: 6px; } .pv-info-sep { display: none; } .pv-info-item { flex-direction: column; gap: 2px; } }
 
-/* ── Title ── */
 .pv-title { font-size: 26px; font-weight: 700; line-height: 1.25; margin: 0; color: #0f172a; font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif; flex: 1 1 0; min-width: 0; word-break: break-word; display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 
-/* ── Cards ── */
 .pv-card { background: #fff; border: 1px solid #cfd7e3; border-radius: 14px; padding: 22px 24px; margin-bottom: 14px; }
 .pv-card-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; margin: 0 0 10px; display: block; }
 .pv-card-body { font-size: 16px; line-height: 1.7; color: #0f172a; margin: 0; font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif; }
 .pv-card-body p { margin: 0 0 0.75em; }
 .pv-card-body p:last-child { margin-bottom: 0; }
 .pv-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+/* Matches --pv-bp-narrow (560px) above. */
 @media (max-width: 560px) { .pv-two-col { grid-template-columns: 1fr; } .pv-title { font-size: 20px; } }
 .pv-card-divider { border: none; border-top: 1px solid #cfd7e3; margin: 14px 0; }
 .pv-sub-card { background: #f8fafc; border: 1px solid #cfd7e3; border-radius: 10px; padding: 14px 16px; margin-top: 10px; }
 .pv-sub-card .pv-card-label { color: #64748b; }
 .pv-empty { font-size: 15px; color: #64748b; font-style: italic; }
 
-/* ── Category pills (matches the portal's table/modal pill style) ── */
 .ip-cat-pills { display: inline-flex; flex-wrap: wrap; gap: 4px; }
-.ip-cat-pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; font-family: 'Public Sans', sans-serif; white-space: nowrap; background: #eaf1fd; color: #16548c; }
+.ip-cat-pill { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; font-family: 'Public Sans', sans-serif; white-space: nowrap; background: transparent; color: #16548c; border: 1px solid #aacdec; }
 
-/* ── Attachments ── */
+/* Hidden by default; shown only once indicator 20 confirms content. */
+#pv-comment-card { display: none; }
+#pv-comment-card.is-visible { display: block; }
+
 .pv-attach-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
 .pv-attach-figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
 .pv-attach-btn { display: block; padding: 0; background: none; border: 2px solid #cfd7e3; border-radius: 10px; cursor: pointer; transition: border-color 0.15s ease; line-height: 0; width: 130px; }
@@ -89,7 +121,6 @@
 .pv-file-link:hover, .pv-file-link:focus { color: #004a82; }
 .pv-file-link:focus-visible { outline: 3px solid #005ea2; outline-offset: 2px; border-radius: 2px; }
 
-/* ── PM Transfer ── */
 .pm-transfer-wrap { padding-bottom: 12px; }
 .pm-transfer-btn { background: #c5ee93 !important; color: #000 !important; cursor: pointer; }
 .pm-transfer-btn:hover, .pm-transfer-btn:focus { background: #7fb135 !important; color: #fff !important; }
@@ -105,6 +136,9 @@
 .pm-transferBody{padding:16px;}
 .pm-transferPrompt{margin:0 0 12px;color:#3f4a57;font-size:.95rem;}
 .pm-transferChoices{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media (max-width: 480px) {
+  .pm-transferChoices{grid-template-columns:1fr;}
+}
 .pm-transferChoice{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;border:2px solid #dbe1e8;border-radius:12px;background:#fff;cursor:pointer;font-weight:700;font-size:.95rem;color:#1f2933;text-align:center;transition:border-color .15s,background .15s,box-shadow .15s;box-shadow:0 1px 2px rgba(16,24,40,.08);}
 .pm-transferChoice:hover{border-color:#2563eb;background:#e7efff;color:#1d4ed8;box-shadow:0 4px 12px rgba(37,99,235,.15);}
 .pm-transferChoice:focus-visible{outline:2px solid #0b5cab;outline-offset:2px;}
@@ -114,10 +148,8 @@
 .pm-transferChoiceDesc{font-weight:400;font-size:.82rem;color:#3f4a57;line-height:1.35;}
 .pm-transferChoice:hover .pm-transferChoiceDesc{color:#1d4ed8;}
 
-/* ── Internal banner ── */
 .pv-internal-banner { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 40px; padding: 10px 20px; background: #fef3c7; border-top: 2px solid #f59e0b; border-bottom: 2px solid #f59e0b; color: #78350f; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-align: center; }
 
-/* ── Votes sidebar button ── */
 .pv-votes-btn { background: #f1f5f9 !important; color: #475569 !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; font-weight: 400 !important; margin-top: 6px; width: 100%; text-align: center; justify-content: center; padding: 6px 8px !important; display: flex !important; align-items: center; transition: background 0.15s ease !important; }
 .pv-votes-btn:hover, .pv-votes-btn:focus { background: #e2e8f0 !important; color: #1e293b !important; }
 .pv-votes-btn[aria-expanded="true"] { background: #e2e8f0 !important; color: #1e293b !important; border-color: #94a3b8 !important; }
@@ -132,38 +164,44 @@
 #pv-votes-panel .pv-votes-showall:hover { color: #1e293b; }
 #pv-votes-panel .pv-votes-empty { padding: 12px 10px; color: #64748b; font-style: italic; }
 
-/* ── Edit button ── */
 .pv-edit-btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; font-size: 0.82rem; font-weight: 700; font-family: 'Public Sans', 'Source Sans 3', sans-serif; color: #005ea2; background: transparent; border: 1.5px solid #cce4f5; border-radius: 6px; cursor: pointer; line-height: 1; transition: all 0.15s; flex-shrink: 0; }
 .pv-edit-btn:hover, .pv-edit-btn:focus { background: #eef4fb; border-color: #005ea2; color: #005ea2; outline: none; }
 .pv-edit-btn:focus-visible { outline: 2px solid #005ea2; outline-offset: 2px; }
 .pv-edit-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
 
 
-/* ── Actions bar (flat, matching modal) ── */
 .pv-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
 .pv-actions-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; flex-shrink: 0; }
 .pv-actions-divider { width: 1px; height: 24px; background: #cbd5e1; flex-shrink: 0; }
 .pv-upvote { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; padding: 0 10px; border: 1.5px solid #cce4f5; border-radius: 6px; background: #fff; color: #1e293b; font-size: 0.8rem; font-weight: 700; font-family: 'Public Sans', 'Source Sans 3', sans-serif; cursor: pointer; transition: all 0.15s; box-sizing: border-box; }
 .pv-upvote:hover:not(:disabled) { background: #005ea2; color: #fff; border-color: #005ea2; }
-.pv-upvote:hover:not(:disabled) .material-symbols-outlined { color: #fff !important; }
-.pv-upvote.is-voted { background: #e8e8e8; color: #666; border-color: #ccc; cursor: default; opacity: 1; }
-.pv-upvote.is-voted .material-symbols-outlined { color: #666 !important; }
-.pv-upvote.is-voted:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
+.pv-upvote:hover:not(:disabled) .pv-icon { color: #fff !important; }
+.pv-upvote.is-voted { background: #edf7ee; color: #2e8540; border-color: #a8d5b0; cursor: pointer; opacity: 1; }
+.pv-upvote.is-voted .pv-icon { color: #2e8540 !important; }
+.pv-upvote__rest, .pv-upvote__hover { display: inline-flex; align-items: center; gap: 4px; }
+.pv-upvote.is-voted .pv-upvote__hover { display: none; }
+.pv-upvote.is-voted:hover:not(:disabled) .pv-upvote__rest,
+.pv-upvote.is-voted:focus-visible:not(:disabled) .pv-upvote__rest { display: none; }
+.pv-upvote.is-voted:hover:not(:disabled) .pv-upvote__hover,
+.pv-upvote.is-voted:focus-visible:not(:disabled) .pv-upvote__hover { display: inline-flex; }
+.pv-upvote.is-voted:hover:not(:disabled),
+.pv-upvote.is-voted:focus-visible:not(:disabled) { background: #fce8e3; color: #9c2f12; border-color: #d54309; }
+.pv-upvote.is-voted:hover:not(:disabled) .pv-icon,
+.pv-upvote.is-voted:focus-visible:not(:disabled) .pv-icon { color: #9c2f12 !important; }
+.pv-upvote.is-voted:focus-visible { outline: 2px solid #d54309; outline-offset: 3px; }
 .pv-upvote.is-own { background: #f8fafc; color: #94a3b8; border-color: #e2e8f0; cursor: not-allowed; opacity: 1; }
-.pv-upvote.is-own .material-symbols-outlined { color: #94a3b8 !important; }
+.pv-upvote.is-own .pv-icon { color: #94a3b8 !important; }
 .pv-upvote:disabled { opacity: 0.65; }
 .pv-upvote:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
-.pv-upvote .material-symbols-outlined { font-size: 0.9rem; line-height: 1; font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 24, 'GRAD' 0; }
+.pv-upvote .pv-icon { font-size: 0.9rem; }
 .pv-share { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; padding: 0 10px; font-size: 0.8rem; background: transparent; border: 1.5px solid #cce4f5; border-radius: 6px; color: #475569; cursor: pointer; font-family: 'Public Sans', 'Source Sans 3', sans-serif; font-weight: 600; transition: all 0.15s; box-sizing: border-box; }
 .pv-share:hover { background: #005ea2; border-color: #005ea2; color: #fff; }
-.pv-share:hover .material-symbols-outlined { color: #fff !important; }
+.pv-share:hover .pv-icon { color: #fff !important; }
 .pv-share:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
-.pv-share .material-symbols-outlined { font-size: 0.9rem; line-height: 1; font-variation-settings: 'FILL' 1, 'wght' 400, 'opsz' 24, 'GRAD' 0; }
-/* ── Toast → sticky top banner ──
-   Ported from ideas_v4.html's .ip-toast so vote/share/submit
-   confirmations look and behave the same across the whole portal
-   instead of print_form's own smaller bottom-pill toast. Manual-dismiss
-   only (no auto-hide timer) per WCAG 2.2.1/2.2.3. */
+.pv-share .pv-icon { font-size: 0.9rem; }
+/* Sticky top banner (ported from ideas_v4.html's .ip-toast) so vote/
+   share/submit confirmations look and behave consistently across the
+   portal. Manual-dismiss only, no auto-hide, per WCAG 2.2.1/2.2.3. */
 #pvToast {
     position: fixed;
     top: 0;
@@ -191,14 +229,14 @@
 #pvToast, #pvToast * { color: #3d2f0f !important; }
 #pvToast .pv-toast__msg { white-space: normal; line-height: 1.4; max-width: 900px; }
 #pvToast .pv-toast__icon { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
-#pvToast .pv-toast__icon .material-symbols-outlined { font-size: 1.3rem; }
-#pvToast:not(.is-error) .pv-toast__icon .material-symbols-outlined { color: #92720a !important; }
-#pvToast.is-error .pv-toast__icon .material-symbols-outlined { color: #d54309 !important; }
+#pvToast .pv-toast__icon .pv-icon { font-size: 1.3rem; }
+#pvToast:not(.is-error) .pv-toast__icon .pv-icon { color: #92720a !important; }
+#pvToast.is-error .pv-toast__icon .pv-icon { color: #d54309 !important; }
 #pvToast.is-error { border-left-color: #d54309; }
 #pvToast .pv-toast__close { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 30px; padding: 0 12px; border-radius: 15px; border: none; background: rgba(61, 47, 15, 0.1); cursor: pointer; font-family: 'Public Sans', 'Source Sans 3', sans-serif; font-weight: 700; font-size: 0.85rem; }
 #pvToast .pv-toast__close:hover { background: rgba(61, 47, 15, 0.18); }
 #pvToast .pv-toast__close:focus-visible { outline: 3px solid #3d2f0f; outline-offset: 2px; }
-#pvToast .pv-toast__close .material-symbols-outlined { font-size: 1.1rem; }
+#pvToast .pv-toast__close .pv-icon { font-size: 1.1rem; }
 #pvToast.is-visible { transform: translateY(0); pointer-events: auto; }
 </style>
 
@@ -213,7 +251,11 @@
 <!-- ── Main ── -->
 <main class="pv-main" id="pv-main" tabindex="-1">
 
-    <!-- ── Row 0: Submit + Cancel buttons (right-aligned, own row) ── -->
+    <!-- Populated by LeafWorkflow only for submitted ideas ($submitted > 0);
+         stays empty for drafts. -->
+    <h2 class="pv-sr-only" id="pv-workflow-heading">Workflow Status</h2>
+    <div id="workflowcontent" aria-labelledby="pv-workflow-heading"></div>
+
     <!--{if $submitted == 0}-->
     <div class="pv-cancel-row noprint">
         <button type="button"
@@ -246,7 +288,6 @@
     </div>
     <!--{/if}-->
 
-    <!-- ── Row 1: ID badge · Title (with inline edit button) ── -->
     <div class="pv-meta" role="group" aria-label="Idea metadata">
         <span class="pv-id-badge" aria-label="Idea number <!--{$recordID|strip_tags}-->">#<!--{$recordID|strip_tags}--></span>
         <h1 class="pv-title" id="pv-heading-5">
@@ -260,7 +301,6 @@
         </h1>
     </div>
 
-    <!-- ── Row 2: Status · Votes ── -->
     <div class="pv-info-row" role="group" aria-label="Idea status and votes">
         <span class="pv-info-item" id="pv-status-item" hidden>
             <span class="pv-info-label">Status</span>
@@ -270,13 +310,12 @@
         <span class="pv-info-item">
             <span class="pv-info-label">Votes</span>
             <span class="pv-info-val pv-info-val--votes" id="pv-votes-pill" aria-live="polite">
-                <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
+                <svg class="pv-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M720-120H320v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h218q32 0 56 24t24 56v80q0 7-1.5 15t-4.5 15L794-168q-9 20-30 34t-44 14ZM240-640v520H80v-520h160Z"/></svg>
                 <span id="pv-votes-count">—</span>
             </span>
         </span>
     </div>
 
-    <!-- ── indicatorID 6: Detailed Summary ── -->
     <section class="pv-card" aria-labelledby="pv-label-6">
         <span class="pv-card-label" id="pv-label-6">
             Detailed Summary
@@ -290,10 +329,8 @@
         <div class="pv-card-body" id="pv-value-6" aria-live="polite"><span class="pv-empty">Loading&hellip;</span></div>
     </section>
 
-    <!-- ── Two-column: Benefit (7) + Category/Impact (8, 9) ── -->
     <div class="pv-two-col">
 
-        <!-- Benefit -->
         <section class="pv-card" aria-labelledby="pv-label-7">
             <span class="pv-card-label" id="pv-label-7">
                 Benefit
@@ -307,7 +344,6 @@
             <div class="pv-card-body" id="pv-value-7" aria-live="polite"><span class="pv-empty">Loading&hellip;</span></div>
         </section>
 
-        <!-- Category + Impact -->
         <section class="pv-card" aria-labelledby="pv-label-8">
             <span class="pv-card-label" id="pv-label-8">
                 Category
@@ -320,7 +356,7 @@
             </span>
             <div class="pv-card-body" id="pv-value-8" aria-live="polite"><span class="pv-empty">Loading&hellip;</span></div>
 
-            <!-- Sub-question: indicatorID 13 (only if category = Other) -->
+            <!-- Sub-question 13, shown only if category = Other -->
             <div id="pv-subq-13" hidden>
                 <div class="pv-sub-card" aria-labelledby="pv-label-13">
                     <span class="pv-card-label" id="pv-label-13">
@@ -350,9 +386,8 @@
             <div class="pv-card-body" id="pv-value-9" aria-live="polite"><span class="pv-empty">Loading&hellip;</span></div>
         </section>
 
-    </div><!-- /.pv-two-col -->
+    </div>
 
-    <!-- ── indicatorID 21: Implemented on LEAF site? (+ 22: URL, if Yes) ── -->
     <section class="pv-card" aria-labelledby="pv-label-21">
         <span class="pv-card-label" id="pv-label-21">
             Have you implemented this idea on your LEAF site?
@@ -365,7 +400,7 @@
         </span>
         <div class="pv-card-body" id="pv-value-21" aria-live="polite"><span class="pv-empty">Loading&hellip;</span></div>
 
-        <!-- Sub-question: indicatorID 22 (only shown if implemented = Yes) -->
+        <!-- Sub-question 22, shown only if implemented = Yes -->
         <div id="pv-subq-22" hidden>
             <div class="pv-sub-card" aria-labelledby="pv-label-22">
                 <span class="pv-card-label" id="pv-label-22">
@@ -382,7 +417,6 @@
         </div>
     </section>
 
-    <!-- ── indicatorID 10: Attachments ── -->
     <section class="pv-card" aria-labelledby="pv-label-10">
         <span class="pv-card-label" id="pv-label-10">
             Attachments
@@ -396,7 +430,11 @@
         <div id="pv-value-10" aria-live="polite" aria-label="Attachments loading"><span class="pv-empty">Loading&hellip;</span></div>
     </section>
 
-    <!-- ── Actions bar: Vote + Share ── -->
+    <section class="pv-card" id="pv-comment-card" aria-labelledby="pv-label-comment">
+        <span class="pv-card-label" id="pv-label-comment">Comments</span>
+        <div class="pv-card-body" id="pv-value-comment"></div>
+    </section>
+
     <div class="pv-actions" role="group" aria-label="Idea actions">
         <span class="pv-actions-label">Actions</span>
         <div class="pv-actions-divider" role="separator" aria-hidden="true"></div>
@@ -406,7 +444,7 @@
                 data-record-id="<!--{$recordID|strip_tags}-->"
                 aria-label="Vote for this idea"
                 title="Vote for this idea">
-            <span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>
+            <svg class="pv-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M720-120H320v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h218q32 0 56 24t24 56v80q0 7-1.5 15t-4.5 15L794-168q-9 20-30 34t-44 14ZM240-640v520H80v-520h160Z"/></svg>
             Vote for this idea
         </button>
         <button type="button"
@@ -415,7 +453,7 @@
                 data-record-link="https://leaf.va.gov/platform/ideas/index.php?a=printview&recordID=<!--{$recordID|strip_tags}-->"
                 aria-label="Copy shareable link for this idea"
                 title="Copy shareable link">
-            <span class="material-symbols-outlined" aria-hidden="true">share</span>
+            <svg class="pv-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false"><path d="M680-80q-50 0-85-35t-35-85q0-6 3-28L282-392q-16 15-37 23.5t-45 8.5q-50 0-85-35t-35-85q0-50 35-85t85-35q24 0 45 8.5t37 23.5l281-164q-2-7-2.5-13.5T560-760q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35q-24 0-45-8.5T598-672L317-508q2 7 2.5 13.5t.5 14.5q0 8-.5 14.5T317-452l281 164q16-15 37-23.5t45-8.5q50 0 85 35t35 85q0 50-35 85t-85 35Z"/></svg>
             Share
         </button>
     </div>
@@ -425,17 +463,41 @@
 <!-- Toast -->
 <div id="pvToast" role="alert" aria-live="polite"></div>
 
-<!-- ── Data loader ── -->
 <script>
 var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{else}-->false<!--{/if}-->;
-// True only for a record that has never been submitted (a real draft).
-// Used to force the status pill to "Draft" rather than trusting
-// indicator 12, which writeDraftStatus() in ideas_v4.js intentionally
-// blanks on every draft save — a blank field here was rendering as the
-// form's configured default option text ("Submitted") instead of
-// nothing, which incorrectly told the idea's author their unsubmitted
-// draft had already been submitted.
+// True only if this record has never been submitted. Used to force
+// the status pill to "Draft" rather than trusting indicator 12, which
+// writeDraftStatus() in ideas_v4.js intentionally blanks on every
+// draft save.
 var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}-->;
+
+// Admins already have a working Cancel Request row and don't need the
+// sendback notice injected below.
+var pvIsAdminView = <!--{if $is_admin}-->true<!--{else}-->false<!--{/if}-->;
+
+// Votes app lives under a different app root than /platform/ideas, so
+// vote reads/writes need an absolute URL, not a relative ./api/ path.
+// Declared here (global scope) since both IIFEs below and the global
+// helper functions further down (_pvFetchVotesList, toggleVotes, etc.)
+// all need to reach it.
+var VOTES_API_ROOT = 'https://leaf.va.gov/platform/votes/api/';
+
+// Mirrors ICON_SVG in ideas_v4.js so icons render identically across
+// both pages with no icon font dependency.
+var PV_ICON_SVG = {
+    thumb_up: '<path d="M720-120H320v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h218q32 0 56 24t24 56v80q0 7-1.5 15t-4.5 15L794-168q-9 20-30 34t-44 14ZM240-640v520H80v-520h160Z"/>',
+    thumb_down: '<path d="M240-840h400v520L360-40l-50-50q-7-7-11.5-19t-4.5-23v-14l44-174H120q-32 0-56-24t-24-56v-80q0-7 1.5-15t4.5-15l120-282q9-20 30-34t44-14Zm480 520v-520h160v520H720Z"/>',
+    share: '<path d="M680-80q-50 0-85-35t-35-85q0-6 3-28L282-392q-16 15-37 23.5t-45 8.5q-50 0-85-35t-35-85q0-50 35-85t85-35q24 0 45 8.5t37 23.5l281-164q-2-7-2.5-13.5T560-760q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35q-24 0-45-8.5T598-672L317-508q2 7 2.5 13.5t.5 14.5q0 8-.5 14.5T317-452l281 164q16-15 37-23.5t45-8.5q50 0 85 35t35 85q0 50-35 85t-85 35Z"/>',
+    check_circle: '<path d="m424-296 282-282-56-56-226 226-114-114-56 56 170 170Zm56 216q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/>',
+    error: '<path d="M508.5-291.5Q520-303 520-320t-11.5-28.5Q497-360 480-360t-28.5 11.5Q440-337 440-320t11.5 28.5Q463-280 480-280t28.5-11.5ZM440-440h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/>',
+    close: '<path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>'
+};
+
+function pvIconSvg(name) {
+    var inner = PV_ICON_SVG[name];
+    if (!inner) { return ''; }
+    return '<svg class="pv-icon" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false">' + inner + '</svg>';
+}
 
 (function() {
     var recordID  = <!--{$recordID|strip_tags|escape:'javascript'}-->;
@@ -444,10 +506,8 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
     var categoryOptionsList = [];
     var lastCategoryRaw = null;
 
-    /* Fetch the known category labels (used to split legacy multi-select
-       values that come back concatenated with no delimiter), same source
-       the "Add Idea" form uses. Re-renders the category pills once loaded
-       if the field already rendered with the un-split fallback. */
+    // Splits legacy multi-select category values with no delimiter by
+    // greedily matching against known category labels.
     function fetchCategoryOptionsList() {
         $.ajax({
             type: 'GET',
@@ -457,8 +517,6 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
             success: function(html) {
                 try {
                     var doc = new DOMParser().parseFromString(html, 'text/html');
-                    /* Use an attribute selector, not #8 — a bare numeric ID
-                       is not a valid CSS selector token and throws. */
                     var sel = doc.querySelector('select[id="8"]');
                     if (sel && sel.options.length) {
                         categoryOptionsList = Array.prototype.map.call(sel.options, function(o) { return o.value; }).filter(Boolean);
@@ -474,9 +532,6 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         });
     }
 
-    /* Split a category value into individual labels. Handles both
-       delimited values and legacy-imported values concatenated with no
-       delimiter, by greedily matching against categoryOptionsList. */
     function parseCategoryValue(raw) {
         var str = String(raw || '').trim();
         if (!str) { return []; }
@@ -503,8 +558,6 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         return [str];
     }
 
-    /* Render category pills matching the .ip-cat-pill style used across
-       the ideas portal's tables and detail modal. */
     function renderCategoryPills(el, raw) {
         var cats = parseCategoryValue(raw);
         if (!cats.length) {
@@ -521,6 +574,21 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         el.innerHTML = out;
     }
 
+    // Mirrors getStatusBadgeClass()/STATUS_BADGE_CLASS_BY_KEY in
+    // ideas_v4.js so this page's status pill stays visually consistent
+    // with the portal.
+    function pvStatusClassFor(statusRaw) {
+        var s = String(statusRaw || '').replace(/[()]/g, '').trim().toLowerCase();
+        if (['new submission', 'submitted', 'new'].indexOf(s) !== -1) return 'pv-status--new';
+        if (['under review', 'review', 'in review'].indexOf(s) !== -1) return 'pv-status--review';
+        if (['in progress', 'progress', 'working', 'in development', 'in-development', 'development'].indexOf(s) !== -1) return 'pv-status--progress';
+        if (['completed', 'complete', 'implemented', 'done', 'already exists', 'already_exist', 'exists'].indexOf(s) !== -1) return 'pv-status--done';
+        if (['duplicate', 'dupe', 'discarded', 'unlikely to implement', 'unlikely', 'need more information', 'needs more information', 'need more info'].indexOf(s) !== -1) return 'pv-status--unlikely';
+        if (['in backlog', 'backlog'].indexOf(s) !== -1) return 'pv-status--backlog';
+        if (s === 'draft') return 'pv-status--draft';
+        return '';
+    }
+
     var fields = [
         { id: 5,  target: 'pv-value-5' },
         { id: 6,  target: 'pv-value-6' },
@@ -529,8 +597,6 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
           onValue: function(text) {
               var cats = parseCategoryValue(text).map(function(c) { return c.toLowerCase(); });
               if (cats.indexOf('other') !== -1) {
-                  /* Only reveal the sub-card if something was actually
-                     typed into 13 — an empty answer stays fully hidden. */
                   loadIndicator(13, { target: 'pv-value-13',
                       onValue: function(subText) {
                           if (subText && subText.trim()) {
@@ -546,8 +612,6 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         { id: 21, target: 'pv-value-21',
           onValue: function(text) {
               if (text.trim().toLowerCase() === 'yes') {
-                  /* Only reveal the sub-card if a URL was actually
-                     provided — an empty answer stays fully hidden. */
                   loadIndicator(22, { target: 'pv-value-22', isLink: true,
                       onValue: function(subText) {
                           if (subText && subText.trim()) {
@@ -561,14 +625,16 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         },
         { id: 22, target: 'pv-value-22', isLink: true },
         { id: 10, target: 'pv-value-10', isAttachment: true },
+        { id: 20, target: 'pv-value-comment',
+          onValue: function(text) {
+              var card = document.getElementById('pv-comment-card');
+              if (card && text && text.trim()) { card.classList.add('is-visible'); }
+          }
+        },
         { id: 12, target: null,
           onValue: function(text) {
               var val;
               if (pvIsTrueDraft) {
-                  // Ground truth: $submitted == 0 means this record has
-                  // never been submitted, full stop — always show
-                  // "Draft" here regardless of whatever indicator 12
-                  // happens to contain.
                   val = 'Draft';
               } else {
                   val = text.trim();
@@ -577,17 +643,20 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
               var pill = document.getElementById('pv-status-pill');
               var item = document.getElementById('pv-status-item');
               var sep  = document.getElementById('pv-info-sep');
-              if (pill) { pill.textContent = val; }
+              if (pill) {
+                  pill.textContent = val;
+                  pill.className = 'pv-info-val pv-info-val--status ' + pvStatusClassFor(val);
+              }
               if (item) { item.removeAttribute('hidden'); }
               if (sep)  { sep.removeAttribute('hidden'); }
           }
         }
     ];
 
-    /* Known sub-question prompt text that LEAF sometimes inlines directly
-       (as plain text, with no distinguishing markup) into a parent
-       field's print value. Keyed by the parent indicatorID; each value
-       is cut at the first case-insensitive occurrence of the marker. */
+    // LEAF sometimes inlines a sub-question's prompt text directly into
+    // its parent field's print value with no distinguishing markup.
+    // Keyed by parent indicatorID; cut at the first case-insensitive
+    // occurrence of the marker.
     var BLEED_MARKERS = {
         8:  'if other',
         21: 'please provide'
@@ -607,10 +676,6 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         var span = tmp.querySelector('[id^="data_' + indicatorID + '_"]');
         var raw;
         if (span) {
-            /* Strip any nested blocks belonging to a *different* indicator
-               (e.g. a sub-question's prompt the server sometimes inlines
-               into a parent field's markup) so it doesn't bleed into this
-               field's text. */
             var clone = span.cloneNode(true);
             var foreign = clone.querySelectorAll('[id^="data_"]:not([id^="data_' + indicatorID + '_"])');
             foreign.forEach(function(el2) { el2.remove(); });
@@ -628,11 +693,10 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         if (value === '' || value === 'N/A') {
             el.innerHTML = '<span class="pv-empty">Not provided</span>';
         } else {
-            el.textContent = value;
+            el.innerHTML = linkifyLeafUrls(value);
         }
     }
 
-    /* ── Render a URL value as a clickable, safe link ── */
     function renderLink(el, html, indicatorID) {
         var value = extractCleanValue(html, indicatorID);
         if (value === '' || value === 'N/A') {
@@ -655,6 +719,29 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         return extractCleanValue(html, indicatorID);
     }
 
+    // Escapes text, then wraps any leaf.va.gov URL substrings (with or
+    // without an explicit http/https scheme) in real anchors. Escaping
+    // happens first so linkification only ever adds markup around
+    // already-safe text — it can't introduce injected HTML. Display
+    // text always mirrors what the user typed; https:// is only added
+    // to the href when the match had no scheme.
+    function escapeForLinkify(str) {
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    var LEAF_URL_PATTERN = /(https?:\/\/)?leaf\.va\.gov[^\s<>"']*/gi;
+
+    function linkifyLeafUrls(text) {
+        var escaped = escapeForLinkify(text);
+        return escaped.replace(LEAF_URL_PATTERN, function(match, scheme) {
+            var href = scheme ? match : 'https://' + match;
+            return '<a href="' + href + '" target="_blank" rel="noopener noreferrer" class="pv-file-link">'
+                + match + '<span class="pv-sr-only"> (opens in new tab)</span></a>';
+        });
+    }
+
     function renderAttachments(el, html) {
         var tmp = document.createElement('div');
         tmp.innerHTML = html;
@@ -670,9 +757,9 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
             var altRaw   = img.getAttribute('alt') || '';
             var filename = altRaw.replace(/^image upload:\s*/i, '').trim() || ('Image ' + (i + 1));
             out += '<figure class="pv-attach-figure">';
-            out +=   '<button type="button" class="pv-attach-btn"'
-                  +        ' onclick="window.open(\'' + src.replace(/'/g, "\\'") + '\',\'pv_img_' + i + '\',\'width=750,height=750,resizable=yes,scrollbars=yes\')"'
-                  +        ' aria-label="View full size: ' + filename.replace(/"/g, '&quot;') + '">';
+out +=   '<button type="button" class="pv-attach-btn"'
+      +        ' onclick="window.open(\'' + src.replace(/'/g, "\\'") + '\',\'pv_img_' + i + '\',\'width=750,height=750,resizable=yes,scrollbars=yes\')"'
+      +        ' aria-label="View full size: ' + filename.replace(/"/g, '&quot;') + ' (opens in new window)">';
             out +=     '<img src="' + src + '" alt="' + filename.replace(/"/g, '&quot;') + '" class="pv-attach-thumb"'
                   +         ' onerror="this.closest(\'.pv-attach-btn\').setAttribute(\'aria-label\',\'Image could not load: ' + filename.replace(/"/g, '&quot;') + '\')" />';
             out +=   '</button>';
@@ -746,29 +833,26 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         });
     }
 
-    /* Imported legacy vote baseline (indicator 23) and live voter count —
-       populated once pvFetchVoteCount() resolves, and reused by the admin
-       voters panel (_pvRenderVotes) for its summary line. */
+    // Imported legacy vote baseline (indicator 23) + live voter count,
+    // reused by the admin voters panel's summary line.
     window._pvImportedVotes = 0;
     var _pvLiveVoteCount = 0;
 
-    /* ── Live vote count pill (all users) ── */
     function pvFetchVoteCount() {
         var ideaKey = String(recordID);
         var q = {
             terms: [
-                { id: 'categoryID', operator: '=', match: 'form_57e89', gate: 'AND' },
+                { id: 'categoryID', operator: '=', match: 'form_ce926', gate: 'AND' },
                 { id: 'deleted',    operator: '=', match: 0,             gate: 'AND' }
             ],
             joins: [],
-            getData: ['2']
+            getData: ['7']
         };
 
         function renderCombined() {
             var count = window._pvImportedVotes + _pvLiveVoteCount;
             var countEl = document.getElementById('pv-votes-count');
             if (countEl) { countEl.textContent = count + ' ' + (count === 1 ? 'vote' : 'votes'); }
-            /* Keep admin sidebar label in sync */
             var lbl = document.getElementById('btn-votes-label');
             if (lbl) { lbl.textContent = 'Votes (' + count + ')'; }
             window._pvVoteCount = count;
@@ -776,14 +860,14 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
 
         $.ajax({
             type: 'GET',
-            url: './api/form/query',
+            url: VOTES_API_ROOT + 'form/query',
             data: { q: JSON.stringify(q), 'x-filterData': 'recordID,s1' },
             dataType: 'json',
             cache: false,
             success: function(res) {
                 var count = 0;
                 $.each(res, function(_, vote) {
-                    if (String((vote.s1 && vote.s1['id2']) || '') === ideaKey) { count++; }
+                    if (String((vote.s1 && vote.s1['id7']) || '') === ideaKey) { count++; }
                 });
                 _pvLiveVoteCount = count;
                 renderCombined();
@@ -794,8 +878,6 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
             }
         });
 
-        /* Imported legacy vote baseline (indicator 23) — same field the
-           portal's tables/detail modal seed their totals from. */
         $.ajax({
             type: 'GET',
             url: 'ajaxIndex.php?a=getprintindicator&recordID=' + encodeURIComponent(recordID) + '&indicatorID=23&series=1',
@@ -813,16 +895,87 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         });
     }
 
+    // LEAF's "Send back to requestor" action only emails the requestor —
+    // it never touches status/date_submitted. The reliable signal is
+    // the workflow step: sendback always returns to stepID -1, the
+    // same sentinel step a never-submitted draft starts at.
+    function pvCheckSentBack() {
+        if (!pvIsTrueDraft) {
+            fetch('./api/formWorkflow/' + encodeURIComponent(recordID) + '/currentStep', { credentials: 'same-origin', cache: 'no-store' })
+                .then(function(res) { return res.ok ? res.json() : null; })
+                .then(function(data) {
+                    if (!data) { return; }
+                    var steps = Array.isArray(data) ? data : Object.values(data || {});
+                    var sentBack = !steps.length || steps.some(function(s) { return Number((s && (s.stepID ?? s.dependencyID))) === -1; });
+                    if (sentBack) { pvRepairSentBackRecord(); }
+                })
+                .catch(function(err) { console.warn('[SendBack] Could not check current step:', err); });
+        }
+    }
+
+    // Reverts a sent-back record to draft: blanks status (12) and
+    // date_submitted (15) as two separate POSTs, since isSubmittedIdea()
+    // elsewhere only checks date_submitted.
+    function pvPostField(fieldNum, value, label) {
+        var body = new URLSearchParams({ CSRFToken: CSRFToken, recordID: String(recordID), series: '1', [fieldNum]: value });
+        return fetch('./api/form/' + encodeURIComponent(recordID), {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            body: body.toString()
+        }).then(function(res) {
+            if (!res.ok) { console.warn('[SendBack] ' + label + ' write failed (HTTP ' + res.status + ')'); return false; }
+            return true;
+        }).catch(function(err) {
+            console.warn('[SendBack] Network error writing ' + label + ':', err);
+            return false;
+        });
+    }
+
+    function pvRepairSentBackRecord() {
+        pvPostField('15', '', 'date_submitted').then(function(dateCleared) {
+            return pvPostField('12', '', 'status').then(function(statusCleared) {
+                return dateCleared || statusCleared;
+            });
+        }).then(function(repaired) {
+            if (!repaired) { return; }
+            pvIsTrueDraft = true;
+            var pill = document.getElementById('pv-status-pill');
+            if (pill) { pill.textContent = 'Draft'; pill.className = 'pv-info-val pv-info-val--status pv-status--draft'; }
+
+            // Field Edit buttons stay hidden here (gated server-side by
+            // $submitted == 0, which sendback never resets) — editing a
+            // sent-back idea happens via My Ideas, not this page.
+            if (!pvIsAdminView) {
+                var cancelRow = document.querySelector('.pv-cancel-row');
+                if (!cancelRow) {
+                    cancelRow = document.createElement('div');
+                    cancelRow.className = 'pv-cancel-row noprint';
+                    var main = document.getElementById('pv-main');
+                    if (main) { main.insertBefore(cancelRow, main.firstChild); }
+                }
+                if (cancelRow && !cancelRow.querySelector('.pv-sentback-notice')) {
+                    var notice = document.createElement('a');
+                    notice.className = 'pv-submit-btn pv-sentback-notice';
+                    notice.href = 'https://leaf.va.gov/platform/ideas/';
+                    notice.setAttribute('aria-label', 'This idea was sent back for edits. Go to My Ideas to edit and resubmit.');
+                    notice.title = 'This idea was sent back for edits';
+                    notice.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false" style="width:14px;height:14px;flex-shrink:0"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>Edit in My Ideas';
+                    cancelRow.insertBefore(notice, cancelRow.firstChild);
+                }
+            }
+        });
+    }
+
     $(function() {
         try {
             fetchCategoryOptionsList();
-            /* Skip 22 (LEAF site URL) — only loaded on demand once 21's
-               onValue callback confirms the answer was "Yes". */
             fields.forEach(function(cfg) {
                 if (cfg.id === 22) { return; }
                 loadIndicator(cfg.id, cfg);
             });
             pvFetchVoteCount();
+            pvCheckSentBack();
         } catch (e) {
             console.error('[print_form_ideas] Data loader init failed — fields will stay on "Loading...". Error:', e);
         }
@@ -834,19 +987,15 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
 
 }());
 
-/* ── Vote + Share IIFE ── */
 (function() {
     var PV_RECORD_ID     = <!--{$recordID|strip_tags|escape:'javascript'}-->;
     var PV_USER_ID       = '<!--{$userID|strip_tags|escape:'javascript'}-->';
-    var PV_FORM_KEY      = '57e89';
-    var PV_VOTE_IND_IDEA = 2;
-    var PV_VOTE_IND_USER = 3;
+    var PV_FORM_KEY      = 'ce926';
+    var PV_VOTE_IND_IDEA = 7;
+    var PV_VOTE_IND_USER = 8;
     var _pvVotingInProgress = false;
-    // recordID of the current user's own vote record for this idea (the
-    // vote FORM record's own recordID, distinct from PV_RECORD_ID which
-    // it points at). Required to target a specific vote record when
-    // un-voting. Populated by pvCheckVoted() on load and immediately on
-    // a fresh vote via pvIdeaVotes().
+    // recordID of the current user's own vote record (distinct from
+    // PV_RECORD_ID, which it points at). Needed to target un-voting.
     var _pvMyVoteRecordID   = null;
     var _pvResolvedEmail    = '';
     var _pvEmailResolved    = false;
@@ -888,10 +1037,6 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         return div.innerHTML;
     }
 
-    /* Sticky top banner, matching ideas_v4.html's .ip-toast: icon +
-       message + manual-dismiss close button, no auto-hide timer (per
-       WCAG 2.2.1/2.2.3 — the previous 4s auto-hide here has been
-       dropped to match). */
     function pvHideToast() {
         var toast = document.getElementById('pvToast');
         if (toast) { toast.classList.remove('is-visible'); }
@@ -903,9 +1048,9 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         toast.classList.toggle('is-error', !!isError);
         var iconName = isError ? 'error' : 'check_circle';
         toast.innerHTML =
-            '<span class="pv-toast__icon" aria-hidden="true"><span class="material-symbols-outlined">' + iconName + '</span></span>' +
+            '<span class="pv-toast__icon" aria-hidden="true">' + pvIconSvg(iconName) + '</span>' +
             '<span class="pv-toast__msg">' + pvEscapeHtml(msg) + '</span>' +
-            '<button type="button" class="pv-toast__close" aria-label="Dismiss notification"><span class="material-symbols-outlined">close</span>Close</button>';
+            '<button type="button" class="pv-toast__close" aria-label="Dismiss notification">' + pvIconSvg('close') + 'Close</button>';
         toast.classList.add('is-visible');
         var closeBtn = toast.querySelector('.pv-toast__close');
         if (closeBtn) { closeBtn.addEventListener('click', pvHideToast, { once: true }); }
@@ -930,17 +1075,18 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         var btn = document.getElementById('pv-vote-btn');
         if (!btn) { return; }
 
-        if (_pvIsOwnIdea) { return; } // pvSetOwnIdea owns this state — never overwrite it here
+        if (_pvIsOwnIdea) { return; }
 
-        // Voted, but we couldn't resolve which vote record is ours (e.g.
-        // a query hiccup) — same "unavailable" fallback as the table/
-        // record-modal use, rather than silently allowing an unvote
-        // click that has nothing to target.
         var unavailable = isVoted && !_pvMyVoteRecordID;
 
         btn.classList.toggle('is-voted', isVoted);
-        btn.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">thumb_up</span>'
-            + (isVoted ? 'Voted' : 'Vote for this idea');
+        if (isVoted && !unavailable) {
+            btn.innerHTML =
+                '<span class="pv-upvote__rest">' + pvIconSvg('thumb_up') + 'Voted</span>' +
+                '<span class="pv-upvote__hover">' + pvIconSvg('thumb_down') + 'Unvote</span>';
+        } else {
+            btn.innerHTML = pvIconSvg('thumb_up') + (isVoted ? 'Voted' : 'Vote for this idea');
+        }
 
         if (unavailable) {
             btn.disabled = true;
@@ -960,7 +1106,7 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         if (!PV_USER_ID) { return; }
         var q = {
             terms: [
-                { id: 'categoryID', operator: '=', match: 'form_57e89', gate: 'AND' },
+                { id: 'categoryID', operator: '=', match: 'form_ce926', gate: 'AND' },
                 { id: 'deleted',    operator: '=', match: 0,             gate: 'AND' }
             ],
             joins: [],
@@ -968,7 +1114,7 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         };
         $.ajax({
             type: 'GET',
-            url: './api/form/query',
+            url: VOTES_API_ROOT + 'form/query',
             data: { q: JSON.stringify(q), 'x-filterData': 'recordID,s1' },
             dataType: 'json',
             cache: false,
@@ -993,8 +1139,6 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         });
     }
 
-    /* Authors can't vote for their own idea — check the record's
-       submitter against the current viewer and disable the button. */
     var _pvIsOwnIdea = false;
 
     function pvCheckIsOwn() {
@@ -1040,8 +1184,6 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         if (_pvIsOwnIdea) { pvShowToast("You can't vote on your own idea.", true); return; }
         var btn = document.getElementById('pv-vote-btn');
 
-        // Already voted → this click means "remove my vote", one click,
-        // no confirmation (matching the table/record-modal behavior).
         if (btn && btn.classList.contains('is-voted')) {
             pvUnvoteIdea();
             return;
@@ -1060,7 +1202,7 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
             payload.append('numform_' + PV_FORM_KEY, '1');
             payload.append(String(PV_VOTE_IND_USER), voterIdentity);
             payload.append(String(PV_VOTE_IND_IDEA), String(PV_RECORD_ID));
-            fetch('./api/?a=form/new', {
+            fetch(VOTES_API_ROOT + '?a=form/new', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: payload.toString()
@@ -1071,8 +1213,7 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
                 if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
                     pvShowToast('Thanks for voting!');
                     _pvMyVoteRecordID = String(newID);
-                    pvSetVoted(true); // re-render now that we have a vote record ID (enables unvote)
-                    /* Refresh votes pill after successful vote */
+                    pvSetVoted(true);
                     if (typeof window._pvFetchVoteCount === 'function') { window._pvFetchVoteCount(); }
                     if (typeof window._pvInvalidateVotesPanel === 'function') { window._pvInvalidateVotesPanel(); }
                 } else {
@@ -1094,14 +1235,12 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         }
     }
 
-    /* ── Un-vote ──
-       Uses the same real LEAF soft-delete route as ideas_v4.js
-       (POST ./api/form/{recordID}/cancel → Form::cancelRecord()) rather
-       than the earlier deleted=1 POST body param, which returned HTTP
-       200 without actually persisting anything since `deleted` is a
-       system-managed timestamp column, not a writable indicator.
-       suppressNotification=1 avoids cancelRecord() emailing "prior
-       approvers" that don't apply to a workflow-less vote record. */
+    // Uses the same soft-delete route as ideas_v4.js (POST
+    // .../cancel → Form::cancelRecord()) rather than a deleted=1 POST
+    // body param, which returned HTTP 200 without persisting anything
+    // since `deleted` is a system-managed column, not a writable
+    // indicator. suppressNotification=1 avoids emailing "prior
+    // approvers" that don't apply to a workflow-less vote record.
     function pvUnvoteIdea() {
         if (_pvVotingInProgress) { return; }
         if (!_pvMyVoteRecordID) {
@@ -1114,7 +1253,7 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         pvSetVoted(false);
 
         var body = new URLSearchParams({ CSRFToken: CSRFToken, suppressNotification: '1' });
-        fetch('./api/form/' + encodeURIComponent(voteRecordID) + '/cancel', {
+        fetch(VOTES_API_ROOT + 'form/' + encodeURIComponent(voteRecordID) + '/cancel', {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
@@ -1134,7 +1273,7 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         })
         .catch(function(err) {
             console.error('[pvUnvoteIdea] error:', err);
-            _pvMyVoteRecordID = voteRecordID; // roll back
+            _pvMyVoteRecordID = voteRecordID;
             pvSetVoted(true);
             pvShowToast("Couldn't remove your vote. Please try again — if this keeps happening, let us know.", true);
         })
@@ -1168,17 +1307,14 @@ var pvIsTrueDraft = <!--{if $submitted == 0}-->true<!--{else}-->false<!--{/if}--
         }
     });
 
-    // pvShowToast/pvHideToast live in this IIFE's private scope, but the
-    // Submit button (pvSubmitDraft, defined later in the page's own
-    // global <script> block, outside any IIFE) needs to reach them too —
-    // expose them on window rather than duplicating the toast logic.
+    // pvShowToast/pvHideToast are exposed on window since pvSubmitDraft
+    // (defined later, outside any IIFE) needs to reach them too.
     window.pvShowToast = pvShowToast;
     window.pvHideToast = pvHideToast;
 
 
 }());
 
-/* ── Edit handler ── */
 function pvOpenEdit(indicatorID) {
     if (!pvCanEdit) { return; }
     if (typeof form === 'undefined') { console.warn('pvOpenEdit: LeafForm not ready yet'); return; }
@@ -1289,7 +1425,7 @@ function pvOpenEdit(indicatorID) {
         <!--{section name=i loop=$childforms}-->
             <button class="IUbutton"
                 onclick="scrollPage('formcontent');openContent('ajaxIndex.php?a=internalonlyview&amp;recordID=<!--{$recordID|strip_tags}-->&amp;childCategoryID=<!--{$childforms[i].childCategoryID|strip_tags}-->');"
-                style="background-image: url(dynicons/?img=text-x-generic.svg&amp;w=16); background-repeat: no-repeat; background-position: left; text-align: center">
+                style="background-image: url(dynicons/?img=text-x-generic.svg&amp;w=16); background-repeat: no-repeat; background-position: center">
                 <!--{$childforms[i].childCategoryName|sanitize}-->
             </button>
         <!--{/section}-->
@@ -1432,21 +1568,13 @@ function pvOpenEdit(indicatorID) {
         });
     }
 
-    // Powers the standalone "Submit" button next to Cancel Request
-    // (visible immediately for any true draft, unlike the native
-    // submitControl UI above which only renders once getsubmitcontrol
-    // has loaded at 100% form completeness). Reports back through
-    // pvShowToast() since that's guaranteed to exist regardless of
-    // whether the native submit-control markup has rendered yet.
-    //
-    // Mirrors ideas_v4.js's NewIdea() advanceOnSuccess path exactly:
-    // LEAF's internal $submitted flag is NOT what the portal's own
-    // tables key off of. writeDateSubmitted() (indicator 15) and
-    // writeSubmittedStatus() (indicator 12 = "Submitted") are what the
-    // My Ideas / All Ideas tables actually read — without them the
-    // record can look permanently stuck as a draft even though LEAF's
-    // native submit succeeded. See writeSubmittedStatus()'s comment in
-    // ideas_v4.js for the full history of why indicator 12 matters here.
+    // Standalone "Submit" button beside Cancel Request, visible
+    // immediately for a true draft (unlike the native submitControl UI,
+    // which only renders once getsubmitcontrol reports 100% complete).
+    // Mirrors ideas_v4.js's NewIdea() advanceOnSuccess path: LEAF's
+    // internal $submitted flag isn't what the portal's tables key off
+    // of — writeDateSubmitted (15) and writeSubmittedStatus (12) are
+    // what My Ideas / All Ideas actually read.
 
     function pvTodayLocalYMD() {
         var d = new Date();
@@ -1543,13 +1671,11 @@ function pvOpenEdit(indicatorID) {
 
             if (result.dateWritten && result.workflowAdvanced) {
                 pvShowToast('Your idea has been submitted successfully.');
-                if (pill) { pill.textContent = 'Submitted'; }
+                if (pill) { pill.textContent = 'Submitted'; pill.className = 'pv-info-val pv-info-val--status pv-status--new'; }
                 if (item) { item.removeAttribute('hidden'); }
                 if (sep)  { sep.removeAttribute('hidden'); }
                 if (btn)  { btn.style.display = 'none'; }
 
-                // Mirror doSubmit()'s side effects for the native
-                // submit-control UI and workflow panel, where present.
                 $('#submitStatus').text('Request submmited');
                 $('#submitControl').empty().html('Submitted');
                 $('#submitContent').hide('blind', 500);
@@ -1563,7 +1689,7 @@ function pvOpenEdit(indicatorID) {
                 }
             } else if (result.dateWritten && !result.workflowAdvanced) {
                 pvShowToast("Your idea was recorded as submitted, but a workflow step didn't complete. You can try submitting again — no data was lost.", true);
-                if (pill) { pill.textContent = 'Submitted'; }
+                if (pill) { pill.textContent = 'Submitted'; pill.className = 'pv-info-val pv-info-val--status pv-status--new'; }
                 if (item) { item.removeAttribute('hidden'); }
                 if (sep)  { sep.removeAttribute('hidden'); }
                 if (btn)  { btn.disabled = false; }
@@ -1882,21 +2008,21 @@ function pvOpenEdit(indicatorID) {
         fc.innerHTML = '<div style="padding:16px;font-size:15px;color:#475569;">Loading votes&hellip;</div>';
         var q = {
             terms: [
-                { id: 'categoryID', operator: '=', match: 'form_57e89', gate: 'AND' },
+                { id: 'categoryID', operator: '=', match: 'form_ce926', gate: 'AND' },
                 { id: 'deleted',    operator: '=', match: 0,             gate: 'AND' }
             ],
-            joins: [], getData: ['2', '3']
+            joins: [], getData: ['7', '8']
         };
         $.ajax({
-            type: 'GET', url: './api/form/query',
+            type: 'GET', url: VOTES_API_ROOT + 'form/query',
             data: { q: JSON.stringify(q), 'x-filterData': 'recordID,s1' },
             dataType: 'json', cache: false,
             success: function(res) {
                 var ideaKey = String(ideaRecordID);
                 _pvAllVoters = [];
                 $.each(res, function(_, vote) {
-                    if (String((vote.s1 && vote.s1['id2']) || '') === ideaKey) {
-                        var v = (vote.s1 && vote.s1['id3']) || '';
+                    if (String((vote.s1 && vote.s1['id7']) || '') === ideaKey) {
+                        var v = (vote.s1 && vote.s1['id8']) || '';
                         if (v) { _pvAllVoters.push(v); }
                     }
                 });
@@ -1908,10 +2034,8 @@ function pvOpenEdit(indicatorID) {
     }
 
     function _pvRenderVotes(fc) {
-        /* Context line: imported legacy total vs. live (email-tracked)
-           voters — always shown, even when one of the two is zero, since
-           the whole point of the import is that legacy counts often
-           exist with no individual voters recorded yet. */
+        // Always shown, even if one side is zero — imports and live
+        // voters are tracked separately and often don't overlap.
         var summary = '<div style="padding:10px 10px 0;font-size:13px;color:#475569;">'
             + 'Imported legacy votes: ' + window._pvImportedVotes + ' &middot; Live voters: ' + _pvAllVoters.length
             + '</div>';
@@ -1930,11 +2054,11 @@ function pvOpenEdit(indicatorID) {
         }).join('');
         var footer = '';
         if (!_pvShowAll && total > PV_VOTE_CAP) {
-            footer = '<div class="pv-votes-footer"><button type="button" class="pv-votes-showall" onclick="_pvShowAll=true;_pvRenderVotes(document.getElementById(\'formcontent\'));">Show all ' + total + ' votes</button></div>';
+            footer = '<div class="pv-votes-footer"><button type="button" class="pv-votes-showall" aria-expanded="false" onclick="_pvShowAll=true;_pvRenderVotes(document.getElementById(\'formcontent\'));">Show all ' + total + ' votes</button></div>';
         } else if (_pvShowAll && total > PV_VOTE_CAP) {
-            footer = '<div class="pv-votes-footer"><button type="button" class="pv-votes-showall" onclick="_pvShowAll=false;_pvRenderVotes(document.getElementById(\'formcontent\'));">Show fewer</button></div>';
+            footer = '<div class="pv-votes-footer"><button type="button" class="pv-votes-showall" aria-expanded="true" onclick="_pvShowAll=false;_pvRenderVotes(document.getElementById(\'formcontent\'));">Show fewer</button></div>';
         }
-        fc.innerHTML = summary + '<div class="pv-votes-table-wrap"><table style="width:100%;border-collapse:collapse;font-size:14px;"><thead><tr style="background:#f8fafc;position:sticky;top:0;"><th style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;width:32px;">#</th><th style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Voter</th></tr></thead><tbody>' + rows + '</tbody></table></div>' + footer;
+        fc.innerHTML = summary + '<div class="pv-votes-table-wrap"><table style="width:100%;border-collapse:collapse;font-size:14px;"><thead><tr style="background:#f8fafc;position:sticky;top:0;"><th scope="col" style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;width:32px;">#</th><th scope="col" style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Voter</th></tr></thead><tbody>' + rows + '</tbody></table></div>' + footer;
     }
 
     function toggleVotes(ideaRecordID) {
@@ -1948,10 +2072,8 @@ function pvOpenEdit(indicatorID) {
         _pvFetchVotesList(fc, ideaRecordID);
     }
 
-    // Called from outside this IIFE (the vote/unvote handlers below) so a
-    // vote or unvote invalidates this panel's cached voter list. If the
-    // panel happens to be open right now, refetch immediately rather than
-    // waiting for the next toggle.
+    // Exposed so vote/unvote handlers elsewhere can invalidate this
+    // panel's cached voter list and refetch immediately if it's open.
     window._pvInvalidateVotesPanel = function() {
         _pvVotesLoaded = false;
         if (_pvVotesExpanded) {
@@ -2797,11 +2919,47 @@ function pvOpenEdit(indicatorID) {
         }
     }
 
-    // Layout is handled by CSS flexbox (.pv-layout-row) — no JS sideBar needed
-
     this.portalAPI = LEAFRequestPortalAPI();
     this.portalAPI.setBaseURL('api/?a=');
     this.portalAPI.setCSRFToken('<!--{$CSRFToken}-->');
+
+    var pmTransferLastFocused = null;
+
+    function pmGetFocusableElements(container) {
+        return Array.prototype.filter.call(
+            container.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'),
+            function(el) { return el.offsetParent !== null; }
+        );
+    }
+
+    function pmTrapFocus(e) {
+        if (e.key !== 'Tab') return;
+        var modal = document.getElementById('pmTransferModal');
+        if (!modal || modal.hidden) return;
+        var focusable = pmGetFocusableElements(modal);
+        if (!focusable.length) { e.preventDefault(); return; }
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+        }
+    }
+
+    function pmSetBackgroundInert(hidden) {
+        var main = document.getElementById('pv-main');
+        if (!main) return;
+        if (hidden) {
+            main.setAttribute('inert', '');
+            main.setAttribute('aria-hidden', 'true');
+        } else {
+            main.removeAttribute('inert');
+            main.removeAttribute('aria-hidden');
+        }
+    }
 
     function transferToPMDashboard() {
         var params = new URLSearchParams(window.location.search || "");
@@ -2810,7 +2968,10 @@ function pvOpenEdit(indicatorID) {
         var modal = document.getElementById('pmTransferModal');
         if (!modal) return;
         modal.dataset.recordId = id;
+        pmTransferLastFocused = document.activeElement;
         modal.hidden = false;
+        pmSetBackgroundInert(true);
+        document.addEventListener('keydown', pmTrapFocus);
         document.getElementById('pmTransferChoiceTask').focus();
     }
 
@@ -2819,6 +2980,8 @@ function pvOpenEdit(indicatorID) {
         var id = modal ? modal.dataset.recordId : '';
         if (!id) return;
         modal.hidden = true;
+        pmSetBackgroundInert(false);
+        document.removeEventListener('keydown', pmTrapFocus);
         var param = type === 'project' ? 'transferProjectFromIdea' : 'transferFromIdea';
         window.location.href = 'https://leaf.va.gov/platform/projects/?tab=' + (type === 'project' ? 'projects' : 'tasks') + '&' + param + '=' + encodeURIComponent(id);
     }
@@ -2826,6 +2989,10 @@ function pvOpenEdit(indicatorID) {
     function closeTransferModal() {
         var modal = document.getElementById('pmTransferModal');
         if (modal) modal.hidden = true;
+        pmSetBackgroundInert(false);
+        document.removeEventListener('keydown', pmTrapFocus);
+        pmTransferLastFocused?.focus();
+        pmTransferLastFocused = null;
     }
 
     document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeTransferModal(); });
