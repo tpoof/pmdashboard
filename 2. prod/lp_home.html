@@ -12,8 +12,6 @@
   Not yet converted to real Smarty tags (separate follow-up):
     - leaf_header.js's own data-is-sysadmin, still hardcoded "0" -- hides
       the Internal nav for everyone regardless of real group membership.
-    - Newsletter signup's CSRF const, still the literal "test-csrf-token"
-      -- the subscribe POST will fail (caught by the existing .catch()).
 
   leaf_header.css/.js and the #lp-nav-host/#lpSwapHost/#lp-live-region
   mount points are included directly here rather than via main.tpl, same
@@ -1017,6 +1015,9 @@
                   href="#"
                   class="finder-cta-btn finder-cta-secondary"
                   id="finderCtaLinkMatch"
+                  data-action="form-modal"
+                  data-modal-src="https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Help+Library&iframe=1"
+                  data-modal-title="Request Support"
                 >
                   <span class="material-symbols-outlined" aria-hidden="true"
                     ><svg viewBox="0 -960 960 960" fill="currentColor">
@@ -1445,16 +1446,25 @@
          form_9015b at service_requests_launchpad (a different LEAF site)
          since no create/save helper exists here; mirrors calendar.js.
 
-         NOTE: sends this page's CSRFToken cross-site — assumed valid via
-         shared VA-SSO session but unconfirmed live; check first if
-         subscriptions start failing silently. */
+         NOTE: this is a cross-site write. Confirmed valid: leaf_header.js's
+         own Feedback widget does the same cross-site api/form/* write with
+         this exact token — see CSRF_TOKEN in leaf_header.js ("valid for
+         api/form/* calls to any LEAF site regardless of which site
+         leaf_header.js happens to be running on"). Read off leaf_header.js's
+         own <script> tag below instead of re-embedding $CSRFToken a second
+         time here, so the two values can't drift apart. */
       (() => {
         const form = document.getElementById("lpNlForm");
         const input = document.getElementById("lpNlEmail");
         const statusEl = document.getElementById("lpNlStatus");
         if (!form || !input || !statusEl) return;
 
-        const CSRF = "test-csrf-token";
+        const headerScriptEl = document.querySelector(
+          'script[src*="leaf_header.js"]',
+        );
+        const CSRF = headerScriptEl
+          ? headerScriptEl.getAttribute("data-csrf-token") || ""
+          : "";
         const NL_ENDPOINT =
           "https://leaf.va.gov/platform/service_requests_launchpad/";
         const NL_FORM_ID = "form_9015b";

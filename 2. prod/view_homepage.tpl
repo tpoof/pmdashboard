@@ -992,6 +992,9 @@
                   href="#"
                   class="finder-cta-btn finder-cta-secondary"
                   id="finderCtaLinkMatch"
+                  data-action="form-modal"
+                  data-modal-src="https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Help+Library&iframe=1"
+                  data-modal-title="Request Support"
                 >
                   <span class="material-symbols-outlined" aria-hidden="true"
                     ><svg viewBox="0 -960 960 960" fill="currentColor">
@@ -1431,17 +1434,25 @@
          exists site-wide; mirrors calendar.js's feedback widget's
          create -> write indicator -> best-effort submit shape.
 
-         NOTE: this is a cross-site write -- this page's own CSRFToken is
-         sent to a different LEAF instance. Assumed valid via shared
-         VA-SSO but unconfirmed against a live submission -- check this
-         first if subscriptions start failing silently. */
+         NOTE: this is a cross-site write. Confirmed valid: leaf_header.js's
+         own Feedback widget does the same cross-site api/form/* write with
+         this exact token -- see CSRF_TOKEN in leaf_header.js ("valid for
+         api/form/* calls to any LEAF site regardless of which site
+         leaf_header.js happens to be running on"). Read off leaf_header.js's
+         own <script> tag below instead of re-embedding $CSRFToken a second
+         time here, so the two values can't drift apart. */
       (() => {
         const form = document.getElementById("lpNlForm");
         const input = document.getElementById("lpNlEmail");
         const statusEl = document.getElementById("lpNlStatus");
         if (!form || !input || !statusEl) return;
 
-        const CSRF = '<!--{$CSRFToken|unescape|escape:"quotes"}-->';
+        const headerScriptEl = document.querySelector(
+          'script[src*="leaf_header.js"]',
+        );
+        const CSRF = headerScriptEl
+          ? headerScriptEl.getAttribute("data-csrf-token") || ""
+          : "";
         const NL_ENDPOINT =
           "https://leaf.va.gov/platform/service_requests_launchpad/";
         const NL_FORM_ID = "form_9015b";
