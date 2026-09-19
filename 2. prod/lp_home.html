@@ -1,17 +1,16 @@
 <!--
-  Interim homepage, currently live at report.php?a=lp_home. Content and
+  Genuinely live at report.php?a=lp_home -- not a static mockup. Content and
   design here are expected to diverge intentionally from view_homepage.tpl
   over time -- view_homepage.tpl remains the version intended for eventual
   full cutover.
 
-  data-user-id and data-is-sysadmin on the multigrid.js script tag below
-  are real Smarty tags (match view_homepage.tpl:831-832), resolved
-  server-side per request same as any other session-dependent value on
-  this page.
-
-  Not yet converted to real Smarty tags (separate follow-up):
-    - leaf_header.js's own data-is-sysadmin, still hardcoded "0" -- hides
-      the Internal nav for everyone regardless of real group membership.
+  All session-dependent values on this page resolve real Smarty tags server-
+  side per request, same as any other LEAF page: data-user-id and
+  data-is-sysadmin on the multigrid.js script tag (match
+  view_homepage.tpl:831-832), data-is-sysadmin and data-csrf-token on the
+  leaf_header.js script tag below, and the newsletter widget's CSRF token
+  (read off that same leaf_header.js script tag). No hardcoded test
+  placeholders remain.
 
   leaf_header.css/.js and the #lp-nav-host/#lpSwapHost/#lp-live-region
   mount points are included directly here rather than via main.tpl, same
@@ -1016,7 +1015,6 @@
                   class="finder-cta-btn finder-cta-secondary"
                   id="finderCtaLinkMatch"
                   data-action="form-modal"
-                  data-modal-src="https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Help+Library&iframe=1"
                   data-modal-title="Request Support"
                 >
                   <span class="material-symbols-outlined" aria-hidden="true"
@@ -1441,6 +1439,18 @@
       document.addEventListener("dragstart", (e) => {
         if (e.target.tagName === "IMG") e.preventDefault();
       });
+
+      /* "Talk to our team" (finder section) opens the same modal as the
+         nav's "Request Support" button — src comes from leaf_header.js's
+         SUPPORT_FORM_URL (exposed as window.LEAF_SUPPORT_FORM_URL) instead
+         of a duplicated literal, so the two can't drift apart. leaf_header.js
+         loads before this block, so the global is already set here. */
+      (() => {
+        const cta = document.getElementById("finderCtaLinkMatch");
+        if (cta && window.LEAF_SUPPORT_FORM_URL) {
+          cta.dataset.modalSrc = window.LEAF_SUPPORT_FORM_URL;
+        }
+      })();
 
       /* Silent AJAX submission — hand-rolled fetch creates a record on
          form_9015b at service_requests_launchpad (a different LEAF site)

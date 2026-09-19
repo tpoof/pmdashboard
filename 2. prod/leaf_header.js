@@ -798,6 +798,13 @@
   var SUPPORT_FORM_URL =
     "https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Help+Library&iframe=1";
 
+  /* Exposed (same pattern as LEAF_NAV_CURRENT above) so markup outside this
+     file can point its own data-modal-src at the identical URL instead of
+     duplicating the literal string — see the "Talk to our team" button in
+     lp_home.html / view_homepage.tpl. This script tag always loads before
+     that markup's own inline <script> runs, so the global is set in time. */
+  window.LEAF_SUPPORT_FORM_URL = SUPPORT_FORM_URL;
+
   function buildSupportButtonHTML() {
     return `
         <button class="lp-nav-support-btn" data-action="form-modal" data-modal-src="${SUPPORT_FORM_URL}" data-modal-title="Request Support">

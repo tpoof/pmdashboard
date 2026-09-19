@@ -993,7 +993,6 @@
                   class="finder-cta-btn finder-cta-secondary"
                   id="finderCtaLinkMatch"
                   data-action="form-modal"
-                  data-modal-src="https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Help+Library&iframe=1"
                   data-modal-title="Request Support"
                 >
                   <span class="material-symbols-outlined" aria-hidden="true"
@@ -1426,6 +1425,20 @@
       document.addEventListener("dragstart", (e) => {
         if (e.target.tagName === "IMG") e.preventDefault();
       });
+
+      /* ── "Talk to our team" (finder section) ──
+         Opens the same modal as the nav's "Request Support" button — src
+         comes from leaf_header.js's SUPPORT_FORM_URL (exposed as
+         window.LEAF_SUPPORT_FORM_URL) instead of a duplicated literal, so
+         the two can't drift apart. leaf_header.js is loaded in main.tpl's
+         <head>, before this body script runs, so the global is already
+         set here. */
+      (() => {
+        const cta = document.getElementById("finderCtaLinkMatch");
+        if (cta && window.LEAF_SUPPORT_FORM_URL) {
+          cta.dataset.modalSrc = window.LEAF_SUPPORT_FORM_URL;
+        }
+      })();
 
       /* ── Newsletter form (silent AJAX submission) ──
          Creates a record on form_9015b at service_requests_launchpad (a
