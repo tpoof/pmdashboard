@@ -858,9 +858,15 @@ button.dd-link {
 .lp-announcement {
   position: sticky;
   top: 0;
-  z-index: 305; /* above .lp-header (300), below dropdown panels (400) */
+  z-index: 305; /* above .lp-header (300), below dropdown panels (400) — shadow below paints over the header, not under it */
   background: #fffbeb; /* --hl-start-bg */
-  border-bottom: 1px solid #f59e0b; /* --hl-start-border */
+  border-bottom: 2px solid #f59e0b; /* --hl-start-border, thickened from 1px for more presence against .lp-header directly below */
+  /* Always-on (unlike .lp-header.scrolled's conditional shadow) — the
+     banner needs to read as a separate bar from the very first paint,
+     not just once scrolling starts. Lighter than .lp-header.scrolled's
+     0 2px 16px rgba(0, 10, 60, 0.1) so the two don't double up once
+     the header's own scrolled shadow also kicks in. */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 .lp-announcement-in {
   display: grid;
@@ -874,7 +880,7 @@ button.dd-link {
   gap: 12px;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 10px 24px;
+  padding: 12px 24px 16px; /* asymmetric — more room before the border/shadow line at the bottom */
 }
 .lp-announcement-spacer {
   /* Inert — exists only to balance .lp-announcement-close's grid
@@ -978,7 +984,7 @@ button.dd-link {
 }
 @media (max-width: 640px) {
   .lp-announcement-in {
-    padding: 10px 16px;
+    padding: 12px 16px 16px; /* same asymmetric bottom-heavy treatment as desktop, scaled to the tighter side gutter */
     /* .lp-announcement-body (flex:1) claims the full row width on
        narrow screens, so the button (and close, if it also doesn't
        fit) wrap to their own row below it — gap (12px) still applies
