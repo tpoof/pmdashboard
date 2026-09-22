@@ -870,6 +870,16 @@ button.dd-link {
   margin: 0 auto;
   padding: 10px 24px;
 }
+.lp-announcement-ico {
+  flex-shrink: 0;
+  display: inline-flex;
+  color: #92400e; /* --hl-start-icon */
+  margin-top: 2px; /* nudges it to sit with body's first line under align-items: flex-start */
+}
+.lp-announcement-ico svg {
+  width: 22px;
+  height: 22px;
+}
 .lp-announcement-body {
   flex: 1;
   min-width: 0;

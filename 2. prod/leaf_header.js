@@ -492,6 +492,8 @@
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-120q-65 0-120.5-32T272-240H160v-80h84q-3-20-3.5-40t-.5-40h-80v-80h80q0-20 .5-40t3.5-40h-84v-80h112q14-23 31.5-43t40.5-35l-64-66 56-56 86 86q28-9 57-9t57 9l88-86 56 56-66 66q23 15 41.5 34.5T688-640h112v80h-84q3 20 3.5 40t.5 40h80v80h-80q0 20-.5 40t-3.5 40h84v80H688q-32 56-87.5 88T480-120Zm-80-200h160v-80H400v80Zm0-160h160v-80H400v80Z"/></svg>',
     close:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>',
+    campaign:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M720-440v-80h160v80H720Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM200-200v-160h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l200-120v480L320-360h-40v160h-80Zm360-146v-268q27 24 43.5 58.5T620-480q0 41-16.5 75.5T560-346Z"/></svg>',
     wrong_location:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 400Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q17 0 35 2t35 4l96 96-84 84 113 113 84-84 31 32q4 20 7 40t3 41q0 100-79.5 217.5T480-80Zm195-558-56-56 84-84-84-84 56-56 84 84 84-84 56 56-84 84 84 84-56 56-84-84-84 84Z"/></svg>',
     home: '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M160-120v-480l320-240 320 240v480H560v-280H400v280H160Z"/></svg>',
@@ -2935,6 +2937,9 @@
     banner.setAttribute("aria-label", "Site announcement");
     banner.innerHTML =
       '<div class="lp-announcement-in">' +
+      '<span class="lp-announcement-ico material-symbols-outlined" aria-hidden="true">' +
+      ICON_SVG.campaign +
+      "</span>" +
       '<div class="lp-announcement-body">' +
       sanitizedHTML +
       "</div>" +
@@ -2978,6 +2983,21 @@
       typeof rec.displayedValue === "string" ? rec.displayedValue.trim() : "";
     var raw = displayed || rec.value;
     return raw && String(raw).trim() ? String(raw) : null;
+  }
+
+  /* Indicator 471 is a plain-text field, not a URL-typed one — site
+     admins realistically type bare domains ("leaf.va.gov") with no
+     protocol, and LEAF stores exactly what was typed. Prepend
+     https:// when it's missing rather than silently dropping the
+     button; still null out anything empty/whitespace-only so a blank
+     471 continues to mean "no button". Deliberately not a full URL
+     validator — just handles the one failure mode actually observed. */
+  function normalizeButtonHref(raw) {
+    if (!raw) return null;
+    var trimmed = String(raw).trim();
+    if (!trimmed) return null;
+    if (!/^https?:\/\//i.test(trimmed)) trimmed = "https://" + trimmed;
+    return trimmed;
   }
 
   function initAnnouncementBanner() {
@@ -3026,7 +3046,7 @@
     Promise.all([textFetch, buttonFetch])
       .then(function (results) {
         var html = results[0];
-        var buttonHref = results[1];
+        var buttonHref = normalizeButtonHref(results[1]);
         if (!html) return;
         return ensureDompurify().then(function () {
           if (!window.DOMPurify) return; /* load failed — already warned */
