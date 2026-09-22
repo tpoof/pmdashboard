@@ -136,14 +136,21 @@
       }
 
       .training-modal-overlay {
+        /* Static fallback — overwritten per-open by measureHeaderOffset()
+           below with the live header's measured height, same pattern as
+           --thb-header-offset (lp_team.html) and --ip-header-offset
+           (ideas_v4.js). Pushing the dialog down below the global header
+           via padding — not z-index alone — is what actually keeps it
+           from being covered. */
+        --training-header-offset: 120px;
         position: fixed;
         inset: 0;
         background: rgba(27, 27, 27, 0.6);
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
-        padding: 1.5rem;
-        z-index: 1000;
+        padding: var(--training-header-offset) 20px 24px;
+        z-index: 2147483000;
       }
       .training-modal-overlay[hidden] {
         display: none;
@@ -153,7 +160,7 @@
         background: #fff;
         border-radius: var(--radius, 8px);
         width: min(1000px, 95vw);
-        height: min(800px, 90vh);
+        height: min(800px, calc(100vh - var(--training-header-offset) - 24px));
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -429,6 +436,29 @@
           update();
         };
 
+        // Measures the live height of whatever fixed/sticky header/nav bar
+        // is actually rendered (the global launchpad.css chrome, in
+        // production) so the modal's padding can push its dialog down
+        // below it instead of trying to out-z-index it alone. Mirrors
+        // ideas_v4.js's measureHeaderOffset(), which mirrors lp_team.html's
+        // thb-modal --thb-header-offset pattern.
+        const measureHeaderOffset = (modalEl, cssVarName) => {
+          if (!modalEl) return;
+          let bottom = 0;
+          document
+            .querySelectorAll('header, nav, [class*="breadcrumb"], [class*="nav"]')
+            .forEach((el) => {
+              const cs = getComputedStyle(el);
+              if (cs.position === "fixed" || cs.position === "sticky") {
+                const rect = el.getBoundingClientRect();
+                if (rect.top <= 4 && rect.bottom > bottom) bottom = rect.bottom;
+              }
+            });
+          if (bottom > 0) {
+            modalEl.style.setProperty(cssVarName, `${Math.ceil(bottom) + 16}px`);
+          }
+        };
+
         const initTrainingModal = () => {
           const openBtn = document.getElementById("trainingRegisterBtn");
           const overlay = document.getElementById("trainingModalOverlay");
@@ -472,6 +502,7 @@
 
           const openModal = () => {
             lastFocused = document.activeElement;
+            measureHeaderOffset(overlay, "--training-header-offset");
             if (!iframe.getAttribute("src")) {
               iframe.addEventListener("load", () => stripLeafChrome(iframe));
               iframe.src = TRAINING_FORM_URL;
