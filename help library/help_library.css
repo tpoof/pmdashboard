@@ -850,6 +850,31 @@
   height: 20px;
 }
 
+/* ── Exact article-ID match row ── */
+.hl-idmatch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hl-idmatch-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--hl-accent-strong);
+}
+.hl-idmatch-label .hl-icon {
+  width: 16px;
+  height: 16px;
+}
+.hl-idmatch .hl-lrow {
+  border-color: var(--hl-accent);
+  border-left-color: var(--hl-accent);
+  box-shadow: 0 0 0 1px var(--hl-accent-weak);
+}
+
 /* ── Show more ── */
 .hl-show-more {
   grid-column: 1 / -1;

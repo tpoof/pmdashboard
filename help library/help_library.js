@@ -99,6 +99,9 @@ var HelpLib = (function () {
   let hasStartHere = false;
   let groupVisible = {};
   let lastOpenedId = null;
+  // Record currently flagged by the exact article-ID search below (getFiltered),
+  // so its temporary _idMatch marker can be cleared before the next filter pass.
+  let idMatchRecord = null;
 
   // Config injected by the page (mirrors window.leafIdeaPortal used by
   // ideas_v4.js) — needed to identify the voting user and authorize the
@@ -635,6 +638,22 @@ ${statusLine}`;
         (a, b) => (b.updDate ?? new Date(0)) - (a.updDate ?? new Date(0)),
       );
     }
+
+    if (idMatchRecord) {
+      delete idMatchRecord._idMatch;
+      idMatchRecord = null;
+    }
+    const qTrim = state.q.trim();
+    if (/^\d+$/.test(qTrim)) {
+      // Runs against DATA, not the filtered `list` — an ID lookup is unique
+      // enough to ignore the active cat/type/days filters.
+      const idMatch = DATA.find((r) => String(r.id) === qTrim);
+      if (idMatch && !list.includes(idMatch)) {
+        idMatch._idMatch = true;
+        idMatchRecord = idMatch;
+        list = [idMatch, ...list];
+      }
+    }
     return list;
   }
 
@@ -824,6 +843,16 @@ ${renderMediaIcon(r, "hl-lr-ico")}
 </a>`;
   }
 
+  /* ── Render: exact article-ID match row ── */
+  /* Wraps renderRow()'s own output with a small label rather than a
+     separate markup path, so the row keeps normal rows' structure/aria-label. */
+  function renderIdMatchRow(r) {
+    return `<div class="hl-idmatch">
+  <p class="hl-idmatch-label">${icon("label")}Exact match for article #${r.id}</p>
+  ${renderRow(r)}
+</div>`;
+  }
+
   /* ── Render: featured card ── */
   function renderFeatCard(r) {
     return `<a class="hl-fcard" href="#article-${r.id}"
@@ -946,8 +975,11 @@ ${r.isNew ? `<span class="hl-badge hl-bn hl-fc-badge-corner">Recently updated</s
       }
       const flatVisible = groupVisible["__flat__"] ?? CFG.FLAT_CAP;
       const shownFlat = list.slice(0, flatVisible);
+      const rowsHTML = shownFlat
+        .map((r) => (r._idMatch ? renderIdMatchRow(r) : renderRow(r)))
+        .join("");
       el.innerHTML = `
-  <div class="hl-list-rows">${shownFlat.map((r) => renderRow(r)).join("")}</div>
+  <div class="hl-list-rows">${rowsHTML}</div>
   ${renderExpandControl(
     "__flat__",
     list.length,
