@@ -2935,8 +2935,17 @@
     banner.className = "lp-announcement";
     banner.setAttribute("role", "region");
     banner.setAttribute("aria-label", "Site announcement");
+    /* 3-column grid: spacer / centered content / close, spacer and
+       close both sit in equal-width (1fr) tracks so the center column
+       is centered against the banner's full width, not just the
+       space left over after the close button — see leaf_header.css
+       .lp-announcement-in. The spacer is inert (aria-hidden, no
+       content) purely to balance the grid track, never focusable or
+       announced. */
     banner.innerHTML =
       '<div class="lp-announcement-in">' +
+      '<div class="lp-announcement-spacer" aria-hidden="true"></div>' +
+      '<div class="lp-announcement-center">' +
       '<span class="lp-announcement-ico material-symbols-outlined" aria-hidden="true">' +
       ICON_SVG.campaign +
       "</span>" +
@@ -2944,6 +2953,7 @@
       sanitizedHTML +
       "</div>" +
       btnHTML +
+      "</div>" +
       '<button type="button" class="lp-announcement-close" aria-label="Dismiss announcement">' +
       '<span class="material-symbols-outlined" aria-hidden="true">' +
       ICON_SVG.close +

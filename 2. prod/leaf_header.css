@@ -863,25 +863,42 @@ button.dd-link {
   border-bottom: 1px solid #f59e0b; /* --hl-start-border */
 }
 .lp-announcement-in {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  /* Spacer (col 1) and close (col 3) are equal 1fr tracks so
+     .lp-announcement-center is centered against the banner's full
+     width, not just the space left over after the close button.
+     minmax(0, auto) lets the center column shrink/wrap instead of
+     forcing the 1fr tracks to overflow when the message is long. */
+  grid-template-columns: 1fr minmax(0, auto) 1fr;
+  align-items: center;
   gap: 12px;
   max-width: 1400px;
   margin: 0 auto;
   padding: 10px 24px;
 }
+.lp-announcement-spacer {
+  /* Inert — exists only to balance .lp-announcement-close's grid
+     track. No content, no size of its own beyond the 1fr track. */
+}
+.lp-announcement-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
 .lp-announcement-ico {
   flex-shrink: 0;
   display: inline-flex;
   color: #92400e; /* --hl-start-icon */
-  margin-top: 2px; /* nudges it to sit with body's first line under align-items: flex-start */
 }
 .lp-announcement-ico svg {
   width: 22px;
   height: 22px;
 }
 .lp-announcement-body {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   font-family: "PublicSans-Regular", sans-serif;
   font-size: 0.85rem;
@@ -931,6 +948,9 @@ button.dd-link {
   height: 0.9rem;
 }
 .lp-announcement-close {
+  grid-column: 3;
+  justify-self: end; /* pins it to the track's right edge, not just the row's */
+  align-self: start; /* stays at the top even if .lp-announcement-center wraps taller */
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
