@@ -90,14 +90,28 @@
   })();
 
   /* ── Announcement banner config ──
-     Placeholder IDs — search "REPLACE_ME" to find these before
-     promoting to production. Sourced from a LEAF form's rawIndicator
-     endpoint: GET {ROOT_URL}api/form/{RECORD_ID}/rawIndicator/
-     {INDICATOR_ID}/{SERIES}. SERIES is the record's series number
-     (1 unless it uses a different one). */
-  var ANNOUNCEMENT_ROOT_URL = "REPLACE_ME_ANNOUNCEMENT_ROOT_URL";
-  var ANNOUNCEMENT_RECORD_ID = "REPLACE_ME_ANNOUNCEMENT_RECORD_ID";
-  var ANNOUNCEMENT_INDICATOR_ID = "REPLACE_ME_ANNOUNCEMENT_INDICATOR_ID";
+     Live — sourced from a LEAF form's rawIndicator endpoint:
+     GET {ROOT_URL}api/form/{RECORD_ID}/rawIndicator/{INDICATOR_ID}/
+     {SERIES}. SERIES is the record's series number (1 unless it uses
+     a different one).
+
+     RECORD_ID (34624) points at one permanent, already-created record
+     on form_41cbd — nobody ever creates a new record for an
+     announcement. To change or clear the banner, an admin edits
+     indicators 470/471 directly on that same record in LEAF; this ID
+     should not change going forward, it's the fixed source of truth
+     for the banner.
+
+     Indicator 470 holds the banner text (rich text, DOMPurify-
+     sanitized before render — see initAnnouncementBanner). Blanking
+     it makes the banner disappear (the existing empty-check in
+     initAnnouncementBanner already handles that). Indicator 471 is an
+     optional "Learn More" link URL — the banner renders fine with 470
+     alone; 471 just adds a button when present. */
+  var ANNOUNCEMENT_ROOT_URL = "https://leaf.va.gov/launchpad/";
+  var ANNOUNCEMENT_RECORD_ID = "34624"; // Fixed, permanent record on form_41cbd — see comment above
+  var ANNOUNCEMENT_INDICATOR_ID = "470"; // Banner Text
+  var ANNOUNCEMENT_BUTTON_INDICATOR_ID = "471"; // Banner Button (optional link)
   var ANNOUNCEMENT_SERIES = 1;
 
   /* ── Feedback button config ──
@@ -2857,13 +2871,13 @@
     });
   }
 
-  function buildAnnouncementURL() {
+  function buildAnnouncementURL(indicatorId) {
     return (
       ANNOUNCEMENT_ROOT_URL +
       "api/form/" +
       encodeURIComponent(ANNOUNCEMENT_RECORD_ID) +
       "/rawIndicator/" +
-      encodeURIComponent(ANNOUNCEMENT_INDICATOR_ID) +
+      encodeURIComponent(indicatorId) +
       "/" +
       encodeURIComponent(ANNOUNCEMENT_SERIES)
     );
@@ -2893,9 +2907,26 @@
   }
 
   /* sanitizedHTML must already be DOMPurify-sanitized — this function
-     just mounts it, it does not sanitize. */
-  function renderAnnouncementBanner(sanitizedHTML) {
+     just mounts it, it does not sanitize. buttonHref is a plain URL
+     string (or null/empty) — it goes into an href attribute, not
+     innerHTML, so it is intentionally NOT run through DOMPurify; the
+     caller is responsible for trimming it and ruling out obviously
+     unusable values before passing it in. */
+  function renderAnnouncementBanner(sanitizedHTML, buttonHref) {
     if (document.getElementById("lpAnnouncement")) return;
+
+    var btnHTML =
+      buttonHref && /^https?:\/\//i.test(buttonHref)
+        ? '<a class="lp-announcement-btn" href="' +
+          buttonHref.replace(/"/g, "&quot;") +
+          '" target="_blank" rel="noopener noreferrer">' +
+          "Learn More" +
+          '<span class="material-symbols-outlined" aria-hidden="true">' +
+          ICON_SVG.open_in_new +
+          "</span>" +
+          '<span class="lp-sr-only">(opens in new tab)</span>' +
+          "</a>"
+        : "";
 
     var banner = document.createElement("div");
     banner.id = "lpAnnouncement";
@@ -2907,6 +2938,7 @@
       '<div class="lp-announcement-body">' +
       sanitizedHTML +
       "</div>" +
+      btnHTML +
       '<button type="button" class="lp-announcement-close" aria-label="Dismiss announcement">' +
       '<span class="material-symbols-outlined" aria-hidden="true">' +
       ICON_SVG.close +
@@ -2937,9 +2969,21 @@
     closeBtn.addEventListener("click", removeAnnouncementBanner);
   }
 
+  /* Extracts a trimmed string value from a rawIndicator response
+     record — same displayedValue-then-value fallback for both the
+     text (470) and button URL (471) indicators. */
+  function extractIndicatorValue(rec) {
+    if (!rec) return null;
+    var displayed =
+      typeof rec.displayedValue === "string" ? rec.displayedValue.trim() : "";
+    var raw = displayed || rec.value;
+    return raw && String(raw).trim() ? String(raw) : null;
+  }
+
   function initAnnouncementBanner() {
     /* Placeholders not yet filled in — skip the fetch entirely rather
-       than requesting a URL built from literal "REPLACE_ME_..." text. */
+       than requesting a URL built from literal "REPLACE_ME_..." text.
+       471 (button) is optional — no guard needed on it. */
     if (
       ANNOUNCEMENT_ROOT_URL.indexOf("REPLACE_ME") === 0 ||
       ANNOUNCEMENT_RECORD_ID.indexOf("REPLACE_ME") === 0 ||
@@ -2948,29 +2992,48 @@
       return;
     }
 
-    fetch(buildAnnouncementURL())
+    var textFetch = fetch(buildAnnouncementURL(ANNOUNCEMENT_INDICATOR_ID))
       .then(function (res) {
         if (!res.ok) throw new Error("HTTP " + res.status);
         return res.json();
       })
       .then(function (data) {
-        var rec = data && data[ANNOUNCEMENT_INDICATOR_ID];
-        if (!rec) return null;
-        var displayed =
-          typeof rec.displayedValue === "string"
-            ? rec.displayedValue.trim()
-            : "";
-        var raw = displayed || rec.value;
-        return raw && String(raw).trim() ? String(raw) : null;
+        return extractIndicatorValue(data && data[ANNOUNCEMENT_INDICATOR_ID]);
+      });
+
+    /* Own .catch() so a failure fetching the optional button URL can't
+       sink the text fetch — falls back to null (no button) instead. */
+    var buttonFetch = fetch(
+      buildAnnouncementURL(ANNOUNCEMENT_BUTTON_INDICATOR_ID),
+    )
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
       })
-      .then(function (html) {
+      .then(function (data) {
+        return extractIndicatorValue(
+          data && data[ANNOUNCEMENT_BUTTON_INDICATOR_ID],
+        );
+      })
+      .catch(function (err) {
+        console.warn(
+          "[LP] Announcement banner button URL not loaded:",
+          err.message,
+        );
+        return null;
+      });
+
+    Promise.all([textFetch, buttonFetch])
+      .then(function (results) {
+        var html = results[0];
+        var buttonHref = results[1];
         if (!html) return;
         return ensureDompurify().then(function () {
           if (!window.DOMPurify) return; /* load failed — already warned */
           var clean = window.DOMPurify.sanitize(html);
           var textOnly = clean.replace(/<[^>]*>/g, "").trim();
           if (!textOnly) return; /* e.g. "<p></p>" — nothing to show */
-          renderAnnouncementBanner(clean);
+          renderAnnouncementBanner(clean, buttonHref);
         });
       })
       .catch(function (err) {

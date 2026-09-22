@@ -892,6 +892,34 @@ button.dd-link {
   outline: 3px solid #92400e;
   outline-offset: 2px;
 }
+.lp-announcement-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid #92400e; /* --hl-start-icon — pill outline, not color alone */
+  border-radius: 999px;
+  font-family: "PublicSans-Bold", sans-serif;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #92400e; /* --hl-start-icon */
+  text-decoration: underline;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.lp-announcement-btn:hover {
+  background: rgba(146, 64, 14, 0.1);
+}
+.lp-announcement-btn:focus-visible {
+  outline: 3px solid #92400e;
+  outline-offset: 2px;
+}
+.lp-announcement-btn .material-symbols-outlined svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
 .lp-announcement-close {
   flex-shrink: 0;
   display: inline-flex;
@@ -921,6 +949,11 @@ button.dd-link {
 @media (max-width: 640px) {
   .lp-announcement-in {
     padding: 10px 16px;
+    /* .lp-announcement-body (flex:1) claims the full row width on
+       narrow screens, so the button (and close, if it also doesn't
+       fit) wrap to their own row below it — gap (12px) still applies
+       to the wrapped row, same as the row-to-row spacing above. */
+    flex-wrap: wrap;
   }
 }
 
