@@ -424,6 +424,13 @@
       .thb-sec--view .thb-sec-icon .material-symbols-outlined {
         color: var(--lp-accent);
       }
+      .thb-sec--updates .thb-sec-icon {
+        border-color: #f0d9ad;
+        background: #fdf3e0;
+      }
+      .thb-sec--updates .thb-sec-icon .material-symbols-outlined {
+        color: #a15c00;
+      }
 
       /* ── Link grid ── */
       .thb-grid {
@@ -447,6 +454,7 @@
         display: flex;
         align-items: center;
         gap: 0.6rem;
+        width: 100%;
         min-height: 58px;
         padding: 0.6rem 0.85rem;
         background: #fff;
@@ -454,11 +462,13 @@
         border-left-width: 3px;
         border-radius: var(--r);
         text-decoration: none;
+        text-align: left;
         color: var(--lp-hl);
         font-family: "Source Sans Pro Web-Bold", sans-serif;
         font-size: 0.92rem;
         font-weight: 700;
         line-height: 1.25;
+        cursor: pointer;
         transition:
           border-color 0.12s,
           box-shadow 0.12s,
@@ -503,6 +513,16 @@
       .thb-tile--view:hover {
         border-color: var(--c-blue20);
         border-left-color: var(--lp-accent);
+      }
+      .thb-tile--updates {
+        border-left-color: #a15c00;
+      }
+      .thb-tile--updates .material-symbols-outlined {
+        color: #a15c00;
+      }
+      .thb-tile--updates:hover {
+        border-color: #f0d9ad;
+        border-left-color: #a15c00;
       }
 
       .thb-tile[hidden] {
@@ -746,6 +766,19 @@
                     /></svg></span
                 >View Reports
               </button>
+              <button
+                class="thb-filter"
+                data-filter="updates"
+                type="button"
+                aria-pressed="false"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true"
+                  ><svg viewBox="0 -960 960 960" fill="currentColor">
+                    <path
+                      d="M720-440v-80h160v80H720Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM200-200v-160h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l200-120v480L320-360h-40v160h-80Zm360-146v-268q27 24 43.5 58.5T620-480q0 41-16.5 75.5T560-346Z"
+                    /></svg></span
+                >Launchpad Updates
+              </button>
             </div>
             <span
               class="thb-result-count"
@@ -776,7 +809,7 @@
               </div>
             </div>
             <button
-              class="thb-admin-btn"
+              class="thb-admin-btn thb-modal-trigger"
               type="button"
               id="thbAdminOpen"
               data-report-title="Admin Inbox"
@@ -864,6 +897,47 @@
             </div>
           </section>
 
+          <!-- Launchpad Updates -->
+          <section
+            class="thb-sec thb-sec--updates"
+            id="secUpdates"
+            data-type="updates"
+          >
+            <button
+              class="thb-sec-head"
+              type="button"
+              aria-expanded="true"
+              aria-controls="bodyUpdates"
+              onclick="thbToggle('secUpdates', this)"
+            >
+              <span class="thb-sec-head-left">
+                <span class="thb-sec-icon"
+                  ><span class="material-symbols-outlined" aria-hidden="true"
+                    ><svg viewBox="0 -960 960 960" fill="currentColor">
+                      <path
+                        d="M720-440v-80h160v80H720Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM200-200v-160h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l200-120v480L320-360h-40v160h-80Zm360-146v-268q27 24 43.5 58.5T620-480q0 41-16.5 75.5T560-346Z"
+                      /></svg></span
+                ></span>
+                <span class="thb-sec-title">Launchpad Updates</span>
+                <span class="thb-sec-count" data-count>1 item</span>
+              </span>
+              <span
+                class="material-symbols-outlined thb-chev"
+                aria-hidden="true"
+                ><svg viewBox="0 -960 960 960" fill="currentColor">
+                  <path
+                    d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"
+                  /></svg
+              ></span>
+            </button>
+            <div class="thb-sec-body" id="bodyUpdates">
+              <div class="thb-grid" id="gridUpdates"></div>
+              <p class="thb-empty" aria-live="polite">
+                No updates match your search.
+              </p>
+            </div>
+          </section>
+
           <footer class="thb-footer" role="contentinfo">
             Internal use only
           </footer>
@@ -903,7 +977,7 @@
          schedule, flag, build, trending_up, trophy (used for
          "emoji_events"), lightbulb, payments, analytics, ac_unit,
          support_agent, sensors, rate_review, monitor_heart, timer,
-         medical_services, savings, menu_book, design_services. */
+         medical_services, savings, menu_book, design_services, campaign. */
           const ICON_SVG = {
             search:
               '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M796-121 533-384q-30 26-70 40.5T378-329q-108 0-183-75t-75-181q0-106 75-181t182-75q106 0 180.5 75T632-585q0 43-14 83t-42 75l264 262-44 44ZM377-389q81 0 138-57.5T572-585q0-81-57-138.5T377-781q-82 0-139.5 57.5T180-585q0 81 57.5 138.5T377-389Z"/></svg>',
@@ -961,6 +1035,8 @@
               '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M560-564v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-600q-38 0-73 9.5T560-564Zm0 220v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-380q-38 0-73 9t-67 27Zm0-110v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-490q-38 0-73 9.5T560-454Zm-40 176q44-21 88.5-31.5T700-320q36 0 70.5 6t69.5 18v-396q-33-14-68.5-21t-71.5-7q-47 0-93 12t-87 36v394Zm-40 118q-48-38-104-59t-116-21q-42 0-82.5 11T100-198q-21 11-40.5-1T40-234v-482q0-11 5.5-21T62-752q47-23 96.5-35.5T260-800q58 0 113.5 15T480-740q51-30 106.5-45T700-800q52 0 101.5 12.5T898-752q11 5 16.5 15t5.5 21v482q0 23-19.5 35t-40.5 1q-37-20-77.5-31T700-240q-60 0-116 21t-104 59Z"/></svg>',
             design_services:
               '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m357-513 90-90-75-75-48 48-42-42 48-48-75-74-90 90 192 191Zm346 348 90-91-75-75-48 48-42-42 48-48-74-74-90 90 191 192Zm-87-520 70 70 94-94-70-70-94 94ZM276-120H120v-156l194-194L80-704l174-176 236 235 178-178q9-9 20-13t22-4q11 0 22 4t20 13l71 71q9 9 13 20t4 22q0 11-4 22t-13 20L645-490l235 235L705-81 471-315 276-120Z"/></svg>',
+            campaign:
+              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M720-440v-80h160v80H720Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM200-200v-160h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l200-120v480L320-360h-40v160h-80Zm360-146v-268q27 24 43.5 58.5T620-480q0 41-16.5 75.5T560-346Z"/></svg>',
           };
           const icon = (name) => ICON_SVG[name] || "";
 
@@ -1112,11 +1188,26 @@
           ];
           const viewCount = viewGroups.reduce((n, g) => n + g.items.length, 0);
 
+          /* Opens in the shared .thb-modal (see below) instead of navigating. */
+          const updateLinks = [
+            {
+              label: "Launchpad Global Announcement Banner",
+              icon: "campaign",
+              href: "https://leaf.va.gov/launchpad/index.php?a=printview&recordID=34624",
+            },
+          ];
+
           const tileHTML = (item, variant) =>
             `<a class="thb-tile thb-tile--${variant}" href="${item.href}" target="_blank" rel="noopener noreferrer" data-label="${item.label.toLowerCase()}">
            <span class="material-symbols-outlined" aria-hidden="true">${icon(item.icon)}</span>
            <span class="thb-tile-label">${item.label}</span>
          </a>`;
+
+          const modalTileHTML = (item, variant) =>
+            `<button type="button" class="thb-tile thb-tile--${variant} thb-modal-trigger" data-label="${item.label.toLowerCase()}" data-report-title="${item.label}" data-report-src="${item.href}">
+           <span class="material-symbols-outlined" aria-hidden="true">${icon(item.icon)}</span>
+           <span class="thb-tile-label">${item.label}</span>
+         </button>`;
 
           $id("gridSubmit").innerHTML = submitLinks
             .map((i) => tileHTML(i, "submit"))
@@ -1131,10 +1222,15 @@
       `,
             )
             .join("");
+          $id("gridUpdates").innerHTML = updateLinks
+            .map((i) => modalTileHTML(i, "updates"))
+            .join("");
           $id("secSubmit").querySelector("[data-count]").textContent =
             `${submitLinks.length} forms`;
           $id("secView").querySelector("[data-count]").textContent =
             `${viewCount} reports`;
+          $id("secUpdates").querySelector("[data-count]").textContent =
+            `${updateLinks.length} item${updateLinks.length === 1 ? "" : "s"}`;
 
           /* ── Collapse / expand ── */
           window.thbToggle = (secId, btn) => {
@@ -1153,6 +1249,7 @@
           const sections = [
             { el: $id("secSubmit"), type: "submit" },
             { el: $id("secView"), type: "view" },
+            { el: $id("secUpdates"), type: "updates" },
           ];
 
           const apply = () => {
@@ -1228,15 +1325,15 @@
             });
           });
 
-          /* ── Admin inbox modal ── */
+          /* ── Report modal (Admin Inbox, Launchpad Updates, …) ── */
           (() => {
             const modal = $id("thbModal");
             const frame = $id("thbModalFrame");
             const titleEl = $id("thbModalTitle");
             const closeBtn = $id("thbModalClose");
             const backdrop = $id("thbModalBackdrop");
-            const openBtn = $id("thbAdminOpen");
-            if (!modal || !frame || !openBtn) return;
+            const triggers = document.querySelectorAll(".thb-modal-trigger");
+            if (!modal || !frame || !triggers.length) return;
 
             let lastFocused = null;
 
@@ -1302,12 +1399,14 @@
               }
             };
 
-            const openModal = () => {
+            const openModal = (trigger) => {
               lastFocused = document.activeElement;
               measureHeaderOffset();
-              titleEl.textContent =
-                openBtn.getAttribute("data-report-title") || "Admin Inbox";
-              frame.src = openBtn.getAttribute("data-report-src");
+              const reportTitle =
+                trigger.getAttribute("data-report-title") || "Report";
+              titleEl.textContent = reportTitle;
+              frame.setAttribute("title", reportTitle);
+              frame.src = trigger.getAttribute("data-report-src");
               modal.classList.add("is-open");
               modal.setAttribute("aria-hidden", "false");
               document.body.style.overflow = "hidden";
@@ -1321,7 +1420,9 @@
               lastFocused?.focus();
             };
 
-            openBtn.addEventListener("click", openModal);
+            triggers.forEach((trigger) =>
+              trigger.addEventListener("click", () => openModal(trigger)),
+            );
             closeBtn.addEventListener("click", closeModal);
             backdrop.addEventListener("click", closeModal);
             document.addEventListener("keydown", (e) => {
