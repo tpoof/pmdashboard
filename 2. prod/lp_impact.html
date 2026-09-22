@@ -8,19 +8,61 @@
     <link rel="stylesheet" href="./files/launchpad.css" />
 
     <style>
-      /* .sec-sub in launchpad.css has no margin-bottom and caps at 620px —
-         fine for the single-paragraph intros other pages (lp_home,
-         lp_use_case, etc.) use it for, but too narrow and too cramped for
-         this section's multi-paragraph mission + founding-story copy.
-         Scoped to .sec-hd--wide instead of editing .sec-sub globally so
-         those other pages are unaffected. 760px reuses the same content
-         measure as .hero-grid elsewhere in launchpad.css, rather than a
-         one-off value. */
-      .sec-hd--wide .sec-sub {
-        max-width: 760px;
+      /* Mission + founding-story intro: a two-column layout specific to
+         this page, so it's scoped here rather than added to launchpad.css.
+         Mirrors .step's grid conventions (64px gap, centered alignment,
+         collapse to one column at the same 900px breakpoint .step uses). */
+      .impact-intro {
+        display: grid;
+        grid-template-columns: minmax(280px, 340px) 1fr;
+        gap: 64px;
+        align-items: center;
+        margin-top: 48px;
       }
-      .sec-hd--wide .sec-sub + .sec-sub {
-        margin-top: 20px;
+      .impact-mission {
+        background: var(--lp-hl);
+        color: #fff;
+        border-radius: var(--r-lg);
+        padding: 48px 40px;
+      }
+      /* Reserves the vertical space a large opening-quote glyph would
+         occupy above the label, without rendering an actual glyph.
+         aria-hidden since it carries no content for assistive tech. */
+      .impact-quote-mark {
+        height: 2.75rem;
+      }
+      .impact-mission-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 12px;
+      }
+      .impact-mission-text {
+        font-size: 1.5rem;
+        font-weight: 800;
+        line-height: 1.35;
+        margin: 0;
+      }
+      /* Matches the reading measure .sec-sub uses elsewhere on this page. */
+      .impact-story .step-body {
+        max-width: 620px;
+      }
+      /* .step-body pairs elsewhere on this page are never direct siblings
+         (e.g. the "Empowering All Users" section has a <dl> between its
+         two .step-body paragraphs), so this gap was never needed before —
+         scoped here instead of on .step-body globally to avoid changing
+         spacing anywhere else. */
+      .impact-story .step-body + .step-body {
+        margin-top: 16px;
+      }
+      @media (max-width: 900px) {
+        .impact-intro {
+          grid-template-columns: 1fr;
+          gap: 32px;
+        }
       }
 
       /* launchpad.css sizes .material-symbols-outlined via font-size, which
@@ -259,32 +301,42 @@
       <main id="lp-main" tabindex="-1">
         <section class="section" aria-labelledby="page-h1">
           <div class="wrap">
-            <div class="sec-hd ctr sec-hd--wide">
-              <span class="eyebrow">Built by VA. For VA.</span>
+            <div class="sec-hd ctr">
               <h1 class="sec-h2" id="page-h1">Our Impact</h1>
-              <p class="sec-sub">
-                Our mission is to empower the VA workforce by making digital
-                business implementation accessible, efficient, and
-                cost-effective.
-              </p>
-              <p class="sec-sub">
-                LEAF was created in 2008 by VA employees at the Washington
-                D.C. VA Medical Center to solve that exact problem:
-                digitizing everyday business processes shouldn't require a
-                costly development contract. Because LEAF is built and
-                owned within VA, it delivers significant cost savings for
-                VA Medical Centers and Program Offices compared to
-                conventional custom development, and it was designed from
-                the start to work seamlessly with VA's existing technology,
-                including PIV-card two-factor authentication and single
-                sign-on.
-              </p>
-              <p class="sec-sub">
-                In 2013, the VA Center for Innovation and the VHA
-                Innovation Program invested in LEAF's continued
-                development, helping mature the platform into the
-                enterprise-scale solution it is today.
-              </p>
+            </div>
+            <div class="impact-intro" aria-labelledby="story-h2">
+              <div class="impact-mission">
+                <div class="impact-quote-mark" aria-hidden="true"></div>
+                <span class="impact-mission-label">Our Mission</span>
+                <p class="impact-mission-text">
+                  To empower the VA workforce by making digital business
+                  implementation accessible, efficient, and cost-effective.
+                </p>
+              </div>
+              <div class="impact-story">
+                <span class="step-tag">Our Story</span>
+                <h2 class="step-h3" id="story-h2">
+                  Built by VA employees, for VA employees
+                </h2>
+                <p class="step-body">
+                  LEAF was created in 2008 by VA employees at the Washington
+                  D.C. VA Medical Center to solve that exact problem:
+                  digitizing everyday business processes shouldn't require a
+                  costly development contract. Because LEAF is built and
+                  owned within VA, it delivers significant cost savings for
+                  VA Medical Centers and Program Offices compared to
+                  conventional custom development, and it was designed from
+                  the start to work seamlessly with VA's existing
+                  technology, including PIV-card two-factor authentication
+                  and single sign-on.
+                </p>
+                <p class="step-body">
+                  In 2013, the VA Center for Innovation and the VHA
+                  Innovation Program invested in LEAF's continued
+                  development, helping mature the platform into the
+                  enterprise-scale solution it is today.
+                </p>
+              </div>
             </div>
           </div>
         </section>

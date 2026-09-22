@@ -1240,19 +1240,10 @@ ${state.q ? '<button class="hl-empty-reset" type="button" data-clearsearch>Clear
      that chrome would otherwise leave behind. */
   function stripLeafChrome(frame) {
     try {
-      // TEMP DIAGNOSTIC — remove after debugging
-      console.log("[stripLeafChrome]", location.origin, "→ frame src:", frame.src);
       const doc =
         frame.contentDocument ||
         (frame.contentWindow && frame.contentWindow.document);
       if (!doc || !doc.head) return;
-      // TEMP DIAGNOSTIC — remove after debugging
-      console.log(
-        "[stripLeafChrome] got doc, head exists:",
-        !!doc.head,
-        "header el found:",
-        !!doc.getElementById("header"),
-      );
       if (doc.getElementById("leaf-chrome-strip")) return;
 
       const style = doc.createElement("style");
@@ -1270,15 +1261,11 @@ ${state.q ? '<button class="hl-empty-reset" type="button" data-clearsearch>Clear
         "}",
       ].join("\n");
       doc.head.appendChild(style);
-      // TEMP DIAGNOSTIC — remove after debugging
-      console.log("[stripLeafChrome] style appended successfully");
 
       const headerEl = doc.getElementById("header");
       if (headerEl) headerEl.style.display = "none";
     } catch (e) {
       // Cross-origin or otherwise inaccessible — leave the frame as-is.
-      // TEMP DIAGNOSTIC — remove after debugging
-      console.warn("[stripLeafChrome] threw:", e.name, e.message);
     }
   }
 
