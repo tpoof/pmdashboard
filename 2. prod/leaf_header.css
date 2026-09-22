@@ -861,11 +861,21 @@ button.dd-link {
   z-index: 305; /* above .lp-header (300), below dropdown panels (400) — shadow below paints over the header, not under it */
   background: #fffbeb; /* --hl-start-bg */
   border-bottom: 2px solid #f59e0b; /* --hl-start-border, thickened from 1px for more presence against .lp-header directly below */
+  /* Real gap (page background shows through), not just padding — kept
+     in sync with ANNOUNCEMENT_GAP_PX in leaf_header.js, which adds
+     this same value on top of the banner's measured height when
+     setting --lp-announcement-h, so the sticky header's offset still
+     matches once scrolled. Change both together. */
+  margin-bottom: 10px;
   /* Always-on (unlike .lp-header.scrolled's conditional shadow) — the
      banner needs to read as a separate bar from the very first paint,
      not just once scrolling starts. Lighter than .lp-header.scrolled's
      0 2px 16px rgba(0, 10, 60, 0.1) so the two don't double up once
-     the header's own scrolled shadow also kicks in. */
+     the header's own scrolled shadow also kicks in. Its ~10px falloff
+     (2px offset + 8px blur) lands right around the new gap's edge —
+     feathers into the header's top edge instead of a hard cutoff or
+     a muddy overlap, so no further spread/blur tuning needed for the
+     gap. */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 .lp-announcement-in {

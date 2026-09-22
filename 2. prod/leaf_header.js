@@ -113,6 +113,7 @@
   var ANNOUNCEMENT_INDICATOR_ID = "470"; // Banner Text
   var ANNOUNCEMENT_BUTTON_INDICATOR_ID = "471"; // Banner Button (optional link)
   var ANNOUNCEMENT_SERIES = 1;
+  var ANNOUNCEMENT_GAP_PX = 10; // visible white-space gap below the banner, before the header — kept in sync with .lp-announcement's margin-bottom in leaf_header.css
 
   /* ── Feedback button config ──
      Internal-nav-only (IS_SYSADMIN) button that lets an admin file
@@ -2971,11 +2972,18 @@
       document.body.insertBefore(banner, document.body.firstChild);
     }
 
+    /* getBoundingClientRect() measures the border box only — it does
+       not include CSS margin — so ANNOUNCEMENT_GAP_PX has to be added
+       explicitly here to account for .lp-announcement's margin-bottom
+       (leaf_header.css), otherwise the sticky header would tuck up
+       against the banner with no visible gap once scrolled. */
     var rect = banner.getBoundingClientRect();
-    setAnnouncementHeightVar(rect.height);
+    setAnnouncementHeightVar(rect.height + ANNOUNCEMENT_GAP_PX);
     if (window.ResizeObserver) {
       _announcementResizeObserver = new ResizeObserver(function () {
-        setAnnouncementHeightVar(banner.getBoundingClientRect().height);
+        setAnnouncementHeightVar(
+          banner.getBoundingClientRect().height + ANNOUNCEMENT_GAP_PX,
+        );
       });
       _announcementResizeObserver.observe(banner);
     }
