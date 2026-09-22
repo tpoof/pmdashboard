@@ -858,36 +858,9 @@ button.dd-link {
 .lp-announcement {
   position: sticky;
   top: 0;
-  z-index: 305; /* above .lp-header (300), below dropdown panels (400) — shadow below paints over the header, not under it */
+  z-index: 305; /* above .lp-header (300), below dropdown panels (400) */
   background: #fffbeb; /* --hl-start-bg */
-  /* Always-on (unlike .lp-header.scrolled's conditional shadow) — the
-     banner needs to read as a separate bar from the very first paint,
-     not just once scrolling starts. Lighter than .lp-header.scrolled's
-     0 2px 16px rgba(0, 10, 60, 0.1) so the two don't double up once
-     the header's own scrolled shadow also kicks in. Stays on the outer
-     element (not .lp-announcement-in) so it separates the *whole*
-     banner assembly — amber content + white strip below — from the
-     header, not just the amber part. */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-/* Solid breathing-room strip, not a real layout gap: both .lp-announcement
-   and .lp-header are `position: sticky`, so an actual margin/gap between
-   them is empty document flow with nothing opaque behind it — scrolling
-   page content shows through underneath. This ::after is normal in-flow
-   content *inside* .lp-announcement's own box (no position change needed —
-   sticky already establishes a positioning context, and this isn't even
-   absolutely positioned), so it scrolls and sticks as one solid unit with
-   the amber content above it and is automatically included in
-   banner.getBoundingClientRect().height in leaf_header.js — no separate
-   gap constant to keep in sync. #fff matches the page background used
-   throughout this codebase (launchpad.css, loaded externally, isn't in
-   this repo to confirm directly — revisit if the live page background
-   isn't pure white). */
-.lp-announcement::after {
-  content: "";
-  display: block;
-  height: 10px;
-  background: #fff;
+  border-bottom: 1px solid #f59e0b; /* --hl-start-border */
 }
 .lp-announcement-in {
   display: grid;
@@ -901,16 +874,7 @@ button.dd-link {
   gap: 12px;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 12px 24px 16px; /* asymmetric — more room before the border below */
-  /* Moved here from .lp-announcement so the line sits right at the
-     amber content's own bottom edge, not at the bottom of the white
-     ::after strip that's also inside .lp-announcement's box. Note:
-     this container is max-width: 1400px + centered, so on viewports
-     wider than that the line is inset from the full-bleed amber
-     background's edges rather than spanning edge-to-edge — accepted
-     tradeoff for getting the line to sit at the actual amber/white
-     boundary. */
-  border-bottom: 2px solid #f59e0b; /* --hl-start-border, thickened from 1px for more presence */
+  padding: 10px 24px;
 }
 .lp-announcement-spacer {
   /* Inert — exists only to balance .lp-announcement-close's grid
@@ -1014,7 +978,7 @@ button.dd-link {
 }
 @media (max-width: 640px) {
   .lp-announcement-in {
-    padding: 12px 16px 16px; /* same asymmetric bottom-heavy treatment as desktop, scaled to the tighter side gutter */
+    padding: 10px 16px;
     /* .lp-announcement-body (flex:1) claims the full row width on
        narrow screens, so the button (and close, if it also doesn't
        fit) wrap to their own row below it — gap (12px) still applies
