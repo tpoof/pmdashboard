@@ -1240,6 +1240,43 @@
 
             let lastFocused = null;
 
+            /* Shared LEAF pattern (also in leaf_header.js, calendar.js,
+               project_v19/v20.js): strips the embedded page's own
+               header/footer chrome once a same-origin iframe has loaded,
+               and clears the top gap that chrome would otherwise leave
+               behind. */
+            const stripLeafChrome = (f) => {
+              try {
+                const doc =
+                  f.contentDocument ||
+                  (f.contentWindow && f.contentWindow.document);
+                if (!doc || !doc.head) return;
+                if (doc.getElementById("leaf-chrome-strip")) return;
+
+                const style = doc.createElement("style");
+                style.id = "leaf-chrome-strip";
+                style.textContent = [
+                  "#header, #siteHeader, .siteHeader, #leafHeader, .leaf-header,",
+                  "#topNav, .topNav, #mainNav, .site-header, #site-header,",
+                  "header.main, nav.main-nav, #headerWrap, .headerWrap,",
+                  "#globalHeader, .globalHeader, footer#footer, #nav-skip-link {",
+                  "  display: none !important;",
+                  "}",
+                  "body, main#body, #content, #bodyarea {",
+                  "  margin-top: 0 !important;",
+                  "  padding-top: 0 !important;",
+                  "}",
+                ].join("\n");
+                doc.head.appendChild(style);
+
+                const headerEl = doc.getElementById("header");
+                if (headerEl) headerEl.style.display = "none";
+              } catch (e) {
+                // Cross-origin or otherwise inaccessible — leave the frame as-is.
+              }
+            };
+            frame.addEventListener("load", () => stripLeafChrome(frame));
+
             /* Measure the fixed/sticky global header so the dialog always clears it.
            Falls back to the CSS default (120px) if nothing is found. */
             const measureHeaderOffset = () => {

@@ -1198,6 +1198,41 @@ ${state.q ? '<button class="hl-empty-reset" type="button" data-clearsearch>Clear
     safeFocus(modalFocus.pdf);
   }
 
+  /* Shared LEAF pattern (also in leaf_header.js, calendar.js,
+     project_v19/v20.js): strips the embedded page's own header/footer
+     chrome once a same-origin iframe has loaded, and clears the top gap
+     that chrome would otherwise leave behind. */
+  function stripLeafChrome(frame) {
+    try {
+      const doc =
+        frame.contentDocument ||
+        (frame.contentWindow && frame.contentWindow.document);
+      if (!doc || !doc.head) return;
+      if (doc.getElementById("leaf-chrome-strip")) return;
+
+      const style = doc.createElement("style");
+      style.id = "leaf-chrome-strip";
+      style.textContent = [
+        "#header, #siteHeader, .siteHeader, #leafHeader, .leaf-header,",
+        "#topNav, .topNav, #mainNav, .site-header, #site-header,",
+        "header.main, nav.main-nav, #headerWrap, .headerWrap,",
+        "#globalHeader, .globalHeader, footer#footer, #nav-skip-link {",
+        "  display: none !important;",
+        "}",
+        "body, main#body, #content, #bodyarea {",
+        "  margin-top: 0 !important;",
+        "  padding-top: 0 !important;",
+        "}",
+      ].join("\n");
+      doc.head.appendChild(style);
+
+      const headerEl = doc.getElementById("header");
+      if (headerEl) headerEl.style.display = "none";
+    } catch (e) {
+      // Cross-origin or otherwise inaccessible — leave the frame as-is.
+    }
+  }
+
   /* ── Consultation modal ──
      Embeds the LEAF request form via iframe. The "&iframe=1" suffix is only
      applied here (not on CFG.consultURL itself) so every "open in a new
@@ -1207,6 +1242,15 @@ ${state.q ? '<button class="hl-empty-reset" type="button" data-clearsearch>Clear
   function openConsult() {
     modalFocus.consult = document.activeElement;
     const frame = document.getElementById("consultFrame");
+
+    /* Frame is reused across opens — swap the load listener each time
+       rather than stacking one per open. */
+    if (frame._stripChromeHandler) {
+      frame.removeEventListener("load", frame._stripChromeHandler);
+    }
+    frame._stripChromeHandler = () => stripLeafChrome(frame);
+    frame.addEventListener("load", frame._stripChromeHandler);
+
     frame.src = `${CFG.consultURL}&iframe=1`;
     document.getElementById("consultModal").classList.add("is-open");
     document.body.style.overflow = "hidden";

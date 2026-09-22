@@ -1704,6 +1704,39 @@
      (no ResizeObserver involved there — see fitFrameToViewport()). */
   var _iframeFixedHeightResizeFn = null;
 
+  /* Shared LEAF pattern (also in calendar.js, project_v19/v20.js): strips
+     the embedded page's own header/footer chrome once a same-origin iframe
+     has loaded, and clears the top gap that chrome would otherwise leave
+     behind. */
+  function stripLeafChrome(frame) {
+    try {
+      var doc =
+        frame.contentDocument ||
+        (frame.contentWindow && frame.contentWindow.document);
+      if (!doc || !doc.head) return;
+
+      if (!doc.getElementById("leaf-chrome-strip")) {
+        var style = doc.createElement("style");
+        style.id = "leaf-chrome-strip";
+        style.textContent = [
+          "#header, #siteHeader, .siteHeader, #leafHeader, .leaf-header,",
+          "#topNav, .topNav, #mainNav, .site-header, #site-header,",
+          "header.main, nav.main-nav, #headerWrap, .headerWrap,",
+          "#globalHeader, .globalHeader, footer#footer, #nav-skip-link {",
+          "  display: none !important;",
+          "}",
+          "body, main#body, #content, #bodyarea {",
+          "  margin-top: 0 !important;",
+          "  padding-top: 0 !important;",
+          "}",
+        ].join("\n");
+        doc.head.appendChild(style);
+        var headerEl = doc.getElementById("header");
+        if (headerEl) headerEl.style.display = "none";
+      }
+    } catch (e) {}
+  }
+
   /* ─────────────────────────────────────────────────────────────
      MOUNT IFRAME
      For full separate LEAF apps (route.iframe === true) — skips
@@ -1773,6 +1806,11 @@
     }
 
     frame.addEventListener("load", function () {
+      /* Strip the embedded page's own header before revealing the frame,
+         so the zero-flash guarantee below holds even though the hide-
+         until-load technique alone only covers the initial load (not a
+         re-render from client-side navigation inside the embed). */
+      stripLeafChrome(frame);
       frame.style.visibility = "visible";
       if (spinner.parentNode) spinner.remove();
 
@@ -2481,6 +2519,18 @@
     formModalTrigger = trigger || document.activeElement;
     titleEl.textContent = title;
     frame.title = title || "Form";
+
+    /* Frame is reused across opens (Request Support, Nominate a Spotlight,
+       etc.) — swap the load listener each time rather than stacking one
+       per open. */
+    if (frame._stripChromeHandler) {
+      frame.removeEventListener("load", frame._stripChromeHandler);
+    }
+    frame._stripChromeHandler = function () {
+      stripLeafChrome(frame);
+    };
+    frame.addEventListener("load", frame._stripChromeHandler);
+
     frame.setAttribute("data-src", src);
     frame.src = src;
     modal.removeAttribute("hidden");
