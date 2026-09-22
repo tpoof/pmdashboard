@@ -8,6 +8,21 @@
     <link rel="stylesheet" href="./files/launchpad.css" />
 
     <style>
+      /* .sec-sub in launchpad.css has no margin-bottom and caps at 620px —
+         fine for the single-paragraph intros other pages (lp_home,
+         lp_use_case, etc.) use it for, but too narrow and too cramped for
+         this section's multi-paragraph mission + founding-story copy.
+         Scoped to .sec-hd--wide instead of editing .sec-sub globally so
+         those other pages are unaffected. 760px reuses the same content
+         measure as .hero-grid elsewhere in launchpad.css, rather than a
+         one-off value. */
+      .sec-hd--wide .sec-sub {
+        max-width: 760px;
+      }
+      .sec-hd--wide .sec-sub + .sec-sub {
+        margin-top: 20px;
+      }
+
       /* launchpad.css sizes .material-symbols-outlined via font-size, which
          doesn't affect these inlined <svg> icons — these rules restore
          each icon's pre-conversion size without touching launchpad.css. */
@@ -244,7 +259,7 @@
       <main id="lp-main" tabindex="-1">
         <section class="section" aria-labelledby="page-h1">
           <div class="wrap">
-            <div class="sec-hd ctr">
+            <div class="sec-hd ctr sec-hd--wide">
               <span class="eyebrow">Built by VA. For VA.</span>
               <h1 class="sec-h2" id="page-h1">Our Impact</h1>
               <p class="sec-sub">
@@ -252,26 +267,17 @@
                 business implementation accessible, efficient, and
                 cost-effective.
               </p>
-            </div>
-          </div>
-        </section>
-
-        <section class="section" aria-labelledby="story-h2">
-          <div class="wrap">
-            <div class="sec-hd ctr">
-              <span class="eyebrow">Built by VA. For VA.</span>
-              <h2 class="sec-h2" id="story-h2">Our Story</h2>
               <p class="sec-sub">
                 LEAF was created in 2008 by VA employees at the Washington
-                D.C. VA Medical Center to solve a problem they saw
-                firsthand: digitizing everyday business processes shouldn't
-                require a costly development contract. Because LEAF is
-                built and owned within VA, it delivers significant cost
-                savings for VA Medical Centers and Program Offices compared
-                to conventional custom development, and it was designed
-                from the start to work seamlessly with VA's existing
-                technology, including PIV-card two-factor authentication
-                and single sign-on.
+                D.C. VA Medical Center to solve that exact problem:
+                digitizing everyday business processes shouldn't require a
+                costly development contract. Because LEAF is built and
+                owned within VA, it delivers significant cost savings for
+                VA Medical Centers and Program Offices compared to
+                conventional custom development, and it was designed from
+                the start to work seamlessly with VA's existing technology,
+                including PIV-card two-factor authentication and single
+                sign-on.
               </p>
               <p class="sec-sub">
                 In 2013, the VA Center for Innovation and the VHA
