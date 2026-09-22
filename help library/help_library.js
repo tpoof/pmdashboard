@@ -843,12 +843,16 @@ ${renderMediaIcon(r, "hl-lr-ico")}
 </a>`;
   }
 
-  /* ── Render: exact article-ID match row ── */
-  /* Wraps renderRow()'s own output with a small label rather than a
-     separate markup path, so the row keeps normal rows' structure/aria-label. */
+  /* ── Render: exact article-ID match band ── */
+  /* Wraps renderRow()'s own output in a highlighted band (styled like the
+     Start Here / Featured bands) rather than a separate row markup path,
+     so the row itself keeps normal rows' structure/aria-label. */
   function renderIdMatchRow(r) {
     return `<div class="hl-idmatch">
-  <p class="hl-idmatch-label">${icon("label")}Exact match for article #${r.id}</p>
+  <div class="hl-idmatch-hdr">
+    ${icon("label")}
+    <span class="hl-idmatch-label">Exact match for article #${r.id}</span>
+  </div>
   ${renderRow(r)}
 </div>`;
   }
@@ -1236,10 +1240,19 @@ ${state.q ? '<button class="hl-empty-reset" type="button" data-clearsearch>Clear
      that chrome would otherwise leave behind. */
   function stripLeafChrome(frame) {
     try {
+      // TEMP DIAGNOSTIC — remove after debugging
+      console.log("[stripLeafChrome]", location.origin, "→ frame src:", frame.src);
       const doc =
         frame.contentDocument ||
         (frame.contentWindow && frame.contentWindow.document);
       if (!doc || !doc.head) return;
+      // TEMP DIAGNOSTIC — remove after debugging
+      console.log(
+        "[stripLeafChrome] got doc, head exists:",
+        !!doc.head,
+        "header el found:",
+        !!doc.getElementById("header"),
+      );
       if (doc.getElementById("leaf-chrome-strip")) return;
 
       const style = doc.createElement("style");
@@ -1257,11 +1270,15 @@ ${state.q ? '<button class="hl-empty-reset" type="button" data-clearsearch>Clear
         "}",
       ].join("\n");
       doc.head.appendChild(style);
+      // TEMP DIAGNOSTIC — remove after debugging
+      console.log("[stripLeafChrome] style appended successfully");
 
       const headerEl = doc.getElementById("header");
       if (headerEl) headerEl.style.display = "none";
     } catch (e) {
       // Cross-origin or otherwise inaccessible — leave the frame as-is.
+      // TEMP DIAGNOSTIC — remove after debugging
+      console.warn("[stripLeafChrome] threw:", e.name, e.message);
     }
   }
 

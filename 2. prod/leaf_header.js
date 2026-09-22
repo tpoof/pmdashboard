@@ -1710,10 +1710,19 @@
      behind. */
   function stripLeafChrome(frame) {
     try {
+      // TEMP DIAGNOSTIC — remove after debugging
+      console.log("[stripLeafChrome]", location.origin, "→ frame src:", frame.src);
       var doc =
         frame.contentDocument ||
         (frame.contentWindow && frame.contentWindow.document);
       if (!doc || !doc.head) return;
+      // TEMP DIAGNOSTIC — remove after debugging
+      console.log(
+        "[stripLeafChrome] got doc, head exists:",
+        !!doc.head,
+        "header el found:",
+        !!doc.getElementById("header"),
+      );
 
       if (!doc.getElementById("leaf-chrome-strip")) {
         var style = doc.createElement("style");
@@ -1731,10 +1740,15 @@
           "}",
         ].join("\n");
         doc.head.appendChild(style);
+        // TEMP DIAGNOSTIC — remove after debugging
+        console.log("[stripLeafChrome] style appended successfully");
         var headerEl = doc.getElementById("header");
         if (headerEl) headerEl.style.display = "none";
       }
-    } catch (e) {}
+    } catch (e) {
+      // TEMP DIAGNOSTIC — remove after debugging
+      console.warn("[stripLeafChrome] threw:", e.name, e.message);
+    }
   }
 
   /* ─────────────────────────────────────────────────────────────

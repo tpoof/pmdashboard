@@ -1247,10 +1247,19 @@
                behind. */
             const stripLeafChrome = (f) => {
               try {
+                // TEMP DIAGNOSTIC — remove after debugging
+                console.log("[stripLeafChrome]", location.origin, "→ frame src:", f.src);
                 const doc =
                   f.contentDocument ||
                   (f.contentWindow && f.contentWindow.document);
                 if (!doc || !doc.head) return;
+                // TEMP DIAGNOSTIC — remove after debugging
+                console.log(
+                  "[stripLeafChrome] got doc, head exists:",
+                  !!doc.head,
+                  "header el found:",
+                  !!doc.getElementById("header"),
+                );
                 if (doc.getElementById("leaf-chrome-strip")) return;
 
                 const style = doc.createElement("style");
@@ -1268,11 +1277,15 @@
                   "}",
                 ].join("\n");
                 doc.head.appendChild(style);
+                // TEMP DIAGNOSTIC — remove after debugging
+                console.log("[stripLeafChrome] style appended successfully");
 
                 const headerEl = doc.getElementById("header");
                 if (headerEl) headerEl.style.display = "none";
               } catch (e) {
                 // Cross-origin or otherwise inaccessible — leave the frame as-is.
+                // TEMP DIAGNOSTIC — remove after debugging
+                console.warn("[stripLeafChrome] threw:", e.name, e.message);
               }
             };
             frame.addEventListener("load", () => stripLeafChrome(frame));
