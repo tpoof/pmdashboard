@@ -1,9 +1,13 @@
 <!--
   LEAF Project Dashboard — standalone report (loaded via report.php iframe)
   Tabs: Roadmap, OKRs, Project Overview, Team Meeting.
-  Design tokens, spacing, and icons are shared with project_v20 (pm- prefix)
-  via a "pmDash-" prefix on dashboard-specific styles.
+  Base design tokens (--space-*, --radius-*, --bg, --surface, --border, --text,
+  --muted, --accent, --focus, --shadow-*) live in project_v20.css's :root block.
+  This is a separate document (loaded in an iframe), so it can't inherit
+  project_v20's stylesheet automatically and links it directly below.
+  Dashboard-specific extensions (--pmDash-*) are defined in the <style> block below.
 -->
+<link rel="stylesheet" href="./files/project_v20.css" />
 <div id="pmDash" data-endpoint="/platform/projects/api/form/query">
   <svg xmlns="http://www.w3.org/2000/svg" style="display: none">
     <symbol id="icon-search" viewBox="0 -960 960 960">
@@ -446,9 +450,9 @@
 </div>
 
 <style>
-  /* LEAF Dashboard report styles. Reuses project_v20's :root tokens
-   (--space-*, --radius-*, --bg, --surface, --border, --text, --muted,
-   --accent, --shadow-*). Status colors are unified with v20's
+  /* LEAF Dashboard report styles. Base tokens (--space-*, --radius-*, --bg,
+   --surface, --border, --text, --muted, --accent, --shadow-*) come from
+   project_v20.css, linked in dashboard.html. Status colors are unified with v20's
    .pm-overdueRed / .pm-completeGreen values rather than redefined. */
 
   :root {
