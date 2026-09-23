@@ -4345,6 +4345,7 @@
           ENDPOINT + "?q=" + encodeURIComponent(JSON.stringify(query)),
           {
             credentials: "same-origin",
+            cache: "no-store",
             headers: { Accept: "application/json" },
           },
         ).then(function (r) {
@@ -4379,6 +4380,7 @@
             "&x-filterData=recordID,stepTitle",
           {
             credentials: "same-origin",
+            cache: "no-store",
             headers: { Accept: "application/json" },
           },
         ).then(function (r) {
