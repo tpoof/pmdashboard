@@ -236,9 +236,12 @@
       }
 
       /* LEAF Finder widget */
+      /* Width matches .wrap's container convention (max-width: var(--max),
+         no separate percentage narrowing) so the box aligns with every
+         other section at every breakpoint instead of floating narrower. */
       .finder-box {
-        width: 80%;
-        max-width: 1800px;
+        width: 100%;
+        max-width: 1200px;
         margin: 2rem auto;
         display: grid;
         grid-template-columns: minmax(0, 420px) 1fr;
@@ -281,14 +284,14 @@
       .finder-search {
         position: relative;
         width: 100%;
-        max-width: 320px;
+        max-width: clamp(220px, 90%, 320px);
         border-radius: 999px;
         transition: box-shadow 0.2s;
       }
       .finder-search-label {
         display: block;
         width: 100%;
-        max-width: 320px;
+        max-width: clamp(220px, 90%, 320px);
         text-align: center;
         font-family: "PublicSans-Medium", sans-serif;
         font-size: 1rem;
@@ -349,6 +352,13 @@
         line-height: 0;
         cursor: pointer;
         color: #fff;
+      }
+      /* Invisible expanded hit area (24px visual -> 44px tap target) —
+         doesn't affect layout or crowd the input's text padding. */
+      .finder-clear::before {
+        content: "";
+        position: absolute;
+        inset: -10px;
       }
       .finder-clear .material-symbols-outlined {
         display: contents;
@@ -595,8 +605,8 @@
       /* Slides open below the finder container once a match is found;
          white background guarantees contrast independent of the navy card. */
       .finder-next-steps {
-        width: 80%;
-        max-width: 1800px;
+        width: 100%;
+        max-width: 1200px;
         margin: 0 auto;
         text-align: center;
         overflow: hidden;
@@ -709,9 +719,37 @@
         margin: 0 0 0.85rem;
       }
 
+      /* Tablet/small-laptop: keep the two-column layout but narrow the
+         fixed left track so the results column doesn't get crowded out
+         before the 700px stacking breakpoint kicks in. */
+      @media (min-width: 701px) and (max-width: 960px) {
+        .finder-box {
+          grid-template-columns: minmax(0, 260px) 1fr;
+          gap: 1rem;
+          padding: 1.75rem 1.25rem 1.25rem;
+        }
+        .finder-left {
+          padding: 0.5rem 0.5rem 1.25rem;
+        }
+      }
       @media (max-width: 700px) {
         .finder-box {
-          grid-template-columns: 1fr;
+          /* minmax(0, 1fr), not a bare 1fr: without an explicit 0 min,
+             the track won't shrink below the topic pills' unwrapped
+             intrinsic width and blows out the whole page horizontally. */
+          grid-template-columns: minmax(0, 1fr);
+        }
+        /* Larger touch targets at mobile widths (WCAG 2.5.8 / 508). */
+        .finder-topics-arrow {
+          width: 2.75rem;
+          height: 2.75rem;
+        }
+        .finder-topics-arrow svg {
+          width: 1.5rem;
+          height: 1.5rem;
+        }
+        .finder-topic-btn {
+          padding: 0.6rem 1rem;
         }
       }
       @media (prefers-reduced-motion: reduce) {
