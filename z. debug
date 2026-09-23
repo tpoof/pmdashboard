@@ -1,10 +1,3 @@
-The "Submit an Idea" modal in idea_v4.js renders with its title bar and close (X) button hidden underneath LEAF's sticky global header (.lp-header, defined in leaf_header.css, which uses position: sticky and z-index: 300). The modal currently either uses a z-index lower than 300 or positions itself flush against the top of the viewport without accounting for the header's height, so the header paints on top of it.
-
-Fix the modal in idea_v4.js using the same pattern already established elsewhere in this LEAF Launchpad project (see lp_leadership.html's .ldh-modal / .ldh-modal__header and lp_team.html's .thb-modal for reference):
-
-Set the modal overlay's z-index well above the header's 300 (the existing pattern in this project uses 2147483000 for full-viewport dialogs, but at minimum anything > 400, since dropdown panels sit at 400).
-Don't let the modal dialog span inset: 0 all the way to the top. Instead, add a --header-offset CSS custom property (default ~120px, matching the other modals) and use it as top padding on the overlay so the dialog renders below the sticky header, not underneath it.
-Ideally, measure the actual live header height at modal-open time (rather than hardcoding it), the same way lp_leadership.html does with its measureHeaderOffset() function — it walks header, nav, [class*="breadcrumb"], [class*="nav"] elements, checks for position: fixed or sticky, and sets --header-offset to the tallest one's bottom edge + 16px. This keeps the modal correctly positioned even if the announcement banner is present (which changes total header height).
-Do not modify leaf_header.css or leaf_header.js — the header's z-index (300) is intentional and other components already depend on that exact stacking order (dropdown panels at 400, announcement banner at 305). This is purely a fix within the idea portal's own modal code.
-
-Also confirm the fix doesn't break keyboard focus trapping or Escape-to-close behavior on the modal, and that it remains responsive (test at mobile width) and accessible (WCAG/508 — focus returns to the trigger element on close, aria-hidden/aria-modal are set correctly).
+Rebuilt out all 4 views to remove the display bug -fixing the filter hiding backlog items and inconsistent OKR completion percentages across tabs
+Matched styling to the main project dashboard and renamed to "LEAF Project Analytics" since naming it project dashboard will confuse your AI agent as its the name of the main tool
+Improved accessibility for keyboard/screen-reader users and enabled "Clear all filters" to fully reset to "All" instead of your defaults
