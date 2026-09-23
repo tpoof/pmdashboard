@@ -449,6 +449,8 @@
   </div>
 </div>
 
+<script src="./files/chart.js"></script>
+
 <style>
   /* LEAF Dashboard report styles. Base tokens (--space-*, --radius-*, --bg,
    --surface, --border, --text, --muted, --accent, --shadow-*) come from
@@ -3865,12 +3867,35 @@
       render();
     }
 
+    // Record modal loads a live LEAF page (printview) in an iframe. LEAF's own header
+    // chrome doesn't belong inside our modal, so strip it once the frame has loaded.
+    // Same-origin only — silently no-ops (with a console warning) if that ever changes.
+    function stripLeafChrome(frame) {
+      try {
+        var doc = frame.contentDocument || frame.contentWindow.document;
+        if (!doc) return;
+        var style = doc.createElement("style");
+        style.textContent =
+          "#header{display:none !important}\nbody{padding-top:0 !important;margin-top:0 !important}";
+        doc.head.appendChild(style);
+      } catch (err) {
+        console.warn(
+          "Could not strip LEAF header from iframe (likely cross-origin):",
+          err,
+        );
+      }
+    }
+
     // ---- record modal (with focus trap + return focus) ----
     function openRecord(rid, triggerEl) {
       lastFocusedEl = triggerEl || document.activeElement;
       var modal = document.getElementById("pmDashModal");
+      var frame = document.getElementById("pmDashModalFrame");
       var url = RECORD_URL + encodeURIComponent(rid);
-      document.getElementById("pmDashModalFrame").src = url;
+      frame.onload = function () {
+        stripLeafChrome(frame);
+      };
+      frame.src = url;
       document.getElementById("pmDashModalOpen").href = url;
       document.getElementById("pmDashModalTitle").textContent =
         "Record #" + rid;
