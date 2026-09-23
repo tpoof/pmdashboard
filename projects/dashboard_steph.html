@@ -2100,6 +2100,147 @@
       transition: none;
     }
   }
+
+  /* ---- Project Overview: collapsible per-objective OKR grid ---- */
+  .pmDash-okrSection {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 6px solid var(--pmDash-okr);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--space-4);
+    overflow: hidden;
+  }
+  .pmDash-okrSectHead {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+  }
+  .pmDash-okrSectHead:hover {
+    background: var(--surface-alt);
+  }
+  .pmDash-okrSection[data-open="true"] .pmDash-okrSectHead {
+    border-bottom: 1px solid var(--border);
+  }
+  .pmDash-okrSectHead .pmDash-icon {
+    flex-shrink: 0;
+    transition: transform 0.15s;
+  }
+  .pmDash-okrSection[data-open="true"] .pmDash-okrSectHead .pmDash-icon.rotate {
+    transform: rotate(180deg);
+  }
+  .pmDash-okrSectTitle {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text);
+  }
+  .pmDash-okrSectCount {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 700;
+    background: var(--surface-alt);
+    border-radius: 999px;
+    padding: 3px 12px;
+  }
+
+  .pmDash-okrGrid {
+    padding: var(--space-3);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+  @media (max-width: 1100px) {
+    .pmDash-okrGrid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 760px) {
+    .pmDash-okrGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 480px) {
+    .pmDash-okrGrid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .pmDash-okrRow {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    box-shadow: var(--shadow-sm);
+  }
+  .pmDash-okrRowTop {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: 4px;
+  }
+  .pmDash-okrRowCode {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--pmDash-brand);
+  }
+  .pmDash-okrRowPct {
+    margin-left: auto;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text);
+  }
+  .pmDash-okrRowTitle {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: var(--space-2);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .pmDash-okrRowBar {
+    height: 6px;
+    background: var(--surface-alt);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .pmDash-okrRowFill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.3s;
+  }
+  .pmDash-okrRowFill.h-ontrack {
+    background: var(--pmDash-complete);
+  }
+  .pmDash-okrRowFill.h-atrisk {
+    background: var(--pmDash-atrisk-text);
+  }
+  .pmDash-okrRowFill.h-offtrack {
+    background: var(--pmDash-overdue);
+  }
+  .pmDash-okrRowFill.h-none {
+    background: var(--muted);
+  }
+  .pmDash-okrRowSub {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+  .pmDash-okrRowNoKr {
+    font-style: italic;
+    color: var(--pmDash-atrisk-text);
+  }
 </style>
 
 <script>
@@ -2446,7 +2587,7 @@
 
       renderKpis(inFlight, inFlightProjects, counts, okr);
       renderAttention(visible);
-      renderOkrSummary(okr);
+      renderOkrGrid(okr);
       renderCharts(visible, counts);
     }
 
@@ -2599,6 +2740,74 @@
         "</div></div>";
     }
 
+    var okrGridOpen = false;
+    function renderOkrGrid(okr) {
+      var el = document.getElementById("pmDashOkrSummary");
+      if (!okr.total) {
+        el.innerHTML = "";
+        return;
+      }
+      var sorted = okr.list.slice().sort(function (a, b) {
+        return a.okr.code.localeCompare(b.okr.code, undefined, {
+          numeric: true,
+        });
+      });
+      var rows = sorted
+        .map(function (x) {
+          var o = x.okr;
+          var sub = x.krs.length
+            ? x.krs.length + " KR" + (x.krs.length !== 1 ? "s" : "")
+            : '<span class="pmDash-okrRowNoKr">No key results defined</span>';
+          return (
+            '<div class="pmDash-okrRow">' +
+            '<div class="pmDash-okrRowTop"><span class="pmDash-okrRowCode">' +
+            clean(o.code) +
+            "</span>" +
+            '<span class="pmDash-health h-' +
+            x.health +
+            '">' +
+            esc(HEALTH_LABEL[x.health]) +
+            "</span>" +
+            '<span class="pmDash-okrRowPct">' +
+            x.pct +
+            "%</span></div>" +
+            '<div class="pmDash-okrRowTitle">' +
+            clean(o.title) +
+            "</div>" +
+            '<div class="pmDash-okrRowBar"><div class="pmDash-okrRowFill h-' +
+            x.health +
+            '" style="width:' +
+            x.pct +
+            '%"></div></div>' +
+            '<div class="pmDash-okrRowSub">' +
+            sub +
+            "</div></div>"
+          );
+        })
+        .join("");
+      el.innerHTML =
+        '<div class="pmDash-okrSection" data-open="' +
+        okrGridOpen +
+        '">' +
+        '<button type="button" class="pmDash-okrSectHead" aria-expanded="' +
+        okrGridOpen +
+        '" aria-controls="pmDashOkrGrid" data-okrsecttoggle="1">' +
+        '<svg class="pmDash-icon' +
+        (okrGridOpen ? " rotate" : "") +
+        '" aria-hidden="true"><use href="#icon-unfold-more"></use></svg>' +
+        '<h2 class="pmDash-okrSectTitle">OKR Status</h2>' +
+        '<span class="pmDash-okrSectCount">' +
+        okr.total +
+        " objective" +
+        (okr.total !== 1 ? "s" : "") +
+        "</span></button>" +
+        '<div id="pmDashOkrGrid"' +
+        (okrGridOpen ? "" : " hidden") +
+        ' class="pmDash-okrGrid">' +
+        rows +
+        "</div></div>";
+    }
+
     function okrSummaryHtml(okr) {
       if (!okr.total) return "";
       return (
@@ -2628,10 +2837,6 @@
         "</div>" +
         "</div></div>"
       );
-    }
-    function renderOkrSummary(okr) {
-      document.getElementById("pmDashOkrSummary").innerHTML =
-        okrSummaryHtml(okr);
     }
 
     var HEALTH_LABEL = {
@@ -3681,6 +3886,11 @@
       }
       if ((el = e.target.closest(".pmDash-attRow"))) {
         openRecord(el.dataset.rid, el);
+        return;
+      }
+      if ((el = e.target.closest("[data-okrsecttoggle]"))) {
+        okrGridOpen = !okrGridOpen;
+        renderOkrGrid(okrStats());
         return;
       }
       if ((el = e.target.closest("[data-okrtoggle]"))) {
