@@ -1577,6 +1577,19 @@ ${relatedHTML}
   }
 
   /* ── Navigation ── */
+  /* Counterpart to open()'s postMessage: an empty articleId tells an
+     embedding launchpad no article is open, so it reverts its address
+     bar to the plain Help Library route. Only called when leaving the
+     detail view — never on initial load of the list. */
+  function notifyParentListView() {
+    if (window.parent !== window) {
+      window.parent.postMessage(
+        { type: "lp-help-library-nav", articleId: "" },
+        "https://leaf.va.gov",
+      );
+    }
+  }
+
   function back() {
     document.title = "VA LEAF — Help Library";
     history.pushState(
@@ -1586,6 +1599,7 @@ ${relatedHTML}
     );
     document.getElementById("dpage").classList.remove("on");
     document.getElementById("lpage").classList.remove("off");
+    notifyParentListView();
     window.scrollTo(0, 0);
     const card =
       lastOpenedId && document.querySelector(`[data-id="${lastOpenedId}"]`);
@@ -1601,6 +1615,7 @@ ${relatedHTML}
     );
     document.getElementById("dpage").classList.remove("on");
     document.getElementById("lpage").classList.remove("off");
+    notifyParentListView();
     window.scrollTo(0, 0);
     state.cat = cat;
     groupVisible = {};

@@ -2341,7 +2341,8 @@
   var HELP_LIBRARY_ORIGIN = "https://leaf.va.gov";
 
   /* Help Library's iframe posts its current article id here on every
-     internal navigation (see help_library.js's open()). Never trust
+     internal navigation (see help_library.js's open()), and an empty id
+     when it returns to the list (back()/backToCategory()). Never trust
      the payload until both origin and message type are verified.
      Written via replaceState, not a real hash assignment, so this
      doesn't re-trigger router() through hashchange. */
@@ -2349,8 +2350,12 @@
     if (e.origin !== HELP_LIBRARY_ORIGIN) return;
     if (!e.data || e.data.type !== "lp-help-library-nav") return;
     var id = String(e.data.articleId || "");
-    if (!/^\d+$/.test(id)) return;
-    history.replaceState(null, "", "#help_library-article-" + id);
+    if (id && !/^\d+$/.test(id)) return;
+    history.replaceState(
+      null,
+      "",
+      id ? "#help_library-article-" + id : "#help_library",
+    );
   }
 
   /* ─────────────────────────────────────────────────────────────
