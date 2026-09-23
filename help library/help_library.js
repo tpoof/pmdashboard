@@ -629,9 +629,12 @@ ${statusLine}`;
         });
         r._rank = score;
       });
+      // Relevance only decides which records qualify; the sort pills
+      // (state.sort) control ordering in both search and browse modes.
       list = list.filter((r) => r._rank > 0);
-      list.sort((a, b) => b._rank - a._rank);
-    } else if (state.sort === "alpha") {
+    }
+
+    if (state.sort === "alpha") {
       list.sort((a, b) => a.title.localeCompare(b.title));
     } else {
       list.sort(
