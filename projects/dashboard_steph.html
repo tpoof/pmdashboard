@@ -1,5 +1,5 @@
 <!--
-  LEAF Project Dashboard — standalone report (loaded via report.php iframe)
+  LEAF Project Analytics — standalone report (loaded via report.php iframe)
   Tabs: Roadmap, OKRs, Project Overview, Team Meeting.
   Base design tokens (--space-*, --radius-*, --bg, --surface, --border, --text,
   --muted, --accent, --focus, --shadow-*) live in project_v20.css's :root block.
@@ -63,7 +63,7 @@
   <div class="pmDash-band">
     <div class="pmDash-bandInner">
       <div>
-        <h1 class="pmDash-title">LEAF Platform Dashboard</h1>
+        <h1 class="pmDash-title">LEAF Project Analytics</h1>
         <p class="pmDash-week" id="pmDashWeek"></p>
       </div>
 
@@ -174,7 +174,7 @@
       </select>
     </div>
 
-    <div class="pmDash-filter pmDash-filterPerson">
+    <div class="pmDash-filter">
       <svg class="pmDash-icon" aria-hidden="true">
         <use href="#icon-person"></use>
       </svg>
@@ -2023,6 +2023,81 @@
     font-style: italic;
     text-align: center;
   }
+
+  /* ---- record modal (shared base for both the record modal and the linked-tasks modal) ---- */
+  .pmDash-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+  }
+  .pmDash-modal[hidden] {
+    display: none;
+  }
+  .pmDash-modalBg {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+  }
+  .pmDash-modalBox {
+    position: relative;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    width: 100%;
+    max-width: 920px;
+    height: 86vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+  }
+  .pmDash-modalHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border);
+  }
+  .pmDash-modalTitle {
+    font-weight: 700;
+  }
+  .pmDash-modalHeadActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .pmDash-modalOpen {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .pmDash-modalOpen:hover {
+    text-decoration: underline;
+  }
+  .pmDash-modalOpen:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .pmDash-modalFrame {
+    flex: 1;
+    border: none;
+    width: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pmDash-attHead .pmDash-icon,
+    .pmDash-dqHead .pmDash-icon,
+    .pmDash-okrdToggle .pmDash-icon,
+    .pmDash-groupHead .pmDash-icon {
+      transition: none;
+    }
+  }
 </style>
 
 <script>
@@ -2202,7 +2277,13 @@
     function visibleRecords() {
       return DATA.filter(function (r) {
         if (r.type === "OKR") return false;
-        if (fyFilter !== "All" && recordFY(r) !== fyFilter) return false;
+        // Records with no determinable FY (common for backlog/unscheduled items that
+        // have no start, due, or completion date yet) aren't excluded by the FY filter —
+        // only records that have a known FY different from the selected one are.
+        if (fyFilter !== "All") {
+          var rfy = recordFY(r);
+          if (rfy && rfy !== fyFilter) return false;
+        }
         if (typeFilter !== "All" && r.type !== typeFilter) return false;
         if (assignees.length && assignees.indexOf(r.assignee) === -1)
           return false;
