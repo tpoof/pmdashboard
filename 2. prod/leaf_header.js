@@ -3144,6 +3144,9 @@
         document.body.scrollTop ||
         0;
       var vis = top > 120;
+      if (!vis && document.activeElement === btn) {
+        btn.blur();
+      }
       btn.classList.toggle("lp-jump-vis", vis);
       btn.setAttribute("aria-hidden", String(!vis));
       btn.tabIndex = vis ? 0 : -1;
@@ -3157,6 +3160,33 @@
       try {
         window.scrollTo({ top: 0, behavior: "smooth" });
       } catch (e) {}
+
+      /* Land keyboard/SR focus on the visible main content instead of
+         letting it fall to <body> when update() blurs this button. Same
+         lookup as initElementCache(): ensureMainContentTarget() renames
+         <main id="lp-main"> to #main-content, so fall back to the bare
+         tag. On SPA routes the home <main> is display:none and content
+         lives in the swap host instead — focus whichever is rendered.
+         preventScroll so focus() can't interrupt the smooth scroll. */
+      var swapHost =
+        _swapHost ||
+        document.querySelector("[data-lp-swap-host]") ||
+        document.getElementById("lpSwapHost");
+      var mainEl =
+        _lpMain ||
+        document.getElementById("lp-main") ||
+        document.querySelector("main");
+      var target =
+        swapHost && swapHost.getClientRects().length ? swapHost : mainEl;
+      if (!target || !target.getClientRects().length) return;
+      if (!target.hasAttribute("tabindex")) {
+        target.setAttribute("tabindex", "-1");
+      }
+      try {
+        target.focus({ preventScroll: true });
+      } catch (e) {
+        target.focus();
+      }
     });
 
     window.addEventListener("scroll", update, { passive: true });

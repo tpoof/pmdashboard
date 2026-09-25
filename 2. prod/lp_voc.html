@@ -51,6 +51,12 @@
         color: var(--c-muted);
         margin: 0;
       }
+      .voc-stat-note {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--c-muted);
+        margin-top: 0.15rem;
+      }
 
       .voc-channels {
         display: grid;
@@ -597,7 +603,6 @@
           </div>
         </section>
 
-        <!-- TODO: placeholder values below — replace with real VoC program metrics before this page ships. -->
         <section class="section" aria-labelledby="voc-stats-h2">
           <div class="wrap">
             <div class="sec-hd ctr">
@@ -613,35 +618,40 @@
               <div class="voc-stat-card" role="listitem">
                 <div
                   class="voc-stat-num"
-                  aria-label="4,200 survey responses collected"
+                  aria-label="765 survey responses collected"
                 >
-                  4,200
+                  765
                 </div>
                 <p class="voc-stat-label">Survey Responses Collected</p>
               </div>
               <div class="voc-stat-card" role="listitem">
                 <div
                   class="voc-stat-num"
-                  aria-label="92 percent satisfaction rate"
+                  aria-label="80 percent satisfaction rate"
                 >
-                  92%
+                  80%
                 </div>
                 <p class="voc-stat-label">Overall Satisfaction Rate</p>
               </div>
               <div class="voc-stat-card" role="listitem">
-                <div class="voc-stat-num" aria-label="310 ideas submitted">
-                  310
+                <div class="voc-stat-num" aria-label="480 ideas submitted">
+                  480
                 </div>
                 <p class="voc-stat-label">Ideas Submitted</p>
               </div>
               <div class="voc-stat-card" role="listitem">
                 <div
                   class="voc-stat-num"
-                  aria-label="48 improvements shipped from feedback"
+                  aria-label="24 improvements shipped since the VoC program's 2025 launch"
                 >
-                  48
+                  24
                 </div>
-                <p class="voc-stat-label">Improvements Shipped</p>
+                <p class="voc-stat-label">
+                  Improvements Shipped
+                  <span class="voc-stat-note"
+                    >(since the VoC program's 2025 launch)</span
+                  >
+                </p>
               </div>
             </div>
           </div>
@@ -653,7 +663,7 @@
               <span class="eyebrow">Our listening channels</span>
               <h2 class="sec-h2" id="voc-channels-h2">How We Listen</h2>
               <p class="sec-sub">
-                We collect feedback through five complementary channels so no
+                We collect feedback through six complementary channels so no
                 voice goes unheard — whether you have 30 seconds or 30 minutes.
               </p>
             </div>
@@ -746,6 +756,26 @@
                   Through the LEAF Idea Portal, any VA employee can submit, vote
                   on, and track feature requests — giving the community a direct
                   line into the product roadmap.
+                </p>
+              </article>
+
+              <article class="voc-channel-card" role="listitem">
+                <div class="voc-channel-icon" aria-hidden="true">
+                  <!-- Material Symbols (Filled): diversity_3 — reused from
+                       leaf_header.js's ICON_SVG map (Community of Practice nav entry) -->
+                  <span class="material-symbols-outlined"
+                    ><svg viewBox="0 -960 960 960" fill="currentColor">
+                      <path
+                        d="M40-160v-160q0-34 23.5-57t56.5-23h131q20 0 38 10t29 27q29 39 71.5 61t90.5 22q49 0 91.5-22t70.5-61q13-17 30.5-27t36.5-10h131q34 0 57 23t23 57v160H640v-91q-35 25-75.5 38T480-200q-43 0-84-13.5T320-252v92H40Zm440-160q-38 0-72-17.5T351-386q-17-25-42.5-39.5T253-440q22-37 93-58.5T480-520q63 0 134 21.5t93 58.5q-29 0-55 14.5T609-386q-22 32-56 49t-73 17ZM160-440q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T280-560q0 50-34.5 85T160-440Zm640 0q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T920-560q0 50-34.5 85T800-440ZM480-560q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T600-680q0 50-34.5 85T480-560Z"
+                      /></svg
+                  ></span>
+                </div>
+                <h3 class="voc-channel-title">Community of Practice</h3>
+                <p class="voc-channel-desc">
+                  Open Office Hours and other CoP calls are one of our most
+                  direct feedback channels — while most topics get routed to one
+                  of the channels above, we often take feedback live, right on
+                  the call.
                 </p>
               </article>
             </div>

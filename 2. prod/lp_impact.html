@@ -50,14 +50,6 @@
       .impact-story .step-body {
         max-width: 620px;
       }
-      /* .step-body pairs elsewhere on this page are never direct siblings
-         (e.g. the "Empowering All Users" section has a <dl> between its
-         two .step-body paragraphs), so this gap was never needed before —
-         scoped here instead of on .step-body globally to avoid changing
-         spacing anywhere else. */
-      .impact-story .step-body + .step-body {
-        margin-top: 16px;
-      }
       @media (max-width: 900px) {
         .impact-intro {
           grid-template-columns: 1fr;
@@ -304,7 +296,7 @@
             <div class="sec-hd ctr">
               <h1 class="sec-h2" id="page-h1">Our Impact</h1>
             </div>
-            <div class="impact-intro" aria-labelledby="story-h2">
+            <div class="impact-intro">
               <div class="impact-mission">
                 <div class="impact-quote-mark" aria-hidden="true"></div>
                 <span class="impact-mission-label">Our Mission</span>
@@ -320,8 +312,8 @@
                 </h2>
                 <p class="step-body">
                   LEAF was created in 2008 by VA employees at the Washington
-                  D.C. VA Medical Center to solve that exact problem:
-                  digitizing everyday business processes shouldn't require a
+                  D.C. VA Medical Center, who saw firsthand that digitizing
+                  everyday business processes shouldn't require a slow,
                   costly development contract. Because LEAF is built and
                   owned within VA, it delivers significant cost savings for
                   VA Medical Centers and Program Offices compared to
@@ -382,7 +374,7 @@
 
         <section class="section section-alt" aria-labelledby="empower-h2">
           <div class="wrap">
-            <div class="step" aria-labelledby="empower-h2">
+            <div class="step">
               <div>
                 <span class="step-tag">No-code &amp; low-code</span>
                 <h2 class="step-h3" id="empower-h2">Empowering All Users</h2>
