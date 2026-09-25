@@ -152,10 +152,6 @@
 .hl-root .hl-dhmeta-item .hl-icon {
   color: var(--hl-muted-label) !important;
 }
-.hl-root .hl-sb-cta a .hl-icon,
-.hl-root .hl-dcta a .hl-icon {
-  color: #ffffff !important;
-}
 
 /* ── Hero ── */
 .hl-hero {
@@ -2042,9 +2038,6 @@
   padding: 11px;
   border-radius: var(--hl-radius-sm);
   text-decoration: none;
-}
-.hl-dcta a .hl-icon {
-  color: #fff !important;
 }
 .hl-dcta a:hover {
   background: var(--hl-accent-strong);

@@ -788,7 +788,7 @@ ${statusLine}`;
   <div class="hl-sb-cta">
     <h3>Need 1-on-1 help?</h3>
     <p>Let our support team know what you're working on, and a member of our team will follow up with you.</p>
-    <a href="${CFG.consultURL}" target="_blank" rel="noopener" data-openconsult>Request a consultation ${icon("open_in_new")}</a>
+    <a href="${CFG.consultURL}" target="_blank" rel="noopener" data-openconsult>Request a consultation</a>
   </div>
 </div>`;
 
@@ -1537,7 +1537,7 @@ ${feedbackHTMLWrap}
 ${relatedHTML}
 <div class="hl-dcta"><h3>Need help?</h3>
   <p>Our team can walk you through this live in a 30-min consultation.</p>
-  <a href="${CFG.consultURL}" target="_blank" rel="noopener" data-openconsult>Request a consultation ${icon("open_in_new")}</a>
+  <a href="${CFG.consultURL}" target="_blank" rel="noopener" data-openconsult>Request a consultation</a>
 </div>`;
 
     if (r.learningObj) {
