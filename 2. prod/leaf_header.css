@@ -1193,14 +1193,20 @@ button.dd-link {
      landscape phones. .modal-box--form/--feedback override width below. */
   width: min(900px, 90vw, calc((100vh - 120px) * 16 / 9));
   width: min(900px, 90vw, calc((100dvh - 120px) * 16 / 9));
-  background: #000;
+  background: #fff;
   border-radius: var(--nav-r-lg);
   overflow: hidden;
 }
+/* Stays black on its own so there's no white flash behind the player
+   before the iframe paints, and letterboxing inside the embed still
+   reads as part of the video. padding-bottom is a % of the box width,
+   so this area is always exactly 16:9 of .modal-box — no gap between
+   the video and the white strip below at any viewport shape. */
 .modal-vid {
   position: relative;
   padding-bottom: 56.25%;
   height: 0;
+  background: #000;
 }
 .modal-vid iframe {
   position: absolute;
@@ -1237,11 +1243,12 @@ button.dd-link {
 }
 /* Always-visible "open in new tab" escape hatch under the demo video,
    for when the SharePoint embed won't render (auth, blocked 3rd-party
-   cookies, etc.). Sits in normal flow below .modal-vid, so it never
-   overlaps .modal-close (absolute, top-right of the video). */
+   cookies, etc.). Sits in normal flow below .modal-vid on .modal-box's
+   white background, so it never overlaps .modal-close (absolute,
+   top-right of the video). */
 .modal-fallback {
   margin: 0;
-  padding: 4px 16px 8px;
+  padding: 6px 16px;
   text-align: center;
 }
 .modal-fallback-link {
@@ -1252,14 +1259,14 @@ button.dd-link {
   padding: 0 8px;
   font-family: "PublicSans-Regular", sans-serif;
   font-size: 0.8125rem;
-  color: #d0d0d0; /* ~13.6:1 on #000 — passes WCAG AA/AAA */
+  color: var(--nav-accent); /* #005ea2 — 6.72:1 on #fff, passes WCAG AA */
   text-decoration: underline;
 }
 .modal-fallback-link:hover {
-  color: #fff;
+  color: var(--nav-hl); /* #1a4480 — 9.62:1 on #fff */
 }
 .modal-fallback-link:focus-visible {
-  outline: 3px solid #fff;
+  outline: 3px solid var(--nav-accent);
   outline-offset: 2px;
   border-radius: 2px;
 }
