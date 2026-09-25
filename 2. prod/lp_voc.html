@@ -438,6 +438,7 @@
         white-space: nowrap;
         transition: filter 0.2s;
         flex-shrink: 0;
+        cursor: pointer;
       }
       .voc-ux-btn:hover {
         filter: brightness(1.1);
@@ -1055,12 +1056,14 @@
                   works.
                 </p>
               </div>
-              <a
-                href="https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=LEAF_Start_Request&amp;id=form_68543"
+              <!-- No &iframe=1: openFormModal() in leaf_header.js already
+                   runs stripLeafChrome() on the modal iframe's load event. -->
+              <button
+                type="button"
                 class="voc-ux-btn"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Join the LEAF User Experience Program (opens in a new tab)"
+                data-action="form-modal"
+                data-modal-src="https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=LEAF_Start_Request&amp;id=form_68543"
+                data-modal-title="Join the UX Program"
               >
                 <span class="material-symbols-outlined" aria-hidden="true"
                   ><svg viewBox="0 -960 960 960" fill="currentColor">
@@ -1069,7 +1072,7 @@
                     /></svg
                 ></span>
                 Join the UX Program
-              </a>
+              </button>
             </div>
           </div>
         </section>
