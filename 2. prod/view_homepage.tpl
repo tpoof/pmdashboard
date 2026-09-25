@@ -758,8 +758,6 @@
     </style>
 
     <div class="lp" id="lp-root">
-      <a class="lp-skip" href="#main-content">Skip to main content</a>
-
       <!-- Nav injected by leaf_header.js -->
       <div id="lp-nav-host"></div>
 

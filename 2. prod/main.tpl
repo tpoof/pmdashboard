@@ -87,12 +87,6 @@
     <link rel="icon" href="vafavicon.ico" type="image/x-icon" />
 </head>
 <body>
-{if $smarty.get.a == ''}
-    <a href="#lp-main" id="nav-skip-link">Skip to main content</a>
-{else}
-    <a href="#bodyarea" id="nav-skip-link">Skip to main content</a>
-{/if}
-
 {if $smarty.server.HTTP_HOST === 'leaf.apps.vapo-aws-ppd.va.gov'}
     <div style="position: fixed; z-index: 9999; width: 100%; background-color: rgba(255,255,100,0.75); text-align: center;">VAPO TESTING</div>
 {/if}

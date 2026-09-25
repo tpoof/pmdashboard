@@ -933,29 +933,33 @@
   /* ─────────────────────────────────────────────────────────────
      SKIP NAVIGATION LINK
      Injected as the first child of <body>, visually hidden until
-     focused. Targets #main-content.
+     focused. Targets #lp-main — the id every lp_* page and
+     view_homepage.tpl already put on their own <main>, and the one
+     showLaunchpadHome() and main.tpl's #nav-skip-link point at.
   ───────────────────────────────────────────────────────────── */
   function ensureSkipLink() {
     if (document.getElementById("lp-skip-nav")) return;
     var skip = document.createElement("a");
     skip.id = "lp-skip-nav";
     skip.className = "lp-skip-link";
-    skip.href = "#main-content";
+    skip.href = "#lp-main";
     skip.textContent = "Skip to main content";
     document.body.insertBefore(skip, document.body.firstChild);
   }
 
+  /* Pages without an #lp-main (other LEAF pages loading this header):
+     point the skip link at the page's first <main> instead. An existing
+     id is kept, not overwritten — main.tpl's <main id="body"> is also
+     targeted as main#body by the iframe chrome-strip rules below. */
   function ensureMainContentTarget() {
-    if (document.getElementById("main-content")) return;
-    var main = document.querySelector("main");
-    if (main) {
-      main.id = "main-content";
-      return;
-    }
+    if (document.getElementById("lp-main")) return;
     var header = document.getElementById("lpHeader");
-    if (header && header.nextElementSibling) {
-      header.nextElementSibling.id = "main-content";
-    }
+    var target =
+      document.querySelector("main") || (header && header.nextElementSibling);
+    if (!target) return;
+    if (!target.id) target.id = "lp-main";
+    var skip = document.getElementById("lp-skip-nav");
+    if (skip) skip.href = "#" + target.id;
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -1496,7 +1500,7 @@
      SWAP HOST: LOADING / ERROR / CONTENT STATES
   ───────────────────────────────────────────────────────────── */
   /* Helper: find swap host by stable data attribute regardless of
-     what id it currently holds (it temporarily holds "main-content") */
+     what id it currently holds */
   function getSwapHost() {
     /* Primary: stable data attribute — survives any id reassignment */
     return (
@@ -1618,9 +1622,7 @@
   var _swapHost = null; /* swap container [data-lp-swap-host] */
 
   function initElementCache() {
-    /* ensureMainContentTarget() renames the home <main id="lp-main"> to
-       id="main-content" for the skip link, so fall back to the bare tag
-       selector — still the same element, just under its new id. */
+    /* Bare-tag fallback for pages whose <main> has no #lp-main. */
     _lpMain =
       document.getElementById("lp-main") || document.querySelector("main");
     _swapHost =
@@ -3163,9 +3165,8 @@
 
       /* Land keyboard/SR focus on the visible main content instead of
          letting it fall to <body> when update() blurs this button. Same
-         lookup as initElementCache(): ensureMainContentTarget() renames
-         <main id="lp-main"> to #main-content, so fall back to the bare
-         tag. On SPA routes the home <main> is display:none and content
+         lookup as initElementCache(): #lp-main, else the first <main>.
+         On SPA routes the home <main> is display:none and content
          lives in the swap host instead — focus whichever is rendered.
          preventScroll so focus() can't interrupt the smooth scroll. */
       var swapHost =
