@@ -2417,6 +2417,17 @@
       DEMO_VIDEO_SRC +
       '" title="LEAF Platform Demo" allowfullscreen frameborder="0"></iframe>' +
       "</div>" +
+      '<p class="modal-fallback">' +
+      '<a class="modal-fallback-link" href="' +
+      DEMO_VIDEO_SRC +
+      '" target="_blank" rel="noopener noreferrer">' +
+      "Having trouble viewing? Open in new tab" +
+      '<span class="material-symbols-outlined" aria-hidden="true">' +
+      ICON_SVG.open_in_new +
+      "</span>" +
+      '<span class="lp-sr-only">(opens in new tab)</span>' +
+      "</a>" +
+      "</p>" +
       "</div>";
     document.body.appendChild(modal);
   }
@@ -2461,12 +2472,24 @@
         closeDemoModal();
       }
     });
-    /* Simple focus trap: while open, Tab always returns to the close
-       button — the only focusable element in the modal. */
+    /* Focus trap: wraps between the close button (first) and the "open
+       in new tab" fallback link (last) — same first/last wrap as the
+       form/feedback modals. The iframe isn't in getFocusableElements()'s
+       selector, but it sits between the two in DOM order, so native Tab
+       still passes through the player's own controls on the way:
+       close → video → link → close. */
     modal.addEventListener("keydown", function (e) {
-      if (e.key === "Tab" && !modal.hasAttribute("hidden")) {
+      if (e.key !== "Tab" || modal.hasAttribute("hidden")) return;
+      var focusable = getFocusableElements(modal);
+      if (!focusable.length) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
         e.preventDefault();
-        closeBtn.focus();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
     });
   }
@@ -3290,7 +3313,7 @@
     /* Auto-close mobile menu if viewport grows past breakpoint */
     window.addEventListener("resize", function () {
       if (
-        window.innerWidth > 640 &&
+        window.innerWidth > 820 && /* keep in sync with leaf_header.css mobile breakpoint */
         navToggle &&
         navToggle.classList.contains("open")
       ) {
