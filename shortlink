@@ -1,0 +1,49 @@
+<script>
+    // Shortened links:
+    // Link names should only have one word to avoid confusion (e.g. don't need to explain whether something has spaces)
+    let links = {
+        'go': {
+            'teams': 'https://teams.microsoft.com/l/team/19%3aVVK_SN9d7f5QaTBELBbp63xihDMZ2tJUjuZsXXKjadY1%40thread.tacv2/conversations?groupId=56e12324-7248-4ed5-a983-613c9bf3acad&tenantId=e95f1b23-abaf-45ee-821d-b7ab251ab3bf',
+            'community': 'https://teams.microsoft.com/l/team/19%3aVVK_SN9d7f5QaTBELBbp63xihDMZ2tJUjuZsXXKjadY1%40thread.tacv2/conversations?groupId=56e12324-7248-4ed5-a983-613c9bf3acad&tenantId=e95f1b23-abaf-45ee-821d-b7ab251ab3bf',
+            'idea': 'https://leaf.va.gov/launchpad/#ideas',
+        },
+        'link': {
+            'help': 'https://leaf.va.gov/',
+        },
+        'help': {
+            '': 'https://leaf.va.gov/',
+            'library': 'https://leaf.va.gov/launchpad/#help_library',
+        },
+        'cop': {
+            'future': 'https://leaf.va.gov/launchpad/#cop',
+            'officehour': 'https://leaf.va.gov/launchpad/#cop'
+        },
+        'privacy': {
+            'resources': 'https://leaf.va.gov/launchpad/#privacy',
+            'va': 'https://department.va.gov/privacy/',
+            'find_officer': 'https://dvagov.sharepoint.com/sites/OITPrivacyHub/SitePages/Privacy-Officer-Locator-Resources.aspx', 
+            'sharepoint': 'https://dvagov.sharepoint.com/sites/OITPrivacyHub', 
+        }
+    };
+
+    // TODO: server needs to retain GET params when redirecting from leaf.va.gov/ to leaf.va.gov/launchpad
+    let urlParams = new URLSearchParams(window.location.search);
+    for(let i in links) {
+        if(urlParams.get(i) != undefined && links[i][urlParams.get(i)] != undefined) {
+            window.location = links[i][urlParams.get(i)];
+        }
+    }
+
+    // backward compatibility (old format)
+    links.goto = links.go;
+
+    let hashCode = window.location.hash.substring(1);
+    let linkTerms = hashCode.split('=');
+    if(linkTerms[1] == undefined) {
+        linkTerms[1] = '';
+    }
+    if(links[linkTerms[0]] != undefined && links[linkTerms[0]][linkTerms[1]] != undefined) {
+        window.location = links[linkTerms[0]][linkTerms[1]];
+    }
+
+</script>

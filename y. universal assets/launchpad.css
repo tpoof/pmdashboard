@@ -235,14 +235,61 @@ body {
   background: var(--lp-bg);
   border-bottom: 1px solid var(--c-blue10);
 }
+/* First-time users see only .hero-main, centered. .is-returning (set by
+   multigrid.js) splits the hero into heading + "National LEAF Requests". */
 .hero-grid {
-  max-width: 760px;
+  max-width: var(--max);
   margin: 0 auto;
   padding: 0 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+  align-items: center;
+}
+.hero-main {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  max-width: 760px;
+  margin: 0 auto;
+  min-width: 0;
+}
+.hero.is-returning .hero-grid {
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+}
+.hero.is-returning .hero-main {
+  align-items: flex-start;
+  text-align: left;
+  max-width: none;
+  margin: 0;
+}
+.hero.is-returning .hero-sub {
+  margin-left: 0;
+  margin-right: 0;
+}
+.hero.is-returning .hero-actions {
+  justify-content: flex-start;
+}
+/* display:none also keeps the grid out of the accessibility tree. */
+.hero-grid-wrap {
+  display: none;
+  justify-content: center;
+  min-width: 0;
+}
+.hero.is-returning .hero-grid-wrap {
+  display: flex;
+}
+.hero-requests {
+  width: 100%;
+  max-width: 640px;
+  min-width: 0;
+}
+.hero-requests-h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--lp-hl);
+  margin-bottom: 8px;
 }
 .hero-kicker {
   display: inline-flex;
@@ -637,6 +684,22 @@ body {
   }
   .hero-h1 {
     font-size: 2.1rem;
+  }
+  .hero.is-returning .hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hero.is-returning .hero-main {
+    align-items: center;
+    text-align: center;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .hero.is-returning .hero-sub {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hero.is-returning .hero-actions {
+    justify-content: center;
   }
 }
 @media (max-width: 768px) {

@@ -10,6 +10,12 @@
  * Smarty placeholders don't render inside this external .js file, so it
  * must be passed in via the attribute. Omit data-mount to append to <body>.
  *
+ * Optional attributes:
+ *   data-trigger="<id>"      open the grid in a modal from that button
+ *   data-compact="true"      smaller inline grid (Date / Request / Status)
+ *   data-hero-target="<id>"  element that gets .is-returning while the
+ *                            user has at least one record in any source
+ *
  * ASCII-only: non-ASCII bytes here have previously been corrupted by
  * deploy pipelines, silently breaking strings/comments. Keep it ASCII.
  *
@@ -39,6 +45,8 @@
     ),
     mountId: thisScript ? thisScript.dataset.mount : undefined,
     triggerId: thisScript ? thisScript.dataset.trigger : undefined,
+    compact: !!(thisScript && thisScript.dataset.compact === "true"),
+    heroTargetId: thisScript ? thisScript.dataset.heroTarget : undefined,
   };
 
   /*
@@ -126,6 +134,27 @@
         ? session.userID
         : cfg.userID;
 
+  // -- Return-user layout ------------------------------------------------------
+  // A per-user localStorage hint picks the hero layout before any fetch
+  // (avoids layout shift); updateReturningState() then corrects it from data.
+  var HINT_KEY = "lp-mst-returning:" + CURRENT_USER_ID;
+  var heroTargetEl = cfg.heroTargetId
+    ? document.getElementById(cfg.heroTargetId)
+    : null;
+
+  function setReturning(on) {
+    if (heroTargetEl) heroTargetEl.classList.toggle("is-returning", on);
+  }
+
+  // Runs synchronously: the script tag sits right after the hero markup.
+  if (heroTargetEl) {
+    try {
+      if (window.localStorage.getItem(HINT_KEY) === "1") setReturning(true);
+    } catch (e) {
+      // Storage blocked: start in the first-time layout.
+    }
+  }
+
   // Site Creations needs getData 17/21/22 (server/dir/site name) for the
   // Site Ready link. Ideas needs getData 12 (custom status field) and
   // excludes categoryID form_57e89 submissions, which shouldn't appear here.
@@ -158,6 +187,18 @@
     return query;
   }
 
+  // Escapes user-entered values before they're concatenated into markup.
+  function escapeHTML(str) {
+    return String(str == null ? "" : str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  var NEW_TAB_SR = '<span class="sr-only">(opens in new tab)</span>';
+
   // Shared MM/DD/YYYY formatter for all tabs (replaces old locale-dependent
   // toLocaleDateString() calls, so every tab's Date column matches).
   function formatDateMDY(epochSeconds) {
@@ -176,7 +217,7 @@
     if (text === "Not Submitted") {
       return '<span class="mst-status-not-submitted">' + text + "</span>";
     }
-    return "<span>" + text + "</span>";
+    return "<span>" + escapeHTML(text) + "</span>";
   }
 
   // Ideas uses its custom id12 status field; Service Requests/Support share
@@ -196,21 +237,46 @@
 
   // Site Ready link once s1.id17/id21/id22 are populated, else a dash.
   // Returns HTML directly (not via statusHTMLFor) since this is a button.
+  // Site Ready link rule: a *.va.gov host (no port, path or @) plus plain
+  // root/site path segments. Anything else falls back to "-".
+  var SITE_READY_HOST_RE = /^[a-z0-9-]+(\.[a-z0-9-]+)*\.va\.gov$/i;
+  var SITE_READY_SEGMENT_RE = /^[A-Za-z0-9_-]+$/;
+  function isValidSiteReadyParts(host, root, site) {
+    return (
+      SITE_READY_HOST_RE.test(host) &&
+      SITE_READY_SEGMENT_RE.test(root) &&
+      SITE_READY_SEGMENT_RE.test(site)
+    );
+  }
+
   function launchpadStatusHTML(rec) {
     rec = rec || {};
+    var s1 = rec.s1;
     if (
-      rec.s1 !== undefined &&
-      rec.s1.id17 !== undefined &&
-      rec.s1.id22 !== undefined &&
-      rec.s1.id21 !== undefined &&
-      rec.s1.id21 !== ""
+      s1 &&
+      s1.id17 != null &&
+      s1.id22 != null &&
+      s1.id21 != null &&
+      isValidSiteReadyParts(
+        String(s1.id17).trim(),
+        String(s1.id22),
+        String(s1.id21),
+      )
     ) {
+      // Scheme is always https://; never taken from the data.
       var siteURL =
-        "https://" + rec.s1.id17 + "/" + rec.s1.id22 + "/" + rec.s1.id21;
+        "https://" +
+        escapeHTML(String(s1.id17).trim()) +
+        "/" +
+        escapeHTML(s1.id22) +
+        "/" +
+        escapeHTML(s1.id21);
       return (
         '<a href="' +
         siteURL +
-        '" class="mst-site-ready-btn" target="_blank">Site Ready</a>'
+        '" class="mst-site-ready-btn" target="_blank" rel="noopener noreferrer">Site Ready' +
+        NEW_TAB_SR +
+        "</a>"
       );
     }
     return "-";
@@ -230,21 +296,23 @@
     return launchpadStatusHTML(rec) === "-" ? "-" : "Site Ready";
   }
 
-  // Shared "badge recordID + title link" cell -- used by Site Creations'
-  // Project column and by the All Requests Request column.
+  // Shared "badge recordID + title link" cell used by every Request/Project
+  // column. The badge is tabindex="-1" so keyboard users reach one link per row.
   function requestCellHTML(link, recordID, title) {
+    var href = escapeHTML(link);
     return (
       '<span class="mst-lp-recid">' +
       '<a href="' +
-      link +
-      '" tabindex="-1" target="_blank">' +
-      recordID +
+      href +
+      '" tabindex="-1" target="_blank" rel="noopener noreferrer">' +
+      escapeHTML(recordID) +
       "</a>" +
       "</span> " +
       '<a href="' +
-      link +
-      '" target="_blank">' +
-      title +
+      href +
+      '" target="_blank" rel="noopener noreferrer">' +
+      escapeHTML(title) +
+      NEW_TAB_SR +
       "</a>"
     );
   }
@@ -375,6 +443,29 @@
           return allRequestsStatusHTML(row.sourceKey, row.rec);
         },
       },
+    ];
+  }
+
+  // Compact layout (data-compact): Date, Request (with site label beneath),
+  // Status. Sort values match buildAllRequestsColumns().
+  function buildCompactColumns() {
+    var all = buildAllRequestsColumns();
+    var request = all[2];
+    return [
+      all[0],
+      {
+        name: "Request",
+        getValue: request.getValue,
+        render: function (row) {
+          return (
+            request.render(row) +
+            '<span class="mst-site">' +
+            row.site.allRequestsLabel +
+            "</span>"
+          );
+        },
+      },
+      all[3],
     ];
   }
 
@@ -558,7 +649,7 @@
         .map(function (row) {
           return (
             '<tr data-rowkey="' +
-            row.key +
+            escapeHTML(row.key) +
             '">' +
             columns
               .map(function (col) {
@@ -578,8 +669,14 @@
       }
 
       var tableClass = "ip-table" + (opts.extraTableClass ? " " + opts.extraTableClass : "");
+      // Focusable region so keyboard users can scroll the compact table.
+      var wrapAttrs = cfg.compact
+        ? ' tabindex="0" role="region" aria-label="Your requests, scrollable"'
+        : "";
       var tableHTML =
-        '<div class="ip-tableWrap"><table class="' +
+        '<div class="ip-tableWrap"' +
+        wrapAttrs +
+        '><table class="' +
         tableClass +
         '"><thead><tr>' +
         headHTML +
@@ -625,12 +722,15 @@
     if (!state.data) return;
 
     var rows = rowsForSource(sourceKey);
-    var columns = source.isLaunchpad
-      ? buildLaunchpadColumns()
-      : buildGenericColumns();
+    var columns = cfg.compact
+      ? buildCompactColumns()
+      : source.isLaunchpad
+        ? buildLaunchpadColumns()
+        : buildGenericColumns();
     renderDataTable(bodyEl, tab.id, columns, rows, {
       defaultSortIndex: 0,
       defaultSortDir: "desc",
+      extraTableClass: cfg.compact ? "mst-table-compact" : "",
     });
   }
 
@@ -659,7 +759,11 @@
       defaultSortDir: "desc",
       beforeHTML: beforeHTML,
       afterHTML: afterHTML,
-      extraTableClass: tab.kind === "all" ? "mst-table-all" : "",
+      extraTableClass: cfg.compact
+        ? "mst-table-compact"
+        : tab.kind === "all"
+          ? "mst-table-all"
+          : "",
     });
   }
 
@@ -671,6 +775,8 @@
 
     if (tab.kind === "single") {
       renderSingleSourceTab(tab, bodyEl);
+    } else if (cfg.compact) {
+      renderMergedTab(tab, bodyEl, buildCompactColumns());
     } else if (tab.kind === "merged") {
       renderMergedTab(tab, bodyEl, buildGenericColumns());
     } else if (tab.kind === "all") {
@@ -822,6 +928,7 @@
   }
 
   // -- Modal shell: overlay, focus trap, Escape-to-close, focus return --------
+  // Only used with data-trigger; the Launchpad home pages mount inline instead.
   var modalState = {
     overlay: null,
     bodyEl: null,
@@ -991,6 +1098,24 @@
 
       "@media (max-width:780px){.mst-container .ip-tabs{width:100%;flex-wrap:wrap;justify-content:center;}.mst-container .ip-tabsRow{justify-content:center;}.mst-container .ip-table{display:block;overflow-x:auto;white-space:nowrap;}}",
 
+      /* -- Compact inline grid (data-compact) -- */
+      ".mst-container.mst-compact{container-type:inline-size;}",
+      ".mst-container.mst-compact .mst-help-text{display:none;}",
+      ".mst-container.mst-compact .ip-wrap{padding:0;max-width:none;}",
+      ".mst-container.mst-compact .ip-tabs{display:flex;flex-wrap:wrap;gap:4px;padding:5px;border-radius:var(--r-lg,8px);}",
+      ".mst-container.mst-compact .ip-tab{padding:6px 12px;font-size:.875rem;}",
+      ".mst-container.mst-compact .ip-tableWrap{position:relative;max-height:340px;overflow:auto;padding:0;}",
+      ".mst-container.mst-compact .ip-tableWrap:focus-visible{outline:3px solid var(--lp-accent,#005ea2);outline-offset:2px;}",
+      // Beats the 780px rule above that turns .ip-table into a nowrap block.
+      ".mst-container.mst-compact .ip-table{display:table;white-space:normal;min-width:0;font-size:.9rem;}",
+      ".mst-container.mst-compact .ip-table thead th{position:sticky;top:0;z-index:1;}",
+      ".mst-container.mst-compact .mst-site{display:block;font-size:.78rem;color:var(--c-muted,#3d4551);}",
+      ".mst-container .mst-table-compact th:nth-child(1),.mst-container .mst-table-compact td:nth-child(1){white-space:nowrap;width:1%;}",
+      ".mst-container .mst-table-compact th:nth-child(3),.mst-container .mst-table-compact td:nth-child(3){white-space:nowrap;}",
+      // At 480px and under, Status wraps between words so Request gets the width.
+      "@container (max-width:480px){.mst-container.mst-compact .ip-tab{padding:6px 10px;}.mst-container.mst-compact .ip-tableWrap{max-height:300px;}.mst-container.mst-compact .mst-table-compact th:nth-child(3),.mst-container.mst-compact .mst-table-compact td:nth-child(3){white-space:normal;overflow-wrap:break-word;}.mst-container.mst-compact .mst-site-ready-btn{padding:6px 8px;text-align:center;}}",
+      "@media (max-width:480px){.mst-container.mst-compact .ip-tab{padding:6px 10px;}.mst-container.mst-compact .ip-tableWrap{max-height:300px;}.mst-container.mst-compact .mst-table-compact th:nth-child(3),.mst-container.mst-compact .mst-table-compact td:nth-child(3){white-space:normal;overflow-wrap:break-word;}.mst-container.mst-compact .mst-site-ready-btn{padding:6px 8px;text-align:center;}}",
+
       /* -- Modal shell -- */
       ".mst-modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:1000;}",
       ".mst-modal-overlay[hidden]{display:none;}",
@@ -1034,7 +1159,38 @@
   }
 
   // -- Entry point --------------------------------------------------------------
+
+  // Return user = at least one record in any source. Shows the grid as soon
+  // as any source has records; falls back to first-time only once every
+  // source has settled with none (including when all of them errored).
+  function updateReturningState() {
+    if (!heroTargetEl) return;
+    var total = 0;
+    var allSettled = true;
+    Object.keys(siteState).forEach(function (k) {
+      var s = siteState[k];
+      if (s.data && typeof s.data === "object") {
+        total += Object.keys(s.data).length;
+      } else if (!s.error) {
+        allSettled = false;
+      }
+    });
+
+    if (total > 0) {
+      setReturning(true);
+      try {
+        window.localStorage.setItem(HINT_KEY, "1");
+      } catch (e) {}
+    } else if (allSettled) {
+      setReturning(false);
+      try {
+        window.localStorage.removeItem(HINT_KEY);
+      } catch (e) {}
+    }
+  }
+
   function onSourceSettled(sourceKey) {
+    updateReturningState();
     var activeIdx = getActiveTabIndex();
     var tab = TABS[activeIdx];
     if (!tab || tab.sourceKeys.indexOf(sourceKey) === -1) return;
@@ -1095,6 +1251,7 @@
       document.body.appendChild(rootEl);
     }
     rootEl.classList.add("mst-container");
+    if (cfg.compact) rootEl.classList.add("mst-compact");
     buildAndLoadGrid(rootEl);
   }
 

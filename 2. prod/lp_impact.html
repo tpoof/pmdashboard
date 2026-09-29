@@ -8,55 +8,6 @@
     <link rel="stylesheet" href="./files/launchpad.css" />
 
     <style>
-      /* Mission + founding-story intro: a two-column layout specific to
-         this page, so it's scoped here rather than added to launchpad.css.
-         Mirrors .step's grid conventions (64px gap, centered alignment,
-         collapse to one column at the same 900px breakpoint .step uses). */
-      .impact-intro {
-        display: grid;
-        grid-template-columns: minmax(280px, 340px) 1fr;
-        gap: 64px;
-        align-items: center;
-        margin-top: 48px;
-      }
-      .impact-mission {
-        background: var(--lp-hl);
-        color: #fff;
-        border-radius: var(--r-lg);
-        padding: 48px 40px;
-      }
-      /* Reserves the vertical space a large opening-quote glyph would
-         occupy above the label, without rendering an actual glyph.
-         aria-hidden since it carries no content for assistive tech. */
-      .impact-quote-mark {
-        height: 2.75rem;
-      }
-      .impact-mission-label {
-        display: block;
-        font-size: 0.75rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.7);
-        margin-bottom: 12px;
-      }
-      .impact-mission-text {
-        font-size: 1.5rem;
-        font-weight: 800;
-        line-height: 1.35;
-        margin: 0;
-      }
-      /* Matches the reading measure .sec-sub uses elsewhere on this page. */
-      .impact-story .step-body {
-        max-width: 620px;
-      }
-      @media (max-width: 900px) {
-        .impact-intro {
-          grid-template-columns: 1fr;
-          gap: 32px;
-        }
-      }
-
       /* launchpad.css sizes .material-symbols-outlined via font-size, which
          doesn't affect these inlined <svg> icons — these rules restore
          each icon's pre-conversion size without touching launchpad.css. */
@@ -293,41 +244,13 @@
         <section class="section" aria-labelledby="page-h1">
           <div class="wrap">
             <div class="sec-hd ctr">
+              <span class="eyebrow">Built by VA. For VA.</span>
               <h1 class="sec-h2" id="page-h1">Our Impact</h1>
-            </div>
-            <div class="impact-intro">
-              <div class="impact-mission">
-                <div class="impact-quote-mark" aria-hidden="true"></div>
-                <span class="impact-mission-label">Our Mission</span>
-                <p class="impact-mission-text">
-                  To empower the VA workforce by making digital business
-                  implementation accessible, efficient, and cost-effective.
-                </p>
-              </div>
-              <div class="impact-story">
-                <span class="step-tag">Our Story</span>
-                <h2 class="step-h3" id="story-h2">
-                  Built by VA employees, for VA employees
-                </h2>
-                <p class="step-body">
-                  LEAF was created in 2008 by VA employees at the Washington
-                  D.C. VA Medical Center, who saw firsthand that digitizing
-                  everyday business processes shouldn't require a slow,
-                  costly development contract. Because LEAF is built and
-                  owned within VA, it delivers significant cost savings for
-                  VA Medical Centers and Program Offices compared to
-                  conventional custom development, and it was designed from
-                  the start to work seamlessly with VA's existing
-                  technology, including PIV-card two-factor authentication
-                  and single sign-on.
-                </p>
-                <p class="step-body">
-                  In 2013, the VA Center for Innovation and the VHA
-                  Innovation Program invested in LEAF's continued
-                  development, helping mature the platform into the
-                  enterprise-scale solution it is today.
-                </p>
-              </div>
+              <p class="sec-sub">
+                Our mission is to empower the VA workforce by making digital
+                business implementation accessible, efficient, and
+                cost-effective.
+              </p>
             </div>
           </div>
         </section>

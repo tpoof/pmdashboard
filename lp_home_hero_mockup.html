@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Launchpad hero mockup: first-time vs return user</title>
+    <style>
+      :root {
+        --c-white: #fff;
+        --c-gray5: #f0f0f0;
+        --c-gray20: #c9c9c9;
+        --c-blue5: #eff6fb;
+        --c-blue10: #d9e8f6;
+        --c-blue20: #aacdec;
+        --c-blue60v: #005ea2;
+        --c-blue60: #1a4480;
+        --c-text: #1b1b1b;
+        --c-muted: #3d4551;
+        --lp-accent: var(--c-blue60v);
+        --lp-hl: var(--c-blue60);
+        --r: 5px;
+        --r-lg: 8px;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #eef2f6;
+        font-family: "Source Sans 3", "Source Sans Pro", system-ui, sans-serif;
+        font-size: 1.0625rem;
+        line-height: 1.65;
+        color: var(--c-text);
+      }
+      h1,
+      h2,
+      h3,
+      .btn,
+      .tab,
+      th {
+        font-family: "Public Sans", system-ui, sans-serif;
+      }
+      a {
+        color: var(--lp-accent);
+      }
+
+      /* Mockup-only toolbar */
+      .mock-bar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #1b1b1b;
+        color: #fff;
+        padding: 10px 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        font-size: 0.9rem;
+      }
+      .mock-bar strong {
+        margin-right: 4px;
+      }
+      .mock-bar button {
+        font: inherit;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 999px;
+        border: 2px solid #fff;
+        background: transparent;
+        color: #fff;
+        cursor: pointer;
+      }
+      .mock-bar button[aria-pressed="true"] {
+        background: #fff;
+        color: #1b1b1b;
+      }
+      .mock-bar button:focus-visible {
+        outline: 3px solid #f4a300;
+        outline-offset: 2px;
+      }
+      .mock-note {
+        background: #fff8e1;
+        border-bottom: 1px solid #f4a300;
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        color: #4a3800;
+      }
+      .stage {
+        margin: 0 auto;
+        background: #fff;
+        transition: max-width 0.2s;
+        container-type: inline-size;
+      }
+      .stage.narrow {
+        max-width: 390px;
+        box-shadow: 0 0 0 1px var(--c-gray20);
+      }
+      .below {
+        padding: 48px 24px;
+        text-align: center;
+        color: var(--c-muted);
+        background: var(--c-blue5);
+        font-size: 0.95rem;
+      }
+
+      /* Hero */
+      .hero {
+        padding: 64px 0;
+        background: #fff;
+        border-bottom: 1px solid var(--c-blue10);
+      }
+      .hero-grid {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 40px;
+        align-items: center;
+      }
+      .hero.is-returning .hero-grid {
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      }
+      .hero-main {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        max-width: 760px;
+        margin: 0 auto;
+      }
+      .hero.is-returning .hero-main {
+        align-items: flex-start;
+        text-align: left;
+        margin: 0;
+        max-width: none;
+      }
+      .hero-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--lp-accent);
+        margin-bottom: 18px;
+        padding: 4px 12px;
+        background: var(--c-blue5);
+        border: 1px solid var(--c-blue20);
+        border-radius: 999px;
+      }
+      .hero-h1 {
+        font-size: clamp(2.1rem, 4.5vw, 3.25rem);
+        font-weight: 800;
+        color: var(--lp-hl);
+        line-height: 1.1;
+        letter-spacing: -0.025em;
+        margin-bottom: 20px;
+      }
+      .hero-h1 em {
+        font-style: normal;
+        color: var(--lp-accent);
+      }
+      .hero-sub {
+        font-size: 1.15rem;
+        color: var(--c-muted);
+        margin-bottom: 36px;
+        max-width: 560px;
+      }
+      .hero-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .hero.is-returning .hero-actions {
+        justify-content: flex-start;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 13px 24px;
+        border-radius: var(--r);
+        border: 2px solid transparent;
+        font-size: 1rem;
+        font-weight: 700;
+        text-decoration: none;
+        line-height: 1;
+      }
+      .btn-pri {
+        background: var(--lp-accent);
+        color: #fff;
+        border-color: var(--lp-accent);
+      }
+      .btn-sec {
+        color: var(--lp-accent);
+        border-color: var(--lp-accent);
+      }
+      .btn:focus-visible {
+        outline: 3px solid var(--lp-hl);
+        outline-offset: 3px;
+      }
+
+      /* Right container: grid centered, fits container width */
+      .hero-grid-wrap {
+        display: none;
+        justify-content: center;
+        min-width: 0;
+      }
+      .hero.is-returning .hero-grid-wrap {
+        display: flex;
+      }
+      .mst {
+        width: 100%;
+        max-width: 640px;
+        min-width: 0;
+      }
+      .mst-title {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: var(--lp-hl);
+        margin-bottom: 8px;
+      }
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 5px;
+        background: var(--c-blue5);
+        border: 1px solid var(--c-blue10);
+        border-radius: 999px;
+        list-style: none;
+        margin-bottom: 10px;
+      }
+      .tab {
+        border: 0;
+        background: transparent;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.875rem;
+        cursor: pointer;
+        color: var(--c-muted);
+        border-bottom: 3px solid transparent;
+      }
+      .tab[aria-selected="true"] {
+        background: #fff;
+        color: var(--lp-accent);
+        border-bottom-color: var(--lp-accent);
+        box-shadow: 0 2px 8px rgba(0, 10, 40, 0.06);
+      }
+      .tab:hover:not([aria-selected="true"]) {
+        border-bottom-color: var(--c-blue20);
+      }
+      .tab:focus-visible,
+      .scroll:focus-visible,
+      td a:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+      .summary {
+        font-size: 0.875rem;
+        color: var(--c-muted);
+        margin-bottom: 8px;
+      }
+      .summary b {
+        color: var(--lp-hl);
+      }
+      .scroll {
+        max-height: 340px;
+        overflow: auto;
+        background: #fff;
+        border: 1px solid var(--c-blue10);
+        border-radius: var(--r-lg);
+        box-shadow: 0 2px 8px rgba(0, 10, 40, 0.06);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+      th {
+        position: sticky;
+        top: 0;
+        background: var(--c-blue10);
+        color: var(--lp-hl);
+        text-align: left;
+        padding: 0;
+        border-bottom: 1px solid var(--c-gray20);
+      }
+      th button {
+        all: unset;
+        box-sizing: border-box;
+        display: block;
+        width: 100%;
+        padding: 8px 10px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      th button:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: -3px;
+      }
+      td {
+        padding: 8px 10px;
+        border-top: 1px solid var(--c-gray20);
+        vertical-align: top;
+        overflow-wrap: anywhere;
+      }
+      tbody tr:nth-child(even) {
+        background: var(--c-gray5);
+      }
+      td.date {
+        white-space: nowrap;
+        width: 1%;
+      }
+      .recid {
+        display: inline-block;
+        background: var(--c-text);
+        color: #fff;
+        border-radius: var(--r);
+        padding: 1px 7px;
+        font-weight: 900;
+        font-size: 0.8rem;
+        margin-right: 4px;
+        text-decoration: none;
+      }
+      .site {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--c-muted);
+      }
+      .status {
+        white-space: nowrap;
+      }
+      .not-sub {
+        color: #b91c1c;
+        font-style: italic;
+        font-size: 0.85em;
+      }
+      .ready {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: var(--r);
+        border: 1px solid var(--c-blue20);
+        background: var(--c-blue5);
+        font-weight: 700;
+        text-decoration: none;
+        font-size: 0.85rem;
+      }
+
+      /* Container queries so the Phone width toggle reflects the real breakpoint;
+     the production CSS uses the equivalent @media (max-width:900px). */
+      @container (max-width:900px) {
+        .hero {
+          padding: 48px 0;
+        }
+        .hero.is-returning .hero-grid {
+          grid-template-columns: 1fr;
+        }
+        .hero.is-returning .hero-main {
+          align-items: center;
+          text-align: center;
+        }
+        .hero.is-returning .hero-actions {
+          justify-content: center;
+        }
+      }
+      @container (max-width:480px) {
+        .tab {
+          padding: 6px 10px;
+        }
+        .scroll {
+          max-height: 300px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .stage {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="mock-bar"
+      role="group"
+      aria-label="Mockup controls (not part of the page)"
+    >
+      <strong>Mockup view:</strong>
+      <button type="button" data-state="first" aria-pressed="true">
+        First-time user
+      </button>
+      <button type="button" data-state="return" aria-pressed="false">
+        Return user
+      </button>
+      <span aria-hidden="true">|</span>
+      <button type="button" data-width="full" aria-pressed="true">
+        Desktop
+      </button>
+      <button type="button" data-width="narrow" aria-pressed="false">
+        Phone width
+      </button>
+    </div>
+    <p class="mock-note">
+      Mockup only. Data below is sample data. The toolbar above will not exist
+      in the real page.
+    </p>
+
+    <div class="stage" id="stage">
+      <section class="hero" id="hero" aria-labelledby="hero-h1">
+        <div class="hero-grid">
+          <div class="hero-main">
+            <span class="hero-kicker">Built by VA. For VA.</span>
+            <h1 class="hero-h1" id="hero-h1">
+              Digitize any VA<br />business process<br /><em>fast.</em>
+            </h1>
+            <p class="hero-sub">
+              LEAF is a secure, no-code/low-code platform that empowers every VA
+              team to build custom workflows, forms, and reports.
+            </p>
+            <div class="hero-actions">
+              <a href="#" class="btn btn-pri">Build a new site</a>
+              <a href="#" class="btn btn-sec">Find a LEAF Site</a>
+            </div>
+          </div>
+
+          <div class="hero-grid-wrap" id="gridWrap">
+            <section class="mst" aria-labelledby="mst-title">
+              <h2 class="mst-title" id="mst-title">National LEAF Requests</h2>
+              <ul
+                class="tabs"
+                role="tablist"
+                aria-label="LEAF request types"
+                id="tabs"
+              ></ul>
+              <p class="summary" id="summary" aria-live="polite"></p>
+              <div
+                class="scroll"
+                id="scroll"
+                tabindex="0"
+                role="region"
+                aria-label="Your requests, scrollable"
+              >
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col" aria-sort="descending">
+                        <button type="button">Date</button>
+                      </th>
+                      <th scope="col" aria-sort="none">
+                        <button type="button">Request</button>
+                      </th>
+                      <th scope="col" aria-sort="none">
+                        <button type="button">Status</button>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="rows"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+      <div class="below">
+        Rest of the home page (Finder, How LEAF works, etc.) continues here.
+      </div>
+    </div>
+
+    <script>
+      var DATA = {
+        all: [
+          [
+            "09/24/2026",
+            "Site Creations",
+            "4021",
+            "Facilities Tracking",
+            "ready",
+          ],
+          [
+            "09/18/2026",
+            "National Support",
+            "1187",
+            "Consultation: onboarding workflow",
+            "Pending Review",
+          ],
+          [
+            "09/02/2026",
+            "Ideas",
+            "392",
+            "Saved drafts on long forms",
+            "Under Consideration",
+          ],
+          [
+            "08/30/2026",
+            "National Support",
+            "2210",
+            "Spotlight nomination",
+            "Not Submitted",
+          ],
+          ["08/12/2026", "Site Creations", "3977", "Travel Approvals", "ready"],
+          [
+            "07/29/2026",
+            "National Support",
+            "1102",
+            "Training registration",
+            "Completed",
+          ],
+          [
+            "07/03/2026",
+            "Ideas",
+            "371",
+            "Bulk reassign requests",
+            "Not Submitted",
+          ],
+          ["06/20/2026", "Site Creations", "3850", "HR Onboarding", "ready"],
+        ],
+      };
+      var TABS = [
+        {
+          name: "All Requests",
+          filter: function () {
+            return true;
+          },
+          desc: "LEAF National requests",
+        },
+        {
+          name: "Site Creations",
+          filter: function (r) {
+            return r[1] === "Site Creations";
+          },
+          desc: "LEAF sites you’ve requested",
+        },
+        {
+          name: "National Support",
+          filter: function (r) {
+            return r[1] === "National Support";
+          },
+          desc: "support requests and consultations",
+        },
+        {
+          name: "Ideas",
+          filter: function (r) {
+            return r[1] === "Ideas";
+          },
+          desc: "ideas you’ve submitted to improve LEAF",
+        },
+      ];
+      var tabsEl = document.getElementById("tabs"),
+        rowsEl = document.getElementById("rows"),
+        sumEl = document.getElementById("summary");
+      var active = 0;
+
+      function statusHTML(s) {
+        if (s === "ready") return '<a class="ready" href="#">Site Ready</a>';
+        if (s === "Not Submitted")
+          return '<span class="not-sub">Not Submitted</span>';
+        return "<span>" + s + "</span>";
+      }
+      function render() {
+        var t = TABS[active],
+          list = DATA.all.filter(t.filter);
+        rowsEl.innerHTML = list
+          .map(function (r) {
+            return (
+              '<tr><td class="date">' +
+              r[0] +
+              "</td>" +
+              '<td><a class="recid" href="#" tabindex="-1">' +
+              r[2] +
+              '</a><a href="#">' +
+              r[3] +
+              '</a><span class="site">' +
+              r[1] +
+              "</span></td>" +
+              '<td class="status">' +
+              statusHTML(r[4]) +
+              "</td></tr>"
+            );
+          })
+          .join("");
+        sumEl.innerHTML =
+          "<b>" + t.name + "</b> — Showing " + list.length + " " + t.desc;
+        [].forEach.call(tabsEl.querySelectorAll(".tab"), function (b, i) {
+          b.setAttribute("aria-selected", i === active);
+          b.tabIndex = i === active ? 0 : -1;
+        });
+      }
+      TABS.forEach(function (t, i) {
+        var li = document.createElement("li");
+        li.setAttribute("role", "presentation");
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "tab";
+        b.setAttribute("role", "tab");
+        b.textContent = t.name;
+        b.addEventListener("click", function () {
+          active = i;
+          render();
+        });
+        b.addEventListener("keydown", function (e) {
+          var n =
+            e.key === "ArrowRight"
+              ? (i + 1) % TABS.length
+              : e.key === "ArrowLeft"
+                ? (i - 1 + TABS.length) % TABS.length
+                : null;
+          if (n === null) return;
+          e.preventDefault();
+          active = n;
+          render();
+          tabsEl.querySelectorAll(".tab")[n].focus();
+        });
+        li.appendChild(b);
+        tabsEl.appendChild(li);
+      });
+      render();
+
+      function setPressed(sel, attr, val) {
+        [].forEach.call(document.querySelectorAll(sel), function (b) {
+          b.setAttribute("aria-pressed", b.getAttribute(attr) === val);
+        });
+      }
+      document.querySelectorAll("[data-state]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          document
+            .getElementById("hero")
+            .classList.toggle("is-returning", b.dataset.state === "return");
+          setPressed("[data-state]", "data-state", b.dataset.state);
+        });
+      });
+      document.querySelectorAll("[data-width]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          document
+            .getElementById("stage")
+            .classList.toggle("narrow", b.dataset.width === "narrow");
+          setPressed("[data-width]", "data-width", b.dataset.width);
+        });
+      });
+    </script>
+  </body>
+</html>

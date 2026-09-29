@@ -215,6 +215,62 @@
         }
       }
 
+      /* ── Mission + founding story ── */
+      .story-grid {
+        display: grid;
+        grid-template-columns: minmax(280px, 340px) 1fr;
+        gap: 64px;
+        align-items: center;
+      }
+      .story-mission {
+        background: var(--lp-hl);
+        color: #fff;
+        border-radius: var(--r-lg);
+        padding: 48px 40px;
+      }
+      /* Reserves the space a large opening-quote glyph would take above
+         the label, without rendering one. */
+      .story-mission-spacer {
+        height: 2.75rem;
+      }
+      .story-mission-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 12px;
+      }
+      .story-mission-text {
+        font-size: 1.5rem;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+      /* Caps line length at ~70 characters so the prose doesn't run the
+         full width of the right track on wide screens. */
+      .story-text .step-body {
+        max-width: 640px;
+      }
+      /* .step-body's own margin-bottom already spaces the paragraphs;
+         dropping it on the last one keeps the column truly centered
+         against the mission card. */
+      .story-text .step-body:last-child {
+        margin-bottom: 0;
+      }
+      /* Stacks at the same breakpoint launchpad.css uses for .step. */
+      @media (max-width: 900px) {
+        .story-grid {
+          grid-template-columns: 1fr;
+          gap: 32px;
+        }
+      }
+      @media (max-width: 640px) {
+        .story-mission {
+          padding: 32px 24px;
+        }
+      }
+
       /* ── LEAF Finder widget ── */
       /* Width matches .wrap's container convention (max-width: var(--max),
          no separate percentage narrowing) so the box aligns with every
@@ -777,12 +833,10 @@
       ></div>
 
       <main id="lp-main" tabindex="-1">
-        <!-- ══════════════════════════════════════════
-             HERO
-        ══════════════════════════════════════════ -->
-        <section class="hero" aria-labelledby="hero-h1">
+        <!-- HERO: .is-returning (set by multigrid.js) shows the requests grid -->
+        <section class="hero" id="lp-hero" aria-labelledby="hero-h1">
           <div class="hero-grid">
-            <div>
+            <div class="hero-main">
               <span class="hero-kicker">
                 <span class="material-symbols-outlined" aria-hidden="true"
                   ><svg viewBox="0 -960 960 960" fill="currentColor">
@@ -826,49 +880,68 @@
                   ></span>
                   Find a LEAF Site
                 </a>
-                <span class="lp-tooltip-wrap">
-                  <button
-                    type="button"
-                    class="btn btn-sec"
-                    id="mst-open-btn"
-                    aria-describedby="mst-open-btn-tip"
-                  >
-                    <span class="material-symbols-outlined" aria-hidden="true"
-                      ><svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        height="24px"
-                        viewBox="0 -960 960 960"
-                        width="24px"
-                        fill="currentColor"
-                      >
-                        <path
-                          d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"
-                        /></svg
-                    ></span>
-                    View My Requests
-                  </button>
-                  <!-- role="tooltip" + aria-describedby on the button means
-                       screen readers announce this on focus; the CSS below
-                       only handles sighted visibility. -->
-                  <span class="lp-tooltip" id="mst-open-btn-tip" role="tooltip"
-                    >View My LEAF National Requests</span
-                  >
-                </span>
               </div>
+            </div>
+            <div class="hero-grid-wrap">
+              <section class="hero-requests" aria-labelledby="hero-requests-h2">
+                <h2 class="hero-requests-h2" id="hero-requests-h2">
+                  National LEAF Requests
+                </h2>
+                <div id="mst-root"></div>
+              </section>
             </div>
           </div>
         </section>
-
-        <!-- Multi-Site LEAF Grid -->
-        <!-- Modal + mount point + Smarty-rendered config — place once anywhere in <body> -->
-        <div id="mst-root"></div>
         <script
           src="./files/multigrid.js"
           data-user-id="<!--{$userID}-->"
           data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
           data-mount="mst-root"
-          data-trigger="mst-open-btn"
+          data-compact="true"
+          data-hero-target="lp-hero"
         ></script>
+
+        <!-- ══════════════════════════════════════════
+             OUR STORY — mission + founding story
+        ══════════════════════════════════════════ -->
+        <section class="section" aria-labelledby="story-h2">
+          <div class="wrap">
+            <div class="story-grid">
+              <div class="story-mission">
+                <div class="story-mission-spacer" aria-hidden="true"></div>
+                <span class="story-mission-label">Our Mission</span>
+                <p class="story-mission-text">
+                  To empower the VA workforce by making digital business
+                  implementation accessible, efficient, and cost-effective.
+                </p>
+              </div>
+              <div class="story-text">
+                <span class="step-tag">Our Story</span>
+                <h2 class="step-h3" id="story-h2">
+                  Built by VA employees, for VA employees
+                </h2>
+                <p class="step-body">
+                  LEAF was created in 2008 by VA employees at the Washington
+                  D.C. VA Medical Center, who saw firsthand that digitizing
+                  everyday business processes shouldn't require a slow,
+                  costly development contract. Because LEAF is built and
+                  owned within VA, it delivers significant cost savings for
+                  VA Medical Centers and Program Offices compared to
+                  conventional custom development, and it was designed from
+                  the start to work seamlessly with VA's existing
+                  technology, including PIV-card two-factor authentication
+                  and single sign-on.
+                </p>
+                <p class="step-body">
+                  In 2013, the VA Center for Innovation and the VHA
+                  Innovation Program invested in LEAF's continued
+                  development, helping mature the platform into the
+                  enterprise-scale solution it is today.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <!-- ══════════════════════════════════════════
              FINDER — "What can LEAF do for me?"
