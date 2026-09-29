@@ -278,7 +278,7 @@ body {
   font-size: 1.15rem;
   color: var(--c-muted);
   line-height: 1.65;
-  margin-bottom: 36px;
+  margin: 0 auto 36px;
   max-width: 560px;
 }
 .hero-actions {
@@ -624,7 +624,6 @@ body {
    RESPONSIVE
 ───────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .hero-grid,
   .step {
     grid-template-columns: 1fr;
     gap: 32px;

@@ -445,23 +445,6 @@ button.dd-link {
   margin: 6px 0;
 }
 
-/* ── Nested submenu (e.g. Community of Practice under Voice of the
-   Customer) ── Permanently visible, indented under its parent item —
-   no expand/collapse. Same shape in the desktop dd-panel and the
-   mobile acc-panel — both render from linkHTML()'s shared
-   nestedLinkHTML() output, so one set of rules covers both. */
-.dd-sub-list {
-  list-style: none;
-  display: grid;
-  gap: 2px;
-  margin: 2px 0 6px 20px;
-  padding: 0 0 0 14px;
-  border-left: 2px solid var(--nav-panel-bd);
-}
-.dd-link--sub {
-  padding: 8px 10px;
-}
-
 /* ── Request Support nav button ──
    Outlined treatment, unlike .dd-trigger's plain borderless text — the
    colored border + label reads as a distinct call-to-action without

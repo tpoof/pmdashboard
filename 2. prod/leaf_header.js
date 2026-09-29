@@ -138,7 +138,10 @@
 
   /* Single source of truth for desktop + mobile nav. href values are
      also matched against a static page's own URL for breadcrumb
-     auto-detect. Placeholder hrefs (#) are skipped by the router. */
+     auto-detect. Placeholder hrefs (#) are skipped by the router.
+     breadcrumbParent (optional) is another item's href in the same
+     section; it adds that item to the breadcrumb trail without
+     nesting the item in the dropdown. */
   var NAV_SECTIONS = [
     {
       label: "About LEAF",
@@ -204,20 +207,20 @@
           title: "Voice of the Customer",
           desc: "Share feedback to help shape LEAF",
           href: "/launchpad/report.php?a=lp_voc",
-          children: [
-            {
-              icon: "diversity_3",
-              title: "Community of Practice",
-              desc: "Connect with LEAF site admins VA-wide",
-              href: "/launchpad/report.php?a=lp_cop",
-            },
-          ],
+        },
+        {
+          icon: "diversity_3",
+          title: "Community of Practice",
+          desc: "Connect with LEAF site admins VA-wide",
+          href: "/launchpad/report.php?a=lp_cop",
+          breadcrumbParent: "/launchpad/report.php?a=lp_voc",
         },
         {
           icon: "lightbulb",
           title: "Submit an Idea",
           desc: "Suggest a feature or improvement for LEAF",
           href: "https://leaf.va.gov/platform/ideas/",
+          breadcrumbParent: "/launchpad/report.php?a=lp_voc",
         },
         {
           icon: "privacy_tip",
@@ -309,11 +312,10 @@
   };
 
   function buildRouteMap() {
-    /* Registers one item into ROUTE_MAP — shared by top-level items and
-       nested children. External items (real target="_blank" links) are
-       skipped. parentItem (nested children only) fills in route.parent
-       so buildTrailHTML() renders the full 3-level breadcrumb. */
-    function registerItem(item, section, parentItem) {
+    /* Registers one item into ROUTE_MAP. External items (real
+       target="_blank" links) are skipped. breadcrumbParent fills in
+       route.parent so buildTrailHTML() adds the parent crumb. */
+    function registerItem(item, section) {
       if (
         item.divider ||
         !item.href ||
@@ -331,6 +333,11 @@
           iframe: !!item.iframe,
           fixedHeight: !!item.fixedHeight,
         };
+        var parentItem =
+          item.breadcrumbParent &&
+          section.items.find(function (candidate) {
+            return candidate.href === item.breadcrumbParent;
+          });
         if (parentItem) {
           ROUTE_MAP[key].parent = {
             label: parentItem.title,
@@ -342,9 +349,6 @@
     NAV_SECTIONS.forEach(function (section) {
       section.items.forEach(function (item) {
         registerItem(item, section);
-        (item.children || []).forEach(function (child) {
-          registerItem(child, section, item);
-        });
       });
     });
     /* Register sub-routes (pages nested under a nav item) */
@@ -523,28 +527,20 @@
   ───────────────────────────────────────────────────────────── */
   function linkHTML(item) {
     if (item.divider) return '<hr class="dd-divider" aria-hidden="true">';
-    if (item.children && item.children.length) return nestedLinkHTML(item);
     return `<li>${linkRowHTML(item)}</li>`;
   }
 
-  /* Renders one <button class="dd-link">, shared by plain items and
-     nested rows. <button data-href>, not <a href>, so the status bar
-     never previews the destination on hover — wireLinkIntercept()
-     reads data-href for navigation. */
-  function linkRowHTML(item, extraClass) {
+  /* Renders one <button class="dd-link">. <button data-href>, not
+     <a href>, so the status bar never previews the destination on
+     hover — wireLinkIntercept() reads data-href for navigation. */
+  function linkRowHTML(item) {
     var badgeHTML = item.badge
       ? `<span class="dd-badge">${item.badge}</span>`
       : "";
     /* Flags items that trigger in-page behavior (e.g. opening the demo
        modal) instead of navigating — read by wireLinkIntercept(). */
     var actionAttr = item.action ? ` data-action="${item.action}"` : "";
-    var cls = extraClass ? `dd-link ${extraClass}` : "dd-link";
-    /* Submenu items (dd-link--sub) render text-only — an icon would
-       crowd the already-indented title/description. */
-    var iconHTML =
-      extraClass === "dd-link--sub"
-        ? ""
-        : `
+    var iconHTML = `
           <span class="dd-link-ico">
             <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG[item.icon] || ""}</span>
           </span>`;
@@ -553,7 +549,7 @@
        Not used by any current item; kept for a future external link. */
     if (item.external) {
       return `
-        <a class="${cls}" href="${item.href}" data-nav-external target="_blank" rel="noopener noreferrer">${iconHTML}
+        <a class="dd-link" href="${item.href}" data-nav-external target="_blank" rel="noopener noreferrer">${iconHTML}
           <span class="dd-link-text">
             <span class="dd-link-title-row">
               <strong>${item.title}</strong>
@@ -565,7 +561,7 @@
         </a>`;
     }
     return `
-        <button class="${cls}" data-href="${item.href}"${actionAttr}>${iconHTML}
+        <button class="dd-link" data-href="${item.href}"${actionAttr}>${iconHTML}
           <span class="dd-link-text">
             <span class="dd-link-title-row">
               <strong>${item.title}</strong>
@@ -574,24 +570,6 @@
             <span class="dd-link-desc">${item.desc}</span>
           </span>
         </button>`;
-  }
-
-  /* Renders a parent item plus its children as a permanently-visible
-     indented list — no expand/collapse. Shared by desktop dd-panel and
-     mobile acc-panel since both call linkHTML() over NAV_SECTIONS. */
-  function nestedLinkHTML(item) {
-    var childItemsHTML = item.children
-      .map(function (child) {
-        return `<li>${linkRowHTML(child, "dd-link--sub")}</li>`;
-      })
-      .join("");
-    return `
-      <li class="dd-item-nested">
-        ${linkRowHTML(item)}
-        <ul class="dd-sub-list">
-          ${childItemsHTML}
-        </ul>
-      </li>`;
   }
 
   function desktopSectionHTML(section, i) {
@@ -1680,7 +1658,8 @@
 
   /* ─────────────────────────────────────────────────────────────
      BREADCRUMB
-     Trail: LEAF Launchpad → [Section] → [Page Title]. updateBreadcrumb()
+     Trail: LEAF Launchpad → [Section] → [Parent] → [Page Title], where
+     [Parent] comes from route.parent when set. updateBreadcrumb()
      owns the persistent #lpBreadcrumb element, filling or hiding it as
      the active route changes.
   ───────────────────────────────────────────────────────────── */
@@ -1696,11 +1675,12 @@
         var isLast = i === trail.length - 1;
         var sep =
           i > 0 ? '<span class="lp-bc-sep" aria-hidden="true">/</span>' : "";
-        var node =
-          isLast || !crumb.href
-            ? '<span class="lp-bc-current" aria-current="page">' +
-              crumb.label +
-              "</span>"
+        var node = isLast
+          ? '<span class="lp-bc-current" aria-current="page">' +
+            crumb.label +
+            "</span>"
+          : !crumb.href
+            ? '<span class="lp-bc-section">' + crumb.label + "</span>"
             : '<a href="' + crumb.href + '">' + crumb.label + "</a>";
         return sep + node;
       })

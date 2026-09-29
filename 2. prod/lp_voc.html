@@ -220,12 +220,10 @@
         line-height: 1.55;
       }
 
-      .voc-ux-band {
-        background: var(--c-white);
-        border-top: 1px solid var(--c-blue10);
-      }
+      /* UX Program closing band: reuses launchpad.css's shared
+         .nl footer band (.nl, .nl-h2, .nl-sub, .nl-btn). Rules below
+         only adapt it to this single-row text + button layout. */
       .voc-ux-inner {
-        padding: 2.5rem 0;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -241,53 +239,25 @@
         font-size: 0.75rem;
         letter-spacing: 0.1em;
         text-transform: uppercase;
-        color: var(--lp-accent);
+        color: rgba(255, 255, 255, 0.75);
         margin: 0 0 0.4rem;
       }
-      .voc-ux-heading {
-        font-family: "Public Sans", sans-serif;
-        font-size: clamp(1.1rem, 2vw, 1.4rem);
-        color: var(--c-text);
-        margin: 0 0 0.4rem;
-      }
-      .voc-ux-desc {
-        font-family: "Source Sans 3", sans-serif;
-        font-size: 1rem;
-        color: var(--c-muted);
-        margin: 0;
+      .voc-ux-inner .nl-sub {
+        margin-bottom: 0;
+        max-width: 640px;
         line-height: 1.6;
       }
       .voc-ux-btn {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        background: var(--lp-accent);
-        color: #fff;
-        font-family: "Public Sans", sans-serif;
         font-size: 1rem;
-        border: none;
-        border-radius: var(--r);
         padding: 0.75rem 1.75rem;
-        text-decoration: none;
-        white-space: nowrap;
-        transition: filter 0.2s;
         flex-shrink: 0;
-        cursor: pointer;
-      }
-      .voc-ux-btn:hover {
-        filter: brightness(1.1);
-      }
-      .voc-ux-btn:focus-visible {
-        outline: 3px solid var(--lp-accent);
-        outline-offset: 3px;
       }
       .voc-ux-btn,
-      .voc-ux-btn:link,
-      .voc-ux-btn:visited {
-        color: #fff !important;
-      }
       .voc-ux-btn .material-symbols-outlined {
-        color: #fff !important;
+        color: var(--lp-nl-bg) !important;
       }
       .voc-ux-btn .material-symbols-outlined svg {
         width: 1.1rem;
@@ -714,15 +684,15 @@
           </div>
         </section>
 
-        <section class="voc-ux-band" aria-labelledby="voc-ux-h2">
+        <section class="nl" aria-labelledby="voc-ux-h2">
           <div class="wrap">
             <div class="voc-ux-inner">
               <div class="voc-ux-text">
                 <p class="voc-ux-eyebrow">User Experience Program</p>
-                <h2 class="voc-ux-heading" id="voc-ux-h2">
+                <h2 class="nl-h2" id="voc-ux-h2">
                   Help shape LEAF by joining our user research community
                 </h2>
-                <p class="voc-ux-desc">
+                <p class="nl-sub">
                   Register to be part of our User Experience Program and receive
                   notifications when we have usability tests, design reviews, or
                   research sessions that need your perspective. Your
@@ -734,7 +704,7 @@
                    runs stripLeafChrome() on the modal iframe's load event. -->
               <button
                 type="button"
-                class="voc-ux-btn"
+                class="nl-btn voc-ux-btn"
                 data-action="form-modal"
                 data-modal-src="https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=LEAF_Start_Request&amp;id=form_68543"
                 data-modal-title="Join the UX Program"
@@ -768,11 +738,6 @@
         ></span>
       </button>
     </div>
-
-    <!-- Breadcrumb data: must be set before leaf_breadcrumb.js loads -->
-    <script>
-      window.LEAF_BREADCRUMB = [{ label: "Voice of the Customer" }];
-    </script>
 
     <script>
       (() => {
