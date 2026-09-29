@@ -1410,8 +1410,52 @@
         margin-left: 2px;
       }
 
+      /* How It Works only: shell restyled to match Launchpad's shared
+         .lp-modal / .modal-hd / .modal-close--inline chrome in
+         leaf_header.css, which this standalone site doesn't load. Scoped
+         to #howItWorksModal so addIdeaModal and ipCommentModal keep the
+         default .ip-modal look. --ip-* tokens resolve to the same values
+         as leaf_header.css's --nav-* ones. */
       .ip-howItWorks__content {
         max-width: 900px;
+        box-shadow: none;
+      }
+      #howItWorksModal .ip-modal__overlay {
+        background: rgba(0, 0, 0, 0.82);
+      }
+      #howItWorksModal .ip-modal__header {
+        gap: 12px;
+        padding: 14px 16px;
+      }
+      #howItWorksModal .ip-modal__title {
+        font-size: 1rem;
+        color: var(--ip-text);
+      }
+      .ip-howItWorks__close {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--ip-muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .ip-howItWorks__close:hover {
+        background: var(--ip-blue-lt);
+        color: var(--ip-blue);
+      }
+      .ip-howItWorks__close:focus-visible {
+        outline: 3px solid var(--ip-blue);
+        outline-offset: 2px;
+      }
+      .ip-howItWorks__close .ip-icon {
+        width: 20px;
+        height: 20px;
       }
       .ip-howItWorks__intro {
         font-size: 0.95rem;
@@ -3686,11 +3730,21 @@
             </h3>
             <button
               type="button"
-              class="ip-btn ip-btn--icon"
+              class="ip-howItWorks__close"
               aria-label="Close"
               data-ip-close="howItWorksModal"
             >
-              <span aria-hidden="true" style="font-size: 1.3rem">×</span>
+              <svg
+                class="ip-icon"
+                viewBox="0 -960 960 960"
+                fill="currentColor"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+                />
+              </svg>
             </button>
           </div>
           <div class="ip-modal__body">
