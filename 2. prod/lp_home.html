@@ -853,8 +853,20 @@
       ></div>
 
       <main id="lp-main" tabindex="-1">
-        <!-- HERO: .is-returning (set by multigrid.js) shows the requests grid -->
+        <!-- HERO: layout classes are set by multigrid.js applyLayout() -->
         <section class="hero" id="lp-hero" aria-labelledby="hero-h1">
+          <!--{if $empMembership['groupID'][1]}-->
+          <div class="hero-preview-bar">
+            <span>Admin preview: first-time view. Nothing is saved.</span>
+            <button
+              type="button"
+              id="mst-preview-exit"
+              aria-keyshortcuts="Alt+Shift+F"
+            >
+              Exit preview (Alt+Shift+F)
+            </button>
+          </div>
+          <!--{/if}-->
           <div class="hero-grid">
             <div class="hero-main">
               <span class="hero-kicker">
@@ -900,13 +912,48 @@
                   ></span>
                   Find a LEAF Site
                 </a>
+                <span class="lp-tooltip-wrap hero-view-requests">
+                  <button
+                    type="button"
+                    class="btn btn-sec"
+                    id="mst-open-btn"
+                    aria-describedby="mst-open-btn-tip"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true"
+                      ><svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        height="24px"
+                        viewBox="0 -960 960 960"
+                        width="24px"
+                        fill="currentColor"
+                      >
+                        <path
+                          d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"
+                        /></svg
+                    ></span>
+                    View My Requests
+                  </button>
+                  <span class="lp-tooltip" id="mst-open-btn-tip" role="tooltip"
+                    >View My LEAF National Requests</span
+                  >
+                </span>
               </div>
             </div>
             <div class="hero-grid-wrap">
               <section class="hero-requests" aria-labelledby="hero-requests-h2">
-                <h2 class="hero-requests-h2" id="hero-requests-h2">
-                  National LEAF Requests
-                </h2>
+                <div class="hero-requests-hd">
+                  <h2 class="hero-requests-h2" id="hero-requests-h2">
+                    National LEAF Requests
+                  </h2>
+                  <button
+                    type="button"
+                    class="btn btn-sec btn-sm"
+                    id="mst-hide-btn"
+                    aria-label="Hide National LEAF Requests panel"
+                  >
+                    Hide
+                  </button>
+                </div>
                 <div id="mst-root"></div>
               </section>
             </div>

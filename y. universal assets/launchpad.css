@@ -226,17 +226,25 @@ body {
 .btn-sec:hover {
   background: var(--lp-bg-alt);
 }
+.btn-sm {
+  padding: 8px 14px;
+  font-size: 0.875rem;
+}
 
 /* ─────────────────────────────────────────────
    HERO
 ───────────────────────────────────────────── */
 .hero {
+  position: relative;
   padding: 80px 0 64px;
   background: var(--lp-bg);
   border-bottom: 1px solid var(--c-blue10);
 }
-/* First-time users see only .hero-main, centered. .is-returning (set by
-   multigrid.js) splits the hero into heading + "National LEAF Requests". */
+/* Layout classes on .hero come from multigrid.js applyLayout():
+   none          first-time: centered .hero-main only
+   .has-requests centered + View My Requests (panel hidden by the user)
+   .is-returning two columns: heading + "National LEAF Requests"
+   .is-preview   sysadmin first-time preview (strip shown) */
 .hero-grid {
   max-width: var(--max);
   margin: 0 auto;
@@ -285,11 +293,65 @@ body {
   max-width: 640px;
   min-width: 0;
 }
+.hero-requests-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
 .hero-requests-h2 {
   font-size: 1.05rem;
   font-weight: 800;
   color: var(--lp-hl);
-  margin-bottom: 8px;
+}
+/* .hero prefix outranks the page's inline .lp-tooltip-wrap display rule. */
+.hero .hero-view-requests {
+  display: none;
+}
+.hero.has-requests:not(.is-returning) .hero-view-requests {
+  display: inline-flex;
+}
+/* Out of flow, inside the hero's 80px top padding, so the preview hero
+   matches the first-time hero exactly. Copy and sizes keep it under 80px
+   at 320px, including with WCAG 1.4.12 text spacing. */
+.hero-preview-bar {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 4px 16px;
+  background: #fff8e1;
+  border-bottom: 2px solid #f4a300;
+  color: #4a3800;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+}
+.hero.is-preview .hero-preview-bar {
+  display: flex;
+}
+.hero-preview-bar button {
+  font: inherit;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--r);
+  border: 2px solid #4a3800;
+  background: transparent;
+  color: #4a3800;
+  cursor: pointer;
+}
+.hero-preview-bar button:focus-visible {
+  outline: 3px solid var(--lp-hl);
+  outline-offset: 2px;
 }
 .hero-kicker {
   display: inline-flex;

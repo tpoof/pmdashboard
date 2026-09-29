@@ -13,8 +13,9 @@
  * Optional attributes:
  *   data-trigger="<id>"      open the grid in a modal from that button
  *   data-compact="true"      smaller inline grid (Date / Request / Status)
- *   data-hero-target="<id>"  element that gets .is-returning while the
- *                            user has at least one record in any source
+ *   data-hero-target="<id>"  hero element whose layout classes are set by
+ *                            applyLayout() (see "Hero layout" below)
+ *   data-is-sysadmin="1"     enables the Alt+Shift+F first-time preview
  *
  * ASCII-only: non-ASCII bytes here have previously been corrupted by
  * deploy pipelines, silently breaking strings/comments. Keep it ASCII.
@@ -47,6 +48,11 @@
     triggerId: thisScript ? thisScript.dataset.trigger : undefined,
     compact: !!(thisScript && thisScript.dataset.compact === "true"),
     heroTargetId: thisScript ? thisScript.dataset.heroTarget : undefined,
+    isSysadmin: /^(1|true|yes)$/i.test(
+      stripSmartyCommentWrapper(
+        (thisScript && thisScript.dataset.isSysadmin) || "",
+      ),
+    ),
   };
 
   /*
@@ -134,25 +140,69 @@
         ? session.userID
         : cfg.userID;
 
-  // -- Return-user layout ------------------------------------------------------
-  // A per-user localStorage hint picks the hero layout before any fetch
-  // (avoids layout shift); updateReturningState() then corrects it from data.
-  var HINT_KEY = "lp-mst-returning:" + CURRENT_USER_ID;
+  // -- Hero layout -------------------------------------------------------------
+  // applyLayout() is the only code that sets the hero's layout classes:
+  //   has-requests  user has records (stored hint until the data confirms)
+  //   is-returning  two-column hero: records, not collapsed, not previewing
+  //   is-preview    sysadmin first-time preview
+  // Stored hints are applied before any fetch to avoid layout shift; the
+  // fetched data then corrects hasRecords.
+  var RETURNING_KEY = "lp-mst-returning:" + CURRENT_USER_ID;
+  var COLLAPSED_KEY = "lp-mst-collapsed:" + CURRENT_USER_ID;
+  var HIDE_BTN_ID = "mst-hide-btn";
+  var SHOW_BTN_ID = "mst-open-btn";
+  var PREVIEW_EXIT_ID = "mst-preview-exit";
   var heroTargetEl = cfg.heroTargetId
     ? document.getElementById(cfg.heroTargetId)
     : null;
 
-  function setReturning(on) {
-    if (heroTargetEl) heroTargetEl.classList.toggle("is-returning", on);
+  // Storage can be blocked (private mode, policy); fail silently.
+  function storageGet(key) {
+    try {
+      return window.localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  }
+  function storageSet(key, value) {
+    try {
+      if (value === null) window.localStorage.removeItem(key);
+      else window.localStorage.setItem(key, value);
+    } catch (e) {}
+  }
+
+  var layout = {
+    hasRecords: storageGet(RETURNING_KEY) === "1",
+    collapsed: storageGet(COLLAPSED_KEY) === "1",
+    preview: false,
+  };
+
+  function applyLayout() {
+    if (!heroTargetEl) return;
+    var cl = heroTargetEl.classList;
+    cl.toggle("has-requests", layout.hasRecords && !layout.preview);
+    cl.toggle(
+      "is-returning",
+      layout.hasRecords && !layout.collapsed && !layout.preview,
+    );
+    cl.toggle("is-preview", layout.preview);
   }
 
   // Runs synchronously: the script tag sits right after the hero markup.
-  if (heroTargetEl) {
-    try {
-      if (window.localStorage.getItem(HINT_KEY) === "1") setReturning(true);
-    } catch (e) {
-      // Storage blocked: start in the first-time layout.
-    }
+  applyLayout();
+
+  // Same clear-then-set pattern as leaf_header.js, so repeats re-announce.
+  function announce(msg) {
+    var region = document.getElementById("lp-live-region");
+    if (!region) return;
+    region.textContent = "";
+    setTimeout(function () {
+      region.textContent = msg;
+    }, 50);
+  }
+
+  function isShown(el) {
+    return !!(el && el.getClientRects().length);
   }
 
   // Site Creations needs getData 17/21/22 (server/dir/site name) for the
@@ -198,6 +248,9 @@
   }
 
   var NEW_TAB_SR = '<span class="sr-only">(opens in new tab)</span>';
+
+  // Appended to the printview URL for the record modal's iframe.
+  var RECORD_MODAL_PARAMS = "&iframe=1";
 
   // Shared MM/DD/YYYY formatter for all tabs (replaces old locale-dependent
   // toLocaleDateString() calls, so every tab's Date column matches).
@@ -298,21 +351,26 @@
 
   // Shared "badge recordID + title link" cell used by every Request/Project
   // column. The badge is tabindex="-1" so keyboard users reach one link per row.
+  // Both open leaf_header.js's shared form modal (data-action="form-modal");
+  // href stays as the Ctrl/Cmd/Shift/middle-click fallback.
   function requestCellHTML(link, recordID, title) {
-    var href = escapeHTML(link);
+    var attrs =
+      ' href="' +
+      escapeHTML(link) +
+      '" data-action="form-modal" data-modal-src="' +
+      escapeHTML(link + RECORD_MODAL_PARAMS) +
+      '" data-modal-title="' +
+      escapeHTML("Request #" + recordID + ": " + title) +
+      '"';
     return (
-      '<span class="mst-lp-recid">' +
-      '<a href="' +
-      href +
-      '" tabindex="-1" target="_blank" rel="noopener noreferrer">' +
+      '<span class="mst-lp-recid"><a' +
+      attrs +
+      ' tabindex="-1">' +
       escapeHTML(recordID) +
-      "</a>" +
-      "</span> " +
-      '<a href="' +
-      href +
-      '" target="_blank" rel="noopener noreferrer">' +
+      "</a></span> <a" +
+      attrs +
+      ">" +
       escapeHTML(title) +
-      NEW_TAB_SR +
       "</a>"
     );
   }
@@ -1176,17 +1234,142 @@
       }
     });
 
+    // The collapsed hint is left alone: it applies again once records exist.
     if (total > 0) {
-      setReturning(true);
-      try {
-        window.localStorage.setItem(HINT_KEY, "1");
-      } catch (e) {}
+      layout.hasRecords = true;
+      storageSet(RETURNING_KEY, "1");
+      applyLayout();
     } else if (allSettled) {
-      setReturning(false);
-      try {
-        window.localStorage.removeItem(HINT_KEY);
-      } catch (e) {}
+      layout.hasRecords = false;
+      storageSet(RETURNING_KEY, null);
+      applyLayout();
     }
+  }
+
+  // Hide collapses the panel to the centered hero; View My Requests shows the
+  // already-loaded grid again (no refetch). Focus moves to whichever button
+  // replaced the one that was clicked.
+  function setCollapsed(on) {
+    layout.collapsed = on;
+    storageSet(COLLAPSED_KEY, on ? "1" : null);
+    applyLayout();
+  }
+
+  function wireHeroToggle() {
+    var hideBtn = document.getElementById(HIDE_BTN_ID);
+    var showBtn = document.getElementById(SHOW_BTN_ID);
+    if (hideBtn) {
+      hideBtn.addEventListener("click", function () {
+        setCollapsed(true);
+        if (showBtn) showBtn.focus();
+        announce(
+          "National LEAF Requests panel hidden. Use View My Requests to show it again.",
+        );
+      });
+    }
+    if (showBtn) {
+      showBtn.addEventListener("click", function () {
+        setCollapsed(false);
+        if (hideBtn) hideBtn.focus();
+        announce("National LEAF Requests panel shown on the home page.");
+      });
+    }
+  }
+
+  // Sysadmin first-time preview, toggled with Alt+Shift+F. In memory only:
+  // no storage writes, no refetch.
+  function isTextEntry(el) {
+    if (!el) return false;
+    if (el.isContentEditable) return true;
+    var tag = el.tagName;
+    if (tag === "TEXTAREA" || tag === "SELECT") return true;
+    if (tag !== "INPUT") return false;
+    return !/^(button|submit|reset|checkbox|radio|range|color|file|image)$/i.test(
+      el.type,
+    );
+  }
+
+  function togglePreview() {
+    layout.preview = !layout.preview;
+    applyLayout();
+    // Keep focus on something visible if the focused control just hid.
+    if (!isShown(document.activeElement)) {
+      var target = layout.preview
+        ? document.getElementById(PREVIEW_EXIT_ID)
+        : document.getElementById(layout.collapsed ? SHOW_BTN_ID : HIDE_BTN_ID);
+      if (isShown(target)) target.focus();
+    }
+    announce(
+      layout.preview
+        ? "Admin preview on. Showing the first-time view."
+        : "Admin preview off. Showing your normal view.",
+    );
+  }
+
+  function wirePreview() {
+    if (!cfg.isSysadmin || !heroTargetEl) return;
+    var exitBtn = document.getElementById(PREVIEW_EXIT_ID);
+    if (exitBtn) {
+      exitBtn.addEventListener("click", function () {
+        if (layout.preview) togglePreview();
+      });
+    }
+    document.addEventListener("keydown", function (e) {
+      if (!(e.altKey && e.shiftKey && e.code === "KeyF") || e.repeat) return;
+      // No records means the user already sees the first-time view.
+      if (!layout.preview && !layout.hasRecords) return;
+      if (document.querySelector(".lp-modal:not([hidden])")) return;
+      if (isTextEntry(document.activeElement)) return;
+      e.preventDefault();
+      togglePreview();
+    });
+  }
+
+  // leaf_header.js returns focus to the link that opened the record modal.
+  // If the grid re-rendered meanwhile, that node is gone, so focus the same
+  // row's link, else the scroll region, else the active tab.
+  var recordModalTrigger = null;
+  var recordModalObserver = null;
+
+  function restoreRecordModalFocus() {
+    var t = recordModalTrigger;
+    recordModalTrigger = null;
+    if (!t || t.el.isConnected || !mstRootEl) return;
+    var panel = mstRootEl.querySelector(".ip-panel.is-active");
+    var row =
+      panel &&
+      panel.querySelector('tr[data-rowkey="' + CSS.escape(t.rowKey) + '"]');
+    var target =
+      (row && row.querySelector('a[data-action="form-modal"]:not([tabindex])')) ||
+      (panel && panel.querySelector(".ip-tableWrap[tabindex]")) ||
+      mstRootEl.querySelector('.ip-tab[aria-selected="true"]');
+    if (target) target.focus();
+  }
+
+  function wireRecordModalFocus(rootEl) {
+    rootEl.addEventListener("click", function (e) {
+      var link = e.target.closest('a[data-action="form-modal"]');
+      if (!link || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) {
+        return;
+      }
+      var tr = link.closest("tr");
+      recordModalTrigger = {
+        el: link,
+        rowKey: tr ? tr.getAttribute("data-rowkey") : "",
+      };
+      // leaf_header.js builds #lpFormModal on first open, after this handler.
+      setTimeout(function () {
+        var modal = document.getElementById("lpFormModal");
+        if (!modal || recordModalObserver) return;
+        recordModalObserver = new MutationObserver(function () {
+          if (modal.hasAttribute("hidden")) restoreRecordModalFocus();
+        });
+        recordModalObserver.observe(modal, {
+          attributes: true,
+          attributeFilter: ["hidden"],
+        });
+      }, 0);
+    });
   }
 
   function onSourceSettled(sourceKey) {
@@ -1252,6 +1435,9 @@
     }
     rootEl.classList.add("mst-container");
     if (cfg.compact) rootEl.classList.add("mst-compact");
+    wireRecordModalFocus(rootEl);
+    wireHeroToggle();
+    wirePreview();
     buildAndLoadGrid(rootEl);
   }
 

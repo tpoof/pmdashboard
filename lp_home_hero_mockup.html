@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Launchpad hero mockup: first-time vs return user</title>
+    <title>
+      Launchpad hero mockup v2: hide panel, admin preview, record modal
+    </title>
     <style>
       :root {
         --c-white: #fff;
@@ -28,6 +30,9 @@
         margin: 0;
         padding: 0;
       }
+      [hidden] {
+        display: none !important;
+      }
       body {
         background: #eef2f6;
         font-family: "Source Sans 3", "Source Sans Pro", system-ui, sans-serif;
@@ -46,23 +51,33 @@
       a {
         color: var(--lp-accent);
       }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
 
-      /* Mockup-only toolbar */
+      /* Mockup-only controls */
       .mock-bar {
         position: sticky;
         top: 0;
-        z-index: 10;
+        z-index: 300;
         background: #1b1b1b;
         color: #fff;
         padding: 10px 16px;
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 10px 12px;
         align-items: center;
         font-size: 0.9rem;
       }
       .mock-bar strong {
-        margin-right: 4px;
+        margin-right: 2px;
       }
       .mock-bar button {
         font: inherit;
@@ -82,6 +97,15 @@
         outline: 3px solid #f4a300;
         outline-offset: 2px;
       }
+      .mock-bar .sep {
+        opacity: 0.5;
+      }
+      .mock-bar kbd {
+        background: #3d4551;
+        border-radius: 4px;
+        padding: 1px 6px;
+        font-size: 0.85rem;
+      }
       .mock-note {
         background: #fff8e1;
         border-bottom: 1px solid #f4a300;
@@ -89,11 +113,13 @@
         font-size: 0.85rem;
         color: #4a3800;
       }
+
       .stage {
         margin: 0 auto;
         background: #fff;
         transition: max-width 0.2s;
         container-type: inline-size;
+        position: relative;
       }
       .stage.narrow {
         max-width: 390px;
@@ -107,11 +133,45 @@
         font-size: 0.95rem;
       }
 
+      /* Admin preview strip */
+      .preview-bar {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+        padding: 8px 16px;
+        background: #fff8e1;
+        border-bottom: 2px solid #f4a300;
+        color: #4a3800;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      .hero.is-preview .preview-bar {
+        display: flex;
+      }
+      .preview-bar button {
+        font: inherit;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: var(--r);
+        border: 2px solid #4a3800;
+        background: transparent;
+        color: #4a3800;
+        cursor: pointer;
+      }
+      .preview-bar button:focus-visible {
+        outline: 3px solid var(--lp-hl);
+        outline-offset: 2px;
+      }
+
       /* Hero */
       .hero {
-        padding: 64px 0;
         background: #fff;
         border-bottom: 1px solid var(--c-blue10);
+      }
+      .hero-body {
+        padding: 64px 0;
       }
       .hero-grid {
         max-width: 1200px;
@@ -192,6 +252,13 @@
         font-weight: 700;
         text-decoration: none;
         line-height: 1;
+        background: transparent;
+        cursor: pointer;
+      }
+      .btn svg {
+        width: 1.15rem;
+        height: 1.15rem;
+        flex: none;
       }
       .btn-pri {
         background: var(--lp-accent);
@@ -202,12 +269,19 @@
         color: var(--lp-accent);
         border-color: var(--lp-accent);
       }
+      .btn-sec:hover {
+        background: var(--c-blue5);
+      }
+      .btn-sm {
+        padding: 8px 14px;
+        font-size: 0.875rem;
+      }
       .btn:focus-visible {
         outline: 3px solid var(--lp-hl);
         outline-offset: 3px;
       }
 
-      /* Right container: grid centered, fits container width */
+      /* Right container */
       .hero-grid-wrap {
         display: none;
         justify-content: center;
@@ -221,11 +295,17 @@
         max-width: 640px;
         min-width: 0;
       }
+      .mst-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
       .mst-title {
         font-size: 1.05rem;
         font-weight: 800;
         color: var(--lp-hl);
-        margin-bottom: 8px;
       }
       .tabs {
         display: flex;
@@ -234,7 +314,7 @@
         padding: 5px;
         background: var(--c-blue5);
         border: 1px solid var(--c-blue10);
-        border-radius: 999px;
+        border-radius: 8px;
         list-style: none;
         margin-bottom: 10px;
       }
@@ -355,10 +435,101 @@
         font-size: 0.85rem;
       }
 
-      /* Container queries so the Phone width toggle reflects the real breakpoint;
-     the production CSS uses the equivalent @media (max-width:900px). */
+      /* Modals (styled like the Launchpad's existing .lp-modal / form modal) */
+      .lp-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        background: rgba(15, 23, 42, 0.55);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 40px 16px;
+        overflow: auto;
+      }
+      .lp-modal.top {
+        z-index: 210;
+      }
+      .modal-box {
+        background: #fff;
+        border-radius: var(--r-lg);
+        width: 100%;
+        max-width: 1100px;
+        max-height: calc(100vh - 80px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        margin: auto 0;
+      }
+      .modal-box.record {
+        max-width: 900px;
+      }
+      .modal-hd {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--c-blue10);
+        flex: none;
+      }
+      .modal-hd-title {
+        font-family: "Public Sans", system-ui, sans-serif;
+        font-weight: 800;
+        font-size: 1.15rem;
+        color: var(--lp-hl);
+      }
+      .modal-hd-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .modal-close {
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        color: var(--c-muted);
+        padding: 8px;
+        border-radius: 999px;
+        line-height: 0;
+      }
+      .modal-close:hover {
+        background: var(--c-blue5);
+      }
+      .modal-close:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+      .modal-close svg {
+        width: 24px;
+        height: 24px;
+      }
+      .modal-body {
+        padding: 20px;
+        overflow: auto;
+        flex: 1 1 auto;
+      }
+      .frame-standin {
+        border: 2px dashed var(--c-gray20);
+        border-radius: var(--r-lg);
+        padding: 20px;
+        color: var(--c-muted);
+        background: var(--c-gray5);
+      }
+      .frame-standin .bar {
+        height: 14px;
+        background: var(--c-gray20);
+        border-radius: 4px;
+        margin: 10px 0;
+      }
+      .frame-standin p {
+        font-size: 0.9rem;
+        margin-top: 12px;
+      }
+
       @container (max-width:900px) {
-        .hero {
+        .hero-body {
           padding: 48px 0;
         }
         .hero.is-returning .hero-grid {
@@ -379,6 +550,12 @@
         .scroll {
           max-height: 300px;
         }
+        td.status {
+          white-space: normal;
+        }
+        .lp-modal {
+          padding: 12px 8px;
+        }
       }
       @media (prefers-reduced-motion: reduce) {
         .stage {
@@ -393,136 +570,245 @@
       role="group"
       aria-label="Mockup controls (not part of the page)"
     >
-      <strong>Mockup view:</strong>
-      <button type="button" data-state="first" aria-pressed="true">
+      <strong>Mockup:</strong>
+      <button type="button" data-state="first" aria-pressed="false">
         First-time user
       </button>
-      <button type="button" data-state="return" aria-pressed="false">
+      <button type="button" data-state="return" aria-pressed="true">
         Return user
       </button>
-      <span aria-hidden="true">|</span>
+      <span class="sep" aria-hidden="true">|</span>
       <button type="button" data-width="full" aria-pressed="true">
         Desktop
       </button>
       <button type="button" data-width="narrow" aria-pressed="false">
         Phone width
       </button>
+      <span class="sep" aria-hidden="true">|</span>
+      <button type="button" id="adminBtn" aria-pressed="false">
+        Simulate sysadmin
+      </button>
+      <span id="adminHint" hidden
+        >Press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> to preview the
+        first-time view</span
+      >
     </div>
     <p class="mock-note">
-      Mockup only. Data below is sample data. The toolbar above will not exist
-      in the real page.
+      Mockup only. Sample data. Try: <b>Hide</b> on the panel,
+      <b>View My Requests</b> (opens the grid modal), any request title (opens
+      the record modal), and the sysadmin shortcut.
     </p>
 
     <div class="stage" id="stage">
-      <section class="hero" id="hero" aria-labelledby="hero-h1">
-        <div class="hero-grid">
-          <div class="hero-main">
-            <span class="hero-kicker">Built by VA. For VA.</span>
-            <h1 class="hero-h1" id="hero-h1">
-              Digitize any VA<br />business process<br /><em>fast.</em>
-            </h1>
-            <p class="hero-sub">
-              LEAF is a secure, no-code/low-code platform that empowers every VA
-              team to build custom workflows, forms, and reports.
-            </p>
-            <div class="hero-actions">
-              <a href="#" class="btn btn-pri">Build a new site</a>
-              <a href="#" class="btn btn-sec">Find a LEAF Site</a>
-            </div>
-          </div>
-
-          <div class="hero-grid-wrap" id="gridWrap">
-            <section class="mst" aria-labelledby="mst-title">
-              <h2 class="mst-title" id="mst-title">National LEAF Requests</h2>
-              <ul
-                class="tabs"
-                role="tablist"
-                aria-label="LEAF request types"
-                id="tabs"
-              ></ul>
-              <p class="summary" id="summary" aria-live="polite"></p>
-              <div
-                class="scroll"
-                id="scroll"
-                tabindex="0"
-                role="region"
-                aria-label="Your requests, scrollable"
-              >
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col" aria-sort="descending">
-                        <button type="button">Date</button>
-                      </th>
-                      <th scope="col" aria-sort="none">
-                        <button type="button">Request</button>
-                      </th>
-                      <th scope="col" aria-sort="none">
-                        <button type="button">Status</button>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody id="rows"></tbody>
-                </table>
+      <section class="hero is-returning" id="hero" aria-labelledby="hero-h1">
+        <div class="preview-bar" id="previewBar">
+          <span
+            >Admin preview: you are seeing the first-time view. Nothing is
+            saved.</span
+          >
+          <button type="button" id="exitPreview">
+            Exit preview (Alt+Shift+F)
+          </button>
+        </div>
+        <div class="hero-body">
+          <div class="hero-grid">
+            <div class="hero-main">
+              <span class="hero-kicker">Built by VA. For VA.</span>
+              <h1 class="hero-h1" id="hero-h1">
+                Digitize any VA<br />business process<br /><em>fast.</em>
+              </h1>
+              <p class="hero-sub">
+                LEAF is a secure, no-code/low-code platform that empowers every
+                VA team to build custom workflows, forms, and reports.
+              </p>
+              <div class="hero-actions">
+                <a href="#" class="btn btn-pri">
+                  <svg
+                    viewBox="0 -960 960 960"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="m98-537 168-168q14-14 33-20t39-2l52 11q-54 64-85 116t-60 126L98-537Zm205 91q23-72 62.5-136T461-702q88-88 201-131.5T873-860q17 98-26 211T716-448q-55 55-120 95.5T459-289L303-446Zm276-120q23 23 56.5 23t56.5-23q23-23 23-56.5T692-679q-23-23-56.5-23T579-679q-23 23-23 56.5t23 56.5ZM551-85l-64-147q74-29 126.5-60T730-377l10 52q4 20-2 39.5T718-252L551-85ZM162-318q35-35 85-35.5t85 34.5q35 35 35 85t-35 85q-25 25-83.5 43T87-74q14-103 32-161t43-83Z"
+                    />
+                  </svg>
+                  Build a new site
+                </a>
+                <a href="#" class="btn btn-sec">
+                  <svg
+                    viewBox="0 -960 960 960"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 400Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Z"
+                    />
+                  </svg>
+                  Find a LEAF Site
+                </a>
+                <button type="button" class="btn btn-sec" id="viewBtn" hidden>
+                  <svg
+                    viewBox="0 -960 960 960"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"
+                    />
+                  </svg>
+                  View My Requests
+                </button>
               </div>
-            </section>
+            </div>
+
+            <div class="hero-grid-wrap" id="gridWrap">
+              <section class="mst" id="mst" aria-labelledby="mst-title">
+                <div class="mst-head">
+                  <h2 class="mst-title" id="mst-title">
+                    National LEAF Requests
+                  </h2>
+                  <button
+                    type="button"
+                    class="btn btn-sec btn-sm btn-hide"
+                    id="hideBtn"
+                    aria-label="Hide National LEAF Requests panel"
+                  >
+                    Hide
+                  </button>
+                </div>
+                <ul
+                  class="tabs"
+                  role="tablist"
+                  aria-label="LEAF request types"
+                  id="tabs"
+                ></ul>
+                <p class="summary" id="summary" aria-live="polite"></p>
+                <div
+                  class="scroll"
+                  tabindex="0"
+                  role="region"
+                  aria-label="Your requests, scrollable"
+                >
+                  <table>
+                    <thead>
+                      <tr>
+                        <th scope="col" aria-sort="descending">
+                          <button type="button">Date</button>
+                        </th>
+                        <th scope="col">
+                          <button type="button">Request</button>
+                        </th>
+                        <th scope="col">
+                          <button type="button">Status</button>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody id="rows"></tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
           </div>
         </div>
       </section>
       <div class="below">
         Rest of the home page (Finder, How LEAF works, etc.) continues here.
       </div>
+
+      <!-- Record modal: the real page opens the record in an iframe, like the other Launchpad form modals -->
+      <div
+        class="lp-modal top"
+        id="recModal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recModalTitle"
+        hidden
+      >
+        <div class="modal-box record">
+          <div class="modal-hd">
+            <h2 class="modal-hd-title" id="recModalTitle"></h2>
+            <button
+              type="button"
+              class="modal-close"
+              id="recModalClose"
+              aria-label="Close"
+            >
+              <svg
+                viewBox="0 -960 960 960"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+                />
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="frame-standin" aria-hidden="true">
+              <div class="bar" style="width: 40%"></div>
+              <div class="bar" style="width: 90%"></div>
+              <div class="bar" style="width: 75%"></div>
+              <div class="bar" style="width: 60%"></div>
+              <p>
+                Stand-in for the record view. In the real page this is an iframe
+                of the request's own LEAF site.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
+    <div id="live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
     <script>
-      var DATA = {
-        all: [
-          [
-            "09/24/2026",
-            "Site Creations",
-            "4021",
-            "Facilities Tracking",
-            "ready",
-          ],
-          [
-            "09/18/2026",
-            "National Support",
-            "1187",
-            "Consultation: onboarding workflow",
-            "Pending Review",
-          ],
-          [
-            "09/02/2026",
-            "Ideas",
-            "392",
-            "Saved drafts on long forms",
-            "Under Consideration",
-          ],
-          [
-            "08/30/2026",
-            "National Support",
-            "2210",
-            "Spotlight nomination",
-            "Not Submitted",
-          ],
-          ["08/12/2026", "Site Creations", "3977", "Travel Approvals", "ready"],
-          [
-            "07/29/2026",
-            "National Support",
-            "1102",
-            "Training registration",
-            "Completed",
-          ],
-          [
-            "07/03/2026",
-            "Ideas",
-            "371",
-            "Bulk reassign requests",
-            "Not Submitted",
-          ],
-          ["06/20/2026", "Site Creations", "3850", "HR Onboarding", "ready"],
+      var DATA = [
+        [
+          "09/24/2026",
+          "Site Creations",
+          "4021",
+          "Facilities Tracking",
+          "ready",
         ],
-      };
+        [
+          "09/18/2026",
+          "National Support",
+          "1187",
+          "Consultation: onboarding workflow",
+          "Pending Review",
+        ],
+        [
+          "09/02/2026",
+          "Ideas",
+          "392",
+          "Saved drafts on long forms",
+          "Under Consideration",
+        ],
+        [
+          "08/30/2026",
+          "National Support",
+          "2210",
+          "Spotlight nomination",
+          "Not Submitted",
+        ],
+        ["08/12/2026", "Site Creations", "3977", "Travel Approvals", "ready"],
+        [
+          "07/29/2026",
+          "National Support",
+          "1102",
+          "Training registration",
+          "Completed",
+        ],
+        [
+          "07/03/2026",
+          "Ideas",
+          "371",
+          "Bulk reassign requests",
+          "Not Submitted",
+        ],
+        ["06/20/2026", "Site Creations", "3850", "HR Onboarding", "ready"],
+      ];
       var TABS = [
         {
           name: "All Requests",
@@ -553,29 +839,75 @@
           desc: "ideas you’ve submitted to improve LEAF",
         },
       ];
-      var tabsEl = document.getElementById("tabs"),
-        rowsEl = document.getElementById("rows"),
-        sumEl = document.getElementById("summary");
-      var active = 0;
+      var S = {
+        state: "return",
+        collapsed: false,
+        admin: false,
+        preview: false,
+        active: 0,
+      };
+      var $ = function (id) {
+        return document.getElementById(id);
+      };
+      var hero = $("hero"),
+        mst = $("mst"),
+        viewBtn = $("viewBtn"),
+        hideBtn = $("hideBtn");
+      var recModal = $("recModal"),
+        recLastFocus = null;
 
+      function announce(msg) {
+        var l = $("live");
+        l.textContent = "";
+        setTimeout(function () {
+          l.textContent = msg;
+        }, 50);
+      }
+
+      /* Layout state */
+      function apply() {
+        var returning = S.state === "return" && !S.preview;
+        hero.classList.toggle("is-returning", returning && !S.collapsed);
+        hero.classList.toggle("is-preview", S.preview);
+        viewBtn.hidden = !(returning && S.collapsed);
+        $("adminHint").hidden = !(S.admin && S.state === "return");
+        [].forEach.call(
+          document.querySelectorAll("[data-state]"),
+          function (b) {
+            b.setAttribute("aria-pressed", b.dataset.state === S.state);
+          },
+        );
+      }
+
+      /* Grid */
       function statusHTML(s) {
-        if (s === "ready") return '<a class="ready" href="#">Site Ready</a>';
+        if (s === "ready")
+          return '<a class="ready" href="#">Site Ready<span class="sr-only"> (opens in new tab)</span></a>';
         if (s === "Not Submitted")
           return '<span class="not-sub">Not Submitted</span>';
         return "<span>" + s + "</span>";
       }
       function render() {
-        var t = TABS[active],
-          list = DATA.all.filter(t.filter);
-        rowsEl.innerHTML = list
+        var t = TABS[S.active],
+          list = DATA.filter(t.filter);
+        $("rows").innerHTML = list
           .map(function (r) {
             return (
               '<tr><td class="date">' +
               r[0] +
               "</td>" +
-              '<td><a class="recid" href="#" tabindex="-1">' +
+              '<td><a class="recid" href="#" tabindex="-1" data-rec="' +
               r[2] +
-              '</a><a href="#">' +
+              '" data-title="' +
+              r[3] +
+              '">' +
+              r[2] +
+              "</a>" +
+              '<a class="rec" href="#" data-rec="' +
+              r[2] +
+              '" data-title="' +
+              r[3] +
+              '">' +
               r[3] +
               '</a><span class="site">' +
               r[1] +
@@ -586,11 +918,11 @@
             );
           })
           .join("");
-        sumEl.innerHTML =
+        $("summary").innerHTML =
           "<b>" + t.name + "</b> — Showing " + list.length + " " + t.desc;
-        [].forEach.call(tabsEl.querySelectorAll(".tab"), function (b, i) {
-          b.setAttribute("aria-selected", i === active);
-          b.tabIndex = i === active ? 0 : -1;
+        [].forEach.call($("tabs").querySelectorAll(".tab"), function (b, i) {
+          b.setAttribute("aria-selected", i === S.active);
+          b.tabIndex = i === S.active ? 0 : -1;
         });
       }
       TABS.forEach(function (t, i) {
@@ -602,7 +934,7 @@
         b.setAttribute("role", "tab");
         b.textContent = t.name;
         b.addEventListener("click", function () {
-          active = i;
+          S.active = i;
           render();
         });
         b.addEventListener("keydown", function (e) {
@@ -614,36 +946,145 @@
                 : null;
           if (n === null) return;
           e.preventDefault();
-          active = n;
+          S.active = n;
           render();
-          tabsEl.querySelectorAll(".tab")[n].focus();
+          $("tabs").querySelectorAll(".tab")[n].focus();
         });
         li.appendChild(b);
-        tabsEl.appendChild(li);
+        $("tabs").appendChild(li);
       });
       render();
 
-      function setPressed(sel, attr, val) {
-        [].forEach.call(document.querySelectorAll(sel), function (b) {
-          b.setAttribute("aria-pressed", b.getAttribute(attr) === val);
-        });
+      /* Record click opens the record modal (modifier-clicks keep normal link behavior) */
+      $("rows").addEventListener("click", function (e) {
+        var a = e.target.closest("a[data-rec]");
+        if (!a) return;
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;
+        e.preventDefault();
+        openRecord(
+          a.dataset.rec,
+          a.dataset.title,
+          a.classList.contains("recid")
+            ? a.parentNode.querySelector("a.rec")
+            : a,
+        );
+      });
+      $("rows").addEventListener("click", function (e) {
+        if (e.target.closest("a.ready")) e.preventDefault();
+      });
+
+      function openRecord(id, title, trigger) {
+        recLastFocus = trigger || document.activeElement;
+        $("recModalTitle").textContent = "Request #" + id + ": " + title;
+        recModal.hidden = false;
+        $("recModalClose").focus();
       }
+      function closeRecord() {
+        if (recModal.hidden) return;
+        recModal.hidden = true;
+        if (recLastFocus && document.contains(recLastFocus))
+          recLastFocus.focus();
+      }
+      $("recModalClose").addEventListener("click", closeRecord);
+      recModal.addEventListener("click", function (e) {
+        if (e.target === recModal) closeRecord();
+      });
+
+      /* View My Requests restores the panel on the page, no modal */
+      viewBtn.addEventListener("click", function () {
+        S.collapsed = false;
+        apply();
+        hideBtn.focus();
+        announce("National LEAF Requests panel shown on the home page.");
+      });
+
+      /* Hide / show panel */
+      hideBtn.addEventListener("click", function () {
+        S.collapsed = true;
+        apply();
+        viewBtn.focus();
+        announce(
+          "National LEAF Requests panel hidden. Use View My Requests to show it again.",
+        );
+      });
+
+      /* Keyboard: Escape closes the top-most modal only; Tab stays inside it */
+      document.addEventListener("keydown", function (e) {
+        var top = !recModal.hidden ? recModal : null;
+        if (e.key === "Escape" && top) {
+          e.preventDefault();
+          closeRecord();
+          return;
+        }
+        if (e.key === "Tab" && top) {
+          var f = [].filter.call(
+            top.querySelectorAll(
+              'a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])',
+            ),
+            function (el) {
+              return el.offsetParent !== null;
+            },
+          );
+          if (!f.length) return;
+          var first = f[0],
+            last = f[f.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+        /* Sysadmin-only first-time preview: Alt+Shift+F */
+        if (
+          e.altKey &&
+          e.shiftKey &&
+          e.code === "KeyF" &&
+          S.admin &&
+          S.state === "return" &&
+          !top
+        ) {
+          e.preventDefault();
+          togglePreview();
+        }
+      });
+      function togglePreview() {
+        S.preview = !S.preview;
+        apply();
+        announce(
+          S.preview
+            ? "Admin preview on. Showing the first-time view."
+            : "Admin preview off. Showing your normal view.",
+        );
+      }
+      $("exitPreview").addEventListener("click", function () {
+        togglePreview();
+      });
+
+      /* Mockup controls */
       document.querySelectorAll("[data-state]").forEach(function (b) {
         b.addEventListener("click", function () {
-          document
-            .getElementById("hero")
-            .classList.toggle("is-returning", b.dataset.state === "return");
-          setPressed("[data-state]", "data-state", b.dataset.state);
+          S.state = b.dataset.state;
+          S.preview = false;
+          apply();
         });
       });
       document.querySelectorAll("[data-width]").forEach(function (b) {
         b.addEventListener("click", function () {
-          document
-            .getElementById("stage")
-            .classList.toggle("narrow", b.dataset.width === "narrow");
-          setPressed("[data-width]", "data-width", b.dataset.width);
+          $("stage").classList.toggle("narrow", b.dataset.width === "narrow");
+          document.querySelectorAll("[data-width]").forEach(function (x) {
+            x.setAttribute("aria-pressed", x.dataset.width === b.dataset.width);
+          });
         });
       });
+      $("adminBtn").addEventListener("click", function () {
+        S.admin = !S.admin;
+        S.preview = false;
+        this.setAttribute("aria-pressed", S.admin);
+        apply();
+      });
+      apply();
     </script>
   </body>
 </html>
