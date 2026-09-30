@@ -307,6 +307,9 @@ body {
   color: var(--lp-hl);
   overflow-wrap: anywhere;
 }
+.hero-requests-h2 .hero-requests-name {
+  color: inherit;
+}
 .hero-requests-ft {
   display: flex;
   justify-content: flex-end;
