@@ -1,3 +1,9 @@
-Rebuilt out all 4 views to remove the display bug -fixing the filter hiding backlog items and inconsistent OKR completion percentages across tabs
-Matched styling to the main project dashboard and renamed to "LEAF Project Analytics" since naming it project dashboard will confuse your AI agent as its the name of the main tool
-Improved accessibility for keyboard/screen-reader users and enabled "Clear all filters" to fully reset to "All" instead of your defaults
+document.querySelector('script[src*="multigrid.js"]').dataset.isSysadmin
+
+document.querySelectorAll('script[src*="multigrid.js"]').length
+
+fetch(document.querySelector('script[src*="multigrid.js"]').src).then(r=>r.text()).then(t=>console.log(t.includes('preview; no storage writes'), t.includes('mst-preview-exit')))
+
+
+['localStorage','sessionStorage'].forEach(s=>console.log(s, Object.keys(window[s]).filter(k=>k.startsWith('lp-mst'))))
+fetch(document.querySelector('script[src*="multigrid.js"]').src,{cache:'no-store'}).then(r=>r.text()).then(t=>console.log({sessionStorage:t.includes('sessionStorage'),oldStrip:t.includes('mst-preview-exit'),lastModifiedHeader:null}))
