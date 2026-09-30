@@ -301,9 +301,16 @@ body {
   margin-bottom: 8px;
 }
 .hero-requests-h2 {
+  min-width: 0;
   font-size: 1.05rem;
   font-weight: 800;
   color: var(--lp-hl);
+  overflow-wrap: anywhere;
+}
+.hero-requests-ft {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
 }
 /* .hero prefix outranks the .lp-tooltip-wrap display rule below. */
 .hero .hero-view-requests {

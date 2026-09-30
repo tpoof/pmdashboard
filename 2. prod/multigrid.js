@@ -153,6 +153,7 @@
   var COLLAPSED_KEY = "lp-mst-collapsed:" + CURRENT_USER_ID;
   var HIDE_BTN_ID = "mst-hide-btn";
   var SHOW_BTN_ID = "mst-open-btn";
+  var HEADING_ID = "hero-requests-h2";
   var heroTargetEl = cfg.heroTargetId
     ? document.getElementById(cfg.heroTargetId)
     : null;
@@ -1253,8 +1254,8 @@
   }
 
   // Hide collapses the panel to the centered hero; View My Requests shows the
-  // already-loaded grid again (no refetch). Focus moves to whichever button
-  // replaced the one that was clicked.
+  // already-loaded grid again (no refetch). Hide focuses View My Requests;
+  // showing focuses the panel heading, since Hide sits below the table.
   function setCollapsed(on) {
     layout.collapsed = on;
     storageSet("sessionStorage", COLLAPSED_KEY, on ? "1" : null);
@@ -1264,6 +1265,7 @@
   function wireHeroToggle() {
     var hideBtn = document.getElementById(HIDE_BTN_ID);
     var showBtn = document.getElementById(SHOW_BTN_ID);
+    var heading = document.getElementById(HEADING_ID);
     if (hideBtn) {
       hideBtn.addEventListener("click", function () {
         setCollapsed(true);
@@ -1276,10 +1278,52 @@
     if (showBtn) {
       showBtn.addEventListener("click", function () {
         setCollapsed(false);
-        if (hideBtn) hideBtn.focus();
+        if (heading) heading.focus();
         announce("National LEAF Requests panel shown on the home page.");
       });
     }
+  }
+
+  async function fetchFirstName() {
+    var userID = String(CURRENT_USER_ID || "").trim();
+    if (!userID || /[{<]/.test(userID)) return null;
+    var cacheKey = "hl.firstName." + userID;
+    var cached = storageGet("sessionStorage", cacheKey);
+    if (cached) return cached;
+    try {
+      var resp = await fetch(
+        "../platform/orgchart/api/employee/search?q=userName:" +
+          encodeURIComponent(userID) +
+          "&noLimit=0&_=" +
+          Date.now(),
+        { credentials: "same-origin" },
+      );
+      if (!resp.ok) return null;
+      var data = await resp.json();
+      var employees = Array.isArray(data) ? data : Object.values(data || {});
+      var fullID = userID.toLowerCase();
+      var bareID = fullID.split("\\").pop();
+      var match = employees.find(function (e) {
+        var name = String((e && e.userName) || "").toLowerCase();
+        return name !== "" && (name === fullID || name === bareID);
+      });
+      var first = String((match && match.firstName) || "").trim();
+      if (!first) return null;
+      storageSet("sessionStorage", cacheKey, first);
+      return first;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function renderGreeting() {
+    var nameEl = document.querySelector(
+      "#" + HEADING_ID + " .hero-requests-name",
+    );
+    if (!nameEl) return;
+    fetchFirstName().then(function (first) {
+      if (first) nameEl.textContent = ", " + first;
+    });
   }
 
   // Sysadmin first-time preview, toggled with Alt+Shift+F (no visible UI; the
@@ -1303,7 +1347,7 @@
     if (!isShown(document.activeElement)) {
       var target = layout.preview
         ? heroTargetEl.querySelector(".hero-actions a, .hero-actions button")
-        : document.getElementById(layout.collapsed ? SHOW_BTN_ID : HIDE_BTN_ID);
+        : document.getElementById(layout.collapsed ? SHOW_BTN_ID : HEADING_ID);
       if (isShown(target)) target.focus();
     }
     announce(
@@ -1444,6 +1488,7 @@
     if (cfg.compact) rootEl.classList.add("mst-compact");
     wireRecordModalFocus(rootEl);
     wireHeroToggle();
+    renderGreeting();
     wirePreview();
     buildAndLoadGrid(rootEl);
   }
