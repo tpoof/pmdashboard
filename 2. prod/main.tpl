@@ -90,10 +90,7 @@
 {if $smarty.server.HTTP_HOST === 'leaf.apps.vapo-aws-ppd.va.gov'}
     <div style="position: fixed; z-index: 9999; width: 100%; background-color: rgba(255,255,100,0.75); text-align: center;">VAPO TESTING</div>
 {/if}
-{* $login and #qrcode-js were previously inside the (now-removed) legacy header: $login drives session/logout state, #qrcode-js is the mount point the QRCode script in <head> targets. *}
-{if $login != ''}
-<div id="lp-login-slot" class="noprint">{$login}</div>
-{/if}
+{* #qrcode-js is the mount point the QRCode script in <head> targets. *}
 {if $qrcodeURL != ''}
 <div id="qrcode-js" style="width: 72px; display: none;"></div>
 {/if}

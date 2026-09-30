@@ -29,7 +29,7 @@ Architecture, shared components, page status, and standards for the LEAF Launchp
 
 Layers, bottom-up:
 
-1. **`main.tpl`** (Smarty shell) — page skeleton. Loads `leaf_header.css`/`.js` in `<head>`, injects jQuery/UI libs per-page via `$useUI`/`$useLiteUI`, skip link, `#lp-login-slot`, `#qrcode-js`. Body renders into `#content > #bodyarea`.
+1. **`main.tpl`** (Smarty shell) — page skeleton. Loads `leaf_header.css`/`.js` in `<head>`, injects jQuery/UI libs per-page via `$useUI`/`$useLiteUI`, skip link, `#qrcode-js`. Body renders into `#content > #bodyarea`.
    - 🚩 **TODO:** `launchpad.css` is linked from `view_homepage.tpl`'s body, not here → FOUC risk. Move to `main.tpl` `<head>` when header is next touched.
 2. **`launchpad.css`** — design tokens (`--lp-*`/`--c-*`), reset, typography, reusable classes (`.hero`, `.btn-pri/-sec`, `.feats`, `.step`, `.scale`, `.nl`, `.lp-jump`, `.lp-inline-panel`), icon sizing, a11y utilities. Every `lp_*.html` links this.
 3. **`leaf_header.js` + `leaf_header.css`** — shared nav/header/router. See §3.

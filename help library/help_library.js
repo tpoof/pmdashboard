@@ -162,38 +162,61 @@ var HelpLib = (function () {
     target?.focus();
   }
 
-  /* LEAF's header renders the logged-in user's full name (from $login->getName()).
-     We extract the first name from that existing DOM content rather than
-     duplicating the lookup server-side. Falls back to null (→ plain "Hello!")
-     if neither method finds a name. Fragile: depends on LEAF shell markup
-     staying stable; breakage here is silent beyond the console.error below. */
-  function getFirstName() {
+  /* Resolves the viewer's first name from the org chart API using
+     HL_CFG.userID (exact, case-insensitive userName match). Cached per
+     user in sessionStorage. Resolves to null on any failure so the
+     greeting stays "Hello!". */
+  async function getFirstName() {
+    const userID = String(HL_CFG.userID ?? "").trim();
+    // Empty or unrendered ("<!--{$userID}-->" left as-is) → no lookup.
+    if (!userID || /[{<]/.test(userID)) return null;
+
+    const cacheKey = `hl.firstName.${userID}`;
     try {
-      const headerEl =
-        document.querySelector("#headerHelp span b") ||
-        document.querySelector(".user-name") ||
-        document.querySelector('[id*="header"] b');
-
-      if (headerEl?.textContent?.trim()) {
-        const first = headerEl.textContent.trim().split(/\s+/)[0];
-        if (first) return first;
-      }
-
-      const bodyMatch = document.body.innerText.match(
-        /Welcome,\s+([A-Za-z]+)\s+/,
-      );
-      if (bodyMatch?.[1]) return bodyMatch[1];
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) return cached;
     } catch (err) {
-      console.error("[getFirstName] lookup failed", err);
+      /* storage unavailable — fall through to the API */
     }
-    return null;
+
+    try {
+      // Absolute path is intentional: the org chart is a separate LEAF app.
+      const res = await fetch(
+        `/platform/orgchart/api/employee/search?q=userName:${encodeURIComponent(userID)}&noLimit=0&_=${Date.now()}`,
+        { credentials: "same-origin" },
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      const employees = Array.isArray(data) ? data : Object.values(data || {});
+      const fullID = userID.toLowerCase();
+      const bareID = fullID.split("\\").pop();
+      const match = employees.find((e) => {
+        const name = String(e?.userName ?? "").toLowerCase();
+        return name !== "" && (name === fullID || name === bareID);
+      });
+      const first = String(match?.firstName ?? "").trim();
+      if (!first) return null;
+      try {
+        sessionStorage.setItem(cacheKey, first);
+      } catch (err) {
+        /* storage unavailable — skip caching */
+      }
+      return first;
+    } catch (err) {
+      console.warn("[getFirstName] org chart lookup failed:", err);
+      return null;
+    }
   }
 
+  // Renders "Hello!" immediately, then swaps in the name in place once
+  // resolved. #heroGreeting isn't a live region, so the update is silent.
   function renderHeroGreeting() {
     const el = document.getElementById("heroGreeting");
     if (!el) return;
-    const first = getFirstName();
-    el.textContent = first ? `Hello, ${first}!` : "Hello!";
+    el.textContent = "Hello!";
+    getFirstName().then((first) => {
+      if (first) el.textContent = `Hello, ${first}!`;
+    });
   }
 
   /* Turn plain-text descriptions into lightly structured HTML: consecutive

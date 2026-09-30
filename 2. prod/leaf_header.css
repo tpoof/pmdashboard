@@ -641,18 +641,6 @@ button.dd-link {
   box-shadow: inset 0 1px 2px rgba(0, 10, 60, 0.04); /* very subtle depth */
 }
 
-/* ── Account slot (login/logout) ──
-   Non-sysadmin counterpart to .lp-nav-internal (the two are mutually
-   exclusive, see buildAccountSlotHTML() in leaf_header.js), so it
-   takes the same far-right position. Content is the Smarty-rendered
-   #lp-login-slot, moved in by inject(). */
-.lp-nav-account {
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
 /* Lock icon only — no visible "Internal" text. role="img" + aria-label
    on the markup gives it a real accessible name since there's no text
    left to provide one. */
@@ -994,11 +982,6 @@ button.dd-link {
     display: inline-flex;
   }
   .lp-nav-internal {
-    display: none !important;
-  }
-  /* Desktop account slot only — login/logout stays reachable on
-     mobile via .lp-mobile-account-item in the accordion panel. */
-  .lp-nav-account {
     display: none !important;
   }
 }
