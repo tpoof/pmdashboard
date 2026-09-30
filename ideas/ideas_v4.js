@@ -2858,6 +2858,57 @@ async function writeSubmittedStatus(recordID) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Tooltips (.lp-tooltip-wrap)
+───────────────────────────────────────────────────────────── */
+
+// CSS handles hover/focus. This adds Escape-to-dismiss (WCAG 1.4.13) and
+// tap-to-show, since iOS doesn't focus buttons on tap. Delegated, so it
+// also covers tooltips rendered after load.
+function bindTooltips() {
+  const reset = (wrap) => wrap.classList.remove("is-open", "is-dismissed");
+
+  document.addEventListener("mouseout", (e) => {
+    const wrap = e.target.closest?.(".lp-tooltip-wrap");
+    if (!wrap || wrap.contains(e.relatedTarget)) return;
+    if (!wrap.contains(document.activeElement)) reset(wrap);
+  });
+  document.addEventListener("focusout", (e) => {
+    const wrap = e.target.closest?.(".lp-tooltip-wrap");
+    if (!wrap || wrap.contains(e.relatedTarget)) return;
+    if (!wrap.matches(":hover")) reset(wrap);
+  });
+  document.addEventListener("pointerdown", (e) => {
+    const wrap = e.target.closest?.(".lp-tooltip-wrap");
+    document.querySelectorAll(".lp-tooltip-wrap.is-open").forEach((w) => {
+      if (w !== wrap) w.classList.remove("is-open");
+    });
+    if (wrap && e.pointerType === "touch") wrap.classList.add("is-open");
+  });
+
+  // Capture phase so Escape closes the tooltip before the modal's
+  // Escape handler closes the whole form.
+  document.addEventListener(
+    "keydown",
+    (e) => {
+      if (e.key !== "Escape") return;
+      const open = Array.from(
+        document.querySelectorAll(".lp-tooltip-wrap"),
+      ).find(
+        (w) =>
+          !w.classList.contains("is-dismissed") &&
+          (w.classList.contains("is-open") ||
+            w.matches(":hover, :focus-within")),
+      );
+      if (!open) return;
+      open.classList.remove("is-open");
+      open.classList.add("is-dismissed");
+      e.stopPropagation();
+    },
+    true,
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
    Idea form
 ───────────────────────────────────────────────────────────── */
 
@@ -2878,7 +2929,7 @@ function setIdeaModalMode(isEditing) {
     if (label) submitBtn.appendChild(label);
     submitBtn.appendChild(document.createTextNode(" Submit Idea"));
   }
-  if (saveBtn) saveBtn.disabled = false;
+  if (saveBtn) saveBtn.removeAttribute("aria-disabled");
 }
 
 async function openDraftForEditing(recordID) {
@@ -3012,8 +3063,9 @@ async function NewIdea(advanceOnSuccess) {
 
   const editingRecordID = editingDraftRecordID;
 
-  if (submitBtn) submitBtn.disabled = true;
-  if (saveBtn) saveBtn.disabled = true;
+  // aria-disabled (not disabled) keeps focus on the button while saving.
+  submitBtn?.setAttribute("aria-disabled", "true");
+  saveBtn?.setAttribute("aria-disabled", "true");
   ideaSubmitInProgress = true;
 
   const todayStr = advanceOnSuccess ? todayLocalYMD() : null;
@@ -3142,7 +3194,7 @@ async function NewIdea(advanceOnSuccess) {
       } else {
         await writeDraftStatus(newID);
         showToast(
-          `${editingRecordID ? "Draft updated. You can find it in My Ideas." : "Idea saved. You can find it in My Ideas."}${attachmentNote}`,
+          `${editingRecordID ? "Draft updated. You can find it in My Ideas." : "Draft saved. You can find it in My Ideas."}${attachmentNote}`,
           Boolean(attachmentNote),
         );
         await fetchUserSubmissions();
@@ -3155,8 +3207,8 @@ async function NewIdea(advanceOnSuccess) {
     showToast("Error submitting idea. Please try again.", true);
   } finally {
     ideaSubmitInProgress = false;
-    if (submitBtn) submitBtn.disabled = false;
-    if (saveBtn) saveBtn.disabled = false;
+    submitBtn?.removeAttribute("aria-disabled");
+    saveBtn?.removeAttribute("aria-disabled");
   }
 }
 
@@ -3974,11 +4026,13 @@ function initPortal() {
   loadImpactOptions();
   loadStatusOptions();
   initValidation();
+  bindTooltips();
   maybeShowHowItWorksOnFirstVisit();
 
   document
     .getElementById("saveDraftButton")
     ?.addEventListener("click", async () => {
+      if (ideaSubmitInProgress) return;
       const form = document.getElementById("ideaForm");
       if (!form) return;
       const titleVal = document.getElementById("inpTitle")?.value.trim();
@@ -3993,6 +4047,7 @@ function initPortal() {
   document
     .getElementById("submitButton")
     ?.addEventListener("click", async () => {
+      if (ideaSubmitInProgress) return;
       const form = document.getElementById("ideaForm");
       if (!form) return;
       form.classList.add("was-validated");

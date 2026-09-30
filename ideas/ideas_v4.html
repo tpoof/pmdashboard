@@ -1103,6 +1103,9 @@
         outline: 2px solid var(--ip-blue);
         outline-offset: 2px;
       }
+      .ip-btn[aria-disabled="true"] {
+        cursor: progress;
+      }
       .ip-btn--icon {
         background: transparent;
         border: none;
@@ -1670,9 +1673,13 @@
         .ip-actions {
           padding: 14px 16px;
         }
-        .ip-actions .ip-btn {
+        .ip-actions .ip-btn,
+        .ip-actions > .lp-tooltip-wrap {
           flex: 1 1 auto;
           justify-content: center;
+        }
+        .ip-actions > .lp-tooltip-wrap .ip-btn {
+          width: 100%;
         }
       }
 
@@ -3466,25 +3473,34 @@
             </form>
           </div>
           <div class="ip-actions">
-            <button
-              type="button"
-              class="ip-btn ip-btn--ghost"
-              id="saveDraftButton"
-            >
-              <svg
-                class="ip-icon"
-                viewBox="0 -960 960 960"
-                fill="currentColor"
-                aria-hidden="true"
-                focusable="false"
-                style="width: 1rem; height: 1rem"
+            <span class="lp-tooltip-wrap">
+              <button
+                type="button"
+                class="ip-btn ip-btn--ghost"
+                id="saveDraftButton"
+                aria-describedby="saveDraftButtonTip"
               >
-                <path
-                  d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160ZM565-275q35-35 35-85t-35-85q-35-35-85-35t-85 35q-35 35-35 85t35 85q35 35 85 35t85-35ZM240-560h360v-160H240v160Z"
-                />
-              </svg>
-              Save Idea
-            </button>
+                <svg
+                  class="ip-icon"
+                  viewBox="0 -960 960 960"
+                  fill="currentColor"
+                  aria-hidden="true"
+                  focusable="false"
+                  style="width: 1rem; height: 1rem"
+                >
+                  <path
+                    d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160ZM565-275q35-35 35-85t-35-85q-35-35-85-35t-85 35q-35 35-35 85t35 85q35 35 85 35t85-35ZM240-560h360v-160H240v160Z"
+                  />
+                </svg>
+                Save Draft
+              </button>
+              <span
+                class="lp-tooltip lp-tooltip--start"
+                id="saveDraftButtonTip"
+                role="tooltip"
+                >Saved drafts are available in your My Ideas tab.</span
+              >
+            </span>
             <button
               type="button"
               class="ip-btn ip-btn--primary"
