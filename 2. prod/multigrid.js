@@ -147,33 +147,39 @@
   //   is-preview    sysadmin first-time preview
   // Stored hints are applied before any fetch to avoid layout shift; the
   // fetched data then corrects hasRecords.
+  // localStorage: only prevents layout shift and is always verified with data.
   var RETURNING_KEY = "lp-mst-returning:" + CURRENT_USER_ID;
+  // sessionStorage: Hide should last only for the current browser session.
   var COLLAPSED_KEY = "lp-mst-collapsed:" + CURRENT_USER_ID;
   var HIDE_BTN_ID = "mst-hide-btn";
   var SHOW_BTN_ID = "mst-open-btn";
-  var PREVIEW_EXIT_ID = "mst-preview-exit";
   var heroTargetEl = cfg.heroTargetId
     ? document.getElementById(cfg.heroTargetId)
     : null;
 
-  // Storage can be blocked (private mode, policy); fail silently.
-  function storageGet(key) {
+  // Storage can be blocked (private mode, policy); fail silently. The
+  // accessor itself can throw, so it is read inside the try.
+  function storageGet(area, key) {
     try {
-      return window.localStorage.getItem(key);
+      return window[area].getItem(key);
     } catch (e) {
       return null;
     }
   }
-  function storageSet(key, value) {
+  function storageSet(area, key, value) {
     try {
-      if (value === null) window.localStorage.removeItem(key);
-      else window.localStorage.setItem(key, value);
+      if (value === null) window[area].removeItem(key);
+      else window[area].setItem(key, value);
     } catch (e) {}
   }
 
+  // Remove the collapsed hint older builds kept in localStorage. Never read
+  // it: a stale value must not collapse the panel. Delete after launch.
+  storageSet("localStorage", COLLAPSED_KEY, null);
+
   var layout = {
-    hasRecords: storageGet(RETURNING_KEY) === "1",
-    collapsed: storageGet(COLLAPSED_KEY) === "1",
+    hasRecords: storageGet("localStorage", RETURNING_KEY) === "1",
+    collapsed: storageGet("sessionStorage", COLLAPSED_KEY) === "1",
     preview: false,
   };
 
@@ -1237,11 +1243,11 @@
     // The collapsed hint is left alone: it applies again once records exist.
     if (total > 0) {
       layout.hasRecords = true;
-      storageSet(RETURNING_KEY, "1");
+      storageSet("localStorage", RETURNING_KEY, "1");
       applyLayout();
     } else if (allSettled) {
       layout.hasRecords = false;
-      storageSet(RETURNING_KEY, null);
+      storageSet("localStorage", RETURNING_KEY, null);
       applyLayout();
     }
   }
@@ -1251,7 +1257,7 @@
   // replaced the one that was clicked.
   function setCollapsed(on) {
     layout.collapsed = on;
-    storageSet(COLLAPSED_KEY, on ? "1" : null);
+    storageSet("sessionStorage", COLLAPSED_KEY, on ? "1" : null);
     applyLayout();
   }
 
@@ -1276,8 +1282,9 @@
     }
   }
 
-  // Sysadmin first-time preview, toggled with Alt+Shift+F. In memory only:
-  // no storage writes, no refetch.
+  // Sysadmin first-time preview, toggled with Alt+Shift+F (no visible UI; the
+  // live region is the only feedback). In memory only: no storage writes, no
+  // refetch; reloading the page leaves preview.
   function isTextEntry(el) {
     if (!el) return false;
     if (el.isContentEditable) return true;
@@ -1295,7 +1302,7 @@
     // Keep focus on something visible if the focused control just hid.
     if (!isShown(document.activeElement)) {
       var target = layout.preview
-        ? document.getElementById(PREVIEW_EXIT_ID)
+        ? heroTargetEl.querySelector(".hero-actions a, .hero-actions button")
         : document.getElementById(layout.collapsed ? SHOW_BTN_ID : HIDE_BTN_ID);
       if (isShown(target)) target.focus();
     }
@@ -1308,21 +1315,21 @@
 
   function wirePreview() {
     if (!cfg.isSysadmin || !heroTargetEl) return;
-    var exitBtn = document.getElementById(PREVIEW_EXIT_ID);
-    if (exitBtn) {
-      exitBtn.addEventListener("click", function () {
-        if (layout.preview) togglePreview();
-      });
-    }
-    document.addEventListener("keydown", function (e) {
-      if (!(e.altKey && e.shiftKey && e.code === "KeyF") || e.repeat) return;
-      // No records means the user already sees the first-time view.
-      if (!layout.preview && !layout.hasRecords) return;
-      if (document.querySelector(".lp-modal:not([hidden])")) return;
-      if (isTextEntry(document.activeElement)) return;
-      e.preventDefault();
-      togglePreview();
-    });
+    // Capture phase: a page-level handler that stops propagation (main.tpl
+    // loads jQuery UI and other scripts) cannot swallow the shortcut.
+    document.addEventListener(
+      "keydown",
+      function (e) {
+        if (!(e.altKey && e.shiftKey && e.code === "KeyF") || e.repeat) return;
+        // No records means the user already sees the first-time view.
+        if (!layout.preview && !layout.hasRecords) return;
+        if (document.querySelector(".lp-modal:not([hidden])")) return;
+        if (isTextEntry(document.activeElement)) return;
+        e.preventDefault();
+        togglePreview();
+      },
+      true,
+    );
   }
 
   // leaf_header.js returns focus to the link that opened the record modal.

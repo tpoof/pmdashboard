@@ -835,18 +835,6 @@
       <main id="lp-main" tabindex="-1">
         <!-- HERO: layout classes are set by multigrid.js applyLayout() -->
         <section class="hero" id="lp-hero" aria-labelledby="hero-h1">
-          <!--{if $empMembership['groupID'][1]}-->
-          <div class="hero-preview-bar">
-            <span>Admin preview: first-time view. Nothing is saved.</span>
-            <button
-              type="button"
-              id="mst-preview-exit"
-              aria-keyshortcuts="Alt+Shift+F"
-            >
-              Exit preview (Alt+Shift+F)
-            </button>
-          </div>
-          <!--{/if}-->
           <div class="hero-grid">
             <div class="hero-main">
               <span class="hero-kicker">
@@ -923,7 +911,7 @@
               <section class="hero-requests" aria-labelledby="hero-requests-h2">
                 <div class="hero-requests-hd">
                   <h2 class="hero-requests-h2" id="hero-requests-h2">
-                    National LEAF Requests
+                    Your National LEAF Requests
                   </h2>
                   <button
                     type="button"
