@@ -539,6 +539,12 @@
         color: var(--ip-muted);
         font-size: 0.9rem;
       }
+      /* Sits outside .ip-votedModal__body so it stays put while the list
+         scrolls and still shows in the empty state. */
+      .ip-votedModal__note {
+        flex-shrink: 0;
+        margin: 12px;
+      }
       .ip-votedModal__search {
         padding: 10px 12px;
         border-bottom: 1px solid var(--ip-blue-10);
@@ -1255,10 +1261,10 @@
         display: inline-flex;
       }
       .ip-share {
-        display: inline-flex;
+        display: inline-grid;
         align-items: center;
         justify-content: center;
-        gap: 4px;
+        justify-items: center;
         height: 32px;
         padding: 0 8px;
         font-size: 0.78rem;
@@ -1299,6 +1305,29 @@
       .ip-share:disabled:focus-visible {
         outline: 2px solid var(--ip-muted);
         outline-offset: 2px;
+      }
+      /* Share/Link copied/Couldn't copy labels (see shareButtonInnerHtml()
+         in ideas_v4.js) sit in one grid cell. Inactive labels are
+         visibility:hidden so they still reserve width: no layout shift. */
+      .ip-share__label {
+        grid-area: 1 / 1;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+      }
+      .ip-share__label--copied,
+      .ip-share__label--error,
+      .ip-share.is-copied .ip-share__label--idle,
+      .ip-share.is-copyError .ip-share__label--idle {
+        visibility: hidden;
+      }
+      .ip-share.is-copied .ip-share__label--copied,
+      .ip-share.is-copyError .ip-share__label--error {
+        visibility: visible;
+      }
+      .ip-share.is-copied .ip-share__label--copied .ip-icon {
+        color: var(--ip-green);
       }
 
       .ip-pagination {
@@ -2044,6 +2073,15 @@
       .ip-phiNotice strong {
         font-weight: 700;
       }
+      .ip-phiNotice--info {
+        background: var(--ip-blue-lt);
+        border-color: var(--ip-blue-20);
+        border-left-color: var(--ip-blue);
+        color: var(--ip-text);
+      }
+      .ip-phiNotice--info .ip-icon {
+        color: var(--ip-blue);
+      }
 
       .ip-toast {
         position: fixed !important;
@@ -2394,6 +2432,7 @@
       @media (prefers-reduced-motion: reduce) {
         .ip-toast,
         .ip-upvote,
+        .ip-share,
         .ip-btn,
         .ip-hero-badge,
         .ip-hero-title,
@@ -3207,6 +3246,12 @@
       </main>
 
       <div id="ipToast" class="ip-toast" role="alert" aria-live="polite"></div>
+      <div
+        id="ipShareStatus"
+        class="ip-srOnly"
+        role="status"
+        aria-live="polite"
+      ></div>
 
       <div
         class="ip-modal"
@@ -3565,6 +3610,11 @@
             </div>
           </div>
           <div class="ip-recordModal__body" id="ipRecordModalBody"></div>
+          <div
+            class="ip-srOnly ip-shareStatus"
+            role="status"
+            aria-live="polite"
+          ></div>
         </div>
       </div>
 
@@ -3588,6 +3638,18 @@
             >
               ✕
             </button>
+          </div>
+          <div
+            class="ip-phiNotice ip-phiNotice--info ip-votedModal__note"
+            role="note"
+          >
+            <!-- TODO: paste Material Symbols Filled "info" SVG here, matching
+                 the .ip-phiNotice icon markup (class="ip-icon",
+                 aria-hidden="true", focusable="false"). -->
+            <span
+              ><strong>Note:</strong> Votes cast in the LEAF Idea Portal will
+              appear here. Votes cast in the PowerApp are not captured.</span
+            >
           </div>
           <div class="ip-votedModal__search" id="ipVotedModalSearch" hidden>
             <div class="ip-searchInner">
@@ -3710,6 +3772,11 @@
               </table>
             </div>
           </div>
+          <div
+            class="ip-srOnly ip-shareStatus"
+            role="status"
+            aria-live="polite"
+          ></div>
         </div>
       </div>
       <div

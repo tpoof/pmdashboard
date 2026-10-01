@@ -571,24 +571,81 @@ function hideToast() {
   toast.classList.remove("is-visible");
 }
 
-function copyFallback(text) {
+/* ─────────────────────────────────────────────────────────────
+   Share button → inline "Link copied" feedback
+───────────────────────────────────────────────────────────── */
+
+const SHARE_FEEDBACK_MS = 2500;
+let shareFeedbackTimer = null;
+let shareFeedbackBtn = null;
+
+// All three labels share one grid cell (see .ip-share CSS), so the button
+// is always as wide as the longest label and never shifts on swap.
+function shareButtonInnerHtml() {
+  return `<span class="ip-share__label ip-share__label--idle">${iconSvg("share")} Share</span>
+    <span class="ip-share__label ip-share__label--copied">${iconSvg("check_circle")} Link copied</span>
+    <span class="ip-share__label ip-share__label--error">${iconSvg("error")} Couldn't copy link</span>`;
+}
+
+// Modals are aria-modal, so screen readers may ignore a live region outside
+// the open dialog. Use the dialog's own region when the button is in one.
+function shareStatusRegion(btn) {
+  return (
+    btn.closest('[role="dialog"]')?.querySelector(".ip-shareStatus") ||
+    document.getElementById("ipShareStatus")
+  );
+}
+
+function resetShareFeedback() {
+  clearTimeout(shareFeedbackTimer);
+  shareFeedbackTimer = null;
+  if (!shareFeedbackBtn) return;
+  shareFeedbackBtn.classList.remove("is-copied", "is-copyError");
+  const region = shareStatusRegion(shareFeedbackBtn);
+  if (region) region.textContent = "";
+  shareFeedbackBtn = null;
+}
+
+function showShareFeedback(btn, ok) {
+  resetShareFeedback();
+  shareFeedbackBtn = btn;
+  btn.classList.add(ok ? "is-copied" : "is-copyError");
+  const region = shareStatusRegion(btn);
+  if (region) region.textContent = ok ? "Link copied" : "Couldn't copy link";
+  shareFeedbackTimer = setTimeout(resetShareFeedback, SHARE_FEEDBACK_MS);
+}
+
+// Fallback for browsers/contexts where the async Clipboard API is missing
+// or blocked. select() moves focus, so focus is handed back to the button.
+function copyWithExecCommand(text, btn) {
+  const input = document.createElement("input");
+  input.value = text;
+  input.readOnly = true;
+  input.tabIndex = -1;
+  input.setAttribute("aria-hidden", "true");
+  input.style.cssText = "position:fixed;top:0;left:-9999px;opacity:0";
+  document.body.appendChild(input);
+  let ok = false;
   try {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    const ok = document.execCommand("copy");
-    document.body.removeChild(ta);
-    if (ok) {
-      showToast("Idea link copied to clipboard.");
-    } else {
-      showToast("Could not copy — please copy the URL manually.", true);
-    }
+    input.select();
+    input.setSelectionRange(0, text.length);
+    ok = document.execCommand("copy");
   } catch (err) {
-    console.warn("[Share] copyFallback failed:", err);
-    showToast("Could not copy — please copy the URL manually.", true);
+    console.warn("[Share] execCommand copy failed:", err);
+  }
+  input.remove();
+  btn.focus({ preventScroll: true });
+  return ok;
+}
+
+function copyShareLink(btn, link) {
+  const fallback = () => showShareFeedback(btn, copyWithExecCommand(link, btn));
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard
+      .writeText(link)
+      .then(() => showShareFeedback(btn, true), fallback);
+  } else {
+    fallback();
   }
 }
 
@@ -1307,8 +1364,7 @@ function buildDetailSkeleton(
         data-record-link="${escapeHtml(RECORD_VIEW_URL + recordID)}"
         aria-label="Copy link to idea #${escapeHtml(recordID)}"
         title="Copy shareable link">
-        ${iconSvg("share")}
-        Share
+        ${shareButtonInnerHtml()}
       </button>`
       }
     </div>
@@ -1969,8 +2025,7 @@ function buildIdeaRow(idea) {
         data-record-link="${escapeHtml(recordLink)}"
         aria-label="Copy link for ${labelTitle}"
         title="Copy shareable link">
-        ${iconSvg("share")}
-        Share
+        ${shareButtonInnerHtml()}
       </button>`;
 
   const comment = idea.comment || "";
@@ -3715,15 +3770,7 @@ function bindDelegatedEvents() {
       if (shareBtn.disabled) return;
       const link = shareBtn.getAttribute("data-record-link");
       if (!link) return;
-
-      if (navigator.clipboard?.writeText) {
-        navigator.clipboard
-          .writeText(link)
-          .then(() => showToast("Idea link copied to clipboard."))
-          .catch(() => copyFallback(link));
-      } else {
-        copyFallback(link);
-      }
+      copyShareLink(shareBtn, link);
       return;
     }
 
@@ -3855,8 +3902,7 @@ function buildVotedActionsCell(id, idea) {
       data-record-link="${escapeHtml(recordLink)}"
       aria-label="Copy link for ${escapeHtml(labelTitle)}"
       title="Copy shareable link">
-      ${iconSvg("share")}
-      Share
+      ${shareButtonInnerHtml()}
     </button>
   </div>`;
 }
