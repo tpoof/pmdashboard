@@ -1465,15 +1465,30 @@
             }
           }
 
-          /* ── Report modal (Admin Inbox and popup links) ── */
-          const modal = $id("thbModal");
+          /* ── Report modal (Admin Inbox and popup links) ──
+             Inline under the Launchpad router (#team) this page's markup lives
+             inside the shell's #lpSwapHost, and earlier visits may have left a
+             modal on <body>. Keep only this visit's copy (the one not yet on
+             <body>; standalone there is just one) and move it to <body> so no
+             ancestor's inert/aria-hidden/transform/overflow can affect it. */
+          const modal = (() => {
+            const copies = Array.from(document.querySelectorAll("#thbModal"));
+            const current =
+              copies.find((m) => m.parentElement !== document.body) ||
+              copies[copies.length - 1];
+            copies.forEach((m) => m !== current && m.remove());
+            if (current && current.parentElement !== document.body)
+              document.body.appendChild(current);
+            return current || null;
+          })();
           (() => {
-            const frame = $id("thbModalFrame");
-            const titleEl = $id("thbModalTitle");
-            const closeBtn = $id("thbModalClose");
-            const backdrop = $id("thbModalBackdrop");
-            const pageRoot = $id("lp-root");
-            if (!modal || !frame) return;
+            if (!modal) return;
+            // Scoped to this modal — ids may be duplicated while stale copies exist
+            const frame = modal.querySelector("#thbModalFrame");
+            const titleEl = modal.querySelector("#thbModalTitle");
+            const closeBtn = modal.querySelector("#thbModalClose");
+            const backdrop = modal.querySelector("#thbModalBackdrop");
+            if (!frame) return;
 
             let lastFocused = null;
             let lastFocusKey = null;
@@ -1549,16 +1564,50 @@
               titleEl.textContent = reportTitle;
               frame.setAttribute("title", reportTitle);
               frame.src = trigger.getAttribute("data-report-src");
+              // Background is not made inert: aria-modal + the focus trap
+              // cover it, and "#lp-root" is ambiguous when loaded inline.
+              modal.inert = false;
+              modal.removeAttribute("aria-hidden");
               modal.classList.add("is-open");
-              modal.setAttribute("aria-hidden", "false");
-              if (pageRoot) pageRoot.inert = true;
               document.body.style.overflow = "hidden";
               closeBtn.focus();
+
+              // ── TEMP DIAGNOSTICS (start) — remove before ship ──
+              requestAnimationFrame(() => {
+                const chain = [];
+                for (
+                  let n = modal;
+                  n && n !== document.documentElement;
+                  n = n.parentElement
+                ) {
+                  chain.push({
+                    tag: n.tagName,
+                    id: n.id,
+                    inert: n.inert,
+                    ariaHidden: n.getAttribute("aria-hidden"),
+                    pointerEvents: getComputedStyle(n).pointerEvents,
+                  });
+                }
+                console.table(chain);
+                const r = closeBtn.getBoundingClientRect();
+                const hit = document.elementFromPoint(
+                  r.left + r.width / 2,
+                  r.top + r.height / 2,
+                );
+                console.info(
+                  "[TeamHub TEMP] modal copies:",
+                  document.querySelectorAll("#thbModal").length,
+                  "| elementFromPoint at close button:",
+                  hit,
+                  "| is close button:",
+                  closeBtn.contains(hit),
+                );
+              });
+              // ── TEMP DIAGNOSTICS (end) ──
             };
             const closeModal = () => {
               modal.classList.remove("is-open");
               modal.setAttribute("aria-hidden", "true");
-              if (pageRoot) pageRoot.inert = false;
               document.body.style.overflow = "";
               frame.src = "";
               // The trigger may have been replaced by a refresh while open
@@ -1568,17 +1617,39 @@
               target?.focus();
             };
 
-            // Delegated: popup tiles are rendered after the fetch.
+            // Delegated: popup tiles are rendered after the fetch. The
+            // isConnected checks stop listeners from an earlier inline visit
+            // (whose modal was removed) from acting.
             document.addEventListener("click", (e) => {
+              if (!modal.isConnected) return;
               const trigger = e.target.closest(".thb-modal-trigger");
               if (trigger) openModal(trigger);
             });
             closeBtn.addEventListener("click", closeModal);
             backdrop.addEventListener("click", closeModal);
             document.addEventListener("keydown", (e) => {
-              if (e.key === "Escape" && modal.classList.contains("is-open"))
+              if (
+                e.key === "Escape" &&
+                modal.isConnected &&
+                modal.classList.contains("is-open")
+              )
                 closeModal();
             });
+
+            // Router teardown (leaf_header.js calls LP_PAGES.team.destroy()
+            // before replacing this route): close and drop the body-level modal.
+            window.LP_PAGES = window.LP_PAGES || {};
+            window.LP_PAGES.team = {
+              ...window.LP_PAGES.team,
+              destroy() {
+                if (modal.classList.contains("is-open")) {
+                  modal.classList.remove("is-open");
+                  document.body.style.overflow = "";
+                  frame.src = "";
+                }
+                modal.remove();
+              },
+            };
             modal.addEventListener("keydown", (e) => {
               if (e.key !== "Tab" || !modal.classList.contains("is-open"))
                 return;
