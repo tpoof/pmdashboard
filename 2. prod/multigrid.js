@@ -548,9 +548,10 @@
 
   // -- Runtime --
 
-  var siteState = {}; // keyed by source.url -- { data, rendered, error }
+  var siteState = {}; // keyed by source.url -- { data, rendered, error, loading }
   var mstRootEl = null; // set by buildShell -- the container passed to buildAndLoadGrid
   var sortState = {}; // keyed by tab.id -- { columnIndex, direction }
+  var activeTabIdx = 0; // source of truth for the active tab; DOM is re-synced from it
 
   function stateKey(source) {
     return source.url;
@@ -565,29 +566,37 @@
     return !!(s && s.error);
   }
 
+  // Shown in place of a table until a tab has anything to show.
+  var LOADING_HTML =
+    '<p class="mst-loading" role="status">Loading your requests&hellip;</p>';
+
+  // One message per failed source, then a single Retry for all failed sources.
+  function errorBlockHTML(erroredKeys) {
+    if (!erroredKeys.length) return "";
+    return (
+      '<div class="mst-error">' +
+      erroredKeys
+        .map(function (k) {
+          return (
+            '<p class="ip-error">Error loading data from ' +
+            SOURCE_SITES[k].url +
+            ". Check your network access and permissions.</p>"
+          );
+        })
+        .join("") +
+      '<button type="button" class="mst-retry-btn">Retry</button>' +
+      "</div>"
+    );
+  }
+
   async function fetchSiteData(site) {
     var rawQuery = myRecordsQuery(site);
     var extraParams = rawQuery.extraParams || "";
     var query = Object.assign({}, rawQuery);
     delete query.extraParams;
 
-    if (typeof LeafFormQuery !== "undefined") {
-      var q = new LeafFormQuery();
-      q.setRootURL(site.url);
-      q.importQuery(query);
-      // importQuery() drops `sort` -- apply it explicitly or results come back unordered.
-      if (query.sort && query.sort.column) {
-        q.sort(query.sort.column, query.sort.direction || "DESC");
-      }
-      // `limit` is also dropped by importQuery(), but that's fine -- execute()
-      // falls through to getBulkData(), which paginates internally (batchSize 500).
-      if (extraParams) {
-        q.setExtraParams(extraParams);
-      }
-      return q.execute();
-    }
-
-    // Raw fetch fallback with pagination.
+    // Always raw fetch, never LeafFormQuery: a spliced route can define that
+    // global mid-session, and a retry must behave like the first load.
     var results = {};
     var batchSize = query.limit || 500;
     var offset = 0;
@@ -790,13 +799,13 @@
     if (!state) return;
 
     if (state.error) {
-      bodyEl.innerHTML =
-        '<p class="ip-error">Error loading data from ' +
-        source.url +
-        ". Check your network access and permissions.</p>";
+      bodyEl.innerHTML = errorBlockHTML([sourceKey]);
       return;
     }
-    if (!state.data) return;
+    if (!state.data) {
+      bodyEl.innerHTML = LOADING_HTML;
+      return;
+    }
 
     var rows = rowsForSource(sourceKey);
     var columns = cfg.compact
@@ -818,15 +827,13 @@
     var erroredKeys = tab.sourceKeys.filter(isSourceErrored);
     var pending = tab.sourceKeys.some(isSourcePending);
 
-    var beforeHTML = erroredKeys
-      .map(function (k) {
-        return (
-          '<p class="ip-error">Error loading data from ' +
-          SOURCE_SITES[k].url +
-          ". Check your network access and permissions.</p>"
-        );
-      })
-      .join("");
+    // Nothing settled yet: a loading message, not an empty "No records" table.
+    if (tab.sourceKeys.every(isSourcePending)) {
+      bodyEl.innerHTML = LOADING_HTML;
+      return;
+    }
+
+    var beforeHTML = errorBlockHTML(erroredKeys);
     var afterHTML = pending
       ? '<p class="mst-loading-more" role="status">Loading more requests&hellip;</p>'
       : "";
@@ -847,7 +854,7 @@
   // -- Tab dispatch ----------------------------------------------------------
   function renderTabContent(tabIndex) {
     var tab = TABS[tabIndex];
-    var bodyEl = document.getElementById("mst-body-" + tabIndex);
+    var bodyEl = mstRootEl && mstRootEl.querySelector("#mst-body-" + tabIndex);
     if (!tab || !bodyEl) return;
 
     if (tab.kind === "single") {
@@ -862,20 +869,22 @@
   }
 
   function getActiveTabIndex() {
-    var activeBtn = mstRootEl && mstRootEl.querySelector(".ip-tab.is-active");
-    if (!activeBtn) return 0;
-    var idx = parseInt(activeBtn.id.replace("mst-tab-", ""), 10);
-    return isNaN(idx) ? 0 : idx;
+    return activeTabIdx;
   }
 
+  // Scoped to mstRootEl: other pages (e.g. the Ideas route) reuse the
+  // .ip-tab/.ip-panel classes, and this must never touch theirs.
+  // Also re-asserts state: exactly one active tab and panel.
   function activateTab(idx) {
-    document.querySelectorAll(".ip-tab").forEach(function (btn, i) {
+    if (!mstRootEl) return;
+    activeTabIdx = idx;
+    mstRootEl.querySelectorAll(".ip-tab").forEach(function (btn, i) {
       var active = i === idx;
       btn.classList.toggle("is-active", active);
       btn.setAttribute("aria-selected", String(active));
       btn.setAttribute("tabindex", active ? "0" : "-1");
     });
-    document.querySelectorAll(".ip-panel").forEach(function (panel, i) {
+    mstRootEl.querySelectorAll(".ip-panel").forEach(function (panel, i) {
       panel.classList.toggle("is-active", i === idx);
     });
     updateSiteSummaryForTab(idx);
@@ -932,6 +941,7 @@
 
   function buildShell(rootEl) {
     mstRootEl = rootEl;
+    activeTabIdx = 0;
     rootEl.innerHTML =
       '<div class="smarty-root">' +
       '<div class="ip-wrap">' +
@@ -983,7 +993,7 @@
             }
             e.preventDefault();
             activateTab(next);
-            document.getElementById("mst-tab-" + next).focus();
+            mstRootEl.querySelector("#mst-tab-" + next).focus();
           };
         })(i),
       );
@@ -1043,6 +1053,7 @@
     modalState.overlay = overlay;
     modalState.bodyEl = overlay.querySelector("#mst-modal-body");
     modalState.bodyEl.classList.add("mst-container");
+    wireRetry(modalState.bodyEl);
   }
 
   function getFocusable(container) {
@@ -1145,6 +1156,12 @@
       ".mst-container .ip-table td a{color:var(--lp-accent,#005ea2);text-decoration:none;}",
       ".mst-container .ip-table td a:hover{text-decoration:underline;}",
       ".mst-container .ip-error{color:#b91c1c;font-size:14px;font-weight:600;}",
+      ".mst-container .mst-loading{margin:10px 0;font-size:0.875rem;color:var(--c-muted,#3d4551);}",
+      ".mst-container .mst-error{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:0 0 10px;}",
+      ".mst-container .mst-error .ip-error{margin:0;overflow-wrap:anywhere;}",
+      ".mst-container .mst-retry-btn{display:inline-flex;align-items:center;min-height:32px;padding:6px 14px;border-radius:var(--r,5px);border:1px solid var(--c-blue20,#aacdec);background:var(--lp-bg-alt,#eff6fb);color:var(--lp-accent,#005ea2);font:inherit;font-weight:700;cursor:pointer;}",
+      ".mst-container .mst-retry-btn:hover{background:var(--c-blue10,#d9e8f6);}",
+      ".mst-container .mst-retry-btn:focus-visible{outline:3px solid var(--lp-accent,#005ea2);outline-offset:2px;}",
       ".mst-container .mst-status-not-submitted{color:#b91c1c;font-style:italic;font-size:0.875em;}",
       ".mst-container .mst-empty{text-align:center;color:var(--c-muted,#3d4551);}",
 
@@ -1444,6 +1461,83 @@
     renderTabContent(activeIdx);
   }
 
+  // Fetches the given sources (clearing any earlier error) and re-renders
+  // as each settles. Used for the first load, Retry, and lp:home-shown.
+  function loadSources(sourceKeys) {
+    var fetches = sourceKeys.map(function (key) {
+      var source = SOURCE_SITES[key];
+      var state = siteState[stateKey(source)];
+      state.error = null;
+      state.loading = true;
+      return fetchSiteData(source)
+        .then(function (data) {
+          state.data = data;
+        })
+        .catch(function (err) {
+          state.error = err;
+          console.error("[MultiSiteGrid] failed:", source.url, err);
+        })
+        .then(function () {
+          state.loading = false;
+          onSourceSettled(key);
+        });
+    });
+    // Show the loading state now for sources that just went back to pending.
+    updateSiteSummaryForTab(getActiveTabIndex());
+    renderTabContent(getActiveTabIndex());
+    return Promise.allSettled(fetches);
+  }
+
+  // Sources with no data that aren't already in flight (errored, or never loaded).
+  function unloadedSourceKeys() {
+    return Object.keys(SOURCE_SITES).filter(function (key) {
+      var s = siteState[stateKey(SOURCE_SITES[key])];
+      return s && !s.data && !s.loading;
+    });
+  }
+
+  // Retry re-renders the panel, which removes the button, so focus moves
+  // to the active tab and the outcome is announced.
+  function retryFailedSources() {
+    var keys = Object.keys(SOURCE_SITES).filter(isSourceErrored);
+    if (!keys.length) return;
+    var tabBtn = mstRootEl.querySelector("#mst-tab-" + getActiveTabIndex());
+    if (tabBtn) tabBtn.focus();
+    announce("Retrying your requests.");
+    loadSources(keys).then(function () {
+      var stillFailed = keys.filter(isSourceErrored);
+      announce(
+        stillFailed.length
+          ? "Some requests still could not be loaded: " +
+              stillFailed
+                .map(function (k) {
+                  return SOURCE_SITES[k].name;
+                })
+                .join(", ") +
+              ". Try again later."
+          : "Your requests have loaded.",
+      );
+    });
+  }
+
+  function wireRetry(rootEl) {
+    rootEl.addEventListener("click", function (e) {
+      if (e.target.closest(".mst-retry-btn")) retryFailedSources();
+    });
+  }
+
+  // leaf_header.js fires lp:home-shown when the router returns to home.
+  // Re-sync tab state (another route may have shown while this was hidden)
+  // and fetch only sources that never loaded; succeeded ones are kept.
+  function wireHomeShown() {
+    document.addEventListener("lp:home-shown", function () {
+      if (!mstRootEl) return;
+      activateTab(getActiveTabIndex());
+      var keys = unloadedSourceKeys();
+      if (keys.length) loadSources(keys);
+    });
+  }
+
   async function buildAndLoadGrid(rootEl) {
     buildShell(rootEl);
 
@@ -1453,29 +1547,11 @@
         data: null,
         rendered: false,
         error: null,
+        loading: false,
       };
     });
 
-    // Paint whatever's already known (covers modal re-entry) before
-    // kicking off the fetches below.
-    updateSiteSummaryForTab(getActiveTabIndex());
-    renderTabContent(getActiveTabIndex());
-
-    var fetches = sourceKeys.map(function (key) {
-      var source = SOURCE_SITES[key];
-      return fetchSiteData(source)
-        .then(function (data) {
-          siteState[stateKey(source)].data = data;
-          onSourceSettled(key);
-        })
-        .catch(function (err) {
-          siteState[stateKey(source)].error = err;
-          console.error("[MultiSiteGrid] failed:", source.url, err);
-          onSourceSettled(key);
-        });
-    });
-
-    await Promise.allSettled(fetches);
+    await loadSources(sourceKeys);
   }
 
   function init() {
@@ -1499,6 +1575,8 @@
     rootEl.classList.add("mst-container");
     if (cfg.compact) rootEl.classList.add("mst-compact");
     wireRecordModalFocus(rootEl);
+    wireRetry(rootEl);
+    wireHomeShown();
     wireHeroToggle();
     renderGreeting();
     wirePreview();
