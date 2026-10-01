@@ -47,7 +47,13 @@ function fetch(input, init = {}) {
   if (aborter && !init.signal && method === "GET") {
     init = { ...init, signal: aborter.signal };
   }
-  return window.fetch(url, init);
+  return window.fetch(url, init).catch((err) => {
+    // Aborted by stop(): never settle, so callers don't log or update UI.
+    if (aborter && aborter.signal.aborted && err.name === "AbortError") {
+      return new Promise(() => {});
+    }
+    throw err;
+  });
 }
 
 function stop() {
