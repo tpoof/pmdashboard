@@ -943,7 +943,7 @@
       }
       .ip-table th:nth-child(2),
       .ip-table td:nth-child(2) {
-        width: 38%;
+        width: 34%;
       }
       .ip-table th:nth-child(3),
       .ip-table td:nth-child(3) {
@@ -959,7 +959,7 @@
       }
       .ip-table th:nth-child(6),
       .ip-table td:nth-child(6) {
-        width: 14%;
+        width: 18%;
       }
       .ip-table th:nth-child(7),
       .ip-table td:nth-child(7) {
@@ -1261,10 +1261,9 @@
         display: inline-flex;
       }
       .ip-share {
-        display: inline-grid;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        justify-items: center;
         height: 32px;
         padding: 0 8px;
         font-size: 0.78rem;
@@ -1277,20 +1276,19 @@
         transition: all 0.15s;
         box-sizing: border-box;
       }
-      .ip-share:hover {
+      .ip-share:hover,
+      .ip-share:focus-visible {
         background: var(--ip-blue);
         border-color: var(--ip-blue);
         color: #fff;
       }
-      .ip-share:hover .ip-icon {
-        color: #fff !important;
+      .ip-share:focus-visible {
+        outline: 2px solid #000;
+        outline-offset: 2px;
       }
       .ip-share .ip-icon {
         width: 0.9rem;
         height: 0.9rem;
-      }
-      .ip-share:disabled:hover .ip-icon {
-        color: var(--ip-muted) !important;
       }
       .ip-share:disabled {
         opacity: 0.5;
@@ -1306,11 +1304,9 @@
         outline: 2px solid var(--ip-muted);
         outline-offset: 2px;
       }
-      /* Share/Link copied/Couldn't copy labels (see shareButtonInnerHtml()
-         in ideas_v4.js) sit in one grid cell. Inactive labels are
-         visibility:hidden so they still reserve width: no layout shift. */
+      /* Only the label for the current state is shown (see
+         shareButtonInnerHtml() in ideas_v4.js); the button sizes to it. */
       .ip-share__label {
-        grid-area: 1 / 1;
         display: inline-flex;
         align-items: center;
         gap: 4px;
@@ -1320,14 +1316,11 @@
       .ip-share__label--error,
       .ip-share.is-copied .ip-share__label--idle,
       .ip-share.is-copyError .ip-share__label--idle {
-        visibility: hidden;
+        display: none;
       }
       .ip-share.is-copied .ip-share__label--copied,
       .ip-share.is-copyError .ip-share__label--error {
-        visibility: visible;
-      }
-      .ip-share.is-copied .ip-share__label--copied .ip-icon {
-        color: var(--ip-green);
+        display: inline-flex;
       }
 
       .ip-pagination {
@@ -2193,8 +2186,8 @@
          Sidebar-stack and table card-stack breakpoints are aligned at
          1110px per direct testing. Actions stays nowrap (Vote+Share on
          one line); Status/Category badges wrap when needed (see
-         .ip-badge); Actions column widened slightly (17%→21%) to give
-         nowrap buttons more room before the breakpoint kicks in. */
+         .ip-badge); Actions column is 18% so Vote + "Link copied"/"Copy
+         failed" fit without spilling into Comment. */
       @media (max-width: 1110px) {
         .ip-mainLayout {
           grid-template-columns: 1fr;
@@ -2365,11 +2358,13 @@
           display: none;
         }
         .ip-table td.ip-actionsCell .ip-upvote,
-        .ip-table td.ip-actionsCell .ip-share,
         .ip-table td.ip-actionsCell .ip-submitDraftBtn,
         .ip-table td.ip-actionsCell .ip-editDraftBtn {
           flex: 1 1 auto;
           justify-content: center;
+          margin: 0;
+        }
+        .ip-table td.ip-actionsCell .ip-share {
           margin: 0;
         }
         .ip-table td.ip-commentCell {
@@ -3648,7 +3643,8 @@
                  aria-hidden="true", focusable="false"). -->
             <span
               ><strong>Note:</strong> Votes cast in the LEAF Idea Portal will
-              appear here. Votes cast in the PowerApp are not captured.</span
+              appear here. Votes cast in the PowerApp before the migration are
+              not captured.</span
             >
           </div>
           <div class="ip-votedModal__search" id="ipVotedModalSearch" hidden>

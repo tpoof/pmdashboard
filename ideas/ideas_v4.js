@@ -256,6 +256,24 @@ function sanitizeLeafValue(value) {
     .trim();
 }
 
+// DOMParser documents are inert: scripts don't run and images don't load.
+const htmlParser = new DOMParser();
+
+// LEAF returns text fields HTML-encoded (e.g. &quot;). Decode for display;
+// "<" is pre-escaped so no markup is ever parsed. Capped at two passes to
+// handle double encoding (&amp;quot;), so a value the user literally typed
+// as "&amp;" displays as "&".
+const HTML_ENTITY_RE = /&(#\d+|#x[\da-f]+|[a-z][a-z\d]*);/i;
+
+function decodeHtmlEntities(value, maxPasses = 2) {
+  let out = String(value || "");
+  for (let i = 0; i < maxPasses && HTML_ENTITY_RE.test(out); i++) {
+    out = htmlParser.parseFromString(out.replace(/</g, "&lt;"), "text/html")
+      .documentElement.textContent;
+  }
+  return out;
+}
+
 function escapeHtml(value) {
   return String(value || "")
     .replace(/&/g, "&amp;")
@@ -579,12 +597,11 @@ const SHARE_FEEDBACK_MS = 2500;
 let shareFeedbackTimer = null;
 let shareFeedbackBtn = null;
 
-// All three labels share one grid cell (see .ip-share CSS), so the button
-// is always as wide as the longest label and never shifts on swap.
+// One label per state; CSS shows only the current one.
 function shareButtonInnerHtml() {
   return `<span class="ip-share__label ip-share__label--idle">${iconSvg("share")} Share</span>
     <span class="ip-share__label ip-share__label--copied">${iconSvg("check_circle")} Link copied</span>
-    <span class="ip-share__label ip-share__label--error">${iconSvg("error")} Couldn't copy link</span>`;
+    <span class="ip-share__label ip-share__label--error">${iconSvg("error")} Copy failed</span>`;
 }
 
 // Modals are aria-modal, so screen readers may ignore a live region outside
@@ -611,7 +628,7 @@ function showShareFeedback(btn, ok) {
   shareFeedbackBtn = btn;
   btn.classList.add(ok ? "is-copied" : "is-copyError");
   const region = shareStatusRegion(btn);
-  if (region) region.textContent = ok ? "Link copied" : "Couldn't copy link";
+  if (region) region.textContent = ok ? "Link copied" : "Copy failed";
   shareFeedbackTimer = setTimeout(resetShareFeedback, SHARE_FEEDBACK_MS);
 }
 
@@ -1125,8 +1142,7 @@ function stripKnownBleed(text, indicatorID) {
 }
 
 function extractCleanValue(html, indicatorID) {
-  const tmp = document.createElement("div");
-  tmp.innerHTML = html;
+  const tmp = htmlParser.parseFromString(html, "text/html").body;
   const span = tmp.querySelector(`[id^="data_${indicatorID}_"]`);
   let raw;
   if (span) {
@@ -1439,8 +1455,10 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
 
   const commentText =
     vm?.comment ||
-    sanitizeLeafValue(
-      getIdeaField(rawIdea, IDEA_INDICATORS.comment, "comment"),
+    decodeHtmlEntities(
+      sanitizeLeafValue(
+        getIdeaField(rawIdea, IDEA_INDICATORS.comment, "comment"),
+      ),
     );
   if (commentText && commentText.trim()) {
     const commentCard = document.getElementById("ip-detail-comment-card");
@@ -1832,17 +1850,17 @@ let workflowIncompleteRecordIds = new Set();
 function buildIdeaViewModel(idea) {
   if (!idea?.recordID) return null;
   const recordID = String(idea.recordID);
-  const title = sanitizeLeafValue(
-    getIdeaField(idea, IDEA_INDICATORS.title, "title"),
+  const title = decodeHtmlEntities(
+    sanitizeLeafValue(getIdeaField(idea, IDEA_INDICATORS.title, "title")),
   );
-  const categoryRaw = sanitizeLeafValue(
-    getIdeaField(idea, IDEA_INDICATORS.category, "category"),
+  const categoryRaw = decodeHtmlEntities(
+    sanitizeLeafValue(getIdeaField(idea, IDEA_INDICATORS.category, "category")),
   );
   const categories = parseCategoryValue(categoryRaw);
   const category = categories.join(", ");
   const status = resolveDisplayStatus(idea);
-  const comment = sanitizeLeafValue(
-    getIdeaField(idea, IDEA_INDICATORS.comment, "comment"),
+  const comment = decodeHtmlEntities(
+    sanitizeLeafValue(getIdeaField(idea, IDEA_INDICATORS.comment, "comment")),
   );
   const votes = voteCounts[recordID] || 0;
   const isVoted = userVotes[recordID] === true;
