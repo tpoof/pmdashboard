@@ -1,7 +1,13 @@
-(async () => {
-  const url = "https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=LEAF_Start_Request&id=form_6ecbe";
-  const r = await fetch(url, { credentials: "include" });
-  const t = await r.text();
-  const m = t.match(/append\(\s*['"]CSRFToken['"]\s*,\s*['"]([^'"]+)['"]\s*\)/);
-  console.log(r.status, r.redirected, m ? m[0].replace(m[1], "<token>") : "NO TOKEN FOUND");
-})();
+const m = document.getElementById('thbModal');
+const c = document.getElementById('thbModalClose');
+const r = c.getBoundingClientRect();
+const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+console.log('modal copies:', document.querySelectorAll('#thbModal').length);
+console.log('element under close button:', hit, '| is close button:', c.contains(hit));
+const chain = []; let n = m;
+while (n && n !== document.documentElement) {
+  const cs = getComputedStyle(n);
+  chain.push({ tag: n.tagName, id: n.id, inert: n.inert, ariaHidden: n.getAttribute('aria-hidden'), pointerEvents: cs.pointerEvents, position: cs.position, zIndex: cs.zIndex, transform: cs.transform !== 'none' });
+  n = n.parentElement;
+}
+console.table(chain);
