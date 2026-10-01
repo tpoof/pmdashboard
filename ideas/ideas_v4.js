@@ -2545,6 +2545,116 @@ async function leafFetchQuery(queryObj, filterData) {
   return res.json();
 }
 
+/* TEMP DEBUG: delete this block and its call in initPortal() after the
+   visibility fix. With ?ipdebug=1, logs what the idea query returns for the
+   current user. Logs record and form IDs only, never names or userIDs. */
+const IP_DEBUG =
+  new URLSearchParams(window.location.search).get("ipdebug") === "1";
+
+async function ipDebugQuery(extra, filterData) {
+  const q = {
+    terms: [
+      { id: "categoryID", operator: "=", match: FORM_IDS.idea, gate: "AND" },
+      { id: "deleted", operator: "=", match: 0, gate: "AND" },
+    ],
+    joins: [],
+    sort: { column: "recordID", direction: "ASC" },
+    ...extra,
+  };
+  const url = `./api/form/query/?q=${encodeURIComponent(JSON.stringify(q))}&x-filterData=${encodeURIComponent(filterData)}&_=${Date.now()}`;
+  const res = await fetch(url, {
+    credentials: "same-origin",
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return {
+    header: res.headers.get("LEAF-Query"),
+    data: (await res.json()) || {},
+  };
+}
+
+async function ipDebugVisibility() {
+  const tag = "[ipdebug]";
+  try {
+    const full = await ipDebugQuery({}, "recordID");
+    const ids = Object.keys(full.data).map(Number);
+    console.log(tag, "unpaged", {
+      header: full.header,
+      count: ids.length,
+      recordIDs: ids,
+    });
+
+    // Pages end when the SQL runs out of rows: empty page and no header.
+    const PAGE = 100;
+    const paged = new Set();
+    for (let page = 0; page < 20; page++) {
+      const r = await ipDebugQuery(
+        { limit: PAGE, limitOffset: page * PAGE },
+        "recordID",
+      );
+      const pageIds = Object.keys(r.data).map(Number);
+      pageIds.forEach((id) => paged.add(id));
+      console.log(tag, `page ${page}`, {
+        header: r.header,
+        count: pageIds.length,
+      });
+      if (!pageIds.length && r.header !== "continue") break;
+    }
+    const newIds = [...paged].filter((id) => !ids.includes(id));
+    console.log(tag, "paged", {
+      count: paged.size,
+      moreThanUnpaged: newIds.length > 0,
+      newRecordIDs: newIds,
+    });
+
+    // Forms attached to the visible records, including disabled ones.
+    const cats = await ipDebugQuery(
+      { joins: ["categoryNameUnabridged"] },
+      "recordID,categoryIDsUnabridged",
+    );
+    const attached = {};
+    Object.values(cats.data).forEach((r) =>
+      (r.categoryIDsUnabridged || []).forEach((id) => {
+        attached[id] = (attached[id] || 0) + 1;
+      }),
+    );
+    let forms = [];
+    try {
+      const res = await fetch(
+        `./api/formStack/categoryList/allWithStaples?_=${Date.now()}`,
+        { credentials: "same-origin", cache: "no-store" },
+      );
+      if (res.ok) forms = await res.json();
+    } catch {}
+    const byId = Object.fromEntries(
+      (Array.isArray(forms) ? forms : []).map((f) => [f.categoryID, f]),
+    );
+    const listUnavailable = !Object.keys(byId).length;
+    console.table(
+      Object.entries(attached).map(([id, records]) => ({
+        form: id,
+        records,
+        needToKnow: byId[id]
+          ? Number(byId[id].needToKnow)
+          : listUnavailable
+            ? "unknown"
+            : "not listed (disabled = treated as 1)",
+        parent: byId[id]?.parentID || "",
+      })),
+    );
+    console.log(
+      tag,
+      "forms with needToKnow=1 on this site",
+      Object.values(byId)
+        .filter((f) => Number(f.needToKnow) === 1)
+        .map((f) => f.categoryID),
+    );
+  } catch (err) {
+    console.warn(tag, "failed", err);
+  }
+}
+
 async function fetchIdeasData() {
   try {
     const data = await leafFetchQuery(
@@ -4159,6 +4269,7 @@ function initPortal() {
   loadIdeasAndVotes().catch((err) => {
     console.error("loadIdeasAndVotes failed", err);
   });
+  if (IP_DEBUG) ipDebugVisibility();
 }
 
 
