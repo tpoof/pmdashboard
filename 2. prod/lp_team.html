@@ -45,8 +45,8 @@
         font-display: swap;
       }
 
-      /* Icons render as inline SVG (see ICON_PATHS below), matching
-       leaf_header.js — no Material Symbols web font dependency. */
+      /* Icons render as inline SVG — static ones in the markup, JS-built ones
+       from ICON_PATHS below — matching leaf_header.js; no icon web font. */
       .material-symbols-outlined {
         display: inline-flex;
         align-items: center;
@@ -67,7 +67,47 @@
 
       /* ── Header ── */
       .thb-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem 1.5rem;
         margin-bottom: 1.5rem;
+      }
+      .thb-header-text {
+        min-width: 0;
+      }
+      .thb-header .thb-update-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-shrink: 0;
+        min-height: 44px;
+        padding: 0 18px;
+        background: #fff;
+        color: var(--lp-accent);
+        border: 1px solid var(--lp-accent);
+        border-radius: 8px;
+        font-family: "PublicSans-Bold", sans-serif;
+        font-weight: 700;
+        font-size: 0.88rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background 0.12s;
+      }
+      .thb-header .thb-update-btn:hover {
+        background: var(--c-blue5);
+      }
+      .thb-header .thb-update-btn:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+      .thb-update-btn .material-symbols-outlined {
+        font-size: 1.15rem !important;
+      }
+      @media (max-width: 600px) {
+        .thb-header {
+          flex-direction: column;
+        }
       }
       .thb-kicker {
         font-family: "PublicSans-Bold", sans-serif;
@@ -183,9 +223,6 @@
           background 0.12s,
           color 0.12s,
           border-color 0.12s;
-      }
-      .thb-filter .material-symbols-outlined {
-        font-size: 1rem !important;
       }
       .thb-filter:hover {
         background: var(--c-blue5);
@@ -419,34 +456,12 @@
         outline-offset: 2px;
       }
 
-      /* accent variants */
-      .thb-sec--submit .thb-sec-icon {
-        border-color: #b6e0c2;
-        background: #eafaf0;
-      }
-      .thb-sec--submit .thb-sec-icon .material-symbols-outlined {
-        color: #1f8a4c;
-      }
-      .thb-sec--view .thb-sec-icon {
+      .thb-sec-icon {
         border-color: var(--c-blue20);
         background: var(--c-blue5);
       }
-      .thb-sec--view .thb-sec-icon .material-symbols-outlined {
+      .thb-sec-icon .material-symbols-outlined {
         color: var(--lp-accent);
-      }
-      .thb-sec--updates .thb-sec-icon {
-        border-color: #f0d9ad;
-        background: #fdf3e0;
-      }
-      .thb-sec--updates .thb-sec-icon .material-symbols-outlined {
-        color: #a15c00;
-      }
-      .thb-sec--admin .thb-sec-icon {
-        border-color: #d9c8ef;
-        background: #f4effb;
-      }
-      .thb-sec--admin .thb-sec-icon .material-symbols-outlined {
-        color: #6b3fa0;
       }
 
       /* ── Load status / error ── */
@@ -459,7 +474,10 @@
       .thb-status:focus {
         outline: none;
       }
-      .thb-status:empty,
+      /* Kept rendered (not display:none) so live-region updates announce */
+      .thb-status:empty {
+        margin: 0;
+      }
       .thb-error:empty {
         display: none;
       }
@@ -571,73 +589,15 @@
         overflow: hidden;
       }
 
-      /* submit tiles = green accent, view tiles = blue accent */
-      .thb-tile--submit {
-        border-left-color: #1f8a4c;
-      }
-      .thb-tile--submit .material-symbols-outlined {
-        color: #1f8a4c;
-      }
-      .thb-tile--submit:hover {
-        border-color: #b6e0c2;
-        border-left-color: #1f8a4c;
-      }
-      .thb-tile--view {
+      .thb-tile {
         border-left-color: var(--lp-accent);
       }
-      .thb-tile--view .material-symbols-outlined {
+      .thb-tile .material-symbols-outlined {
         color: var(--lp-accent);
       }
-      .thb-tile--view:hover {
+      .thb-tile:hover {
         border-color: var(--c-blue20);
         border-left-color: var(--lp-accent);
-      }
-      .thb-tile--updates {
-        border-left-color: #a15c00;
-      }
-      .thb-tile--updates .material-symbols-outlined {
-        color: #a15c00;
-      }
-      .thb-tile--updates:hover {
-        border-color: #f0d9ad;
-        border-left-color: #a15c00;
-      }
-      .thb-tile--admin {
-        border-left-color: #6b3fa0;
-      }
-      .thb-tile--admin .material-symbols-outlined {
-        color: #6b3fa0;
-      }
-      .thb-tile--admin:hover {
-        border-color: #d9c8ef;
-        border-left-color: #6b3fa0;
-      }
-
-      /* ── View sub-groups ── */
-      .thb-subgroup {
-        margin-bottom: 1.25rem;
-      }
-      .thb-subgroup:last-child {
-        margin-bottom: 0;
-      }
-      .thb-subgroup .thb-subgroup-label {
-        font-family: "PublicSans-Bold", sans-serif;
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--c-muted);
-        margin: 0 0 0.6rem;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-      }
-      .thb-subgroup-label .thb-subgroup-count {
-        color: var(--c-muted);
-        font-weight: 400;
-      }
-      .thb-subgroup[hidden] {
-        display: none;
       }
 
       /* empty state */
@@ -765,7 +725,8 @@
       }
       @media (prefers-reduced-motion: reduce) {
         .thb-tile,
-        .thb-chev {
+        .thb-chev,
+        .thb-update-btn {
           transition: none;
         }
         .thb-tile:hover {
@@ -780,9 +741,24 @@
       <main id="lp-main" tabindex="-1">
         <div class="thb-page">
           <header class="thb-header">
-            <p class="thb-kicker">LEAF Team</p>
-            <h1 class="thb-title">Team Hub</h1>
-            <p class="thb-sub">Your hub for internal team links and inbox.</p>
+            <div class="thb-header-text">
+              <p class="thb-kicker">LEAF Team</p>
+              <h1 class="thb-title">Team Hub</h1>
+              <p class="thb-sub">Your hub for internal team links and inbox.</p>
+            </div>
+            <a
+              class="thb-update-btn"
+              href="/platform/service_requests_launchpad/open.php?report=32wnv"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span
+                class="material-symbols-outlined"
+                aria-hidden="true"
+                data-icon="edit_note"
+              ></span
+              >Update links<span class="sr-only"> (opens in a new tab)</span>
+            </a>
           </header>
 
           <!-- Search / filter -->
@@ -797,8 +773,8 @@
               <input
                 type="text"
                 id="thbSearch"
-                placeholder="Search reports…"
-                aria-label="Search reports"
+                placeholder="Search links…"
+                aria-label="Search links"
                 autocomplete="off"
               />
               <button
@@ -815,7 +791,12 @@
                 ></span>
               </button>
             </div>
-            <div class="thb-filters" role="group" aria-label="Filter by type">
+            <div
+              class="thb-filters"
+              id="thbFilters"
+              role="group"
+              aria-label="Filter by category"
+            >
               <button
                 class="thb-filter active"
                 data-filter="all"
@@ -823,58 +804,6 @@
                 aria-pressed="true"
               >
                 All
-              </button>
-              <button
-                class="thb-filter"
-                data-filter="submit"
-                type="button"
-                aria-pressed="false"
-              >
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M220-80q-24 0-42-18t-18-42v-680q0-24 18-42t42-18h340l240 240v142q-17 3-33 11.5T738-465L500-228v148H220Zm340 0v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q9 9 13 20t4 22q0 11-4.5 22.5T902-300L683-80H560Zm263-224 37-39-37-37-38 38 38 38ZM520-600h220L520-820l220 220-220-220v220Z"
-                    /></svg></span
-                >Submit Reports
-              </button>
-              <button
-                class="thb-filter"
-                data-filter="view"
-                type="button"
-                aria-pressed="false"
-              >
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M120-120v-76l60-60v136h-60Zm165 0v-236l60-60v296h-60Zm165 0v-296l60 61v235h-60Zm165 0v-235l60-60v295h-60Zm165 0v-396l60-60v456h-60ZM120-356v-85l280-278 160 160 280-281v85L560-474 400-634 120-356Z"
-                    /></svg></span
-                >View Reports
-              </button>
-              <button
-                class="thb-filter"
-                data-filter="updates"
-                type="button"
-                aria-pressed="false"
-              >
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M720-440v-80h160v80H720Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM200-200v-160h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l200-120v480L320-360h-40v160h-80Zm360-146v-268q27 24 43.5 58.5T620-480q0 41-16.5 75.5T560-346Z"
-                    /></svg></span
-                >Launchpad Updates
-              </button>
-              <button
-                class="thb-filter"
-                data-filter="admin-pages"
-                type="button"
-                aria-pressed="false"
-              >
-                <span
-                  class="material-symbols-outlined"
-                  aria-hidden="true"
-                  data-icon="admin_panel_settings"
-                ></span
-                >Admin Pages
               </button>
             </div>
             <span
@@ -927,197 +856,10 @@
             Loading team links…
           </p>
           <div class="thb-error" id="thbError" role="alert"></div>
+          <p class="thb-status" id="thbRefreshMsg" aria-live="polite"></p>
 
-          <!-- Sections are filled from form_531cc by the script below -->
-          <section
-            class="thb-sec thb-sec--submit"
-            id="secSubmit"
-            data-type="submit"
-            aria-labelledby="titleSubmit"
-            aria-busy="true"
-          >
-            <h2 class="thb-sec-h">
-              <button
-                class="thb-sec-head"
-                type="button"
-                aria-expanded="true"
-                aria-controls="bodySubmit"
-              >
-                <span class="thb-sec-head-left">
-                  <span class="thb-sec-icon"
-                    ><span class="material-symbols-outlined" aria-hidden="true"
-                      ><svg viewBox="0 -960 960 960" fill="currentColor">
-                        <path
-                          d="M452-202h60v-201l82 82 42-42-156-152-154 154 42 42 84-84v201ZM220-80q-24 0-42-18t-18-42v-680q0-24 18-42t42-18h361l219 219v521q0 24-18 42t-42 18H220Zm331-554h189L551-820v186Z"
-                        /></svg></span
-                  ></span>
-                  <span class="thb-sec-title" id="titleSubmit"
-                    >Submit Reports</span
-                  >
-                  <span class="thb-sec-count" data-count></span>
-                </span>
-                <span
-                  class="material-symbols-outlined thb-chev"
-                  aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"
-                    /></svg
-                ></span>
-              </button>
-            </h2>
-            <div class="thb-sec-body" id="bodySubmit">
-              <ul class="thb-grid" id="gridSubmit"></ul>
-              <p
-                class="thb-empty"
-                aria-live="polite"
-                data-empty-none="No submit forms are available yet."
-                data-empty-search="No submit forms match your search."
-              ></p>
-            </div>
-          </section>
-
-          <section
-            class="thb-sec thb-sec--view"
-            id="secView"
-            data-type="view"
-            aria-labelledby="titleView"
-            aria-busy="true"
-          >
-            <h2 class="thb-sec-h">
-              <button
-                class="thb-sec-head"
-                type="button"
-                aria-expanded="true"
-                aria-controls="bodyView"
-              >
-                <span class="thb-sec-head-left">
-                  <span class="thb-sec-icon"
-                    ><span class="material-symbols-outlined" aria-hidden="true"
-                      ><svg viewBox="0 -960 960 960" fill="currentColor">
-                        <path
-                          d="M640-160v-280h160v280H640Zm-240 0v-640h160v640H400Zm-240 0v-440h160v440H160Z"
-                        /></svg></span
-                  ></span>
-                  <span class="thb-sec-title" id="titleView">View Reports</span>
-                  <span class="thb-sec-count" data-count></span>
-                </span>
-                <span
-                  class="material-symbols-outlined thb-chev"
-                  aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"
-                    /></svg
-                ></span>
-              </button>
-            </h2>
-            <div class="thb-sec-body" id="bodyView">
-              <div id="viewGroups"></div>
-              <p
-                class="thb-empty"
-                aria-live="polite"
-                data-empty-none="No reports are available yet."
-                data-empty-search="No reports match your search."
-              ></p>
-            </div>
-          </section>
-
-          <section
-            class="thb-sec thb-sec--updates"
-            id="secUpdates"
-            data-type="updates"
-            aria-labelledby="titleUpdates"
-            aria-busy="true"
-          >
-            <h2 class="thb-sec-h">
-              <button
-                class="thb-sec-head"
-                type="button"
-                aria-expanded="true"
-                aria-controls="bodyUpdates"
-              >
-                <span class="thb-sec-head-left">
-                  <span class="thb-sec-icon"
-                    ><span class="material-symbols-outlined" aria-hidden="true"
-                      ><svg viewBox="0 -960 960 960" fill="currentColor">
-                        <path
-                          d="M720-440v-80h160v80H720Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM200-200v-160h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l200-120v480L320-360h-40v160h-80Zm360-146v-268q27 24 43.5 58.5T620-480q0 41-16.5 75.5T560-346Z"
-                        /></svg></span
-                  ></span>
-                  <span class="thb-sec-title" id="titleUpdates"
-                    >Launchpad Updates</span
-                  >
-                  <span class="thb-sec-count" data-count></span>
-                </span>
-                <span
-                  class="material-symbols-outlined thb-chev"
-                  aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"
-                    /></svg
-                ></span>
-              </button>
-            </h2>
-            <div class="thb-sec-body" id="bodyUpdates">
-              <ul class="thb-grid" id="gridUpdates"></ul>
-              <p
-                class="thb-empty"
-                aria-live="polite"
-                data-empty-none="No updates are available yet."
-                data-empty-search="No updates match your search."
-              ></p>
-            </div>
-          </section>
-
-          <section
-            class="thb-sec thb-sec--admin"
-            id="secAdminPages"
-            data-type="admin-pages"
-            aria-labelledby="titleAdminPages"
-            aria-busy="true"
-          >
-            <h2 class="thb-sec-h">
-              <button
-                class="thb-sec-head"
-                type="button"
-                aria-expanded="true"
-                aria-controls="bodyAdminPages"
-              >
-                <span class="thb-sec-head-left">
-                  <span class="thb-sec-icon"
-                    ><span
-                      class="material-symbols-outlined"
-                      aria-hidden="true"
-                      data-icon="admin_panel_settings"
-                    ></span
-                  ></span>
-                  <span class="thb-sec-title" id="titleAdminPages"
-                    >Admin Pages</span
-                  >
-                  <span class="thb-sec-count" data-count></span>
-                </span>
-                <span
-                  class="material-symbols-outlined thb-chev"
-                  aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"
-                    /></svg
-                ></span>
-              </button>
-            </h2>
-            <div class="thb-sec-body" id="bodyAdminPages">
-              <ul class="thb-grid" id="gridAdminPages"></ul>
-              <p
-                class="thb-empty"
-                aria-live="polite"
-                data-empty-none="No admin pages are available yet."
-                data-empty-search="No admin pages match your search."
-              ></p>
-            </div>
-          </section>
+          <!-- One section per form_531cc category, built by the script below -->
+          <div id="thbSections" aria-busy="true"></div>
 
           <footer class="thb-footer" role="contentinfo">
             Internal use only
@@ -1154,25 +896,38 @@
           const CONFIG = {
             apiBase: "/platform/service_requests_launchpad/",
             formID: "form_531cc",
-            indicators: { name: 479, url: 480, category: 489 },
             timeoutMs: 15000,
+            refreshAfterMs: 5000,
           };
 
+          // TODO: replace the two "<<…>>" placeholders with real indicator IDs.
+          // Until then those fields are treated as unset.
+          const INDICATORS = {
+            name: 479,
+            url: 480,
+            category: 489,
+            popup: "<<POPUP_INDICATOR_ID>>",
+            order: "<<ORDER_INDICATOR_ID>>",
+          };
+          const IDS = Object.fromEntries(
+            Object.entries(INDICATORS).map(([field, id]) => [
+              field,
+              /^\d+$/.test(String(id)) ? Number(id) : null,
+            ]),
+          );
+
+          const UNCATEGORIZED_KEY = "uncategorized";
+          const UNCATEGORIZED_TITLE = "Uncategorized";
+
           /* Material Symbols (Filled) path data for viewBox "0 -960 960 960",
-             rendered as inline SVG like leaf_header.js — no icon font. */
+             for icons built by JS. Static icons are inline SVG in the markup. */
           const ICON_PATHS = {
-            upload_file:
-              "M452-202h60v-201l82 82 42-42-156-152-154 154 42 42 84-84v201ZM220-80q-24 0-42-18t-18-42v-680q0-24 18-42t42-18h361l219 219v521q0 24-18 42t-42 18H220Zm331-554h189L551-820v186Z",
-            insights:
-              "M120-120v-76l60-60v136h-60Zm165 0v-236l60-60v296h-60Zm165 0v-296l60 61v235h-60Zm165 0v-235l60-60v295h-60Zm165 0v-396l60-60v456h-60ZM120-356v-85l280-278 160 160 280-281v85L560-474 400-634 120-356Z",
-            analytics:
-              "M284-277h60v-205h-60v205Zm332 0h60v-420h-60v420Zm-166 0h60v-118h-60v118Zm0-205h60v-60h-60v60ZM180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h600q24 0 42 18t18 42v600q0 24-18 42t-42 18H180Z",
-            menu_book:
-              "M560-564v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-600q-38 0-73 9.5T560-564Zm0 220v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-380q-38 0-73 9t-67 27Zm0-110v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-490q-38 0-73 9.5T560-454Zm-40 176q44-21 88.5-31.5T700-320q36 0 70.5 6t69.5 18v-396q-33-14-68.5-21t-71.5-7q-47 0-93 12t-87 36v394Zm-40 118q-48-38-104-59t-116-21q-42 0-82.5 11T100-198q-21 11-40.5-1T40-234v-482q0-11 5.5-21T62-752q47-23 96.5-35.5T260-800q58 0 113.5 15T480-740q51-30 106.5-45T700-800q52 0 101.5 12.5T898-752q11 5 16.5 15t5.5 21v482q0 23-19.5 35t-40.5 1q-37-20-77.5-31T700-240q-60 0-116 21t-104 59Z",
-            campaign:
-              "M720-440v-80h160v80H720Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM200-200v-160h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l200-120v480L320-360h-40v160h-80Zm360-146v-268q27 24 43.5 58.5T620-480q0 41-16.5 75.5T560-346Z",
-            // TODO: placeholder square — replace with the real admin_panel_settings path.
-            admin_panel_settings: "M200-200v-560h560v560H200Z",
+            expand_more:
+              "M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z",
+            // TODO: placeholder square — replace with the real `link` path.
+            link: "M200-200v-560h560v560H200Z",
+            // TODO: placeholder square — replace with the real `edit_note` path.
+            edit_note: "M200-200v-560h560v560H200Z",
           };
 
           const SVG_NS = "http://www.w3.org/2000/svg";
@@ -1188,82 +943,17 @@
             svg.appendChild(path);
             el.replaceChildren(svg);
           };
-          const makeIcon = (name) => {
+          const makeIcon = (name, extraClass) => {
             const span = document.createElement("span");
             span.className = "material-symbols-outlined";
+            if (extraClass) span.classList.add(extraClass);
             span.setAttribute("aria-hidden", "true");
             fillIcon(span, name);
             return span;
           };
-          // Static markup icons that share a path with the tiles (data-icon="…")
           document
             .querySelectorAll("[data-icon]")
             .forEach((el) => fillIcon(el, el.dataset.icon));
-
-          const SECTIONS = {
-            submit: {
-              el: $id("secSubmit"),
-              grid: $id("gridSubmit"),
-              unit: ["form", "forms"],
-            },
-            view: { el: $id("secView"), unit: ["report", "reports"] },
-            updates: {
-              el: $id("secUpdates"),
-              grid: $id("gridUpdates"),
-              unit: ["item", "items"],
-            },
-            "admin-pages": {
-              el: $id("secAdminPages"),
-              grid: $id("gridAdminPages"),
-              unit: ["page", "pages"],
-            },
-          };
-          const VIEW_GROUPS = ["Dashboards", "Reports", "Resources", "Other"];
-
-          /* Keys are indicator 489 values, trimmed + lowercased. Unknown values
-             fall back to OTHER so no record is silently dropped. */
-          const CATEGORIES = {
-            "submit reports": {
-              section: "submit",
-              variant: "submit",
-              icon: "upload_file",
-            },
-            dashboards: {
-              section: "view",
-              group: "Dashboards",
-              variant: "view",
-              icon: "insights",
-            },
-            reports: {
-              section: "view",
-              group: "Reports",
-              variant: "view",
-              icon: "analytics",
-            },
-            resources: {
-              section: "view",
-              group: "Resources",
-              variant: "view",
-              icon: "menu_book",
-            },
-            "launchpad updates": {
-              section: "updates",
-              variant: "updates",
-              icon: "campaign",
-              modal: true,
-            },
-            "admin pages": {
-              section: "admin-pages",
-              variant: "admin",
-              icon: "admin_panel_settings",
-            },
-          };
-          const OTHER = {
-            section: "view",
-            group: "Other",
-            variant: "view",
-            icon: "insights",
-          };
 
           function getS1Value(record, indicatorId) {
             const value = record?.s1?.["id" + indicatorId];
@@ -1281,7 +971,18 @@
           }
 
           const readField = (record, indicatorId) =>
-            decodeHtmlEntities(getS1Value(record, indicatorId)).trim();
+            indicatorId === null
+              ? ""
+              : decodeHtmlEntities(getS1Value(record, indicatorId)).trim();
+
+          const isYes = (value) =>
+            ["yes", "true", "1"].includes(value.toLowerCase());
+
+          const parseOrder = (value) => {
+            if (value === "") return null;
+            const n = Number(value);
+            return Number.isFinite(n) ? n : null;
+          };
 
           // Allows same-origin root-relative paths and https: URLs only.
           // "//host" and "/\host" start with "/" but resolve off-origin.
@@ -1301,21 +1002,17 @@
             }
           }
 
-          function toItems(data) {
-            const items = [];
+          /* Groups records by category (trimmed, case-insensitive), keeping
+             record order within each group. Sections sort by their lowest
+             Section Order, then unnumbered by lowest record ID, with
+             Uncategorized always last. */
+          function groupLinks(data) {
+            const groups = new Map();
             Object.keys(data)
               .sort((a, b) => Number(a) - Number(b))
               .forEach((recordID) => {
                 const rec = data[recordID];
-                const rawCategory = readField(rec, CONFIG.indicators.category);
-                let cat = CATEGORIES[rawCategory.toLowerCase()];
-                if (!cat) {
-                  console.warn(
-                    `[TeamHub] Record ${recordID}: unknown category "${rawCategory}" — shown under View Reports › Other.`,
-                  );
-                  cat = OTHER;
-                }
-                const rawUrl = readField(rec, CONFIG.indicators.url);
+                const rawUrl = readField(rec, IDS.url);
                 const href = safeUrl(rawUrl);
                 if (!href) {
                   console.warn(
@@ -1323,37 +1020,83 @@
                   );
                   return;
                 }
-                const label = readField(rec, CONFIG.indicators.name) || href;
-                items.push({ label, href, cat });
+
+                const rawCategory = readField(rec, IDS.category);
+                const key = rawCategory
+                  ? rawCategory.toLowerCase()
+                  : UNCATEGORIZED_KEY;
+                let group = groups.get(key);
+                if (!group) {
+                  group = {
+                    key,
+                    title: rawCategory || UNCATEGORIZED_TITLE,
+                    order: Infinity,
+                    firstRecord: Number(recordID),
+                    links: [],
+                  };
+                  groups.set(key, group);
+                }
+
+                const order = parseOrder(readField(rec, IDS.order));
+                if (order !== null && order < group.order) group.order = order;
+
+                group.links.push({
+                  recordID,
+                  label: readField(rec, IDS.name) || href,
+                  href,
+                  popup: isYes(readField(rec, IDS.popup)),
+                });
               });
-            return items;
+
+            return [...groups.values()].sort((a, b) => {
+              const aLast = a.key === UNCATEGORIZED_KEY;
+              const bLast = b.key === UNCATEGORIZED_KEY;
+              if (aLast !== bLast) return aLast ? 1 : -1;
+              if (a.order !== b.order) return a.order < b.order ? -1 : 1;
+              return a.firstRecord - b.firstRecord;
+            });
           }
 
-          function makeTile(item) {
-            const { cat } = item;
+          // Category text → unique, id-safe slug ("Q&A / FAQ" → "q-a-faq").
+          const slugify = (key, used) => {
+            const base =
+              key
+                .normalize("NFKD")
+                .replace(/[̀-ͯ]/g, "")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "") || "category";
+            let slug = base;
+            for (let n = 2; used.has(slug); n++) slug = `${base}-${n}`;
+            used.add(slug);
+            return slug;
+          };
+
+          function makeTile(link) {
             let tile;
-            if (cat.modal) {
+            if (link.popup) {
               tile = document.createElement("button");
               tile.type = "button";
               tile.classList.add("thb-modal-trigger");
               tile.setAttribute("aria-haspopup", "dialog");
-              tile.dataset.reportTitle = item.label;
-              tile.dataset.reportSrc = item.href;
+              tile.dataset.reportTitle = link.label;
+              tile.dataset.reportSrc = link.href;
             } else {
               tile = document.createElement("a");
-              tile.href = item.href;
+              tile.href = link.href;
               tile.target = "_blank";
               tile.rel = "noopener noreferrer";
             }
-            tile.classList.add("thb-tile", `thb-tile--${cat.variant}`);
-            tile.dataset.label = item.label.toLowerCase();
+            tile.classList.add("thb-tile");
+            tile.dataset.label = link.label.toLowerCase();
+            tile.dataset.focusKey = "tile:" + link.recordID;
 
             const label = document.createElement("span");
             label.className = "thb-tile-label";
-            label.textContent = item.label;
-            tile.append(makeIcon(cat.icon), label);
+            label.textContent = link.label;
+            tile.append(makeIcon("link"), label);
 
-            if (!cat.modal) {
+            if (!link.popup) {
               const sr = document.createElement("span");
               sr.className = "sr-only";
               sr.textContent = " (opens in a new tab)";
@@ -1365,90 +1108,117 @@
             return li;
           }
 
-          const setCount = (key, n) => {
-            const [one, many] = SECTIONS[key].unit;
-            SECTIONS[key].el.querySelector("[data-count]").textContent =
-              `${n} ${n === 1 ? one : many}`;
-          };
+          const collapsedKeys = new Set();
 
-          function render(items) {
-            const buckets = { submit: [], updates: [], "admin-pages": [] };
-            const groups = new Map(VIEW_GROUPS.map((g) => [g, []]));
-            items.forEach((item) => {
-              if (item.cat.section === "view")
-                groups.get(item.cat.group).push(item);
-              else buckets[item.cat.section].push(item);
-            });
+          function makeSection(group, slug) {
+            const n = group.links.length;
+            const section = document.createElement("section");
+            section.className = "thb-sec";
+            section.id = "thb-sec-" + slug;
+            section.dataset.key = group.key;
+            section.setAttribute("aria-labelledby", "thb-title-" + slug);
 
-            Object.entries(buckets).forEach(([key, list]) => {
-              SECTIONS[key].grid.replaceChildren(
-                ...list.map((item) => makeTile(item)),
-              );
-              setCount(key, list.length);
-            });
+            const heading = document.createElement("h2");
+            heading.className = "thb-sec-h";
+            const head = document.createElement("button");
+            head.className = "thb-sec-head";
+            head.type = "button";
+            head.setAttribute("aria-controls", "thb-body-" + slug);
+            head.dataset.focusKey = "head:" + group.key;
 
-            const viewWrap = $id("viewGroups");
-            viewWrap.replaceChildren();
-            let viewTotal = 0;
-            groups.forEach((list, name) => {
-              if (!list.length) return;
-              viewTotal += list.length;
+            const left = document.createElement("span");
+            left.className = "thb-sec-head-left";
+            const iconWrap = document.createElement("span");
+            iconWrap.className = "thb-sec-icon";
+            iconWrap.appendChild(makeIcon("link"));
+            const title = document.createElement("span");
+            title.className = "thb-sec-title";
+            title.id = "thb-title-" + slug;
+            title.textContent = group.title;
+            const count = document.createElement("span");
+            count.className = "thb-sec-count";
+            count.textContent = `${n} link${n === 1 ? "" : "s"}`;
+            left.append(iconWrap, title, count);
+            head.append(left, makeIcon("expand_more", "thb-chev"));
+            heading.appendChild(head);
 
-              const group = document.createElement("div");
-              group.className = "thb-subgroup";
-              group.dataset.subgroup = "";
+            const body = document.createElement("div");
+            body.className = "thb-sec-body";
+            body.id = "thb-body-" + slug;
+            const grid = document.createElement("ul");
+            grid.className = "thb-grid";
+            grid.append(...group.links.map((link) => makeTile(link)));
+            const empty = document.createElement("p");
+            empty.className = "thb-empty";
+            empty.setAttribute("aria-live", "polite");
+            empty.textContent = "No links match your search.";
+            body.append(grid, empty);
 
-              const heading = document.createElement("h3");
-              heading.className = "thb-subgroup-label";
-              const count = document.createElement("span");
-              count.className = "thb-subgroup-count";
-              count.dataset.subCount = "";
-              count.setAttribute("aria-hidden", "true");
-              count.textContent = list.length;
-              heading.append(name, count);
-
-              const grid = document.createElement("ul");
-              grid.className = "thb-grid";
-              grid.append(...list.map((item) => makeTile(item)));
-
-              group.append(heading, grid);
-              viewWrap.appendChild(group);
-            });
-            setCount("view", viewTotal);
+            section.append(heading, body);
+            setCollapsed(section, collapsedKeys.has(group.key));
+            return section;
           }
 
-          /* ── Collapse / expand ── */
-          document.querySelectorAll(".thb-sec-head").forEach((btn) => {
-            btn.addEventListener("click", () => {
-              const sec = btn.closest(".thb-sec");
-              const collapsed = sec.classList.toggle("collapsed");
-              btn.setAttribute("aria-expanded", String(!collapsed));
-            });
-          });
+          function makeChip(group) {
+            const chip = document.createElement("button");
+            chip.className = "thb-filter";
+            chip.type = "button";
+            chip.dataset.key = group.key;
+            chip.dataset.focusKey = "chip:" + group.key;
+            chip.textContent = group.title;
+            return chip;
+          }
 
-          /* ── Search + type filter ── */
+          function setCollapsed(section, collapsed) {
+            section.classList.toggle("collapsed", collapsed);
+            section
+              .querySelector(".thb-sec-head")
+              .setAttribute("aria-expanded", String(!collapsed));
+            if (collapsed) collapsedKeys.add(section.dataset.key);
+            else collapsedKeys.delete(section.dataset.key);
+          }
+
+          const findByFocusKey = (key) =>
+            key
+              ? Array.from(document.querySelectorAll("[data-focus-key]")).find(
+                  (el) => el.dataset.focusKey === key,
+                )
+              : null;
+
+          /* ── Search + category filter ── */
           const search = $id("thbSearch");
           const clearBtn = $id("thbClear");
           const admin = $id("thbAdmin");
           const resultCount = $id("thbResultCount");
+          const filters = $id("thbFilters");
+          const sectionsWrap = $id("thbSections");
           const status = $id("thbStatus");
           const errorBox = $id("thbError");
-          let typeFilter = "all";
-          let loadState = "loading"; // loading | ready | error
+          const refreshMsg = $id("thbRefreshMsg");
+          let activeKey = null; // null = "All"
+          let lastSuccess = 0;
+
+          const syncChips = () => {
+            filters.querySelectorAll(".thb-filter").forEach((chip) => {
+              const on = (chip.dataset.key ?? null) === activeKey;
+              chip.classList.toggle("active", on);
+              chip.setAttribute("aria-pressed", String(on));
+            });
+          };
 
           const apply = () => {
             const q = search.value.trim().toLowerCase();
             clearBtn.classList.toggle("vis", q.length > 0);
 
-            admin.hidden = typeFilter !== "all";
+            admin.hidden = activeKey !== null;
 
             let shown = 0;
             let considered = 0;
 
-            Object.entries(SECTIONS).forEach(([type, { el }]) => {
-              const typeOK = typeFilter === "all" || typeFilter === type;
+            sectionsWrap.querySelectorAll(".thb-sec").forEach((el) => {
+              const typeOK = activeKey === null || activeKey === el.dataset.key;
               el.hidden = !typeOK;
-              if (!typeOK || loadState !== "ready") return;
+              if (!typeOK) return;
 
               const tiles = el.querySelectorAll(".thb-tile");
               considered += tiles.length;
@@ -1460,34 +1230,13 @@
               });
               shown += matches;
 
-              // Hide sub-groups that have no visible tiles; update sub-counts
-              el.querySelectorAll("[data-subgroup]").forEach((g) => {
-                const lis = g.querySelectorAll(".thb-grid > li");
-                const gShown = Array.from(lis).filter((li) => !li.hidden).length;
-                g.hidden = gShown === 0;
-                const c = g.querySelector("[data-sub-count]");
-                if (c) c.textContent = q ? gShown : lis.length;
-              });
-
-              const empty = el.querySelector(".thb-empty");
-              const msg = tiles.length
-                ? empty.dataset.emptySearch
-                : empty.dataset.emptyNone;
-              if (empty.textContent !== msg) empty.textContent = msg;
               el.classList.toggle("no-matches", matches === 0);
-
-              if (q) {
-                el.classList.remove("collapsed");
-                el.querySelector(".thb-sec-head").setAttribute(
-                  "aria-expanded",
-                  "true",
-                );
-              }
+              if (q) setCollapsed(el, false);
             });
 
             // "Showing X of Y" badge — only while searching or filtering
             resultCount.textContent =
-              loadState === "ready" && (q || typeFilter !== "all")
+              lastSuccess && (q || activeKey !== null)
                 ? `Showing ${shown} of ${considered}`
                 : "";
           };
@@ -1499,25 +1248,51 @@
             search.focus();
           });
 
-          document.querySelectorAll(".thb-filter").forEach((btn) => {
-            btn.addEventListener("click", () => {
-              document.querySelectorAll(".thb-filter").forEach((b) => {
-                b.classList.remove("active");
-                b.setAttribute("aria-pressed", "false");
-              });
-              btn.classList.add("active");
-              btn.setAttribute("aria-pressed", "true");
-              typeFilter = btn.getAttribute("data-filter");
-              apply();
-            });
+          filters.addEventListener("click", (e) => {
+            const chip = e.target.closest(".thb-filter");
+            if (!chip) return;
+            activeKey = chip.dataset.key ?? null;
+            syncChips();
+            apply();
           });
 
-          /* ── Load links from form_531cc ── */
-          const setBusy = (busy) =>
-            Object.values(SECTIONS).forEach(({ el }) =>
-              el.setAttribute("aria-busy", String(busy)),
+          sectionsWrap.addEventListener("click", (e) => {
+            const head = e.target.closest(".thb-sec-head");
+            if (!head) return;
+            const section = head.closest(".thb-sec");
+            setCollapsed(section, !section.classList.contains("collapsed"));
+          });
+
+          /* Rebuilds sections + chips. Search text, active filter, collapsed
+             state and keyboard focus survive a refresh. */
+          function render(groups) {
+            const focusKey = document.activeElement?.dataset?.focusKey;
+
+            const used = new Set();
+            sectionsWrap.replaceChildren(
+              ...groups.map((g) => makeSection(g, slugify(g.key, used))),
             );
 
+            // Only category chips are rebuilt; the static "All" chip stays put.
+            filters.querySelectorAll("[data-key]").forEach((c) => c.remove());
+            filters.append(...groups.map((g) => makeChip(g)));
+
+            if (activeKey !== null && !groups.some((g) => g.key === activeKey))
+              activeKey = null;
+            syncChips();
+            apply();
+
+            // A focused chip whose category disappeared hands focus to "All"
+            const target =
+              findByFocusKey(focusKey) ||
+              (focusKey?.startsWith("chip:")
+                ? filters.querySelector('[data-filter="all"]')
+                : null);
+            if (target && !target.closest("[hidden]"))
+              target.focus({ preventScroll: true });
+          }
+
+          /* ── Load links from form_531cc ── */
           const showError = () => {
             const msg = document.createElement("p");
             msg.textContent =
@@ -1536,12 +1311,15 @@
 
           // loadSeq guards against an older request finishing after a newer one.
           let loadSeq = 0;
-          async function loadLinks() {
+          let inFlight = false;
+          async function loadLinks(isRefresh = false) {
             const seq = ++loadSeq;
-            loadState = "loading";
-            setBusy(true);
-            errorBox.replaceChildren();
-            status.textContent = "Loading team links…";
+            inFlight = true;
+            if (!isRefresh) {
+              sectionsWrap.setAttribute("aria-busy", "true");
+              errorBox.replaceChildren();
+              status.textContent = "Loading team links…";
+            }
 
             const ctrl = new AbortController();
             const timer = setTimeout(() => ctrl.abort(), CONFIG.timeoutMs);
@@ -1560,7 +1338,7 @@
                 ],
                 joins: [],
                 sort: {},
-                getData: Object.values(CONFIG.indicators),
+                getData: Object.values(IDS).filter((id) => id !== null),
               };
               const r = await fetch(
                 `${CONFIG.apiBase}api/form/query?q=${encodeURIComponent(JSON.stringify(q))}`,
@@ -1572,30 +1350,35 @@
                 throw new Error("Unexpected query response");
               if (seq !== loadSeq) return;
 
-              const items = toItems(data);
-              render(items);
-              loadState = "ready";
-              status.textContent = items.length
+              const groups = groupLinks(data);
+              lastSuccess = Date.now();
+              render(groups);
+              refreshMsg.textContent = "";
+              status.textContent = groups.length
                 ? ""
                 : "No team links were found. If you expected links here, check that you have access to the Service Requests Launchpad site.";
             } catch (err) {
               if (seq !== loadSeq) return;
               console.error("[TeamHub] Failed to load links:", err);
-              loadState = "error";
-              status.textContent = "";
-              showError();
+              if (isRefresh) {
+                refreshMsg.textContent =
+                  "Links couldn't be refreshed. Showing the last loaded version.";
+              } else {
+                status.textContent = "";
+                showError();
+              }
             } finally {
               clearTimeout(timer);
               if (seq === loadSeq) {
-                setBusy(false);
-                apply();
+                inFlight = false;
+                sectionsWrap.setAttribute("aria-busy", "false");
               }
             }
           }
 
-          /* ── Report modal (Admin Inbox, Launchpad Updates, …) ── */
+          /* ── Report modal (Admin Inbox and popup links) ── */
+          const modal = $id("thbModal");
           (() => {
-            const modal = $id("thbModal");
             const frame = $id("thbModalFrame");
             const titleEl = $id("thbModalTitle");
             const closeBtn = $id("thbModalClose");
@@ -1604,6 +1387,7 @@
             if (!modal || !frame) return;
 
             let lastFocused = null;
+            let lastFocusKey = null;
 
             /* Shared LEAF pattern (also in leaf_header.js, calendar.js,
                project_v19/v20.js): strips the embedded page's own
@@ -1669,6 +1453,7 @@
 
             const openModal = (trigger) => {
               lastFocused = document.activeElement;
+              lastFocusKey = trigger.dataset.focusKey || null;
               measureHeaderOffset();
               const reportTitle =
                 trigger.getAttribute("data-report-title") || "Report";
@@ -1687,10 +1472,14 @@
               if (pageRoot) pageRoot.inert = false;
               document.body.style.overflow = "";
               frame.src = "";
-              lastFocused?.focus();
+              // The trigger may have been replaced by a refresh while open
+              const target = lastFocused?.isConnected
+                ? lastFocused
+                : findByFocusKey(lastFocusKey);
+              target?.focus();
             };
 
-            // Delegated: Launchpad Updates tiles are rendered after the fetch.
+            // Delegated: popup tiles are rendered after the fetch.
             document.addEventListener("click", (e) => {
               const trigger = e.target.closest(".thb-modal-trigger");
               if (trigger) openModal(trigger);
@@ -1721,6 +1510,15 @@
               }
             });
           })();
+
+          /* ── Refresh when the user returns to the tab ── */
+          document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState !== "visible") return;
+            if (!lastSuccess || inFlight) return;
+            if (modal?.classList.contains("is-open")) return;
+            if (Date.now() - lastSuccess < CONFIG.refreshAfterMs) return;
+            loadLinks(true);
+          });
 
           /* ── Jump to top ── */
           (() => {
