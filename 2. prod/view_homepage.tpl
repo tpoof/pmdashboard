@@ -1542,68 +1542,20 @@
       })();
 
       /* ── Newsletter form (silent AJAX submission) ──
-         Creates a record on form_9015b at service_requests_launchpad (a
-         different LEAF site than this page), writing the email to
-         indicator 487. Hand-rolled fetch since no create/save helper
-         exists site-wide; mirrors calendar.js's feedback widget's
-         create -> write indicator -> best-effort submit shape.
-
-         NOTE: this is a cross-site write. Confirmed valid: leaf_header.js's
-         own Feedback widget does the same cross-site api/form/* write with
-         this exact token -- see CSRF_TOKEN in leaf_header.js ("valid for
-         api/form/* calls to any LEAF site regardless of which site
-         leaf_header.js happens to be running on"). Read off leaf_header.js's
-         own <script> tag below instead of re-embedding $CSRFToken a second
-         time here, so the two values can't drift apart. */
+         Writes the email to a new form_9015b record on
+         service_requests_launchpad via leaf_header.js's
+         window.LEAF_LP.createPortalRecord (token fetched from that portal). */
       (() => {
         const form = document.getElementById("lpNlForm");
         const input = document.getElementById("lpNlEmail");
         const statusEl = document.getElementById("lpNlStatus");
         if (!form || !input || !statusEl) return;
 
-        const headerScriptEl = document.querySelector(
-          'script[src*="leaf_header.js"]',
-        );
-        const CSRF = headerScriptEl
-          ? headerScriptEl.getAttribute("data-csrf-token") || ""
-          : "";
         const NL_ENDPOINT =
           "https://leaf.va.gov/platform/service_requests_launchpad/";
         const NL_FORM_ID = "form_9015b";
         const NL_INDICATOR_ID = "487";
-        // Single-step workflow assumed (mirrors the feedback widget) --
-        // verify against form_9015b's real workflow if signups don't show as submitted.
         const NL_STEP_ID = "1";
-
-        function encodeBody(obj) {
-          const body = new URLSearchParams();
-          Object.keys(obj || {}).forEach((k) => {
-            const v = obj[k];
-            if (v === undefined || v === null) return;
-            body.append(String(k), String(v));
-          });
-          return body.toString();
-        }
-
-        async function apiPost(path, dataObj) {
-          const res = await fetch(NL_ENDPOINT + path, {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              "Content-Type":
-                "application/x-www-form-urlencoded; charset=UTF-8",
-              "x-requested-with": "XMLHttpRequest",
-            },
-            body: encodeBody(dataObj),
-          });
-          if (!res.ok) throw new Error(`POST ${path} -> HTTP ${res.status}`);
-          const text = await res.text();
-          try {
-            return JSON.parse(text);
-          } catch (e) {
-            return text;
-          }
-        }
 
         function setStatus(message, kind) {
           statusEl.textContent = message;
@@ -1611,40 +1563,19 @@
           if (kind) statusEl.classList.add(kind);
         }
 
-        async function subscribe(email) {
-          // Step 1: create the record -- field name confirmed against
-          // calendar.js's createRecord() (`num{categoryID}`, "form_" prefix intact).
-          const createRes = await apiPost("api/form/new", {
-            CSRFToken: CSRF,
+        function subscribe(email) {
+          const api = window.LEAF_LP;
+          if (!api || !api.createPortalRecord) {
+            return Promise.reject(new Error("leaf_header.js not loaded"));
+          }
+          return api.createPortalRecord({
+            rootURL: NL_ENDPOINT,
+            formID: NL_FORM_ID,
             title: "Newsletter Subscription",
-            [`num${NL_FORM_ID}`]: "on",
+            indicatorID: NL_INDICATOR_ID,
+            value: email,
+            stepID: NL_STEP_ID,
           });
-          const recordID = parseInt(
-            String(createRes).trim().replace(/^"|"$/g, ""),
-            10,
-          );
-          if (!recordID || recordID <= 0) {
-            throw new Error(`Record creation returned no ID: ${createRes}`);
-          }
-
-          // Step 2: write the email to indicator 487.
-          await apiPost(`api/form/${encodeURIComponent(recordID)}`, {
-            recordID,
-            CSRFToken: CSRF,
-            [NL_INDICATOR_ID]: email,
-          });
-
-          // Step 3: submit into the workflow, best-effort -- the record +
-          // indicator write is what matters, so a wrong step-ID guess
-          // shouldn't turn a successful signup into an error.
-          try {
-            await apiPost(`api/form/${encodeURIComponent(recordID)}/submit`, {
-              CSRFToken: CSRF,
-              stepID: NL_STEP_ID,
-            });
-          } catch (e) {
-            /* record + indicator are saved either way */
-          }
         }
 
         form.addEventListener("submit", (e) => {
@@ -1672,7 +1603,9 @@
             .catch((err) => {
               console.error("[Newsletter] subscription failed:", err);
               setStatus(
-                "Something went wrong subscribing you. Please try again.",
+                err.status === 401 || err.status === 403
+                  ? "We couldn't process your signup right now. Please try again later."
+                  : "Something went wrong subscribing you. Please try again.",
                 "is-error",
               );
             })

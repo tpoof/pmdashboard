@@ -20,7 +20,7 @@
  * ASCII-only: non-ASCII bytes here have previously been corrupted by
  * deploy pipelines, silently breaking strings/comments. Keep it ASCII.
  *
- * All four tabs render through the single renderDataTable() below rather
+ * All tabs render through the single renderDataTable() below rather
  * than mixing a third-party grid widget with hand-rolled HTML, so chrome
  * and sort behavior stay identical across tabs, including the merged ones
  * (which combine rows from more than one LEAF site).
@@ -82,6 +82,12 @@
       description: "your LEAF National consultation requests",
       allRequestsLabel: "National Support",
     },
+    learn: {
+      url: "https://leaf.va.gov/platform/learn/",
+      name: "Learn",
+      description: "your LEAF National learning requests",
+      allRequestsLabel: "National Support",
+    },
     ideas: {
       url: "https://leaf.va.gov/platform/ideas/",
       name: "Ideas",
@@ -102,7 +108,7 @@
       id: "all",
       name: "All Requests",
       kind: "all",
-      sourceKeys: ["siteCreations", "serviceRequests", "support", "ideas"],
+      sourceKeys: ["siteCreations", "serviceRequests", "support", "learn", "ideas"],
       description: "LEAF National requests",
     },
     {
@@ -115,7 +121,7 @@
       id: "nationalSupport",
       name: "National Support",
       kind: "merged",
-      sourceKeys: ["serviceRequests", "support"],
+      sourceKeys: ["serviceRequests", "support", "learn"],
       description: "support requests and consultations",
     },
     {
@@ -280,9 +286,9 @@
     return "<span>" + escapeHTML(text) + "</span>";
   }
 
-  // Ideas uses its custom id12 status field; Service Requests/Support share
-  // lastStatus. FLAG: this can't tell those two apart once merged -- if
-  // either ever needs its own status field, add a per-source branch here.
+  // Ideas uses its custom id12 status field; Service Requests/Support/Learn
+  // share lastStatus. FLAG: this can't tell those apart once merged -- if
+  // any ever needs its own status field, add a per-source branch here.
   function statusTextForSource(sourceKey, rec) {
     var source = SOURCE_SITES[sourceKey];
     if (source.isIdeas) {
@@ -395,7 +401,7 @@
   // sort on plain text.
 
   // Shared 3-column layout (Date Initiated, Request, Status) for National
-  // Support and Ideas, using requestCellHTML() so all four tabs match.
+  // Support and Ideas, using requestCellHTML() so all tabs match.
   function buildGenericColumns() {
     return [
       {
@@ -646,7 +652,7 @@
     return rows;
   }
 
-  // Shared table renderer used by all four tabs. Header is a real <button>
+  // Shared table renderer used by all tabs. Header is a real <button>
   // (Enter/Space work without extra keyboard handling); aria-sort on the
   // <th> tracks state. Sort state persists per tab.id so switching tabs
   // doesn't reset the user's chosen sort.

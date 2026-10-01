@@ -26,6 +26,7 @@ var HelpLib = (function () {
     "lightbulb",
     "thumb_up",
     "thumb_down",
+    "download",
   ];
   const ICONS = {};
 
@@ -34,6 +35,7 @@ var HelpLib = (function () {
       ICON_NAMES.map(async (name) => {
         try {
           const res = await fetch(`./files/${name}.svg`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
           ICONS[name] = await res.text();
         } catch (err) {
           console.error(`[loadIcons] failed to load ${name}.svg`, err);
@@ -552,6 +554,22 @@ ${statusLine}`;
     };
   }
 
+  /* id41 can list several uploads, one per line; file.php serves file=0,
+     so the first entry is the name to use. Falls back to the article title. */
+  function pdfDownloadName(rawFiles, title) {
+    const clean = (s) =>
+      s
+        .replace(/[\u0000-\u001f\u007f]/g, "")
+        .replace(/[<>:"|?*\\/]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    const first = scrubHTML(rawFiles ?? "").split(/\r?\n/)[0] ?? "";
+    let name = clean(first.split(/[\\/]/).pop() ?? "");
+    if (!name || /^\.+$/.test(name)) name = clean(title ?? "") || "help-article";
+    name = name.replace(/\.pdf$/i, "").replace(/[.\s]+$/, "").slice(0, 150);
+    return `${name || "help-article"}.pdf`;
+  }
+
   /* ── Normalize API record → UI record ── */
   function norm(rec) {
     const s1 = rec.s1 ?? {};
@@ -595,6 +613,7 @@ ${statusLine}`;
       embedSrc,
       pdfURL,
       pdfTitle: scrubHTML(rec.title ?? ""),
+      pdfFileName: tutFile ? pdfDownloadName(tutFile, scrubHTML(rec.title ?? "")) : null,
       updDate,
       _raw: s1,
     };
@@ -1241,6 +1260,33 @@ ${state.q ? '<button class="hl-empty-reset" type="button" data-clearsearch>Clear
     safeFocus(modalFocus.vid);
   }
 
+  /* Fetching as a blob guarantees the saved name; the server's
+     Content-Disposition would otherwise win over the download attribute. */
+  async function downloadPDF(url, fileName) {
+    const save = (href) => {
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = fileName;
+      a.hidden = true;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    };
+    try {
+      const res = await fetch(url, { credentials: "same-origin" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const objURL = URL.createObjectURL(await res.blob());
+      save(objURL);
+      setTimeout(() => URL.revokeObjectURL(objURL), 10000);
+    } catch (err) {
+      console.error("[downloadPDF] blob download failed, using direct link", err);
+      announce(
+        `Couldn't prepare ${fileName}. Trying a direct download instead; the file may save under a different name.`,
+      );
+      save(url);
+    }
+  }
+
   /* ── PDF modal ── */
   function openPDF(url, title) {
     modalFocus.pdf = document.activeElement;
@@ -1440,6 +1486,13 @@ ${catCrumb}
 
     const pdfPanel = hasPDF
       ? `<div class="hl-pdf-inline-wrap" id="pdfInlineWrap">
+    <div class="hl-pdf-toolbar">
+      <a class="hl-pdf-dl" id="pdfDownload" href="${esc(r.pdfURL)}"
+        download="${esc(r.pdfFileName)}"
+        aria-label="Download PDF: ${esc(r.pdfFileName)}">
+        ${icon("download")}Download PDF
+      </a>
+    </div>
     <object
       class="hl-pdf-inline"
       type="application/pdf"
@@ -1476,6 +1529,11 @@ ${catCrumb}
           : "";
 
     document.getElementById("dmain").innerHTML = mediaBlock;
+
+    document.getElementById("pdfDownload")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      downloadPDF(r.pdfURL, r.pdfFileName);
+    });
 
     document.getElementById("vpreviewBtn")?.addEventListener("click", (e) => {
       playInlineVideo(

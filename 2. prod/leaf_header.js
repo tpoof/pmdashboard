@@ -16,8 +16,7 @@
    A new page only needs one line, right before </head> or </body>:
 
        <script src="/launchpad/files/leaf_header.js"
-               data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
-               data-csrf-token="<!--{$CSRFToken}-->">
+               data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->">
        </script>
 
    data-is-sysadmin gates the Internal nav bar (Coaches/Team/Leadership/
@@ -25,11 +24,9 @@
    $is_admin; requires Sysadmin group (groupID 1). Omitting it is safe
    (bar stays hidden).
 
-   data-csrf-token is required for the Feedback button's writes (see
-   FEEDBACK_* below) — one LEAF session token, valid platform-wide,
-   posted with every api/form/* call regardless of which LEAF site
-   owns the target form. Omitting it is safe (Feedback button still
-   renders, but every submission fails with a clear inline error).
+   Cross-site form writes (Feedback button, homepage newsletter) go
+   through window.LEAF_LP.createPortalRecord, which fetches its CSRF
+   token from the target portal itself — see PORTAL RECORD WRITES.
 
    Breadcrumb is auto-detected, no per-page flag: on load,
    resolveCurrentRoute() matches this page's URL against NAV_SECTIONS/
@@ -79,16 +76,6 @@
     return !!raw && /^(1|true|yes)$/i.test(raw);
   })();
 
-  /* Read the same way as IS_SYSADMIN, off the same <script> tag. Used only
-     by the Feedback button's writes (see FEEDBACK_* below) — one token,
-     valid for api/form/* calls to any LEAF site regardless of which site
-     leaf_header.js happens to be running on. */
-  var CSRF_TOKEN = (function () {
-    var raw =
-      HEADER_SCRIPT_EL && HEADER_SCRIPT_EL.getAttribute("data-csrf-token");
-    return stripSmartyCommentWrapper(raw) || "";
-  })();
-
   /* ── Announcement banner config ──
      Live — sourced from a LEAF form's rawIndicator endpoint:
      GET {ROOT_URL}api/form/{RECORD_ID}/rawIndicator/{INDICATOR_ID}/
@@ -118,17 +105,18 @@
      Internal-nav-only (IS_SYSADMIN) button that lets an admin file
      quick feedback from any page. Each submission: creates a new
      record on FEEDBACK_FORM_ID, writes the admin's text to
-     FEEDBACK_INDICATOR_ID, then advances it straight to
-     FEEDBACK_STEP_ID. Same 3-call pattern as an existing, working
-     implementation on the Team Command Center calendar app
-     (calendar.js — createRecord/writeIndicators/submitRecord), just
-     pointed at this form/indicator/step and running from the shared
-     header instead of a single page's own script. */
+     FEEDBACK_INDICATOR_ID, then submits it at FEEDBACK_STEP_ID via
+     createPortalRecord(). */
   var FEEDBACK_ROOT_URL =
     "https://leaf.va.gov/platform/service_requests_launchpad/";
   var FEEDBACK_FORM_ID = "form_6ecbe";
   var FEEDBACK_INDICATOR_ID = "488";
   var FEEDBACK_STEP_ID = "105";
+
+  /* createPortalRecord() reads its CSRF token off this form's
+     LEAF_Start_Request page on the target portal. The token is
+     session-scoped, so one page serves writes to any form there. */
+  var PORTAL_TOKEN_FORM_ID = "form_9015b";
 
   /* Home route for the brand logo link and breadcrumb auto-detect's
      "hide breadcrumb here" match. Absolute since the header is
@@ -2526,36 +2514,76 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
-     FEEDBACK WIDGET (internal nav, sysadmin-only)
-     Small modal with a textarea. On submit: creates a record on
-     FEEDBACK_FORM_ID, writes the text to FEEDBACK_INDICATOR_ID, then
-     advances it to FEEDBACK_STEP_ID. Same 3-call shape as the working
-     calendar.js feedback widget (createRecord/writeIndicators/
-     submitRecord), reusing CSRF_TOKEN read off this script's own tag
-     (see CSRF_TOKEN above) instead of a page-local Smarty config —
-     leaf_header.js runs on every page, not just one.
+     PORTAL RECORD WRITES
+     createPortalRecord() creates a record on another LEAF portal:
+     create -> write one indicator -> submit (best-effort). Uses a
+     CSRF token from that portal's own session, cached per rootURL.
+     Exposed as window.LEAF_LP for page scripts (homepage newsletter).
+     Depends on the portal's LEAF_Start_Request page keeping its
+     formData.append('CSRFToken', ...) markup — first suspect if writes break.
   ───────────────────────────────────────────────────────────── */
-  function feedbackEncodeBody(obj) {
+  var _portalTokens = {};
+
+  function fetchPortalToken(rootURL) {
+    var pageURL =
+      rootURL +
+      "report.php?a=LEAF_Start_Request&id=" +
+      encodeURIComponent(PORTAL_TOKEN_FORM_ID);
+    return fetch(pageURL, { credentials: "include" }).then(function (res) {
+      return res.text().then(function (html) {
+        var match = res.ok
+          ? html.match(
+              /append\(\s*['"]CSRFToken['"]\s*,\s*['"]([^'"]+)['"]\s*\)/,
+            )
+          : null;
+        var token = match ? stripSmartyCommentWrapper(match[1]) : "";
+        if (!token) {
+          console.error(
+            "[LP] CSRF token lookup failed:",
+            pageURL,
+            "HTTP " + res.status,
+          );
+          var err = new Error(
+            "Could not locate a CSRF token on the target portal.",
+          );
+          if (!res.ok) err.status = res.status;
+          throw err;
+        }
+        _portalTokens[rootURL] = token;
+        return token;
+      });
+    });
+  }
+
+  function getPortalToken(rootURL, forceRefresh) {
+    if (!forceRefresh && _portalTokens[rootURL]) {
+      return Promise.resolve(_portalTokens[rootURL]);
+    }
+    delete _portalTokens[rootURL];
+    return fetchPortalToken(rootURL);
+  }
+
+  function portalPost(url, dataObj) {
     var body = new URLSearchParams();
-    Object.keys(obj || {}).forEach(function (k) {
-      var v = obj[k];
+    Object.keys(dataObj || {}).forEach(function (k) {
+      var v = dataObj[k];
       if (v === undefined || v === null) return;
       body.append(String(k), String(v));
     });
-    return body.toString();
-  }
-
-  function feedbackApiPost(url, dataObj) {
     return fetch(url, {
       method: "POST",
-      credentials: "same-origin",
+      credentials: "include",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
         "x-requested-with": "XMLHttpRequest",
       },
-      body: feedbackEncodeBody(dataObj),
+      body: body.toString(),
     }).then(function (res) {
-      if (!res.ok) throw new Error("POST " + url + " → HTTP " + res.status);
+      if (!res.ok) {
+        var err = new Error("POST " + url + " → HTTP " + res.status);
+        err.status = res.status;
+        throw err;
+      }
       return res.text().then(function (text) {
         try {
           return JSON.parse(text);
@@ -2566,35 +2594,73 @@
     });
   }
 
-  function submitFeedback(text) {
-    var createURL = FEEDBACK_ROOT_URL + "api/form/new";
-    return feedbackApiPost(createURL, {
-      CSRFToken: CSRF_TOKEN,
-      title: "Launchpad Feedback",
-      ["num" + FEEDBACK_FORM_ID]: "on",
-    }).then(function (createRes) {
-      var recordID = parseInt(
-        String(createRes).trim().replace(/^"|"$/g, ""),
-        10,
-      );
-      if (!recordID || recordID <= 0) {
-        throw new Error("Record creation returned no ID: " + createRes);
-      }
-      var writeURL =
-        FEEDBACK_ROOT_URL + "api/form/" + encodeURIComponent(recordID);
-      var writePayload = { recordID: recordID, CSRFToken: CSRF_TOKEN };
-      writePayload[FEEDBACK_INDICATOR_ID] = text;
-      return feedbackApiPost(writeURL, writePayload).then(function () {
-        var submitURL =
-          FEEDBACK_ROOT_URL +
-          "api/form/" +
-          encodeURIComponent(recordID) +
-          "/submit";
-        return feedbackApiPost(submitURL, {
-          CSRFToken: CSRF_TOKEN,
-          stepID: FEEDBACK_STEP_ID,
+  function createPortalRecord(opts) {
+    var rootURL = opts.rootURL;
+    var token = "";
+
+    function create() {
+      var payload = { CSRFToken: token, title: opts.title };
+      payload["num" + opts.formID] = "on";
+      return portalPost(rootURL + "api/form/new", payload);
+    }
+
+    return getPortalToken(rootURL, false)
+      .then(function (t) {
+        token = t;
+        return create().catch(function (err) {
+          if (err.status !== 401 && err.status !== 403) throw err;
+          return getPortalToken(rootURL, true).then(function (fresh) {
+            token = fresh;
+            return create();
+          });
         });
+      })
+      .then(function (createRes) {
+        var recordID = parseInt(
+          String(createRes).trim().replace(/^"|"$/g, ""),
+          10,
+        );
+        if (!recordID || recordID <= 0) {
+          throw new Error("Record creation returned no ID: " + createRes);
+        }
+        var recordURL =
+          rootURL + "api/form/" + encodeURIComponent(recordID);
+        var writePayload = { recordID: recordID, CSRFToken: token };
+        writePayload[opts.indicatorID] = opts.value;
+        return portalPost(recordURL, writePayload)
+          .then(function () {
+            return portalPost(recordURL + "/submit", {
+              CSRFToken: token,
+              stepID: opts.stepID,
+            }).catch(function (err) {
+              console.warn(
+                "[LP] Record " + recordID + " saved; workflow submit failed:",
+                err.message,
+              );
+            });
+          })
+          .then(function () {
+            return recordID;
+          });
       });
+  }
+
+  window.LEAF_LP = window.LEAF_LP || {};
+  window.LEAF_LP.createPortalRecord = createPortalRecord;
+
+  /* ─────────────────────────────────────────────────────────────
+     FEEDBACK WIDGET (internal nav, sysadmin-only)
+     Small modal with a textarea. On submit, writes the text to a new
+     FEEDBACK_FORM_ID record via createPortalRecord().
+  ───────────────────────────────────────────────────────────── */
+  function submitFeedback(text) {
+    return createPortalRecord({
+      rootURL: FEEDBACK_ROOT_URL,
+      formID: FEEDBACK_FORM_ID,
+      title: "Launchpad Feedback",
+      indicatorID: FEEDBACK_INDICATOR_ID,
+      value: text,
+      stepID: FEEDBACK_STEP_ID,
     });
   }
 
@@ -2669,12 +2735,6 @@
         textarea.focus();
         return;
       }
-      if (!CSRF_TOKEN) {
-        statusEl.textContent =
-          "Feedback can't be submitted right now (missing session token). Please try again later.";
-        statusEl.classList.add("is-error");
-        return;
-      }
 
       submitBtn.disabled = true;
       cancelBtn.disabled = true;
@@ -2695,7 +2755,10 @@
         .catch(function (err) {
           console.error("[LP] Feedback submission failed:", err.message);
           statusEl.classList.add("is-error");
-          statusEl.textContent = "Submission failed. Please try again.";
+          statusEl.textContent =
+            err.status === 401 || err.status === 403
+              ? "You may not have access to submit feedback right now."
+              : "Submission failed. Please try again.";
           submitBtn.disabled = false;
           cancelBtn.disabled = false;
         });
