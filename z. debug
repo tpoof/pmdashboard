@@ -1,2 +1,7 @@
-const c=await (await fetch("./api/formStack/categoryList/allWithStaples",{credentials:"same-origin"})).json();
-console.table(c.map(f=>({id:f.categoryID,name:f.categoryName,needToKnow:f.needToKnow})));
+const q={terms:[{id:"categoryID",operator:"=",match:"form_ae642",gate:"AND"},{id:"deleted",operator:"=",match:0,gate:"AND"}],joins:["status"],sort:{},getData:[]};
+const r=await fetch(`./api/form/query/?q=${encodeURIComponent(JSON.stringify(q))}&x-filterData=recordID,userID,date,stepID,lastStatus`,{credentials:"same-origin"});
+const d=await r.json(); const rows=Object.values(d);
+console.log("header:", r.headers.get("LEAF-Query"), "count:", rows.length);
+console.log("recordIDs:", rows.map(x=>x.recordID).join(","));
+console.table(rows.slice(0,15).map(x=>({recordID:x.recordID,userID:x.userID,date:new Date(x.date*1000).toLocaleDateString(),stepID:x.stepID,status:x.lastStatus})));
+const bystep={}; rows.forEach(x=>{const k=x.stepID+" | "+x.lastStatus; bystep[k]=(bystep[k]||0)+1}); console.table(bystep);
