@@ -41,8 +41,12 @@ function setInterval(fn, ms) {
 // page's current <base>, so a late request can't hit another route's site.
 // Reads are aborted by stop(); writes finish so a multi-step save isn't
 // cut off halfway.
-function fetch(input, init = {}) {
-  const url = typeof input === "string" ? new URL(input, apiBase).href : input;
+// Parameter is "resource", not "input": an open paren + input + comma near
+// the top of a file makes MIME sniffers (libmagic/finfo) label it Algol 68,
+// and LEAF's upload rejects that type.
+function fetch(resource, init = {}) {
+  const url =
+    typeof resource === "string" ? new URL(resource, apiBase).href : resource;
   const method = String(init.method || "GET").toUpperCase();
   if (aborter && !init.signal && method === "GET") {
     init = { ...init, signal: aborter.signal };
