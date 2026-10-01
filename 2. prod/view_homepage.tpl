@@ -642,7 +642,9 @@
         padding: 0.6rem 1.1rem;
         font-family: "PublicSans-Medium", sans-serif;
         font-size: 0.85rem;
+        line-height: inherit;
         text-decoration: none;
+        cursor: pointer;
         transition:
           background 0.15s,
           color 0.15s;
@@ -1051,7 +1053,14 @@
                     We couldn't find a match for that — but LEAF may still be
                     able to help. Tell our team about your project.
                   </p>
-                  <a href="#" class="btn btn-pri" id="finderCtaLinkNoMatch">
+                  <button
+                    type="button"
+                    class="btn btn-pri"
+                    id="finderCtaLinkNoMatch"
+                    data-action="support-modal"
+                    data-modal-title="Request a Consultation"
+                    data-record-title="Consultation Request from Launchpad Finder"
+                  >
                     <span class="material-symbols-outlined" aria-hidden="true">
                       <svg viewBox="0 -960 960 960" fill="currentColor">
                         <path
@@ -1060,7 +1069,7 @@
                       </svg>
                     </span>
                     Request a consultation
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1090,12 +1099,13 @@
                   Build a new site
                   <span class="lp-sr-only">(opens in new tab)</span>
                 </a>
-                <a
-                  href="#"
+                <button
+                  type="button"
                   class="finder-cta-btn finder-cta-secondary"
                   id="finderCtaLinkMatch"
-                  data-action="form-modal"
-                  data-modal-title="Request Support"
+                  data-action="support-modal"
+                  data-modal-title="Request a Consultation"
+                  data-record-title="Consultation Request from Launchpad Finder"
                 >
                   <span class="material-symbols-outlined" aria-hidden="true"
                     ><svg viewBox="0 -960 960 960" fill="currentColor">
@@ -1104,7 +1114,7 @@
                       /></svg
                   ></span>
                   Talk to our team
-                </a>
+                </button>
               </div>
               <a href="#steps-h2" class="finder-readmore"
                 >Not ready yet? Read more about LEAF below</a

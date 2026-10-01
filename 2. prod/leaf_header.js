@@ -780,17 +780,27 @@
      wireLinkIntercept(). Desktop: last item in .lp-nav-links. Mobile:
      pinned above the accordion so it isn't buried in a section.
   ───────────────────────────────────────────────────────────── */
-  /* &iframe=1 tells the LEAF support app to suppress its own header/nav
+  /* Used by the nav Request Support button and the home finder CTAs
+     (data-action="support-modal"); only the record title differs.
+     &iframe=1 tells the LEAF support app to suppress its own header/nav
      — without it, the fetched form renders a second header inside this
      modal's iframe. */
-  var SUPPORT_FORM_URL =
-    "https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Help+Library&iframe=1";
+  var SUPPORT_FORM_BASE_URL =
+    "https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&iframe=1";
+  var SUPPORT_DEFAULT_RECORD_TITLE = "Consultation Request from Launchpad";
 
-  /* Exposed (same pattern as LEAF_NAV_CURRENT above) so markup outside this
-     file can point its own data-modal-src at the identical URL instead of
-     duplicating the literal string — see the "Talk to our team" button in
-     lp_home.html / view_homepage.tpl. This script tag always loads before
-     that markup's own inline <script> runs, so the global is set in time. */
+  function supportFormURL(recordTitle) {
+    return (
+      SUPPORT_FORM_BASE_URL +
+      "&title=" +
+      encodeURIComponent(recordTitle).replace(/%20/g, "+")
+    );
+  }
+
+  var SUPPORT_FORM_URL = supportFormURL(SUPPORT_DEFAULT_RECORD_TITLE);
+
+  /* Exposed (same pattern as LEAF_NAV_CURRENT above) for markup outside
+     this file that needs the default support URL. */
   window.LEAF_SUPPORT_FORM_URL = SUPPORT_FORM_URL;
 
   function buildSupportButtonHTML() {
@@ -2259,6 +2269,21 @@
         e.preventDefault();
         closeAllDropdowns(null);
         openDemoModal(link);
+        return;
+      }
+
+      /* Support form modal — record/modal titles come from data
+         attributes; the URL itself stays in this file. */
+      if (link.dataset.action === "support-modal") {
+        e.preventDefault();
+        closeAllDropdowns(null);
+        openFormModal(
+          supportFormURL(
+            link.dataset.recordTitle || SUPPORT_DEFAULT_RECORD_TITLE,
+          ),
+          link.dataset.modalTitle || "Request Support",
+          link,
+        );
         return;
       }
 
