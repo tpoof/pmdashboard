@@ -1,77 +1,3 @@
-/* Idea Portal. Runs standalone (auto-init on load) or inside the LEAF
-   Launchpad router, which calls window.LP_PAGES.ideas.init(host) on every
-   mount and destroy() on route exit. Each init() builds a fresh instance
-   from createPortal(), so no state or listeners carry over between visits. */
-(function () {
-function createPortal(root, apiBase) {
-/* Every document/window listener and timer is tracked so stop() can undo
-   it. setTimeout/clearTimeout/setInterval/fetch shadow the globals here. */
-const cleanups = [];
-const aborter =
-  typeof AbortController === "function" ? new AbortController() : null;
-const timeouts = new Set();
-const intervals = new Set();
-
-function listen(target, type, fn, opts) {
-  target.addEventListener(type, fn, opts);
-  cleanups.push(() => target.removeEventListener(type, fn, opts));
-}
-
-function setTimeout(fn, ms) {
-  const id = window.setTimeout(() => {
-    timeouts.delete(id);
-    fn();
-  }, ms);
-  timeouts.add(id);
-  return id;
-}
-
-function clearTimeout(id) {
-  timeouts.delete(id);
-  window.clearTimeout(id);
-}
-
-function setInterval(fn, ms) {
-  const id = window.setInterval(fn, ms);
-  intervals.add(id);
-  return id;
-}
-
-// Relative URLs resolve against apiBase (captured in init()), never the
-// page's current <base>, so a late request can't hit another route's site.
-// Reads are aborted by stop(); writes finish so a multi-step save isn't
-// cut off halfway.
-function fetch(input, init = {}) {
-  const url = typeof input === "string" ? new URL(input, apiBase).href : input;
-  const method = String(init.method || "GET").toUpperCase();
-  if (aborter && !init.signal && method === "GET") {
-    init = { ...init, signal: aborter.signal };
-  }
-  return window.fetch(url, init).catch((err) => {
-    // Aborted by stop(): never settle, so callers don't log or update UI.
-    if (aborter && aborter.signal.aborted && err.name === "AbortError") {
-      return new Promise(() => {});
-    }
-    throw err;
-  });
-}
-
-function stop() {
-  cleanups.splice(0).forEach((undo) => undo());
-  timeouts.forEach((id) => window.clearTimeout(id));
-  timeouts.clear();
-  intervals.forEach((id) => window.clearInterval(id));
-  intervals.clear();
-  if (aborter) aborter.abort();
-  // A modal left open on route exit: put inert back the way it was.
-  if (backgroundHidden) setBackgroundHidden(false);
-}
-
-function start() {
-  snapshotBackground();
-  initPortal();
-}
-
 const statusRepairAttempted = new Set();
 const sendBackRepairFailed = new Set();
 
@@ -487,7 +413,7 @@ function updateTableScrollEdges(el) {
 }
 
 function bindTableScrollEdges() {
-  const containers = Array.from(root.querySelectorAll(".ip-tableScroll"));
+  const containers = Array.from(document.querySelectorAll(".ip-tableScroll"));
   containers.forEach((el) => {
     updateTableScrollEdges(el);
     el.addEventListener("scroll", () => updateTableScrollEdges(el), {
@@ -497,7 +423,7 @@ function bindTableScrollEdges() {
   const onResize = debounce(() => {
     containers.forEach((el) => updateTableScrollEdges(el));
   }, 150);
-  listen(window, "resize", onResize);
+  window.addEventListener("resize", onResize);
 
   // Table content re-renders often (sort, page, filter, tab switch),
   // which can change scrollWidth without a scroll/resize event firing.
@@ -752,7 +678,7 @@ function closeAllCategoryPopovers(exceptId) {
     .forEach((pop) => {
       if (pop.id === exceptId) return;
       pop.classList.remove("is-open");
-      const toggle = root.querySelector(
+      const toggle = document.querySelector(
         `[data-cat-more-toggle="${pop.id}"]`,
       );
       toggle?.setAttribute("aria-expanded", "false");
@@ -779,7 +705,7 @@ function positionCategoryPopover(popover, toggle) {
 }
 
 function bindCategoryPillPopovers() {
-  listen(document, "click", (e) => {
+  document.addEventListener("click", (e) => {
     const toggle = e.target.closest("[data-cat-more-toggle]");
     if (toggle) {
       const popoverId = toggle.getAttribute("data-cat-more-toggle");
@@ -796,11 +722,11 @@ function bindCategoryPillPopovers() {
       closeAllCategoryPopovers(null);
     }
   });
-  listen(document, "keydown", (e) => {
+  document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeAllCategoryPopovers(null);
   });
-  listen(window, "scroll", () => closeAllCategoryPopovers(null), true);
-  listen(window, "resize", () => closeAllCategoryPopovers(null));
+  window.addEventListener("scroll", () => closeAllCategoryPopovers(null), true);
+  window.addEventListener("resize", () => closeAllCategoryPopovers(null));
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -864,44 +790,22 @@ function bindFocusTrap(container) {
   });
 }
 
-function backgroundTargets() {
-  return [
-    root.querySelector("#lp-main"),
+function setBackgroundHidden(hidden) {
+  const targets = [
+    document.getElementById("lp-main"),
     document.getElementById("lp-nav-host"),
-    root.querySelector(".ip-creditBadge"),
+    document.querySelector(".ip-creditBadge"),
     document.getElementById("ipJumpTopBtn"),
   ].filter(Boolean);
-}
 
-// Prior inert/aria-hidden values, recorded at start(), so closing a modal
-// (or stop()) restores them instead of clearing state Ideas didn't set.
-let backgroundSnapshot = [];
-let backgroundHidden = false;
-
-function snapshotBackground() {
-  backgroundSnapshot = backgroundTargets().map((el) => ({
-    el,
-    inert: el.getAttribute("inert"),
-    ariaHidden: el.getAttribute("aria-hidden"),
-  }));
-}
-
-function restoreAttr(el, name, value) {
-  if (value === null) el.removeAttribute(name);
-  else el.setAttribute(name, value);
-}
-
-function setBackgroundHidden(hidden) {
-  backgroundHidden = hidden;
-  backgroundTargets().forEach((el) => {
+  targets.forEach((el) => {
     if (hidden) {
       el.setAttribute("inert", "");
       el.setAttribute("aria-hidden", "true");
-      return;
+    } else {
+      el.removeAttribute("inert");
+      el.removeAttribute("aria-hidden");
     }
-    const prior = backgroundSnapshot.find((s) => s.el === el);
-    restoreAttr(el, "inert", prior ? prior.inert : null);
-    restoreAttr(el, "aria-hidden", prior ? prior.ariaHidden : null);
   });
 }
 
@@ -936,7 +840,7 @@ function closeModal(modalId) {
 }
 
 function bindModalEvents() {
-  root.querySelectorAll("[data-ip-open]").forEach((btn) => {
+  document.querySelectorAll("[data-ip-open]").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (btn.dataset.ipOpen === "addIdeaModal" && !btn.dataset.editRecordId) {
         editingDraftRecordID = null;
@@ -946,10 +850,10 @@ function bindModalEvents() {
       openModal(btn.dataset.ipOpen);
     });
   });
-  root.querySelectorAll("[data-ip-close]").forEach((btn) => {
+  document.querySelectorAll("[data-ip-close]").forEach((btn) => {
     btn.addEventListener("click", () => closeModal(btn.dataset.ipClose));
   });
-  listen(document, "keydown", (e) => {
+  document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     document
       .querySelectorAll(".ip-modal.is-open")
@@ -962,8 +866,8 @@ function bindModalEvents() {
 ───────────────────────────────────────────────────────────── */
 
 function bindTabs() {
-  const tabs = Array.from(root.querySelectorAll(".ip-tab"));
-  const panels = Array.from(root.querySelectorAll(".ip-panel"));
+  const tabs = Array.from(document.querySelectorAll(".ip-tab"));
+  const panels = Array.from(document.querySelectorAll(".ip-panel"));
 
   function syncTabs(target) {
     tabs.forEach((tab) => {
@@ -1512,7 +1416,7 @@ function closeRecordModal(opts = {}) {
 }
 
 function bindRecordModal() {
-  listen(document, "click", (e) => {
+  document.addEventListener("click", (e) => {
     const link = e.target.closest("a.ip-recordLink");
     if (link) {
       e.preventDefault();
@@ -1556,7 +1460,7 @@ function bindRecordModal() {
     if (e.target?.getAttribute("data-ip-record-close") === "1")
       closeRecordModal();
   });
-  listen(document, "keydown", (e) => {
+  document.addEventListener("keydown", (e) => {
     if (
       e.key === "Escape" &&
       document.getElementById("ipRecordModal")?.classList.contains("is-open")
@@ -2234,7 +2138,7 @@ function renderTop10Ideas() {
 ───────────────────────────────────────────────────────────── */
 
 function setVoteButtonsDisabled(isDisabled) {
-  root.querySelectorAll(".ip-upvote").forEach((btn) => {
+  document.querySelectorAll(".ip-upvote").forEach((btn) => {
     if (
       btn.classList.contains("is-own") ||
       btn.classList.contains("is-unavailable")
@@ -2485,7 +2389,7 @@ async function unvoteIdea(recordID) {
       renderVotedTable();
     }
 
-    const detailVoteBtn = root.querySelector(`[data-detail-vote="${key}"]`);
+    const detailVoteBtn = document.querySelector(`[data-detail-vote="${key}"]`);
     if (detailVoteBtn) {
       const state = voteButtonStateHtml(key, false, false, false);
       detailVoteBtn.className = `ip-upvote${state.classes ? " " + state.classes : ""}`;
@@ -2963,19 +2867,19 @@ async function writeSubmittedStatus(recordID) {
 function bindTooltips() {
   const reset = (wrap) => wrap.classList.remove("is-open", "is-dismissed");
 
-  listen(document, "mouseout", (e) => {
+  document.addEventListener("mouseout", (e) => {
     const wrap = e.target.closest?.(".lp-tooltip-wrap");
     if (!wrap || wrap.contains(e.relatedTarget)) return;
     if (!wrap.contains(document.activeElement)) reset(wrap);
   });
-  listen(document, "focusout", (e) => {
+  document.addEventListener("focusout", (e) => {
     const wrap = e.target.closest?.(".lp-tooltip-wrap");
     if (!wrap || wrap.contains(e.relatedTarget)) return;
     if (!wrap.matches(":hover")) reset(wrap);
   });
-  listen(document, "pointerdown", (e) => {
+  document.addEventListener("pointerdown", (e) => {
     const wrap = e.target.closest?.(".lp-tooltip-wrap");
-    root.querySelectorAll(".lp-tooltip-wrap.is-open").forEach((w) => {
+    document.querySelectorAll(".lp-tooltip-wrap.is-open").forEach((w) => {
       if (w !== wrap) w.classList.remove("is-open");
     });
     if (wrap && e.pointerType === "touch") wrap.classList.add("is-open");
@@ -2983,13 +2887,12 @@ function bindTooltips() {
 
   // Capture phase so Escape closes the tooltip before the modal's
   // Escape handler closes the whole form.
-  listen(
-    document,
+  document.addEventListener(
     "keydown",
     (e) => {
       if (e.key !== "Escape") return;
       const open = Array.from(
-        root.querySelectorAll(".lp-tooltip-wrap"),
+        document.querySelectorAll(".lp-tooltip-wrap"),
       ).find(
         (w) =>
           !w.classList.contains("is-dismissed") &&
@@ -3154,7 +3057,7 @@ async function NewIdea(advanceOnSuccess) {
   const impactValue = val("inpImpact");
   const otherCatValue = val("inpOtherCategory");
   const implementedValue =
-    root.querySelector('input[name="inpImplemented"]:checked')?.value ||
+    document.querySelector('input[name="inpImplemented"]:checked')?.value ||
     "No";
   const implementedUrlValue = val("inpImplementedUrl");
 
@@ -3434,14 +3337,14 @@ function bindCategoryChange() {
 }
 
 function bindImplementedChange() {
-  const radios = root.querySelectorAll('input[name="inpImplemented"]');
+  const radios = document.querySelectorAll('input[name="inpImplemented"]');
   const urlWrapper = document.getElementById("implementedUrlWrapper");
   const urlInput = document.getElementById("inpImplementedUrl");
   if (!radios.length || !urlWrapper || !urlInput) return;
 
   radios.forEach((radio) => {
     radio.addEventListener("change", () => {
-      const anyYesChecked = root.querySelector(
+      const anyYesChecked = document.querySelector(
         'input[name="inpImplemented"][value="Yes"]:checked',
       );
       urlWrapper.style.display = anyYesChecked ? "" : "none";
@@ -3501,7 +3404,7 @@ function resetImplementedField() {
 }
 
 function initValidation() {
-  root.querySelectorAll(".needs-validation").forEach((form) => {
+  document.querySelectorAll(".needs-validation").forEach((form) => {
     form.addEventListener("input", (e) => {
       const target = e.target;
       if (!target) return;
@@ -3557,7 +3460,7 @@ function handlePaginationAction(scope, action) {
 }
 
 function bindDelegatedEvents() {
-  listen(document, "click", (e) => {
+  document.addEventListener("click", (e) => {
     const sortBtn = e.target.closest(".ip-sortBtn");
     if (sortBtn) {
       handleSortClick(sortBtn);
@@ -3669,7 +3572,7 @@ function bindMySearch() {
   if (!input) return;
   const handler = debounce(() => {
     const q = input.value.toLowerCase();
-    root.querySelectorAll("#myResults tr").forEach((row) => {
+    document.querySelectorAll("#myResults tr").forEach((row) => {
       row.style.display = row.textContent.toLowerCase().includes(q)
         ? ""
         : "none";
@@ -3694,7 +3597,7 @@ function bindClearMy() {
 ───────────────────────────────────────────────────────────── */
 
 function switchToMyIdeasTab() {
-  const myTab = root.querySelector('.ip-tab[data-ip-tab="my"]');
+  const myTab = document.querySelector('.ip-tab[data-ip-tab="my"]');
   if (!myTab) return;
   myTab.click();
   myTab.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -3767,7 +3670,7 @@ function buildVotedRow(id, idea) {
 }
 
 function refreshVotedRowActions(id) {
-  const row = root.querySelector(`tr[data-voted-id="${id}"]`);
+  const row = document.querySelector(`tr[data-voted-id="${id}"]`);
   if (!row) return;
   const idea = votedModalState.allRows.find((r) => r.id === id)?.idea;
   const cell = row.querySelector(".ip-actionsCell");
@@ -3962,7 +3865,7 @@ function bindVotedModal() {
 
   bindClearVoted();
 
-  listen(document, "keydown", (e) => {
+  document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       const modal = document.getElementById("ipVotedModal");
       if (modal?.classList.contains("is-open")) closeVotedModal();
@@ -4024,13 +3927,13 @@ function bindCommentModal() {
   document
     .getElementById("ipCommentModalOverlay")
     ?.addEventListener("click", closeCommentModal);
-  listen(document, "keydown", (e) => {
+  document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       const modal = document.getElementById("ipCommentModal");
       if (modal?.classList.contains("is-open")) closeCommentModal();
     }
   });
-  listen(document, "click", (e) => {
+  document.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-comment-view]");
     if (!btn) return;
     openCommentModal(
@@ -4092,7 +3995,7 @@ async function recheckMyIdeasForSendBack() {
 }
 
 function bindSendBackRecheck() {
-  listen(document, "visibilitychange", () => {
+  document.addEventListener("visibilitychange", () => {
     if (!document.hidden) recheckMyIdeasForSendBack();
   });
   setInterval(recheckMyIdeasForSendBack, SENDBACK_POLL_MS);
@@ -4157,36 +4060,8 @@ function initPortal() {
   });
 }
 
-
-return { start, stop };
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initPortal);
+} else {
+  initPortal();
 }
-
-let current = null;
-
-function destroy() {
-  if (!current) return;
-  current.stop();
-  current = null;
-}
-
-// Safe to call repeatedly: tears down the previous instance first.
-function init(hostEl) {
-  destroy();
-  // The Ideas site directory, from the route <base> (router) or page URL.
-  const apiBase = new URL("./", document.baseURI).href;
-  current = createPortal(hostEl || document.body, apiBase);
-  current.start();
-}
-
-window.LP_PAGES = window.LP_PAGES || {};
-window.LP_PAGES.ideas = { init, destroy };
-
-// Under the Launchpad router, the router calls init() itself.
-if (!window.__lpRouter) {
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => init());
-  } else {
-    init();
-  }
-}
-})();
