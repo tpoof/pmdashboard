@@ -1269,6 +1269,8 @@
             newScript.onload = function () { resolve(); };
             newScript.onerror = function () {
               console.warn("[LP] Failed to load re-executed script:", src);
+              /* Let a later visit retry instead of skipping it forever */
+              delete _seenExternalScripts[src];
               resolve();
             };
           }),
@@ -1543,6 +1545,11 @@
      change — the skip link always targets #lp-main or #lpSwapHost.
   ───────────────────────────────────────────────────────────── */
   function showLaunchpadHome() {
+    /* Drop any in-flight route fetch and tear down the route being left */
+    startNavigation();
+    exitActiveRoute();
+    _currentLoadUrl = null;
+
     if (_lpMain) _lpMain.style.display = "";
     if (_swapHost) {
       _swapHost.style.display = "none";
@@ -1564,6 +1571,9 @@
     updateBreadcrumb(null);
     announce("Returned to Launchpad home");
     updateNavCurrent(null);
+
+    /* Home widgets (multigrid.js) re-check their state on this */
+    document.dispatchEvent(new CustomEvent("lp:home-shown"));
   }
 
   function showSwapView() {
@@ -1791,14 +1801,62 @@
   }
 
   /* ─────────────────────────────────────────────────────────────
+     ROUTE PAGE LIFECYCLE
+     A spliced route's external script is loaded once (see
+     _seenExternalScripts), so it can't rely on running again for each
+     visit. To re-init on every visit, it registers:
+       window.LP_PAGES[routeKey] = { init(host), destroy() }
+     The router calls init(host) after every mount (host = the new
+     content wrapper) and destroy() before that route's content is
+     replaced. window.__lpRouter = true tells it not to auto-init.
+     Scripts without hooks behave as before.
+  ───────────────────────────────────────────────────────────── */
+  var _activeRouteKey = null;
+
+  /* Stale-response guard: every navigation bumps the token and aborts
+     the previous fetch. Work carrying an older token is dropped. */
+  var _loadToken = 0;
+  var _loadAbort = null;
+
+  function startNavigation() {
+    _loadToken++;
+    if (_loadAbort) {
+      _loadAbort.abort();
+      _loadAbort = null;
+    }
+    return _loadToken;
+  }
+
+  function callRouteHook(routeKey, hook, arg) {
+    var page = window.LP_PAGES && window.LP_PAGES[routeKey];
+    if (!page || typeof page[hook] !== "function") return;
+    try {
+      page[hook](arg);
+    } catch (err) {
+      console.warn("[LP] " + routeKey + "." + hook + "() failed:", err);
+    }
+  }
+
+  /* Route-exit hook: tears down the route being left */
+  function exitActiveRoute() {
+    if (!_activeRouteKey) return;
+    var key = _activeRouteKey;
+    _activeRouteKey = null;
+    callRouteHook(key, "destroy");
+  }
+
+  /* ─────────────────────────────────────────────────────────────
      MOUNT CONTENT
   ───────────────────────────────────────────────────────────── */
-  function mountContent(el, sourceDoc, route, depScriptSrcs) {
+  function mountContent(el, sourceDoc, route, depScriptSrcs, routeKey, token) {
     var host = _swapHost;
     if (!host) {
       console.error("[LP] mountContent: swap host not found");
       return;
     }
+
+    /* A previous route's queued inits must never run against this content */
+    window.__lpDeferredInits = [];
 
     /* ── Base URL injection ──
        Fetched pages make relative API calls (e.g. ./api/form/query)
@@ -1854,12 +1912,15 @@
 
     host.innerHTML = "";
     host.appendChild(wrapper);
+    _activeRouteKey = routeKey || null;
 
     /* Lazy-loads any LEAF UI deps the fetched page needs before
        re-executing its inline scripts — depScriptSrcs was scanned
        before chrome suppression, so deps inside #header/#footer are
-       still caught. */
+       still caught. Each step bails if a newer navigation replaced
+       this content in the meantime. */
     ensureLeafUIDeps(depScriptSrcs).then(function () {
+      if (token !== _loadToken) return;
       return reExecuteScripts(wrapper);
     }).then(function () {
       /* After scripts run, drain any deferred page-init functions.
@@ -1867,23 +1928,24 @@
          it as a DOMContentLoaded listener, captured into
          window.__lpDeferredInits. We never dispatch a synthetic
          DOMContentLoaded — that would retrigger the header's own init
-         and loop — so we call the queued functions directly instead. */
+         and loop — so we call the queued functions directly instead.
+         Then the route's init(host) hook, if it registered one. */
       setTimeout(function () {
-        if (window.__lpDeferredInits && window.__lpDeferredInits.length) {
-          _routerSuppressed = true;
-          var inits = window.__lpDeferredInits.splice(0);
-          inits.forEach(function (fn) {
-            try {
-              fn();
-            } catch (e) {
-              console.warn("[LP] Deferred init error:", e.message);
-            }
-          });
-          /* Re-enable router after any sync hash side-effects settle */
-          setTimeout(function () {
-            _routerSuppressed = false;
-          }, 0);
-        }
+        if (token !== _loadToken) return;
+        _routerSuppressed = true;
+        var inits = window.__lpDeferredInits.splice(0);
+        inits.forEach(function (fn) {
+          try {
+            fn();
+          } catch (e) {
+            console.warn("[LP] Deferred init error:", e.message);
+          }
+        });
+        callRouteHook(routeKey, "init", wrapper);
+        /* Re-enable router after any sync hash side-effects settle */
+        setTimeout(function () {
+          _routerSuppressed = false;
+        }, 0);
       }, 0);
     });
 
@@ -1930,6 +1992,9 @@
   function loadView(hash, route, deepLinkId) {
     if (!route) {
       console.warn("[LP Router] No route found for hash:", hash);
+      startNavigation();
+      exitActiveRoute();
+      _currentLoadUrl = null;
       showSwapView();
       updateBreadcrumb(null);
       showSwapError(null, "missing");
@@ -1941,6 +2006,8 @@
 
     /* Prevent stacked fetches: if this URL is already in-flight, bail. */
     if (_currentLoadUrl === url) return;
+    var token = startNavigation();
+    exitActiveRoute();
     _currentLoadUrl = url;
 
     showSwapView();
@@ -1961,8 +2028,12 @@
 
     showSwapLoading();
 
+    _loadAbort =
+      typeof AbortController === "function" ? new AbortController() : null;
+
     fetch(url, {
       credentials: "include",
+      signal: _loadAbort ? _loadAbort.signal : undefined,
       headers: {
         /* Tell LEAF this is a normal browser navigation, not an AJAX
            call. Without Accept: text/html some LEAF pages detect the
@@ -1981,6 +2052,10 @@
         return response.text();
       })
       .then(function (html) {
+        /* A newer navigation owns the swap host and _currentLoadUrl now */
+        if (token !== _loadToken) return;
+        _loadAbort = null;
+
         var parser = new DOMParser();
         var doc = parser.parseFromString(html, "text/html");
 
@@ -2000,7 +2075,7 @@
         }
 
         /* Mount into swap host */
-        mountContent(contentEl, doc, route, depScriptSrcs);
+        mountContent(contentEl, doc, route, depScriptSrcs, hash, token);
         _currentLoadUrl = null;
 
         /* Scroll swap host to top */
@@ -2009,6 +2084,9 @@
         window.scrollTo(0, 0);
       })
       .catch(function (err) {
+        /* Superseded (including the abort above) — not a real failure */
+        if (token !== _loadToken) return;
+        _loadAbort = null;
         _currentLoadUrl = null;
         console.error("[LP Router] Fetch failed for", url, ":", err.message);
         showSwapError(url, "fetch");
@@ -2276,6 +2354,9 @@
   function wireRouter() {
     /* Cache element references once — used by show/hide throughout */
     initElementCache();
+
+    /* Tells contract route scripts not to auto-init (see ROUTE PAGE LIFECYCLE) */
+    window.__lpRouter = true;
 
     /* hashchange drives back/forward navigation */
     window.addEventListener("hashchange", function () {
