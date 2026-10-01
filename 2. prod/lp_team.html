@@ -213,7 +213,9 @@
         border: 1px solid var(--c-blue20);
         background: #fff;
         color: var(--c-muted);
+        min-height: 44px;
         padding: 8px 14px;
+        line-height: 1.2;
         border-radius: 999px;
         cursor: pointer;
         display: inline-flex;
@@ -312,6 +314,21 @@
         outline: 3px solid #fff;
         outline-offset: 2px;
       }
+      @media (max-width: 560px) {
+        .thb-admin {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .thb-admin-left,
+        .thb-admin-left > div {
+          min-width: 0;
+        }
+        .thb-admin-btn {
+          width: 100%;
+          min-height: 44px;
+          white-space: normal;
+        }
+      }
 
       /* ── Sections ── */
       .thb-sec {
@@ -349,6 +366,8 @@
         display: flex;
         align-items: center;
         gap: 0.65rem;
+        flex: 1 1 auto;
+        min-width: 0;
       }
       .thb-sec-icon {
         width: 38px;
@@ -370,8 +389,12 @@
         font-size: 1.1rem;
         margin: 0;
         color: var(--lp-hl);
+        min-width: 0;
+        overflow-wrap: anywhere;
       }
       .thb-sec-count {
+        flex-shrink: 0;
+        white-space: nowrap;
         font-family: "PublicSans-Bold", sans-serif;
         font-size: 0.78rem;
         font-weight: 700;
@@ -385,6 +408,7 @@
         display: none;
       }
       .thb-chev {
+        flex-shrink: 0;
         color: var(--c-muted);
         transition: transform 0.2s;
       }
@@ -748,7 +772,7 @@
             </div>
             <a
               class="thb-update-btn"
-              href="/platform/service_requests_launchpad/open.php?report=32wnv"
+              href="/platform/service_requests_launchpad/open.php?report=32wnw"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -900,21 +924,14 @@
             refreshAfterMs: 5000,
           };
 
-          // TODO: replace the two "<<…>>" placeholders with real indicator IDs.
-          // Until then those fields are treated as unset.
+          // popup = "Open in popup" (Yes/No), order = "Section Order" (number)
           const INDICATORS = {
             name: 479,
             url: 480,
             category: 489,
-            popup: "<<POPUP_INDICATOR_ID>>",
-            order: "<<ORDER_INDICATOR_ID>>",
+            popup: 490,
+            order: 491,
           };
-          const IDS = Object.fromEntries(
-            Object.entries(INDICATORS).map(([field, id]) => [
-              field,
-              /^\d+$/.test(String(id)) ? Number(id) : null,
-            ]),
-          );
 
           const UNCATEGORIZED_KEY = "uncategorized";
           const UNCATEGORIZED_TITLE = "Uncategorized";
@@ -924,10 +941,9 @@
           const ICON_PATHS = {
             expand_more:
               "M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z",
-            // TODO: placeholder square — replace with the real `link` path.
-            link: "M200-200v-560h560v560H200Z",
-            // TODO: placeholder square — replace with the real `edit_note` path.
-            edit_note: "M200-200v-560h560v560H200Z",
+            link: "M440-280H280q-83 0-141.5-58.5T80-480q0-83 58.5-141.5T280-680h160v80H280q-50 0-85 35t-35 85q0 50 35 85t85 35h160v80ZM320-440v-80h320v80H320Zm200 160v-80h160q50 0 85-35t35-85q0-50-35-85t-85-35H520v-80h160q83 0 141.5 58.5T880-480q0 83-58.5 141.5T680-280H520Z",
+            edit_note:
+              "M160-400v-80h280v80H160Zm0-160v-80h440v80H160Zm0-160v-80h440v80H160Zm360 560v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q8 9 12.5 20t4.5 22q0 11-4 22.5T863-380L643-160H520Zm263-224 37-39-37-37-38 38 38 38Z",
           };
 
           const SVG_NS = "http://www.w3.org/2000/svg";
@@ -971,9 +987,20 @@
           }
 
           const readField = (record, indicatorId) =>
-            indicatorId === null
-              ? ""
-              : decodeHtmlEntities(getS1Value(record, indicatorId)).trim();
+            decodeHtmlEntities(getS1Value(record, indicatorId)).trim();
+
+          // Normalized view of the fetched records, used to skip no-op refreshes.
+          const snapshotOf = (data) =>
+            JSON.stringify(
+              Object.keys(data)
+                .sort((a, b) => Number(a) - Number(b))
+                .map((recordID) => [
+                  recordID,
+                  ...["name", "url", "category", "popup", "order"].map((f) =>
+                    readField(data[recordID], INDICATORS[f]),
+                  ),
+                ]),
+            );
 
           const isYes = (value) =>
             ["yes", "true", "1"].includes(value.toLowerCase());
@@ -1012,7 +1039,7 @@
               .sort((a, b) => Number(a) - Number(b))
               .forEach((recordID) => {
                 const rec = data[recordID];
-                const rawUrl = readField(rec, IDS.url);
+                const rawUrl = readField(rec, INDICATORS.url);
                 const href = safeUrl(rawUrl);
                 if (!href) {
                   console.warn(
@@ -1021,7 +1048,7 @@
                   return;
                 }
 
-                const rawCategory = readField(rec, IDS.category);
+                const rawCategory = readField(rec, INDICATORS.category);
                 const key = rawCategory
                   ? rawCategory.toLowerCase()
                   : UNCATEGORIZED_KEY;
@@ -1037,14 +1064,14 @@
                   groups.set(key, group);
                 }
 
-                const order = parseOrder(readField(rec, IDS.order));
+                const order = parseOrder(readField(rec, INDICATORS.order));
                 if (order !== null && order < group.order) group.order = order;
 
                 group.links.push({
                   recordID,
-                  label: readField(rec, IDS.name) || href,
+                  label: readField(rec, INDICATORS.name) || href,
                   href,
-                  popup: isYes(readField(rec, IDS.popup)),
+                  popup: isYes(readField(rec, INDICATORS.popup)),
                 });
               });
 
@@ -1266,7 +1293,11 @@
           /* Rebuilds sections + chips. Search text, active filter, collapsed
              state and keyboard focus survive a refresh. */
           function render(groups) {
-            const focusKey = document.activeElement?.dataset?.focusKey;
+            const focused = document.activeElement;
+            const focusKey = focused?.dataset?.focusKey;
+            const focusCategory = focusKey
+              ? (focused.closest(".thb-sec") || focused).dataset.key
+              : undefined;
 
             const used = new Set();
             sectionsWrap.replaceChildren(
@@ -1282,14 +1313,15 @@
             syncChips();
             apply();
 
-            // A focused chip whose category disappeared hands focus to "All"
-            const target =
-              findByFocusKey(focusKey) ||
-              (focusKey?.startsWith("chip:")
-                ? filters.querySelector('[data-filter="all"]')
-                : null);
-            if (target && !target.closest("[hidden]"))
-              target.focus({ preventScroll: true });
+            // Focus was on a replaced element: same element → its category's
+            // header → "All" chip, so it never drops to <body>.
+            if (!focusKey) return;
+            const target = [
+              findByFocusKey(focusKey),
+              findByFocusKey("head:" + focusCategory),
+              filters.querySelector('[data-filter="all"]'),
+            ].find((el) => el && !el.closest("[hidden]"));
+            target.focus({ preventScroll: true });
           }
 
           /* ── Load links from form_531cc ── */
@@ -1302,21 +1334,35 @@
             retry.className = "thb-retry";
             retry.textContent = "Retry";
             retry.addEventListener("click", () => {
-              loadLinks();
+              loadLinks("retry");
               // Retry is removed on reload; keep focus on the status message
               status.focus();
             });
             errorBox.replaceChildren(msg, retry);
           };
 
-          // loadSeq guards against an older request finishing after a newer one.
+          const focusFirstSection = () =>
+            (
+              sectionsWrap.querySelector(".thb-sec:not([hidden]) .thb-sec-head") ||
+              status
+            ).focus({ preventScroll: true });
+
+          /* mode: "initial" | "retry" (Retry button) | "auto-retry" (tab return
+             after a failed first load; error UI stays until it succeeds) |
+             "refresh" (tab return after a successful load).
+             loadSeq guards against an older request finishing after a newer one. */
           let loadSeq = 0;
           let inFlight = false;
-          async function loadLinks(isRefresh = false) {
+          let lastAttempt = 0;
+          let lastSnapshot = null;
+          async function loadLinks(mode = "initial") {
             const seq = ++loadSeq;
             inFlight = true;
-            if (!isRefresh) {
-              sectionsWrap.setAttribute("aria-busy", "true");
+            lastAttempt = Date.now();
+            const isRefresh = mode === "refresh";
+            const isAuto = mode === "auto-retry";
+            if (!isRefresh) sectionsWrap.setAttribute("aria-busy", "true");
+            if (!isRefresh && !isAuto) {
               errorBox.replaceChildren();
               status.textContent = "Loading team links…";
             }
@@ -1338,7 +1384,7 @@
                 ],
                 joins: [],
                 sort: {},
-                getData: Object.values(IDS).filter((id) => id !== null),
+                getData: Object.values(INDICATORS),
               };
               const r = await fetch(
                 `${CONFIG.apiBase}api/form/query?q=${encodeURIComponent(JSON.stringify(q))}`,
@@ -1350,19 +1396,29 @@
                 throw new Error("Unexpected query response");
               if (seq !== loadSeq) return;
 
-              const groups = groupLinks(data);
               lastSuccess = Date.now();
-              render(groups);
               refreshMsg.textContent = "";
+              const snapshot = snapshotOf(data);
+              if (isRefresh && snapshot === lastSnapshot) return;
+              lastSnapshot = snapshot;
+
+              const groups = groupLinks(data);
+              render(groups);
               status.textContent = groups.length
                 ? ""
                 : "No team links were found. If you expected links here, check that you have access to the Service Requests Launchpad site.";
+              if (mode === "retry" || isAuto) {
+                errorBox.replaceChildren();
+                focusFirstSection();
+              }
             } catch (err) {
               if (seq !== loadSeq) return;
               console.error("[TeamHub] Failed to load links:", err);
               if (isRefresh) {
                 refreshMsg.textContent =
                   "Links couldn't be refreshed. Showing the last loaded version.";
+              } else if (isAuto) {
+                // Keep the existing error + Retry (and any focus on it) as-is
               } else {
                 status.textContent = "";
                 showError();
@@ -1511,13 +1567,19 @@
             });
           })();
 
-          /* ── Refresh when the user returns to the tab ── */
+          /* ── Refresh (or retry a failed first load) on tab return ── */
           document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState !== "visible") return;
-            if (!lastSuccess || inFlight) return;
+            if (document.visibilityState !== "visible" || inFlight) return;
             if (modal?.classList.contains("is-open")) return;
-            if (Date.now() - lastSuccess < CONFIG.refreshAfterMs) return;
-            loadLinks(true);
+            if (lastSuccess) {
+              if (Date.now() - lastSuccess >= CONFIG.refreshAfterMs)
+                loadLinks("refresh");
+            } else if (
+              errorBox.childElementCount &&
+              Date.now() - lastAttempt >= CONFIG.refreshAfterMs
+            ) {
+              loadLinks("auto-retry");
+            }
           });
 
           /* ── Jump to top ── */
@@ -1610,7 +1672,7 @@
             The Team Hub is available to LEAF Sysadmins only. Contact your LEAF
             administrator if you believe you should have access.
           </p>
-          <a href="#">Return to Launchpad</a>
+          <a href="/launchpad">Return to Launchpad</a>
         </div>
       </main>
     </div>
