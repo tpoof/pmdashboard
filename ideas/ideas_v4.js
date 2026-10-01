@@ -3,10 +3,12 @@
    mount and destroy() on route exit. Each init() builds a fresh instance
    from createPortal(), so no state or listeners carry over between visits. */
 (function () {
-function createPortal(root) {
+function createPortal(root, apiBase) {
 /* Every document/window listener and timer is tracked so stop() can undo
-   it. setTimeout/clearTimeout/setInterval shadow the globals in this scope. */
+   it. setTimeout/clearTimeout/setInterval/fetch shadow the globals here. */
 const cleanups = [];
+const aborter =
+  typeof AbortController === "function" ? new AbortController() : null;
 const timeouts = new Set();
 const intervals = new Set();
 
@@ -35,14 +37,33 @@ function setInterval(fn, ms) {
   return id;
 }
 
+// Relative URLs resolve against apiBase (captured in init()), never the
+// page's current <base>, so a late request can't hit another route's site.
+// Reads are aborted by stop(); writes finish so a multi-step save isn't
+// cut off halfway.
+function fetch(input, init = {}) {
+  const url = typeof input === "string" ? new URL(input, apiBase).href : input;
+  const method = String(init.method || "GET").toUpperCase();
+  if (aborter && !init.signal && method === "GET") {
+    init = { ...init, signal: aborter.signal };
+  }
+  return window.fetch(url, init);
+}
+
 function stop() {
   cleanups.splice(0).forEach((undo) => undo());
   timeouts.forEach((id) => window.clearTimeout(id));
   timeouts.clear();
   intervals.forEach((id) => window.clearInterval(id));
   intervals.clear();
-  // A modal left open on route exit would keep the shell nav inert.
-  setBackgroundHidden(false);
+  if (aborter) aborter.abort();
+  // A modal left open on route exit: put inert back the way it was.
+  if (backgroundHidden) setBackgroundHidden(false);
+}
+
+function start() {
+  snapshotBackground();
+  initPortal();
 }
 
 const statusRepairAttempted = new Set();
@@ -837,22 +858,44 @@ function bindFocusTrap(container) {
   });
 }
 
-function setBackgroundHidden(hidden) {
-  const targets = [
+function backgroundTargets() {
+  return [
     root.querySelector("#lp-main"),
     document.getElementById("lp-nav-host"),
     root.querySelector(".ip-creditBadge"),
     document.getElementById("ipJumpTopBtn"),
   ].filter(Boolean);
+}
 
-  targets.forEach((el) => {
+// Prior inert/aria-hidden values, recorded at start(), so closing a modal
+// (or stop()) restores them instead of clearing state Ideas didn't set.
+let backgroundSnapshot = [];
+let backgroundHidden = false;
+
+function snapshotBackground() {
+  backgroundSnapshot = backgroundTargets().map((el) => ({
+    el,
+    inert: el.getAttribute("inert"),
+    ariaHidden: el.getAttribute("aria-hidden"),
+  }));
+}
+
+function restoreAttr(el, name, value) {
+  if (value === null) el.removeAttribute(name);
+  else el.setAttribute(name, value);
+}
+
+function setBackgroundHidden(hidden) {
+  backgroundHidden = hidden;
+  backgroundTargets().forEach((el) => {
     if (hidden) {
       el.setAttribute("inert", "");
       el.setAttribute("aria-hidden", "true");
-    } else {
-      el.removeAttribute("inert");
-      el.removeAttribute("aria-hidden");
+      return;
     }
+    const prior = backgroundSnapshot.find((s) => s.el === el);
+    restoreAttr(el, "inert", prior ? prior.inert : null);
+    restoreAttr(el, "aria-hidden", prior ? prior.ariaHidden : null);
   });
 }
 
@@ -4109,7 +4152,7 @@ function initPortal() {
 }
 
 
-return { start: initPortal, stop };
+return { start, stop };
 }
 
 let current = null;
@@ -4123,7 +4166,9 @@ function destroy() {
 // Safe to call repeatedly: tears down the previous instance first.
 function init(hostEl) {
   destroy();
-  current = createPortal(hostEl || document.body);
+  // The Ideas site directory, from the route <base> (router) or page URL.
+  const apiBase = new URL("./", document.baseURI).href;
+  current = createPortal(hostEl || document.body, apiBase);
   current.start();
 }
 
