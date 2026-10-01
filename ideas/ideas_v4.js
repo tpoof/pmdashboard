@@ -3447,19 +3447,49 @@ function populateSelect(select, options, appendOther = false) {
   }
 }
 
+let fieldOptionsPromise = null;
+
+// Dropdown options for idea fields, read from the site's field list. Any
+// signed-in user can read it; getindicator only renders a <select> for admins.
+function fetchFieldOptions() {
+  if (!fieldOptionsPromise) {
+    fieldOptionsPromise = fetch("./api/form/indicator/list?sort=indicatorID", {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((list) => {
+        // A field's format is its type, then one option per line.
+        const decoder = document.createElement("textarea");
+        const byId = {};
+        Object.values(list || {}).forEach((field) => {
+          byId[field.indicatorID] = String(field.format || "")
+            .split("\n")
+            .slice(1)
+            .map((line) => {
+              decoder.innerHTML = line.replace(/^\s*default:/, "").trim();
+              return decoder.value;
+            })
+            .filter(Boolean);
+        });
+        return byId;
+      });
+  }
+  return fieldOptionsPromise;
+}
+
+async function getFieldOptions(indicatorID) {
+  const options = (await fetchFieldOptions())[indicatorID] || [];
+  if (!options.length) throw new Error("no options");
+  return options;
+}
+
 async function loadCategoryOptions() {
   try {
-    const res = await fetch(
-      "/platform/ideas/ajaxIndex.php?a=getindicator&indicatorID=8&series=1&recordID=0",
-      { credentials: "same-origin" },
-    );
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const sel = doc.querySelector('select[id="8"]');
-    if (!sel || !sel.options.length) throw new Error("no options");
-    const options = Array.from(sel.options)
-      .map((o) => o.value)
-      .filter(Boolean);
+    const options = await getFieldOptions(IDEA_FIELDS.category);
     categoryOptionsList = options;
     populateSelect(document.getElementById("inpCategory"), options, false);
   } catch {
@@ -3480,19 +3510,9 @@ async function loadCategoryOptions() {
 
 async function loadImpactOptions() {
   try {
-    const res = await fetch(
-      "/platform/ideas/ajaxIndex.php?a=getindicator&indicatorID=9&series=1&recordID=0",
-      { credentials: "same-origin" },
-    );
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const sel = doc.querySelector('select[id="9"]');
-    if (!sel || !sel.options.length) throw new Error("no options");
     populateSelect(
       document.getElementById("inpImpact"),
-      Array.from(sel.options)
-        .map((o) => o.value)
-        .filter(Boolean),
+      await getFieldOptions(IDEA_FIELDS.impact),
       false,
     );
   } catch {
@@ -3508,18 +3528,7 @@ let statusOptionsList = [];
 
 async function loadStatusOptions() {
   try {
-    const res = await fetch(
-      `/platform/ideas/ajaxIndex.php?a=getindicator&indicatorID=${IDEA_FIELDS.status}&series=1&recordID=0`,
-      { credentials: "same-origin" },
-    );
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const sel = doc.querySelector(`select[id="${IDEA_FIELDS.status}"]`);
-    if (!sel || !sel.options.length) throw new Error("no options");
-    const options = Array.from(sel.options)
-      .map((o) => o.value)
-      .filter(Boolean);
-    statusOptionsList = options;
+    statusOptionsList = await getFieldOptions(IDEA_FIELDS.status);
   } catch (err) {
     console.warn(
       "[IdeaPortal] Could not load live status options for indicator 12:",

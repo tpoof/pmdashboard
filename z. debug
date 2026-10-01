@@ -1,6 +1,2 @@
-const q={terms:[{id:"categoryID",operator:"=",match:"form_ae642",gate:"AND"},{id:"deleted",operator:"=",match:0,gate:"AND"}],joins:[],sort:{},getData:[]};
-const r=await fetch(`./api/form/query/?q=${encodeURIComponent(JSON.stringify(q))}&x-filterData=recordID,userID&_=${Date.now()}`,{credentials:"same-origin",cache:"no-store"});
-const d=await r.json();
-console.log("header:", r.headers.get("LEAF-Query"), "count:", Object.keys(d).length);
-const r2=await fetch(`./api/form/154/data?_=${Date.now()}`,{credentials:"same-origin",cache:"no-store"});
-console.log("record 154 direct:", r2.status, (await r2.text()).length, "chars");
+   await fetch("./api/formEditor/formNeedToKnow", { method: "POST", credentials: "same-origin",
+     body: new URLSearchParams({ categoryID: "form_935d1", needToKnow: "0", CSRFToken: window.leafIdeaPortal.csrfToken }) });
