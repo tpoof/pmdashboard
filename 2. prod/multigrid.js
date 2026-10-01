@@ -1503,11 +1503,12 @@
     else panels.removeAttribute("aria-busy");
   }
 
-  // Live-region summary once a batch of sources settles.
-  function announceLoadResult(sourceKeys, afterRetry) {
+  // Live-region summary once a batch of sources settles. quietOnSuccess:
+  // a normal page load says nothing unless something failed.
+  function announceLoadResult(sourceKeys, afterRetry, quietOnSuccess) {
     var failed = sourceKeys.filter(isSourceErrored);
     if (!failed.length) {
-      announce("Your requests have loaded.");
+      if (!quietOnSuccess) announce("Your requests have loaded.");
       return;
     }
     var names = failed
@@ -1579,7 +1580,7 @@
     await loadSources(sourceKeys);
     // Skip when the grid isn't on screen (another route, or first-time view);
     // lp:home-shown reports any failure once home is shown.
-    if (isShown(rootEl)) announceLoadResult(sourceKeys, false);
+    if (isShown(rootEl)) announceLoadResult(sourceKeys, false, true);
   }
 
   function init() {
