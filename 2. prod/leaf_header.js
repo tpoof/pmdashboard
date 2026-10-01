@@ -193,7 +193,7 @@
         {
           icon: "record_voice_over",
           title: "Voice of the Customer",
-          desc: "Share feedback to help shape LEAF",
+          desc: "See how your feedback shapes LEAF",
           href: "/launchpad/report.php?a=lp_voc",
         },
         {
@@ -249,6 +249,13 @@
           desc: "Self-paced courses and live training for LEAF",
           href: "/launchpad/report.php?a=lp_learn",
           badge: "Coming Soon",
+        },
+        {
+          icon: "event_available",
+          title: "Register for Training",
+          desc: "Sign up for a live session with the LEAF team",
+          href: "#",
+          action: "training-modal",
         },
         {
           icon: "quiz",
@@ -469,6 +476,8 @@
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h600q24 0 42 18t18 42v600q0 24-18 42t-42 18H180Zm97-159h275v-60H277v60Zm0-171h406v-60H277v60Zm0-171h406v-60H277v60Z"/></svg>',
     school:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M840-280v-276L480-360 40-600l440-240 440 240v320h-80ZM480-120 200-272v-200l280 152 280-152v200L480-120Z"/></svg>',
+    event_available:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M438-226 296-368l58-58 84 84 168-168 58 58-226 226ZM200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Z"/></svg>',
     quiz: '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M560-360q17 0 29.5-12.5T602-402q0-17-12.5-29.5T560-444q-17 0-29.5 12.5T518-402q0 17 12.5 29.5T560-360Zm-30-128h60q0-29 6-42.5t28-35.5q30-30 40-48.5t10-43.5q0-45-31.5-73.5T560-760q-41 0-71.5 23T446-676l54 22q9-25 24.5-37.5T560-704q24 0 39 13.5t15 36.5q0 14-8 26.5T578-596q-33 29-40.5 45.5T530-488ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Z"/></svg>',
     arrow_drop_down:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-360 280-560h400L480-360Z"/></svg>',
@@ -802,6 +811,12 @@
   /* Exposed (same pattern as LEAF_NAV_CURRENT above) for markup outside
      this file that needs the default support URL. */
   window.LEAF_SUPPORT_FORM_URL = SUPPORT_FORM_URL;
+
+  /* Opened by data-action="training-modal" (Knowledge Center nav item,
+     lp_learn CTA). &iframe=1 suppresses the form app's own header/nav,
+     same as SUPPORT_FORM_BASE_URL. */
+  var TRAINING_FORM_URL =
+    "https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=LEAF_Start_Request&id=form_a3df9&title=Training+Registration&iframe=1";
 
   function buildSupportButtonHTML() {
     return `
@@ -2300,6 +2315,15 @@
         return;
       }
 
+      /* Training registration — URL lives in TRAINING_FORM_URL, so
+         triggers need no data-modal-src. */
+      if (link.dataset.action === "training-modal") {
+        e.preventDefault();
+        closeAllDropdowns(null);
+        openFormModal(TRAINING_FORM_URL, "Training Registration", link);
+        return;
+      }
+
       /* Feedback button (internal nav, sysadmin-only) opens a small modal
          with a textarea instead of navigating. */
       if (link.dataset.action === "feedback-modal") {
@@ -2405,6 +2429,23 @@
     closeFeedbackModal();
   }
 
+  /* WCAG 2.4.3: a dropdown item that opened a modal is hidden by
+     closeAllDropdowns() by the time the modal closes, so fall back to
+     its section's trigger button instead of letting focus drop to <body>. */
+  function restoreModalFocus(trigger) {
+    if (!trigger || !trigger.isConnected) return;
+    if (trigger.getClientRects().length) {
+      trigger.focus();
+      return;
+    }
+    var panel = trigger.closest(".dd-panel, .acc-panel");
+    if (!panel || !panel.id) return;
+    var sectionBtn = document.querySelector(
+      '.dd-trigger[aria-controls="' + panel.id + '"], .acc-trigger[aria-controls="' + panel.id + '"]',
+    );
+    if (sectionBtn && sectionBtn.getClientRects().length) sectionBtn.focus();
+  }
+
   /* ─────────────────────────────────────────────────────────────
      DEMO MODAL
      Injected once so "Watch a Demo" can open it from any page. The
@@ -2469,10 +2510,8 @@
     frame.src = "";
     modal.setAttribute("hidden", "");
     document.body.style.overflow = "";
-    if (demoModalTrigger) {
-      demoModalTrigger.focus();
-      demoModalTrigger = null;
-    }
+    restoreModalFocus(demoModalTrigger);
+    demoModalTrigger = null;
   }
 
   function wireDemoModal() {
@@ -2613,10 +2652,8 @@
     frame.src = "";
     modal.setAttribute("hidden", "");
     document.body.style.overflow = "";
-    if (formModalTrigger) {
-      formModalTrigger.focus();
-      formModalTrigger = null;
-    }
+    restoreModalFocus(formModalTrigger);
+    formModalTrigger = null;
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -2899,10 +2936,8 @@
     if (!modal || modal.hasAttribute("hidden")) return;
     modal.setAttribute("hidden", "");
     document.body.style.overflow = "";
-    if (feedbackModalTrigger) {
-      feedbackModalTrigger.focus();
-      feedbackModalTrigger = null;
-    }
+    restoreModalFocus(feedbackModalTrigger);
+    feedbackModalTrigger = null;
   }
 
   /* ─────────────────────────────────────────────────────────────
