@@ -770,11 +770,14 @@
               <h1 class="thb-title">Team Hub</h1>
               <p class="thb-sub">Your hub for internal team links and inbox.</p>
             </div>
+            <!-- data-nav-external: leaf_header.js's link interceptor skips it,
+                 so it opens normally instead of being hash-routed -->
             <a
               class="thb-update-btn"
               href="/platform/service_requests_launchpad/open.php?report=32wnw"
               target="_blank"
               rel="noopener noreferrer"
+              data-nav-external
             >
               <span
                 class="material-symbols-outlined"
@@ -1113,6 +1116,9 @@
               tile.href = link.href;
               tile.target = "_blank";
               tile.rel = "noopener noreferrer";
+              // leaf_header.js's link interceptor skips anchors with
+              // data-nav-external, so they open normally instead of being hash-routed
+              tile.setAttribute("data-nav-external", "");
             }
             tile.classList.add("thb-tile");
             tile.dataset.label = link.label.toLowerCase();
@@ -1396,39 +1402,6 @@
                 throw new Error("Unexpected query response");
               if (seq !== loadSeq) return;
 
-              // ── TEMP DIAGNOSTICS (start) — remove before ship ──
-              {
-                const tempTitles = new Map(
-                  groupLinks(data).map((g) => [g.key, g.title]),
-                );
-                console.info(
-                  `[TeamHub TEMP] ${mode}: ${Object.keys(data).length} records returned`,
-                );
-                console.table(
-                  Object.keys(data)
-                    .sort((a, b) => Number(a) - Number(b))
-                    .map((recordID) => {
-                      const rec = data[recordID];
-                      const cat = readField(rec, INDICATORS.category);
-                      const groupedKey = cat
-                        ? cat.toLowerCase()
-                        : UNCATEGORIZED_KEY;
-                      return {
-                        recordID,
-                        name: readField(rec, INDICATORS.name),
-                        rawCategory: rec?.s1?.["id" + INDICATORS.category],
-                        groupedKey,
-                        sectionTitle:
-                          tempTitles.get(groupedKey) ?? "(no section)",
-                        urlAccepted: !!safeUrl(
-                          readField(rec, INDICATORS.url),
-                        ),
-                      };
-                    }),
-                );
-              }
-              // ── TEMP DIAGNOSTICS (end) ──
-
               lastSuccess = Date.now();
               refreshMsg.textContent = "";
               const snapshot = snapshotOf(data);
@@ -1571,39 +1544,6 @@
               modal.classList.add("is-open");
               document.body.style.overflow = "hidden";
               closeBtn.focus();
-
-              // ── TEMP DIAGNOSTICS (start) — remove before ship ──
-              requestAnimationFrame(() => {
-                const chain = [];
-                for (
-                  let n = modal;
-                  n && n !== document.documentElement;
-                  n = n.parentElement
-                ) {
-                  chain.push({
-                    tag: n.tagName,
-                    id: n.id,
-                    inert: n.inert,
-                    ariaHidden: n.getAttribute("aria-hidden"),
-                    pointerEvents: getComputedStyle(n).pointerEvents,
-                  });
-                }
-                console.table(chain);
-                const r = closeBtn.getBoundingClientRect();
-                const hit = document.elementFromPoint(
-                  r.left + r.width / 2,
-                  r.top + r.height / 2,
-                );
-                console.info(
-                  "[TeamHub TEMP] modal copies:",
-                  document.querySelectorAll("#thbModal").length,
-                  "| elementFromPoint at close button:",
-                  hit,
-                  "| is close button:",
-                  closeBtn.contains(hit),
-                );
-              });
-              // ── TEMP DIAGNOSTICS (end) ──
             };
             const closeModal = () => {
               modal.classList.remove("is-open");
