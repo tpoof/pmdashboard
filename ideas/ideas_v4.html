@@ -1289,6 +1289,7 @@
       .ip-share .ip-icon {
         width: 0.9rem;
         height: 0.9rem;
+        color: inherit;
       }
       .ip-share:disabled {
         opacity: 0.5;
@@ -1306,11 +1307,16 @@
       }
       /* Only the label for the current state is shown (see
          shareButtonInnerHtml() in ideas_v4.js); the button sizes to it. */
+      /* Host CSS styles spans directly (black, Verdana); inherit from the
+         button so hover/focus/disabled colors reach the label and icon. */
       .ip-share__label {
         display: inline-flex;
         align-items: center;
         gap: 4px;
         white-space: nowrap;
+        color: inherit;
+        font-family: inherit;
+        font-size: inherit;
       }
       .ip-share__label--copied,
       .ip-share__label--error,
