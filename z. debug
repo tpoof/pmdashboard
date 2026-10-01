@@ -1,15 +1,7 @@
-["", "report.php?a=LEAF_Start_Request&id=form_9015b"].forEach(async (p) => {
-  const url = "https://leaf.va.gov/platform/service_requests_launchpad/" + p;
+(async () => {
+  const url = "https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=LEAF_Start_Request&id=form_6ecbe";
   const r = await fetch(url, { credentials: "include" });
   const t = await r.text();
-  console.group(url);
-  console.log("status:", r.status, "| redirected:", r.redirected, "| final URL:", r.url);
-  console.log("title:", (t.match(/<title>([^<]*)/i) || [])[1], "| length:", t.length);
-  const hits = [...t.matchAll(/csrf/gi)].slice(0, 6).map((m) =>
-    t.slice(Math.max(0, m.index - 50), m.index + 90)
-      .replace(/[A-Za-z0-9]{16,}/g, "<long>")
-      .replace(/\s+/g, " ")
-  );
-  console.log("csrf mentions:", hits.length ? hits : "NONE");
-  console.groupEnd();
-});
+  const m = t.match(/append\(\s*['"]CSRFToken['"]\s*,\s*['"]([^'"]+)['"]\s*\)/);
+  console.log(r.status, r.redirected, m ? m[0].replace(m[1], "<token>") : "NO TOKEN FOUND");
+})();
