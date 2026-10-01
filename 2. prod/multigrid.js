@@ -86,6 +86,7 @@
       url: "https://leaf.va.gov/platform/learn/",
       name: "Learn",
       description: "your LEAF National learning requests",
+      isLearn: true,
       allRequestsLabel: "National Support",
     },
     ideas: {
@@ -286,9 +287,10 @@
     return "<span>" + escapeHTML(text) + "</span>";
   }
 
-  // Ideas uses its custom id12 status field; Service Requests/Support/Learn
-  // share lastStatus. FLAG: this can't tell those apart once merged -- if
-  // any ever needs its own status field, add a per-source branch here.
+  // Ideas uses its custom id12 status field; Learn is self-paced, so it's
+  // Completed once submitted. Service Requests/Support share lastStatus.
+  // FLAG: those two can't be told apart once merged -- if either ever needs
+  // its own status field, add a per-source branch here.
   function statusTextForSource(sourceKey, rec) {
     var source = SOURCE_SITES[sourceKey];
     if (source.isIdeas) {
@@ -297,6 +299,10 @@
           ? rec.s1.id12
           : "";
       return v || "Not Submitted";
+    }
+    if (source.isLearn) {
+      // submitted can arrive as a string; Number() also maps null to 0.
+      return rec && Number(rec.submitted) > 0 ? "Completed" : "In Progress";
     }
     return rec && rec.lastStatus ? rec.lastStatus : "Not Submitted";
   }
