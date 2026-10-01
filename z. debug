@@ -1,3 +1,2 @@
-const q={terms:[{id:"categoryID",operator:"=",match:"form_ae642",gate:"AND"},{id:"deleted",operator:"=",match:0,gate:"AND"}],joins:["categoryNameUnabridged"],sort:{},getData:[]};
-const d=await (await fetch(`./api/form/query/?q=${encodeURIComponent(JSON.stringify(q))}&x-filterData=recordID,date,categoryNamesUnabridged`,{credentials:"same-origin"})).json();
-console.table(Object.values(d).filter(x=>!(x.categoryNamesUnabridged||[]).includes("LEAF Internal Review")).map(x=>({recordID:x.recordID,date:new Date(x.date*1000).toLocaleDateString()})));
+const c=await (await fetch("./api/formStack/categoryList/allWithStaples",{credentials:"same-origin"})).json();
+console.table(c.map(f=>({id:f.categoryID,name:f.categoryName,needToKnow:f.needToKnow})));
