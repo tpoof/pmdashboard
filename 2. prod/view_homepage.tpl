@@ -118,6 +118,7 @@
         margin: 0.75rem 0 0;
         font-family: "PublicSans-Medium", sans-serif;
         font-size: 0.9rem;
+        color: #fff;
       }
       .nl-status:empty {
         display: none;
