@@ -45,7 +45,7 @@
         font-display: swap;
       }
 
-      /* Icons render as inline SVG (see ICON_SVG below), matching
+      /* Icons render as inline SVG (see ICON_PATHS below), matching
        leaf_header.js — no Material Symbols web font dependency. */
       .material-symbols-outlined {
         display: inline-flex;
@@ -163,6 +163,7 @@
       }
       .thb-filters {
         display: inline-flex;
+        flex-wrap: wrap;
         gap: 6px;
       }
       .thb-filter {
@@ -297,6 +298,12 @@
         font: inherit;
         text-align: left;
       }
+      /* Heading wrapper for the accordion button; resets launchpad.css .lp h2 */
+      .thb-sec .thb-sec-h {
+        margin: 0;
+        font: inherit;
+        letter-spacing: normal;
+      }
       .thb-sec-head:focus-visible {
         outline: 3px solid var(--lp-accent);
         outline-offset: -3px;
@@ -336,6 +343,9 @@
         border: 1px solid var(--c-blue10);
         padding: 2px 10px;
         border-radius: 999px;
+      }
+      .thb-sec-count:empty {
+        display: none;
       }
       .thb-chev {
         color: var(--c-muted);
@@ -431,6 +441,64 @@
       .thb-sec--updates .thb-sec-icon .material-symbols-outlined {
         color: #a15c00;
       }
+      .thb-sec--admin .thb-sec-icon {
+        border-color: #d9c8ef;
+        background: #f4effb;
+      }
+      .thb-sec--admin .thb-sec-icon .material-symbols-outlined {
+        color: #6b3fa0;
+      }
+
+      /* ── Load status / error ── */
+      .thb-status {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.95rem;
+        color: var(--c-muted);
+        margin: 0 0 1.25rem;
+      }
+      .thb-status:focus {
+        outline: none;
+      }
+      .thb-status:empty,
+      .thb-error:empty {
+        display: none;
+      }
+      .thb-error {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.9rem 1.15rem;
+        margin-bottom: 1.5rem;
+        background: #fff;
+        border: 1px solid #b50909;
+        border-left-width: 4px;
+        border-radius: var(--r-lg);
+        font-family: "Source Sans Pro Web", sans-serif;
+        color: var(--c-text);
+      }
+      .thb-error p {
+        margin: 0;
+      }
+      .thb-retry {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-weight: 700;
+        font-size: 0.88rem;
+        color: #fff;
+        background: var(--lp-accent);
+        border: 0;
+        border-radius: 8px;
+        padding: 9px 18px;
+        cursor: pointer;
+      }
+      .thb-retry:hover {
+        background: var(--lp-accent-strong, #004a82);
+      }
+      .thb-retry:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
 
       /* ── Link grid ── */
       .thb-grid {
@@ -438,6 +506,16 @@
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 0.7rem;
         align-items: stretch;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .thb-grid > li {
+        display: flex;
+        min-width: 0;
+      }
+      .thb-grid > li[hidden] {
+        display: none;
       }
       @media (max-width: 900px) {
         .thb-grid {
@@ -524,9 +602,15 @@
         border-color: #f0d9ad;
         border-left-color: #a15c00;
       }
-
-      .thb-tile[hidden] {
-        display: none;
+      .thb-tile--admin {
+        border-left-color: #6b3fa0;
+      }
+      .thb-tile--admin .material-symbols-outlined {
+        color: #6b3fa0;
+      }
+      .thb-tile--admin:hover {
+        border-color: #d9c8ef;
+        border-left-color: #6b3fa0;
       }
 
       /* ── View sub-groups ── */
@@ -536,7 +620,7 @@
       .thb-subgroup:last-child {
         margin-bottom: 0;
       }
-      .thb-subgroup-label {
+      .thb-subgroup .thb-subgroup-label {
         font-family: "PublicSans-Bold", sans-serif;
         font-size: 0.72rem;
         font-weight: 700;
@@ -549,8 +633,8 @@
         gap: 0.4rem;
       }
       .thb-subgroup-label .thb-subgroup-count {
-        color: var(--c-blue20);
-        font-weight: 700;
+        color: var(--c-muted);
+        font-weight: 400;
       }
       .thb-subgroup[hidden] {
         display: none;
@@ -779,6 +863,19 @@
                     /></svg></span
                 >Launchpad Updates
               </button>
+              <button
+                class="thb-filter"
+                data-filter="admin-pages"
+                type="button"
+                aria-pressed="false"
+              >
+                <span
+                  class="material-symbols-outlined"
+                  aria-hidden="true"
+                  data-icon="admin_panel_settings"
+                ></span
+                >Admin Pages
+              </button>
             </div>
             <span
               class="thb-result-count"
@@ -819,122 +916,206 @@
             </button>
           </div>
 
-          <!-- Submit Reports -->
+          <!-- Link load status (filled by JS) -->
+          <p
+            class="thb-status"
+            id="thbStatus"
+            role="status"
+            aria-live="polite"
+            tabindex="-1"
+          >
+            Loading team links…
+          </p>
+          <div class="thb-error" id="thbError" role="alert"></div>
+
+          <!-- Sections are filled from form_531cc by the script below -->
           <section
             class="thb-sec thb-sec--submit"
             id="secSubmit"
             data-type="submit"
+            aria-labelledby="titleSubmit"
+            aria-busy="true"
           >
-            <button
-              class="thb-sec-head"
-              type="button"
-              aria-expanded="true"
-              aria-controls="bodySubmit"
-              onclick="thbToggle('secSubmit', this)"
-            >
-              <span class="thb-sec-head-left">
-                <span class="thb-sec-icon"
-                  ><span class="material-symbols-outlined" aria-hidden="true"
-                    ><svg viewBox="0 -960 960 960" fill="currentColor">
-                      <path
-                        d="M452-202h60v-201l82 82 42-42-156-152-154 154 42 42 84-84v201ZM220-80q-24 0-42-18t-18-42v-680q0-24 18-42t42-18h361l219 219v521q0 24-18 42t-42 18H220Zm331-554h189L551-820v186Z"
-                      /></svg></span
+            <h2 class="thb-sec-h">
+              <button
+                class="thb-sec-head"
+                type="button"
+                aria-expanded="true"
+                aria-controls="bodySubmit"
+              >
+                <span class="thb-sec-head-left">
+                  <span class="thb-sec-icon"
+                    ><span class="material-symbols-outlined" aria-hidden="true"
+                      ><svg viewBox="0 -960 960 960" fill="currentColor">
+                        <path
+                          d="M452-202h60v-201l82 82 42-42-156-152-154 154 42 42 84-84v201ZM220-80q-24 0-42-18t-18-42v-680q0-24 18-42t42-18h361l219 219v521q0 24-18 42t-42 18H220Zm331-554h189L551-820v186Z"
+                        /></svg></span
+                  ></span>
+                  <span class="thb-sec-title" id="titleSubmit"
+                    >Submit Reports</span
+                  >
+                  <span class="thb-sec-count" data-count></span>
+                </span>
+                <span
+                  class="material-symbols-outlined thb-chev"
+                  aria-hidden="true"
+                  ><svg viewBox="0 -960 960 960" fill="currentColor">
+                    <path
+                      d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"
+                    /></svg
                 ></span>
-                <span class="thb-sec-title">Submit Reports</span>
-                <span class="thb-sec-count" data-count>8 forms</span>
-              </span>
-              <span
-                class="material-symbols-outlined thb-chev"
-                aria-hidden="true"
-                ><svg viewBox="0 -960 960 960" fill="currentColor">
-                  <path
-                    d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"
-                  /></svg
-              ></span>
-            </button>
+              </button>
+            </h2>
             <div class="thb-sec-body" id="bodySubmit">
-              <div class="thb-grid" id="gridSubmit"></div>
-              <p class="thb-empty" aria-live="polite">
-                No submit forms match your search.
-              </p>
+              <ul class="thb-grid" id="gridSubmit"></ul>
+              <p
+                class="thb-empty"
+                aria-live="polite"
+                data-empty-none="No submit forms are available yet."
+                data-empty-search="No submit forms match your search."
+              ></p>
             </div>
           </section>
 
-          <!-- View Reports -->
-          <section class="thb-sec thb-sec--view" id="secView" data-type="view">
-            <button
-              class="thb-sec-head"
-              type="button"
-              aria-expanded="true"
-              aria-controls="bodyView"
-              onclick="thbToggle('secView', this)"
-            >
-              <span class="thb-sec-head-left">
-                <span class="thb-sec-icon"
-                  ><span class="material-symbols-outlined" aria-hidden="true"
-                    ><svg viewBox="0 -960 960 960" fill="currentColor">
-                      <path
-                        d="M640-160v-280h160v280H640Zm-240 0v-640h160v640H400Zm-240 0v-440h160v440H160Z"
-                      /></svg></span
+          <section
+            class="thb-sec thb-sec--view"
+            id="secView"
+            data-type="view"
+            aria-labelledby="titleView"
+            aria-busy="true"
+          >
+            <h2 class="thb-sec-h">
+              <button
+                class="thb-sec-head"
+                type="button"
+                aria-expanded="true"
+                aria-controls="bodyView"
+              >
+                <span class="thb-sec-head-left">
+                  <span class="thb-sec-icon"
+                    ><span class="material-symbols-outlined" aria-hidden="true"
+                      ><svg viewBox="0 -960 960 960" fill="currentColor">
+                        <path
+                          d="M640-160v-280h160v280H640Zm-240 0v-640h160v640H400Zm-240 0v-440h160v440H160Z"
+                        /></svg></span
+                  ></span>
+                  <span class="thb-sec-title" id="titleView">View Reports</span>
+                  <span class="thb-sec-count" data-count></span>
+                </span>
+                <span
+                  class="material-symbols-outlined thb-chev"
+                  aria-hidden="true"
+                  ><svg viewBox="0 -960 960 960" fill="currentColor">
+                    <path
+                      d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"
+                    /></svg
                 ></span>
-                <span class="thb-sec-title">View Reports</span>
-                <span class="thb-sec-count" data-count>15 reports</span>
-              </span>
-              <span
-                class="material-symbols-outlined thb-chev"
-                aria-hidden="true"
-                ><svg viewBox="0 -960 960 960" fill="currentColor">
-                  <path
-                    d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"
-                  /></svg
-              ></span>
-            </button>
+              </button>
+            </h2>
             <div class="thb-sec-body" id="bodyView">
               <div id="viewGroups"></div>
-              <p class="thb-empty" aria-live="polite">
-                No reports match your search.
-              </p>
+              <p
+                class="thb-empty"
+                aria-live="polite"
+                data-empty-none="No reports are available yet."
+                data-empty-search="No reports match your search."
+              ></p>
             </div>
           </section>
 
-          <!-- Launchpad Updates -->
           <section
             class="thb-sec thb-sec--updates"
             id="secUpdates"
             data-type="updates"
+            aria-labelledby="titleUpdates"
+            aria-busy="true"
           >
-            <button
-              class="thb-sec-head"
-              type="button"
-              aria-expanded="true"
-              aria-controls="bodyUpdates"
-              onclick="thbToggle('secUpdates', this)"
-            >
-              <span class="thb-sec-head-left">
-                <span class="thb-sec-icon"
-                  ><span class="material-symbols-outlined" aria-hidden="true"
-                    ><svg viewBox="0 -960 960 960" fill="currentColor">
-                      <path
-                        d="M720-440v-80h160v80H720Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM200-200v-160h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l200-120v480L320-360h-40v160h-80Zm360-146v-268q27 24 43.5 58.5T620-480q0 41-16.5 75.5T560-346Z"
-                      /></svg></span
+            <h2 class="thb-sec-h">
+              <button
+                class="thb-sec-head"
+                type="button"
+                aria-expanded="true"
+                aria-controls="bodyUpdates"
+              >
+                <span class="thb-sec-head-left">
+                  <span class="thb-sec-icon"
+                    ><span class="material-symbols-outlined" aria-hidden="true"
+                      ><svg viewBox="0 -960 960 960" fill="currentColor">
+                        <path
+                          d="M720-440v-80h160v80H720Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM200-200v-160h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l200-120v480L320-360h-40v160h-80Zm360-146v-268q27 24 43.5 58.5T620-480q0 41-16.5 75.5T560-346Z"
+                        /></svg></span
+                  ></span>
+                  <span class="thb-sec-title" id="titleUpdates"
+                    >Launchpad Updates</span
+                  >
+                  <span class="thb-sec-count" data-count></span>
+                </span>
+                <span
+                  class="material-symbols-outlined thb-chev"
+                  aria-hidden="true"
+                  ><svg viewBox="0 -960 960 960" fill="currentColor">
+                    <path
+                      d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"
+                    /></svg
                 ></span>
-                <span class="thb-sec-title">Launchpad Updates</span>
-                <span class="thb-sec-count" data-count>1 item</span>
-              </span>
-              <span
-                class="material-symbols-outlined thb-chev"
-                aria-hidden="true"
-                ><svg viewBox="0 -960 960 960" fill="currentColor">
-                  <path
-                    d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"
-                  /></svg
-              ></span>
-            </button>
+              </button>
+            </h2>
             <div class="thb-sec-body" id="bodyUpdates">
-              <div class="thb-grid" id="gridUpdates"></div>
-              <p class="thb-empty" aria-live="polite">
-                No updates match your search.
-              </p>
+              <ul class="thb-grid" id="gridUpdates"></ul>
+              <p
+                class="thb-empty"
+                aria-live="polite"
+                data-empty-none="No updates are available yet."
+                data-empty-search="No updates match your search."
+              ></p>
+            </div>
+          </section>
+
+          <section
+            class="thb-sec thb-sec--admin"
+            id="secAdminPages"
+            data-type="admin-pages"
+            aria-labelledby="titleAdminPages"
+            aria-busy="true"
+          >
+            <h2 class="thb-sec-h">
+              <button
+                class="thb-sec-head"
+                type="button"
+                aria-expanded="true"
+                aria-controls="bodyAdminPages"
+              >
+                <span class="thb-sec-head-left">
+                  <span class="thb-sec-icon"
+                    ><span
+                      class="material-symbols-outlined"
+                      aria-hidden="true"
+                      data-icon="admin_panel_settings"
+                    ></span
+                  ></span>
+                  <span class="thb-sec-title" id="titleAdminPages"
+                    >Admin Pages</span
+                  >
+                  <span class="thb-sec-count" data-count></span>
+                </span>
+                <span
+                  class="material-symbols-outlined thb-chev"
+                  aria-hidden="true"
+                  ><svg viewBox="0 -960 960 960" fill="currentColor">
+                    <path
+                      d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"
+                    /></svg
+                ></span>
+              </button>
+            </h2>
+            <div class="thb-sec-body" id="bodyAdminPages">
+              <ul class="thb-grid" id="gridAdminPages"></ul>
+              <p
+                class="thb-empty"
+                aria-live="polite"
+                data-empty-none="No admin pages are available yet."
+                data-empty-search="No admin pages match your search."
+              ></p>
             </div>
           </section>
 
@@ -943,8 +1124,6 @@
           </footer>
         </div>
       </main>
-
-      <!-- Admin Inbox Modal -->
 
       <button
         class="lp-jump"
@@ -969,288 +1148,293 @@
         const init = () => {
           const $id = (id) => document.getElementById(id);
 
-          /* Inline SVGs (viewBox 0 -960 960 960, fill=currentColor) — same
-         pattern as leaf_header.js, no external icon font. Material
-         Symbols (Filled): search, close, edit_document, inbox,
-         upload_file, monitoring (used for "insights"), keyboard_arrow_down
-         (used for "expand_more"), arrow_upward, lock, bug_report, school,
-         schedule, flag, build, trending_up, trophy (used for
-         "emoji_events"), lightbulb, payments, analytics, ac_unit,
-         support_agent, sensors, rate_review, monitor_heart, timer,
-         medical_services, savings, menu_book, design_services, campaign. */
-          const ICON_SVG = {
-            search:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M796-121 533-384q-30 26-70 40.5T378-329q-108 0-183-75t-75-181q0-106 75-181t182-75q106 0 180.5 75T632-585q0 43-14 83t-42 75l264 262-44 44ZM377-389q81 0 138-57.5T572-585q0-81-57-138.5T377-781q-82 0-139.5 57.5T180-585q0 81 57.5 138.5T377-389Z"/></svg>',
-            close:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>',
-            edit_document:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M220-80q-24 0-42-18t-18-42v-680q0-24 18-42t42-18h340l240 240v142q-17 3-33 11.5T738-465L500-228v148H220Zm340 0v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q9 9 13 20t4 22q0 11-4.5 22.5T902-300L683-80H560Zm263-224 37-39-37-37-38 38 38 38ZM520-600h220L520-820l220 220-220-220v220Z"/></svg>',
-            inbox:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h600q24 0 42 18t18 42v600q0 24-18 42t-42 18H180Zm374-196.5q33-23.5 56-59.5h170v-404H180v404h170q23 36 56 59.5t74 23.5q41 0 74-23.5Z"/></svg>',
-            upload_file:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M452-202h60v-201l82 82 42-42-156-152-154 154 42 42 84-84v201ZM220-80q-24 0-42-18t-18-42v-680q0-24 18-42t42-18h361l219 219v521q0 24-18 42t-42 18H220Zm331-554h189L551-820v186Z"/></svg>',
-            expand_more:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"/></svg>',
-            insights:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M120-120v-76l60-60v136h-60Zm165 0v-236l60-60v296h-60Zm165 0v-296l60 61v235h-60Zm165 0v-235l60-60v295h-60Zm165 0v-396l60-60v456h-60ZM120-356v-85l280-278 160 160 280-281v85L560-474 400-634 120-356Z"/></svg>',
-            arrow_upward:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z"/></svg>',
-            lock: '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm240-200q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z"/></svg>',
-            bug_report:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-120q-65 0-120.5-32T272-240H160v-80h84q-3-20-3.5-40t-.5-40h-80v-80h80q0-20 .5-40t3.5-40h-84v-80h112q14-23 31.5-43t40.5-35l-64-66 56-56 86 86q28-9 57-9t57 9l88-86 56 56-66 66q23 15 41.5 34.5T688-640h112v80h-84q3 20 3.5 40t.5 40h80v80h-80q0 20-.5 40t-3.5 40h84v80H688q-32 56-87.5 88T480-120Zm-80-200h160v-80H400v80Zm0-160h160v-80H400v80Z"/></svg>',
-            school:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M840-280v-276L480-360 40-600l440-240 440 240v320h-80ZM480-120 200-272v-200l280 152 280-152v200L480-120Z"/></svg>',
-            schedule:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m627-287 45-45-159-160v-201h-60v225l174 181ZM480-80q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-82 31.5-155t86-127.5Q252-817 325-848.5T480-880q82 0 155 31.5t127.5 86Q817-708 848.5-635T880-480q0 82-31.5 155t-86 127.5Q708-143 635-111.5T480-80Z"/></svg>',
-            flag: '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120v-680h343l19 86h238v370H544l-19-85H260v309h-60Z"/></svg>',
-            build:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M705-128 447-388q-23 8-46 13t-47 5q-97 0-165-67.5T121-602q0-31 8-60.5t23-55.5l145 145 92-86-149-149q26-15 55-23.5t59-8.5q99 0 168.5 69.5T592-602q0 24-5 47t-13 46l259 258q11 11 11 26.5T833-198l-76 70q-11 11-26 11t-26-11Z"/></svg>',
-            trending_up:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m123-240-43-43 292-291 167 167 241-241H653v-60h227v227h-59v-123L538-321 371-488 123-240Z"/></svg>',
-            emoji_events:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M298-120v-60h152v-148q-54-11-96-46.5T296-463q-74-8-125-60t-51-125v-44q0-25 17.5-42.5T180-752h104v-88h392v88h104q25 0 42.5 17.5T840-692v44q0 73-51 125t-125 60q-16 53-58 88.5T510-328v148h152v60H298Zm-14-406v-166H180v44q0 45 29.5 78.5T284-526Zm392 0q45-10 74.5-43.5T780-648v-44H676v166Z"/></svg>',
-            lightbulb:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-80q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-200v-80h320v80H320Zm10-120q-69-41-109.5-110T180-580q0-125 87.5-212.5T480-880q125 0 212.5 87.5T780-580q0 81-40.5 150T630-320H330Z"/></svg>',
-            payments:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M100-160q-24.75 0-42.37-17.63Q40-195.25 40-220v-460h60v460h700v60H100Zm120-120q-24.75 0-42.37-17.63Q160-315.25 160-340v-400q0-24.75 17.63-42.38Q195.25-800 220-800h640q24.75 0 42.38 17.62Q920-764.75 920-740v400q0 24.75-17.62 42.37Q884.75-280 860-280H220Zm100-60q0-42-29-71t-71-29v100h100Zm440 0h100v-100q-42 0-71 29t-29 71Zm-220-80q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM220-640q42 0 71-29t29-71H220v100Zm640 0v-100H760q0 42 29 71t71 29Z"/></svg>',
-            analytics:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M284-277h60v-205h-60v205Zm332 0h60v-420h-60v420Zm-166 0h60v-118h-60v118Zm0-205h60v-60h-60v60ZM180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h600q24 0 42 18t18 42v600q0 24-18 42t-42 18H180Z"/></svg>',
-            ac_unit:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M450-80v-195L301-126l-43-42 192-192v-90h-90L172-262l-44-41 147-147H80v-60h195L125-660l43-43 192 193h90v-91L262-789l42-44 146 147v-194h60v194l150-150 42 43-192 192v91h91l189-189 43 42-147 147h194v60H686l148 149-41 43-192-192h-91v90l192 193-41 43-151-151v195h-60Z"/></svg>',
-            support_agent:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-120v-60h340v-304q0-123.69-87.32-209.84Q605.36-780 480-780q-125.36 0-212.68 86.16Q180-607.69 180-484v244h-20q-33 0-56.5-23.5T80-320v-80q0-21 10.5-39.5T120-469l3-53q8-68 39.5-126t79-101q47.5-43 109-67T480-840q68 0 129 24t109 66.5Q766-707 797-649t40 126l3 52q19 9 29.5 27t10.5 38v92q0 20-10.5 38T840-249v69q0 24.75-17.62 42.37Q804.75-120 780-120H440ZM338.5-418.68q-8.5-8.67-8.5-21.5 0-12.82 8.68-21.32 8.67-8.5 21.5-8.5 12.82 0 21.32 8.68 8.5 8.67 8.5 21.5 0 12.82-8.68 21.32-8.67 8.5-21.5 8.5-12.82 0-21.32-8.68Zm240 0q-8.5-8.67-8.5-21.5 0-12.82 8.68-21.32 8.67-8.5 21.5-8.5 12.82 0 21.32 8.68 8.5 8.67 8.5 21.5 0 12.82-8.68 21.32-8.67 8.5-21.5 8.5-12.82 0-21.32-8.68ZM241-462q-7-106 64-182t177-76q87 0 151 57.5T711-519q-89-1-162.5-50T434.72-698Q419-618 367.5-555.5T241-462Z"/></svg>',
-            sensors:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M197-197q-54-54-85.5-126.5T80-480q0-84 31.5-156.5T197-763l42 43q-46 46-72.5 107.5T140-480q0 71 26.5 132.5T240-239l-43 42Zm113-113q-32-32-51-75.5T240-480q0-51 19-94.5t51-75.5l42 43q-24 24-38 56.5T300-480q0 38 14 70.5t39 57.5l-43 42Zm113.5-113.5Q400-447 400-480t23.5-56.5Q447-560 480-560t56.5 23.5Q560-513 560-480t-23.5 56.5Q513-400 480-400t-56.5-23.5ZM650-310l-42-43q24-24 38-56.5t14-70.5q0-38-14-70.5T607-608l43-42q32 32 51 75.5t19 94.5q0 50-19 93.5T650-310Zm113 113-42-43q46-46 72.5-107.5T820-480q0-71-26.5-132.5T720-721l43-42q54 55 85.5 127.5T880-480q0 83-31.5 155.5T763-197Z"/></svg>',
-            rate_review:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M240-400h123l199-200q9-9 13.5-20.5T580-643q0-11-4-22t-13-20l-37-37q-9-9-20-13.5t-23-4.5q-11 0-22 4t-20 13L240-523v123Zm280-243-37 39-38-38 38-38 37 37Zm-85 243h285v-60H495l-60 60ZM80-80v-740q0-24 18-42t42-18h680q24 0 42 18t18 42v520q0 24-18 42t-42 18H240L80-80Z"/></svg>',
-            monitor_heart:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M140-160q-24 0-42-18t-18-42v-230h221l72 144q4 8 11.5 12t15.5 4q8 0 15.5-4t11.5-12l133-266 53 106q4 8 11.5 12t15.5 4h240v230q0 24-18 42t-42 18H140ZM80-510v-230q0-24 18-42t42-18h680q24 0 42 18t18 42v230H659l-72-143q-4-8-11.5-11.5T560-668q-8 0-15.5 3.5T533-653L400-388l-53-106q-4-8-11.5-12t-15.5-4H80Z"/></svg>',
-            timer:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M360-860v-60h240v60H360Zm90 447h60v-230h-60v230ZM340.5-109.5Q275-138 226-187t-77.5-114.5Q120-367 120-441t28.5-139.5Q177-646 226-695t114.5-77.5Q406-801 480-801q67 0 125.5 22T710-717l51-51 43 43-51 51q36 40 61.5 97T840-441q0 74-28.5 139.5T734-187q-49 49-114.5 77.5T480-81q-74 0-139.5-28.5Z"/></svg>',
-            medical_services:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M140-80q-24 0-42-18t-18-42v-520q0-24 18-42t42-18h180v-100q0-24 18-42t42-18h200q24 0 42 18t18 42v100h180q24 0 42 18t18 42v520q0 24-18 42t-42 18H140Zm240-640h200v-100H380v100Zm70 350v120h60v-120h120v-60H510v-120h-60v120H330v60h120Z"/></svg>',
-            savings:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M668.5-531.5Q680-543 680-560t-11.5-28.5Q657-600 640-600t-28.5 11.5Q600-577 600-560t11.5 28.5Q623-520 640-520t28.5-11.5ZM320-620h200v-60H320v60ZM180-120q-34-114-67-227.5T80-580q0-92 64-156t156-64h200q29-38 70.5-59t89.5-21q25 0 42.5 17.5T720-820q0 5-5 23-4 11-7.5 22.5T702-751l91 91h87v279l-113 37-67 224H480v-80h-80v80H180Z"/></svg>',
-            menu_book:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M560-564v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-600q-38 0-73 9.5T560-564Zm0 220v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-380q-38 0-73 9t-67 27Zm0-110v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-490q-38 0-73 9.5T560-454Zm-40 176q44-21 88.5-31.5T700-320q36 0 70.5 6t69.5 18v-396q-33-14-68.5-21t-71.5-7q-47 0-93 12t-87 36v394Zm-40 118q-48-38-104-59t-116-21q-42 0-82.5 11T100-198q-21 11-40.5-1T40-234v-482q0-11 5.5-21T62-752q47-23 96.5-35.5T260-800q58 0 113.5 15T480-740q51-30 106.5-45T700-800q52 0 101.5 12.5T898-752q11 5 16.5 15t5.5 21v482q0 23-19.5 35t-40.5 1q-37-20-77.5-31T700-240q-60 0-116 21t-104 59Z"/></svg>',
-            design_services:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m357-513 90-90-75-75-48 48-42-42 48-48-75-74-90 90 192 191Zm346 348 90-91-75-75-48 48-42-42 48-48-74-74-90 90 191 192Zm-87-520 70 70 94-94-70-70-94 94ZM276-120H120v-156l194-194L80-704l174-176 236 235 178-178q9-9 20-13t22-4q11 0 22 4t20 13l71 71q9 9 13 20t4 22q0 11-4 22t-13 20L645-490l235 235L705-81 471-315 276-120Z"/></svg>',
-            campaign:
-              '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M720-440v-80h160v80H720Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM200-200v-160h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l200-120v480L320-360h-40v160h-80Zm360-146v-268q27 24 43.5 58.5T620-480q0 41-16.5 75.5T560-346Z"/></svg>',
+          /* Links are records of form_531cc on the Service Requests Launchpad
+             LEAF site. Root-relative (same origin) so the user's LEAF session
+             cookie is sent. Trailing slash required. */
+          const CONFIG = {
+            apiBase: "/platform/service_requests_launchpad/",
+            formID: "form_531cc",
+            indicators: { name: 479, url: 480, category: 489 },
+            timeoutMs: 15000,
           };
-          const icon = (name) => ICON_SVG[name] || "";
 
-          /* ── Link data — replace href with real URLs ──
-         Add/remove items here; counts update automatically. */
-          const submitLinks = [
-            {
-              label: "Report an Issue with LEAF",
-              icon: "bug_report",
-              href: "https://leaf.va.gov/platform/issues/",
-            },
-            {
-              label: "LEAF Training Attendance Report",
-              icon: "school",
-              href: "/platform/service_requests_launchpad/report.php?a=Attendance_Report",
-            },
-            {
-              label: "Open Office Hours Report",
-              icon: "schedule",
-              href: "/platform/service_requests_launchpad/report.php?a=Open_Hours_Attendance",
-            },
-            {
-              label: "New National Project",
-              icon: "flag",
-              href: "/platform/service_requests_launchpad/report.php?a=National_Projects_direct",
-            },
-            {
-              label: "LEAF Maintenance Event",
-              icon: "build",
-              href: "https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=Maintenance_direct",
-            },
-            {
-              label: "End of Year Data Trend",
-              icon: "trending_up",
-              href: "https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=Data_Trend_direct",
-            },
-            {
-              label: "Awards",
-              icon: "emoji_events",
-              href: "https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=Awards",
-            },
-            {
-              label: "Use Case",
-              icon: "lightbulb",
-              href: "https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=LEAF_Start_Request&id=form_efec3",
-            },
-          ];
-          const viewGroups = [
-            {
-              label: "Dashboards",
-              items: [
-                {
-                  label: "Billing Dashboard",
-                  icon: "payments",
-                  href: "https://leaf.va.gov/launchpad/report.php?a=billing_dashboard",
-                },
-                {
-                  label: "PBI Dashboards",
-                  icon: "analytics",
-                  href: "https://app.powerbigov.us/Redirect?action=OpenReport&appId=bc14ee51-602f-4786-842e-f6162f360b9b&reportObjectId=ce960232-c527-4260-82d5-8d32ebe8edbe&ctid=e95f1b23-abaf-45ee-821d-b7ab251ab3bf&reportPage=6da026e5b757fdf526ab&pbi_source=appShareLink&portalSessionId=5aec0ee2-9d87-4b57-a721-ccaf63eb016e",
-                },
-                {
-                  label: "SNOW Dashboard",
-                  icon: "ac_unit",
-                  href: "https://yourit.va.gov/now/platform-analytics-workspace/dashboards/params/edit/false/tab-sys-id/77632d6497916a5050f9fb56f053af34/sys-id/fd06b9c51b5a69105d46cb78624bcb54",
-                },
-                {
-                  label: "Support Dashboard",
-                  icon: "support_agent",
-                  href: "https://dvagov.sharepoint.com/sites/LEAFTO/SitePages/LEAF-Operations-Dashboard.aspx",
-                },
-                {
-                  label: "Telemetry Dashboard",
-                  icon: "sensors",
-                  href: "/platform/service_requests_launchpad/report.php?a=telemetry_dashboard",
-                },
-                {
-                  label: "Help Library Feedback",
-                  icon: "rate_review",
-                  href: "https://leaf.va.gov/platform/votes/report.php?a=dashboard",
-                },
-                {
-                  label: "Idea Portal Dashboard",
-                  icon: "lightbulb",
-                  href: "https://leaf.va.gov/platform/ideas/report.php?a=Ideas_Dashboard",
-                },
-              ],
-            },
-            {
-              label: "Reports",
-              items: [
-                {
-                  label: "Awards",
-                  icon: "emoji_events",
-                  href: "https://leaf.va.gov/platform/service_requests_launchpad/open.php?report=32wnZ",
-                },
-                {
-                  label: "National Projects Report",
-                  icon: "flag",
-                  href: "https://leaf.va.gov/platform/service_requests_launchpad/open.php?report=32wnc",
-                },
-                {
-                  label: "Open Office Hours Report",
-                  icon: "schedule",
-                  href: "https://leaf.va.gov/platform/service_requests_launchpad/open.php?report=32wn7",
-                },
-                {
-                  label: "System Status Report",
-                  icon: "monitor_heart",
-                  href: "https://leaf.va.gov/platform/service_requests_launchpad/open.php?report=32wnJ",
-                },
-                {
-                  label: "Training Attendance Report",
-                  icon: "school",
-                  href: "https://leaf.va.gov/platform/service_requests_launchpad/open.php?report=32wnS",
-                },
-                {
-                  label: "Uptime Stats",
-                  icon: "timer",
-                  href: "https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=Uptime_Stats",
-                },
-                {
-                  label: "Use Case – Access to Care",
-                  icon: "medical_services",
-                  href: "https://leaf.va.gov/platform/service_requests_launchpad/open.php?report=32wna",
-                },
-                {
-                  label: "Use Case – Efficiency and Cost Savings",
-                  icon: "savings",
-                  href: "https://leaf.va.gov/platform/service_requests_launchpad/open.php?report=32wnb",
-                },
-              ],
-            },
-            {
-              label: "Resources",
-              items: [
-                {
-                  label: "Help & SOP Library",
-                  icon: "menu_book",
-                  href: "https://leaf.va.gov/platform/help_library/",
-                },
-                {
-                  label: "UX – Documentation",
-                  icon: "design_services",
-                  href: "https://leaf.va.gov/platform/ux/",
-                },
-              ],
-            },
-          ];
-          const viewCount = viewGroups.reduce((n, g) => n + g.items.length, 0);
+          /* Material Symbols (Filled) path data for viewBox "0 -960 960 960",
+             rendered as inline SVG like leaf_header.js — no icon font. */
+          const ICON_PATHS = {
+            upload_file:
+              "M452-202h60v-201l82 82 42-42-156-152-154 154 42 42 84-84v201ZM220-80q-24 0-42-18t-18-42v-680q0-24 18-42t42-18h361l219 219v521q0 24-18 42t-42 18H220Zm331-554h189L551-820v186Z",
+            insights:
+              "M120-120v-76l60-60v136h-60Zm165 0v-236l60-60v296h-60Zm165 0v-296l60 61v235h-60Zm165 0v-235l60-60v295h-60Zm165 0v-396l60-60v456h-60ZM120-356v-85l280-278 160 160 280-281v85L560-474 400-634 120-356Z",
+            analytics:
+              "M284-277h60v-205h-60v205Zm332 0h60v-420h-60v420Zm-166 0h60v-118h-60v118Zm0-205h60v-60h-60v60ZM180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h600q24 0 42 18t18 42v600q0 24-18 42t-42 18H180Z",
+            menu_book:
+              "M560-564v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-600q-38 0-73 9.5T560-564Zm0 220v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-380q-38 0-73 9t-67 27Zm0-110v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-490q-38 0-73 9.5T560-454Zm-40 176q44-21 88.5-31.5T700-320q36 0 70.5 6t69.5 18v-396q-33-14-68.5-21t-71.5-7q-47 0-93 12t-87 36v394Zm-40 118q-48-38-104-59t-116-21q-42 0-82.5 11T100-198q-21 11-40.5-1T40-234v-482q0-11 5.5-21T62-752q47-23 96.5-35.5T260-800q58 0 113.5 15T480-740q51-30 106.5-45T700-800q52 0 101.5 12.5T898-752q11 5 16.5 15t5.5 21v482q0 23-19.5 35t-40.5 1q-37-20-77.5-31T700-240q-60 0-116 21t-104 59Z",
+            campaign:
+              "M720-440v-80h160v80H720Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM200-200v-160h-40q-33 0-56.5-23.5T80-440v-80q0-33 23.5-56.5T160-600h160l200-120v480L320-360h-40v160h-80Zm360-146v-268q27 24 43.5 58.5T620-480q0 41-16.5 75.5T560-346Z",
+            // TODO: placeholder square — replace with the real admin_panel_settings path.
+            admin_panel_settings: "M200-200v-560h560v560H200Z",
+          };
 
-          /* Opens in the shared .thb-modal (see below) instead of navigating. */
-          const updateLinks = [
-            {
-              label: "Launchpad Global Announcement Banner",
+          const SVG_NS = "http://www.w3.org/2000/svg";
+          const fillIcon = (el, name) => {
+            const d = ICON_PATHS[name];
+            if (!d) return;
+            const svg = document.createElementNS(SVG_NS, "svg");
+            svg.setAttribute("viewBox", "0 -960 960 960");
+            svg.setAttribute("fill", "currentColor");
+            svg.setAttribute("focusable", "false");
+            const path = document.createElementNS(SVG_NS, "path");
+            path.setAttribute("d", d);
+            svg.appendChild(path);
+            el.replaceChildren(svg);
+          };
+          const makeIcon = (name) => {
+            const span = document.createElement("span");
+            span.className = "material-symbols-outlined";
+            span.setAttribute("aria-hidden", "true");
+            fillIcon(span, name);
+            return span;
+          };
+          // Static markup icons that share a path with the tiles (data-icon="…")
+          document
+            .querySelectorAll("[data-icon]")
+            .forEach((el) => fillIcon(el, el.dataset.icon));
+
+          const SECTIONS = {
+            submit: {
+              el: $id("secSubmit"),
+              grid: $id("gridSubmit"),
+              unit: ["form", "forms"],
+            },
+            view: { el: $id("secView"), unit: ["report", "reports"] },
+            updates: {
+              el: $id("secUpdates"),
+              grid: $id("gridUpdates"),
+              unit: ["item", "items"],
+            },
+            "admin-pages": {
+              el: $id("secAdminPages"),
+              grid: $id("gridAdminPages"),
+              unit: ["page", "pages"],
+            },
+          };
+          const VIEW_GROUPS = ["Dashboards", "Reports", "Resources", "Other"];
+
+          /* Keys are indicator 489 values, trimmed + lowercased. Unknown values
+             fall back to OTHER so no record is silently dropped. */
+          const CATEGORIES = {
+            "submit reports": {
+              section: "submit",
+              variant: "submit",
+              icon: "upload_file",
+            },
+            dashboards: {
+              section: "view",
+              group: "Dashboards",
+              variant: "view",
+              icon: "insights",
+            },
+            reports: {
+              section: "view",
+              group: "Reports",
+              variant: "view",
+              icon: "analytics",
+            },
+            resources: {
+              section: "view",
+              group: "Resources",
+              variant: "view",
+              icon: "menu_book",
+            },
+            "launchpad updates": {
+              section: "updates",
+              variant: "updates",
               icon: "campaign",
-              href: "https://leaf.va.gov/launchpad/index.php?a=printview&recordID=34624",
+              modal: true,
             },
-          ];
+            "admin pages": {
+              section: "admin-pages",
+              variant: "admin",
+              icon: "admin_panel_settings",
+            },
+          };
+          const OTHER = {
+            section: "view",
+            group: "Other",
+            variant: "view",
+            icon: "insights",
+          };
 
-          const tileHTML = (item, variant) =>
-            `<a class="thb-tile thb-tile--${variant}" href="${item.href}" target="_blank" rel="noopener noreferrer" data-label="${item.label.toLowerCase()}">
-           <span class="material-symbols-outlined" aria-hidden="true">${icon(item.icon)}</span>
-           <span class="thb-tile-label">${item.label}</span>
-         </a>`;
+          function getS1Value(record, indicatorId) {
+            const value = record?.s1?.["id" + indicatorId];
+            if (value === null || value === undefined) return "";
+            return typeof value === "string" ? value.trim() : value;
+          }
 
-          const modalTileHTML = (item, variant) =>
-            `<button type="button" class="thb-tile thb-tile--${variant} thb-modal-trigger" data-label="${item.label.toLowerCase()}" data-report-title="${item.label}" data-report-src="${item.href}">
-           <span class="material-symbols-outlined" aria-hidden="true">${icon(item.icon)}</span>
-           <span class="thb-tile-label">${item.label}</span>
-         </button>`;
+          // LEAF returns text fields HTML-escaped (e.g. "&amp;" in URLs).
+          // A <textarea> only parses the string as text, never as markup.
+          function decodeHtmlEntities(text) {
+            if (!text) return "";
+            const textarea = document.createElement("textarea");
+            textarea.innerHTML = String(text);
+            return textarea.value;
+          }
 
-          $id("gridSubmit").innerHTML = submitLinks
-            .map((i) => tileHTML(i, "submit"))
-            .join("");
-          $id("viewGroups").innerHTML = viewGroups
-            .map(
-              (g) => `
-        <div class="thb-subgroup" data-subgroup>
-          <p class="thb-subgroup-label">${g.label}<span class="thb-subgroup-count" data-sub-count>${g.items.length}</span></p>
-          <div class="thb-grid">${g.items.map((i) => tileHTML(i, "view")).join("")}</div>
-        </div>
-      `,
-            )
-            .join("");
-          $id("gridUpdates").innerHTML = updateLinks
-            .map((i) => modalTileHTML(i, "updates"))
-            .join("");
-          $id("secSubmit").querySelector("[data-count]").textContent =
-            `${submitLinks.length} forms`;
-          $id("secView").querySelector("[data-count]").textContent =
-            `${viewCount} reports`;
-          $id("secUpdates").querySelector("[data-count]").textContent =
-            `${updateLinks.length} item${updateLinks.length === 1 ? "" : "s"}`;
+          const readField = (record, indicatorId) =>
+            decodeHtmlEntities(getS1Value(record, indicatorId)).trim();
+
+          // Allows same-origin root-relative paths and https: URLs only.
+          // "//host" and "/\host" start with "/" but resolve off-origin.
+          function safeUrl(raw) {
+            if (!raw) return null;
+            try {
+              if (raw.startsWith("/")) {
+                const u = new URL(raw, window.location.origin);
+                return u.origin === window.location.origin
+                  ? u.pathname + u.search + u.hash
+                  : null;
+              }
+              const u = new URL(raw);
+              return u.protocol === "https:" ? u.href : null;
+            } catch {
+              return null;
+            }
+          }
+
+          function toItems(data) {
+            const items = [];
+            Object.keys(data)
+              .sort((a, b) => Number(a) - Number(b))
+              .forEach((recordID) => {
+                const rec = data[recordID];
+                const rawCategory = readField(rec, CONFIG.indicators.category);
+                let cat = CATEGORIES[rawCategory.toLowerCase()];
+                if (!cat) {
+                  console.warn(
+                    `[TeamHub] Record ${recordID}: unknown category "${rawCategory}" — shown under View Reports › Other.`,
+                  );
+                  cat = OTHER;
+                }
+                const rawUrl = readField(rec, CONFIG.indicators.url);
+                const href = safeUrl(rawUrl);
+                if (!href) {
+                  console.warn(
+                    `[TeamHub] Record ${recordID}: skipped — URL must start with "/" or "https:" (got "${rawUrl}").`,
+                  );
+                  return;
+                }
+                const label = readField(rec, CONFIG.indicators.name) || href;
+                items.push({ label, href, cat });
+              });
+            return items;
+          }
+
+          function makeTile(item) {
+            const { cat } = item;
+            let tile;
+            if (cat.modal) {
+              tile = document.createElement("button");
+              tile.type = "button";
+              tile.classList.add("thb-modal-trigger");
+              tile.setAttribute("aria-haspopup", "dialog");
+              tile.dataset.reportTitle = item.label;
+              tile.dataset.reportSrc = item.href;
+            } else {
+              tile = document.createElement("a");
+              tile.href = item.href;
+              tile.target = "_blank";
+              tile.rel = "noopener noreferrer";
+            }
+            tile.classList.add("thb-tile", `thb-tile--${cat.variant}`);
+            tile.dataset.label = item.label.toLowerCase();
+
+            const label = document.createElement("span");
+            label.className = "thb-tile-label";
+            label.textContent = item.label;
+            tile.append(makeIcon(cat.icon), label);
+
+            if (!cat.modal) {
+              const sr = document.createElement("span");
+              sr.className = "sr-only";
+              sr.textContent = " (opens in a new tab)";
+              tile.appendChild(sr);
+            }
+
+            const li = document.createElement("li");
+            li.appendChild(tile);
+            return li;
+          }
+
+          const setCount = (key, n) => {
+            const [one, many] = SECTIONS[key].unit;
+            SECTIONS[key].el.querySelector("[data-count]").textContent =
+              `${n} ${n === 1 ? one : many}`;
+          };
+
+          function render(items) {
+            const buckets = { submit: [], updates: [], "admin-pages": [] };
+            const groups = new Map(VIEW_GROUPS.map((g) => [g, []]));
+            items.forEach((item) => {
+              if (item.cat.section === "view")
+                groups.get(item.cat.group).push(item);
+              else buckets[item.cat.section].push(item);
+            });
+
+            Object.entries(buckets).forEach(([key, list]) => {
+              SECTIONS[key].grid.replaceChildren(
+                ...list.map((item) => makeTile(item)),
+              );
+              setCount(key, list.length);
+            });
+
+            const viewWrap = $id("viewGroups");
+            viewWrap.replaceChildren();
+            let viewTotal = 0;
+            groups.forEach((list, name) => {
+              if (!list.length) return;
+              viewTotal += list.length;
+
+              const group = document.createElement("div");
+              group.className = "thb-subgroup";
+              group.dataset.subgroup = "";
+
+              const heading = document.createElement("h3");
+              heading.className = "thb-subgroup-label";
+              const count = document.createElement("span");
+              count.className = "thb-subgroup-count";
+              count.dataset.subCount = "";
+              count.setAttribute("aria-hidden", "true");
+              count.textContent = list.length;
+              heading.append(name, count);
+
+              const grid = document.createElement("ul");
+              grid.className = "thb-grid";
+              grid.append(...list.map((item) => makeTile(item)));
+
+              group.append(heading, grid);
+              viewWrap.appendChild(group);
+            });
+            setCount("view", viewTotal);
+          }
 
           /* ── Collapse / expand ── */
-          window.thbToggle = (secId, btn) => {
-            const sec = $id(secId);
-            const collapsed = sec.classList.toggle("collapsed");
-            btn.setAttribute("aria-expanded", String(!collapsed));
-          };
+          document.querySelectorAll(".thb-sec-head").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const sec = btn.closest(".thb-sec");
+              const collapsed = sec.classList.toggle("collapsed");
+              btn.setAttribute("aria-expanded", String(!collapsed));
+            });
+          });
 
           /* ── Search + type filter ── */
           const search = $id("thbSearch");
           const clearBtn = $id("thbClear");
           const admin = $id("thbAdmin");
           const resultCount = $id("thbResultCount");
+          const status = $id("thbStatus");
+          const errorBox = $id("thbError");
           let typeFilter = "all";
-
-          const sections = [
-            { el: $id("secSubmit"), type: "submit" },
-            { el: $id("secView"), type: "view" },
-            { el: $id("secUpdates"), type: "updates" },
-          ];
+          let loadState = "loading"; // loading | ready | error
 
           const apply = () => {
             const q = search.value.trim().toLowerCase();
@@ -1261,33 +1445,37 @@
             let shown = 0;
             let considered = 0;
 
-            sections.forEach(({ el, type }) => {
+            Object.entries(SECTIONS).forEach(([type, { el }]) => {
               const typeOK = typeFilter === "all" || typeFilter === type;
               el.hidden = !typeOK;
-              if (!typeOK) return;
+              if (!typeOK || loadState !== "ready") return;
 
               const tiles = el.querySelectorAll(".thb-tile");
               considered += tiles.length;
               let matches = 0;
               tiles.forEach((t) => {
-                const hit = !q || t.getAttribute("data-label").includes(q);
-                t.hidden = !hit;
+                const hit = !q || t.dataset.label.includes(q);
+                t.closest("li").hidden = !hit;
                 if (hit) matches++;
               });
               shown += matches;
 
               // Hide sub-groups that have no visible tiles; update sub-counts
               el.querySelectorAll("[data-subgroup]").forEach((g) => {
-                const gTiles = g.querySelectorAll(".thb-tile");
-                const gShown = Array.from(gTiles).filter(
-                  (t) => !t.hidden,
-                ).length;
+                const lis = g.querySelectorAll(".thb-grid > li");
+                const gShown = Array.from(lis).filter((li) => !li.hidden).length;
                 g.hidden = gShown === 0;
                 const c = g.querySelector("[data-sub-count]");
-                if (c) c.textContent = q ? gShown : gTiles.length;
+                if (c) c.textContent = q ? gShown : lis.length;
               });
 
+              const empty = el.querySelector(".thb-empty");
+              const msg = tiles.length
+                ? empty.dataset.emptySearch
+                : empty.dataset.emptyNone;
+              if (empty.textContent !== msg) empty.textContent = msg;
               el.classList.toggle("no-matches", matches === 0);
+
               if (q) {
                 el.classList.remove("collapsed");
                 el.querySelector(".thb-sec-head").setAttribute(
@@ -1297,12 +1485,11 @@
               }
             });
 
-            // "showing X of Y" badge — only while searching or filtering
-            if (q || typeFilter !== "all") {
-              resultCount.textContent = `Showing ${shown} of ${considered}`;
-            } else {
-              resultCount.textContent = "";
-            }
+            // "Showing X of Y" badge — only while searching or filtering
+            resultCount.textContent =
+              loadState === "ready" && (q || typeFilter !== "all")
+                ? `Showing ${shown} of ${considered}`
+                : "";
           };
 
           search.addEventListener("input", apply);
@@ -1325,6 +1512,87 @@
             });
           });
 
+          /* ── Load links from form_531cc ── */
+          const setBusy = (busy) =>
+            Object.values(SECTIONS).forEach(({ el }) =>
+              el.setAttribute("aria-busy", String(busy)),
+            );
+
+          const showError = () => {
+            const msg = document.createElement("p");
+            msg.textContent =
+              "Team links couldn't be loaded. Check your connection or LEAF access, then try again.";
+            const retry = document.createElement("button");
+            retry.type = "button";
+            retry.className = "thb-retry";
+            retry.textContent = "Retry";
+            retry.addEventListener("click", () => {
+              loadLinks();
+              // Retry is removed on reload; keep focus on the status message
+              status.focus();
+            });
+            errorBox.replaceChildren(msg, retry);
+          };
+
+          // loadSeq guards against an older request finishing after a newer one.
+          let loadSeq = 0;
+          async function loadLinks() {
+            const seq = ++loadSeq;
+            loadState = "loading";
+            setBusy(true);
+            errorBox.replaceChildren();
+            status.textContent = "Loading team links…";
+
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), CONFIG.timeoutMs);
+            try {
+              // Plain fetch + encodeURIComponent, same as lp_blog.html
+              // (LeafFormQuery's URL encoding is unreliable for this API).
+              const q = {
+                terms: [
+                  {
+                    id: "categoryID",
+                    operator: "=",
+                    match: CONFIG.formID,
+                    gate: "AND",
+                  },
+                  { id: "deleted", operator: "=", match: 0, gate: "AND" },
+                ],
+                joins: [],
+                sort: {},
+                getData: Object.values(CONFIG.indicators),
+              };
+              const r = await fetch(
+                `${CONFIG.apiBase}api/form/query?q=${encodeURIComponent(JSON.stringify(q))}`,
+                { credentials: "include", signal: ctrl.signal },
+              );
+              if (!r.ok) throw new Error("Query failed HTTP " + r.status);
+              const data = await r.json();
+              if (!data || typeof data !== "object")
+                throw new Error("Unexpected query response");
+              if (seq !== loadSeq) return;
+
+              const items = toItems(data);
+              render(items);
+              loadState = "ready";
+              status.textContent = items.length
+                ? ""
+                : "No team links were found. If you expected links here, check that you have access to the Service Requests Launchpad site.";
+            } catch (err) {
+              if (seq !== loadSeq) return;
+              console.error("[TeamHub] Failed to load links:", err);
+              loadState = "error";
+              status.textContent = "";
+              showError();
+            } finally {
+              clearTimeout(timer);
+              if (seq === loadSeq) {
+                setBusy(false);
+                apply();
+              }
+            }
+          }
+
           /* ── Report modal (Admin Inbox, Launchpad Updates, …) ── */
           (() => {
             const modal = $id("thbModal");
@@ -1332,8 +1600,8 @@
             const titleEl = $id("thbModalTitle");
             const closeBtn = $id("thbModalClose");
             const backdrop = $id("thbModalBackdrop");
-            const triggers = document.querySelectorAll(".thb-modal-trigger");
-            if (!modal || !frame || !triggers.length) return;
+            const pageRoot = $id("lp-root");
+            if (!modal || !frame) return;
 
             let lastFocused = null;
 
@@ -1409,20 +1677,24 @@
               frame.src = trigger.getAttribute("data-report-src");
               modal.classList.add("is-open");
               modal.setAttribute("aria-hidden", "false");
+              if (pageRoot) pageRoot.inert = true;
               document.body.style.overflow = "hidden";
               closeBtn.focus();
             };
             const closeModal = () => {
               modal.classList.remove("is-open");
               modal.setAttribute("aria-hidden", "true");
+              if (pageRoot) pageRoot.inert = false;
               document.body.style.overflow = "";
               frame.src = "";
               lastFocused?.focus();
             };
 
-            triggers.forEach((trigger) =>
-              trigger.addEventListener("click", () => openModal(trigger)),
-            );
+            // Delegated: Launchpad Updates tiles are rendered after the fetch.
+            document.addEventListener("click", (e) => {
+              const trigger = e.target.closest(".thb-modal-trigger");
+              if (trigger) openModal(trigger);
+            });
             closeBtn.addEventListener("click", closeModal);
             backdrop.addEventListener("click", closeModal);
             document.addEventListener("keydown", (e) => {
@@ -1434,7 +1706,7 @@
                 return;
               const f = Array.from(
                 modal.querySelectorAll(
-                  'button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+                  'button:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])',
                 ),
               );
               if (!f.length) return;
@@ -1454,6 +1726,9 @@
           (() => {
             const btn = $id("lpJump");
             if (!btn) return;
+            const reduceMotion = window.matchMedia(
+              "(prefers-reduced-motion: reduce)",
+            );
             const update = () => {
               const vis =
                 (window.pageYOffset || document.documentElement.scrollTop) >
@@ -1463,12 +1738,17 @@
               btn.tabIndex = vis ? 0 : -1;
             };
             btn.addEventListener("click", () =>
-              window.scrollTo({ top: 0, behavior: "smooth" }),
+              window.scrollTo({
+                top: 0,
+                behavior: reduceMotion.matches ? "auto" : "smooth",
+              }),
             );
             window.addEventListener("scroll", update, { passive: true });
             window.addEventListener("resize", update);
             update();
           })();
+
+          loadLinks();
         };
 
         if (document.readyState === "loading") {
@@ -1479,7 +1759,7 @@
       })();
     </script>
 
-    <!-- Admin Inbox Modal — at body level so no ancestor stacking context can trap it under the global header -->
+    <!-- Shared report modal — at body level so no ancestor stacking context can trap it under the global header -->
     <div
       class="thb-modal"
       id="thbModal"
