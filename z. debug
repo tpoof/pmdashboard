@@ -1,7 +1,6 @@
-const q={terms:[{id:"categoryID",operator:"=",match:"form_ae642",gate:"AND"},{id:"deleted",operator:"=",match:0,gate:"AND"}],joins:["status"],sort:{},getData:[]};
-const r=await fetch(`./api/form/query/?q=${encodeURIComponent(JSON.stringify(q))}&x-filterData=recordID,userID,date,stepID,lastStatus`,{credentials:"same-origin"});
-const d=await r.json(); const rows=Object.values(d);
-console.log("header:", r.headers.get("LEAF-Query"), "count:", rows.length);
-console.log("recordIDs:", rows.map(x=>x.recordID).join(","));
-console.table(rows.slice(0,15).map(x=>({recordID:x.recordID,userID:x.userID,date:new Date(x.date*1000).toLocaleDateString(),stepID:x.stepID,status:x.lastStatus})));
-const bystep={}; rows.forEach(x=>{const k=x.stepID+" | "+x.lastStatus; bystep[k]=(bystep[k]||0)+1}); console.table(bystep);
+const q={terms:[{id:"categoryID",operator:"=",match:"form_ae642",gate:"AND"},{id:"deleted",operator:"=",match:0,gate:"AND"}],joins:[],sort:{},getData:[]};
+const r=await fetch(`./api/form/query/?q=${encodeURIComponent(JSON.stringify(q))}&x-filterData=recordID,userID&_=${Date.now()}`,{credentials:"same-origin",cache:"no-store"});
+const d=await r.json();
+console.log("header:", r.headers.get("LEAF-Query"), "count:", Object.keys(d).length);
+const r2=await fetch(`./api/form/154/data?_=${Date.now()}`,{credentials:"same-origin",cache:"no-store"});
+console.log("record 154 direct:", r2.status, (await r2.text()).length, "chars");
