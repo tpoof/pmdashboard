@@ -1,9 +1,7 @@
-document.querySelector('script[src*="multigrid.js"]').dataset.isSysadmin
-
-document.querySelectorAll('script[src*="multigrid.js"]').length
-
-fetch(document.querySelector('script[src*="multigrid.js"]').src).then(r=>r.text()).then(t=>console.log(t.includes('preview; no storage writes'), t.includes('mst-preview-exit')))
-
-
-['localStorage','sessionStorage'].forEach(s=>console.log(s, Object.keys(window[s]).filter(k=>k.startsWith('lp-mst'))))
-fetch(document.querySelector('script[src*="multigrid.js"]').src,{cache:'no-store'}).then(r=>r.text()).then(t=>console.log({sessionStorage:t.includes('sessionStorage'),oldStrip:t.includes('mst-preview-exit'),lastModifiedHeader:null}))
+["", "report.php?a=LEAF_Start_Request&id=form_9015b"].forEach(async (p) => {
+  const url = "https://leaf.va.gov/platform/service_requests_launchpad/" + p;
+  const r = await fetch(url, { credentials: "include" });
+  const t = await r.text();
+  const m = t.match(/CSRFToken['"]?\s*[:=]\s*['"]([^'"]+)['"]/i);
+  console.log(url, r.status, m ? m[0].replace(m[1], "<token>") : "NO TOKEN FOUND");
+});
