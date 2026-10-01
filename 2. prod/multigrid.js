@@ -566,9 +566,11 @@
     return !!(s && s.error);
   }
 
-  // Shown in place of a table until a tab has anything to show.
+  // Shown in place of a table until a tab has anything to show. Visible
+  // text only: aria-busy marks the panels and the live region reports the
+  // outcome (see updateBusy/announceLoadResult).
   var LOADING_HTML =
-    '<p class="mst-loading" role="status">Loading your requests&hellip;</p>';
+    '<p class="mst-loading">Loading your requests&hellip;</p>';
 
   // One message per failed source, then a single Retry for all failed sources.
   function errorBlockHTML(erroredKeys) {
@@ -835,7 +837,7 @@
 
     var beforeHTML = errorBlockHTML(erroredKeys);
     var afterHTML = pending
-      ? '<p class="mst-loading-more" role="status">Loading more requests&hellip;</p>'
+      ? '<p class="mst-loading-more">Loading more requests&hellip;</p>'
       : "";
 
     renderDataTable(bodyEl, tab.id, columns, rows, {
@@ -1479,13 +1481,45 @@
         })
         .then(function () {
           state.loading = false;
+          updateBusy();
           onSourceSettled(key);
         });
     });
+    updateBusy();
     // Show the loading state now for sources that just went back to pending.
     updateSiteSummaryForTab(getActiveTabIndex());
     renderTabContent(getActiveTabIndex());
     return Promise.allSettled(fetches);
+  }
+
+  // aria-busy on the panels while any source is in flight.
+  function updateBusy() {
+    var panels = mstRootEl && mstRootEl.querySelector("#mst-panels");
+    if (!panels) return;
+    var busy = Object.keys(siteState).some(function (k) {
+      return siteState[k].loading;
+    });
+    if (busy) panels.setAttribute("aria-busy", "true");
+    else panels.removeAttribute("aria-busy");
+  }
+
+  // Live-region summary once a batch of sources settles.
+  function announceLoadResult(sourceKeys, afterRetry) {
+    var failed = sourceKeys.filter(isSourceErrored);
+    if (!failed.length) {
+      announce("Your requests have loaded.");
+      return;
+    }
+    var names = failed
+      .map(function (k) {
+        return SOURCE_SITES[k].name;
+      })
+      .join(", ");
+    announce(
+      afterRetry
+        ? "Some requests still could not be loaded: " + names + ". Try again later."
+        : "Some requests could not be loaded: " + names + ". Use Retry to try again.",
+    );
   }
 
   // Sources with no data that aren't already in flight (errored, or never loaded).
@@ -1503,20 +1537,8 @@
     if (!keys.length) return;
     var tabBtn = mstRootEl.querySelector("#mst-tab-" + getActiveTabIndex());
     if (tabBtn) tabBtn.focus();
-    announce("Retrying your requests.");
     loadSources(keys).then(function () {
-      var stillFailed = keys.filter(isSourceErrored);
-      announce(
-        stillFailed.length
-          ? "Some requests still could not be loaded: " +
-              stillFailed
-                .map(function (k) {
-                  return SOURCE_SITES[k].name;
-                })
-                .join(", ") +
-              ". Try again later."
-          : "Your requests have loaded.",
-      );
+      announceLoadResult(keys, true);
     });
   }
 
@@ -1534,7 +1556,10 @@
       if (!mstRootEl) return;
       activateTab(getActiveTabIndex());
       var keys = unloadedSourceKeys();
-      if (keys.length) loadSources(keys);
+      if (!keys.length) return;
+      loadSources(keys).then(function () {
+        announceLoadResult(keys, false);
+      });
     });
   }
 
@@ -1552,6 +1577,9 @@
     });
 
     await loadSources(sourceKeys);
+    // Skip when the grid isn't on screen (another route, or first-time view);
+    // lp:home-shown reports any failure once home is shown.
+    if (isShown(rootEl)) announceLoadResult(sourceKeys, false);
   }
 
   function init() {
