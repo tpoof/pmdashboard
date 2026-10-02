@@ -40,6 +40,19 @@
     outline-offset: 2px;
 }
 
+/* Visually hidden, still read by screen readers (same as print_form_ideas.tpl). */
+.pv-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 /* ── Wrapper ────────────────────────────────────────── */
 #public-view {
     font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
@@ -412,7 +425,7 @@
 }
 </style>
 
-<!--{if $empMembership['groupID'][226]}-->
+<!--{if $empMembership['groupID'][1]}-->
 <div class="noprint pm-transfer-wrap">
     <button type="button" class="tools pm-transfer-btn" onclick="transferToPMDashboard()" title="Transfer to LEAF Projects">
         <img src="dynicons/?img=go-next.svg&amp;w=32" alt="" aria-hidden="true" style="vertical-align: middle" /> Transfer to LEAF Projects
@@ -422,7 +435,7 @@
 
 <!-- ── Back nav ─────────────────────────────────────────────────────────── -->
 <div class="pv-topbar" role="navigation" aria-label="Breadcrumb">
-    <a href="https://leaf.va.gov/platform/ideas/" class="pv-back-link">
+    <a href="./" class="pv-back-link">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
             <path d="M10 12L6 8l4-4"/>
         </svg>
@@ -433,12 +446,15 @@
 <!-- ── Main ─────────────────────────────────────────────────────────────── -->
 <main class="pv-main" id="pv-main" tabindex="-1">
 
+    <!-- One announcement when every field has loaded (set by the data loader) -->
+    <div id="pv-load-status" class="pv-sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
     <!-- Record ID + dynamic pills (populated by JS below) -->
     <div class="pv-meta" role="group" aria-label="Idea metadata">
         <span class="pv-id-badge" aria-label="Idea number <!--{$recordID|strip_tags}-->">#<!--{$recordID|strip_tags}--></span>
         <!-- .pv-pill--category and .pv-pill--impact injected by JS after AJAX load -->
-        <span id="pv-category-pill" class="pv-pill pv-pill--category" aria-live="polite" hidden></span>
-        <span id="pv-impact-pill"   class="pv-pill pv-pill--impact"   aria-live="polite" hidden></span>
+        <span id="pv-category-pill" class="pv-pill pv-pill--category" hidden></span>
+        <span id="pv-impact-pill"   class="pv-pill pv-pill--impact"   hidden></span>
         <!--{if $submitted == 0 || $is_admin}-->
         <button type="button"
                 class="pv-cancel-btn noprint"
@@ -454,7 +470,7 @@
     <!-- ── indicatorID 5: Title of idea ──────────────────────────────── -->
     <div class="pv-title-edit-wrap">
         <h1 class="pv-title" id="pv-heading-5">
-            <span id="pv-value-5" aria-live="polite">
+            <span id="pv-value-5">
                 <span class="pv-empty">Loading&hellip;</span>
             </span>
         </h1>
@@ -477,7 +493,7 @@
             </button>
             <!--{/if}-->
         </span>
-        <div class="pv-card-body" id="pv-value-6" aria-live="polite">
+        <div class="pv-card-body" id="pv-value-6">
             <span class="pv-empty">Loading&hellip;</span>
         </div>
     </section>
@@ -496,7 +512,7 @@
                 </button>
                 <!--{/if}-->
             </span>
-            <div class="pv-card-body" id="pv-value-7" aria-live="polite">
+            <div class="pv-card-body" id="pv-value-7">
                 <span class="pv-empty">Loading&hellip;</span>
             </div>
         </section>
@@ -512,7 +528,7 @@
                 </button>
                 <!--{/if}-->
             </span>
-            <div class="pv-card-body" id="pv-value-8" aria-live="polite">
+            <div class="pv-card-body" id="pv-value-8">
                 <span class="pv-empty">Loading&hellip;</span>
             </div>
 
@@ -528,7 +544,7 @@
                         </button>
                         <!--{/if}-->
                     </span>
-                    <div class="pv-card-body" id="pv-value-13" aria-live="polite"></div>
+                    <div class="pv-card-body" id="pv-value-13"></div>
                 </div>
             </div>
 
@@ -543,7 +559,7 @@
                 </button>
                 <!--{/if}-->
             </span>
-            <div class="pv-card-body" id="pv-value-9" aria-live="polite">
+            <div class="pv-card-body" id="pv-value-9">
                 <span class="pv-empty">Loading&hellip;</span>
             </div>
         </section>
@@ -561,7 +577,7 @@
             </button>
             <!--{/if}-->
         </span>
-        <div class="pv-card-body" id="pv-value-21" aria-live="polite"><span class="pv-empty">Loading&hellip;</span></div>
+        <div class="pv-card-body" id="pv-value-21"><span class="pv-empty">Loading&hellip;</span></div>
 
         <!-- Sub-question: indicatorID 22 (only shown if implemented = Yes) -->
         <div id="pv-subq-22" hidden>
@@ -575,7 +591,7 @@
                     </button>
                     <!--{/if}-->
                 </span>
-                <div class="pv-card-body" id="pv-value-22" aria-live="polite"></div>
+                <div class="pv-card-body" id="pv-value-22"></div>
             </div>
         </div>
     </section>
@@ -591,7 +607,7 @@
             </button>
             <!--{/if}-->
         </span>
-        <div id="pv-value-10" aria-live="polite" aria-label="Attachments loading">
+        <div id="pv-value-10">
             <span class="pv-empty">Loading&hellip;</span>
         </div>
     </section>
@@ -902,6 +918,7 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
 
         var el = document.getElementById(cfg.target || 'pv-value-' + indicatorID);
         if (!el) { return; }
+        pendingLoads++;
 
         $.ajax({
             type: 'GET',
@@ -935,8 +952,28 @@ var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{
             },
             error: function() {
                 el.innerHTML = '<span class="pv-empty">Could not load this field.</span>';
-            }
+                anyLoadFailed = true;
+            },
+            complete: loadFinished
         });
+    }
+
+    /* Replaces a live region per field. Sub-questions 13 and 22 start from
+       a parent's onValue, before the parent completes, so they're counted
+       too. Announces once, on first load; edit reloads stay quiet. */
+    var pendingLoads  = 0;
+    var anyLoadFailed = false;
+    var loadAnnounced = false;
+    function loadFinished() {
+        pendingLoads--;
+        if (pendingLoads > 0 || loadAnnounced) { return; }
+        loadAnnounced = true;
+        var region = document.getElementById('pv-load-status');
+        if (region) {
+            region.textContent = anyLoadFailed
+                ? "Some idea details couldn't load."
+                : 'Idea details loaded.';
+        }
     }
 
     /* ── Kick off all field loads on DOM ready ───────────────────────── */
@@ -1167,7 +1204,7 @@ $(function() {
     dialog_message = new dialogController('genericDialog', 'genericDialogxhr', 'genericDialogloadIndicator', 'genericDialogbutton_save', 'genericDialogbutton_cancelchange');
     dialog_confirm = new dialogController('confirm_xhrDialog', 'confirm_xhr', 'confirm_loadIndicator', 'confirm_button_save', 'confirm_button_cancelchange');
 
-    <!--{if $empMembership['groupID'][226]}-->
+    <!--{if $empMembership['groupID'][1]}-->
     <!--{if $childCategoryID == ''}-->
     openContent('ajaxIndex.php?a=printview&recordID=<!--{$recordID|strip_tags}-->');
     <!--{else}-->
