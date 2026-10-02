@@ -957,33 +957,43 @@
               status.textContent = "Loading cards…";
             }
 
+            // Plain fetch + encodeURIComponent, same as lp_team.html. apiBase is
+            // root-relative, so neither the shell's /launchpad/ URL nor its
+            // injected <base href> changes where this goes.
+            const q = {
+              terms: [
+                {
+                  id: "categoryID",
+                  operator: "=",
+                  match: CONFIG.formID,
+                  gate: "AND",
+                },
+                { id: "deleted", operator: "=", match: 0, gate: "AND" },
+              ],
+              joins: [],
+              sort: {},
+              getData: Object.values(INDICATORS).map(String),
+            };
+            const url = `${CONFIG.apiBase}api/form/query?q=${encodeURIComponent(JSON.stringify(q))}`;
+            let httpStatus = null;
+            let finalUrl = null;
+
             const timer = setTimeout(() => ctrl.abort(), CONFIG.timeoutMs);
             try {
-              // Plain fetch + encodeURIComponent, same as lp_team.html
-              const q = {
-                terms: [
-                  {
-                    id: "categoryID",
-                    operator: "=",
-                    match: CONFIG.formID,
-                    gate: "AND",
-                  },
-                  { id: "deleted", operator: "=", match: 0, gate: "AND" },
-                ],
-                joins: [],
-                sort: {},
-                getData: Object.values(INDICATORS),
-              };
-              const r = await fetch(
-                `${CONFIG.apiBase}api/form/query?q=${encodeURIComponent(JSON.stringify(q))}`,
-                {
-                  credentials: "include",
-                  cache: "no-store",
-                  signal: ctrl.signal,
-                },
-              );
+              const r = await fetch(url, {
+                credentials: "include",
+                cache: "no-store",
+                signal: ctrl.signal,
+              });
+              httpStatus = r.status;
+              finalUrl = r.url || null; // differs from url after a redirect (e.g. login)
               if (!r.ok) throw new Error("Query failed HTTP " + r.status);
-              const data = await r.json();
+              let data;
+              try {
+                data = await r.json();
+              } catch {
+                throw new Error("Query returned non-JSON (login page or wrong path?)");
+              }
               if (!data || typeof data !== "object")
                 throw new Error("Unexpected query response");
               if (seq !== loadSeq) return;
@@ -1007,7 +1017,12 @@
               }
             } catch (err) {
               if (seq !== loadSeq) return;
-              console.error("[LeadershipHub] Failed to load cards:", err);
+              console.error("[LeadershipHub] Failed to load cards:", {
+                url,
+                finalUrl,
+                status: httpStatus,
+                error: err,
+              });
               if (isRefresh) {
                 refreshMsg.textContent =
                   "Cards couldn't be refreshed. Showing the last loaded version.";
