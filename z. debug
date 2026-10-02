@@ -1,1 +1,10 @@
-This year I delivered significant enterprise-wide impact, anchored by the full rebuild of the LEAF Launchpad and its seven supporting applications, which consolidated 10+ scattered URLs into a single, modern entry point for the entire platform. I led a critical privacy overhaul, completing 10+ backlog stories that introduced Privacy Officer access groups, station-level auditing tools, and faster PHI/PII identification, while also driving the enterprise-wide "need to know" default change. Beyond these flagship initiatives, I introduced new tools and processes, including the LEAF Command Center with first-of-its-kind Outlook integration, the Project Tracker and Project Hub, and newly approved Penpot and Axure RP capabilities, that improved transparency, efficiency, and design maturity across the team. Throughout, I maintained strong usability testing, inquiry response, and accessibility standards, earned my PMP certification, and consistently modeled ICARE values in how I led and supported others.
+*Use relative path (unless we're referencing paths to another LEAF site)
+*Call out any TODOs and clear them out by using AskUserQuestions to resolve
+*We want to use as little external dependencies as possible (anything within LEAF domain like referencing other LEAF sites is okay because its within the same platform so bottom line - anything internal to LEAF is okay). Everything will be locally hosted
+*If you are introducing any new icon usage, return the Material Symbols (Filled) SVG icon name I need to download and upload
+*Code is WCAG and section 508 accessible
+*Code is responsive
+*Code is consistent with each other
+*Remove any irrelevant comments in the code that does not give context to a developer looking at the code for the first time. If comments are relevant, make them short and succinct
+
+Return with your game plan, recommendations, and questions using AskUserQuestions before returning any code. When returning code, review your own work and flag anything you’d fix before I ship.
