@@ -1,0 +1,7 @@
+﻿Card Name,Card URL,Description,Chip Text,Action Label,Open in Popup,Icon Name,Card Order
+LEAF Command Center,https://leaf.va.gov/platform/calendar/,"LEAF team meetings, action items, and coverage — organized and always up to date.",Live,Open command center,No,hub,1
+Project Dashboard,https://leaf.va.gov/platform/projects/,"Team tracker for projects, tasks, and OKRs across the LEAF team.",Live,Open dashboard,No,dashboard,2
+Impact Map,https://leaf.va.gov/launchpad/report.php?a=impact_map,"Search facilities using LEAF and explore national usage, adoption and utilization rates, and top use cases.",Live,Open map,No,map,3
+Support Services,https://app.powerbigov.us/reportEmbed?reportId=4edaaa11-3794-4ceb-bacd-15978d94415d&appId=bc14ee51-602f-4786-842e-f6162f360b9b&autoAuth=true&ctid=e95f1b23-abaf-45ee-821d-b7ab251ab3bf,"Service volume, response times, and support performance metrics.",Power BI,View report,Yes,support_agent,4
+Customer Feedback,https://app.powerbigov.us/reportEmbed?reportId=962c98ea-2211-4403-aa35-076b453a47a1&appId=bc14ee51-602f-4786-842e-f6162f360b9b&autoAuth=true&ctid=e95f1b23-abaf-45ee-821d-b7ab251ab3bf,"Satisfaction scores, sentiment, and feedback trends over time.",Power BI,View report,Yes,reviews,5
+Community Ideas,https://app.powerbigov.us/reportEmbed?reportId=76d43845-3a03-49c0-a8b3-1c121be0c8e7&appId=bc14ee51-602f-4786-842e-f6162f360b9b&autoAuth=true&ctid=e95f1b23-abaf-45ee-821d-b7ab251ab3bf,"Submitted ideas from the LEAF Community, voting activity, and status.",Power BI,View report,Yes,lightbulb,6
