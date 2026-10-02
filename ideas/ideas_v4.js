@@ -73,6 +73,8 @@ function stop() {
 
 function start() {
   snapshotBackground();
+  // Live regions must exist before any message is written to them.
+  root.querySelectorAll('[role="dialog"]').forEach(addDialogToastRegions);
   initPortal();
 }
 
@@ -567,13 +569,63 @@ function cacheElements() {
    Manual-dismiss only (no auto-hide timer) per WCAG 2.2.1/2.2.3.
 ───────────────────────────────────────────────────────────── */
 
+// The visual toast isn't a live region: its Close button would be read
+// with the message. Text goes to hidden regions instead (status = polite
+// for success, alert = assertive for errors). Inside an aria-modal dialog
+// it uses that dialog's own regions, since screen readers may ignore one
+// outside it.
+let toastAnnounceTimer = null;
+
+// Page-level regions are in the markup; each dialog gets its own here.
+function addDialogToastRegions(dialog) {
+  [
+    ["status", "ip-toastStatus"],
+    ["alert", "ip-toastAlert"],
+  ].forEach(([role, cls]) => {
+    if (dialog.querySelector(`:scope > .${cls}`)) return;
+    const region = document.createElement("div");
+    region.className = `ip-srOnly ${cls}`;
+    region.setAttribute("role", role);
+    region.setAttribute("aria-atomic", "true");
+    if (role === "status") region.setAttribute("aria-live", "polite");
+    dialog.appendChild(region);
+  });
+}
+
+function openDialog() {
+  const fromFocus = document.activeElement?.closest?.('[role="dialog"]');
+  if (fromFocus?.closest(".is-open")) return fromFocus;
+  return root.querySelector('[role="dialog"].is-open, .is-open [role="dialog"]');
+}
+
+function clearToastAnnouncements() {
+  clearTimeout(toastAnnounceTimer);
+  root
+    .querySelectorAll(".ip-toastStatus, .ip-toastAlert")
+    .forEach((region) => (region.textContent = ""));
+}
+
+function announceToast(msg, isError) {
+  clearToastAnnouncements();
+  // Cleared first, then set, so a repeated message is announced again. The
+  // region is picked at write time, after any modal that just closed.
+  toastAnnounceTimer = setTimeout(() => {
+    const cls = isError ? ".ip-toastAlert" : ".ip-toastStatus";
+    const region =
+      openDialog()?.querySelector(`:scope > ${cls}`) ||
+      document.getElementById(isError ? "ipToastAlert" : "ipToastStatus");
+    if (region) region.textContent = msg;
+  }, 100);
+}
+
 function showToast(msg, isError = false) {
   const toast = document.getElementById("ipToast");
   if (!toast) return;
+  announceToast(msg || "", isError);
   const iconName = isError ? "error" : "check_circle";
   toast.innerHTML = `<span class="ip-toast__icon" aria-hidden="true">${iconSvg(iconName)}</span>
     <span class="ip-toast__msg">${escapeHtml(msg || "")}</span>
-    <button type="button" class="ip-toast__close" aria-label="Dismiss notification">
+    <button type="button" class="ip-toast__close" aria-label="Close notification">
       ${iconSvg("close")}
       Close
     </button>`;
@@ -601,6 +653,7 @@ function hideToast() {
   const toast = document.getElementById("ipToast");
   if (!toast) return;
   toast.classList.remove("is-visible");
+  clearToastAnnouncements();
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1261,9 +1314,9 @@ function voteButtonStateHtml(recordID, isVoted, isOwn, hasVoteRecordId) {
     return {
       classes: "is-voted is-unavailable",
       disabled: true,
-      ariaLabel:
-        "Vote recorded, but could not be loaded for removal — refresh and try again",
-      title: "Vote record not found — refresh and try again",
+      ariaLabel: `Voted, but your vote for idea ${recordID} can't be removed right now. Refresh and try again.`,
+      title:
+        "Voted, but this vote can't be removed right now. Refresh and try again.",
       icon: "thumb_up",
       label: "Voted",
     };
@@ -1272,8 +1325,8 @@ function voteButtonStateHtml(recordID, isVoted, isOwn, hasVoteRecordId) {
     return {
       classes: "is-voted",
       disabled: false,
-      ariaLabel: `Remove your vote for idea ${recordID}`,
-      title: "Click to remove your vote",
+      ariaLabel: `Voted, unvote idea ${recordID}`,
+      title: "Voted, unvote this idea",
       icon: "thumb_up",
       label: "Voted",
       hoverIcon: "thumb_down",
@@ -1287,8 +1340,8 @@ function voteButtonStateHtml(recordID, isVoted, isOwn, hasVoteRecordId) {
       classes: "is-closed",
       disabled: false,
       ariaDisabled: true,
-      ariaLabel: `Voting is closed for idea ${recordID}`,
-      title: "Voting is closed for this idea",
+      ariaLabel: `Closed to new votes, idea ${recordID}`,
+      title: "Closed to new votes",
       icon: "thumb_up",
       label: "Closed",
     };
@@ -1317,7 +1370,8 @@ function voteButtonStateHtml(recordID, isVoted, isOwn, hasVoteRecordId) {
 // Both spans exist in the DOM at once (CSS toggles visibility on
 // hover/focus) — aria-hidden on both prevents "Voted Unvote" being
 // announced together. The button's own aria-label is the sole
-// accessible name.
+// accessible name, and it contains every visible word (WCAG 2.5.3):
+// "Voted, unvote idea N" covers both the rest and hover text.
 function voteButtonInnerHtml(state) {
   if (state.hoverIcon) {
     return `<span class="ip-upvote__rest" aria-hidden="true">${iconSvg(state.icon)}${state.label ? ` ${state.label}` : ""}</span><span class="ip-upvote__hover" aria-hidden="true">${iconSvg(state.hoverIcon)} ${state.hoverLabel}</span>`;

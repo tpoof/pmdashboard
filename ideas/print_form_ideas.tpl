@@ -9,7 +9,7 @@
 
 <!-- Public view for all users -->
 
-<!--{if $empMembership['groupID'][12]}--><div class="pv-layout-row"><!--{/if}-->
+<!--{if $empMembership['groupID'][1] || $is_admin}--><div class="pv-layout-row"><!--{/if}-->
 <div id="public-view">
 <a href="#pv-main" class="pv-skip-link">Skip to main content</a>
 
@@ -192,6 +192,13 @@
 .pv-upvote.is-own { background: #f8fafc; color: #94a3b8; border-color: #e2e8f0; cursor: not-allowed; opacity: 1; }
 .pv-upvote.is-own .pv-icon { color: #94a3b8 !important; }
 .pv-upvote:disabled { opacity: 0.65; }
+/* Closed idea: aria-disabled (stays focusable), so hover is pinned to the
+   resting colors. Text 8.5:1 (#3d4551 on #f0f0f0); outline #000 on white. */
+.pv-upvote.is-closed[aria-disabled="true"],
+.pv-upvote.is-closed[aria-disabled="true"]:hover { background: #f0f0f0; color: #3d4551; border-color: #c9c9c9; cursor: not-allowed; opacity: 1; }
+.pv-upvote.is-closed[aria-disabled="true"] .pv-icon,
+.pv-upvote.is-closed[aria-disabled="true"]:hover .pv-icon { color: #3d4551 !important; }
+.pv-upvote.is-closed[aria-disabled="true"]:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
 .pv-upvote:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
 .pv-upvote .pv-icon { font-size: 0.9rem; }
 .pv-share { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; padding: 0 10px; font-size: 0.8rem; background: transparent; border: 1.5px solid #cce4f5; border-radius: 6px; color: #475569; cursor: pointer; font-family: 'Public Sans', 'Source Sans 3', sans-serif; font-weight: 600; transition: all 0.15s; box-sizing: border-box; }
@@ -461,7 +468,10 @@
 </main>
 
 <!-- Toast -->
-<div id="pvToast" role="alert" aria-live="polite"></div>
+<!-- Visual only; pvShowToast() announces the text in the two regions below. -->
+<div id="pvToast"></div>
+<div id="pvToastStatus" class="pv-sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+<div id="pvToastAlert" class="pv-sr-only" role="alert" aria-atomic="true"></div>
 
 <script>
 var pvCanEdit = <!--{if $canWrite && ($is_admin || $submitted == 0)}-->true<!--{else}-->false<!--{/if}-->;
@@ -638,7 +648,7 @@ function pvIconSvg(name) {
                   val = 'Draft';
               } else {
                   val = text.trim();
-                  if (!val || val === 'N/A') { return; }
+                  if (!val || val === 'N/A') { pvReportVotingStatus(''); return; }
               }
               var pill = document.getElementById('pv-status-pill');
               var item = document.getElementById('pv-status-item');
@@ -649,9 +659,23 @@ function pvIconSvg(name) {
               }
               if (item) { item.removeAttribute('hidden'); }
               if (sep)  { sep.removeAttribute('hidden'); }
+              pvReportVotingStatus(val);
+          },
+          // Fails open: a broken status field shouldn't block all voting.
+          onError: function() {
+              console.warn('[print_form_ideas] Status (field 12) failed to load; voting left open.');
+              pvReportVotingStatus('');
           }
         }
     ];
+
+    // Hands the status to the vote button in the next IIFE, which may load
+    // before or after this.
+    function pvReportVotingStatus(val) {
+        window._pvStatusText   = val;
+        window._pvStatusLoaded = true;
+        if (typeof window._pvApplyVotingStatus === 'function') { window._pvApplyVotingStatus(val); }
+    }
 
     // LEAF sometimes inlines a sub-question's prompt text directly into
     // its parent field's print value with no distinguishing markup.
@@ -829,6 +853,7 @@ out +=   '<button type="button" class="pv-attach-btn"'
             },
             error: function() {
                 if (el) { el.innerHTML = '<span class="pv-empty">Could not load this field.</span>'; }
+                if (typeof cfg.onError === 'function') { cfg.onError(); }
             }
         });
     }
@@ -999,6 +1024,17 @@ out +=   '<button type="button" class="pv-attach-btn"'
     var _pvMyVoteRecordID   = null;
     var _pvResolvedEmail    = '';
     var _pvEmailResolved    = false;
+    var _pvVotingClosed     = false;
+    var _pvStatusLoaded     = false;
+
+    // Mirrors VOTING_CLOSED_STATUS_KEYS/canonicalStatusKey() in ideas_v4.js.
+    // Includes the canonical keys themselves, which canonicalStatusKey() also
+    // passes through.
+    var PV_VOTING_CLOSED_STATUSES = ['duplicate', 'dupe', 'already exists', 'already_exist', 'already_exists', 'exists', 'unlikely to implement', 'unlikely'];
+    function pvIsVotingClosedStatus(statusRaw) {
+        var s = String(statusRaw || '').replace(/<!--|-->/g, '').replace(/[()]/g, '').trim().toLowerCase();
+        return PV_VOTING_CLOSED_STATUSES.indexOf(s) !== -1;
+    }
 
     function pvIsRealEmail(str) {
         return typeof str === 'string' && str.includes('@') && !str.includes('<' + '!--');
@@ -1037,20 +1073,41 @@ out +=   '<button type="button" class="pv-attach-btn"'
         return div.innerHTML;
     }
 
+    // The visual toast isn't a live region (its Close button would be read
+    // with the message). Success goes to a polite status region, errors to an
+    // alert region. Cleared first so a repeated message is announced again.
+    var _pvAnnounceTimer = null;
+    function pvClearToastAnnouncements() {
+        clearTimeout(_pvAnnounceTimer);
+        ['pvToastStatus', 'pvToastAlert'].forEach(function(id) {
+            var region = document.getElementById(id);
+            if (region) { region.textContent = ''; }
+        });
+    }
+    function pvAnnounceToast(msg, isError) {
+        pvClearToastAnnouncements();
+        _pvAnnounceTimer = setTimeout(function() {
+            var region = document.getElementById(isError ? 'pvToastAlert' : 'pvToastStatus');
+            if (region) { region.textContent = msg; }
+        }, 100);
+    }
+
     function pvHideToast() {
         var toast = document.getElementById('pvToast');
         if (toast) { toast.classList.remove('is-visible'); }
+        pvClearToastAnnouncements();
     }
 
     function pvShowToast(msg, isError) {
         var toast = document.getElementById('pvToast');
         if (!toast) { return; }
+        pvAnnounceToast(String(msg || ''), isError);
         toast.classList.toggle('is-error', !!isError);
         var iconName = isError ? 'error' : 'check_circle';
         toast.innerHTML =
             '<span class="pv-toast__icon" aria-hidden="true">' + pvIconSvg(iconName) + '</span>' +
             '<span class="pv-toast__msg">' + pvEscapeHtml(msg) + '</span>' +
-            '<button type="button" class="pv-toast__close" aria-label="Dismiss notification">' + pvIconSvg('close') + 'Close</button>';
+            '<button type="button" class="pv-toast__close" aria-label="Close notification">' + pvIconSvg('close') + 'Close</button>';
         toast.classList.add('is-visible');
         var closeBtn = toast.querySelector('.pv-toast__close');
         if (closeBtn) { closeBtn.addEventListener('click', pvHideToast, { once: true }); }
@@ -1078,28 +1135,43 @@ out +=   '<button type="button" class="pv-attach-btn"'
         if (_pvIsOwnIdea) { return; }
 
         var unavailable = isVoted && !_pvMyVoteRecordID;
+        // An existing vote wins over "closed" so it can still be removed.
+        var closed = !isVoted && _pvVotingClosed;
 
         btn.classList.toggle('is-voted', isVoted);
+        btn.classList.toggle('is-closed', closed);
         if (isVoted && !unavailable) {
             btn.innerHTML =
                 '<span class="pv-upvote__rest">' + pvIconSvg('thumb_up') + 'Voted</span>' +
                 '<span class="pv-upvote__hover">' + pvIconSvg('thumb_down') + 'Unvote</span>';
         } else {
-            btn.innerHTML = pvIconSvg('thumb_up') + (isVoted ? 'Voted' : 'Vote for this idea');
+            btn.innerHTML = pvIconSvg('thumb_up') + (isVoted ? 'Voted' : closed ? 'Voting closed' : 'Vote for this idea');
+        }
+
+        // aria-disabled only, so focus stays put when an unvote flips it here.
+        // pvIdeaVotes() shows the toast if it's activated.
+        if (closed) {
+            btn.disabled = false;
+            btn.setAttribute('aria-disabled', 'true');
+            // Name starts with the visible text (WCAG 2.5.3).
+            btn.setAttribute('aria-label', 'Voting closed for this idea');
+            btn.title = 'Voting closed for this idea';
+            return;
         }
 
         if (unavailable) {
             btn.disabled = true;
             btn.setAttribute('aria-disabled', 'true');
-            btn.setAttribute('aria-label', "Vote recorded, but could not be loaded for removal — refresh and try again");
-            btn.title = 'Vote record not found — refresh and try again';
+            btn.setAttribute('aria-label', "Voted, but your vote can't be removed right now. Refresh and try again.");
+            btn.title = "Voted, but your vote can't be removed right now. Refresh and try again.";
             return;
         }
 
         btn.disabled = false;
         btn.setAttribute('aria-disabled', 'false');
-        btn.setAttribute('aria-label', isVoted ? 'Remove your vote for this idea' : 'Vote for this idea');
-        btn.title = isVoted ? 'Click to remove your vote' : 'Vote for this idea';
+        // "Voted, unvote" covers both the rest text and the hover/focus text.
+        btn.setAttribute('aria-label', isVoted ? 'Voted, unvote this idea' : 'Vote for this idea');
+        btn.title = isVoted ? 'Voted, unvote this idea' : 'Vote for this idea';
     }
 
     function pvCheckVoted() {
@@ -1173,10 +1245,13 @@ out +=   '<button type="button" class="pv-attach-btn"'
         var btn = document.getElementById('pv-vote-btn');
         if (!btn) { return; }
         btn.disabled = true;
+        btn.classList.remove('is-closed');
+        btn.innerHTML = pvIconSvg('thumb_up') + 'Vote for this idea';
         btn.classList.add('is-own');
         btn.setAttribute('aria-disabled', 'true');
-        btn.setAttribute('aria-label', "You can't vote on your own idea");
-        btn.title = "You can't vote on your own idea";
+        // Name keeps the visible text first (WCAG 2.5.3).
+        btn.setAttribute('aria-label', "Vote for this idea, unavailable on your own idea");
+        btn.title = "Vote for this idea, unavailable on your own idea";
     }
 
     function pvIdeaVotes() {
@@ -1188,6 +1263,10 @@ out +=   '<button type="button" class="pv-attach-btn"'
             pvUnvoteIdea();
             return;
         }
+
+        // Client-side only: the votes API still accepts a vote on a closed idea.
+        if (!_pvStatusLoaded) { pvShowToast("Still loading this idea's status. Try again in a moment.", true); return; }
+        if (_pvVotingClosed) { pvShowToast('Voting is closed for this idea because of its current status.', true); return; }
 
         if (btn && btn.disabled) { pvShowToast('You already voted on this idea.', true); return; }
         _pvVotingInProgress = true;
@@ -1281,6 +1360,16 @@ out +=   '<button type="button" class="pv-attach-btn"'
     }
 
 
+    // Called by the status field loader, which may finish before or after
+    // this script's vote check.
+    function pvApplyVotingStatus(statusText) {
+        _pvStatusLoaded = true;
+        _pvVotingClosed = pvIsVotingClosedStatus(statusText);
+        var btn = document.getElementById('pv-vote-btn');
+        if (btn) { pvSetVoted(btn.classList.contains('is-voted')); }
+    }
+    window._pvApplyVotingStatus = pvApplyVotingStatus;
+
     function pvShare() {
         var btn  = document.getElementById('pv-share-btn');
         var link = btn ? btn.getAttribute('data-record-link') : window.location.href;
@@ -1302,6 +1391,7 @@ out +=   '<button type="button" class="pv-attach-btn"'
             if (shareBtn) { shareBtn.addEventListener('click', pvShare); }
             pvResolveEmail().then(function() { pvCheckVoted(); });
             pvCheckIsOwn();
+            if (window._pvStatusLoaded) { pvApplyVotingStatus(window._pvStatusText); }
         } catch (e) {
             console.error('[print_form_ideas] Vote/share init failed:', e);
         }
@@ -1336,8 +1426,8 @@ function pvOpenEdit(indicatorID) {
 
 </div>
 
-<!-- Group 12 toolbar -->
-<!--{if $empMembership['groupID'][12]}-->
+<!-- Sysadmin toolbar. Keeps the #toolbar12 id/CSS from its old group 12 gate. -->
+<!--{if $empMembership['groupID'][1] || $is_admin}-->
 <div id="toolbar12" class="toolbar_right toolbar noprint">
 
     <div class="pm-transfer-wrap">
@@ -1489,9 +1579,9 @@ function pvOpenEdit(indicatorID) {
 
 </div>
 <!--{/if}-->
-<!--{if $empMembership['groupID'][12]}--></div><!--{/if}-->
+<!--{if $empMembership['groupID'][1] || $is_admin}--></div><!--{/if}-->
 
-<!--{if $empMembership['groupID'][12]}-->
+<!--{if $empMembership['groupID'][1]}-->
 <div class="pv-internal-banner noprint" role="note" aria-label="Internal view notice">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false" style="width:15px;height:15px;flex-shrink:0;"><path d="M8 1L1 14h14L8 1z"/><path d="M8 6v4M8 11.5v.5"/></svg>
     LEAF TEAM — INTERNAL VIEW ONLY
@@ -3012,7 +3102,7 @@ function pvOpenEdit(indicatorID) {
             dialog_message = new dialogController('genericDialog',      'genericDialogxhr',  'genericDialogloadIndicator', 'genericDialogbutton_save', 'genericDialogbutton_cancelchange');
             dialog_ok      = new dialogController('ok_xhrDialog',      'ok_xhr',            'ok_loadIndicator',           'confirm_button_ok',    'confirm_button_cancelchange');
             dialog_confirm = new dialogController('confirm_xhrDialog',  'confirm_xhr',       'confirm_loadIndicator',      'confirm_button_save',  'confirm_button_cancelchange');
-            <!--{if $empMembership['groupID'][12]}-->
+            <!--{if $empMembership['groupID'][1]}-->
             <!--{if $childCategoryID == ''}-->
                 openContent('ajaxIndex.php?a=printview&recordID=<!--{$recordID|strip_tags}-->');
             <!--{else}-->

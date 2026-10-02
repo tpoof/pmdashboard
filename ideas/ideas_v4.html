@@ -3269,7 +3269,22 @@
         <div class="lp-bottom-safe" aria-hidden="true"></div>
       </main>
 
-      <div id="ipToast" class="ip-toast" role="alert" aria-live="polite"></div>
+      <!-- Visual only; ideas_v4.js announces the text in the two regions
+           below (or the open dialog's own). -->
+      <div id="ipToast" class="ip-toast"></div>
+      <div
+        id="ipToastStatus"
+        class="ip-srOnly ip-toastStatus"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      ></div>
+      <div
+        id="ipToastAlert"
+        class="ip-srOnly ip-toastAlert"
+        role="alert"
+        aria-atomic="true"
+      ></div>
       <div
         id="ipShareStatus"
         class="ip-srOnly"
