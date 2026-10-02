@@ -531,6 +531,8 @@
         background: var(--lp-accent);
         border: 0;
         border-radius: 8px;
+        min-height: 44px;
+        min-width: 44px;
         padding: 9px 18px;
         cursor: pointer;
       }
@@ -888,9 +890,7 @@
           <!-- One section per form_531cc category, built by the script below -->
           <div id="thbSections" aria-busy="true"></div>
 
-          <footer class="thb-footer" role="contentinfo">
-            Internal use only
-          </footer>
+          <div class="thb-footer">Internal use only</div>
         </div>
       </main>
 
@@ -916,6 +916,9 @@
         "use strict";
         const init = () => {
           const $id = (id) => document.getElementById(id);
+
+          // An earlier inline visit may not have been torn down; destroy() is idempotent.
+          window.LP_PAGES?.team?.destroy?.();
 
           /* Links are records of form_531cc on the Service Requests Launchpad
              LEAF site. Root-relative (same origin) so the user's LEAF session
@@ -992,17 +995,15 @@
           const readField = (record, indicatorId) =>
             decodeHtmlEntities(getS1Value(record, indicatorId)).trim();
 
-          // Normalized view of the fetched records, used to skip no-op refreshes.
-          const snapshotOf = (data) =>
+          // Normalized view of the grouped, sorted links (what render() shows),
+          // used to skip no-op refreshes.
+          const snapshotOf = (groups) =>
             JSON.stringify(
-              Object.keys(data)
-                .sort((a, b) => Number(a) - Number(b))
-                .map((recordID) => [
-                  recordID,
-                  ...["name", "url", "category", "popup", "order"].map((f) =>
-                    readField(data[recordID], INDICATORS[f]),
-                  ),
-                ]),
+              groups.map((g) => [
+                g.key,
+                g.title,
+                g.links.map((l) => [l.recordID, l.name, l.href, l.popup]),
+              ]),
             );
 
           const isYes = (value) =>
@@ -1032,10 +1033,10 @@
             }
           }
 
-          /* Groups records by category (trimmed, case-insensitive), keeping
-             record order within each group. Sections sort by their lowest
-             Section Order, then unnumbered by lowest record ID, with
-             Uncategorized always last. */
+          /* Groups records by category (trimmed, case-insensitive). Links in
+             each group sort A–Z by name (empty names last, ties by record
+             order). Sections sort by their lowest Section Order, then
+             unnumbered by lowest record ID, with Uncategorized always last. */
           function groupLinks(data) {
             const groups = new Map();
             Object.keys(data)
@@ -1070,13 +1071,33 @@
                 const order = parseOrder(readField(rec, INDICATORS.order));
                 if (order !== null && order < group.order) group.order = order;
 
+                const name = readField(rec, INDICATORS.name);
                 group.links.push({
                   recordID,
-                  label: readField(rec, INDICATORS.name) || href,
+                  name,
+                  label: name || href,
                   href,
                   popup: isYes(readField(rec, INDICATORS.popup)),
                 });
               });
+
+            // Sorted once here so page tiles and modal triggers share one order
+            groups.forEach((group) => {
+              group.links = group.links
+                .map((link, i) => ({ link, i }))
+                .sort((a, b) => {
+                  const an = a.link.name;
+                  const bn = b.link.name;
+                  if (!an !== !bn) return an ? -1 : 1;
+                  return (
+                    an.localeCompare(bn, undefined, {
+                      sensitivity: "base",
+                      numeric: true,
+                    }) || a.i - b.i
+                  );
+                })
+                .map(({ link }) => link);
+            });
 
             return [...groups.values()].sort((a, b) => {
               const aLast = a.key === UNCATEGORIZED_KEY;
@@ -1356,13 +1377,18 @@
           /* mode: "initial" | "retry" (Retry button) | "auto-retry" (tab return
              after a failed first load; error UI stays until it succeeds) |
              "refresh" (tab return after a successful load).
-             loadSeq guards against an older request finishing after a newer one. */
+             loadSeq drops responses from superseded requests; starting a new
+             request aborts the previous one so they never overlap. */
           let loadSeq = 0;
           let inFlight = false;
+          let currentCtrl = null;
           let lastAttempt = 0;
           let lastSnapshot = null;
           async function loadLinks(mode = "initial") {
+            currentCtrl?.abort();
             const seq = ++loadSeq;
+            const ctrl = new AbortController();
+            currentCtrl = ctrl;
             inFlight = true;
             lastAttempt = Date.now();
             const isRefresh = mode === "refresh";
@@ -1373,7 +1399,6 @@
               status.textContent = "Loading team links…";
             }
 
-            const ctrl = new AbortController();
             const timer = setTimeout(() => ctrl.abort(), CONFIG.timeoutMs);
             try {
               // Plain fetch + encodeURIComponent, same as lp_blog.html
@@ -1394,7 +1419,11 @@
               };
               const r = await fetch(
                 `${CONFIG.apiBase}api/form/query?q=${encodeURIComponent(JSON.stringify(q))}`,
-                { credentials: "include", signal: ctrl.signal },
+                {
+                  credentials: "include",
+                  cache: "no-store",
+                  signal: ctrl.signal,
+                },
               );
               if (!r.ok) throw new Error("Query failed HTTP " + r.status);
               const data = await r.json();
@@ -1402,20 +1431,24 @@
                 throw new Error("Unexpected query response");
               if (seq !== loadSeq) return;
 
+              // Focus on Retry/status is about to lose its target
+              const active = document.activeElement;
+              const focusOnError =
+                active === status || errorBox.contains(active);
               lastSuccess = Date.now();
               refreshMsg.textContent = "";
-              const snapshot = snapshotOf(data);
+              const groups = groupLinks(data);
+              const snapshot = snapshotOf(groups);
               if (isRefresh && snapshot === lastSnapshot) return;
               lastSnapshot = snapshot;
 
-              const groups = groupLinks(data);
               render(groups);
               status.textContent = groups.length
                 ? ""
                 : "No team links were found. If you expected links here, check that you have access to the Service Requests Launchpad site.";
               if (mode === "retry" || isAuto) {
                 errorBox.replaceChildren();
-                focusFirstSection();
+                if (focusOnError) focusFirstSection();
               }
             } catch (err) {
               if (seq !== loadSeq) return;
@@ -1433,10 +1466,15 @@
               clearTimeout(timer);
               if (seq === loadSeq) {
                 inFlight = false;
+                currentCtrl = null;
                 sectionsWrap.setAttribute("aria-busy", "false");
               }
             }
           }
+
+          // Document/window listeners from this visit, removed by destroy()
+          const pageCtl = new AbortController();
+          const listen = { signal: pageCtl.signal };
 
           /* ── Report modal (Admin Inbox and popup links) ──
              Inline under the Launchpad router (#team) this page's markup lives
@@ -1454,15 +1492,29 @@
               document.body.appendChild(current);
             return current || null;
           })();
-          (() => {
-            if (!modal) return;
-            // Scoped to this modal — ids may be duplicated while stale copies exist
-            const frame = modal.querySelector("#thbModalFrame");
-            const titleEl = modal.querySelector("#thbModalTitle");
-            const closeBtn = modal.querySelector("#thbModalClose");
-            const backdrop = modal.querySelector("#thbModalBackdrop");
-            if (!frame) return;
+          // Scoped to this modal — ids may be duplicated while stale copies exist
+          const frame = modal?.querySelector("#thbModalFrame");
+          const titleEl = modal?.querySelector("#thbModalTitle");
+          const closeBtn = modal?.querySelector("#thbModalClose");
+          const backdrop = modal?.querySelector("#thbModalBackdrop");
+          const modalReady = !!(frame && titleEl && closeBtn && backdrop);
+          const isModalOpen = () =>
+            modalReady && modal.classList.contains("is-open");
 
+          let savedOverflow = null;
+          // Hides the modal and restores body scroll; shared by close and destroy()
+          const releaseModal = () => {
+            modal.classList.remove("is-open");
+            modal.setAttribute("aria-hidden", "true");
+            if (savedOverflow !== null) {
+              document.body.style.overflow = savedOverflow;
+              savedOverflow = null;
+            }
+            // Clearing src stops the iframe so audio/video and resources free up
+            frame.src = "";
+          };
+
+          if (modalReady) {
             let lastFocused = null;
             let lastFocusKey = null;
 
@@ -1503,8 +1555,10 @@
             };
             frame.addEventListener("load", () => stripLeafChrome(frame));
 
-            /* Measure the fixed/sticky global header so the dialog always clears it.
-           Falls back to the CSS default (120px) if nothing is found. */
+            /* Measures the fixed/sticky global header so the dialog clears it.
+               Anything taller than 40% of the viewport (e.g. an open mobile
+               drawer matching [class*="nav"]) is ignored and the 120px CSS
+               default is used instead. */
             const measureHeaderOffset = () => {
               let bottom = 0;
               document
@@ -1520,111 +1574,124 @@
                       bottom = rect.bottom;
                   }
                 });
-              if (bottom > 0) {
+              if (bottom > 0 && bottom <= window.innerHeight * 0.4) {
                 modal.style.setProperty(
                   "--thb-header-offset",
                   `${Math.ceil(bottom) + 16}px`,
                 );
+              } else {
+                modal.style.removeProperty("--thb-header-offset");
               }
             };
 
             const openModal = (trigger) => {
-              lastFocused = document.activeElement;
+              lastFocused = trigger;
               lastFocusKey = trigger.dataset.focusKey || null;
               measureHeaderOffset();
-              const reportTitle =
-                trigger.getAttribute("data-report-title") || "Report";
+              const reportTitle = trigger.dataset.reportTitle || "Report";
               titleEl.textContent = reportTitle;
               frame.setAttribute("title", reportTitle);
-              frame.src = trigger.getAttribute("data-report-src");
+              frame.src = trigger.dataset.reportSrc;
               // Background is not made inert: aria-modal + the focus trap
               // cover it, and "#lp-root" is ambiguous when loaded inline.
               modal.inert = false;
               modal.removeAttribute("aria-hidden");
               modal.classList.add("is-open");
+              if (savedOverflow === null)
+                savedOverflow = document.body.style.overflow;
               document.body.style.overflow = "hidden";
               closeBtn.focus();
             };
             const closeModal = () => {
-              modal.classList.remove("is-open");
-              modal.setAttribute("aria-hidden", "true");
-              document.body.style.overflow = "";
-              frame.src = "";
+              releaseModal();
               // The trigger may have been replaced by a refresh while open
               const target = lastFocused?.isConnected
                 ? lastFocused
-                : findByFocusKey(lastFocusKey);
-              target?.focus();
+                : findByFocusKey(lastFocusKey) ||
+                  sectionsWrap.querySelector(".thb-sec-head") ||
+                  status;
+              target.focus();
             };
 
-            // Delegated: popup tiles are rendered after the fetch. The
-            // isConnected checks stop listeners from an earlier inline visit
-            // (whose modal was removed) from acting.
-            document.addEventListener("click", (e) => {
-              if (!modal.isConnected) return;
-              const trigger = e.target.closest(".thb-modal-trigger");
-              if (trigger) openModal(trigger);
-            });
+            // Delegated: popup tiles are rendered after the fetch, and the
+            // Admin Inbox button sits outside the sections.
+            document.addEventListener(
+              "click",
+              (e) => {
+                const trigger = e.target.closest(".thb-modal-trigger");
+                if (trigger) openModal(trigger);
+              },
+              listen,
+            );
             closeBtn.addEventListener("click", closeModal);
             backdrop.addEventListener("click", closeModal);
-            document.addEventListener("keydown", (e) => {
-              if (
-                e.key === "Escape" &&
-                modal.isConnected &&
-                modal.classList.contains("is-open")
-              )
-                closeModal();
-            });
-
-            // Router teardown (leaf_header.js calls LP_PAGES.team.destroy()
-            // before replacing this route): close and drop the body-level modal.
-            window.LP_PAGES = window.LP_PAGES || {};
-            window.LP_PAGES.team = {
-              ...window.LP_PAGES.team,
-              destroy() {
-                if (modal.classList.contains("is-open")) {
-                  modal.classList.remove("is-open");
-                  document.body.style.overflow = "";
-                  frame.src = "";
-                }
-                modal.remove();
+            document.addEventListener(
+              "keydown",
+              (e) => {
+                if (e.key === "Escape" && isModalOpen()) closeModal();
               },
-            };
+              listen,
+            );
+
+            /* Focus trap: close button <-> iframe. Keys pressed inside a
+               cross-origin iframe never reach this page, so Tab out of the
+               report is caught by focusin instead and sent back to Close. */
             modal.addEventListener("keydown", (e) => {
-              if (e.key !== "Tab" || !modal.classList.contains("is-open"))
-                return;
-              const f = Array.from(
-                modal.querySelectorAll(
-                  'button:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])',
-                ),
-              );
-              if (!f.length) return;
-              const first = f[0],
-                last = f[f.length - 1];
-              if (e.shiftKey && document.activeElement === first) {
+              if (e.key !== "Tab" || !isModalOpen()) return;
+              if (e.shiftKey && document.activeElement === closeBtn) {
                 e.preventDefault();
-                last.focus();
-              } else if (!e.shiftKey && document.activeElement === last) {
+                frame.focus();
+              } else if (!e.shiftKey && document.activeElement === frame) {
                 e.preventDefault();
-                first.focus();
+                closeBtn.focus();
               }
             });
-          })();
+            document.addEventListener(
+              "focusin",
+              (e) => {
+                if (isModalOpen() && !modal.contains(e.target))
+                  closeBtn.focus();
+              },
+              listen,
+            );
+          }
+
+          // Router teardown (leaf_header.js calls LP_PAGES.team.destroy()
+          // before replacing this route): stop loads, drop document listeners,
+          // and close and remove the body-level modal.
+          let destroyed = false;
+          window.LP_PAGES = window.LP_PAGES || {};
+          window.LP_PAGES.team = {
+            ...window.LP_PAGES.team,
+            destroy() {
+              if (destroyed) return;
+              destroyed = true;
+              loadSeq++;
+              currentCtrl?.abort();
+              pageCtl.abort();
+              if (isModalOpen()) releaseModal();
+              modal?.remove();
+            },
+          };
 
           /* ── Refresh (or retry a failed first load) on tab return ── */
-          document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState !== "visible" || inFlight) return;
-            if (modal?.classList.contains("is-open")) return;
-            if (lastSuccess) {
-              if (Date.now() - lastSuccess >= CONFIG.refreshAfterMs)
-                loadLinks("refresh");
-            } else if (
-              errorBox.childElementCount &&
-              Date.now() - lastAttempt >= CONFIG.refreshAfterMs
-            ) {
-              loadLinks("auto-retry");
-            }
-          });
+          document.addEventListener(
+            "visibilitychange",
+            () => {
+              if (document.visibilityState !== "visible" || inFlight) return;
+              if (isModalOpen()) return;
+              if (lastSuccess) {
+                if (Date.now() - lastSuccess >= CONFIG.refreshAfterMs)
+                  loadLinks("refresh");
+              } else if (
+                errorBox.childElementCount &&
+                Date.now() - lastAttempt >= CONFIG.refreshAfterMs
+              ) {
+                loadLinks("auto-retry");
+              }
+            },
+            listen,
+          );
 
           /* ── Jump to top ── */
           (() => {
@@ -1647,8 +1714,11 @@
                 behavior: reduceMotion.matches ? "auto" : "smooth",
               }),
             );
-            window.addEventListener("scroll", update, { passive: true });
-            window.addEventListener("resize", update);
+            window.addEventListener("scroll", update, {
+              passive: true,
+              signal: pageCtl.signal,
+            });
+            window.addEventListener("resize", update, listen);
             update();
           })();
 
@@ -1656,7 +1726,7 @@
         };
 
         if (document.readyState === "loading") {
-          document.addEventListener("DOMContentLoaded", init);
+          document.addEventListener("DOMContentLoaded", init, { once: true });
         } else {
           init();
         }
@@ -1680,7 +1750,7 @@
             class="thb-modal__close"
             id="thbModalClose"
             type="button"
-            aria-label="Close"
+            aria-label="Close dialog"
           >
             <span class="material-symbols-outlined" aria-hidden="true"
               ><svg viewBox="0 -960 960 960" fill="currentColor">
@@ -1695,6 +1765,7 @@
             class="thb-modal__frame"
             id="thbModalFrame"
             title="Admin Inbox"
+            tabindex="0"
           ></iframe>
         </div>
       </div>

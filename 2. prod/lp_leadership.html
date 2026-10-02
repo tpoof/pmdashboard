@@ -33,8 +33,8 @@
         font-display: swap;
       }
 
-      /* Icons render as inline SVG, matching leaf_header.js — no Material
-       Symbols web font dependency. */
+      /* Icons render as inline SVG — static ones in the markup, JS-built ones
+       from ICON_PATHS below — matching leaf_header.js; no icon web font. */
       .material-symbols-outlined {
         display: inline-flex;
         align-items: center;
@@ -53,7 +53,47 @@
       }
 
       .ldh-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem 1.5rem;
         margin-bottom: 2.25rem;
+      }
+      .ldh-header-text {
+        min-width: 0;
+      }
+      .ldh-header .ldh-update-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-shrink: 0;
+        min-height: 44px;
+        padding: 0 18px;
+        background: #fff;
+        color: var(--lp-accent);
+        border: 1px solid var(--lp-accent);
+        border-radius: 8px;
+        font-family: "PublicSans-Bold", sans-serif;
+        font-weight: 700;
+        font-size: 0.88rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background 0.12s;
+      }
+      .ldh-header .ldh-update-btn:hover {
+        background: var(--c-blue5);
+      }
+      .ldh-header .ldh-update-btn:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+      .ldh-update-btn .material-symbols-outlined {
+        font-size: 1.15rem !important;
+      }
+      @media (max-width: 600px) {
+        .ldh-header {
+          flex-direction: column;
+        }
       }
 
       .ldh-kicker {
@@ -87,6 +127,13 @@
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 1.25rem;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .ldh-grid > li {
+        display: flex;
+        min-width: 0;
       }
 
       .ldh-card {
@@ -126,6 +173,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 0.75rem;
         margin-bottom: 0.875rem;
       }
 
@@ -153,7 +201,9 @@
         text-transform: uppercase;
         padding: 4px 10px;
         border-radius: 999px;
-        white-space: nowrap;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        text-align: right;
       }
 
       .ldh-chip--live {
@@ -165,21 +215,30 @@
         color: var(--lp-hl);
       }
 
+      /* h2 on link cards, span on popup cards. Font and spacing mirror
+         launchpad.css's .lp h2 so both render alike. */
       .ldh-card-title {
-        font-family: "PublicSans-Bold", sans-serif;
+        display: block;
+        font-family: "Public Sans", sans-serif;
+        letter-spacing: -0.015em;
         font-size: 1.05rem;
         font-weight: 700;
         color: var(--lp-hl);
         margin: 0 0 0.375rem;
+        min-width: 0;
+        overflow-wrap: anywhere;
       }
 
       .ldh-card-desc {
+        display: block;
         font-family: "Source Sans Pro Web", sans-serif;
         font-size: 0.9375rem;
         color: var(--c-muted);
         margin: 0 0 1.125rem;
         flex-grow: 1;
         line-height: 1.55;
+        min-width: 0;
+        overflow-wrap: anywhere;
       }
 
       .ldh-card-action {
@@ -191,6 +250,8 @@
         font-weight: 700;
         color: var(--lp-accent);
         margin-top: auto;
+        min-width: 0;
+        overflow-wrap: anywhere;
       }
 
       .ldh-card-action .material-symbols-outlined {
@@ -211,6 +272,62 @@
         color: var(--c-muted);
       }
 
+      /* ── Load status / error ── */
+      .ldh-status {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.95rem;
+        color: var(--c-muted);
+        margin: 0 0 1.25rem;
+      }
+      .ldh-status:focus {
+        outline: none;
+      }
+      /* Kept rendered (not display:none) so live-region updates announce */
+      .ldh-status:empty {
+        margin: 0;
+      }
+      .ldh-error:empty {
+        display: none;
+      }
+      .ldh-error {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.9rem 1.15rem;
+        margin-bottom: 1.5rem;
+        background: #fff;
+        border: 1px solid #b50909;
+        border-left-width: 4px;
+        border-radius: var(--r-lg);
+        font-family: "Source Sans Pro Web", sans-serif;
+        color: var(--c-text);
+      }
+      .ldh-error p {
+        margin: 0;
+      }
+      .ldh-retry {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-weight: 700;
+        font-size: 0.88rem;
+        color: #fff;
+        background: var(--lp-accent);
+        border: 0;
+        border-radius: 8px;
+        min-height: 44px;
+        min-width: 44px;
+        padding: 9px 18px;
+        cursor: pointer;
+      }
+      .ldh-retry:hover {
+        background: var(--lp-accent-strong, #004a82);
+      }
+      .ldh-retry:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+
       /* The global header (launchpad.css) is fixed with a high z-index and
        paints over centered overlays, so the dialog is pushed down below it
        via --ldh-header-offset instead of relying on z-index alone. */
@@ -227,6 +344,7 @@
 
       .ldh-modal.is-open {
         display: flex;
+        pointer-events: auto;
       }
 
       .ldh-modal__backdrop {
@@ -251,6 +369,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 0.75rem;
         padding: 0.75rem 1rem;
         background: var(--c-blue5);
         border-bottom: 1px solid var(--c-blue20);
@@ -263,6 +382,8 @@
         font-weight: 700;
         color: var(--lp-hl);
         margin: 0;
+        min-width: 0;
+        overflow-wrap: anywhere;
       }
 
       .ldh-modal__close {
@@ -317,7 +438,8 @@
 
       @media (prefers-reduced-motion: reduce) {
         .ldh-card,
-        .ldh-card-action .material-symbols-outlined {
+        .ldh-card-action .material-symbols-outlined,
+        .ldh-update-btn {
           transition: none;
         }
         .ldh-card:hover {
@@ -389,234 +511,49 @@
       <main id="lp-main" tabindex="-1">
         <div class="ldh-page">
           <header class="ldh-header">
-            <p class="ldh-kicker">LEAF Operations</p>
-            <h1 class="ldh-title">Leadership Hub</h1>
-            <p class="ldh-sub">
-              Internal dashboards, reports, and tools for the LEAF leadership
-              team.
-            </p>
+            <div class="ldh-header-text">
+              <p class="ldh-kicker">LEAF Operations</p>
+              <h1 class="ldh-title">Leadership Hub</h1>
+              <p class="ldh-sub">
+                Internal dashboards, reports, and tools for the LEAF leadership
+                team.
+              </p>
+            </div>
+            <!-- data-nav-external: leaf_header.js's link interceptor skips it,
+                 so it opens normally instead of being hash-routed -->
+            <a
+              class="ldh-update-btn"
+              href="/platform/service_requests_launchpad/open.php?report=32wny"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-nav-external
+            >
+              <span
+                class="material-symbols-outlined"
+                aria-hidden="true"
+                data-icon="edit_note"
+              ></span
+              >Update cards<span class="sr-only"> (opens in a new tab)</span>
+            </a>
           </header>
 
-          <!-- Card grid -->
-          <div class="ldh-grid" role="list">
-            <!-- 1. LEAF Command Center -->
-            <a
-              class="ldh-card"
-              href="https://leaf.va.gov/platform/calendar/"
-              target="_blank"
-              rel="noopener noreferrer"
-              role="listitem"
-              aria-label="LEAF Command Center — opens in a new tab"
-            >
-              <div class="ldh-card-top">
-                <span class="ldh-icon" aria-hidden="true">
-                  <span class="material-symbols-outlined" aria-hidden="true"
-                    ><svg viewBox="0 -960 960 960" fill="currentColor">
-                      <path
-                        d="M153-73q-33-33-33-81t33-81q33-33 81-33 14 0 24.5 2.5T280-258l85-106q-19-23-29-52.5t-5-61.5l-121-41q-15 25-39.5 39T114-466q-48 0-81-33T0-580q0-48 33-81t81-33q48 0 81 33t33 81v4l122 42q18-32 43.5-49t56.5-24v-129q-39-11-61.5-43T366-846q0-48 33-81t81-33q48 0 81 33t33 81q0 35-23 67t-61 43v129q31 7 57 24t44 49l121-42v-4q0-48 33-81t81-33q48 0 81 33t33 81q0 48-33 81t-81 33q-32 0-57-14t-39-39l-121 41q5 32-4.5 61.5T595-364l85 106q11-5 21.5-7.5T726-268q48 0 81 33t33 81q0 48-33 81t-81 33q-48 0-81-33t-33-81q0-20 5.5-36t15.5-31l-85-106q-32 17-68.5 17T411-327l-84 107q10 15 15.5 30.5T348-154q0 48-33 81t-81 33Z"
-                      /></svg
-                  ></span>
-                </span>
-                <span class="ldh-chip ldh-chip--live">Live</span>
-              </div>
-              <h2 class="ldh-card-title">LEAF Command Center</h2>
-              <p class="ldh-card-desc">
-                LEAF team meetings, action items, and coverage — organized and
-                always up to date.
-              </p>
-              <span class="ldh-card-action" aria-hidden="true">
-                Open command center
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"
-                    /></svg
-                ></span>
-              </span>
-            </a>
+          <!-- Card load status (filled by JS) -->
+          <p
+            class="ldh-status"
+            id="ldhStatus"
+            role="status"
+            aria-live="polite"
+            tabindex="-1"
+          >
+            Loading cards…
+          </p>
+          <div class="ldh-error" id="ldhError" role="alert"></div>
+          <p class="ldh-status" id="ldhRefreshMsg" aria-live="polite"></p>
 
-            <!-- 2. Project Dashboard -->
-            <a
-              class="ldh-card"
-              href="https://leaf.va.gov/platform/projects/"
-              target="_blank"
-              rel="noopener noreferrer"
-              role="listitem"
-              aria-label="Project Dashboard — opens in a new tab"
-            >
-              <div class="ldh-card-top">
-                <span class="ldh-icon" aria-hidden="true">
-                  <span class="material-symbols-outlined" aria-hidden="true"
-                    ><svg viewBox="0 -960 960 960" fill="currentColor">
-                      <path
-                        d="M510-570v-270h330v270H510ZM120-450v-390h330v390H120Zm390 330v-390h330v390H510Zm-390 0v-270h330v270H120Z"
-                      /></svg
-                  ></span>
-                </span>
-                <span class="ldh-chip ldh-chip--live">Live</span>
-              </div>
-              <h2 class="ldh-card-title">Project Dashboard</h2>
-              <p class="ldh-card-desc">
-                Team tracker for projects, tasks, and OKRs across the LEAF team.
-              </p>
-              <span class="ldh-card-action" aria-hidden="true">
-                Open dashboard
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"
-                    /></svg
-                ></span>
-              </span>
-            </a>
+          <!-- One card per form_b8d63 record, built by the script below -->
+          <ul class="ldh-grid" id="ldhGrid" aria-busy="true"></ul>
 
-            <!-- 3. Impact Map -->
-            <a
-              class="ldh-card"
-              href="https://leaf.va.gov/launchpad/report.php?a=steph_map"
-              target="_blank"
-              rel="noopener noreferrer"
-              role="listitem"
-              aria-label="Impact Map — opens in a new tab"
-            >
-              <div class="ldh-card-top">
-                <span class="ldh-icon" aria-hidden="true">
-                  <span class="material-symbols-outlined" aria-hidden="true"
-                    ><svg viewBox="0 -960 960 960" fill="currentColor">
-                      <path
-                        d="m612-120-263-93-179 71q-17 9-33.5-1T120-173v-558q0-13 7.5-23t19.5-15l202-71 263 92 178-71q17-8 33.5 1.5T840-788v565q0 11-7.5 19T814-192l-202 72Zm-34-75v-505l-196-66v505l196 66Z"
-                      /></svg
-                  ></span>
-                </span>
-                <span class="ldh-chip ldh-chip--live">Live</span>
-              </div>
-              <h2 class="ldh-card-title">Impact Map</h2>
-              <p class="ldh-card-desc">
-                Search facilities using LEAF and explore national usage,
-                adoption and utilization rates, and top use cases.
-              </p>
-              <span class="ldh-card-action" aria-hidden="true">
-                Open map
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"
-                    /></svg
-                ></span>
-              </span>
-            </a>
-
-            <!-- 4. Power BI: Support Services -->
-            <button
-              class="ldh-card"
-              type="button"
-              role="listitem"
-              aria-label="Support Services — view Power BI report"
-              data-report-title="LEAF Support Services Dashboard v3"
-              data-report-src="https://app.powerbigov.us/reportEmbed?reportId=4edaaa11-3794-4ceb-bacd-15978d94415d&appId=bc14ee51-602f-4786-842e-f6162f360b9b&autoAuth=true&ctid=e95f1b23-abaf-45ee-821d-b7ab251ab3bf"
-            >
-              <div class="ldh-card-top">
-                <span class="ldh-icon" aria-hidden="true">
-                  <span class="material-symbols-outlined" aria-hidden="true"
-                    ><svg viewBox="0 -960 960 960" fill="currentColor">
-                      <path
-                        d="M440-120v-60h340v-304q0-123.69-87.32-209.84Q605.36-780 480-780q-125.36 0-212.68 86.16Q180-607.69 180-484v244h-20q-33 0-56.5-23.5T80-320v-80q0-21 10.5-39.5T120-469l3-53q8-68 39.5-126t79-101q47.5-43 109-67T480-840q68 0 129 24t109 66.5Q766-707 797-649t40 126l3 52q19 9 29.5 27t10.5 38v92q0 20-10.5 38T840-249v69q0 24.75-17.62 42.37Q804.75-120 780-120H440ZM338.5-418.68q-8.5-8.67-8.5-21.5 0-12.82 8.68-21.32 8.67-8.5 21.5-8.5 12.82 0 21.32 8.68 8.5 8.67 8.5 21.5 0 12.82-8.68 21.32-8.67 8.5-21.5 8.5-12.82 0-21.32-8.68Zm240 0q-8.5-8.67-8.5-21.5 0-12.82 8.68-21.32 8.67-8.5 21.5-8.5 12.82 0 21.32 8.68 8.5 8.67 8.5 21.5 0 12.82-8.68 21.32-8.67 8.5-21.5 8.5-12.82 0-21.32-8.68ZM241-462q-7-106 64-182t177-76q87 0 151 57.5T711-519q-89-1-162.5-50T434.72-698Q419-618 367.5-555.5T241-462Z"
-                      /></svg
-                  ></span>
-                </span>
-                <span class="ldh-chip ldh-chip--report">Power BI</span>
-              </div>
-              <h2 class="ldh-card-title">Support Services</h2>
-              <p class="ldh-card-desc">
-                Service volume, response times, and support performance metrics.
-              </p>
-              <span class="ldh-card-action" aria-hidden="true">
-                View report
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M686-450H160v-60h526L438-758l42-42 320 320-320 320-42-42 248-248Z"
-                    /></svg
-                ></span>
-              </span>
-            </button>
-
-            <!-- 5. Power BI: Customer Feedback -->
-            <button
-              class="ldh-card"
-              type="button"
-              role="listitem"
-              aria-label="Customer Feedback — view Power BI report"
-              data-report-title="LEAF Customer Feedback Dashboard (v2)"
-              data-report-src="https://app.powerbigov.us/reportEmbed?reportId=962c98ea-2211-4403-aa35-076b453a47a1&appId=bc14ee51-602f-4786-842e-f6162f360b9b&autoAuth=true&ctid=e95f1b23-abaf-45ee-821d-b7ab251ab3bf"
-            >
-              <div class="ldh-card-top">
-                <span class="ldh-icon" aria-hidden="true">
-                  <span class="material-symbols-outlined" aria-hidden="true"
-                    ><svg viewBox="0 -960 960 960" fill="currentColor">
-                      <path
-                        d="M80-80v-740q0-24 18-42t42-18h680q24 0 42 18t18 42v520q0 24-18 42t-42 18H240L80-80Zm283-310 117-71 117 71-31-133 104-90-137-11-53-126-53 126-137 11 104 90-31 133Z"
-                      /></svg
-                  ></span>
-                </span>
-                <span class="ldh-chip ldh-chip--report">Power BI</span>
-              </div>
-              <h2 class="ldh-card-title">Customer Feedback</h2>
-              <p class="ldh-card-desc">
-                Satisfaction scores, sentiment, and feedback trends over time.
-              </p>
-              <span class="ldh-card-action" aria-hidden="true">
-                View report
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M686-450H160v-60h526L438-758l42-42 320 320-320 320-42-42 248-248Z"
-                    /></svg
-                ></span>
-              </span>
-            </button>
-
-            <!-- 6. Power BI: Community Ideas -->
-            <button
-              class="ldh-card"
-              type="button"
-              role="listitem"
-              aria-label="Community Ideas — view Power BI report"
-              data-report-title="LEAF Ideas"
-              data-report-src="https://app.powerbigov.us/reportEmbed?reportId=76d43845-3a03-49c0-a8b3-1c121be0c8e7&appId=bc14ee51-602f-4786-842e-f6162f360b9b&autoAuth=true&ctid=e95f1b23-abaf-45ee-821d-b7ab251ab3bf"
-            >
-              <div class="ldh-card-top">
-                <span class="ldh-icon" aria-hidden="true">
-                  <span class="material-symbols-outlined" aria-hidden="true"
-                    ><svg viewBox="0 -960 960 960" fill="currentColor">
-                      <path
-                        d="M480-80q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-200v-80h320v80H320Zm10-120q-69-41-109.5-110T180-580q0-125 87.5-212.5T480-880q125 0 212.5 87.5T780-580q0 81-40.5 150T630-320H330Z"
-                      /></svg
-                  ></span>
-                </span>
-                <span class="ldh-chip ldh-chip--report">Power BI</span>
-              </div>
-              <h2 class="ldh-card-title">Community Ideas</h2>
-              <p class="ldh-card-desc">
-                Submitted ideas from the LEAF Community, voting activity, and
-                status.
-              </p>
-              <span class="ldh-card-action" aria-hidden="true">
-                View report
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor">
-                    <path
-                      d="M686-450H160v-60h526L438-758l42-42 320 320-320 320-42-42 248-248Z"
-                    /></svg
-                ></span>
-              </span>
-            </button>
-          </div>
-          <!-- /.ldh-grid -->
-
-          <footer class="ldh-footer" role="contentinfo">
-            Internal use only
-          </footer>
+          <div class="ldh-footer">Internal use only</div>
         </div>
         <!-- /.ldh-page -->
       </main>
@@ -637,7 +574,7 @@
               class="ldh-modal__close"
               id="ldhModalClose"
               type="button"
-              aria-label="Close report"
+              aria-label="Close dialog"
             >
               <span class="material-symbols-outlined" aria-hidden="true"
                 ><svg viewBox="0 -960 960 960" fill="currentColor">
@@ -651,7 +588,8 @@
             <iframe
               class="ldh-modal__frame"
               id="ldhModalFrame"
-              title="Power BI report"
+              title="Report"
+              tabindex="0"
               allowfullscreen
             ></iframe>
           </div>
@@ -679,120 +617,665 @@
     <script>
       (() => {
         "use strict";
+        const init = () => {
+          const $id = (id) => document.getElementById(id);
 
-        const $id = (id) => document.getElementById(id);
+          // An earlier inline visit may not have been torn down; destroy() is idempotent.
+          window.LP_PAGES?.leadership?.destroy?.();
 
-        (() => {
-          const modal = $id("ldhModal");
-          const frame = $id("ldhModalFrame");
-          const titleEl = $id("ldhModalTitle");
-          const closeBtn = $id("ldhModalClose");
-          const backdrop = $id("ldhModalBackdrop");
-          if (!modal || !frame || !closeBtn) return;
-
-          let lastFocused = null;
-
-          /* Measures the fixed/sticky global header so the dialog clears it;
-           falls back to the CSS default (120px) if none is found. */
-          const measureHeaderOffset = () => {
-            let bottom = 0;
-            document
-              .querySelectorAll(
-                'header, nav, [class*="breadcrumb"], [class*="nav"]',
-              )
-              .forEach((el) => {
-                const cs = getComputedStyle(el);
-                if (cs.position === "fixed" || cs.position === "sticky") {
-                  const rect = el.getBoundingClientRect();
-                  if (rect.top <= 4 && rect.bottom > bottom)
-                    bottom = rect.bottom;
-                }
-              });
-            if (bottom > 0) {
-              modal.style.setProperty(
-                "--ldh-header-offset",
-                `${Math.ceil(bottom) + 16}px`,
-              );
-            }
+          /* Cards are records of form_b8d63 on the Service Requests Launchpad
+             LEAF site. Root-relative (same origin) so the user's LEAF session
+             cookie is sent. Trailing slash required. */
+          const CONFIG = {
+            apiBase: "/platform/service_requests_launchpad/",
+            formID: "form_b8d63",
+            timeoutMs: 15000,
+            refreshAfterMs: 5000,
           };
 
-          const openModal = (src, title) => {
-            lastFocused = document.activeElement;
-            measureHeaderOffset();
-            titleEl.textContent = title || "Report";
-            frame.src = src;
-            modal.classList.add("is-open");
-            modal.setAttribute("aria-hidden", "false");
-            document.body.style.overflow = "hidden";
-            closeBtn.focus();
+          // popup = "Open in Popup" (Yes/No), order = "Card Order" (number)
+          const INDICATORS = {
+            name: 492,
+            url: 493,
+            popup: 496,
+            order: 497,
+            description: 498,
+            chip: 499,
+            action: 500,
+            icon: 501,
           };
+          const FIELDS = Object.keys(INDICATORS);
 
-          const closeModal = () => {
-            modal.classList.remove("is-open");
-            modal.setAttribute("aria-hidden", "true");
-            document.body.style.overflow = "";
-            /* Clearing src stops the iframe so audio/video and resources free up */
-            frame.src = "";
-            lastFocused?.focus();
+          /* Material Symbols path data for viewBox "0 -960 960 960", for icons
+             built by JS. Static icons are inline SVG in the markup. */
+          const ICON_PATHS = {
+            hub: "M153-73q-33-33-33-81t33-81q33-33 81-33 14 0 24.5 2.5T280-258l85-106q-19-23-29-52.5t-5-61.5l-121-41q-15 25-39.5 39T114-466q-48 0-81-33T0-580q0-48 33-81t81-33q48 0 81 33t33 81v4l122 42q18-32 43.5-49t56.5-24v-129q-39-11-61.5-43T366-846q0-48 33-81t81-33q48 0 81 33t33 81q0 35-23 67t-61 43v129q31 7 57 24t44 49l121-42v-4q0-48 33-81t81-33q48 0 81 33t33 81q0 48-33 81t-81 33q-32 0-57-14t-39-39l-121 41q5 32-4.5 61.5T595-364l85 106q11-5 21.5-7.5T726-268q48 0 81 33t33 81q0 48-33 81t-81 33q-48 0-81-33t-33-81q0-20 5.5-36t15.5-31l-85-106q-32 17-68.5 17T411-327l-84 107q10 15 15.5 30.5T348-154q0 48-33 81t-81 33Z",
+            dashboard:
+              "M510-570v-270h330v270H510ZM120-450v-390h330v390H120Zm390 330v-390h330v390H510Zm-390 0v-270h330v270H120Z",
+            map: "m612-120-263-93-179 71q-17 9-33.5-1T120-173v-558q0-13 7.5-23t19.5-15l202-71 263 92 178-71q17-8 33.5 1.5T840-788v565q0 11-7.5 19T814-192l-202 72Zm-34-75v-505l-196-66v505l196 66Z",
+            support_agent:
+              "M440-120v-60h340v-304q0-123.69-87.32-209.84Q605.36-780 480-780q-125.36 0-212.68 86.16Q180-607.69 180-484v244h-20q-33 0-56.5-23.5T80-320v-80q0-21 10.5-39.5T120-469l3-53q8-68 39.5-126t79-101q47.5-43 109-67T480-840q68 0 129 24t109 66.5Q766-707 797-649t40 126l3 52q19 9 29.5 27t10.5 38v92q0 20-10.5 38T840-249v69q0 24.75-17.62 42.37Q804.75-120 780-120H440ZM338.5-418.68q-8.5-8.67-8.5-21.5 0-12.82 8.68-21.32 8.67-8.5 21.5-8.5 12.82 0 21.32 8.68 8.5 8.67 8.5 21.5 0 12.82-8.68 21.32-8.67 8.5-21.5 8.5-12.82 0-21.32-8.68Zm240 0q-8.5-8.67-8.5-21.5 0-12.82 8.68-21.32 8.67-8.5 21.5-8.5 12.82 0 21.32 8.68 8.5 8.67 8.5 21.5 0 12.82-8.68 21.32-8.67 8.5-21.5 8.5-12.82 0-21.32-8.68ZM241-462q-7-106 64-182t177-76q87 0 151 57.5T711-519q-89-1-162.5-50T434.72-698Q419-618 367.5-555.5T241-462Z",
+            reviews:
+              "M80-80v-740q0-24 18-42t42-18h680q24 0 42 18t18 42v520q0 24-18 42t-42 18H240L80-80Zm283-310 117-71 117 71-31-133 104-90-137-11-53-126-53 126-137 11 104 90-31 133Z",
+            lightbulb:
+              "M480-80q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-200v-80h320v80H320Zm10-120q-69-41-109.5-110T180-580q0-125 87.5-212.5T480-880q125 0 212.5 87.5T780-580q0 81-40.5 150T630-320H330Z",
+            link: "M440-280H280q-83 0-141.5-58.5T80-480q0-83 58.5-141.5T280-680h160v80H280q-50 0-85 35t-35 85q0 50 35 85t85 35h160v80ZM320-440v-80h320v80H320Zm200 160v-80h160q50 0 85-35t35-85q0-50-35-85t-85-35H520v-80h160q83 0 141.5 58.5T880-480q0 83-58.5 141.5T680-280H520Z",
+            open_in_new:
+              "M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z",
+            arrow_forward:
+              "M686-450H160v-60h526L438-758l42-42 320 320-320 320-42-42 248-248Z",
+            edit_note:
+              "M160-400v-80h280v80H160Zm0-160v-80h440v80H160Zm0-160v-80h440v80H160Zm360 560v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q8 9 12.5 20t4.5 22q0 11-4 22.5T863-380L643-160H520Zm263-224 37-39-37-37-38 38 38 38Z",
           };
+          // Card icons an editor may name in the form; anything else shows "link"
+          const CARD_ICONS = new Set([
+            "hub",
+            "dashboard",
+            "map",
+            "support_agent",
+            "reviews",
+            "lightbulb",
+          ]);
 
+          const SVG_NS = "http://www.w3.org/2000/svg";
+          const fillIcon = (el, name) => {
+            const d = ICON_PATHS[name];
+            if (!d) return;
+            const svg = document.createElementNS(SVG_NS, "svg");
+            svg.setAttribute("viewBox", "0 -960 960 960");
+            svg.setAttribute("fill", "currentColor");
+            svg.setAttribute("focusable", "false");
+            const path = document.createElementNS(SVG_NS, "path");
+            path.setAttribute("d", d);
+            svg.appendChild(path);
+            el.replaceChildren(svg);
+          };
+          const makeIcon = (name) => {
+            const span = document.createElement("span");
+            span.className = "material-symbols-outlined";
+            span.setAttribute("aria-hidden", "true");
+            fillIcon(span, name);
+            return span;
+          };
           document
-            .querySelectorAll(".ldh-card[data-report-src]")
-            .forEach((card) => {
-              card.addEventListener("click", () => {
-                openModal(
-                  card.getAttribute("data-report-src"),
-                  card.getAttribute("data-report-title"),
+            .querySelectorAll(".ldh-page [data-icon]")
+            .forEach((el) => fillIcon(el, el.dataset.icon));
+
+          function getS1Value(record, indicatorId) {
+            const value = record?.s1?.["id" + indicatorId];
+            if (value === null || value === undefined) return "";
+            return typeof value === "string" ? value.trim() : value;
+          }
+
+          // LEAF returns text fields HTML-escaped (e.g. "&amp;" in URLs).
+          // A <textarea> only parses the string as text, never as markup.
+          function decodeHtmlEntities(text) {
+            if (!text) return "";
+            const textarea = document.createElement("textarea");
+            textarea.innerHTML = String(text);
+            return textarea.value;
+          }
+
+          const readField = (record, indicatorId) =>
+            decodeHtmlEntities(getS1Value(record, indicatorId)).trim();
+
+          const isYes = (value) =>
+            ["yes", "true", "1"].includes(value.toLowerCase());
+
+          // Any finite number; "" and non-numeric (including "1,000") are unset.
+          const parseOrder = (value) => {
+            if (value === "") return null;
+            const n = Number(value);
+            return Number.isFinite(n) ? n : null;
+          };
+
+          const iconName = (value) => {
+            const key = value.toLowerCase().replace(/\s+/g, "_");
+            return CARD_ICONS.has(key) ? key : "link";
+          };
+
+          // Allows same-origin root-relative paths and https: URLs only.
+          // "//host" and "/\host" start with "/" but resolve off-origin.
+          function safeUrl(raw) {
+            if (!raw) return null;
+            try {
+              if (raw.startsWith("/")) {
+                const u = new URL(raw, window.location.origin);
+                return u.origin === window.location.origin
+                  ? u.pathname + u.search + u.hash
+                  : null;
+              }
+              const u = new URL(raw);
+              return u.protocol === "https:" ? u.href : null;
+            } catch {
+              return null;
+            }
+          }
+
+          /* Valid records sorted by Card Order (unset last), then record ID. */
+          function buildCards(data) {
+            const cards = [];
+            Object.keys(data).forEach((recordID) => {
+              const fields = {};
+              FIELDS.forEach(
+                (f) => (fields[f] = readField(data[recordID], INDICATORS[f])),
+              );
+              if (!fields.name) {
+                console.warn(
+                  `[LeadershipHub] Record ${recordID}: skipped — Card Name is blank.`,
                 );
+                return;
+              }
+              const href = safeUrl(fields.url);
+              if (!href) {
+                console.warn(
+                  `[LeadershipHub] Record ${recordID}: skipped — URL must start with "/" or "https:" (got "${fields.url}").`,
+                );
+                return;
+              }
+              const order = parseOrder(fields.order);
+              cards.push({
+                id: Number(recordID),
+                fields,
+                href,
+                popup: isYes(fields.popup),
+                order: order === null ? Infinity : order,
               });
             });
-
-          closeBtn.addEventListener("click", closeModal);
-          backdrop.addEventListener("click", closeModal);
-
-          document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape" && modal.classList.contains("is-open"))
-              closeModal();
-          });
-
-          /* Focus trap inside modal */
-          modal.addEventListener("keydown", (e) => {
-            if (e.key !== "Tab" || !modal.classList.contains("is-open")) return;
-            const focusable = Array.from(
-              modal.querySelectorAll(
-                'button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-              ),
+            return cards.sort((a, b) =>
+              a.order !== b.order ? (a.order < b.order ? -1 : 1) : a.id - b.id,
             );
-            if (!focusable.length) return;
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            if (e.shiftKey && document.activeElement === first) {
-              e.preventDefault();
-              last.focus();
-            } else if (!e.shiftKey && document.activeElement === last) {
-              e.preventDefault();
-              first.focus();
-            }
-          });
-        })();
+          }
 
-        (() => {
-          const btn = $id("lpJump");
-          if (!btn) return;
-          const update = () => {
-            const vis =
-              (window.pageYOffset || document.documentElement.scrollTop) > 120;
-            btn.classList.toggle("vis", vis);
-            btn.setAttribute("aria-hidden", String(!vis));
-            btn.tabIndex = vis ? 0 : -1;
+          // Normalized view of the rendered cards, used to skip no-op refreshes.
+          const snapshotOf = (cards) =>
+            JSON.stringify(
+              cards.map((c) => [c.id, ...FIELDS.map((f) => c.fields[f])]),
+            );
+
+          function makeCard(card) {
+            const { fields } = card;
+            const idBase = "ldh-card-" + card.id;
+            let el;
+            if (card.popup) {
+              el = document.createElement("button");
+              el.type = "button";
+              el.setAttribute("aria-haspopup", "dialog");
+              el.dataset.reportTitle = fields.name;
+              el.dataset.reportSrc = card.href;
+            } else {
+              el = document.createElement("a");
+              el.href = card.href;
+              el.target = "_blank";
+              el.rel = "noopener noreferrer";
+              // Without this, leaf_header.js's link interceptor hash-routes any
+              // anchor whose derived key matches a route (e.g. a URL ending in
+              // /admin), even with target="_blank".
+              el.setAttribute("data-nav-external", "");
+            }
+            el.className = "ldh-card";
+            el.dataset.focusKey = "card:" + card.id;
+
+            // <button> allows phrasing content only, so popup cards use spans
+            // for the block parts (CSS makes span and div/p/h2 render alike).
+            const top = document.createElement(card.popup ? "span" : "div");
+            top.className = "ldh-card-top";
+            const icon = document.createElement("span");
+            icon.className = "ldh-icon";
+            icon.setAttribute("aria-hidden", "true");
+            icon.appendChild(makeIcon(iconName(fields.icon)));
+            top.appendChild(icon);
+
+            // Name = title + hint; chip and description are read as the description.
+            const describedBy = [];
+            if (fields.chip) {
+              const chip = document.createElement("span");
+              chip.className =
+                "ldh-chip " +
+                (card.popup ? "ldh-chip--report" : "ldh-chip--live");
+              chip.id = idBase + "-chip";
+              chip.textContent = fields.chip;
+              top.appendChild(chip);
+              describedBy.push(chip.id);
+            }
+
+            const title = document.createElement(card.popup ? "span" : "h2");
+            title.className = "ldh-card-title";
+            title.id = idBase + "-title";
+            title.textContent = fields.name;
+            el.append(top, title);
+
+            if (fields.description) {
+              const desc = document.createElement(card.popup ? "span" : "p");
+              desc.className = "ldh-card-desc";
+              desc.id = idBase + "-desc";
+              desc.textContent = fields.description;
+              el.appendChild(desc);
+              describedBy.push(desc.id);
+            }
+
+            const action = document.createElement("span");
+            action.className = "ldh-card-action";
+            action.setAttribute("aria-hidden", "true");
+            const actionLabel = document.createElement("span");
+            actionLabel.textContent =
+              fields.action || (card.popup ? "View report" : "Open");
+            action.append(
+              actionLabel,
+              makeIcon(card.popup ? "arrow_forward" : "open_in_new"),
+            );
+
+            const hint = document.createElement("span");
+            hint.className = "sr-only";
+            hint.id = idBase + "-hint";
+            hint.textContent = card.popup
+              ? " (opens a report in a popup)"
+              : " (opens in a new tab)";
+            el.append(action, hint);
+
+            el.setAttribute("aria-labelledby", `${title.id} ${hint.id}`);
+            if (describedBy.length)
+              el.setAttribute("aria-describedby", describedBy.join(" "));
+
+            const li = document.createElement("li");
+            li.appendChild(el);
+            return li;
+          }
+
+          const grid = $id("ldhGrid");
+          const status = $id("ldhStatus");
+          const errorBox = $id("ldhError");
+          const refreshMsg = $id("ldhRefreshMsg");
+          if (!grid || !status || !errorBox || !refreshMsg) return;
+
+          const findByFocusKey = (key) =>
+            key
+              ? Array.from(grid.querySelectorAll("[data-focus-key]")).find(
+                  (el) => el.dataset.focusKey === key,
+                )
+              : null;
+          const firstCardOrStatus = () =>
+            grid.querySelector(".ldh-card") || status;
+
+          /* Rebuilds the grid. If a card had focus, it moves to the same card
+             (by record ID), else the first card, else the status message —
+             never <body>. */
+          function render(cards) {
+            const focused = document.activeElement;
+            const focusKey =
+              focused && grid.contains(focused)
+                ? focused.dataset.focusKey || ""
+                : null;
+            grid.replaceChildren(...cards.map((c) => makeCard(c)));
+            status.textContent = cards.length ? "" : "No cards found.";
+            if (focusKey === null) return;
+            (findByFocusKey(focusKey) || firstCardOrStatus()).focus({
+              preventScroll: true,
+            });
+          }
+
+          /* ── Load cards from form_b8d63 ── */
+          const showError = () => {
+            const msg = document.createElement("p");
+            msg.textContent =
+              "Leadership cards couldn't be loaded. Check your connection or LEAF access, then try again.";
+            const retry = document.createElement("button");
+            retry.type = "button";
+            retry.className = "ldh-retry";
+            retry.textContent = "Retry";
+            retry.addEventListener("click", () => {
+              loadCards("retry");
+              // Retry is removed on reload; keep focus on the status message
+              status.focus();
+            });
+            errorBox.replaceChildren(msg, retry);
           };
-          btn.addEventListener("click", () =>
-            window.scrollTo({ top: 0, behavior: "smooth" }),
+
+          /* mode: "initial" | "retry" (Retry button) | "auto-retry" (tab return
+             after a failed first load; error UI stays until it succeeds) |
+             "refresh" (tab return after a successful load).
+             loadSeq drops responses from superseded requests; starting a new
+             request aborts the previous one so they never overlap. */
+          let loadSeq = 0;
+          let inFlight = false;
+          let currentCtrl = null;
+          let lastAttempt = 0;
+          let lastSuccess = 0;
+          let lastSnapshot = null;
+          async function loadCards(mode = "initial") {
+            currentCtrl?.abort();
+            const seq = ++loadSeq;
+            const ctrl = new AbortController();
+            currentCtrl = ctrl;
+            inFlight = true;
+            lastAttempt = Date.now();
+            const isRefresh = mode === "refresh";
+            const isAuto = mode === "auto-retry";
+            if (!isRefresh) grid.setAttribute("aria-busy", "true");
+            if (!isRefresh && !isAuto) {
+              errorBox.replaceChildren();
+              status.textContent = "Loading cards…";
+            }
+
+            const timer = setTimeout(() => ctrl.abort(), CONFIG.timeoutMs);
+            try {
+              // Plain fetch + encodeURIComponent, same as lp_team.html
+              const q = {
+                terms: [
+                  {
+                    id: "categoryID",
+                    operator: "=",
+                    match: CONFIG.formID,
+                    gate: "AND",
+                  },
+                  { id: "deleted", operator: "=", match: 0, gate: "AND" },
+                ],
+                joins: [],
+                sort: {},
+                getData: Object.values(INDICATORS),
+              };
+              const r = await fetch(
+                `${CONFIG.apiBase}api/form/query?q=${encodeURIComponent(JSON.stringify(q))}`,
+                {
+                  credentials: "include",
+                  cache: "no-store",
+                  signal: ctrl.signal,
+                },
+              );
+              if (!r.ok) throw new Error("Query failed HTTP " + r.status);
+              const data = await r.json();
+              if (!data || typeof data !== "object")
+                throw new Error("Unexpected query response");
+              if (seq !== loadSeq) return;
+
+              // Focus on Retry/status is about to lose its target
+              const active = document.activeElement;
+              const focusOnError =
+                active === status || errorBox.contains(active);
+              lastSuccess = Date.now();
+              refreshMsg.textContent = "";
+              const cards = buildCards(data);
+              const snapshot = snapshotOf(cards);
+              if (isRefresh && snapshot === lastSnapshot) return;
+              lastSnapshot = snapshot;
+
+              render(cards);
+              if (mode === "retry" || isAuto) {
+                errorBox.replaceChildren();
+                if (focusOnError)
+                  firstCardOrStatus().focus({ preventScroll: true });
+              }
+            } catch (err) {
+              if (seq !== loadSeq) return;
+              console.error("[LeadershipHub] Failed to load cards:", err);
+              if (isRefresh) {
+                refreshMsg.textContent =
+                  "Cards couldn't be refreshed. Showing the last loaded version.";
+              } else if (isAuto) {
+                // Keep the existing error + Retry (and any focus on it) as-is
+              } else {
+                status.textContent = "";
+                showError();
+              }
+            } finally {
+              clearTimeout(timer);
+              if (seq === loadSeq) {
+                inFlight = false;
+                currentCtrl = null;
+                grid.setAttribute("aria-busy", "false");
+              }
+            }
+          }
+
+          // Document/window listeners from this visit, removed by destroy()
+          const pageCtl = new AbortController();
+          const listen = { signal: pageCtl.signal };
+
+          /* ── Report modal (popup cards) ──
+             Inline under the Launchpad router (#leadership) this page's markup
+             lives inside the shell's #lpSwapHost, under #lp-root, which can be
+             inert — a modal left there renders but ignores all input. Keep only
+             this visit's copy (the one not yet on <body>; standalone there is
+             just one) and move it to <body>. */
+          const modal = (() => {
+            const copies = Array.from(document.querySelectorAll("#ldhModal"));
+            const current =
+              copies.find((m) => m.parentElement !== document.body) ||
+              copies[copies.length - 1];
+            copies.forEach((m) => m !== current && m.remove());
+            if (current && current.parentElement !== document.body)
+              document.body.appendChild(current);
+            return current || null;
+          })();
+          // Scoped to this modal — ids may be duplicated while stale copies exist
+          const frame = modal?.querySelector("#ldhModalFrame");
+          const titleEl = modal?.querySelector("#ldhModalTitle");
+          const closeBtn = modal?.querySelector("#ldhModalClose");
+          const backdrop = modal?.querySelector("#ldhModalBackdrop");
+          const modalReady = !!(frame && titleEl && closeBtn && backdrop);
+          const isModalOpen = () =>
+            modalReady && modal.classList.contains("is-open");
+
+          let savedOverflow = null;
+          // Hides the modal and restores body scroll; shared by close and destroy()
+          const releaseModal = () => {
+            modal.classList.remove("is-open");
+            modal.setAttribute("aria-hidden", "true");
+            if (savedOverflow !== null) {
+              document.body.style.overflow = savedOverflow;
+              savedOverflow = null;
+            }
+            // Clearing src stops the iframe so audio/video and resources free up
+            frame.src = "";
+          };
+
+          if (modalReady) {
+            let lastFocused = null;
+            let lastFocusKey = null;
+
+            /* Shared LEAF pattern (also in lp_team.html, leaf_header.js,
+               calendar.js, project_v19/v20.js): strips the embedded page's own
+               header/footer chrome once a same-origin iframe has loaded, and
+               clears the top gap that chrome would otherwise leave behind. */
+            const stripLeafChrome = (f) => {
+              try {
+                const doc =
+                  f.contentDocument ||
+                  (f.contentWindow && f.contentWindow.document);
+                if (!doc || !doc.head) return;
+                if (doc.getElementById("leaf-chrome-strip")) return;
+
+                const style = doc.createElement("style");
+                style.id = "leaf-chrome-strip";
+                style.textContent = [
+                  "#header, #siteHeader, .siteHeader, #leafHeader, .leaf-header,",
+                  "#topNav, .topNav, #mainNav, .site-header, #site-header,",
+                  "header.main, nav.main-nav, #headerWrap, .headerWrap,",
+                  "#globalHeader, .globalHeader, footer#footer, #nav-skip-link {",
+                  "  display: none !important;",
+                  "}",
+                  "body, main#body, #content, #bodyarea {",
+                  "  margin-top: 0 !important;",
+                  "  padding-top: 0 !important;",
+                  "}",
+                ].join("\n");
+                doc.head.appendChild(style);
+
+                const headerEl = doc.getElementById("header");
+                if (headerEl) headerEl.style.display = "none";
+              } catch (e) {
+                // Cross-origin (e.g. Power BI) — leave the frame as-is.
+              }
+            };
+            frame.addEventListener("load", () => stripLeafChrome(frame));
+
+            /* Measures the fixed/sticky global header so the dialog clears it.
+               Anything taller than 40% of the viewport (e.g. an open mobile
+               drawer matching [class*="nav"]) is ignored and the 120px CSS
+               default is used instead. */
+            const measureHeaderOffset = () => {
+              let bottom = 0;
+              document
+                .querySelectorAll(
+                  'header, nav, [class*="breadcrumb"], [class*="nav"]',
+                )
+                .forEach((el) => {
+                  const cs = getComputedStyle(el);
+                  if (cs.position === "fixed" || cs.position === "sticky") {
+                    const rect = el.getBoundingClientRect();
+                    // Only count bars anchored near the top of the viewport
+                    if (rect.top <= 4 && rect.bottom > bottom)
+                      bottom = rect.bottom;
+                  }
+                });
+              if (bottom > 0 && bottom <= window.innerHeight * 0.4) {
+                modal.style.setProperty(
+                  "--ldh-header-offset",
+                  `${Math.ceil(bottom) + 16}px`,
+                );
+              } else {
+                modal.style.removeProperty("--ldh-header-offset");
+              }
+            };
+
+            const openModal = (trigger) => {
+              lastFocused = trigger;
+              lastFocusKey = trigger.dataset.focusKey || null;
+              measureHeaderOffset();
+              const reportTitle = trigger.dataset.reportTitle || "Report";
+              titleEl.textContent = reportTitle;
+              frame.setAttribute("title", reportTitle);
+              frame.src = trigger.dataset.reportSrc;
+              // Background is not made inert: aria-modal + the focus trap
+              // cover it, and "#lp-root" is ambiguous when loaded inline.
+              modal.inert = false;
+              modal.removeAttribute("aria-hidden");
+              modal.classList.add("is-open");
+              if (savedOverflow === null)
+                savedOverflow = document.body.style.overflow;
+              document.body.style.overflow = "hidden";
+              closeBtn.focus();
+            };
+            const closeModal = () => {
+              releaseModal();
+              // The trigger may have been replaced by a refresh while open
+              const target = lastFocused?.isConnected
+                ? lastFocused
+                : findByFocusKey(lastFocusKey) || firstCardOrStatus();
+              target.focus();
+            };
+
+            // Delegated: cards are rendered (and re-rendered) after each fetch
+            grid.addEventListener("click", (e) => {
+              const trigger = e.target.closest(".ldh-card[data-report-src]");
+              if (trigger) openModal(trigger);
+            });
+            closeBtn.addEventListener("click", closeModal);
+            backdrop.addEventListener("click", closeModal);
+            document.addEventListener(
+              "keydown",
+              (e) => {
+                if (e.key === "Escape" && isModalOpen()) closeModal();
+              },
+              listen,
+            );
+            /* Focus trap: close button <-> iframe. Keys pressed inside a
+               cross-origin iframe never reach this page, so Tab out of the
+               report is caught by focusin instead and sent back to Close. */
+            modal.addEventListener("keydown", (e) => {
+              if (e.key !== "Tab" || !isModalOpen()) return;
+              if (e.shiftKey && document.activeElement === closeBtn) {
+                e.preventDefault();
+                frame.focus();
+              } else if (!e.shiftKey && document.activeElement === frame) {
+                e.preventDefault();
+                closeBtn.focus();
+              }
+            });
+            document.addEventListener(
+              "focusin",
+              (e) => {
+                if (isModalOpen() && !modal.contains(e.target))
+                  closeBtn.focus();
+              },
+              listen,
+            );
+          }
+
+          // Router teardown (leaf_header.js calls LP_PAGES.leadership.destroy()
+          // before replacing this route): stop loads, drop document listeners,
+          // and close and remove the body-level modal.
+          let destroyed = false;
+          window.LP_PAGES = window.LP_PAGES || {};
+          window.LP_PAGES.leadership = {
+            ...window.LP_PAGES.leadership,
+            destroy() {
+              if (destroyed) return;
+              destroyed = true;
+              loadSeq++;
+              currentCtrl?.abort();
+              pageCtl.abort();
+              if (isModalOpen()) releaseModal();
+              modal?.remove();
+            },
+          };
+
+          /* ── Refresh (or retry a failed first load) on tab return ── */
+          document.addEventListener(
+            "visibilitychange",
+            () => {
+              if (document.visibilityState !== "visible" || inFlight) return;
+              if (isModalOpen()) return;
+              if (lastSuccess) {
+                if (Date.now() - lastSuccess >= CONFIG.refreshAfterMs)
+                  loadCards("refresh");
+              } else if (
+                errorBox.childElementCount &&
+                Date.now() - lastAttempt >= CONFIG.refreshAfterMs
+              ) {
+                loadCards("auto-retry");
+              }
+            },
+            listen,
           );
-          window.addEventListener("scroll", update, { passive: true });
-          window.addEventListener("resize", update);
-          update();
-        })();
+
+          /* ── Jump to top ── */
+          (() => {
+            const btn = $id("lpJump");
+            if (!btn) return;
+            const reduceMotion = window.matchMedia(
+              "(prefers-reduced-motion: reduce)",
+            );
+            const update = () => {
+              const vis =
+                (window.pageYOffset || document.documentElement.scrollTop) >
+                120;
+              btn.classList.toggle("vis", vis);
+              btn.setAttribute("aria-hidden", String(!vis));
+              btn.tabIndex = vis ? 0 : -1;
+            };
+            btn.addEventListener("click", () =>
+              window.scrollTo({
+                top: 0,
+                behavior: reduceMotion.matches ? "auto" : "smooth",
+              }),
+            );
+            window.addEventListener("scroll", update, {
+              passive: true,
+              signal: pageCtl.signal,
+            });
+            window.addEventListener("resize", update, listen);
+            update();
+          })();
+
+          loadCards();
+        };
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", init, { once: true });
+        } else {
+          init();
+        }
       })();
     </script>
     <!--{else}-->
@@ -812,7 +1295,7 @@
             The Leadership Hub is available to LEAF Sysadmins only. Contact your
             LEAF administrator if you believe you should have access.
           </p>
-          <a href="#">Return to Launchpad</a>
+          <a href="/launchpad">Return to Launchpad</a>
         </div>
       </main>
     </div>
