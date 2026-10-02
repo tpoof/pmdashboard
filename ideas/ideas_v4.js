@@ -137,9 +137,14 @@ function isAcceptedAttachmentFile(file) {
   return ACCEPTED_ATTACHMENT_EXTENSIONS.has(ext);
 }
 
+// Votes live on their own LEAF site so vote records don't share the
+// ideas site's record numbering. Absolute, since fetch() would resolve a
+// relative path against the ideas site.
+const VOTES_API_BASE = `${window.location.origin}/platform/votes/api/`;
+
 const FORM_IDS = {
   idea: "form_ae642",
-  votes: "form_57e89",
+  votes: "form_ce926",
 };
 
 const FORM_KEYS = {
@@ -164,8 +169,8 @@ const IDEA_FIELDS = {
 };
 
 const VOTE_FIELDS = {
-  idea: 2,
-  user: 3,
+  idea: 7,
+  user: 8,
 };
 
 const IDEA_INDICATORS = {
@@ -233,6 +238,13 @@ const PUBLIC_VISIBLE_STATUS_KEYS = new Set([
   "backlog",
   "in_development",
   "need_more_info",
+  "unlikely",
+]);
+
+// New votes are blocked on these; existing votes can still be removed.
+const VOTING_CLOSED_STATUS_KEYS = new Set([
+  "duplicate",
+  "already_exists",
   "unlikely",
 ]);
 
@@ -450,6 +462,8 @@ let myIdeasCache = [];
 let lastFocusedElement = null;
 let lastRecordFocusedElement = null;
 let resolvedVoterEmail = "";
+// True when the /platform/votes read failed. Voting is paused until reload.
+let votesLoadFailed = false;
 
 let editingDraftRecordID = null;
 let editingDraftAttachmentLabel = "";
@@ -1220,8 +1234,17 @@ function extractAttachmentLabel(html) {
   return "";
 }
 
+function isVotingClosed(recordID) {
+  const key = String(recordID);
+  const vm =
+    ideasVMById[key] || myIdeasCache.find((i) => String(i.recordID) === key);
+  const status = vm ? vm.status : resolveDisplayStatus(ideasById[key]);
+  return VOTING_CLOSED_STATUS_KEYS.has(canonicalStatusKey(status));
+}
+
 // Single source of truth for a vote button's visible state, reused by
-// every render path (table rows, detail modal, voted modal).
+// every render path (table rows, detail modal, voted modal). An existing
+// vote wins over "closed" so the voter can still remove it.
 function voteButtonStateHtml(recordID, isVoted, isOwn, hasVoteRecordId) {
   const unavailable = isVoted && !isOwn && !hasVoteRecordId;
   if (isOwn) {
@@ -1257,6 +1280,30 @@ function voteButtonStateHtml(recordID, isVoted, isOwn, hasVoteRecordId) {
       hoverLabel: "Unvote",
     };
   }
+  // aria-disabled, not disabled: the button stays focusable and keeps its
+  // tooltip, and focus isn't dropped when an unvote flips it to closed.
+  if (isVotingClosed(recordID)) {
+    return {
+      classes: "is-closed",
+      disabled: false,
+      ariaDisabled: true,
+      ariaLabel: `Voting is closed for idea ${recordID}`,
+      title: "Voting is closed for this idea",
+      icon: "thumb_up",
+      label: "Closed",
+    };
+  }
+  if (votesLoadFailed) {
+    return {
+      classes: "is-paused",
+      disabled: true,
+      ariaLabel:
+        "Voting is unavailable right now. Refresh the page to try again.",
+      title: "Voting is unavailable right now. Refresh to try again.",
+      icon: "thumb_up",
+      label: "",
+    };
+  }
   return {
     classes: "",
     disabled: false,
@@ -1276,6 +1323,66 @@ function voteButtonInnerHtml(state) {
     return `<span class="ip-upvote__rest" aria-hidden="true">${iconSvg(state.icon)}${state.label ? ` ${state.label}` : ""}</span><span class="ip-upvote__hover" aria-hidden="true">${iconSvg(state.hoverIcon)} ${state.hoverLabel}</span>`;
   }
   return `${iconSvg(state.icon)}${state.label ? ` ${state.label}` : ""}`;
+}
+
+function voteButtonDisabledAttrs(state) {
+  if (state.disabled) return 'disabled aria-disabled="true"';
+  return `aria-disabled="${state.ariaDisabled ? "true" : "false"}"`;
+}
+
+// Rewrites a vote button in place, so focus stays on it.
+function applyVoteButtonState(btn, state) {
+  btn.className = `ip-upvote${state.classes ? " " + state.classes : ""}`;
+  btn.disabled = state.disabled;
+  btn.setAttribute(
+    "aria-disabled",
+    state.disabled || state.ariaDisabled ? "true" : "false",
+  );
+  btn.setAttribute("aria-label", state.ariaLabel);
+  btn.setAttribute("title", state.title);
+  btn.innerHTML = voteButtonInnerHtml(state);
+}
+
+const VOTING_CLOSED_TOAST =
+  "Voting is closed for this idea because of its current status.";
+
+// Click guard for aria-disabled closed buttons. A closed idea the user
+// already voted on renders as is-voted, so unvote is never blocked.
+function isClosedVoteButton(btn) {
+  if (!btn.classList.contains("is-closed")) return false;
+  showToast(VOTING_CLOSED_TOAST, true);
+  return true;
+}
+
+// Re-rendering a table replaces the focused vote button. Put focus back on
+// the same idea's button, or on the table/dialog if the row is gone.
+function captureVoteFocus() {
+  const btn = document.activeElement;
+  if (!btn?.matches?.(".ip-upvote[data-record-id]")) return null;
+  return {
+    id: btn.getAttribute("data-record-id"),
+    table: btn.closest("table"),
+    region: btn.closest('[role="dialog"], [role="tabpanel"]'),
+  };
+}
+
+function restoreVoteFocus(ctx) {
+  if (!ctx) return;
+  const active = document.activeElement;
+  if (active && active !== document.body && active.isConnected) return;
+  const sameBtn = ctx.table?.querySelector(
+    `.ip-upvote[data-record-id="${CSS.escape(ctx.id)}"]`,
+  );
+  const target =
+    sameBtn ||
+    (ctx.table?.isConnected && ctx.table.getClientRects().length
+      ? ctx.table
+      : ctx.region);
+  if (!target) return;
+  if (!sameBtn && !target.hasAttribute("tabindex")) {
+    target.setAttribute("tabindex", "-1");
+  }
+  target.focus();
 }
 
 function buildDetailSkeleton(
@@ -1372,7 +1479,7 @@ function buildDetailSkeleton(
         data-detail-vote="${escapeHtml(recordID)}"
         aria-label="${escapeHtml(voteState.ariaLabel)}"
         title="${escapeHtml(voteState.title)}"
-        ${voteState.disabled ? "disabled" : ""}>
+        ${voteButtonDisabledAttrs(voteState)}>
         ${voteButtonInnerHtml(voteState)}
       </button>
       <button type="button"
@@ -1474,6 +1581,7 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
     ?.addEventListener("click", async (e) => {
       const btn = e.currentTarget;
       if (btn.disabled || votingInProgress) return;
+      if (isClosedVoteButton(btn)) return;
       if (userVotes[ridStr] === true) {
         await unvoteIdea(ridStr);
       } else {
@@ -1487,11 +1595,7 @@ async function openIdeaDetailModal(recordID, title, openTabUrl) {
         isOwn,
         Boolean(myVoteRecordIdByIdea[ridStr]),
       );
-      btn.className = `ip-upvote${state.classes ? " " + state.classes : ""}`;
-      btn.disabled = state.disabled;
-      btn.setAttribute("aria-label", state.ariaLabel);
-      btn.setAttribute("title", state.title);
-      btn.innerHTML = voteButtonInnerHtml(state);
+      applyVoteButtonState(btn, state);
       const votesText = body.querySelector("#ip-detail-votes-text");
       if (votesText) {
         votesText.innerHTML = `${iconSvg("thumb_up")}${newCount} ${newCount === 1 ? "vote" : "votes"}`;
@@ -2082,9 +2186,8 @@ function buildIdeaRow(idea) {
     ? ""
     : `        <button class="ip-upvote${voteState.classes ? " " + voteState.classes : ""}"
           data-record-id="${recordID}"
-          ${voteState.disabled ? "disabled" : ""}
+          ${voteButtonDisabledAttrs(voteState)}
           aria-label="${escapeHtml(voteState.ariaLabel)}"
-          aria-disabled="${voteState.disabled}"
           title="${escapeHtml(voteState.title)}">
           ${voteButtonInnerHtml(voteState)}
         </button>
@@ -2314,7 +2417,9 @@ function setVoteButtonsDisabled(isDisabled) {
   root.querySelectorAll(".ip-upvote").forEach((btn) => {
     if (
       btn.classList.contains("is-own") ||
-      btn.classList.contains("is-unavailable")
+      btn.classList.contains("is-unavailable") ||
+      btn.classList.contains("is-closed") ||
+      btn.classList.contains("is-paused")
     ) {
       return;
     }
@@ -2338,12 +2443,7 @@ function setVotedState(recordID, isVoted, opts = {}) {
     .forEach((btn) => {
       const isOwn = btn.classList.contains("is-own");
       const state = voteButtonStateHtml(key, isVoted, isOwn, hasVoteRecordId);
-      btn.className = `ip-upvote${state.classes ? " " + state.classes : ""}`;
-      btn.disabled = state.disabled;
-      btn.setAttribute("aria-disabled", state.disabled ? "true" : "false");
-      btn.setAttribute("aria-label", state.ariaLabel);
-      btn.setAttribute("title", state.title);
-      btn.innerHTML = voteButtonInnerHtml(state);
+      applyVoteButtonState(btn, state);
     });
 }
 
@@ -2424,8 +2524,22 @@ async function IdeaVotes(recordID) {
     showToast("You can't vote on your own idea.", true);
     return;
   }
+  // Backstop for a stale button. Client-side only: the votes API itself
+  // still accepts a vote on a closed idea.
+  if (isVotingClosed(key)) {
+    showToast(VOTING_CLOSED_TOAST, true);
+    return;
+  }
+  if (votesLoadFailed) {
+    showToast(
+      "Voting is unavailable right now. Refresh the page to try again.",
+      true,
+    );
+    return;
+  }
 
   votingInProgress = true;
+  const focusCtx = captureVoteFocus();
   userVotes[key] = true;
   setVotedState(key, true);
 
@@ -2440,7 +2554,7 @@ async function IdeaVotes(recordID) {
   };
 
   try {
-    const response = await apiPostJson("./api/?a=form/new", payload);
+    const response = await apiPostJson(`${VOTES_API_BASE}?a=form/new`, payload);
     const newID = parseFloat(response);
 
     if (!isNaN(newID) && isFinite(newID) && newID !== 0) {
@@ -2464,7 +2578,8 @@ async function IdeaVotes(recordID) {
       throw new Error(`Unexpected response: ${response}`);
     }
   } catch (err) {
-    console.error("[IdeaVotes] error:", err);
+    // A bad CSRF token or missing permission on /platform/votes lands here.
+    console.error("[IdeaVotes] /platform/votes create failed:", err);
     showToast("Error processing vote. Please try again.", true);
     userVotes[key] = false;
     delete myVoteRecordIdByIdea[key];
@@ -2477,6 +2592,7 @@ async function IdeaVotes(recordID) {
     setVotedState(key, false);
   } finally {
     votingInProgress = false;
+    restoreVoteFocus(focusCtx);
   }
 }
 
@@ -2495,7 +2611,7 @@ async function deleteVoteRecord(voteRecordID) {
 
   try {
     const res = await fetch(
-      `./api/form/${encodeURIComponent(voteRecordID)}/cancel`,
+      `${VOTES_API_BASE}form/${encodeURIComponent(voteRecordID)}/cancel`,
       {
         method: "POST",
         credentials: "same-origin",
@@ -2505,9 +2621,13 @@ async function deleteVoteRecord(voteRecordID) {
         body: body.toString(),
       },
     );
-    if (!res.ok) return false;
     const text = (await res.text()).trim();
-    return text === "1" || text === '"1"';
+    if (res.ok && (text === "1" || text === '"1"')) return true;
+    console.error(
+      `[UnVote] /platform/votes cancel failed (HTTP ${res.status}):`,
+      text.slice(0, 200),
+    );
+    return false;
   } catch (err) {
     console.warn("[UnVote] Network error deleting vote record:", err);
     return false;
@@ -2532,6 +2652,7 @@ async function unvoteIdea(recordID) {
   }
 
   votingInProgress = true;
+  const focusCtx = captureVoteFocus();
 
   const previousCount = voteCounts[key] || 0;
   voteCounts[key] = Math.max(0, previousCount - 1);
@@ -2540,6 +2661,7 @@ async function unvoteIdea(recordID) {
   renderTop10Ideas();
   if (sortState.tblIdeas.key === "votes") renderAllIdeas();
   if (sortState.tblMyIdeas.key === "votes") renderMyIdeas();
+  restoreVoteFocus(focusCtx);
   const totalVotesOptimistic = Object.values(voteCounts).reduce(
     (s, n) => s + n,
     0,
@@ -2565,10 +2687,7 @@ async function unvoteIdea(recordID) {
     const detailVoteBtn = root.querySelector(`[data-detail-vote="${key}"]`);
     if (detailVoteBtn) {
       const state = voteButtonStateHtml(key, false, false, false);
-      detailVoteBtn.className = `ip-upvote${state.classes ? " " + state.classes : ""}`;
-      detailVoteBtn.disabled = state.disabled;
-      detailVoteBtn.setAttribute("aria-label", state.ariaLabel);
-      detailVoteBtn.innerHTML = voteButtonInnerHtml(state);
+      applyVoteButtonState(detailVoteBtn, state);
       const votesText = document.getElementById("ip-detail-votes-text");
       if (votesText) {
         const newCount = voteCounts[key] || 0;
@@ -2597,6 +2716,7 @@ async function unvoteIdea(recordID) {
     );
   } finally {
     votingInProgress = false;
+    restoreVoteFocus(focusCtx);
   }
 }
 
@@ -2605,9 +2725,10 @@ async function unvoteIdea(recordID) {
    without a status join silently returns 0 on this site)
 ───────────────────────────────────────────────────────────── */
 
-async function leafFetchQuery(queryObj, filterData) {
+// base defaults to this site's API; pass VOTES_API_BASE for vote records.
+async function leafFetchQuery(queryObj, filterData, base = "./api/") {
   const q = JSON.stringify(queryObj);
-  const url = `./api/form/query/?q=${encodeURIComponent(q)}&x-filterData=${encodeURIComponent(filterData)}&_=${Date.now()}`;
+  const url = `${base}form/query/?q=${encodeURIComponent(q)}&x-filterData=${encodeURIComponent(filterData)}&_=${Date.now()}`;
   const res = await fetch(url, {
     method: "GET",
     credentials: "same-origin",
@@ -2776,21 +2897,27 @@ async function fetchVotesData() {
         getData: VOTE_GETDATA,
       },
       VOTE_FILTER_DATA,
+      VOTES_API_BASE,
     );
 
     voteCounts = {};
     userVotes = {};
     myVoteRecordIdByIdea = {};
 
+    // Same rule as print_form_ideas.tpl: email or userID, any case, so a
+    // vote stored under the userID fallback is still recognized.
+    const myIdentities = new Set(
+      [resolvedVoterEmail, userID].filter(Boolean).map((v) => v.toLowerCase()),
+    );
+
     const votesList = Object.values(voteData || {});
     votesList.forEach((vote) => {
       const ideanum = vote.s1?.[VOTE_INDICATORS.idea];
-      const voter = vote.s1?.[VOTE_INDICATORS.user];
+      const voter = String(vote.s1?.[VOTE_INDICATORS.user] || "").toLowerCase();
       if (ideanum !== undefined && ideanum !== null && ideanum !== "") {
         const key = String(ideanum);
         voteCounts[key] = (voteCounts[key] || 0) + 1;
-        const voterIdentity = resolvedVoterEmail || userID;
-        if (voter && voterIdentity && voter === voterIdentity) {
+        if (voter && myIdentities.has(voter)) {
           userVotes[key] = true;
           const voteRecId = vote.recordID ?? vote.recordId ?? vote.id;
           if (
@@ -2963,8 +3090,20 @@ async function loadIdeasAndVotes() {
 
   await resolveVoterEmail();
 
+  votesLoadFailed = false;
   try {
-    const [ideasData] = await Promise.all([fetchIdeasData(), fetchVotesData()]);
+    // A votes-site failure shouldn't hide the ideas: show them with imported
+    // counts only and pause voting.
+    const [ideasData] = await Promise.all([
+      fetchIdeasData(),
+      fetchVotesData().catch((err) => {
+        console.error("[fetchVotesData] /platform/votes read failed:", err);
+        votesLoadFailed = true;
+        voteCounts = {};
+        userVotes = {};
+        myVoteRecordIdByIdea = {};
+      }),
+    ]);
 
     ideasRaw = ideasData;
 
@@ -3001,6 +3140,12 @@ async function loadIdeasAndVotes() {
     renderAllIdeas();
     renderTop10Ideas();
     setStatus("all", "", "");
+    if (votesLoadFailed) {
+      showToast(
+        "Vote counts couldn't load, so voting is paused. Refresh the page to try again.",
+        true,
+      );
+    }
 
     await fetchUserSubmissions();
   } catch (err) {
@@ -3772,8 +3917,11 @@ function bindDelegatedEvents() {
       return;
     }
 
-    const upvoteBtn = e.target.closest(".ip-upvote");
+    // [data-record-id] skips the detail modal's button, which has its own
+    // handler.
+    const upvoteBtn = e.target.closest(".ip-upvote[data-record-id]");
     if (upvoteBtn && !upvoteBtn.disabled) {
+      if (isClosedVoteButton(upvoteBtn)) return;
       const recId = upvoteBtn.getAttribute("data-record-id");
       if (userVotes[recId] === true) {
         unvoteIdea(recId);
@@ -3910,9 +4058,8 @@ function buildVotedActionsCell(id, idea) {
   return `<div class="ip-actionsInner">
     <button class="ip-upvote${voteState.classes ? " " + voteState.classes : ""}"
       data-record-id="${escapeHtml(id)}"
-      ${voteState.disabled ? "disabled" : ""}
+      ${voteButtonDisabledAttrs(voteState)}
       aria-label="${escapeHtml(voteState.ariaLabel)}"
-      aria-disabled="${voteState.disabled}"
       title="${escapeHtml(voteState.title)}">
       ${voteButtonInnerHtml(voteState)}
     </button>
