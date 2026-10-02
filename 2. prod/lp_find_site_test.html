@@ -1414,17 +1414,9 @@
               if (!ok) throw new Error("copy command rejected");
             }
 
-            // HTML flavor keeps site links clickable when pasted into Excel.
-            async function writeClipboard(html, text) {
-              if (navigator.clipboard && window.ClipboardItem) {
-                await navigator.clipboard.write([
-                  new ClipboardItem({
-                    "text/html": new Blob([html], { type: "text/html" }),
-                    "text/plain": new Blob([text], { type: "text/plain" }),
-                  }),
-                ]);
-                return;
-              }
+            // Plain tab-separated text only: Excel splits it into
+            // columns reliably (an HTML flavor can paste into one cell).
+            async function writeClipboard(text) {
               if (navigator.clipboard && navigator.clipboard.writeText) {
                 await navigator.clipboard.writeText(text);
                 return;
@@ -1445,20 +1437,8 @@
                 .map((cols) => cols.join("\t"))
                 .join("\r\n");
 
-              const html =
-                "<table><thead><tr>" +
-                REPORT_HEADERS.map((h) => `<th>${h}</th>`).join("") +
-                "</tr></thead><tbody>" +
-                reportRows
-                  .map(
-                    (r) =>
-                      `<tr><td>${escapeHtml(safeCell(r.admin))}</td><td><a href="${escapeHtml(r.href)}">${escapeHtml(safeCell(r.label))}</a></td><td>${escapeHtml(r.href)}</td></tr>`,
-                  )
-                  .join("") +
-                "</tbody></table>";
-
               try {
-                await writeClipboard(html, text);
+                await writeClipboard(text);
                 setReportStatus(
                   `Copied ${reportRows.length} rows. Paste into Excel with Ctrl+V.`,
                 );
