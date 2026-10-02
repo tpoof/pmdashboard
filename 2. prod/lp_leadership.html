@@ -633,10 +633,11 @@
             refreshAfterMs: 5000,
           };
 
+          // form_b8d63 indicator IDs (record.s1["id<N>"]); also drives getData.
           // popup = "Open in Popup" (Yes/No), order = "Card Order" (number)
           const INDICATORS = {
-            name: 492,
-            url: 493,
+            name: 493,
+            url: 494,
             popup: 496,
             order: 497,
             description: 498,
@@ -762,7 +763,7 @@
               );
               if (!fields.name) {
                 console.warn(
-                  `[LeadershipHub] Record ${recordID}: skipped — Card Name is blank.`,
+                  `[LeadershipHub] Record ${recordID}: skipped — Card Name (indicator ${INDICATORS.name}) is blank.`,
                 );
                 return;
               }
@@ -1009,6 +1010,10 @@
               if (isRefresh && snapshot === lastSnapshot) return;
               lastSnapshot = snapshot;
 
+              if (!cards.length && Object.keys(data).length)
+                console.error(
+                  `[LeadershipHub] All ${Object.keys(data).length} records were skipped — the INDICATORS IDs may not match ${CONFIG.formID}.`,
+                );
               render(cards);
               if (mode === "retry" || isAuto) {
                 errorBox.replaceChildren();
