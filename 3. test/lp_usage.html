@@ -1,0 +1,1505 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Launchpad Usage — LEAF Launchpad</title>
+
+    <link rel="stylesheet" href="./files/launchpad.css" />
+
+    <style>
+      @font-face {
+        font-family: "PublicSans-Bold";
+        src:
+          url("/app/libs/css/fonts/public-sans/PublicSans-Bold.woff2")
+            format("woff2"),
+          url("/app/libs/css/fonts/public-sans/PublicSans-Bold.woff")
+            format("woff");
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Source Sans Pro Web";
+        src:
+          url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-regular-webfont.woff2")
+            format("woff2"),
+          url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-regular-webfont.woff")
+            format("woff");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      .ldh-page {
+        max-width: 1160px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem 5rem;
+      }
+      .ldh-header {
+        margin-bottom: 2.25rem;
+      }
+      .ldh-kicker {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--lp-accent);
+        margin: 0 0 0.5rem;
+      }
+      .ldh-title {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: clamp(1.6rem, 3vw, 2.15rem);
+        font-weight: 800;
+        color: var(--lp-hl);
+        margin: 0 0 0.4rem;
+        line-height: 1.15;
+      }
+      .ldh-sub {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 1.05rem;
+        color: var(--c-muted);
+        margin: 0;
+        max-width: 640px;
+      }
+      .ldh-footer {
+        margin-top: 2.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--c-blue10);
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.85rem;
+        color: var(--c-muted);
+      }
+
+      .usage-banner {
+        margin: 0 0 1.5rem;
+        padding: 0.875rem 1rem;
+        background: #fff8e1;
+        border: 1px solid #b38600;
+        border-radius: var(--r);
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.95rem;
+        color: #1b1b1b;
+      }
+      .usage-banner strong {
+        font-family: "PublicSans-Bold", sans-serif;
+      }
+
+      .usage-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem 1.5rem;
+        align-items: flex-end;
+        margin: 0 0 0.75rem;
+      }
+      .usage-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .usage-field label {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 0.8rem;
+        color: var(--lp-hl);
+      }
+      .usage-field select {
+        min-height: 44px;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--c-blue20);
+        border-radius: var(--r);
+        background: #fff;
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 1rem;
+        color: var(--c-text);
+      }
+      .usage-field select:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+      .usage-inline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.5rem;
+        align-items: flex-end;
+        margin: 0 0 1rem;
+      }
+      .usage-status {
+        margin: 0 0 1.5rem;
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.9rem;
+        color: var(--c-muted);
+        min-height: 1.4em;
+      }
+      .usage-status.is-error {
+        color: #b50909;
+      }
+
+      .usage-kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 1rem;
+        margin: 0 0 1.5rem;
+        padding: 0;
+        list-style: none;
+      }
+      .usage-kpi {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        padding: 1.125rem 1.25rem;
+        background: #fff;
+        border: 1px solid var(--c-blue10);
+        border-radius: var(--r-lg);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      }
+      .usage-kpi-label {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--c-muted);
+      }
+      .usage-kpi-hint {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.8rem;
+        color: var(--c-muted);
+      }
+      .usage-kpi-value {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 1.75rem;
+        line-height: 1.1;
+        color: var(--lp-hl);
+      }
+
+      .usage-panel {
+        margin: 0 0 1.25rem;
+        padding: 1.375rem;
+        background: #fff;
+        border: 1px solid var(--c-blue10);
+        border-radius: var(--r-lg);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        min-width: 0;
+      }
+      .usage-panel h2 {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--lp-hl);
+        margin: 0 0 0.375rem;
+      }
+      .usage-help {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.9rem;
+        color: var(--c-muted);
+        margin: 0 0 1rem;
+        line-height: 1.5;
+      }
+      .usage-pair {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.25rem;
+      }
+      .usage-pair > .usage-panel {
+        margin-bottom: 0;
+      }
+      .usage-pair + .usage-panel,
+      .usage-panel + .usage-pair {
+        margin-top: 1.25rem;
+      }
+
+      .usage-scroll {
+        overflow-x: auto;
+      }
+      .usage-scroll:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+      .usage-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.95rem;
+        color: var(--c-text);
+      }
+      .usage-table th,
+      .usage-table td {
+        padding: 0.6rem 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--c-blue10);
+        vertical-align: middle;
+      }
+      .usage-table thead th {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--lp-hl);
+        white-space: nowrap;
+      }
+      .usage-table tbody th {
+        font-weight: 600;
+      }
+      .usage-table .num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .usage-table .muted {
+        color: var(--c-muted);
+      }
+      .usage-meter {
+        display: inline-block;
+        width: 90px;
+        height: 8px;
+        margin-right: 0.5rem;
+        border-radius: 999px;
+        background: var(--c-blue10);
+        vertical-align: middle;
+        overflow: hidden;
+      }
+      .usage-meter-fill {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: var(--lp-accent);
+      }
+
+      .usage-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.75rem 1.25rem;
+        margin: 0 0 1rem;
+      }
+      .usage-stats div {
+        display: flex;
+        flex-direction: column-reverse;
+      }
+      .usage-stats dt {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.85rem;
+        color: var(--c-muted);
+      }
+      .usage-stats dd {
+        margin: 0;
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 1.35rem;
+        color: var(--lp-hl);
+      }
+      .usage-empty {
+        margin: 0;
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.95rem;
+        color: var(--c-muted);
+      }
+
+      @media (max-width: 900px) {
+        .usage-pair {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .usage-pair > .usage-panel + .usage-panel {
+          margin-top: 1.25rem;
+        }
+      }
+      @media (max-width: 600px) {
+        .ldh-page {
+          padding: 2rem 1rem 4rem;
+        }
+        .usage-field,
+        .usage-field select {
+          width: 100%;
+        }
+      }
+      @media (forced-colors: active) {
+        .usage-meter {
+          border: 1px solid CanvasText;
+        }
+        .usage-meter-fill {
+          background: Highlight;
+        }
+      }
+
+      .lp-gate {
+        max-width: 460px;
+        margin: 4rem auto;
+        padding: 2.5rem 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        text-align: center;
+        background: #fff;
+        border: 1px solid var(--c-blue20);
+        border-radius: var(--r-lg);
+      }
+      .lp-gate-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--c-blue5);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .lp-gate-icon .material-symbols-outlined {
+        display: inline-flex;
+        font-size: 1.75rem !important;
+        color: var(--lp-accent);
+      }
+      .lp-gate-icon .material-symbols-outlined svg {
+        width: 1em;
+        height: 1em;
+        display: block;
+      }
+      .lp-gate h1 {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--lp-hl);
+        margin: 0;
+      }
+      .lp-gate p {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.95rem;
+        color: var(--c-muted);
+        margin: 0;
+      }
+      .lp-gate a {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #fff;
+        background: var(--lp-accent);
+        text-decoration: none;
+        padding: 0.6rem 1.3rem;
+        border-radius: 8px;
+      }
+      .lp-gate a:hover {
+        background: var(--lp-accent-strong, #004a82);
+      }
+      .lp-gate a:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <!--{if $empMembership['groupID'][1]}-->
+    <div class="lp" id="lp-root">
+      <main id="lp-main" tabindex="-1">
+        <div class="ldh-page">
+          <header class="ldh-header">
+            <p class="ldh-kicker">LEAF Operations</p>
+            <h1 class="ldh-title">Launchpad Usage</h1>
+            <p class="ldh-sub">
+              How visitors move through and interact with the Launchpad: pages
+              viewed, sections seen, and what gets clicked.
+            </p>
+          </header>
+
+          <div class="usage-banner" id="usageSampleBanner" role="note" hidden>
+            <strong>Sample data.</strong> This page is showing generated numbers
+            because the tracking form is not connected yet. Nothing here
+            reflects real visitors.
+          </div>
+
+          <div class="usage-controls">
+            <div class="usage-field">
+              <label for="usageRange">Time range</label>
+              <select id="usageRange">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="0">All time</option>
+              </select>
+            </div>
+            <div class="usage-field">
+              <label for="usageDevice">Screen size</label>
+              <select id="usageDevice">
+                <option value="all" selected>All screen sizes</option>
+                <option value="l">Large (1024px and up)</option>
+                <option value="m">Medium (640px to 1023px)</option>
+                <option value="s">Small (under 640px)</option>
+              </select>
+            </div>
+          </div>
+          <p class="usage-status" id="usageStatus" role="status">
+            Loading usage data…
+          </p>
+
+          <ul class="usage-kpis" id="usageKpis" aria-label="Summary"></ul>
+
+          <section class="usage-panel" aria-labelledby="usageSecH">
+            <h2 id="usageSecH">Sections</h2>
+            <p class="usage-help">
+              Click rate is the share of visits that saw a section and then
+              clicked something in it. Sections count as seen after about a
+              second in the middle of the screen. Sections with nothing to click
+              always show 0%.
+            </p>
+            <div id="usageSections"></div>
+          </section>
+
+          <section class="usage-panel" aria-labelledby="usageClicksH">
+            <h2 id="usageClicksH">Most clicked</h2>
+            <p class="usage-help">Top 15 links and buttons by total clicks.</p>
+            <div id="usageClicks"></div>
+          </section>
+
+          <section class="usage-panel" aria-labelledby="usageNextH">
+            <h2 id="usageNextH">Where people go next</h2>
+            <p class="usage-help">
+              After viewing the starting page, where the visit went next. "Left
+              or stayed" covers closing the tab, following a link to another
+              site, or simply not going further.
+            </p>
+            <div class="usage-inline">
+              <div class="usage-field">
+                <label for="usageFrom">Starting page</label>
+                <select id="usageFrom"></select>
+              </div>
+            </div>
+            <div id="usageNext"></div>
+          </section>
+
+          <div class="usage-pair">
+            <section class="usage-panel" aria-labelledby="usageActionsH">
+              <h2 id="usageActionsH">Key actions</h2>
+              <p class="usage-help">
+                Clicks on the main calls to action, wherever they appear.
+              </p>
+              <div id="usageActions"></div>
+            </section>
+            <section class="usage-panel" aria-labelledby="usageFinderH">
+              <h2 id="usageFinderH">Finder</h2>
+              <p class="usage-help">
+                Typed searches are only counted as a match or no match. The text
+                people type is never recorded.
+              </p>
+              <div id="usageFinder"></div>
+            </section>
+          </div>
+
+          <div class="usage-pair">
+            <section class="usage-panel" aria-labelledby="usageSourcesH">
+              <h2 id="usageSourcesH">Where visits come from</h2>
+              <p class="usage-help">
+                A bounce is a visit with one page view and no clicks. Links
+                shared with <code>&amp;src=name</code> on the end show up as
+                tagged links.
+              </p>
+              <div id="usageSources"></div>
+            </section>
+            <section class="usage-panel" aria-labelledby="usageDevicesH">
+              <h2 id="usageDevicesH">Screen sizes</h2>
+              <p class="usage-help">Visits by screen width.</p>
+              <div id="usageDevices"></div>
+            </section>
+          </div>
+
+          <div class="usage-pair">
+            <section class="usage-panel" aria-labelledby="usagePagesH">
+              <h2 id="usagePagesH">Pages viewed</h2>
+              <p class="usage-help">
+                Views of each page. Broken links are views of a page that does
+                not exist.
+              </p>
+              <div id="usagePages"></div>
+            </section>
+            <section class="usage-panel" aria-labelledby="usageLoadsH">
+              <h2 id="usageLoadsH">Page load time</h2>
+              <p class="usage-help">
+                Time until a page's content appears. Home loads with the
+                Launchpad itself and is not measured.
+              </p>
+              <div id="usageLoads"></div>
+            </section>
+          </div>
+
+          <section class="usage-panel" aria-labelledby="usageFrictionH">
+            <h2 id="usageFrictionH">Friction</h2>
+            <p class="usage-help">
+              Dead click: clicking something that looks clickable but does
+              nothing. Rage click: four or more fast clicks on the same control.
+              Load failure: a page that did not load. Script error: the file and
+              line where the page's code failed.
+            </p>
+            <div id="usageFriction"></div>
+          </section>
+
+          <footer class="ldh-footer">
+            Internal use only. Counts are directional: visits that could not be
+            recorded are missing.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      (() => {
+        "use strict";
+
+        const $ = (id) => document.getElementById(id);
+
+        /* Replace both IDs with the tracking form's; the page shows
+           generated sample data until then. */
+        const CONFIG = {
+          apiBase: "https://leaf.va.gov/platform/service_requests_launchpad/",
+          formId: "REPLACE_ME_TRACK_FORM_ID",
+          indicatorId: "REPLACE_ME_TRACK_INDICATOR_ID",
+          batchSize: 500,
+          maxBatches: 20,
+        };
+        const IS_SAMPLE =
+          CONFIG.formId.startsWith("REPLACE_ME") ||
+          CONFIG.indicatorId.startsWith("REPLACE_ME");
+
+        const ROUTE_LABELS = {
+          home: "Home",
+          impact: "Our Impact",
+          find_site: "Find a LEAF Site",
+          form_library: "Form Library",
+          use_case: "Use Cases",
+          help_library: "Help Library",
+          voc: "Voice of the Customer",
+          cop: "Community of Practice",
+          privacy: "Privacy Resources",
+          learn: "Learn",
+          blog: "Blog",
+        };
+        const SECTION_ORDER = [
+          "hero",
+          "my-requests",
+          "finder",
+          "how-it-works",
+          "features",
+          "awards",
+          "newsletter",
+        ];
+        const SECTION_LABELS = {
+          hero: "Hero",
+          "my-requests": "My requests panel",
+          finder: "Finder",
+          "how-it-works": "How it works",
+          features: "Features",
+          awards: "Awards",
+          newsletter: "Newsletter and resources",
+          header: "Header and menu",
+          announcement: "Announcement banner",
+          page: "Page",
+        };
+        const ITEM_LABELS = {
+          "build-site": "Build a new site",
+          "find-site": "Find a LEAF Site",
+          "view-my-requests": "View my requests",
+          "hide-requests": "Hide requests panel",
+          "requests-grid": "Inside the requests panel",
+          "talk-to-team": "Talk to our team",
+          "request-consultation": "Request a consultation",
+          "read-more": "Read more about LEAF",
+          "cost-estimator": "LEAF Cost Estimator",
+          "spotlight-nomination": "Nominate a Spotlight",
+          "teams-channel": "LEAF Community Teams Channel",
+          oit: "Office of Information and Technology",
+        };
+        const FINDER_CONTROLS = new Set([
+          "Scroll topics left",
+          "Scroll topics right",
+          "Clear search",
+          "build-site",
+          "talk-to-team",
+          "request-consultation",
+          "read-more",
+        ]);
+        const KEY_ACTIONS = [
+          "build-site",
+          "find-site",
+          "view-my-requests",
+          "hide-requests",
+          "talk-to-team",
+          "request-consultation",
+          "cost-estimator",
+          "spotlight-nomination",
+        ];
+        const SLOW_MS = 3000;
+        const LEFT = "(left)";
+        const SOURCE_LABELS = {
+          direct: "Direct link or bookmark",
+          teams: "Teams",
+          sharepoint: "SharePoint",
+          "leaf-site": "Another LEAF site",
+          "va-site": "Another VA site",
+          other: "Other",
+        };
+        const FRICTION_LABELS = {
+          "dead-click": "Dead click",
+          "rage-click": "Rage click",
+          "load-fail": "Load failure",
+          "js-error": "Script error",
+        };
+        const DEVICE_LABELS = {
+          l: "Large (1024px and up)",
+          m: "Medium (640px to 1023px)",
+          s: "Small (under 640px)",
+        };
+
+        const esc = (value) =>
+          String(value).replace(
+            /[&<>"']/g,
+            (c) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[c],
+          );
+        const num = (n) => n.toLocaleString("en-US");
+        const pct = (n, d) => (d ? `${Math.round((n / d) * 1000) / 10}%` : "");
+        const dateMDY = (epoch) => {
+          const d = new Date(epoch * 1000);
+          return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(
+            d.getDate(),
+          ).padStart(2, "0")}/${d.getFullYear()}`;
+        };
+        const prettyKey = (k) => String(k).replace(/[_-]+/g, " ");
+        const routeLabel = (route) =>
+          route.startsWith("not_found:")
+            ? `Broken link: ${route.slice(10)}`
+            : ROUTE_LABELS[route] || prettyKey(route);
+        const sectionLabel = (s) => SECTION_LABELS[s] || prettyKey(s);
+        const itemLabel = (l) => ITEM_LABELS[l] || ROUTE_LABELS[l] || l;
+        const sourceLabel = (src) =>
+          src.startsWith("tag:")
+            ? `Tagged link: ${src.slice(4)}`
+            : SOURCE_LABELS[src] || prettyKey(src);
+        const seconds = (ms) => `${(ms / 1000).toFixed(1)} s`;
+
+        /* ── Data ── */
+
+        const decodeEntities = (s) =>
+          s
+            .replace(/&quot;/g, '"')
+            .replace(/&#0?39;/g, "'")
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/&amp;/g, "&");
+
+        function parseVisit(rec) {
+          const raw = rec && rec.s1 ? rec.s1[`id${CONFIG.indicatorId}`] : "";
+          if (!raw || typeof raw !== "string") return null;
+          let payload;
+          try {
+            payload = JSON.parse(raw);
+          } catch (e) {
+            try {
+              payload = JSON.parse(decodeEntities(raw));
+            } catch (e2) {
+              return null;
+            }
+          }
+          if (!payload || !Array.isArray(payload.ev)) return null;
+          return {
+            date: Number(rec.date) || 0,
+            vp: DEVICE_LABELS[payload.vp] ? payload.vp : "l",
+            src: /^[a-z0-9:_-]{1,25}$/.test(payload.src || "")
+              ? payload.src
+              : "direct",
+            ev: payload.ev.filter((e) => Array.isArray(e)),
+          };
+        }
+
+        async function fetchVisits() {
+          const visits = [];
+          let skipped = 0;
+          let offset = 0;
+          for (let i = 0; i < CONFIG.maxBatches; i++) {
+            const q = {
+              terms: [
+                { id: "recordID", operator: ">", match: 0, gate: "AND" },
+                {
+                  id: "categoryID",
+                  operator: "=",
+                  match: CONFIG.formId,
+                  gate: "AND",
+                },
+                { id: "deleted", operator: "=", match: 0, gate: "AND" },
+              ],
+              joins: [],
+              sort: {},
+              getData: [CONFIG.indicatorId],
+              limit: CONFIG.batchSize,
+              limitOffset: offset,
+            };
+            /* x-filterData keeps creator IDs out of the response. */
+            const res = await fetch(
+              `${CONFIG.apiBase}api/form/query?q=${encodeURIComponent(
+                JSON.stringify(q),
+              )}&x-filterData=recordID,date`,
+              { credentials: "include" },
+            );
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const batch = await res.json();
+            const entries =
+              batch && typeof batch === "object" && !Array.isArray(batch)
+                ? Object.values(batch)
+                : [];
+            entries.forEach((rec) => {
+              const visit = parseVisit(rec);
+              if (visit) visits.push(visit);
+              else skipped++;
+            });
+            const more =
+              (res.headers.get("LEAF-Query") || "").toLowerCase() ===
+              "continue";
+            if (entries.length < CONFIG.batchSize && !more) {
+              return { visits, skipped, capped: false };
+            }
+            offset += CONFIG.batchSize;
+            $("usageStatus").textContent = `Loading usage data… ${num(
+              visits.length,
+            )} visits so far`;
+          }
+          return { visits, skipped, capped: true };
+        }
+
+        function sampleVisits() {
+          let seed = 20261002;
+          const rnd = () => {
+            seed = (seed + 0x6d2b79f5) | 0;
+            let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+          };
+          const pick = (items) => items[Math.floor(rnd() * items.length)];
+          const now = Math.floor(Date.now() / 1000);
+          const topics = [
+            "Too much paper",
+            "Manual approvals",
+            "No visibility",
+            "Disorganized requests",
+            "Access & oversight headaches",
+            "Switching platforms",
+            "Stuck with spreadsheets",
+            "Cost, security & support",
+          ];
+          const nav = [
+            ["impact", 0.25],
+            ["find_site", 0.25],
+            ["form_library", 0.2],
+            ["help_library", 0.15],
+            ["voc", 0.05],
+            ["privacy", 0.04],
+            ["learn", 0.03],
+            ["not_found:old_blog", 0.03],
+          ];
+          const visits = [];
+          for (let i = 0; i < 900; i++) {
+            const date = now - Math.floor(rnd() * 90 * 86400);
+            const r = rnd();
+            const vp = r < 0.68 ? "l" : r < 0.8 ? "m" : "s";
+            let sx = rnd();
+            let src = "other";
+            for (const [name, p] of [
+              ["direct", 0.4],
+              ["teams", 0.2],
+              ["tag:newsletter", 0.15],
+              ["sharepoint", 0.1],
+              ["leaf-site", 0.08],
+              ["tag:flyer", 0.03],
+            ]) {
+              sx -= p;
+              if (sx <= 0) {
+                src = name;
+                break;
+              }
+            }
+            const ev = [[0, "v", "home", "", ""]];
+            let t = 0;
+            const add = (type, route, section, label) => {
+              t += 1 + Math.floor(rnd() * 12);
+              ev.push([t, type, route, section, label]);
+            };
+            const click = (section, label, p) => {
+              if (rnd() < p) add("c", "home", section, label);
+            };
+            const baseMs = {
+              impact: 900,
+              find_site: 1900,
+              form_library: 2300,
+              help_library: 1500,
+              voc: 700,
+              privacy: 800,
+              learn: 600,
+            };
+            const goTo = (route) => {
+              ev.push([t + 1, "v", route, "", ""]);
+              t += 1;
+              if (route.startsWith("not_found") || !baseMs[route]) return;
+              if (rnd() < 0.02) {
+                ev.push([t + 1, "f", route, "", "load-fail"]);
+                return;
+              }
+              const ms =
+                baseMs[route] * (0.6 + rnd() * 1.2 + (rnd() < 0.1 ? 2 : 0));
+              ev.push([
+                t + 1,
+                "p",
+                route,
+                "",
+                String(Math.round(ms / 100) * 100),
+              ]);
+            };
+
+            const depth = rnd();
+            const seen = (p) => depth < p;
+            if (seen(0.97)) {
+              add("i", "home", "hero", "");
+              click("hero", "build-site", 0.12);
+              click("hero", "view-my-requests", 0.05);
+              add("i", "home", "my-requests", "");
+              click("my-requests", "hide-requests", 0.18);
+              click("my-requests", "requests-grid", 0.3);
+            }
+            if (seen(0.72)) {
+              add("i", "home", "finder", "");
+              if (rnd() < 0.25) add("c", "home", "finder", pick(topics));
+              if (rnd() < 0.15) {
+                const hit = rnd() < 0.8;
+                add(
+                  "e",
+                  "home",
+                  "finder",
+                  hit ? "search-match" : "search-no-match",
+                );
+                click(
+                  "finder",
+                  hit ? "talk-to-team" : "request-consultation",
+                  0.12,
+                );
+              }
+              click("finder", "build-site", 0.05);
+              click("finder", "read-more", 0.02);
+            }
+            if (seen(0.5)) add("i", "home", "how-it-works", "");
+            if (seen(0.34)) add("i", "home", "features", "");
+            if (seen(0.26)) {
+              add("i", "home", "awards", "");
+              if (rnd() < 0.12) {
+                add(
+                  "f",
+                  "home",
+                  "awards",
+                  "dead-click:img:2025 Disruptive Tech Award",
+                );
+              }
+            }
+            if (seen(0.2)) {
+              add("i", "home", "newsletter", "");
+              click("newsletter", "cost-estimator", 0.2);
+              click("newsletter", "spotlight-nomination", 0.08);
+              click("newsletter", "teams-channel", 0.08);
+              click("newsletter", "oit", 0.04);
+              if (rnd() < 0.06) add("e", "home", "newsletter", "subscribed");
+            }
+            if (rnd() < 0.3) {
+              let x = rnd();
+              let target = nav[0][0];
+              for (const [route, p] of nav) {
+                x -= p;
+                if (x <= 0) {
+                  target = route;
+                  break;
+                }
+              }
+              add(
+                "c",
+                "home",
+                "header",
+                target.startsWith("not_found") ? "impact" : target,
+              );
+              goTo(target);
+            } else if (rnd() < 0.08) {
+              add("c", "home", "hero", "find-site");
+              goTo("find_site");
+            }
+            if (rnd() < 0.03) add("c", "home", "header", "Request Support");
+            if (rnd() < 0.01)
+              add("f", "home", "hero", "rage-click:Find a LEAF Site");
+            if (rnd() < 0.005)
+              add("f", "home", "", "js-error:multigrid.js:412");
+            visits.push({ date, vp, src, ev });
+          }
+          return visits;
+        }
+
+        /* ── Aggregation ── */
+
+        function summarize(visits) {
+          const out = {
+            visits: visits.length,
+            views: 0,
+            clicks: 0,
+            devices: { l: 0, m: 0, s: 0 },
+            routes: new Map(),
+            sections: new Map(),
+            items: new Map(),
+            labelClicks: new Map(),
+            finder: { match: 0, none: 0, topics: new Map() },
+            subscribed: 0,
+            bounced: 0,
+            sources: new Map(),
+            paths: new Map(),
+            loads: new Map(),
+            friction: new Map(),
+          };
+          const bump = (map, key, by = 1) =>
+            map.set(key, (map.get(key) || 0) + by);
+          const sectionStat = (key, route, section) => {
+            if (!out.sections.has(key)) {
+              out.sections.set(key, {
+                route,
+                section,
+                seen: 0,
+                clickedSeen: 0,
+                clicks: 0,
+              });
+            }
+            return out.sections.get(key);
+          };
+
+          visits.forEach((v) => {
+            out.devices[v.vp]++;
+            const seen = new Set();
+            const clicked = new Set();
+            const views = [];
+            const hit = new Set();
+            let visitClicks = 0;
+            v.ev.forEach((e) => {
+              const type = e[1];
+              const route = String(e[2] || "unknown");
+              const section = String(e[3] || "");
+              const label = String(e[4] || "");
+              const key = `${route}|${section}`;
+              if (type === "v") {
+                out.views++;
+                views.push(route);
+                bump(out.routes, route);
+              } else if (type === "p") {
+                const ms = Number(label);
+                if (Number.isFinite(ms)) {
+                  if (!out.loads.has(route)) out.loads.set(route, []);
+                  out.loads.get(route).push(ms);
+                }
+              } else if (type === "f") {
+                const fKey = `${route}|${section}|${label}`;
+                if (!out.friction.has(fKey)) {
+                  const cut = label.indexOf(":");
+                  out.friction.set(fKey, {
+                    route,
+                    section,
+                    kind: cut === -1 ? label : label.slice(0, cut),
+                    detail: cut === -1 ? "" : label.slice(cut + 1),
+                    count: 0,
+                    visits: 0,
+                  });
+                }
+                out.friction.get(fKey).count++;
+                hit.add(fKey);
+              } else if (type === "i") {
+                seen.add(key);
+              } else if (type === "c") {
+                out.clicks++;
+                visitClicks++;
+                clicked.add(key);
+                sectionStat(key, route, section).clicks++;
+                bump(out.labelClicks, label);
+                const itemKey = `${route}|${section}|${label}`;
+                if (!out.items.has(itemKey)) {
+                  out.items.set(itemKey, { route, section, label, clicks: 0 });
+                }
+                out.items.get(itemKey).clicks++;
+                if (section === "finder" && !FINDER_CONTROLS.has(label)) {
+                  bump(out.finder.topics, label);
+                }
+              } else if (type === "e") {
+                if (section === "finder" && label === "search-match")
+                  out.finder.match++;
+                if (section === "finder" && label === "search-no-match")
+                  out.finder.none++;
+                if (section === "newsletter" && label === "subscribed")
+                  out.subscribed++;
+              }
+            });
+            hit.forEach((fKey) => out.friction.get(fKey).visits++);
+
+            const bounced = views.length <= 1 && visitClicks === 0;
+            if (bounced) out.bounced++;
+            if (!out.sources.has(v.src)) {
+              out.sources.set(v.src, { visits: 0, bounced: 0 });
+            }
+            const srcStat = out.sources.get(v.src);
+            srcStat.visits++;
+            if (bounced) srcStat.bounced++;
+
+            const path = views.filter((r, i) => i === 0 || r !== views[i - 1]);
+            path.forEach((from, i) => {
+              const to = path[i + 1] || LEFT;
+              if (!out.paths.has(from)) out.paths.set(from, new Map());
+              bump(out.paths.get(from), to);
+            });
+
+            seen.forEach((key) => {
+              const [route, section] = key.split("|");
+              const stat = sectionStat(key, route, section);
+              stat.seen++;
+              if (clicked.has(key)) stat.clickedSeen++;
+            });
+          });
+          return out;
+        }
+
+        /* ── Rendering ── */
+
+        const meter = (value, max) =>
+          `<span class="usage-meter" aria-hidden="true"><span class="usage-meter-fill" data-w="${
+            max ? Math.min(100, Math.round((value / max) * 100)) : 0
+          }"></span></span>`;
+        const noData = `<span aria-hidden="true">–</span><span class="lp-sr-only">no data</span>`;
+
+        function table(caption, headings, rows) {
+          if (!rows.length)
+            return `<p class="usage-empty">No data for this selection.</p>`;
+          const head = headings
+            .map(
+              (h) =>
+                `<th scope="col"${h.num ? ' class="num"' : ""}>${esc(h.label)}</th>`,
+            )
+            .join("");
+          const body = rows
+            .map(
+              (cells) =>
+                `<tr>${cells
+                  .map((c, i) =>
+                    i === 0
+                      ? `<th scope="row">${c}</th>`
+                      : `<td${headings[i].num ? ' class="num"' : ""}>${c}</td>`,
+                  )
+                  .join("")}</tr>`,
+            )
+            .join("");
+          return `<div class="usage-scroll" role="region" aria-label="${esc(
+            caption,
+          )}" tabindex="0"><table class="usage-table"><caption class="lp-sr-only">${esc(
+            caption,
+          )}</caption><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+        }
+
+        function renderKpis(s) {
+          const kpis = [
+            ["Visits", num(s.visits), "Each page load of the Launchpad"],
+            ["Page views", num(s.views), "Including pages opened inside it"],
+            ["Clicks", num(s.clicks), "On tracked sections and menus"],
+            [
+              "Clicks per visit",
+              s.visits ? (s.clicks / s.visits).toFixed(1) : "–",
+              "Clicks divided by visits",
+            ],
+            [
+              "Bounce rate",
+              s.visits ? pct(s.bounced, s.visits) : "–",
+              "One page view, no clicks",
+            ],
+          ];
+          $("usageKpis").innerHTML = kpis
+            .map(
+              ([label, value, hint]) =>
+                `<li class="usage-kpi"><span class="usage-kpi-label">${esc(
+                  label,
+                )}</span><strong class="usage-kpi-value">${esc(
+                  value,
+                )}</strong><span class="usage-kpi-hint">${esc(hint)}</span></li>`,
+            )
+            .join("");
+        }
+
+        function renderSections(s) {
+          const order = (x) => {
+            const i = SECTION_ORDER.indexOf(x.section);
+            return (x.route === "home" ? 0 : 1000) + (i === -1 ? 500 : i);
+          };
+          const rows = [...s.sections.values()]
+            .filter((x) => x.seen > 0)
+            .sort((a, b) => order(a) - order(b))
+            .map((x) => [
+              esc(sectionLabel(x.section)),
+              esc(routeLabel(x.route)),
+              num(x.seen),
+              num(x.clickedSeen),
+              x.seen
+                ? `${meter(x.clickedSeen, x.seen)}${pct(x.clickedSeen, x.seen)}`
+                : noData,
+              num(x.clicks),
+            ]);
+          $("usageSections").innerHTML = table(
+            "Sections: visits that saw and clicked each one",
+            [
+              { label: "Section" },
+              { label: "Page" },
+              { label: "Visits that saw it", num: true },
+              { label: "Visits that clicked", num: true },
+              { label: "Click rate" },
+              { label: "Total clicks", num: true },
+            ],
+            rows,
+          );
+        }
+
+        function renderClicks(s) {
+          const items = [...s.items.values()]
+            .sort((a, b) => b.clicks - a.clicks)
+            .slice(0, 15);
+          const max = items.length ? items[0].clicks : 0;
+          $("usageClicks").innerHTML = table(
+            "Most clicked links and buttons",
+            [
+              { label: "Item" },
+              { label: "Section" },
+              { label: "Page" },
+              { label: "Clicks" },
+            ],
+            items.map((x) => [
+              esc(itemLabel(x.label)),
+              esc(sectionLabel(x.section)),
+              esc(routeLabel(x.route)),
+              `${meter(x.clicks, max)}${num(x.clicks)}`,
+            ]),
+          );
+        }
+
+        function renderActions(s) {
+          const rows = KEY_ACTIONS.map((label) => [
+            esc(itemLabel(label)),
+            num(s.labelClicks.get(label) || 0),
+            s.visits
+              ? ((100 * (s.labelClicks.get(label) || 0)) / s.visits).toFixed(1)
+              : noData,
+          ]);
+          rows.push([
+            "Newsletter signups",
+            num(s.subscribed),
+            s.visits ? ((100 * s.subscribed) / s.visits).toFixed(1) : noData,
+          ]);
+          $("usageActions").innerHTML = table(
+            "Key actions and how often they happen",
+            [
+              { label: "Action" },
+              { label: "Count", num: true },
+              { label: "Per 100 visits", num: true },
+            ],
+            rows,
+          );
+        }
+
+        function renderFinder(s) {
+          const f = s.finder;
+          const searches = f.match + f.none;
+          const topics = [...f.topics.entries()].sort((a, b) => b[1] - a[1]);
+          const max = topics.length ? topics[0][1] : 0;
+          $("usageFinder").innerHTML = `
+            <dl class="usage-stats">
+              <div><dt>Searches with a match</dt><dd>${num(f.match)}</dd></div>
+              <div><dt>Searches with no match</dt><dd>${num(f.none)}</dd></div>
+              <div><dt>No-match rate</dt><dd>${
+                searches ? pct(f.none, searches) : noData
+              }</dd></div>
+            </dl>
+            ${table(
+              "Finder topics clicked",
+              [{ label: "Topic" }, { label: "Clicks" }],
+              topics.map(([label, count]) => [
+                esc(label),
+                `${meter(count, max)}${num(count)}`,
+              ]),
+            )}`;
+        }
+
+        function renderPages(s) {
+          const rows = [...s.routes.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 15);
+          const max = rows.length ? rows[0][1] : 0;
+          $("usagePages").innerHTML = table(
+            "Views per page",
+            [{ label: "Page" }, { label: "Views" }, { label: "Note" }],
+            rows.map(([route, count]) => [
+              esc(routeLabel(route)),
+              `${meter(count, max)}${num(count)}`,
+              route.startsWith("not_found:") ? "Fix or redirect this link" : "",
+            ]),
+          );
+        }
+
+        function renderDevices(s) {
+          const max = Math.max(s.devices.l, s.devices.m, s.devices.s);
+          $("usageDevices").innerHTML = table(
+            "Visits per screen size",
+            [
+              { label: "Screen size" },
+              { label: "Visits" },
+              { label: "Share", num: true },
+            ],
+            ["l", "m", "s"].map((k) => [
+              esc(DEVICE_LABELS[k]),
+              `${meter(s.devices[k], max)}${num(s.devices[k])}`,
+              s.visits ? pct(s.devices[k], s.visits) : noData,
+            ]),
+          );
+        }
+
+        function renderNext(s) {
+          const select = $("usageFrom");
+          const froms = [...s.paths.entries()]
+            .map(([from, tos]) => [
+              from,
+              [...tos.values()].reduce((a, b) => a + b, 0),
+            ])
+            .sort((a, b) => b[1] - a[1]);
+          const previous = select.value;
+          select.innerHTML = froms
+            .map(
+              ([from, total]) =>
+                `<option value="${esc(from)}">${esc(routeLabel(from))} (${num(
+                  total,
+                )} views)</option>`,
+            )
+            .join("");
+          if (!froms.length) {
+            select.disabled = true;
+            $("usageNext").innerHTML = table(
+              "Next page",
+              [{ label: "Next" }],
+              [],
+            );
+            return;
+          }
+          select.disabled = false;
+          const keep = froms.some(([from]) => from === previous);
+          select.value = keep
+            ? previous
+            : froms.some(([from]) => from === "home")
+              ? "home"
+              : froms[0][0];
+          const tos = s.paths.get(select.value);
+          const total = [...tos.values()].reduce((a, b) => a + b, 0);
+          const rows = [...tos.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+          $("usageNext").innerHTML = table(
+            `Where visits went after ${routeLabel(select.value)}`,
+            [
+              { label: "Next step" },
+              { label: "Times", num: true },
+              { label: "Share" },
+            ],
+            rows.map(([to, count]) => [
+              to === LEFT ? "Left or stayed" : esc(routeLabel(to)),
+              num(count),
+              `${meter(count, total)}${pct(count, total)}`,
+            ]),
+          );
+        }
+
+        function renderSources(s) {
+          const rows = [...s.sources.entries()].sort(
+            (a, b) => b[1].visits - a[1].visits,
+          );
+          const max = rows.length ? rows[0][1].visits : 0;
+          $("usageSources").innerHTML = table(
+            "Visits and bounce rate by entry source",
+            [
+              { label: "Source" },
+              { label: "Visits" },
+              { label: "Bounce rate", num: true },
+            ],
+            rows.map(([src, x]) => [
+              esc(sourceLabel(src)),
+              `${meter(x.visits, max)}${num(x.visits)}`,
+              pct(x.bounced, x.visits),
+            ]),
+          );
+        }
+
+        function renderLoads(s) {
+          const rows = [...s.loads.entries()]
+            .map(([route, list]) => {
+              const sorted = [...list].sort((a, b) => a - b);
+              const n = sorted.length;
+              const median =
+                n % 2
+                  ? sorted[(n - 1) / 2]
+                  : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+              const p90 = sorted[Math.min(n - 1, Math.ceil(0.9 * n) - 1)];
+              const slow = sorted.filter((ms) => ms >= SLOW_MS).length;
+              return { route, n, median, p90, slow };
+            })
+            .sort((a, b) => b.p90 - a.p90);
+          $("usageLoads").innerHTML = table(
+            "Page load time by page",
+            [
+              { label: "Page" },
+              { label: "Loads", num: true },
+              { label: "Typical", num: true },
+              { label: "Slowest 1 in 10", num: true },
+              { label: "3 s or more", num: true },
+            ],
+            rows.map((x) => [
+              esc(routeLabel(x.route)),
+              num(x.n),
+              seconds(x.median),
+              seconds(x.p90),
+              pct(x.slow, x.n),
+            ]),
+          );
+        }
+
+        function renderFriction(s) {
+          const rows = [...s.friction.values()].sort(
+            (a, b) => b.count - a.count,
+          );
+          $("usageFriction").innerHTML = table(
+            "Friction events",
+            [
+              { label: "Issue" },
+              { label: "Detail" },
+              { label: "Section" },
+              { label: "Page" },
+              { label: "Times", num: true },
+              { label: "Visits affected", num: true },
+            ],
+            rows.map((x) => [
+              esc(FRICTION_LABELS[x.kind] || prettyKey(x.kind)),
+              x.detail ? esc(x.detail) : '<span class="muted">None</span>',
+              x.section
+                ? esc(sectionLabel(x.section))
+                : '<span class="muted">None</span>',
+              esc(routeLabel(x.route)),
+              num(x.count),
+              num(x.visits),
+            ]),
+          );
+        }
+
+        function applyMeters() {
+          document
+            .querySelectorAll(".usage-meter-fill[data-w]")
+            .forEach((el) => {
+              el.style.width = `${el.getAttribute("data-w")}%`;
+            });
+        }
+
+        /* ── Wiring ── */
+
+        const state = { visits: [], skipped: 0, capped: false };
+
+        function render() {
+          const days = Number($("usageRange").value);
+          const device = $("usageDevice").value;
+          const cutoff = days
+            ? Math.floor(Date.now() / 1000) - days * 86400
+            : 0;
+          const subset = state.visits.filter(
+            (v) =>
+              (!days || v.date >= cutoff) &&
+              (device === "all" || v.vp === device),
+          );
+          const s = summarize(subset);
+
+          renderKpis(s);
+          renderSections(s);
+          renderClicks(s);
+          renderActions(s);
+          renderFinder(s);
+          renderPages(s);
+          renderDevices(s);
+          renderNext(s);
+          renderSources(s);
+          renderLoads(s);
+          renderFriction(s);
+          applyMeters();
+
+          const status = $("usageStatus");
+          status.classList.remove("is-error");
+          if (!subset.length) {
+            status.textContent = "No visits match this selection.";
+            return;
+          }
+          const dates = subset.map((v) => v.date).filter(Boolean);
+          let text = `Showing ${num(subset.length)} visits`;
+          if (dates.length) {
+            text += ` from ${dateMDY(Math.min(...dates))} to ${dateMDY(
+              Math.max(...dates),
+            )}`;
+          }
+          text += ".";
+          if (state.capped) {
+            text += ` The query limit was reached, so older visits are missing.`;
+          }
+          if (state.skipped) {
+            text += ` ${num(state.skipped)} records could not be read and were skipped.`;
+          }
+          status.textContent = text;
+        }
+
+        async function init() {
+          $("usageRange").addEventListener("change", render);
+          $("usageDevice").addEventListener("change", render);
+          $("usageFrom").addEventListener("change", render);
+          try {
+            if (IS_SAMPLE) {
+              $("usageSampleBanner").hidden = false;
+              state.visits = sampleVisits();
+            } else {
+              const result = await fetchVisits();
+              state.visits = result.visits;
+              state.skipped = result.skipped;
+              state.capped = result.capped;
+            }
+            render();
+          } catch (err) {
+            console.error("[Usage] load failed:", err);
+            const status = $("usageStatus");
+            status.classList.add("is-error");
+            status.textContent =
+              "Usage data could not be loaded. You may not have access to the tracking form. Try again later.";
+          }
+        }
+
+        init();
+      })();
+    </script>
+    <!--{else}-->
+    <div class="lp" id="lp-root">
+      <main id="lp-main" tabindex="-1">
+        <div class="lp-gate">
+          <span class="lp-gate-icon" aria-hidden="true">
+            <span class="material-symbols-outlined" aria-hidden="true"
+              ><svg viewBox="0 -960 960 960" fill="currentColor">
+                <path
+                  d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm240-200q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z"
+                /></svg
+            ></span>
+          </span>
+          <h1>Access restricted</h1>
+          <p>
+            Launchpad Usage is available to LEAF Sysadmins only. Contact your
+            LEAF administrator if you believe you should have access.
+          </p>
+          <a href="#">Return to Launchpad</a>
+        </div>
+      </main>
+    </div>
+    <!--{/if}-->
+  </body>
+</html>

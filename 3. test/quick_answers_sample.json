@@ -1,0 +1,206 @@
+{
+  "answers": [
+    {
+      "id": "name-change",
+      "topic": "Name changes",
+      "question": "How do I change the name shown on my account?",
+      "shortAnswer": "[Placeholder] LEAF shows the name from your directory record, so LEAF administrators can't edit it. Update your name with [team that owns the name record] and it will appear in LEAF after the next sync.",
+      "steps": "<ol><li>Contact [team that owns the name record].</li><li>Allow [timeline] for the change to reach LEAF.</li><li>Sign out and back in to LEAF to see the update.</li></ol>",
+      "keywords": [
+        "legal name",
+        "last name",
+        "first name",
+        "married",
+        "marriage",
+        "divorce",
+        "display name",
+        "name update",
+        "wrong name",
+        "misspelled name"
+      ],
+      "contacts": [{ "name": "[Placeholder: team]", "url": "", "note": "" }],
+      "lastUpdated": "2026-10-01",
+      "inSupportForm": true
+    },
+    {
+      "id": "name-not-updating",
+      "topic": "Name changes",
+      "question": "Why is my old name still showing after I updated it?",
+      "shortAnswer": "[Placeholder] Name updates can take [timeline] to reach LEAF after the source record changes. If it's been longer than that, contact [team].",
+      "steps": "<ol><li>Confirm the name is updated at [source of the name record].</li><li>Sign out and back in to LEAF.</li><li>If it still shows the old name after [timeline], contact [team].</li></ol>",
+      "keywords": [
+        "old name",
+        "still showing",
+        "not updating",
+        "name not changed",
+        "name sync",
+        "outdated name",
+        "previous name"
+      ],
+      "contacts": [{ "name": "[Placeholder: team]", "url": "", "note": "" }],
+      "lastUpdated": "2026-06-15",
+      "inSupportForm": true
+    },
+    {
+      "id": "access-site",
+      "topic": "Access and permissions",
+      "question": "How do I get access to a LEAF site?",
+      "shortAnswer": "Access is usually granted by a site's own administrators, so contact the administrator of the site you need.",
+      "steps": "<ol><li>Use Find a LEAF Site to locate the site.</li><li>Contact that site's administrator and tell them what access you need.</li><li>Ask them to confirm once access is added, then sign in again.</li></ol>",
+      "keywords": [
+        "no access",
+        "access denied",
+        "permission",
+        "permissions",
+        "request access",
+        "add me",
+        "user group",
+        "need access",
+        "cant open site",
+        "cant see site"
+      ],
+      "contacts": [
+        {
+          "name": "Site administrator",
+          "url": "/launchpad/report.php?a=lp_find_site",
+          "note": "Find their site first"
+        }
+      ],
+      "lastUpdated": "2026-06-15",
+      "inSupportForm": true
+    },
+    {
+      "id": "access-changed",
+      "topic": "Access and permissions",
+      "question": "Why can't I see or do something I could before?",
+      "shortAnswer": "Your permissions on a site come from the groups you belong to there. If something changed, ask that site's administrator to check your groups.",
+      "steps": "<ol><li>Note the site and what you can no longer do.</li><li>Contact that site's administrator.</li><li>Ask them to confirm your group membership and restore it if it was removed.</li></ol>",
+      "keywords": [
+        "lost access",
+        "cant see",
+        "missing button",
+        "cant edit",
+        "permissions changed",
+        "removed from group",
+        "used to have access",
+        "role changed"
+      ],
+      "contacts": [
+        {
+          "name": "Site administrator",
+          "url": "/launchpad/report.php?a=lp_find_site",
+          "note": "Find their site first"
+        }
+      ],
+      "lastUpdated": "2026-06-15",
+      "inSupportForm": true
+    },
+    {
+      "id": "email-missing",
+      "topic": "Notifications",
+      "question": "Why am I not getting LEAF emails?",
+      "shortAnswer": "Check your Junk and spam folders first. LEAF only emails when a request reaches a step set up to notify you, so no email can be normal.",
+      "steps": "<ol><li>Check your Junk and spam folders.</li><li>Ask the site administrator whether your step sends an email.</li><li>If it should, ask them to confirm the email address on your account.</li></ol>",
+      "keywords": [
+        "no email",
+        "emails",
+        "not receiving",
+        "spam",
+        "junk",
+        "notification",
+        "notifications",
+        "alert",
+        "didnt get email"
+      ],
+      "contacts": [
+        {
+          "name": "Site administrator",
+          "url": "/launchpad/report.php?a=lp_find_site",
+          "note": "If your step should send an email"
+        },
+        {
+          "name": "ESD or local IT",
+          "url": "",
+          "note": "If other email is missing too"
+        }
+      ],
+      "lastUpdated": "2026-09-25",
+      "inSupportForm": true
+    },
+    {
+      "id": "email-too-many",
+      "topic": "Notifications",
+      "question": "How do I stop getting so many LEAF emails?",
+      "shortAnswer": "[Placeholder] Each LEAF site controls its own notifications, so ask that site's administrator to change them.",
+      "steps": "<ol><li>Note which site and request sent the email.</li><li>Ask that site's administrator to adjust the notification.</li></ol>",
+      "keywords": [
+        "too many emails",
+        "stop emails",
+        "unsubscribe",
+        "reduce notifications",
+        "turn off emails",
+        "email spam",
+        "duplicate emails"
+      ],
+      "contacts": [
+        {
+          "name": "Site administrator",
+          "url": "/launchpad/report.php?a=lp_find_site",
+          "note": "Find their site first"
+        }
+      ],
+      "lastUpdated": "2026-06-15",
+      "inSupportForm": true
+    },
+    {
+      "id": "status-check",
+      "topic": "Request status",
+      "question": "How do I check the status of my request?",
+      "shortAnswer": "Open the request to see its current step. View My Requests on the Launchpad home page lists your LEAF National requests.",
+      "steps": "<ol><li>Open the request from the LEAF site where you submitted it, or use View My Requests on the Launchpad home page.</li><li>Check the current step shown on the request.</li><li>Open the request history to see what has happened so far.</li></ol>",
+      "keywords": [
+        "status",
+        "where is my request",
+        "track request",
+        "request progress",
+        "check request",
+        "find my request"
+      ],
+      "contacts": [],
+      "lastUpdated": "2026-06-15",
+      "inSupportForm": true
+    },
+    {
+      "id": "request-stuck",
+      "topic": "Request status",
+      "question": "Why hasn't my request moved?",
+      "shortAnswer": "A request moves when the person on its current step acts on it. LEAF can't speed that up, but you can follow up with them.",
+      "steps": "<ol><li>Open the request and check its current step.</li><li>Contact the person or group on that step.</li><li>If the step looks wrong, contact the site administrator.</li></ol>",
+      "keywords": [
+        "stuck",
+        "not moving",
+        "waiting",
+        "pending",
+        "no response",
+        "approval",
+        "approver",
+        "delayed",
+        "taking too long"
+      ],
+      "contacts": [
+        {
+          "name": "Person or group on the current step",
+          "url": "",
+          "note": ""
+        },
+        {
+          "name": "Site administrator",
+          "url": "/launchpad/report.php?a=lp_find_site",
+          "note": "If the step looks wrong"
+        }
+      ],
+      "lastUpdated": "2026-06-15",
+      "inSupportForm": true
+    }
+  ]
+}

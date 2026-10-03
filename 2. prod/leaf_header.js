@@ -482,6 +482,8 @@
     arrow_drop_down:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-360 280-560h400L480-360Z"/></svg>',
     lock: '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm240-200q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z"/></svg>',
+    lock_open:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M240-640h360v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85h-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640Zm296.5 336.5Q560-327 560-360t-23.5-56.5Q513-440 480-440t-56.5 23.5Q400-393 400-360t23.5 56.5Q447-280 480-280t56.5-23.5Z"/></svg>',
     sync: '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M160-160v-80h110l-16-14q-49-49-71.5-106.5T160-478q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z"/></svg>',
     groups:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M0-240v-63q0-43 44-70t116-27q13 0 25 .5t23 2.5q-14 21-21 44t-7 48v65H0Zm240 0v-65q0-32 17.5-58.5T307-410q32-20 76.5-30t96.5-10q53 0 97.5 10t76.5 30q32 20 49 46.5t17 58.5v65H240Zm540 0v-65q0-26-6.5-49T754-397q11-2 22.5-2.5t23.5-.5q72 0 116 26.5t44 70.5v63H780ZM160-440q-33 0-56.5-23.5T80-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T160-440Zm640 0q-33 0-56.5-23.5T720-520q0-34 23.5-57t56.5-23q34 0 57 23t23 57q0 33-23 56.5T800-440Zm-320-40q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T600-600q0 50-34.5 85T480-480Z"/></svg>',
@@ -614,59 +616,112 @@
 
   /* ─────────────────────────────────────────────────────────────
      INTERNAL NAV SECTION
-     Right-aligned group: [lock] Coaches (new tab) → Team → Leadership
-     → Admin → Users Online. Sysadmin-only — gated on IS_SYSADMIN, so
-     the section never enters the DOM for non-sysadmins rather than
-     being hidden with CSS (the CSS rule is defense in depth only).
+     Right-aligned pill: [Coaches (new tab) → Team → Leadership → Admin
+     → Users Online → Feedback] [lock toggle]. The lock collapses the
+     bracketed items (see wireInternalNavToggle in wire()). Sysadmin-only
+     — gated on IS_SYSADMIN, so the section never enters the DOM for
+     non-sysadmins rather than being hidden with CSS (the CSS rule is
+     defense in depth only).
   ───────────────────────────────────────────────────────────── */
+  /* Saved choice ("1" collapsed / "0" expanded) always wins; with none,
+     collapse at INTERNAL_NAV_NARROW_MQ widths. Storage can be blocked,
+     so every access is guarded and falls back to the width default.
+     Known limitation (accepted, sysadmin-only): a saved "expanded" on a
+     961–1425px screen scrolls the page sideways, since the expanded
+     pill needs ~1426px to fit. */
+  var INTERNAL_NAV_STORAGE_KEY = "lpInternalNavCollapsed";
+  /* Expanded pill measured (PublicSans) to fit at ~1426px with no
+     sideways scroll, ~1458px clear of the bar's 24px right padding. */
+  var INTERNAL_NAV_NARROW_MQ = "(max-width: 1460px)";
+
+  function readInternalNavChoice() {
+    try {
+      var saved = window.localStorage.getItem(INTERNAL_NAV_STORAGE_KEY);
+      if (saved === "1") return true;
+      if (saved === "0") return false;
+    } catch (err) {}
+    return null;
+  }
+
+  function saveInternalNavChoice(collapsed) {
+    try {
+      window.localStorage.setItem(INTERNAL_NAV_STORAGE_KEY, collapsed ? "1" : "0");
+    } catch (err) {}
+  }
+
+  function isInternalNavNarrow() {
+    return !!(window.matchMedia && window.matchMedia(INTERNAL_NAV_NARROW_MQ).matches);
+  }
+
+  function initialInternalNavCollapsed() {
+    var saved = readInternalNavChoice();
+    return saved === null ? isInternalNavNarrow() : saved;
+  }
+
   function buildInternalNavHTML() {
     if (!IS_SYSADMIN) {
       return { desktop: "", mobile: "" };
     }
 
+    /* Initial state is baked into the markup so first paint is already
+       correct and no collapse transition plays on load. */
+    var collapsed = initialInternalNavCollapsed();
+
     var desktopInternal = `
-<div class="lp-nav-internal" data-sysadmin="1" role="navigation" aria-label="Internal team links">
+<div class="lp-nav-internal" data-sysadmin="1" data-collapsed="${collapsed}" role="navigation" aria-label="Internal team links">
 
-  <!-- Lock icon only — role="img" + aria-label gives it an accessible name. -->
-  <span class="lp-internal-label" role="img" aria-label="Internal">
-    <span class="material-symbols-outlined lp-internal-label-icon" aria-hidden="true">${ICON_SVG.lock}</span>
-  </span>
+  <!-- Collapsible items. inert while collapsed keeps them out of the
+       tab order and accessibility tree. The rule sits last so the
+       collapsed pill is just the lock. -->
+  <div class="lp-internal-items" id="lpInternalItems"${collapsed ? " inert" : ""}>
+    <div class="lp-internal-items-in">
 
-  <span class="lp-internal-rule" aria-hidden="true"></span>
+      <!-- Coaches: external, new tab. data-nav-external tells
+           wireLinkIntercept() to leave it alone instead of hash-routing it. -->
+      <a class="lp-internal-btn" href="https://leaf.va.gov/launchpad/report.php?a=Coaches" data-nav-external target="_blank" rel="noopener noreferrer">
+        Coaches
+        <span class="lp-sr-only">(opens in new tab)</span>
+      </a>
 
-  <!-- Coaches: external, new tab. data-nav-external tells
-       wireLinkIntercept() to leave it alone instead of hash-routing it. -->
-  <a class="lp-internal-btn" href="https://leaf.va.gov/launchpad/report.php?a=Coaches" data-nav-external target="_blank" rel="noopener noreferrer">
-    Coaches
-    <span class="lp-sr-only">(opens in new tab)</span>
-  </a>
+      <button class="lp-internal-btn" data-href="/launchpad/report.php?a=lp_team">
+        Team
+      </button>
 
-  <button class="lp-internal-btn" data-href="/launchpad/report.php?a=lp_team">
-    Team
-  </button>
+      <button class="lp-internal-btn" data-href="/launchpad/report.php?a=lp_leadership">
+        Leadership
+      </button>
 
-  <button class="lp-internal-btn" data-href="/launchpad/report.php?a=lp_leadership">
-    Leadership
-  </button>
+      <!-- Admin is a real standalone page — data-nav-fullpage tells
+           wireLinkIntercept() to always navigate here for real. -->
+      <button class="lp-internal-btn" data-href="/launchpad/admin" data-nav-fullpage>
+        Admin
+      </button>
 
-  <!-- Admin is a real standalone page — data-nav-fullpage tells
-       wireLinkIntercept() to always navigate here for real. -->
-  <button class="lp-internal-btn" data-href="/launchpad/admin" data-nav-fullpage>
-    Admin
-  </button>
+      <!-- Users Online: live count via SSE (see wireUsersOnlineBadge()) —
+           non-interactive, so <span> not <button>. Class, not id, since
+           this also renders in the mobile accordion below. -->
+      <span class="lp-internal-btn lp-internal-online">
+        <span class="lp-internal-online-dot" aria-hidden="true"></span>
+        Users Online:
+        <span class="lp-internal-online-count" aria-live="polite" aria-atomic="true">0</span>
+      </span>
 
-  <!-- Users Online: live count via SSE (see wireUsersOnlineBadge()) —
-       non-interactive, so <span> not <button>. Class, not id, since
-       this also renders in the mobile accordion below. -->
-  <span class="lp-internal-btn lp-internal-online">
-    <span class="lp-internal-online-dot" aria-hidden="true"></span>
-    Users Online:
-    <span class="lp-internal-online-count" aria-live="polite" aria-atomic="true">0</span>
-  </span>
+      <!-- Feedback: icon-only, opens lpFeedbackModal (see wireFeedbackWidget). -->
+      <button class="lp-internal-feedback-btn" type="button" data-action="feedback-modal" aria-label="Send feedback">
+        <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.add_comment}</span>
+      </button>
 
-  <!-- Feedback: icon-only, opens lpFeedbackModal (see wireFeedbackWidget). -->
-  <button class="lp-internal-feedback-btn" type="button" data-action="feedback-modal" aria-label="Send feedback">
-    <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.add_comment}</span>
+      <span class="lp-internal-rule" aria-hidden="true"></span>
+
+    </div>
+  </div>
+
+  <!-- Lock toggle: last so it never moves. Constant name; aria-expanded
+       carries the state. Deliberately not .lp-internal-btn/data-action
+       so wireLinkIntercept() ignores it. -->
+  <button class="lp-internal-toggle" type="button" data-internal-toggle
+          aria-controls="lpInternalItems" aria-expanded="${!collapsed}" aria-label="Internal links">
+    <span class="material-symbols-outlined" aria-hidden="true">${collapsed ? ICON_SVG.lock : ICON_SVG.lock_open}</span>
   </button>
 
 </div>`;
@@ -3326,7 +3381,8 @@
 
   /* ─────────────────────────────────────────────────────────────
      WIRE INTERACTIONS
-     Desktop dropdowns, mobile accordion, scroll shadow, Escape.
+     Desktop dropdowns, mobile accordion, internal nav toggle, scroll
+     shadow, Escape.
   ───────────────────────────────────────────────────────────── */
   function wire() {
     var header = document.getElementById("lpHeader");
@@ -3466,10 +3522,55 @@
       });
     }
 
+    /* ── Internal nav collapse (desktop lock toggle) ──
+       data-collapsed on the pill drives the CSS; aria-expanded, the
+       icon and inert on the items are kept in sync with it here. */
+    var internalPill = document.querySelector(".lp-nav-internal");
+    var internalToggle = internalPill && internalPill.querySelector("[data-internal-toggle]");
+    var internalItems = document.getElementById("lpInternalItems");
+
+    if (internalToggle && internalItems) {
+      var internalUserChose = readInternalNavChoice() !== null;
+
+      var setInternalCollapsed = function (collapsed) {
+        internalPill.setAttribute("data-collapsed", String(collapsed));
+        internalToggle.setAttribute("aria-expanded", String(!collapsed));
+        internalToggle.querySelector(".material-symbols-outlined").innerHTML =
+          collapsed ? ICON_SVG.lock : ICON_SVG.lock_open;
+        if (collapsed) {
+          /* inert would drop focus to <body> if it's inside the items */
+          if (internalItems.contains(document.activeElement)) internalToggle.focus();
+          internalItems.setAttribute("inert", "");
+        } else {
+          internalItems.removeAttribute("inert");
+        }
+      };
+
+      internalToggle.addEventListener("click", function () {
+        var collapsed = internalPill.getAttribute("data-collapsed") !== "true";
+        setInternalCollapsed(collapsed);
+        saveInternalNavChoice(collapsed);
+        internalUserChose = true;
+      });
+
+      /* Follow the viewport only until the user makes a choice */
+      if (window.matchMedia) {
+        var internalMq = window.matchMedia(INTERNAL_NAV_NARROW_MQ);
+        var onInternalMqChange = function (e) {
+          if (!internalUserChose) setInternalCollapsed(e.matches);
+        };
+        if (internalMq.addEventListener) {
+          internalMq.addEventListener("change", onInternalMqChange);
+        } else if (internalMq.addListener) {
+          internalMq.addListener(onInternalMqChange); /* Safari < 14 */
+        }
+      }
+    }
+
     /* Auto-close mobile menu if viewport grows past breakpoint */
     window.addEventListener("resize", function () {
       if (
-        window.innerWidth > 820 && /* keep in sync with leaf_header.css mobile breakpoint */
+        window.innerWidth > 960 && /* keep in sync with leaf_header.css mobile breakpoint */
         navToggle &&
         navToggle.classList.contains("open")
       ) {

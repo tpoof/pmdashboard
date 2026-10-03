@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quick Answers — LEAF Launchpad</title>
+
+    <link rel="stylesheet" href="launchpad/files/launchpad.css" />
+    <link rel="stylesheet" href="launchpad/files/leaf_header.css" />
+    <link rel="stylesheet" href="./files/quick_answers.css" />
+  </head>
+  <body>
+    <div class="lp" id="lp-root">
+      <a class="lp-skip" href="#lp-main">Skip to main content</a>
+      <div id="lp-header-host"></div>
+
+      <main id="lp-main" tabindex="-1">
+        <section
+          class="section qa-hero"
+          aria-labelledby="qa-h1"
+          data-track-section="qa-search"
+        >
+          <div class="wrap qa-wrap">
+            <div class="qa-title-row">
+              <h1 class="sec-h2" id="qa-h1">Quick Answers</h1>
+              <span class="qa-beta">Beta</span>
+            </div>
+            <p class="sec-sub">
+              Automated answers to common LEAF questions (FAQ). Each answer is
+              written and reviewed by the LEAF team.
+            </p>
+
+            <div
+              class="qa-sample-banner"
+              id="qa-sample-banner"
+              role="note"
+              hidden
+            >
+              <strong>Sample content.</strong> These answers are placeholders,
+              not official guidance.
+            </div>
+
+            <form class="qa-search" id="qa-form" role="search" novalidate>
+              <label class="qa-label" for="qa-input"
+                >Search Quick Answers</label
+              >
+              <div class="qa-search-row">
+                <input
+                  class="qa-input"
+                  id="qa-input"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Example: change my name"
+                  aria-describedby="qa-privacy"
+                />
+                <button class="btn btn-pri" type="submit" data-track-norage>
+                  Search
+                </button>
+                <button
+                  class="btn btn-sec qa-clear"
+                  id="qa-clear"
+                  type="button"
+                  hidden
+                >
+                  Clear
+                </button>
+              </div>
+              <p class="qa-note" id="qa-privacy">
+                Don't enter personal information. Your search isn't saved.
+              </p>
+            </form>
+
+            <div
+              class="qa-chips"
+              id="qa-chips"
+              role="group"
+              aria-label="Filter by topic"
+            ></div>
+          </div>
+        </section>
+
+        <section
+          class="section section-alt qa-results-section"
+          aria-label="Answers"
+          data-track-section="qa-answers"
+        >
+          <div class="wrap qa-wrap">
+            <p class="qa-count" id="qa-count"></p>
+
+            <div class="qa-loading" id="qa-loading" role="status">
+              <div class="qa-spinner" aria-hidden="true"></div>
+              <p>Loading answers&hellip;</p>
+            </div>
+
+            <div class="qa-error" id="qa-error" role="alert" hidden></div>
+
+            <div id="qa-results"></div>
+
+            <div class="qa-empty" id="qa-empty" hidden>
+              <h2 class="qa-empty-h">No matching answers</h2>
+              <p>Try different words, choose All topics, or request support.</p>
+              <div id="qa-empty-cta"></div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          class="section qa-help"
+          aria-labelledby="qa-help-h2"
+          data-track-section="qa-help"
+        >
+          <div class="wrap qa-wrap qa-help-in">
+            <div>
+              <h2 class="qa-help-h2" id="qa-help-h2">
+                Didn't find what you need?
+              </h2>
+              <p class="sec-sub">
+                Request support and tell us what you already tried.
+              </p>
+            </div>
+            <a
+              class="btn btn-pri"
+              href="https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Quick+Answers"
+              data-action="form-modal"
+              data-modal-src="https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&id=form_ba7de&title=Consultation+Request+from+Quick+Answers&iframe=1"
+              data-modal-title="Request Support"
+              data-track="request-support"
+            >
+              Request support
+            </a>
+          </div>
+        </section>
+      </main>
+    </div>
+    <!-- /.lp -->
+
+    <script
+      src="launchpad/files/leaf_header.js"
+      data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
+      data-csrf-token="<!--{$CSRFToken}-->"
+    ></script>
+    <script src="./files/quick_answers.js"></script>
+
+    <script>
+      (() => {
+        "use strict";
+
+        const INPUT_DELAY_MS = 250;
+        const TRACK_DELAY_MS = 1500;
+
+        const state = { answers: [], topics: [], topic: "", query: "" };
+        let inputTimer;
+        let trackTimer;
+        let countIsLive = false;
+        let QA;
+
+        const byId = (id) => document.getElementById(id);
+        const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+        const slug = (text) =>
+          String(text)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "");
+
+        function setCount(text) {
+          const node = byId("qa-count");
+          node.textContent = text;
+          // Live only after the first render so page load isn't announced twice.
+          if (!countIsLive) {
+            countIsLive = true;
+            setTimeout(() => node.setAttribute("role", "status"), 0);
+          }
+        }
+
+        function reportSearch(hitCount) {
+          clearTimeout(trackTimer);
+          trackTimer = setTimeout(
+            () => QA.track(hitCount ? "search-match" : "search-no-match"),
+            TRACK_DELAY_MS,
+          );
+        }
+
+        function onVote(entry, helpful, message) {
+          if (helpful) {
+            message.textContent = "Thanks for letting us know.";
+            return;
+          }
+          message.append(
+            "Sorry about that. ",
+            QA.supportLink({ className: "qa-inline-link" }),
+          );
+        }
+
+        function buildGroup(heading, entries) {
+          const group = document.createElement("section");
+          group.className = "qa-group";
+          const headingId = `qa-group-${slug(heading)}`;
+          group.setAttribute("aria-labelledby", headingId);
+
+          const h2 = document.createElement("h2");
+          h2.className = "qa-group-h";
+          h2.id = headingId;
+          h2.textContent = heading;
+
+          const list = document.createElement("ul");
+          list.className = "qa-list";
+          entries.forEach((entry) => {
+            const li = document.createElement("li");
+            li.append(
+              QA.renderCard(entry, {
+                feedback: true,
+                showTopic: true,
+                onVote,
+              }),
+            );
+            list.append(li);
+          });
+
+          group.append(h2, list);
+          return group;
+        }
+
+        function render() {
+          const container = byId("qa-results");
+          const query = state.query.trim();
+          const pool = state.topic
+            ? state.answers.filter((a) => a.topic === state.topic)
+            : state.answers;
+          let count;
+
+          container.replaceChildren();
+
+          if (query) {
+            const hits = QA.search(query, pool);
+            count = hits.length;
+            if (count) container.append(buildGroup("Best matches", hits));
+            reportSearch(count);
+            setCount(
+              count ? `${plural(count, "answer")} found` : "No answers found",
+            );
+          } else {
+            clearTimeout(trackTimer);
+            count = pool.length;
+            state.topics.forEach((topic) => {
+              const items = pool.filter((a) => a.topic === topic);
+              if (items.length) container.append(buildGroup(topic, items));
+            });
+            setCount(
+              state.topic
+                ? `${plural(count, "answer")} in ${state.topic}`
+                : plural(count, "answer"),
+            );
+          }
+
+          byId("qa-empty").hidden = count > 0;
+        }
+
+        function buildChips() {
+          const wrap = byId("qa-chips");
+          const options = [{ label: "All topics", value: "" }].concat(
+            state.topics.map((t) => ({ label: t, value: t })),
+          );
+          options.forEach(({ label, value }) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "qa-chip";
+            button.textContent = label;
+            button.dataset.topic = value;
+            button.setAttribute("aria-pressed", String(value === state.topic));
+            wrap.append(button);
+          });
+
+          wrap.addEventListener("click", (e) => {
+            const button = e.target.closest(".qa-chip");
+            if (!button) return;
+            state.topic = button.dataset.topic;
+            wrap
+              .querySelectorAll(".qa-chip")
+              .forEach((c) =>
+                c.setAttribute("aria-pressed", String(c === button)),
+              );
+            QA.track("topic", state.topic ? slug(state.topic) : "all");
+            render();
+          });
+        }
+
+        function wireSearch() {
+          const form = byId("qa-form");
+          const input = byId("qa-input");
+          const clear = byId("qa-clear");
+
+          const apply = () => {
+            state.query = input.value;
+            clear.hidden = !input.value;
+            render();
+          };
+
+          input.addEventListener("input", () => {
+            clear.hidden = !input.value;
+            clearTimeout(inputTimer);
+            inputTimer = setTimeout(apply, INPUT_DELAY_MS);
+          });
+
+          form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            clearTimeout(inputTimer);
+            apply();
+          });
+
+          clear.addEventListener("click", () => {
+            input.value = "";
+            clearTimeout(inputTimer);
+            apply();
+            input.focus();
+          });
+        }
+
+        function showError(message) {
+          byId("qa-loading").hidden = true;
+          const node = byId("qa-error");
+          node.textContent = message;
+          node.hidden = false;
+        }
+
+        async function init() {
+          try {
+            QA = window.LPQuickAnswers;
+            if (!QA) throw new Error("Quick Answers engine did not load");
+
+            byId("qa-sample-banner").hidden = QA.source !== "sample";
+
+            const data = await QA.load();
+            state.answers = data.answers;
+            state.topics = data.topics;
+
+            byId("qa-empty-cta").append(QA.supportLink());
+            buildChips();
+            wireSearch();
+            byId("qa-loading").hidden = true;
+            render();
+          } catch (err) {
+            console.error("[QuickAnswers]", err);
+            showError(
+              "Quick Answers can't load right now. Try again later, or request support below.",
+            );
+          }
+        }
+
+        document.addEventListener("DOMContentLoaded", init);
+      })();
+    </script>
+  </body>
+</html>
