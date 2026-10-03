@@ -122,53 +122,12 @@
   display: none;
 }
 
-/* ── Topic chips and vote buttons ── */
-.qa-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 18px;
-}
-.qa-chip {
-  min-height: 36px;
-  padding: 4px 14px;
-  font-family: "Public Sans", sans-serif;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--lp-accent, #005ea2);
-  background: #fff;
-  border: 1px solid var(--lp-accent, #005ea2);
-  border-radius: 999px;
-  cursor: pointer;
-}
-.qa-chip:hover {
-  background: var(--lp-bg-alt, #eff6fb);
-}
-.qa-chip[aria-pressed="true"] {
-  color: #fff;
-  background: var(--lp-hl, #1a4480);
-  border-color: var(--lp-hl, #1a4480);
-}
-.qa-chip:focus-visible {
-  outline: 3px solid var(--lp-hl, #1a4480);
-  outline-offset: 2px;
-}
-
 /* ── Results ── */
 .qa-count {
   margin-bottom: 16px;
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--c-muted, #3d4551);
-}
-.qa-group + .qa-group {
-  margin-top: 28px;
-}
-.qa-group-h {
-  margin-bottom: 10px;
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: var(--lp-hl, #1a4480);
 }
 .qa-list {
   display: grid;
@@ -177,6 +136,7 @@
 }
 
 .qa-card {
+  position: relative;
   padding: 14px 16px;
   background: #fff;
   border: 1px solid var(--c-blue10, #d9e8f6);
@@ -249,25 +209,22 @@
 .qa-contact-note {
   color: var(--c-muted, #3d4551);
 }
-.qa-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.875rem;
-  color: var(--c-muted, #3d4551);
-}
-/* #1a4480 on #eff6fb is 8.8:1. */
+/* #14532d on #e6f4ea is 8.0:1. */
 .qa-updated {
-  display: inline-flex;
-  align-items: center;
+  position: absolute;
+  top: 12px;
+  right: 14px;
   padding: 1px 8px;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #1a4480;
-  background: #eff6fb;
-  border: 1px solid #aacdec;
+  color: #14532d;
+  background: #e6f4ea;
+  border: 1px solid #4a8a5f;
   border-radius: 999px;
+  white-space: nowrap;
+}
+.qa-card--updated .qa-card-title {
+  padding-right: 9.5rem;
 }
 .qa-link,
 .qa-inline-link {
@@ -278,30 +235,6 @@
 .qa-inline-link:focus-visible {
   outline: 3px solid var(--lp-hl, #1a4480);
   outline-offset: 2px;
-}
-
-.qa-feedback {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--c-blue10, #d9e8f6);
-}
-.qa-feedback-label {
-  margin-right: 4px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--c-muted, #3d4551);
-}
-.qa-vote-msg {
-  flex-basis: 100%;
-  font-size: 0.875rem;
-  color: var(--c-text, #1b1b1b);
-}
-.qa-vote-msg:empty {
-  display: none;
 }
 
 /* ── States ── */
@@ -346,6 +279,13 @@
   border: 1px solid var(--c-blue10, #d9e8f6);
   border-radius: var(--r-lg, 8px);
 }
+.qa-idle {
+  padding: 1rem 0;
+  color: var(--c-muted, #3d4551);
+}
+.qa-idle[hidden] {
+  display: none;
+}
 .qa-empty[hidden] {
   display: none;
 }
@@ -367,8 +307,18 @@
   .qa-search-row {
     flex-direction: column;
   }
-  .qa-chip {
-    min-height: 44px;
+  .qa-card--updated {
+    display: flex;
+    flex-direction: column;
+  }
+  .qa-card--updated .qa-card-title {
+    padding-right: 0;
+  }
+  .qa-updated {
+    position: static;
+    order: -1;
+    align-self: flex-start;
+    margin-bottom: 8px;
   }
   .qa-help-in {
     flex-direction: column;

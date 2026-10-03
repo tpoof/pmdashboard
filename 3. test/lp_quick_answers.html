@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quick Answers — LEAF Launchpad</title>
 
-    <link rel="stylesheet" href="launchpad/files/launchpad.css" />
-    <link rel="stylesheet" href="launchpad/files/leaf_header.css" />
+    <link rel="stylesheet" href="./files/launchpad.css" />
+    <link rel="stylesheet" href="./files/leaf_header.css" />
     <link rel="stylesheet" href="./files/quick_answers.css" />
   </head>
   <body>
@@ -69,13 +69,6 @@
                 Don't enter personal information. Your search isn't saved.
               </p>
             </form>
-
-            <div
-              class="qa-chips"
-              id="qa-chips"
-              role="group"
-              aria-label="Filter by topic"
-            ></div>
           </div>
         </section>
 
@@ -85,6 +78,10 @@
           data-track-section="qa-answers"
         >
           <div class="wrap qa-wrap">
+            <p class="qa-idle" id="qa-idle" hidden>
+              Type a question or a few keywords above. For example: change my
+              name, no email, request stuck.
+            </p>
             <p class="qa-count" id="qa-count"></p>
 
             <div class="qa-loading" id="qa-loading" role="status">
@@ -98,7 +95,7 @@
 
             <div class="qa-empty" id="qa-empty" hidden>
               <h2 class="qa-empty-h">No matching answers</h2>
-              <p>Try different words, choose All topics, or request support.</p>
+              <p>Try different words or request support.</p>
               <div id="qa-empty-cta"></div>
             </div>
           </div>
@@ -135,7 +132,7 @@
     <!-- /.lp -->
 
     <script
-      src="launchpad/files/leaf_header.js"
+      src="./files/leaf_header.js"
       data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
       data-csrf-token="<!--{$CSRFToken}-->"
     ></script>
@@ -148,7 +145,7 @@
         const INPUT_DELAY_MS = 250;
         const TRACK_DELAY_MS = 1500;
 
-        const state = { answers: [], topics: [], topic: "", query: "" };
+        const state = { answers: [] };
         let inputTimer;
         let trackTimer;
         let countIsLive = false;
@@ -156,19 +153,15 @@
 
         const byId = (id) => document.getElementById(id);
         const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
-        const slug = (text) =>
-          String(text)
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-|-$/g, "");
 
         function setCount(text) {
           const node = byId("qa-count");
           node.textContent = text;
-          // Live only after the first render so page load isn't announced twice.
-          if (!countIsLive) {
+          if (text && !countIsLive) {
             countIsLive = true;
-            setTimeout(() => node.setAttribute("role", "status"), 0);
+            node.setAttribute("role", "status");
+            node.textContent = "";
+            setTimeout(() => (node.textContent = text), 50);
           }
         }
 
@@ -180,108 +173,36 @@
           );
         }
 
-        function onVote(entry, helpful, message) {
-          if (helpful) {
-            message.textContent = "Thanks for letting us know.";
-            return;
-          }
-          message.append(
-            "Sorry about that. ",
-            QA.supportLink({ className: "qa-inline-link" }),
-          );
-        }
-
-        function buildGroup(heading, entries) {
-          const group = document.createElement("section");
-          group.className = "qa-group";
-          const headingId = `qa-group-${slug(heading)}`;
-          group.setAttribute("aria-labelledby", headingId);
-
-          const h2 = document.createElement("h2");
-          h2.className = "qa-group-h";
-          h2.id = headingId;
-          h2.textContent = heading;
-
-          const list = document.createElement("ul");
-          list.className = "qa-list";
-          entries.forEach((entry) => {
-            const li = document.createElement("li");
-            li.append(
-              QA.renderCard(entry, {
-                feedback: true,
-                showTopic: true,
-                onVote,
-              }),
-            );
-            list.append(li);
-          });
-
-          group.append(h2, list);
-          return group;
-        }
-
-        function render() {
+        function render(query) {
           const container = byId("qa-results");
-          const query = state.query.trim();
-          const pool = state.topic
-            ? state.answers.filter((a) => a.topic === state.topic)
-            : state.answers;
-          let count;
-
           container.replaceChildren();
 
-          if (query) {
-            const hits = QA.search(query, pool);
-            count = hits.length;
-            if (count) container.append(buildGroup("Best matches", hits));
-            reportSearch(count);
-            setCount(
-              count ? `${plural(count, "answer")} found` : "No answers found",
-            );
-          } else {
+          if (!query) {
             clearTimeout(trackTimer);
-            count = pool.length;
-            state.topics.forEach((topic) => {
-              const items = pool.filter((a) => a.topic === topic);
-              if (items.length) container.append(buildGroup(topic, items));
-            });
-            setCount(
-              state.topic
-                ? `${plural(count, "answer")} in ${state.topic}`
-                : plural(count, "answer"),
-            );
+            setCount("");
+            byId("qa-idle").hidden = false;
+            byId("qa-empty").hidden = true;
+            return;
           }
 
-          byId("qa-empty").hidden = count > 0;
-        }
+          const hits = QA.search(query, state.answers);
+          const list = document.createElement("ul");
+          list.className = "qa-list";
+          hits.forEach((entry) => {
+            const li = document.createElement("li");
+            li.append(QA.renderCard(entry));
+            list.append(li);
+          });
+          if (hits.length) container.append(list);
 
-        function buildChips() {
-          const wrap = byId("qa-chips");
-          const options = [{ label: "All topics", value: "" }].concat(
-            state.topics.map((t) => ({ label: t, value: t })),
+          byId("qa-idle").hidden = true;
+          byId("qa-empty").hidden = hits.length > 0;
+          setCount(
+            hits.length
+              ? `${plural(hits.length, "answer")} found`
+              : "No answers found",
           );
-          options.forEach(({ label, value }) => {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "qa-chip";
-            button.textContent = label;
-            button.dataset.topic = value;
-            button.setAttribute("aria-pressed", String(value === state.topic));
-            wrap.append(button);
-          });
-
-          wrap.addEventListener("click", (e) => {
-            const button = e.target.closest(".qa-chip");
-            if (!button) return;
-            state.topic = button.dataset.topic;
-            wrap
-              .querySelectorAll(".qa-chip")
-              .forEach((c) =>
-                c.setAttribute("aria-pressed", String(c === button)),
-              );
-            QA.track("topic", state.topic ? slug(state.topic) : "all");
-            render();
-          });
+          reportSearch(hits.length);
         }
 
         function wireSearch() {
@@ -290,9 +211,8 @@
           const clear = byId("qa-clear");
 
           const apply = () => {
-            state.query = input.value;
             clear.hidden = !input.value;
-            render();
+            render(input.value.trim());
           };
 
           input.addEventListener("input", () => {
@@ -331,13 +251,11 @@
 
             const data = await QA.load();
             state.answers = data.answers;
-            state.topics = data.topics;
 
             byId("qa-empty-cta").append(QA.supportLink());
-            buildChips();
             wireSearch();
             byId("qa-loading").hidden = true;
-            render();
+            render("");
           } catch (err) {
             console.error("[QuickAnswers]", err);
             showError(

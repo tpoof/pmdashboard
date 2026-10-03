@@ -245,10 +245,7 @@
       .filter((e) => e.question && e.shortAnswer)
       .map(prepare)
       .sort((a, b) => a.question.localeCompare(b.question));
-    const topics = [
-      ...new Set(answers.map((a) => a.topic).filter(Boolean)),
-    ].sort((a, b) => a.localeCompare(b));
-    return { answers, topics };
+    return { answers };
   }
 
   function track(label, id) {
@@ -319,45 +316,14 @@
     return wrap;
   }
 
-  function renderFeedback(entry, uid, opts) {
-    const group = el("div", "qa-feedback");
-    group.setAttribute("role", "group");
-    group.setAttribute("aria-labelledby", `${uid}-fb`);
-    const label = el("span", "qa-feedback-label", "Did this help?");
-    label.id = `${uid}-fb`;
-
-    const yes = el("button", "qa-chip", "Yes");
-    const no = el("button", "qa-chip", "No");
-    [yes, no].forEach((b) => {
-      b.type = "button";
-      b.setAttribute("aria-pressed", "false");
-      b.dataset.trackNorage = "";
-    });
-    const message = el("p", "qa-vote-msg");
-    message.setAttribute("role", "status");
-
-    const vote = (helpful, button) => {
-      if (button.getAttribute("aria-pressed") === "true") return;
-      yes.setAttribute("aria-pressed", String(helpful));
-      no.setAttribute("aria-pressed", String(!helpful));
-      track(helpful ? "yes" : "no", entry.id);
-      message.textContent = "";
-      if (opts.onVote) opts.onVote(entry, helpful, message);
-    };
-    yes.addEventListener("click", () => vote(true, yes));
-    no.addEventListener("click", () => vote(false, no));
-
-    group.append(label, yes, no, message);
-    return group;
-  }
-
   function renderCard(entry, options) {
-    const opts = options || {};
-    const uid = "qa-" + String(entry.id).replace(/[^a-z0-9_-]/gi, "");
-    const card = el("article", "qa-card");
+    const level = (options && options.headingLevel) || 2;
+    const recent = isRecent(entry.lastUpdated);
+    const card = el("article", recent ? "qa-card qa-card--updated" : "qa-card");
     card.dataset.id = entry.id;
 
-    card.append(el("h3", "qa-card-title", entry.question));
+    card.append(el("h" + level, "qa-card-title", entry.question));
+    if (recent) card.append(el("span", "qa-updated", "Updated recently"));
     card.append(el("p", "qa-short", entry.shortAnswer));
 
     const contacts = renderContacts(entry.contacts);
@@ -375,17 +341,6 @@
       card.append(details);
     }
 
-    const recent = isRecent(entry.lastUpdated);
-    if ((opts.showTopic && entry.topic) || recent) {
-      const meta = el("p", "qa-meta");
-      if (opts.showTopic && entry.topic) {
-        meta.append(el("span", "qa-topic", entry.topic));
-      }
-      if (recent) meta.append(el("span", "qa-updated", "Updated recently"));
-      card.append(meta);
-    }
-
-    if (opts.feedback) card.append(renderFeedback(entry, uid, opts));
     return card;
   }
 
