@@ -541,12 +541,11 @@
 
         const $ = (id) => document.getElementById(id);
 
-        /* Replace both IDs with the tracking form's; the page shows
-           generated sample data until then. */
+        /* Sample data shows while either ID is a REPLACE_ME value. */
         const CONFIG = {
-          apiBase: "https://leaf.va.gov/platform/service_requests_launchpad/",
-          formId: "REPLACE_ME_TRACK_FORM_ID",
-          indicatorId: "REPLACE_ME_TRACK_INDICATOR_ID",
+          apiBase: "https://leaf.va.gov/platform/stephanie_sandbox/",
+          formId: "form_3e7be",
+          indicatorId: "99",
           batchSize: 500,
           maxBatches: 20,
         };
