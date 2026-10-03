@@ -680,6 +680,11 @@ button.dd-link {
   padding: 5px 0 5px 5px;
   margin: -5px 0 -5px -5px;
 }
+/* Fully expanded and settled (JS adds .is-settled after the transition):
+   stop clipping so the Feedback tooltip can open below the pill. */
+.lp-nav-internal[data-collapsed="false"] .lp-internal-items.is-settled .lp-internal-items-in {
+  overflow: visible;
+}
 
 /* Lock toggle — same 30px circular target as .lp-internal-feedback-btn.
    The icon shape (lock_open / lock) is the state signal; color is
@@ -721,6 +726,89 @@ button.dd-link {
 .lp-internal-toggle:focus-visible {
   outline: 3px solid #005ea2;
   outline-offset: 2px;
+}
+
+/* ── Internal nav tooltips (lock toggle + Feedback) ──
+   Same look as launchpad.css's .lp-tooltip, under separate names since
+   that stylesheet shares the document on the launchpad home. Opens below
+   (the header is at the top of the page) and right-aligned (both triggers
+   sit at the far right), arrow over the 30px trigger's center. #fff on
+   #1b1b1b = 17.2:1. Shown on hover and :focus-visible; JS adds
+   .is-dismissed for Escape/activation. The .lp-nav-internal prefix
+   outranks .lp-header *'s line-height: normal. */
+.lp-nav-tip-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.lp-nav-internal .lp-nav-tip {
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 0;
+  z-index: 10; /* above the breadcrumb row; within .lp-header's stack */
+  width: max-content;
+  max-width: min(220px, calc(100vw - 2rem));
+  overflow-wrap: break-word;
+  white-space: normal;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 5px; /* --nav-r */
+  background: #1b1b1b; /* --nav-text */
+  color: #fff;
+  font-family: "PublicSans-Regular", sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.4;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-0.25rem);
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+}
+/* Arrow */
+.lp-nav-internal .lp-nav-tip::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  right: 10px;
+  border: 5px solid transparent;
+  border-bottom-color: #1b1b1b;
+}
+/* Bridges the gap so the pointer can move onto the tooltip (WCAG 1.4.13) */
+.lp-nav-internal .lp-nav-tip::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  height: 9px;
+}
+/* visibility: inherit keeps the Feedback tip hidden inside collapsed items */
+@media (hover: hover) {
+  .lp-nav-internal .lp-nav-tip-wrap:hover .lp-nav-tip {
+    opacity: 1;
+    visibility: inherit;
+    transform: translateY(0);
+  }
+}
+.lp-nav-internal .lp-nav-tip-wrap > :focus-visible + .lp-nav-tip {
+  opacity: 1;
+  visibility: inherit;
+  transform: translateY(0);
+}
+.lp-nav-internal .lp-nav-tip-wrap.is-dismissed .lp-nav-tip {
+  opacity: 0;
+  visibility: hidden;
+}
+@media (forced-colors: active) {
+  .lp-nav-internal .lp-nav-tip {
+    border: 1px solid CanvasText;
+  }
+  .lp-nav-internal .lp-nav-tip::after {
+    forced-color-adjust: none;
+    border-bottom-color: CanvasText;
+  }
 }
 
 /* Vertical rule between the items and the lock */
@@ -1489,6 +1577,7 @@ button.dd-link {
   .lp-nav-internal,
   .lp-internal-items,
   .lp-internal-toggle,
+  .lp-nav-internal .lp-nav-tip,
   .lp-nav-toggle-icon span,
   .lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(1),
   .lp-nav-toggle.open .lp-nav-toggle-icon span:nth-child(3),

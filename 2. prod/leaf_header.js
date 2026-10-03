@@ -653,6 +653,10 @@
     return !!(window.matchMedia && window.matchMedia(INTERNAL_NAV_NARROW_MQ).matches);
   }
 
+  function internalToggleTip(collapsed) {
+    return collapsed ? "Show internal links" : "Hide internal links";
+  }
+
   function initialInternalNavCollapsed() {
     var saved = readInternalNavChoice();
     return saved === null ? isInternalNavNarrow() : saved;
@@ -673,7 +677,7 @@
   <!-- Collapsible items. inert while collapsed keeps them out of the
        tab order and accessibility tree. The rule sits last so the
        collapsed pill is just the lock. -->
-  <div class="lp-internal-items" id="lpInternalItems"${collapsed ? " inert" : ""}>
+  <div class="lp-internal-items${collapsed ? "" : " is-settled"}" id="lpInternalItems"${collapsed ? " inert" : ""}>
     <div class="lp-internal-items-in">
 
       <!-- Coaches: external, new tab. data-nav-external tells
@@ -707,9 +711,12 @@
       </span>
 
       <!-- Feedback: icon-only, opens lpFeedbackModal (see wireFeedbackWidget). -->
-      <button class="lp-internal-feedback-btn" type="button" data-action="feedback-modal" aria-label="Send feedback">
-        <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.add_comment}</span>
-      </button>
+      <span class="lp-nav-tip-wrap">
+        <button class="lp-internal-feedback-btn" type="button" data-action="feedback-modal" aria-label="Send feedback" aria-describedby="lpFeedbackTip">
+          <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.add_comment}</span>
+        </button>
+        <span class="lp-nav-tip" id="lpFeedbackTip" role="tooltip">Send feedback on Launchpad v2</span>
+      </span>
 
       <span class="lp-internal-rule" aria-hidden="true"></span>
 
@@ -719,10 +726,14 @@
   <!-- Lock toggle: last so it never moves. Constant name; aria-expanded
        carries the state. Deliberately not .lp-internal-btn/data-action
        so wireLinkIntercept() ignores it. -->
-  <button class="lp-internal-toggle" type="button" data-internal-toggle
-          aria-controls="lpInternalItems" aria-expanded="${!collapsed}" aria-label="Internal links">
-    <span class="material-symbols-outlined" aria-hidden="true">${collapsed ? ICON_SVG.lock : ICON_SVG.lock_open}</span>
-  </button>
+  <span class="lp-nav-tip-wrap">
+    <button class="lp-internal-toggle" type="button" data-internal-toggle
+            aria-controls="lpInternalItems" aria-expanded="${!collapsed}" aria-label="Internal links"
+            aria-describedby="lpInternalToggleTip">
+      <span class="material-symbols-outlined" aria-hidden="true">${collapsed ? ICON_SVG.lock : ICON_SVG.lock_open}</span>
+    </button>
+    <span class="lp-nav-tip" id="lpInternalToggleTip" role="tooltip">${internalToggleTip(collapsed)}</span>
+  </span>
 
 </div>`;
 
@@ -3524,25 +3535,65 @@
 
     /* ── Internal nav collapse (desktop lock toggle) ──
        data-collapsed on the pill drives the CSS; aria-expanded, the
-       icon and inert on the items are kept in sync with it here. */
+       icon, the tooltip text and inert on the items are kept in sync
+       with it here. */
     var internalPill = document.querySelector(".lp-nav-internal");
     var internalToggle = internalPill && internalPill.querySelector("[data-internal-toggle]");
     var internalItems = document.getElementById("lpInternalItems");
+    var internalToggleTipEl = document.getElementById("lpInternalToggleTip");
 
     if (internalToggle && internalItems) {
       var internalUserChose = readInternalNavChoice() !== null;
+      var internalSettleTimer = null;
+
+      /* .is-settled lets the items overflow (so the Feedback tooltip isn't
+         clipped) only once fully expanded. transitionend is the normal
+         path; a timeout of the computed duration covers cases where it
+         never fires (reduced motion = 0s, interrupted toggle, pill hidden
+         at mobile widths). */
+      var markInternalSettled = function () {
+        if (internalPill.getAttribute("data-collapsed") === "false") {
+          internalItems.classList.add("is-settled");
+        }
+      };
+
+      var internalTransitionMs = function () {
+        var cs = window.getComputedStyle(internalItems);
+        var durations = cs.transitionDuration.split(",");
+        var delays = cs.transitionDelay.split(",");
+        var toMs = function (s) {
+          return s.indexOf("ms") > -1 ? parseFloat(s) : parseFloat(s) * 1000;
+        };
+        var max = 0;
+        durations.forEach(function (d, i) {
+          max = Math.max(max, toMs(d) + toMs(delays[i % delays.length]));
+        });
+        return max || 0;
+      };
+
+      internalItems.addEventListener("transitionend", function (e) {
+        if (e.target === internalItems && e.propertyName === "grid-template-columns") {
+          markInternalSettled();
+        }
+      });
 
       var setInternalCollapsed = function (collapsed) {
+        clearTimeout(internalSettleTimer);
+        internalItems.classList.remove("is-settled");
         internalPill.setAttribute("data-collapsed", String(collapsed));
         internalToggle.setAttribute("aria-expanded", String(!collapsed));
         internalToggle.querySelector(".material-symbols-outlined").innerHTML =
           collapsed ? ICON_SVG.lock : ICON_SVG.lock_open;
+        if (internalToggleTipEl) internalToggleTipEl.textContent = internalToggleTip(collapsed);
         if (collapsed) {
           /* inert would drop focus to <body> if it's inside the items */
           if (internalItems.contains(document.activeElement)) internalToggle.focus();
           internalItems.setAttribute("inert", "");
         } else {
           internalItems.removeAttribute("inert");
+          var settleMs = internalTransitionMs();
+          if (settleMs === 0) markInternalSettled();
+          else internalSettleTimer = setTimeout(markInternalSettled, settleMs + 50);
         }
       };
 
@@ -3565,6 +3616,51 @@
           internalMq.addListener(onInternalMqChange); /* Safari < 14 */
         }
       }
+    }
+
+    /* ── Internal nav tooltips (WCAG 1.4.13) ──
+       CSS shows them on hover / :focus-visible. .is-dismissed hides one
+       after Escape or activation until a fresh pointer enter or focus. */
+    var tipWraps = document.querySelectorAll(".lp-nav-internal .lp-nav-tip-wrap");
+    tipWraps.forEach(function (wrap) {
+      var trigger = wrap.querySelector("button");
+      var reset = function () {
+        wrap.classList.remove("is-dismissed");
+      };
+      wrap.addEventListener("mouseenter", reset);
+      wrap.addEventListener("focusin", reset);
+      if (trigger) {
+        trigger.addEventListener("click", function () {
+          wrap.classList.add("is-dismissed");
+        });
+      }
+    });
+
+    /* Capture phase, so it runs before the document-level Escape handlers
+       (dropdowns, mobile menu, modals). It only stops the event when a
+       tooltip is actually showing, so Escape then dismisses just the
+       tooltip and leaves focus where it is. */
+    if (tipWraps.length) {
+      document.addEventListener(
+        "keydown",
+        function (e) {
+          if (e.key !== "Escape") return;
+          var dismissed = false;
+          tipWraps.forEach(function (wrap) {
+            var tip = wrap.querySelector(".lp-nav-tip");
+            if (
+              tip &&
+              !wrap.classList.contains("is-dismissed") &&
+              window.getComputedStyle(tip).visibility === "visible"
+            ) {
+              wrap.classList.add("is-dismissed");
+              dismissed = true;
+            }
+          });
+          if (dismissed) e.stopPropagation();
+        },
+        true,
+      );
     }
 
     /* Auto-close mobile menu if viewport grows past breakpoint */
