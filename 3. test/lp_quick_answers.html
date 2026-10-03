@@ -74,14 +74,12 @@
 
         <section
           class="section section-alt qa-results-section"
+          id="qa-results-section"
           aria-label="Answers"
+          hidden
           data-track-section="qa-answers"
         >
           <div class="wrap qa-wrap">
-            <p class="qa-idle" id="qa-idle" hidden>
-              Type a question or a few keywords above. For example: change my
-              name, no email, request stuck.
-            </p>
             <p class="qa-count" id="qa-count"></p>
 
             <div class="qa-loading" id="qa-loading" role="status">
@@ -103,7 +101,9 @@
 
         <section
           class="section qa-help"
+          id="qa-help"
           aria-labelledby="qa-help-h2"
+          hidden
           data-track-section="qa-help"
         >
           <div class="wrap qa-wrap qa-help-in">
@@ -180,8 +180,8 @@
           if (!query) {
             clearTimeout(trackTimer);
             setCount("");
-            byId("qa-idle").hidden = false;
-            byId("qa-empty").hidden = true;
+            byId("qa-results-section").hidden = true;
+            byId("qa-help").hidden = true;
             return;
           }
 
@@ -195,7 +195,8 @@
           });
           if (hits.length) container.append(list);
 
-          byId("qa-idle").hidden = true;
+          byId("qa-results-section").hidden = false;
+          byId("qa-help").hidden = hits.length === 0;
           byId("qa-empty").hidden = hits.length > 0;
           setCount(
             hits.length

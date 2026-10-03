@@ -269,6 +269,10 @@
   border-left: 4px solid #d54309;
   border-radius: var(--r-lg, 8px);
 }
+.qa-results-section[hidden],
+.qa-help[hidden] {
+  display: none;
+}
 .qa-error[hidden] {
   display: none;
 }
@@ -278,13 +282,6 @@
   background: #fff;
   border: 1px solid var(--c-blue10, #d9e8f6);
   border-radius: var(--r-lg, 8px);
-}
-.qa-idle {
-  padding: 1rem 0;
-  color: var(--c-muted, #3d4551);
-}
-.qa-idle[hidden] {
-  display: none;
 }
 .qa-empty[hidden] {
   display: none;
