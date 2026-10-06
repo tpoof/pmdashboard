@@ -1,0 +1,3066 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Build Docs — LEAF Launchpad</title>
+
+    <link rel="stylesheet" href="./files/launchpad.css" />
+
+    <style>
+      /* Local LEAF fonts, declared here because this page can load standalone. */
+      @font-face {
+        font-family: "PublicSans-Bold";
+        src:
+          url("/app/libs/css/fonts/public-sans/PublicSans-Bold.woff2")
+            format("woff2"),
+          url("/app/libs/css/fonts/public-sans/PublicSans-Bold.woff")
+            format("woff");
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Source Sans Pro Web";
+        src:
+          url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-regular-webfont.woff2")
+            format("woff2"),
+          url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-regular-webfont.woff")
+            format("woff");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      .material-symbols-outlined {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .material-symbols-outlined svg {
+        width: 1em;
+        height: 1em;
+        display: block;
+      }
+
+      /* ── Page shell ── */
+      .ldc-page {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem 5rem;
+      }
+      .ldc-header {
+        margin-bottom: 2rem;
+      }
+      .ldc-kicker {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--lp-accent);
+        margin: 0 0 0.5rem;
+      }
+      .ldc-title {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: clamp(1.6rem, 3vw, 2.15rem);
+        font-weight: 800;
+        color: var(--lp-hl);
+        margin: 0 0 0.4rem;
+        line-height: 1.15;
+      }
+      .ldc-sub {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 1.05rem;
+        color: var(--c-muted);
+        margin: 0;
+        max-width: 640px;
+      }
+
+      /* ── Layout: contents list + article ── */
+      .ldc-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 2rem;
+      }
+      .ldc-toc {
+        font-family: "Source Sans Pro Web", sans-serif;
+      }
+      .ldc-toc-title {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--lp-hl);
+        margin: 0 0 0.5rem;
+      }
+      .ldc-toc ul {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .ldc-toc a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0.25rem 0.9rem;
+        border: 1px solid var(--c-blue20);
+        border-radius: 999px;
+        background: var(--c-white);
+        color: var(--lp-accent);
+        font-size: 0.95rem;
+        text-decoration: none;
+      }
+      .ldc-toc a:hover {
+        background: var(--c-blue5);
+      }
+
+      @media (min-width: 960px) {
+        .ldc-layout {
+          grid-template-columns: 220px minmax(0, 1fr);
+          gap: 3rem;
+          align-items: start;
+        }
+        .ldc-toc {
+          position: sticky;
+          top: 9rem;
+        }
+        .ldc-toc ul {
+          flex-direction: column;
+          gap: 0;
+          border-left: 2px solid var(--c-blue10);
+        }
+        .ldc-toc a {
+          min-height: 44px;
+          padding: 0.25rem 0.9rem;
+          border: 0;
+          border-radius: 0;
+          background: transparent;
+        }
+      }
+
+      /* ── Article ── */
+      .ldc-sec {
+        padding: 0 0 2.5rem;
+        margin: 0 0 2.5rem;
+        border-bottom: 1px solid var(--c-blue10);
+        scroll-margin-top: 9rem;
+      }
+      .ldc-sec:last-child {
+        border-bottom: 0;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+      .ldc-sec h2 {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--lp-hl);
+        line-height: 1.2;
+        margin: 0 0 0.75rem;
+      }
+      .ldc-sec h3 {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--lp-hl);
+        margin: 1.75rem 0 0.5rem;
+      }
+      .ldc-sec p,
+      .ldc-sec li {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 1rem;
+        color: var(--c-text);
+        max-width: 72ch;
+      }
+      .ldc-sec p {
+        margin: 0 0 0.9rem;
+      }
+      .ldc-sec ol,
+      .ldc-sec ul.ldc-list {
+        margin: 0 0 1rem;
+        padding-left: 1.4rem;
+      }
+      .ldc-sec li {
+        margin-bottom: 0.4rem;
+      }
+      .ldc-sec a {
+        color: var(--lp-accent);
+      }
+      .ldc-sec a:focus-visible,
+      .ldc-toc a:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+
+      .ldc-sec code {
+        font-family: ui-monospace, Consolas, "Courier New", monospace;
+        font-size: 0.9em;
+        padding: 0.1em 0.35em;
+        background: var(--c-blue5);
+        border: 1px solid var(--c-blue10);
+        border-radius: 3px;
+        overflow-wrap: anywhere;
+      }
+      .ldc-sec pre {
+        margin: 0 0 1.1rem;
+        padding: 1rem;
+        background: var(--c-gray5);
+        border: 1px solid var(--c-gray20);
+        border-radius: var(--r);
+        overflow-x: auto;
+      }
+      .ldc-sec pre code {
+        padding: 0;
+        background: none;
+        border: 0;
+        font-size: 0.875rem;
+        line-height: 1.55;
+        overflow-wrap: normal;
+      }
+      .ldc-sec pre:focus-visible,
+      .ldc-table-wrap:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+
+      .ldc-note {
+        margin: 0 0 1.1rem;
+        padding: 0.8rem 1rem;
+        background: var(--c-blue5);
+        border-left: 4px solid var(--lp-accent);
+        border-radius: var(--r);
+      }
+      .ldc-note p {
+        margin: 0;
+      }
+
+      /* ── Tables ── */
+      .ldc-table-wrap {
+        margin: 0 0 1.25rem;
+        overflow-x: auto;
+        border: 1px solid var(--c-blue20);
+        border-radius: var(--r);
+      }
+      .ldc-table {
+        width: 100%;
+        min-width: 560px;
+        border-collapse: collapse;
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.95rem;
+      }
+      .ldc-table caption {
+        text-align: left;
+        padding: 0.75rem 1rem;
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--lp-hl);
+        background: var(--c-white);
+      }
+      .ldc-table th,
+      .ldc-table td {
+        padding: 0.65rem 1rem;
+        text-align: left;
+        vertical-align: top;
+        border-top: 1px solid var(--c-blue10);
+      }
+      .ldc-table thead th {
+        background: var(--c-blue5);
+        color: var(--lp-hl);
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+      .ldc-table tbody th {
+        font-weight: 700;
+        color: var(--c-text);
+        white-space: nowrap;
+      }
+
+      /* ── Interactive code viewer ── */
+      .ldc-code {
+        margin: 0 0 1.25rem;
+        border: 1px solid var(--c-blue20);
+        border-radius: var(--r);
+        background: var(--c-white);
+        overflow: hidden;
+      }
+
+      .ldc-code-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem 0.75rem;
+        padding: 0.5rem 0.75rem;
+        background: var(--c-blue5);
+        border-bottom: 1px solid var(--c-blue20);
+      }
+
+      .ldc-code-title {
+        font-family: ui-monospace, Consolas, "Courier New", monospace;
+        font-size: 0.85rem;
+        color: var(--lp-hl);
+        overflow-wrap: anywhere;
+      }
+
+      .ldc-code-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .ldc-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        min-height: 44px;
+        padding: 0.35rem 0.85rem;
+        border: 1px solid var(--lp-accent);
+        border-radius: var(--r);
+        background: var(--c-white);
+        color: var(--lp-accent);
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 0.875rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .ldc-btn:hover {
+        background: var(--c-blue10);
+      }
+
+      .ldc-btn:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+
+      .ldc-btn:disabled {
+        border-color: var(--c-gray20);
+        background: var(--c-gray5);
+        color: #565c65;
+        cursor: not-allowed;
+      }
+
+      .ldc-btn .material-symbols-outlined {
+        font-size: 1.15rem;
+      }
+
+      .ldc-seg {
+        display: inline-flex;
+        border: 1px solid var(--lp-accent);
+        border-radius: var(--r);
+        overflow: hidden;
+      }
+
+      .ldc-seg .ldc-btn {
+        border: 0;
+        border-radius: 0;
+      }
+
+      .ldc-seg .ldc-btn:focus-visible {
+        outline-offset: -3px;
+      }
+
+      .ldc-btn[aria-pressed="true"] {
+        background: var(--lp-accent);
+        color: var(--c-white);
+      }
+
+      .ldc-code-area {
+        display: block;
+        width: 100%;
+        min-height: 6rem;
+        margin: 0;
+        padding: 1rem;
+        border: 0;
+        background: var(--c-gray5);
+        color: var(--c-text);
+        font-family: ui-monospace, Consolas, "Courier New", monospace;
+        font-size: 0.875rem;
+        line-height: 1.55;
+        tab-size: 2;
+        white-space: pre;
+        overflow: auto;
+        resize: vertical;
+      }
+
+      .ldc-sec .ldc-hint {
+        max-width: none;
+        margin: 0;
+        padding: 0.5rem 1rem;
+        border-top: 1px solid var(--c-blue10);
+        font-size: 0.85rem;
+        color: var(--c-muted);
+      }
+
+      @media (forced-colors: active) {
+        .ldc-btn[aria-pressed="true"] {
+          background: Highlight;
+          color: HighlightText;
+        }
+      }
+      .ldc-preview {
+        padding: 1rem;
+        background: var(--c-gray5);
+      }
+      .ldc-code-area[hidden],
+      .ldc-sec .ldc-hint[hidden],
+      .ldc-preview[hidden],
+      .ldc-seg[hidden] {
+        display: none;
+      }
+      .ldc-frame {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: 120px;
+        margin: 0 auto;
+        border: 1px solid var(--c-gray20);
+        background: var(--c-white);
+      }
+      .ldc-preview[data-size="mobile"] .ldc-frame {
+        width: 375px;
+      }
+
+      /* ── Access restricted state ── */
+      .lp-gate {
+        max-width: 460px;
+        margin: 4rem auto;
+        padding: 2.5rem 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        text-align: center;
+        background: #fff;
+        border: 1px solid var(--c-blue20);
+        border-radius: var(--r-lg);
+      }
+      .lp-gate-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--c-blue5);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .lp-gate-icon .material-symbols-outlined {
+        font-size: 1.75rem !important;
+        color: var(--lp-accent);
+      }
+      .lp-gate h1 {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--lp-hl);
+        margin: 0;
+      }
+      .lp-gate p {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.95rem;
+        color: var(--c-muted);
+        margin: 0;
+      }
+      .lp-gate a {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #fff;
+        background: var(--lp-accent);
+        text-decoration: none;
+        padding: 0.6rem 1.3rem;
+        border-radius: 8px;
+      }
+      .lp-gate a:hover {
+        background: var(--lp-accent-strong, #004a82);
+      }
+      .lp-gate a:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!--{if $empMembership['groupID'][1]}-->
+    <div class="lp" id="lp-root">
+      <main id="lp-main" tabindex="-1">
+        <div class="ldc-page">
+          <header class="ldc-header">
+            <p class="ldc-kicker">LEAF Team</p>
+            <h1 class="ldc-title">Launchpad Build Docs</h1>
+            <p class="ldc-sub">
+              How the Launchpad is put together, how to add to it, and where its
+              connected forms live.
+            </p>
+          </header>
+
+          <div class="ldc-layout">
+            <nav class="ldc-toc" aria-labelledby="ldcTocH">
+              <h2 class="ldc-toc-title" id="ldcTocH">On this page</h2>
+              <ul>
+                <li><a href="#ldc-files">File map</a></li>
+                <li><a href="#ldc-loading">How pages load</a></li>
+                <li><a href="#ldc-add-page">Add a page</a></li>
+                <li><a href="#ldc-access">Sysadmin access</a></li>
+                <li><a href="#ldc-forms">Connected forms</a></li>
+                <li><a href="#ldc-components">Components</a></li>
+                <li><a href="#ldc-standards">Build standards</a></li>
+              </ul>
+            </nav>
+
+            <div class="ldc-article">
+              <section
+                class="ldc-sec"
+                id="ldc-files"
+                aria-labelledby="ldcFilesH"
+              >
+                <h2 id="ldcFilesH">File map</h2>
+                <p>
+                  Each Launchpad page is a LEAF report template published as
+                  <code>report.php?a=lp_&lt;name&gt;</code>. Shared behavior and
+                  styling live in two files under
+                  <code>/launchpad/files/</code>, so there is one copy of each
+                  to edit.
+                </p>
+                <div
+                  class="ldc-table-wrap"
+                  role="region"
+                  aria-label="File map table"
+                  tabindex="0"
+                >
+                  <table class="ldc-table">
+                    <caption>
+                      Launchpad files and what each one does
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">File</th>
+                        <th scope="col">Role</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th scope="row"><code>main.tpl</code></th>
+                        <td>
+                          Wraps every page. Loads the universal header and
+                          renders the page body inside
+                          <code>&lt;main id="body"&gt;</code>.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row"><code>leaf_header.js</code></th>
+                        <td>
+                          Universal header. Builds the nav, breadcrumb and
+                          mobile menu, runs the router, and hosts the modals and
+                          the Feedback button.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row"><code>leaf_header.css</code></th>
+                        <td>Styles for everything the header script builds.</td>
+                      </tr>
+                      <tr>
+                        <th scope="row"><code>launchpad.css</code></th>
+                        <td>
+                          Design tokens (colors, radii, max width) and shared
+                          components such as buttons and the skip link.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row"><code>view_homepage.tpl</code></th>
+                        <td>
+                          Homepage template served at the bare Launchpad URL,
+                          with its own inline styles and script.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row"><code>lp_*.html</code></th>
+                        <td>
+                          One file per page: Impact, Find a Site, Form Library,
+                          Team, Leadership and so on.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row"><code>multigrid.js</code></th>
+                        <td>
+                          Builds the My Requests grid by merging records from
+                          several LEAF sites (see <code>SOURCE_SITES</code>).
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section
+                class="ldc-sec"
+                id="ldc-loading"
+                aria-labelledby="ldcLoadingH"
+              >
+                <h2 id="ldcLoadingH">How pages load</h2>
+                <p>
+                  Every page gets the universal header. Only the homepage
+                  (<code>view_homepage.tpl</code>) also runs the router, which
+                  swaps content in place so the header and breadcrumb stay put.
+                </p>
+                <ol>
+                  <li>
+                    <code>main.tpl</code> loads <code>leaf_header.css</code> and
+                    <code>leaf_header.js</code> and hides LEAF's native header
+                    and footer.
+                  </li>
+                  <li>
+                    The header script mounts the nav and breadcrumb. It matches
+                    the current URL against its route list to build the
+                    breadcrumb. The homepage and unknown pages show none.
+                  </li>
+                  <li>
+                    On the homepage, a nav click sets a hash such as
+                    <code>#find_site</code> instead of navigating.
+                  </li>
+                  <li>
+                    <code>loadView()</code> fetches the route's URL, removes
+                    LEAF chrome, extracts <code>#content</code> and places it in
+                    <code>#lpSwapHost</code>.
+                  </li>
+                  <li>
+                    Scripts matching <code>SCRIPT_BLOCKLIST</code> (the header
+                    itself and legacy nav scripts) are not run again.
+                  </li>
+                  <li>
+                    A route marked <code>iframe: true</code> is mounted in an
+                    iframe instead. Use this for a full separate LEAF app, such
+                    as the Help Library.
+                  </li>
+                  <li>
+                    Back and forward use hash history. Each view change is
+                    announced through <code>#lp-live-region</code>.
+                  </li>
+                </ol>
+                <p>
+                  Hash keys come from the <code>?a=</code> value, lowercased.
+                  <code>HREF_HASH_KEY_OVERRIDES</code> drops the
+                  <code>lp_</code> prefix, and
+                  <code>LEGACY_HASH_KEY_ALIASES</code> keeps old
+                  <code>#lp_*</code> links working.
+                </p>
+                <div class="ldc-note" role="note">
+                  <p>
+                    In-page anchors inside a loaded page are handled by the
+                    router, so a link such as <code>href="#ldc-files"</code>
+                    scrolls without changing the route.
+                  </p>
+                </div>
+              </section>
+
+              <section
+                class="ldc-sec"
+                id="ldc-add-page"
+                aria-labelledby="ldcAddH"
+              >
+                <h2 id="ldcAddH">Add a page</h2>
+                <ol>
+                  <li>
+                    Create <code>lp_&lt;name&gt;.html</code>. Link
+                    <code>./files/launchpad.css</code> in the head and put the
+                    content inside
+                    <code>&lt;div class="lp" id="lp-root"&gt;</code> and
+                    <code>&lt;main id="lp-main" tabindex="-1"&gt;</code>. Do not
+                    add a nav or skip link; the header adds them.
+                  </li>
+                  <li>
+                    Publish it as <code>report.php?a=lp_&lt;name&gt;</code>.
+                  </li>
+                  <li>
+                    Register the route in <code>leaf_header.js</code>. Public
+                    pages go in <code>NAV_SECTIONS</code>, or in
+                    <code>SUBROUTES</code> if nested under another page.
+                    Internal pages get an <code>INTERNAL_*_ROUTE</code>
+                    constant, as shown below.
+                  </li>
+                  <li>
+                    Add the page to <code>HREF_HASH_KEY_OVERRIDES</code> to set
+                    its short hash key.
+                  </li>
+                  <li>
+                    Link to it with a root-relative path such as
+                    <code>/launchpad/report.php?a=lp_&lt;name&gt;</code>.
+                  </li>
+                </ol>
+                <h3>Example: an internal route</h3>
+                <div data-ldc-code data-title="leaf_header.js">
+                  <textarea>
+var INTERNAL_DOCS_ROUTE = {
+  href: "/launchpad/report.php?a=lp_docs",
+  title: "Build Docs",
+  section: "Internal",
+  parent: {
+    label: "Team",
+    href: "/launchpad/report.php?a=lp_team",
+  },
+};
+
+// in buildRouteMap()
+var docsKey = hrefToHashKey(INTERNAL_DOCS_ROUTE.href);
+if (docsKey) ROUTE_MAP[docsKey] = INTERNAL_DOCS_ROUTE;
+
+// in HREF_HASH_KEY_OVERRIDES
+"/launchpad/report.php?a=lp_docs": "docs",</textarea
+                  >
+                </div>
+              </section>
+
+              <section
+                class="ldc-sec"
+                id="ldc-access"
+                aria-labelledby="ldcAccessH"
+              >
+                <h2 id="ldcAccessH">Sysadmin access</h2>
+                <p>
+                  Two checks work together, and only the first protects content.
+                </p>
+                <h3>Page gate (server side)</h3>
+                <p>
+                  Sysadmin pages wrap their content in a Smarty condition on
+                  group 1. Anyone else is served the access-restricted block and
+                  never receives the page content.
+                </p>
+                <div data-ldc-code data-title="lp_*.html">
+                  <textarea>
+&lt;!--{if $empMembership['groupID'][1]}--&gt;
+  ...page content...
+&lt;!--{else}--&gt;
+  ...access restricted block...
+&lt;!--{/if}--&gt;</textarea
+                  >
+                </div>
+                <h3>Nav flag (client side)</h3>
+                <p>
+                  <code>leaf_header.js</code> reads
+                  <code>data-is-sysadmin</code> from its own script tag to show
+                  or hide the Internal nav. Anything other than <code>1</code>,
+                  <code>true</code> or <code>yes</code> keeps it hidden. This
+                  only controls what appears in the nav, so never use it to
+                  protect data.
+                </p>
+              </section>
+
+              <section
+                class="ldc-sec"
+                id="ldc-forms"
+                aria-labelledby="ldcFormsH"
+              >
+                <h2 id="ldcFormsH">Connected forms and services</h2>
+                <div
+                  class="ldc-table-wrap"
+                  role="region"
+                  aria-label="Connected forms table"
+                  tabindex="0"
+                >
+                  <table class="ldc-table">
+                    <caption>
+                      Forms and services the Launchpad reads from or writes to
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Feature</th>
+                        <th scope="col">Site</th>
+                        <th scope="col">Form</th>
+                        <th scope="col">Indicator</th>
+                        <th scope="col">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th scope="row">Feedback button</th>
+                        <td>
+                          <code>/platform/service_requests_launchpad/</code>
+                        </td>
+                        <td><code>form_6ecbe</code></td>
+                        <td><code>488</code></td>
+                        <td>
+                          Sysadmin only. Creates a record, writes the text, then
+                          advances it to step <code>105</code>.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Request Support</th>
+                        <td><code>/platform/support/</code></td>
+                        <td><code>form_ba7de</code></td>
+                        <td>None</td>
+                        <td>
+                          Opens in a modal through
+                          <code>data-action="form-modal"</code>. The
+                          <code>&amp;iframe=1</code> parameter hides the app's
+                          own header.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">My Requests</th>
+                        <td>Several sites</td>
+                        <td>Per site</td>
+                        <td>Per site</td>
+                        <td>
+                          Sources are listed in <code>SOURCE_SITES</code> in
+                          <code>multigrid.js</code>.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Users online</th>
+                        <td><code>/online-users/getonlineusers.php</code></td>
+                        <td>None</td>
+                        <td>None</td>
+                        <td>Server-sent events feed for the Internal nav.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <h3>Header script attributes</h3>
+                <ul class="ldc-list">
+                  <li>
+                    <code>data-is-sysadmin</code> shows or hides the Internal
+                    nav.
+                  </li>
+                  <li>
+                    <code>data-csrf-token</code> is the LEAF session token the
+                    Feedback button sends with its writes. Without it the button
+                    renders but submissions fail with an inline error.
+                  </li>
+                </ul>
+                <p>
+                  Both are filled by Smarty in <code>main.tpl</code>. A page
+                  that loads the header script on its own must set them too.
+                </p>
+              </section>
+
+              <section
+                class="ldc-sec"
+                id="ldc-components"
+                aria-labelledby="ldcCompH"
+              >
+                <h2 id="ldcCompH">Components</h2>
+                <p>
+                  Each snippet is real Launchpad markup. Preview renders it with
+                  <code>launchpad.css</code>, at desktop or mobile width. Raw is
+                  editable. Copy takes the whole snippet, including any
+                  <code>&lt;style&gt;</code> block, so it works when pasted.
+                  Edits are not saved.
+                </p>
+
+                <h3>Buttons</h3>
+                <p>
+                  Primary and secondary buttons with an inline icon. Uses
+                  launchpad.css.
+                </p>
+                <div data-ldc-code data-title="Buttons" data-preview="true">
+                  <textarea>
+&lt;style&gt;
+  .btn .material-symbols-outlined svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+&lt;/style&gt;
+
+&lt;div style="display:flex;gap:12px;flex-wrap:wrap"&gt;
+  &lt;a
+    href="https://leaf.va.gov/launchpad/report.php?a=Start_new_site"
+    class="btn btn-pri"
+    target="_blank"
+    rel="noopener noreferrer"
+  &gt;
+    &lt;span class="material-symbols-outlined" aria-hidden="true"
+      &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+        &lt;path
+          d="m98-537 168-168q14-14 33-20t39-2l52 11q-54 64-85 116t-60 126L98-537Zm205 91q23-72 62.5-136T461-702q88-88 201-131.5T873-860q17 98-26 211T716-448q-55 55-120 95.5T459-289L303-446Zm276-120q23 23 56.5 23t56.5-23q23-23 23-56.5T692-679q-23-23-56.5-23T579-679q-23 23-23 56.5t23 56.5ZM551-85l-64-147q74-29 126.5-60T730-377l10 52q4 20-2 39.5T718-252L551-85ZM162-318q35-35 85-35.5t85 34.5q35 35 35 85t-35 85q-25 25-83.5 43T87-74q14-103 32-161t43-83Z"
+        /&gt;&lt;/svg
+    &gt;&lt;/span&gt;
+    Build a new site
+    &lt;span class="lp-sr-only"&gt;(opens in new tab)&lt;/span&gt;
+  &lt;/a&gt;
+  &lt;a href="#find_site" class="btn btn-sec"&gt;
+    &lt;span class="material-symbols-outlined" aria-hidden="true"
+      &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+        &lt;path
+          d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 400Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Z"
+        /&gt;&lt;/svg
+    &gt;&lt;/span&gt;
+    Find a LEAF Site
+  &lt;/a&gt;
+&lt;/div&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Section header</h3>
+                <p>
+                  Eyebrow, heading and intro. Add class ctr to center it. Uses
+                  launchpad.css.
+                </p>
+                <div
+                  data-ldc-code
+                  data-title="Section header"
+                  data-preview="true"
+                >
+                  <textarea>
+&lt;div class="sec-hd"&gt;
+  &lt;span class="eyebrow"&gt;How LEAF works&lt;/span&gt;
+  &lt;h2 class="sec-h2" id="steps-h2"&gt;
+    Build forms, workflows, and reports in a few easy steps.
+  &lt;/h2&gt;
+  &lt;p class="sec-sub"&gt;
+    No coding required. LEAF gives every VA team the tools to
+    digitize and automate any business process.
+  &lt;/p&gt;
+&lt;/div&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Hero</h3>
+                <p>Kicker, heading, intro and actions. Uses launchpad.css.</p>
+                <div data-ldc-code data-title="Hero" data-preview="true">
+                  <textarea>
+&lt;style&gt;
+  .hero-kicker .material-symbols-outlined svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .btn .material-symbols-outlined svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+&lt;/style&gt;
+
+&lt;section class="hero" aria-labelledby="hero-h1"&gt;
+  &lt;div class="hero-grid"&gt;
+    &lt;div&gt;
+      &lt;span class="hero-kicker"&gt;
+        &lt;span class="material-symbols-outlined" aria-hidden="true"
+          &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+            &lt;path
+              d="m344-60-76-128-144-32 14-148-98-112 98-112-14-148 144-32 76-128 136 58 136-58 76 128 144 32-14 148 98 112-98 112 14 148-144 32-76 128-136-58-136 58Zm94-278 226-226-56-58-170 170-86-84-56 56 142 142Z"
+            /&gt;&lt;/svg
+        &gt;&lt;/span&gt;
+        Built by VA. For VA.
+      &lt;/span&gt;
+      &lt;h1 class="hero-h1" id="hero-h1"&gt;
+        Digitize any VA&lt;br /&gt;
+        business process&lt;br /&gt;
+        &lt;em&gt;fast.&lt;/em&gt;
+      &lt;/h1&gt;
+      &lt;p class="hero-sub"&gt;
+        LEAF is a secure, no-code/low-code platform that empowers every
+        VA team to build custom workflows, forms, and reports.
+      &lt;/p&gt;
+      &lt;div class="hero-actions"&gt;
+        &lt;a
+          href="https://leaf.va.gov/launchpad/report.php?a=Start_new_site"
+          class="btn btn-pri"
+          target="_blank"
+          rel="noopener noreferrer"
+        &gt;
+          &lt;span class="material-symbols-outlined" aria-hidden="true"
+            &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+              &lt;path
+                d="m98-537 168-168q14-14 33-20t39-2l52 11q-54 64-85 116t-60 126L98-537Zm205 91q23-72 62.5-136T461-702q88-88 201-131.5T873-860q17 98-26 211T716-448q-55 55-120 95.5T459-289L303-446Zm276-120q23 23 56.5 23t56.5-23q23-23 23-56.5T692-679q-23-23-56.5-23T579-679q-23 23-23 56.5t23 56.5ZM551-85l-64-147q74-29 126.5-60T730-377l10 52q4 20-2 39.5T718-252L551-85ZM162-318q35-35 85-35.5t85 34.5q35 35 35 85t-35 85q-25 25-83.5 43T87-74q14-103 32-161t43-83Z"
+              /&gt;&lt;/svg
+          &gt;&lt;/span&gt;
+          Build a new site
+          &lt;span class="lp-sr-only"&gt;(opens in new tab)&lt;/span&gt;
+        &lt;/a&gt;
+        &lt;a href="#find_site" class="btn btn-sec"&gt;
+          &lt;span class="material-symbols-outlined" aria-hidden="true"
+            &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+              &lt;path
+                d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 400Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Z"
+              /&gt;&lt;/svg
+          &gt;&lt;/span&gt;
+          Find a LEAF Site
+        &lt;/a&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Step</h3>
+                <p>
+                  Text beside an image. Add class rev to flip the order. Uses
+                  launchpad.css.
+                </p>
+                <div data-ldc-code data-title="Step" data-preview="true">
+                  <textarea>
+&lt;div class="step" aria-labelledby="step1-h3"&gt;
+  &lt;div&gt;
+    &lt;span class="step-tag"&gt;Step 01 — Design&lt;/span&gt;
+    &lt;h3 class="step-h3" id="step1-h3"&gt;Design your form&lt;/h3&gt;
+    &lt;p class="step-body"&gt;
+      Our user-friendly, drag-and-drop Form Editor creates a custom
+      form for your process — no developers needed.
+    &lt;/p&gt;
+    &lt;ul class="step-list"&gt;
+      &lt;li&gt;Dozens of question formats to choose from&lt;/li&gt;
+      &lt;li&gt;
+        Toggle questions on or off based on previous responses
+      &lt;/li&gt;
+      &lt;li&gt;Integration with VA Active Directory&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/div&gt;
+  &lt;div
+    class="step-img"
+    role="img"
+    aria-label="LEAF drag-and-drop form editor"
+  &gt;
+    &lt;img
+      src="./files/graphics-form.png"
+      alt="LEAF form editor showing question types and layout options"
+      width="500"
+      height="281"
+      loading="lazy"
+    /&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Feature cards</h3>
+                <p>
+                  A grid of cards. Add one article per card. Uses launchpad.css.
+                </p>
+                <div
+                  data-ldc-code
+                  data-title="Feature cards"
+                  data-preview="true"
+                >
+                  <textarea>
+&lt;style&gt;
+  .feat-ico .material-symbols-outlined svg {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .feats .feat {
+    transform: none !important;
+    transition: none !important;
+    cursor: default;
+  }
+
+  .feats .feat:hover,
+  .feats .feat:focus-within {
+    transform: none !important;
+    box-shadow: var(
+    --shadow-card,
+    0 2px 12px rgba(0, 0, 0, 0.08)
+    ) !important;
+  }
+
+  .feats .feat:focus-visible {
+    outline: 3px solid var(--lp-accent, #005ea2);
+    outline-offset: 2px;
+  }
+&lt;/style&gt;
+
+&lt;div class="feats" role="list"&gt;
+  &lt;article class="feat" role="listitem"&gt;
+    &lt;div class="feat-ico"&gt;
+      &lt;span class="material-symbols-outlined" aria-hidden="true"
+        &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+          &lt;path
+            d="M222-200 80-342l56-56 85 85 170-170 56 57-225 226Zm0-320L80-662l56-56 85 85 170-170 56 57-225 226Zm298 240v-80h360v80H520Zm0-320v-80h360v80H520Z"
+          /&gt;&lt;/svg
+      &gt;&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;h3 class="feat-h3"&gt;Integrated form library&lt;/h3&gt;
+    &lt;p class="feat-desc"&gt;
+      Import ready-to-use form templates other VA teams have
+      built and shared.
+    &lt;/p&gt;
+  &lt;/article&gt;
+
+  &lt;article class="feat" role="listitem"&gt;
+    &lt;div class="feat-ico"&gt;
+      &lt;span class="material-symbols-outlined" aria-hidden="true"
+        &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+          &lt;path
+            d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm320-280 320-200v-80L480-520 160-720v80l320 200Z"
+          /&gt;&lt;/svg
+      &gt;&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;h3 class="feat-h3"&gt;Inbox management&lt;/h3&gt;
+    &lt;p class="feat-desc"&gt;
+      Centralize and organize all your pending requests efficiently.
+    &lt;/p&gt;
+  &lt;/article&gt;
+&lt;/div&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Scale cards</h3>
+                <p>
+                  A heading with a list under each card. Uses launchpad.css.
+                </p>
+                <div data-ldc-code data-title="Scale cards" data-preview="true">
+                  <textarea>
+&lt;style&gt;
+  .scale-hd .material-symbols-outlined svg {
+    width: 2rem;
+    height: 2rem;
+  }
+&lt;/style&gt;
+
+&lt;div class="scale"&gt;
+  &lt;div class="scale-card"&gt;
+    &lt;div class="scale-hd"&gt;
+      &lt;span class="material-symbols-outlined" aria-hidden="true"
+        &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+          &lt;path
+            d="M420-280h120v-140h140v-120H540v-140H420v140H280v120h140v140ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Z"
+          /&gt;&lt;/svg
+      &gt;&lt;/span&gt;
+      &lt;p class="scale-title"&gt;Facility Level&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;ul class="scale-list"&gt;
+      &lt;li&gt;Clinic Profile Management&lt;/li&gt;
+      &lt;li&gt;Eligibility &amp;amp; Enrollment&lt;/li&gt;
+      &lt;li&gt;Onboarding &amp;amp; Offboarding&lt;/li&gt;
+      &lt;li&gt;Conference &amp;amp; Travel&lt;/li&gt;
+      &lt;li&gt;Work Order Submissions&lt;/li&gt;
+      &lt;li&gt;&lt;em&gt;… and many more&lt;/em&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/div&gt;
+
+  &lt;div class="scale-card"&gt;
+    &lt;div class="scale-hd"&gt;
+      &lt;span class="material-symbols-outlined" aria-hidden="true"
+        &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+          &lt;path
+            d="M600-120v-120H440v-400h-80v120H80v-320h280v120h240v-120h280v320H600v-120h-80v320h80v-120h280v320H600Z"
+          /&gt;&lt;/svg
+      &gt;&lt;/span&gt;
+      &lt;p class="scale-title"&gt;Regional Level&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;ul class="scale-list"&gt;
+      &lt;li&gt;VISN Network Office&lt;/li&gt;
+      &lt;li&gt;Human Resources Management&lt;/li&gt;
+      &lt;li&gt;VBA Regional Offices&lt;/li&gt;
+      &lt;li&gt;VA Supportive Housing (VASH)&lt;/li&gt;
+      &lt;li&gt;Memorial Service Networks (MSNs)&lt;/li&gt;
+      &lt;li&gt;&lt;em&gt;… and many more&lt;/em&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Awards row</h3>
+                <p>
+                  A row of award images. Image paths are relative to the
+                  Launchpad files folder.
+                </p>
+                <div data-ldc-code data-title="Awards row" data-preview="true">
+                  <textarea>
+&lt;style&gt;
+  .awards-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2.5rem;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2.5rem;
+  }
+
+  .award-img {
+    max-width: 160px;
+    max-height: 90px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    filter: grayscale(100%);
+    transition: filter 0.4s ease;
+    cursor: pointer;
+  }
+
+  .award-img:hover {
+    filter: grayscale(0%);
+  }
+&lt;/style&gt;
+
+&lt;div class="awards-row"&gt;
+  &lt;img
+    class="award-img"
+    src="./files/2019_FedIT_Innovation_Award.png"
+    alt="2019 FedHealthIT Innovation Award"
+  /&gt;
+  &lt;img
+    class="award-img"
+    src="./files/2019_Gears-of-Government_Award.png"
+    alt="2019 Gears of Government Award"
+  /&gt;
+  &lt;img
+    class="award-img"
+    src="./files/2022_disruptive_tech_awards.jpg"
+    alt="2022 Disruptive Tech Award"
+  /&gt;
+&lt;/div&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Newsletter band</h3>
+                <p>
+                  Signup form beside supporting links. Submit handling lives in
+                  the page script. Uses launchpad.css.
+                </p>
+                <div
+                  data-ldc-code
+                  data-title="Newsletter band"
+                  data-preview="true"
+                >
+                  <textarea>
+&lt;style&gt;
+  .nl-link .material-symbols-outlined {
+    color: #fff !important;
+  }
+
+  .nl-res-label {
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.65);
+    margin: 0 0 0.75rem;
+    display: block;
+  }
+
+  .nl-footer-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .nl-footer-links li {
+    display: flex;
+  }
+
+  .nl-footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: "PublicSans-Medium", sans-serif;
+    font-size: 0.95rem;
+    color: #fff !important;
+    text-decoration: underline !important;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(255, 255, 255, 0.45) !important;
+    transition: text-decoration-color 0.15s;
+  }
+
+  .nl-footer-link .material-symbols-outlined {
+    color: rgba(255, 255, 255, 0.7) !important;
+    flex-shrink: 0;
+  }
+
+  .nl-footer-link .material-symbols-outlined svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .nl-footer-link:hover {
+    color: #fff !important;
+    text-decoration-color: #fff !important;
+  }
+
+  .nl-footer-link:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+    border-radius: 3px;
+    color: #fff !important;
+    text-decoration-color: #fff !important;
+  }
+
+  .nl-status {
+    margin: 0.75rem 0 0;
+    font-family: "PublicSans-Medium", sans-serif;
+    font-size: 0.9rem;
+  }
+
+  .nl-status:empty {
+    display: none;
+  }
+
+  .nl-status.is-success {
+    color: #7ed99b;
+  }
+
+  .nl-status.is-error {
+    color: #ff9d9d;
+  }
+
+  @media (max-width: 700px) {
+    .nl-in {
+      flex-direction: column;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nl-footer-link {
+      transition: none;
+    }
+  }
+&lt;/style&gt;
+
+&lt;section id="lp-resources" class="nl" aria-labelledby="nl-h2"&gt;
+  &lt;div class="nl-in"&gt;
+    &lt;!-- Left: newsletter signup --&gt;
+    &lt;div&gt;
+      &lt;h2 class="nl-h2" id="nl-h2"&gt;Stay in the loop&lt;/h2&gt;
+      &lt;p class="nl-sub"&gt;
+        Get LEAF platform updates, new features, and tips delivered
+        directly to your VA inbox.
+      &lt;/p&gt;
+      &lt;form
+        class="nl-form"
+        id="lpNlForm"
+        novalidate
+        aria-label="Subscribe to LEAF updates"
+      &gt;
+        &lt;label class="nl-lbl" for="lpNlEmail"
+          &gt;Your VA email address&lt;/label
+        &gt;
+        &lt;input
+          class="nl-input"
+          type="email"
+          id="lpNlEmail"
+          name="email"
+          placeholder="your.name@va.gov"
+          autocomplete="email"
+          aria-required="true"
+        /&gt;
+        &lt;button class="nl-btn" type="submit"&gt;Subscribe&lt;/button&gt;
+      &lt;/form&gt;
+      &lt;p
+        class="nl-status"
+        id="lpNlStatus"
+        role="status"
+        aria-live="polite"
+      &gt;&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;div&gt;
+      &lt;span class="nl-res-label" id="nl-res-heading"
+        &gt;More from LEAF&lt;/span
+      &gt;
+      &lt;nav aria-labelledby="nl-res-heading"&gt;
+        &lt;ul class="nl-footer-links" role="list"&gt;
+          &lt;li&gt;
+            &lt;a
+              class="nl-footer-link"
+              href="https://leaf.va.gov/launchpad/report.php?a=Cost_Estimator"
+              target="_blank"
+              rel="noopener noreferrer"
+            &gt;
+              &lt;span class="material-symbols-outlined" aria-hidden="true"
+                &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+                  &lt;path
+                    d="M320-240h60v-80h80v-60h-80v-80h-60v80h-80v60h80v80Zm200-30h200v-60H520v60Zm0-100h200v-60H520v60Zm44-152 56-56 56 56 42-42-56-58 56-56-42-42-56 56-56-56-42 42 56 56-56 58 42 42Zm-314-70h200v-60H250v60Zm-50 472q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Z"
+                  /&gt;&lt;/svg
+              &gt;&lt;/span&gt;
+              LEAF Cost Estimator
+              &lt;span class="sr-only"&gt;(opens in new tab)&lt;/span&gt;
+            &lt;/a&gt;
+          &lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/nav&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Finder search box</h3>
+                <p>
+                  The static shell of the finder. Topics and results are built
+                  by the script in view_homepage.tpl.
+                </p>
+                <div
+                  data-ldc-code
+                  data-title="Finder search box"
+                  data-preview="true"
+                >
+                  <textarea>
+&lt;style&gt;
+  #lp-finder .material-symbols-outlined,
+  #finderNextSteps .material-symbols-outlined {
+    color: inherit;
+  }
+
+  #lp-finder {
+    background: #fff;
+  }
+
+  .finder-box {
+    width: 80%;
+    max-width: 1800px;
+    margin: 2rem auto;
+    display: grid;
+    grid-template-columns: minmax(0, 420px) 1fr;
+    gap: 1.5rem;
+    align-items: stretch;
+    min-height: 320px;
+    background: linear-gradient(90deg, #0a2540 0%, #0f3a63 100%);
+    border-radius: 20px;
+    padding: 2rem 1.5rem 1.5rem;
+    transition: border-radius 0.25s ease;
+  }
+
+  .finder-box.has-next-steps {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-bottom: 0;
+  }
+
+  .finder-hd {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-bottom: 0.25rem;
+  }
+
+  .finder-hd .sec-h2 {
+    color: #fff;
+  }
+
+  .finder-hd .sec-sub {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+    text-align: center;
+    margin: 0.5rem auto 0;
+  }
+
+  .finder-left {
+    padding: 0.75rem 1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .finder-search {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+    border-radius: 999px;
+    transition: box-shadow 0.2s;
+  }
+
+  .finder-search-label {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    text-align: center;
+    font-family: "PublicSans-Medium", sans-serif;
+    font-size: 1rem;
+    color: #fff;
+    margin: 0 0 0.9rem;
+  }
+
+  .finder-search:focus-within {
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.25);
+  }
+
+  #lp-finder .finder-search .material-symbols-outlined {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.85);
+    pointer-events: none;
+  }
+
+  .finder-search .material-symbols-outlined svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .finder-input {
+    width: 100%;
+    padding: 0.7rem 2.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 999px;
+    font-family: "PublicSans-Regular", sans-serif;
+    font-size: 0.95rem;
+    text-align: center;
+    box-sizing: border-box;
+    background: transparent;
+    color: #fff;
+    transition: border-color 0.15s;
+  }
+
+  .finder-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.8rem;
+  }
+
+  .finder-input:focus-visible {
+    outline: none;
+    border-color: #fff;
+  }
+
+  .finder-clear {
+    position: absolute;
+    right: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.5rem;
+    height: 1.5rem;
+    display: grid;
+    place-items: center;
+    background: none;
+    border: none;
+    appearance: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 50%;
+    line-height: 0;
+    cursor: pointer;
+    color: #fff;
+  }
+
+  .finder-clear .material-symbols-outlined {
+    display: contents;
+  }
+
+  .finder-clear svg {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .finder-clear:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .finder-clear:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 1px;
+  }
+
+  .finder-clear[hidden] {
+    display: none;
+  }
+
+  .finder-topics-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1.25rem;
+    max-width: 100%;
+  }
+
+  .finder-topics-arrow {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    opacity: 0.8;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .finder-topics-arrow:hover {
+    opacity: 1;
+  }
+
+  .finder-topics-arrow:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+  }
+
+  .finder-topics-arrow svg {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+
+  .finder-topics-arrow[disabled] {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  .finder-topics {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.25rem 0.1rem;
+    list-style: none;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    scroll-behavior: smooth;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .finder-topics::-webkit-scrollbar {
+    display: none;
+  }
+
+  .finder-topics &gt; li {
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+  }
+
+  .finder-topic-btn {
+    display: inline-block;
+    white-space: nowrap;
+    background: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
+    font-family: "PublicSans-Medium", sans-serif;
+    font-size: 0.85rem;
+    color: #0a2540;
+    cursor: pointer;
+    transform: scale(1);
+    transition:
+    background 0.25s,
+    color 0.25s,
+    transform 0.25s,
+    box-shadow 0.25s,
+    padding 0.25s,
+    font-size 0.25s;
+  }
+
+  .finder-topic-btn:hover {
+    background: rgba(255, 255, 255, 0.85);
+  }
+
+  .finder-topic-btn[aria-pressed="true"] {
+    background: #f4a300;
+    color: #0a2540;
+    font-size: 1.05rem;
+    font-family: "PublicSans-Bold", sans-serif;
+    padding: 0.65rem 1.4rem;
+    box-shadow: 0 4px 18px rgba(244, 163, 0, 0.5);
+  }
+
+  .finder-topic-btn:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+  }
+
+  .finder-panel {
+    padding: 0.75rem 1rem 1.5rem;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #fff;
+  }
+
+  .finder-idle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .finder-idle-ico {
+    width: 2.75rem;
+    height: 2.75rem;
+    color: #fff;
+    opacity: 0.75;
+    margin-bottom: 0.75rem;
+    animation: finder-float 3s ease-in-out infinite;
+  }
+
+  .finder-idle-ico svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .finder-idle p {
+    font-family: "PublicSans-Regular", sans-serif;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+    max-width: 320px;
+  }
+
+  .finder-idle[hidden] {
+    display: none;
+  }
+
+  .finder-results {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-width: 420px;
+  }
+
+  .finder-results[hidden] {
+    display: none;
+  }
+
+  .finder-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0;
+    animation: finder-card-in 0.25s ease-out forwards;
+  }
+
+  .finder-card-ico {
+    flex-shrink: 0;
+    width: 2.1rem;
+    height: 2.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    margin-bottom: 0.6rem;
+  }
+
+  .finder-card-ico svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+
+  .finder-card-yes {
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: 1rem;
+    margin: 0 0 0.75rem;
+  }
+
+  .finder-card-bullets {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-width: 380px;
+    text-align: left;
+    font-family: "PublicSans-Regular", sans-serif;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.92);
+  }
+
+  .finder-card-bullets li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.55rem;
+    line-height: 1.4;
+  }
+
+  .finder-card-bullets li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #f4a300;
+    font-weight: bold;
+  }
+
+  .finder-card-bullets li:last-child {
+    margin-bottom: 0;
+  }
+
+  .finder-card-more {
+    font-family: "PublicSans-Medium", sans-serif;
+    font-style: italic;
+    opacity: 0.85;
+  }
+
+  .finder-card-more::before {
+    content: none !important;
+  }
+
+  .finder-next-steps {
+    width: 80%;
+    max-width: 1800px;
+    margin: 0 auto;
+    text-align: center;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    filter: drop-shadow(0 6px 14px rgba(10, 37, 64, 0.18))
+    drop-shadow(0 0 24px rgba(10, 37, 64, 0.12));
+    transition:
+    max-height 0.3s ease,
+    opacity 0.2s ease;
+  }
+
+  .finder-next-steps.is-open {
+    max-height: 340px;
+    opacity: 1;
+    margin-bottom: 2rem;
+  }
+
+  .finder-next-steps-inner {
+    height: 100%;
+    background: #fff;
+    border: 1px solid rgba(10, 37, 64, 0.15);
+    clip-path: polygon(0% 0%, 100% 0%, 91% 100%, 9% 100%);
+    padding: 1.5rem 3rem 2rem;
+  }
+
+  .finder-next-steps-lead {
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: 1rem;
+    color: #0a2540;
+    margin: 0 0 1rem;
+  }
+
+  .finder-cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .finder-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 999px;
+    padding: 0.6rem 1.1rem;
+    font-family: "PublicSans-Medium", sans-serif;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition:
+    background 0.15s,
+    color 0.15s;
+  }
+
+  .finder-cta-btn .material-symbols-outlined svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  #finderNextSteps .finder-cta-primary {
+    background: #0a2540;
+    color: #fff;
+  }
+
+  #finderNextSteps .finder-cta-primary:hover {
+    background: #123a63;
+  }
+
+  #finderNextSteps .finder-cta-secondary {
+    background: #fff;
+    border: 2px solid #0a2540;
+    color: #0a2540;
+  }
+
+  .finder-cta-secondary:hover {
+    background: #eef2f6;
+  }
+
+  .finder-cta-btn:focus-visible {
+    outline: 3px solid #0a2540;
+    outline-offset: 2px;
+  }
+
+  #finderNextSteps .finder-readmore {
+    display: block;
+    margin-top: 1rem;
+    font-family: "PublicSans-Medium", sans-serif;
+    font-size: 0.8rem;
+    color: #0a2540;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .finder-readmore:hover,
+  .finder-readmore:focus-visible {
+    color: #123a63;
+  }
+
+  .finder-readmore:focus-visible {
+    outline: 3px solid #0a2540;
+    outline-offset: 2px;
+  }
+
+  .finder-empty {
+    padding: 1rem 0;
+  }
+
+  .finder-empty[hidden] {
+    display: none;
+  }
+
+  .finder-empty p {
+    font-family: "PublicSans-Regular", sans-serif;
+    font-size: 0.875rem;
+    margin: 0 0 0.85rem;
+  }
+
+  @media (max-width: 700px) {
+    .finder-box {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .finder-clear,
+    .finder-topic-btn,
+    .finder-topics-arrow,
+    .finder-search,
+    .finder-input,
+    .finder-topics,
+    .finder-next-steps,
+    .finder-cta-btn {
+      transition: none;
+      scroll-behavior: auto;
+    }
+
+    .finder-idle-ico {
+      animation: none;
+    }
+
+    .finder-card {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+&lt;/style&gt;
+
+&lt;section id="lp-finder" class="section" aria-labelledby="finder-h2"&gt;
+  &lt;div class="finder-box"&gt;
+    &lt;div class="finder-hd"&gt;
+      &lt;h2 class="sec-h2" id="finder-h2"&gt;
+        Not sure where to start? Let's find out.
+      &lt;/h2&gt;
+      &lt;p class="sec-sub"&gt;
+        Every VA team's process is different — let's find where LEAF
+        fits into yours.
+      &lt;/p&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Left: search + topic list --&gt;
+    &lt;div class="finder-left"&gt;
+      &lt;label class="finder-search-label" for="finderInput"
+        &gt;What's slowing your team down?&lt;/label
+      &gt;
+      &lt;div class="finder-search"&gt;
+        &lt;span class="material-symbols-outlined" aria-hidden="true"&gt;
+          &lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+            &lt;path
+              d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"
+            /&gt;
+          &lt;/svg&gt;
+        &lt;/span&gt;
+        &lt;input
+          type="text"
+          id="finderInput"
+          class="finder-input"
+          placeholder="Search for a business problem or process — e.g. travel, approvals…"
+          autocomplete="off"
+        /&gt;
+        &lt;button
+          type="button"
+          class="finder-clear"
+          id="finderClear"
+          hidden
+          aria-label="Clear search"
+        &gt;
+          &lt;span class="material-symbols-outlined" aria-hidden="true"&gt;
+            &lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+              &lt;path
+                d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+              /&gt;
+            &lt;/svg&gt;
+          &lt;/span&gt;
+        &lt;/button&gt;
+      &lt;/div&gt;
+
+      &lt;div class="finder-topics-row"&gt;
+        &lt;button
+          type="button"
+          class="finder-topics-arrow"
+          id="finderTopicsPrev"
+          aria-label="Scroll topics left"
+        &gt;
+          &lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+            &lt;path
+              d="m480-320 56-56-64-64h168v-80H472l64-64-56-56-160 160 160 160Zm0 240q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"
+            /&gt;
+          &lt;/svg&gt;
+        &lt;/button&gt;
+        &lt;ul
+          class="finder-topics"
+          id="finderTopics"
+          role="list"
+          aria-label="Browse by topic"
+        &gt;&lt;/ul&gt;
+        &lt;button
+          type="button"
+          class="finder-topics-arrow"
+          id="finderTopicsNext"
+          aria-label="Scroll topics right"
+        &gt;
+          &lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+            &lt;path
+              d="m480-320 160-160-160-160-56 56 64 64H320v80h168l-64 64 56 56Zm0 240q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"
+            /&gt;
+          &lt;/svg&gt;
+        &lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="finder-panel"&gt;
+      &lt;div class="finder-idle" id="finderIdle"&gt;
+        &lt;span class="finder-idle-ico" aria-hidden="true"&gt;
+          &lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+            &lt;path
+              d="M423.5-103.5Q400-127 400-160h160q0 33-23.5 56.5T480-80q-33 0-56.5-23.5ZM320-200v-80h320v80H320Zm10-120q-69-41-109.5-110T180-580q0-125 87.5-212.5T480-880q125 0 212.5 87.5T780-580q0 81-40.5 150T630-320H330Z"
+            /&gt;
+          &lt;/svg&gt;
+        &lt;/span&gt;
+        &lt;p&gt;
+          Start typing or select a topic — your answer will appear here.
+        &lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Hub card</h3>
+                <p>A link card used on the Leadership page.</p>
+                <div data-ldc-code data-title="Hub card" data-preview="true">
+                  <textarea>
+&lt;style&gt;
+  .material-symbols-outlined {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .material-symbols-outlined svg {
+    width: 1em;
+    height: 1em;
+    display: block;
+  }
+
+  .ldh-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .ldh-card {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid var(--c-blue10);
+    border-radius: var(--r-lg);
+    padding: 1.375rem;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .ldh-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.13);
+    border-color: var(--c-blue20);
+  }
+
+  .ldh-card:focus-visible {
+    outline: 3px solid var(--lp-accent);
+    outline-offset: 3px;
+  }
+
+  .ldh-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.875rem;
+  }
+
+  .ldh-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: var(--r-lg);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--c-blue5);
+    color: var(--lp-hl);
+    flex-shrink: 0;
+  }
+
+  .ldh-icon .material-symbols-outlined {
+    font-size: 1.5rem !important;
+  }
+
+  .ldh-chip {
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .ldh-chip--live {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .ldh-chip--report {
+    background: var(--c-blue5);
+    color: var(--lp-hl);
+  }
+
+  .ldh-card-title {
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--lp-hl);
+    margin: 0 0 0.375rem;
+  }
+
+  .ldh-card-desc {
+    font-family: "Source Sans Pro Web", sans-serif;
+    font-size: 0.9375rem;
+    color: var(--c-muted);
+    margin: 0 0 1.125rem;
+    flex-grow: 1;
+    line-height: 1.55;
+  }
+
+  .ldh-card-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--lp-accent);
+    margin-top: auto;
+  }
+
+  .ldh-card-action .material-symbols-outlined {
+    font-size: 1.1rem !important;
+    transition: transform 0.15s ease;
+  }
+
+  .ldh-card:hover .ldh-card-action .material-symbols-outlined {
+    transform: translateX(3px);
+  }
+
+  @media (max-width: 900px) {
+    .ldh-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 600px) {
+    .ldh-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ldh-card,
+    .ldh-card-action .material-symbols-outlined {
+      transition: none;
+    }
+
+    .ldh-card:hover {
+      transform: none;
+    }
+  }
+&lt;/style&gt;
+
+&lt;div class="ldh-grid" role="list"&gt;
+  &lt;a
+    class="ldh-card"
+    href="https://leaf.va.gov/platform/calendar/"
+    target="_blank"
+    rel="noopener noreferrer"
+    role="listitem"
+    aria-label="LEAF Command Center — opens in a new tab"
+  &gt;
+    &lt;div class="ldh-card-top"&gt;
+      &lt;span class="ldh-icon" aria-hidden="true"&gt;
+        &lt;span class="material-symbols-outlined" aria-hidden="true"
+          &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+            &lt;path
+              d="M153-73q-33-33-33-81t33-81q33-33 81-33 14 0 24.5 2.5T280-258l85-106q-19-23-29-52.5t-5-61.5l-121-41q-15 25-39.5 39T114-466q-48 0-81-33T0-580q0-48 33-81t81-33q48 0 81 33t33 81v4l122 42q18-32 43.5-49t56.5-24v-129q-39-11-61.5-43T366-846q0-48 33-81t81-33q48 0 81 33t33 81q0 35-23 67t-61 43v129q31 7 57 24t44 49l121-42v-4q0-48 33-81t81-33q48 0 81 33t33 81q0 48-33 81t-81 33q-32 0-57-14t-39-39l-121 41q5 32-4.5 61.5T595-364l85 106q11-5 21.5-7.5T726-268q48 0 81 33t33 81q0 48-33 81t-81 33q-48 0-81-33t-33-81q0-20 5.5-36t15.5-31l-85-106q-32 17-68.5 17T411-327l-84 107q10 15 15.5 30.5T348-154q0 48-33 81t-81 33Z"
+            /&gt;&lt;/svg
+        &gt;&lt;/span&gt;
+      &lt;/span&gt;
+      &lt;span class="ldh-chip ldh-chip--live"&gt;Live&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;h2 class="ldh-card-title"&gt;LEAF Command Center&lt;/h2&gt;
+    &lt;p class="ldh-card-desc"&gt;
+      LEAF team meetings, action items, and coverage — organized and
+      always up to date.
+    &lt;/p&gt;
+    &lt;span class="ldh-card-action" aria-hidden="true"&gt;
+      Open command center
+      &lt;span class="material-symbols-outlined" aria-hidden="true"
+        &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+          &lt;path
+            d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"
+          /&gt;&lt;/svg
+      &gt;&lt;/span&gt;
+    &lt;/span&gt;
+  &lt;/a&gt;
+&lt;/div&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Team tile</h3>
+                <p>
+                  A link tile from the Team page. Use thb-tile--submit for the
+                  green variant.
+                </p>
+                <div data-ldc-code data-title="Team tile" data-preview="true">
+                  <textarea>
+&lt;style&gt;
+  .thb-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.7rem;
+    align-items: stretch;
+  }
+
+  @media (max-width: 900px) {
+    .thb-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .thb-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .thb-tile {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 58px;
+    padding: 0.6rem 0.85rem;
+    background: #fff;
+    border: 1px solid var(--c-blue10);
+    border-left-width: 3px;
+    border-radius: var(--r);
+    text-decoration: none;
+    color: var(--lp-hl);
+    font-family: "Source Sans Pro Web-Bold", sans-serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.25;
+    transition:
+    border-color 0.12s,
+    box-shadow 0.12s,
+    transform 0.12s;
+  }
+
+  .thb-tile:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+  }
+
+  .thb-tile:focus-visible {
+    outline: 3px solid var(--lp-accent);
+    outline-offset: 2px;
+  }
+
+  .thb-tile .material-symbols-outlined {
+    font-size: 1.15rem !important;
+    flex-shrink: 0;
+  }
+
+  .thb-tile .thb-tile-label {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .thb-tile--submit {
+    border-left-color: #1f8a4c;
+  }
+
+  .thb-tile--submit .material-symbols-outlined {
+    color: #1f8a4c;
+  }
+
+  .thb-tile--submit:hover {
+    border-color: #b6e0c2;
+    border-left-color: #1f8a4c;
+  }
+
+  .thb-tile--view {
+    border-left-color: var(--lp-accent);
+  }
+
+  .thb-tile--view .material-symbols-outlined {
+    color: var(--lp-accent);
+  }
+
+  .thb-tile--view:hover {
+    border-color: var(--c-blue20);
+    border-left-color: var(--lp-accent);
+  }
+
+  .thb-tile[hidden] {
+    display: none;
+  }
+
+  .thb-sec.no-matches .thb-sec-body .thb-grid {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .thb-tile {
+      transition: none;
+    }
+
+    .thb-tile:hover {
+      transform: none;
+    }
+  }
+
+  .material-symbols-outlined {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .material-symbols-outlined svg {
+    width: 1em;
+    height: 1em;
+    display: block;
+  }
+&lt;/style&gt;
+
+&lt;div class="thb-grid"&gt;
+  &lt;a class="thb-tile thb-tile--view" href="/launchpad/report.php?a=lp_docs"&gt;
+    &lt;span class="material-symbols-outlined" aria-hidden="true"
+      &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+        &lt;path d="M705-128 447-388q-23 8-46 13t-47 5q-97 0-165-67.5T121-602q0-31 8-60.5t23-55.5l145 145 92-86-149-149q26-15 55-23.5t59-8.5q99 0 168.5 69.5T592-602q0 24-5 47t-13 46l259 258q11 11 11 26.5T833-198l-76 70q-11 11-26 11t-26-11Z" /&gt;
+      &lt;/svg&gt;&lt;/span&gt;
+    &lt;span class="thb-tile-label"&gt;Launchpad Build Docs&lt;/span&gt;
+  &lt;/a&gt;
+&lt;/div&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Access-restricted block</h3>
+                <p>
+                  Shown to anyone outside the sysadmin group. Put it in the else
+                  branch of the Smarty gate.
+                </p>
+                <div
+                  data-ldc-code
+                  data-title="Access-restricted block"
+                  data-preview="true"
+                >
+                  <textarea>
+&lt;style&gt;
+  .lp-gate {
+    max-width: 460px;
+    margin: 4rem auto;
+    padding: 2.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: center;
+    background: #fff;
+    border: 1px solid var(--c-blue20);
+    border-radius: var(--r-lg);
+  }
+
+  .lp-gate-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--c-blue5);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lp-gate-icon .material-symbols-outlined {
+    font-size: 1.75rem !important;
+    color: var(--lp-accent);
+  }
+
+  .lp-gate h1 {
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--lp-hl);
+    margin: 0;
+  }
+
+  .lp-gate p {
+    font-family: "Source Sans Pro Web", sans-serif;
+    font-size: 0.95rem;
+    color: var(--c-muted);
+    margin: 0;
+  }
+
+  .lp-gate a {
+    font-family: "PublicSans-Bold", sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #fff;
+    background: var(--lp-accent);
+    text-decoration: none;
+    padding: 0.6rem 1.3rem;
+    border-radius: 8px;
+  }
+
+  .lp-gate a:hover {
+    background: var(--lp-accent-strong, #004a82);
+  }
+
+  .lp-gate a:focus-visible {
+    outline: 3px solid var(--lp-accent);
+    outline-offset: 2px;
+  }
+
+  .material-symbols-outlined svg {
+    width: 1em;
+    height: 1em;
+    display: block;
+  }
+&lt;/style&gt;
+
+&lt;div class="lp-gate"&gt;
+  &lt;span class="lp-gate-icon" aria-hidden="true"&gt;
+    &lt;span class="material-symbols-outlined" aria-hidden="true"
+      &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+        &lt;path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm240-200q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z" /&gt;
+      &lt;/svg&gt;&lt;/span&gt;
+  &lt;/span&gt;
+  &lt;h1&gt;Access restricted&lt;/h1&gt;
+  &lt;p&gt;This page is available to LEAF Sysadmins only.&lt;/p&gt;
+  &lt;a href="/launchpad"&gt;Return to Launchpad&lt;/a&gt;
+&lt;/div&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Add a nav link</h3>
+                <p>
+                  Items live in NAV_SECTIONS in leaf_header.js. The icon name
+                  must exist in ICON_SVG.
+                </p>
+                <div data-ldc-code data-title="Add a nav link">
+                  <textarea>
+// Standard page
+{
+  icon: "bar_chart",
+  title: "Our Impact",
+  desc: "LEAF's impact across the VA enterprise",
+  href: "/launchpad/report.php?a=lp_impact",
+},
+
+// Full LEAF app mounted in an iframe
+{
+  icon: "menu_book",
+  title: "Help Library",
+  desc: "Guides and SOPs for LEAF",
+  href: "https://leaf.va.gov/platform/help_library/report.php?a=homepage",
+  iframe: true,
+  fixedHeight: true,
+},
+
+// Not shown in the menu yet
+{
+  icon: "article",
+  title: "Blog",
+  desc: "Stories from LEAF collaborators",
+  href: "/launchpad/report.php?a=lp_blog",
+  hidden: true,
+},
+
+// Shown with a badge
+{
+  icon: "school",
+  title: "Learn",
+  desc: "Self-paced courses and live training",
+  href: "/launchpad/report.php?a=lp_learn",
+  badge: "Coming Soon",
+},
+</textarea
+                  >
+                </div>
+
+                <h3>Form modal trigger</h3>
+                <p>
+                  Opens a LEAF form in the shared modal. Add &amp;iframe=1 to
+                  data-modal-src so the app hides its own header.
+                </p>
+                <div data-ldc-code data-title="Form modal trigger">
+                  <textarea>
+&lt;a
+  href="https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&amp;id=form_ba7de&amp;title=Consultation+Request"
+  class="btn btn-sec"
+  data-action="form-modal"
+  data-modal-src="https://leaf.va.gov/platform/support/report.php?a=LEAF_Start_Request&amp;id=form_ba7de&amp;title=Consultation+Request&amp;iframe=1"
+  data-modal-title="Request Support"
+&gt;
+  Request Support
+&lt;/a&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Chrome suppression (suppressChrome)</h3>
+                <p>
+                  How fetched pages lose their own header and footer. Add a
+                  selector to CHROME_SELECTORS to strip more.
+                </p>
+                <div
+                  data-ldc-code
+                  data-title="Chrome suppression (suppressChrome)"
+                >
+                  <textarea>
+// Page elements removed from fetched pages before they are shown in the shell
+var CHROME_SELECTORS = [
+  "#header",
+  "#footer",
+  ".noprint",
+  "#lp-skip-nav",
+  "#nav-skip-link",
+  ".usa-skipnav",
+  "#LeafSession_dialog",
+  "#lpInlinePanel",
+  "#lpSwapHost",
+  ".lp-header",
+  "#lp-header-host",
+  "#lp-live-region",
+];
+
+// Removes every element matching CHROME_SELECTORS from a parsed document
+function suppressChrome(doc) {
+  CHROME_SELECTORS.forEach(function (sel) {
+    var els = doc.querySelectorAll(sel);
+    els.forEach(function (el) {
+      if (el &amp;&amp; el.parentNode) el.parentNode.removeChild(el);
+    });
+  });
+}
+
+// Picks the content to show: [data-lp-content], #content, #bodyarea, main, then body
+function extractContent(doc) {
+  var el = doc.querySelector("[data-lp-content]");
+  if (el) return el;
+  el = doc.getElementById("content");
+  if (el &amp;&amp; el.innerHTML.trim().length &gt; 0) return el;
+  el = doc.getElementById("bodyarea");
+  if (el &amp;&amp; el.innerHTML.trim().length &gt; 0) return el;
+  el = doc.querySelector("main");
+  if (el &amp;&amp; el.innerHTML.trim().length &gt; 0) return el;
+  return doc.body;
+}
+</textarea
+                  >
+                </div>
+
+                <h3>Jump-to-top button</h3>
+                <p>
+                  Injected once by leaf_header.js on every page. The CSS uses
+                  the --nav-* variables from leaf_header.css.
+                </p>
+                <div data-ldc-code data-title="Jump-to-top button">
+                  <textarea>
+/* CSS (leaf_header.css) */
+#leaf-jump-top {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--nav-border);
+  color: var(--nav-accent);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+#leaf-jump-top.lp-jump-vis {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#leaf-jump-top:hover {
+  background: var(--nav-hover-bg);
+}
+
+#leaf-jump-top:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 3px;
+}
+
+#leaf-jump-top .material-symbols-outlined svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #leaf-jump-top {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+// JS (leaf_header.js)
+function ensureJumpToTop() {
+  if (document.getElementById("leaf-jump-top")) return;
+  var btn = document.createElement("button");
+  btn.id = "leaf-jump-top";
+  btn.type = "button";
+  btn.setAttribute("aria-label", "Back to top");
+  btn.setAttribute("aria-hidden", "true");
+  btn.tabIndex = -1;
+  btn.innerHTML =
+    '&lt;span class="material-symbols-outlined" aria-hidden="true"&gt;' +
+    ICON_SVG.arrow_upward +
+    "&lt;/span&gt;";
+  document.body.appendChild(btn);
+  function update() {
+    var top =
+      window.pageYOffset ||
+      document.documentElement.scrollTop ||
+      document.body.scrollTop ||
+      0;
+    var vis = top &gt; 120;
+    btn.classList.toggle("lp-jump-vis", vis);
+    btn.setAttribute("aria-hidden", String(!vis));
+    btn.tabIndex = vis ? 0 : -1;
+  }
+  btn.addEventListener("click", function () {
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    try {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (e) {}
+  });
+  window.addEventListener("scroll", update, { passive: true });
+  window.addEventListener("resize", update);
+  update();
+}
+</textarea
+                  >
+                </div>
+              </section>
+
+              <section
+                class="ldc-sec"
+                id="ldc-standards"
+                aria-labelledby="ldcStdH"
+              >
+                <h2 id="ldcStdH">Build standards</h2>
+                <h3>Paths and dependencies</h3>
+                <ul class="ldc-list">
+                  <li>
+                    Use relative paths. Use a full URL only to point at another
+                    LEAF site.
+                  </li>
+                  <li>
+                    Host everything locally. Anything inside the LEAF platform,
+                    such as fonts under <code>/app/libs/css/fonts/</code> or
+                    DOMPurify under <code>/app/libs/js/dompurify/</code>, counts
+                    as local.
+                  </li>
+                </ul>
+                <h3>Icons</h3>
+                <ul class="ldc-list">
+                  <li>
+                    Icons are inline SVG from Material Symbols (Filled), using
+                    <code>viewBox="0 -960 960 960"</code> and
+                    <code>fill="currentColor"</code>. No icon font is loaded.
+                  </li>
+                  <li>
+                    Reuse an icon already in <code>ICON_SVG</code> (header) or
+                    the page's own icon map before adding a new one. For a new
+                    one, download the SVG by its Material Symbols name and add
+                    its path.
+                  </li>
+                  <li>Decorative icons get <code>aria-hidden="true"</code>.</li>
+                </ul>
+                <h3>Accessibility and responsive checks</h3>
+                <ul class="ldc-list">
+                  <li>
+                    Meet WCAG 2.1 AA and Section 508: one <code>h1</code>,
+                    headings in order, visible focus, 44px touch targets, and
+                    contrast of at least 4.5:1 for text.
+                  </li>
+                  <li>
+                    Give tables a <code>caption</code> and <code>scope</code> on
+                    headers. Wrap wide tables and code in a keyboard-focusable
+                    scroll region.
+                  </li>
+                  <li>Respect <code>prefers-reduced-motion</code>.</li>
+                  <li>
+                    Test at about 360px wide and at desktop width. Nothing
+                    should scroll sideways except a wrapped table or code block.
+                  </li>
+                </ul>
+                <h3>Code style</h3>
+                <ul class="ldc-list">
+                  <li>
+                    Match the surrounding code. Use the same class prefixes,
+                    tokens and spacing as sibling pages.
+                  </li>
+                  <li>
+                    Keep comments short and only where they explain something a
+                    new developer would not guess.
+                  </li>
+                </ul>
+              </section>
+            </div>
+          </div>
+        </div>
+        <p
+          class="sr-only"
+          id="ldcStatus"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        ></p>
+      </main>
+    </div>
+    <script>
+      (() => {
+        "use strict";
+
+        /* Material Symbols (Filled): content_copy, check, restart_alt. */
+        const ICONS = {
+          copy: '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Z"/></svg>',
+          check:
+            '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg>',
+          reset:
+            '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M440-122q-121-15-200.5-105.5T160-440q0-66 26-126.5T260-672l57 57q-38 34-57.5 79T240-440q0 88 56 155.5T440-202v80Zm80 0v-80q87-16 143.5-83T720-440q0-100-70-170t-170-70h-3l44 44-56 56-140-140 140-140 56 56-44 44h3q134 0 227 93t93 227q0 121-79.5 211.5T520-122Z"/></svg>',
+        };
+
+        /* Preview documents are inert (no scripts) and load the same local
+           stylesheet and fonts as the Launchpad pages. */
+        const FRAME_FONTS =
+          '@font-face{font-family:"PublicSans-Bold";src:url("/app/libs/css/fonts/public-sans/PublicSans-Bold.woff2") format("woff2");font-weight:700;font-display:swap}' +
+          '@font-face{font-family:"Source Sans Pro Web";src:url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-regular-webfont.woff2") format("woff2");font-weight:400;font-display:swap}';
+        const frameDoc = (code) =>
+          '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+          '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+          '<base target="_blank">' +
+          '<link rel="stylesheet" href="./files/launchpad.css">' +
+          "<style>" +
+          FRAME_FONTS +
+          "body{margin:0;padding:16px;background:#fff}.lp-sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>" +
+          '</head><body><div class="lp">' +
+          code +
+          "</div></body></html>";
+
+        const el = (tag, cls) => {
+          const node = document.createElement(tag);
+          if (cls) node.className = cls;
+          return node;
+        };
+
+        const announce = (msg) => {
+          const live = document.getElementById("ldcStatus");
+          if (!live) return;
+          live.textContent = "";
+          setTimeout(() => {
+            live.textContent = msg;
+          }, 50);
+        };
+
+        const copyText = async (text) => {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (err) {
+            const origin = document.activeElement;
+            const temp = el("textarea", "sr-only");
+            temp.value = text;
+            temp.setAttribute("readonly", "");
+            document.body.append(temp);
+            temp.select();
+            let ok = false;
+            try {
+              ok = document.execCommand("copy");
+            } catch (e) {}
+            temp.remove();
+            if (origin && origin.focus) origin.focus();
+            return ok;
+          }
+        };
+
+        const makeBtn = (iconKey, text, aria) => {
+          const b = el("button", "ldc-btn");
+          b.type = "button";
+          if (iconKey) {
+            const icon = el("span", "material-symbols-outlined");
+            icon.setAttribute("aria-hidden", "true");
+            icon.innerHTML = ICONS[iconKey];
+            b.append(icon);
+            b.iconEl = icon;
+          }
+          const label = el("span");
+          label.textContent = text;
+          b.append(label);
+          if (aria) b.setAttribute("aria-label", aria);
+          b.textEl = label;
+          return b;
+        };
+
+        const makeSeg = (label, items) => {
+          const seg = el("div", "ldc-seg");
+          seg.setAttribute("role", "group");
+          seg.setAttribute("aria-label", label);
+          const buttons = items.map((text) => {
+            const b = makeBtn(null, text);
+            seg.append(b);
+            return b;
+          });
+          return { seg, buttons };
+        };
+
+        let uid = 0;
+        const mount = (root) => {
+          const id = ++uid;
+          const title = root.dataset.title || "Code";
+          const hasPreview = root.dataset.preview === "true";
+          root.classList.add("ldc-code");
+
+          const area = root.querySelector("textarea");
+          area.className = "ldc-code-area";
+          area.id = "ldcArea" + id;
+          area.spellcheck = false;
+          area.setAttribute("wrap", "off");
+          area.rows = Math.min(area.defaultValue.split("\n").length + 1, 22);
+
+          const label = el("label", "sr-only");
+          label.htmlFor = area.id;
+          label.textContent = title + " code, editable";
+
+          const hint = el("p", "ldc-hint");
+          hint.id = "ldcHint" + id;
+          hint.textContent =
+            "Editable. Changes stay in your browser and are not saved.";
+          area.setAttribute("aria-describedby", hint.id);
+
+          const bar = el("div", "ldc-code-bar");
+          const name = el("span", "ldc-code-title");
+          name.textContent = title;
+          const actions = el("div", "ldc-code-actions");
+          const resetBtn = makeBtn("reset", "Reset", "Reset " + title);
+          const copyBtn = makeBtn(
+            "copy",
+            "Copy code",
+            "Copy code from " + title,
+          );
+
+          let preview = null;
+          let frame = null;
+          let viewSeg = null;
+          let sizeSeg = null;
+
+          const fit = () => {
+            try {
+              const h = frame.contentDocument.documentElement.scrollHeight;
+              if (Math.abs(frame.offsetHeight - h) > 1)
+                frame.style.height = h + "px";
+            } catch (e) {}
+          };
+
+          const setView = (view) => {
+            const showPreview = view === "preview";
+            area.hidden = showPreview;
+            hint.hidden = showPreview;
+            preview.hidden = !showPreview;
+            sizeSeg.seg.hidden = !showPreview;
+            if (showPreview) frame.srcdoc = frameDoc(area.value);
+            viewSeg.buttons[0].setAttribute(
+              "aria-pressed",
+              String(showPreview),
+            );
+            viewSeg.buttons[1].setAttribute(
+              "aria-pressed",
+              String(!showPreview),
+            );
+          };
+
+          const setSize = (size) => {
+            preview.dataset.size = size;
+            sizeSeg.buttons[0].setAttribute(
+              "aria-pressed",
+              String(size === "desktop"),
+            );
+            sizeSeg.buttons[1].setAttribute(
+              "aria-pressed",
+              String(size === "mobile"),
+            );
+            fit();
+          };
+
+          if (hasPreview) {
+            preview = el("div", "ldc-preview");
+            frame = el("iframe", "ldc-frame");
+            frame.setAttribute("sandbox", "allow-same-origin");
+            frame.title = "Preview of " + title;
+            frame.addEventListener("load", () => {
+              fit();
+              try {
+                if ("ResizeObserver" in window) {
+                  new ResizeObserver(fit).observe(frame.contentDocument.body);
+                }
+              } catch (e) {}
+            });
+            preview.append(frame);
+
+            viewSeg = makeSeg("View of " + title, ["Preview", "Raw"]);
+            sizeSeg = makeSeg("Preview width of " + title, [
+              "Desktop",
+              "Mobile",
+            ]);
+            viewSeg.buttons[0].addEventListener("click", () =>
+              setView("preview"),
+            );
+            viewSeg.buttons[1].addEventListener("click", () => setView("raw"));
+            sizeSeg.buttons[0].addEventListener("click", () =>
+              setSize("desktop"),
+            );
+            sizeSeg.buttons[1].addEventListener("click", () =>
+              setSize("mobile"),
+            );
+            actions.append(viewSeg.seg, sizeSeg.seg);
+          }
+
+          actions.append(resetBtn, copyBtn);
+          bar.append(name, actions);
+          root.replaceChildren(bar, label);
+          if (preview) root.append(preview);
+          root.append(area, hint);
+
+          if (hasPreview) {
+            setSize("desktop");
+            setView("preview");
+          }
+
+          let copyTimer = null;
+          copyBtn.addEventListener("click", async () => {
+            const ok = await copyText(area.value);
+            clearTimeout(copyTimer);
+            copyBtn.textEl.textContent = ok ? "Copied" : "Copy failed";
+            copyBtn.iconEl.innerHTML = ok ? ICONS.check : ICONS.copy;
+            copyBtn.setAttribute(
+              "aria-label",
+              (ok ? "Copied " : "Copy failed for ") + title,
+            );
+            announce(
+              ok
+                ? title + " copied to clipboard."
+                : "Copy failed. Select the text and copy it manually.",
+            );
+            copyTimer = setTimeout(() => {
+              copyBtn.textEl.textContent = "Copy code";
+              copyBtn.iconEl.innerHTML = ICONS.copy;
+              copyBtn.setAttribute("aria-label", "Copy code from " + title);
+            }, 2000);
+          });
+
+          resetBtn.addEventListener("click", () => {
+            area.value = area.defaultValue;
+            if (hasPreview && !preview.hidden)
+              frame.srcdoc = frameDoc(area.value);
+            announce(title + " reset to original.");
+          });
+        };
+
+        const init = () => {
+          document.querySelectorAll("[data-ldc-code]").forEach(mount);
+        };
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", init);
+        } else {
+          init();
+        }
+      })();
+    </script>
+    <!--{else}-->
+    <div class="lp" id="lp-root">
+      <main id="lp-main" tabindex="-1">
+        <div class="lp-gate">
+          <span class="lp-gate-icon" aria-hidden="true">
+            <span class="material-symbols-outlined" aria-hidden="true"
+              ><svg viewBox="0 -960 960 960" fill="currentColor">
+                <path
+                  d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm240-200q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z"
+                /></svg
+            ></span>
+          </span>
+          <h1>Access restricted</h1>
+          <p>
+            The Build Docs are available to LEAF Sysadmins only. Contact your
+            LEAF administrator if you believe you should have access.
+          </p>
+          <a href="/launchpad">Return to Launchpad</a>
+        </div>
+      </main>
+    </div>
+    <!--{/if}-->
+  </body>
+</html>
