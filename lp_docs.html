@@ -518,8 +518,12 @@
                 <li><a href="#ldc-access">Sysadmin access</a></li>
                 <li><a href="#ldc-forms">Connected forms</a></li>
                 <li><a href="#ldc-multigrid">Multigrid</a></li>
+                <li><a href="#ldc-badges">Nav badges</a></li>
+                <li><a href="#ldc-coming-soon">Coming-soon pages</a></li>
+                <li><a href="#ldc-redirects">Redirects</a></li>
                 <li><a href="#ldc-components">Components</a></li>
                 <li><a href="#ldc-standards">Build standards</a></li>
+                <li><a href="#ldc-appendix">Appendix</a></li>
               </ul>
             </nav>
 
@@ -914,15 +918,20 @@ if (docsKey) ROUTE_MAP[docsKey] = INTERNAL_DOCS_ROUTE;
                       </tr>
                       <tr>
                         <th scope="row">Announcement banner</th>
-                        <td><code>ANNOUNCEMENT_ROOT_URL</code></td>
-                        <td>Record <code>ANNOUNCEMENT_RECORD_ID</code></td>
-                        <td><code>ANNOUNCEMENT_INDICATOR_ID</code></td>
+                        <td><code>/launchpad/</code></td>
+                        <td><code>form_41cbd</code></td>
                         <td>
-                          Reads one indicator value and shows it above the
-                          header. The four constants are at the top of
-                          <code>leaf_header.js</code>, and the fetch is skipped
-                          while they are placeholders. Content is cleaned with
-                          DOMPurify.
+                          <code>470</code> message<br />
+                          <code>471</code> button
+                        </td>
+                        <td>
+                          The header reads indicator <code>470</code> from the
+                          record in <code>ANNOUNCEMENT_RECORD_ID</code> and
+                          shows it above the nav. It does not read
+                          <code>471</code> yet. The four constants are at the
+                          top of <code>leaf_header.js</code>, and the fetch is
+                          skipped while any is a placeholder. Content is cleaned
+                          with DOMPurify.
                         </td>
                       </tr>
                     </tbody>
@@ -1138,6 +1147,256 @@ function statusTextForSource(sourceKey, rec) {
   return rec &amp;&amp; rec.lastStatus ? rec.lastStatus : "Not Submitted";
 }
 </textarea
+                  >
+                </div>
+              </section>
+
+              <section
+                class="ldc-sec"
+                id="ldc-badges"
+                aria-labelledby="ldcBadgeH"
+              >
+                <h2 id="ldcBadgeH">Nav badges</h2>
+                <p>
+                  A badge is a small pill next to a menu item's title. It tells
+                  people a destination isn't fully live. Set it with the
+                  <code>badge</code> field on an item in
+                  <code>NAV_SECTIONS</code>, and the text is shown as typed.
+                </p>
+                <ul class="ldc-list">
+                  <li>
+                    <strong>Coming Soon</strong> is used for pages that exist
+                    but are still in development, such as Use Cases and Learn.
+                    It is a neutral gray pill with a contrast ratio of 8.48:1.
+                  </li>
+                  <li>
+                    <strong>Add</strong> a badge by adding the
+                    <code>badge</code> line to the item.
+                  </li>
+                  <li>
+                    <strong>Remove</strong> it by deleting that line when the
+                    page goes live. Nothing else changes.
+                  </li>
+                  <li>
+                    To keep an item out of the menu entirely, use
+                    <code>hidden: true</code> instead of a badge.
+                  </li>
+                  <li>
+                    <strong>Beta</strong> is a gold variant that is not live
+                    yet. It needs the three edits in the Beta badge snippet: a
+                    <code>badgeClass</code> field, a small change to
+                    <code>linkRowHTML()</code>, and one CSS rule.
+                  </li>
+                </ul>
+                <p>
+                  The snippets are under
+                  <a href="#ldc-components">Components</a>: Nav badge, Add or
+                  remove a badge, and Beta badge (pending patch).
+                </p>
+              </section>
+
+              <section
+                class="ldc-sec"
+                id="ldc-coming-soon"
+                aria-labelledby="ldcSoonH"
+              >
+                <h2 id="ldcSoonH">Coming-soon pages</h2>
+                <p>
+                  <code>lp_use_case</code> and <code>lp_learn</code> were built
+                  as placeholders so the page can be linked, shared and reviewed
+                  before the real content exists. They share one pattern:
+                </p>
+                <ul class="ldc-list">
+                  <li>
+                    A hero with a round icon, a <strong>Coming Soon</strong>
+                    eyebrow, the page title, a short description and an
+                    <strong>In development</strong> pill.
+                  </li>
+                  <li>
+                    A <strong>What to Expect</strong> section listing what the
+                    finished page will include.
+                  </li>
+                  <li>
+                    Optionally, something useful in the meantime. Learn adds an
+                    <strong>In the meantime</strong> band whose button opens a
+                    live training registration modal.
+                  </li>
+                </ul>
+                <h3>Create one</h3>
+                <ol>
+                  <li>
+                    Copy <code>lp_use_case.html</code> to
+                    <code>lp_&lt;name&gt;.html</code>. Change the icon, text and
+                    the <code>id</code> values that tie headings to sections.
+                  </li>
+                  <li>
+                    Publish it as <code>report.php?a=lp_&lt;name&gt;</code>.
+                  </li>
+                  <li>
+                    Register the route, following the steps in
+                    <a href="#ldc-add-page">Add a page</a>, and give the nav
+                    item <code>badge: "Coming Soon"</code>.
+                  </li>
+                  <li>
+                    When the page is ready, replace the two sections with the
+                    real content and delete the badge line.
+                  </li>
+                </ol>
+                <p>
+                  The Coming-soon page and In the meantime band snippets are
+                  under <a href="#ldc-components">Components</a>.
+                </p>
+              </section>
+
+              <section
+                class="ldc-sec"
+                id="ldc-redirects"
+                aria-labelledby="ldcRedirH"
+              >
+                <h2 id="ldcRedirH">Redirects</h2>
+                <p>
+                  When these pages moved into the Launchpad, each old page was
+                  given a one-line script that sends visitors to the new
+                  address. Place the script on the old page. It uses
+                  <code>window.location.replace()</code>, so the old address
+                  isn't kept in history and the back button doesn't bounce
+                  people forward again.
+                </p>
+                <div
+                  class="ldc-table-wrap"
+                  role="region"
+                  aria-label="Redirects table"
+                  tabindex="0"
+                >
+                  <table class="ldc-table">
+                    <caption>
+                      Old pages and where they now go
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Old page</th>
+                        <th scope="col">Old address</th>
+                        <th scope="col">New address</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th scope="row">Support Services</th>
+                        <td>
+                          <code>/platform/service_requests_launchpad</code>
+                        </td>
+                        <td><code>/launchpad/</code></td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Find My Site</th>
+                        <td>
+                          <code>/launchpad/report.php?a=Find_my_site</code>
+                        </td>
+                        <td><code>/launchpad/#find_site</code></td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Form Library</th>
+                        <td><code>/launchpad/report.php?a=library</code></td>
+                        <td><code>/launchpad/#form_library</code></td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Privacy Resources</th>
+                        <td>
+                          <code>/platform/privacy/report.php?a=resources</code>
+                        </td>
+                        <td><code>/launchpad/#privacy</code></td>
+                      </tr>
+                      <tr>
+                        <th scope="row">CoP</th>
+                        <td><code>/platform/CoP</code></td>
+                        <td><code>/launchpad/#cop</code></td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Help Library (search and landing)</th>
+                        <td>
+                          <code
+                            >/platform/help_library/report.php?a=Search_Help_Library</code
+                          >
+                        </td>
+                        <td><code>/launchpad/#help_library</code></td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Support</th>
+                        <td><code>/platform/support</code></td>
+                        <td><code>/launchpad/</code></td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Help Library article</th>
+                        <td>
+                          <code
+                            >/platform/help_library/report.php?a=View_Help_Resource#&lt;id&gt;</code
+                          >
+                        </td>
+                        <td>
+                          <code
+                            >/launchpad/#help_library-article-&lt;id&gt;</code
+                          >
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <ul class="ldc-list">
+                  <li>
+                    The part after <code>#</code> is the page's hash key from
+                    <code>HREF_HASH_KEY_OVERRIDES</code> in
+                    <code>leaf_header.js</code>. If you rename a key, update its
+                    redirect too.
+                  </li>
+                  <li>
+                    Help Library article links carry the article ID in the hash,
+                    and the redirect passes it through. With no ID it falls back
+                    to the Help Library landing page.
+                  </li>
+                  <li>
+                    Put each script only on the page being retired. The Support
+                    and Service Requests sites also serve the forms that open in
+                    modals and take newsletter signups, so a redirect on a
+                    shared template would break them.
+                  </li>
+                </ul>
+
+                <h3>Redirect to a Launchpad page</h3>
+                <p>
+                  Change the comment, the address and nothing else for any of
+                  the simple redirects in the table.
+                </p>
+                <div data-ldc-code data-title="Redirect to a Launchpad page">
+                  <textarea>
+&lt;!-- Find My Site
+     old: /launchpad/report.php?a=Find_my_site
+     new: /launchpad/#find_site --&gt;
+&lt;script&gt;
+  window.location.replace("/launchpad/#find_site");
+&lt;/script&gt;</textarea
+                  >
+                </div>
+
+                <h3>Help Library article redirect</h3>
+                <p>
+                  Passes the article ID from the old address to the new one.
+                </p>
+                <div data-ldc-code data-title="Help Library article redirect">
+                  <textarea>
+&lt;!-- Help Library article
+     old: /platform/help_library/report.php?a=View_Help_Resource#XXX
+     new: /launchpad/#help_library-article-XXX --&gt;
+&lt;script&gt;
+  // window.location.hash includes the leading "#", e.g. "#XXX"
+  var articleId = window.location.hash.substring(1);
+
+  if (articleId) {
+    window.location.replace("/launchpad/#help_library-article-" + articleId);
+  } else {
+    // No article ID in the URL
+    window.location.replace("/launchpad/#help_library");
+  }
+&lt;/script&gt;</textarea
                   >
                 </div>
               </section>
@@ -3128,10 +3387,10 @@ function ensureJumpToTop() {
                 </p>
                 <div data-ldc-code data-title="Announcement banner loader">
                   <textarea>
-// Set these four to turn the banner on; while they are placeholders nothing is fetched
-var ANNOUNCEMENT_ROOT_URL = "REPLACE_ME_ANNOUNCEMENT_ROOT_URL";
+// All four must be set for the banner to load; any placeholder skips the fetch
+var ANNOUNCEMENT_ROOT_URL = "https://leaf.va.gov/launchpad/";
 var ANNOUNCEMENT_RECORD_ID = "REPLACE_ME_ANNOUNCEMENT_RECORD_ID";
-var ANNOUNCEMENT_INDICATOR_ID = "REPLACE_ME_ANNOUNCEMENT_INDICATOR_ID";
+var ANNOUNCEMENT_INDICATOR_ID = "470"; // 470 = message, 471 = button (form_41cbd)
 var ANNOUNCEMENT_SERIES = 1;
 
 // GET {ROOT_URL}api/form/{RECORD_ID}/rawIndicator/{INDICATOR_ID}/{SERIES}
@@ -3694,6 +3953,571 @@ function closeFeedbackModal() {
 </textarea
                   >
                 </div>
+
+                <h3>Stat cards</h3>
+                <p>
+                  Large numbers with labels. lp_impact also fades each card in
+                  on scroll by adding a stat-visible class from its page script.
+                </p>
+                <div data-ldc-code data-title="Stat cards" data-preview="true">
+                  <textarea>
+&lt;style&gt;
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 900px) {
+    .stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 500px) {
+    .stats {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .stat-card {
+    background: var(--surface, #fff);
+    border-radius: var(--radius, 8px);
+    box-shadow: var(--shadow-card, 0 2px 12px rgba(0, 0, 0, 0.08));
+    padding: 2rem 1.5rem;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    line-height: 1;
+    color: var(--color-primary, #005ea2);
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-label {
+    font-family: "Source Sans Pro Web", sans-serif;
+    font-size: 1.05rem;
+    color: var(--color-text-muted, #5c6670);
+    margin: 0;
+  }
+&lt;/style&gt;
+
+&lt;div class="stats" role="list"&gt;
+  &lt;div class="stat-card" role="listitem"&gt;
+    &lt;div class="stat-num" aria-label="250 Facilities Adopted"&gt;
+      250
+    &lt;/div&gt;
+    &lt;p class="stat-label"&gt;Facilities Adopted&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div class="stat-card" role="listitem"&gt;
+    &lt;div class="stat-num" aria-label="3,700 Active Sites"&gt;
+      3,700
+    &lt;/div&gt;
+    &lt;p class="stat-label"&gt;Active Sites&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div class="stat-card" role="listitem"&gt;
+    &lt;div class="stat-num" aria-label="6 Million Requests Per Year"&gt;
+      6M
+    &lt;/div&gt;
+    &lt;p class="stat-label"&gt;Requests Per Year&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div class="stat-card" role="listitem"&gt;
+    &lt;div class="stat-num" aria-label="20 Percent Annual Growth"&gt;
+      20%
+    &lt;/div&gt;
+    &lt;p class="stat-label"&gt;Annual Growth&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>User types list</h3>
+                <p>
+                  A definition list for short term and description pairs. Sits
+                  inside a step.
+                </p>
+                <div
+                  data-ldc-code
+                  data-title="User types list"
+                  data-preview="true"
+                >
+                  <textarea>
+&lt;style&gt;
+  .user-types {
+    margin: 1rem 0 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .user-types dt {
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: 1rem;
+    color: var(--color-text, #1b1b1b);
+    margin: 0 0 0.2rem;
+  }
+
+  .user-types dd {
+    margin: 0;
+    font-family: "Source Sans Pro Web", sans-serif;
+    font-size: 1rem;
+    color: var(--color-text-muted, #5c6670);
+    line-height: 1.55;
+  }
+&lt;/style&gt;
+
+&lt;div class="step-body"&gt;
+  &lt;dl class="user-types"&gt;
+    &lt;div&gt;
+      &lt;dt&gt;Low-Code for Programmers&lt;/dt&gt;
+      &lt;dd&gt;
+        Streamline development with reusable components and rapid
+        deployment tools.
+      &lt;/dd&gt;
+    &lt;/div&gt;
+    &lt;div&gt;
+      &lt;dt&gt;No-Code for Citizen Developers&lt;/dt&gt;
+      &lt;dd&gt;
+        Intuitive drag-and-drop interfaces let anyone manage
+        digital processes without writing a line of code.
+      &lt;/dd&gt;
+    &lt;/div&gt;
+  &lt;/dl&gt;
+&lt;/div&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>CTA band</h3>
+                <p>
+                  A full-width blue band with one button. In lp_impact the
+                  button opens the demo video modal.
+                </p>
+                <div data-ldc-code data-title="CTA band" data-preview="true">
+                  <textarea>
+&lt;style&gt;
+  .btn-cta .material-symbols-outlined svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .cta-band {
+    background: var(--color-primary, #005ea2);
+    color: #fff;
+  }
+
+  .cta-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+    padding: 3rem 0;
+  }
+
+  .cta-text {
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+    margin: 0;
+  }
+
+  .btn-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fff;
+    color: var(--color-primary, #005ea2);
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: 1rem;
+    border: none;
+    border-radius: var(--radius, 6px);
+    padding: 0.75rem 1.75rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition:
+    background 0.2s,
+    color 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-cta:hover {
+    background: #d9e8f6;
+  }
+&lt;/style&gt;
+
+&lt;section class="cta-band" aria-labelledby="cta-heading"&gt;
+  &lt;div class="wrap"&gt;
+    &lt;div class="cta-inner"&gt;
+      &lt;p class="cta-text" id="cta-heading"&gt;
+        See the platform in action for yourself!
+      &lt;/p&gt;
+      &lt;button class="btn-cta" id="lpCtaDemoBtn" type="button"&gt;
+        &lt;span class="material-symbols-outlined" aria-hidden="true"
+          &gt;&lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+            &lt;path
+              d="m380-300 280-180-280-180v360ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"
+            /&gt;&lt;/svg
+        &gt;&lt;/span&gt;
+        Watch a demo
+      &lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Nav badge</h3>
+                <p>
+                  The pill drawn next to a menu item's title. The markup is
+                  built by linkRowHTML() from the item's badge text.
+                </p>
+                <div data-ldc-code data-title="Nav badge" data-preview="true">
+                  <textarea>
+&lt;style&gt;
+  .dd-badge {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 1px 7px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #3d4551;
+    background: #eef0f2;
+    border: 1px solid #dde1e4;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: sans-serif;
+  }
+&lt;/style&gt;
+
+&lt;div class="title-row"&gt;
+  &lt;strong&gt;Learn&lt;/strong&gt;
+  &lt;span class="dd-badge"&gt;Coming Soon&lt;/span&gt;
+&lt;/div&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Add or remove a badge</h3>
+                <p>
+                  Set badge on an item in NAV_SECTIONS. Delete the line when the
+                  page goes live. hidden: true removes the item from the menu
+                  instead.
+                </p>
+                <div data-ldc-code data-title="Add or remove a badge">
+                  <textarea>
+// Add: the text is shown as typed
+{
+  icon: "school",
+  title: "Learn",
+  desc: "Self-paced courses and live training for LEAF",
+  href: "/launchpad/report.php?a=lp_learn",
+  badge: "Coming Soon",
+},
+
+// Remove: delete the badge line once the page is live
+{
+  icon: "school",
+  title: "Learn",
+  desc: "Self-paced courses and live training for LEAF",
+  href: "/launchpad/report.php?a=lp_learn",
+},
+
+// In linkRowHTML(): how the badge is drawn
+var badgeHTML = item.badge
+  ? `&lt;span class="dd-badge"&gt;${item.badge}&lt;/span&gt;`
+  : "";
+</textarea
+                  >
+                </div>
+
+                <h3>Beta badge (pending patch)</h3>
+                <p>
+                  Not live until these three edits from the Quick Answers patch
+                  are applied. The gold variant is for features that work but
+                  are still being tested.
+                </p>
+                <div data-ldc-code data-title="Beta badge (pending patch)">
+                  <textarea>
+// 1. NAV_SECTIONS item: add badgeClass beside badge
+{
+  icon: "quiz",
+  title: "Quick Answers",
+  desc: "Automated answers to common LEAF questions",
+  href: "/launchpad/report.php?a=lp_quick_answers",
+  badge: "Beta",
+  badgeClass: "dd-badge--beta",
+},
+
+// 2. leaf_header.js, linkRowHTML(): let a badge carry its own class
+var badgeHTML = item.badge
+  ? `&lt;span class="dd-badge${item.badgeClass ? " " + item.badgeClass : ""}"&gt;${item.badge}&lt;/span&gt;`
+  : "";
+
+/* 3. leaf_header.css, directly after .dd-badge */
+.dd-badge--beta {
+  color: #5c4809;
+  background: #fef0cb;
+  border-color: #c2850c;
+}
+</textarea
+                  >
+                </div>
+
+                <h3>Coming-soon page</h3>
+                <p>
+                  The two sections every coming-soon page starts from: a hero
+                  with a Coming Soon eyebrow, then a What to Expect list. Copied
+                  from lp_use_case.
+                </p>
+                <div
+                  data-ldc-code
+                  data-title="Coming-soon page"
+                  data-preview="true"
+                >
+                  <textarea>
+&lt;style&gt;
+  .uc-hero-badge .material-symbols-outlined svg {
+    width: 1rem;
+    height: 1rem;
+    color: var(--color-primary, #005ea2);
+  }
+
+  .uc-hero-icon {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: var(--color-primary, #005ea2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.75rem;
+    box-shadow: 0 4px 20px rgba(0, 94, 162, 0.25);
+  }
+
+  .uc-hero-icon svg {
+    width: 3rem;
+    height: 3rem;
+    color: #fff;
+  }
+
+  .uc-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--color-primary-lightest, #e8f0fb);
+    color: var(--color-primary, #005ea2);
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    margin-top: 1.5rem;
+  }
+
+  .uc-expect-list {
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 0 0 0 1.25rem;
+    text-align: left;
+    color: var(--c-text, #1b1b1b);
+    font-family: "Source Sans Pro Web", sans-serif;
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+
+  .uc-expect-list li {
+    margin-bottom: 0.6rem;
+  }
+
+  .uc-expect-list li:last-child {
+    margin-bottom: 0;
+  }
+&lt;/style&gt;
+
+&lt;section class="section" aria-labelledby="uc-h1"&gt;
+  &lt;div class="wrap"&gt;
+    &lt;div class="sec-hd ctr"&gt;
+      &lt;div class="uc-hero-icon" aria-hidden="true"&gt;
+        &lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+          &lt;path
+            d="M343-420h225v-60H343v60Zm0-90h395v-60H343v60Zm0-90h395v-60H343v60Zm-83 400q-24 0-42-18t-18-42v-560q0-24 18-42t42-18h560q24 0 42 18t18 42v560q0 24-18 42t-42 18H260ZM140-80q-24 0-42-18t-18-42v-620h60v620h620v60H140Z"
+          /&gt;
+        &lt;/svg&gt;
+      &lt;/div&gt;
+      &lt;span class="eyebrow"&gt;Coming Soon&lt;/span&gt;
+      &lt;h1 class="sec-h2" id="uc-h1"&gt;LEAF Use Case Library&lt;/h1&gt;
+      &lt;p class="sec-sub"&gt;
+        A growing library showcasing what LEAF is doing across the VA —
+        browse real workflow improvements from teams nationwide, and see
+        how sites like yours put LEAF to work.
+      &lt;/p&gt;
+      &lt;span class="uc-hero-badge"&gt;
+        &lt;span class="material-symbols-outlined" aria-hidden="true"&gt;
+          &lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+            &lt;path
+              d="M768-120 517-371l57-57 251 251-57 57Zm-581 0-57-57 290-290-107-107-23 23-44-44v85l-24 24-122-122 24-24h86l-48-48 131-131q17-17 37-23t44-6q24 0 44 8.5t37 25.5L348-699l48 48-24 24 104 104 122-122q-8-13-12.5-30t-4.5-36q0-53 38.5-91.5T711-841q15 0 25.5 3t17.5 8l-85 85 75 75 85-85q5 8 8.5 19.5T841-709q0 53-38.5 91.5T711-579q-18 0-31-2.5t-24-7.5L187-120Z"
+            /&gt;
+          &lt;/svg&gt;
+        &lt;/span&gt;
+        In development
+      &lt;/span&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+
+&lt;section class="section section-alt" aria-labelledby="uc-expect-h2"&gt;
+  &lt;div class="wrap"&gt;
+    &lt;div class="sec-hd ctr"&gt;
+      &lt;h2 class="sec-h2" id="uc-expect-h2"&gt;What to Expect&lt;/h2&gt;
+      &lt;p class="sec-sub"&gt;
+        Once launched, the Use Case Library will include:
+      &lt;/p&gt;
+    &lt;/div&gt;
+    &lt;ul class="uc-expect-list"&gt;
+      &lt;li&gt;
+        Real-world examples of LEAF implementations from sites across
+        the VA
+      &lt;/li&gt;
+      &lt;li&gt;
+        Filtering by industry, facility type, or use case category
+      &lt;/li&gt;
+      &lt;li&gt;Downloadable case studies you can share with your team&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>In the meantime band</h3>
+                <p>
+                  Used on lp_learn to offer something useful while the page is
+                  in development. The button opens a registration modal built in
+                  that page's own script.
+                </p>
+                <div
+                  data-ldc-code
+                  data-title="In the meantime band"
+                  data-preview="true"
+                >
+                  <textarea>
+&lt;style&gt;
+  .training-cta-btn .material-symbols-outlined svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    color: var(--color-primary, #005ea2) !important;
+  }
+
+  .training-cta-band {
+    background: var(--color-primary, #005ea2);
+    color: #fff;
+  }
+
+  .training-cta-inner {
+    padding: 3.5rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .training-cta-eyebrow {
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.75);
+    margin: 0;
+  }
+
+  .training-cta-heading {
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+    margin: 0;
+    color: #fff;
+  }
+
+  .training-cta-sub {
+    font-family: "Source Sans Pro Web", sans-serif;
+    font-size: 1.05rem;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+    max-width: 540px;
+    line-height: 1.6;
+  }
+
+  .training-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fff;
+    color: var(--color-primary, #005ea2) !important;
+    font-family: "PublicSans-Bold", sans-serif;
+    font-size: 1rem;
+    border: none;
+    border-radius: var(--radius, 6px);
+    padding: 0.85rem 2rem;
+    margin-top: 0.5rem;
+    cursor: pointer;
+    transition: filter 0.2s;
+  }
+
+  .training-cta-btn:hover {
+    filter: brightness(0.96);
+  }
+
+  .training-cta-btn:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+  }
+&lt;/style&gt;
+
+&lt;section class="training-cta-band" aria-labelledby="training-cta-h2"&gt;
+  &lt;div class="wrap"&gt;
+    &lt;div class="training-cta-inner"&gt;
+      &lt;p class="training-cta-eyebrow"&gt;In the meantime&lt;/p&gt;
+      &lt;h2 class="training-cta-heading" id="training-cta-h2"&gt;
+        Join a Live Training Session
+      &lt;/h2&gt;
+      &lt;p class="training-cta-sub"&gt;
+        While the Learning Center is being built, register for a live
+        training session with the LEAF team to get hands-on help and
+        answers to your questions.
+      &lt;/p&gt;
+      &lt;button
+        class="training-cta-btn"
+        type="button"
+        id="trainingRegisterBtn"
+      &gt;
+        &lt;span class="material-symbols-outlined" aria-hidden="true"&gt;
+          &lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;
+            &lt;path
+              d="M433-228 295-365l42-42 96 94 184-184 42 43-226 226ZM180-80q-24 0-42-18t-18-42v-620q0-24 18-42t42-18h65v-60h65v60h340v-60h65v60h65q24 0 42 18t18 42v620q0 24-18 42t-42 18H180Zm0-60h600v-430H180v430Z"
+            /&gt;
+          &lt;/svg&gt;
+        &lt;/span&gt;
+        Register for Live Training
+      &lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+</textarea
+                  >
+                </div>
               </section>
 
               <section
@@ -3753,6 +4577,119 @@ function closeFeedbackModal() {
                   <li>
                     Match the surrounding code. Use the same class prefixes,
                     tokens and spacing as sibling pages.
+                  </li>
+                </ul>
+              </section>
+
+              <section
+                class="ldc-sec"
+                id="ldc-appendix"
+                aria-labelledby="ldcAppH"
+              >
+                <h2 id="ldcAppH">Appendix: Ideas and Help Library</h2>
+                <p>
+                  Submit an Idea and Help Library appear inside the Launchpad,
+                  but they are separate LEAF sites. The Launchpad fetches them
+                  and shows them in its own frame, so their content and behavior
+                  are changed at their own root, not here.
+                </p>
+                <div
+                  class="ldc-table-wrap"
+                  role="region"
+                  aria-label="Where to make changes"
+                  tabindex="0"
+                >
+                  <table class="ldc-table">
+                    <caption>
+                      Where to change each part
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">What</th>
+                        <th scope="col">Where</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th scope="row">Ideas page content and scripts</th>
+                        <td><code>/platform/ideas/</code></td>
+                      </tr>
+                      <tr>
+                        <th scope="row">
+                          Idea votes and Help Library article feedback
+                        </th>
+                        <td>Saved in <code>/platform/votes</code></td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Help Library articles and layout</th>
+                        <td><code>/platform/help_library/</code></td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Menu entry, route and hash key</th>
+                        <td><code>leaf_header.js</code></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <h3>Submit an Idea</h3>
+                <ul class="ldc-list">
+                  <li>
+                    The nav item points at
+                    <code>https://leaf.va.gov/platform/ideas/</code>. It is
+                    fetched, stripped of its own header and footer, and its
+                    content is placed in the Launchpad page, with no iframe.
+                  </li>
+                  <li>
+                    The router adds a <code>&lt;base&gt;</code> for the Ideas
+                    folder, so its relative calls such as
+                    <code>./api/form/query</code> go to the Ideas site and not
+                    the Launchpad.
+                  </li>
+                  <li>
+                    Its scripts run again inside the Launchpad. Scripts that
+                    wait for page load are held and started after the content is
+                    in place.
+                  </li>
+                  <li>
+                    Votes are saved in <code>/platform/votes</code>, not in the
+                    Launchpad.
+                  </li>
+                  <li>
+                    My Requests also reads the Ideas site. See
+                    <a href="#ldc-multigrid">Multigrid</a>.
+                  </li>
+                </ul>
+                <h3>Help Library</h3>
+                <ul class="ldc-list">
+                  <li>
+                    The route uses <code>iframe: true</code> and
+                    <code>fixedHeight: true</code>. Help Library has its own
+                    internal routing, so it needs its own window. The frame
+                    fills the screen below the header and scrolls inside itself.
+                  </li>
+                  <li>
+                    The frame stays hidden behind a spinner until it finishes
+                    loading, so its own header never flashes.
+                  </li>
+                  <li>
+                    Each time someone opens an article, Help Library posts the
+                    article ID to the Launchpad. The Launchpad accepts it only
+                    from <code>https://leaf.va.gov</code> and writes it into the
+                    address as <code>#help_library-article-&lt;id&gt;</code>.
+                  </li>
+                  <li>
+                    Opening a link with that hash jumps straight to the article.
+                  </li>
+                  <li>
+                    Article feedback is saved in
+                    <code>/platform/votes</code>, the same place as Idea votes,
+                    and not in the Launchpad.
+                  </li>
+                  <li>
+                    Articles and layout are edited at
+                    <code>/platform/help_library/</code>. Changing the
+                    article-opening code there can break deep links, since the
+                    Launchpad expects that message.
                   </li>
                 </ul>
               </section>
