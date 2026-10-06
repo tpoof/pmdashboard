@@ -364,9 +364,13 @@
         outline-offset: -3px;
       }
 
-      .ldc-btn[aria-pressed="true"] {
+      .ldc-sec .ldc-code .ldc-seg .ldc-btn[aria-pressed="true"],
+      .ldc-sec .ldc-code .ldc-seg .ldc-btn[aria-pressed="true"]:hover {
         background: var(--lp-accent);
-        color: var(--c-white);
+        color: #fff;
+      }
+      .ldc-sec .ldc-code .ldc-btn[aria-pressed="true"] span {
+        color: #fff;
       }
 
       .ldc-code-area {
@@ -513,6 +517,7 @@
                 <li><a href="#ldc-add-page">Add a page</a></li>
                 <li><a href="#ldc-access">Sysadmin access</a></li>
                 <li><a href="#ldc-forms">Connected forms</a></li>
+                <li><a href="#ldc-multigrid">Multigrid</a></li>
                 <li><a href="#ldc-components">Components</a></li>
                 <li><a href="#ldc-standards">Build standards</a></li>
               </ul>
@@ -661,6 +666,45 @@
                     scrolls without changing the route.
                   </p>
                 </div>
+
+                <h3 id="ldc-chrome">Chrome suppression</h3>
+                <p>
+                  A fetched LEAF page arrives with its own header, footer and
+                  skip links. <code>suppressChrome()</code> in
+                  <code>leaf_header.js</code> removes anything matching
+                  <code>CHROME_SELECTORS</code> before the router shows the
+                  page, so the shell's header is the only one on screen. It also
+                  drops the shell's own elements, such as
+                  <code>#lpSwapHost</code> and <code>.lp-header</code>, so a
+                  fetched Launchpad page can't bring in a second copy.
+                </p>
+                <p>
+                  <code>extractContent()</code> then picks what to show, using
+                  the first match in this order:
+                </p>
+                <ol>
+                  <li><code>[data-lp-content]</code>, an explicit opt-in</li>
+                  <li><code>#content</code></li>
+                  <li><code>#bodyarea</code></li>
+                  <li><code>&lt;main&gt;</code></li>
+                  <li>the whole <code>&lt;body&gt;</code>, as a last resort</li>
+                </ol>
+                <p>Two common fixes:</p>
+                <ul class="ldc-list">
+                  <li>
+                    A fetched page shows a stray header, footer or skip link:
+                    add its selector to <code>CHROME_SELECTORS</code>.
+                  </li>
+                  <li>
+                    A page loads more than you want: put
+                    <code>data-lp-content</code> on the wrapper you do want. It
+                    wins over every other rule.
+                  </li>
+                </ul>
+                <p>
+                  The code is in the Chrome suppression snippet under
+                  <a href="#ldc-components">Components</a>.
+                </p>
               </section>
 
               <section
@@ -806,13 +850,59 @@ if (docsKey) ROUTE_MAP[docsKey] = INTERNAL_DOCS_ROUTE;
                         </td>
                       </tr>
                       <tr>
-                        <th scope="row">My Requests</th>
-                        <td>Several sites</td>
-                        <td>Per site</td>
-                        <td>Per site</td>
+                        <th scope="row">Newsletter signup</th>
                         <td>
-                          Sources are listed in <code>SOURCE_SITES</code> in
-                          <code>multigrid.js</code>.
+                          <code>/platform/service_requests_launchpad/</code>
+                        </td>
+                        <td><code>form_9015b</code></td>
+                        <td><code>487</code></td>
+                        <td>
+                          Creates a record titled Newsletter Subscription,
+                          writes the email, then advances it to step
+                          <code>14</code>. The submit step is best effort, so a
+                          signup still saves if it fails. The write goes to
+                          another LEAF site using this page's CSRF token, so
+                          check that first if signups fail.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">My Requests: Site Creations</th>
+                        <td><code>/launchpad/</code></td>
+                        <td>All forms</td>
+                        <td>
+                          <code>17</code>, <code>21</code>, <code>22</code>
+                        </td>
+                        <td>
+                          Read only. Indicators 17, 21 and 22 hold the server,
+                          directory and site name used for the Site Ready link.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">My Requests: Service Requests</th>
+                        <td>
+                          <code>/platform/service_requests_launchpad/</code>
+                        </td>
+                        <td>All forms</td>
+                        <td>None</td>
+                        <td>
+                          Read only. Case studies, spotlight nominations,
+                          training requests and feedback.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">My Requests: Support</th>
+                        <td><code>/platform/support/</code></td>
+                        <td>All forms</td>
+                        <td>None</td>
+                        <td>Read only. LEAF National consultation requests.</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">My Requests: Ideas</th>
+                        <td><code>/platform/ideas/</code></td>
+                        <td>All forms except <code>form_57e89</code></td>
+                        <td><code>12</code></td>
+                        <td>
+                          Read only. Indicator 12 is the custom status field.
                         </td>
                       </tr>
                       <tr>
@@ -821,6 +911,19 @@ if (docsKey) ROUTE_MAP[docsKey] = INTERNAL_DOCS_ROUTE;
                         <td>None</td>
                         <td>None</td>
                         <td>Server-sent events feed for the Internal nav.</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Announcement banner</th>
+                        <td><code>ANNOUNCEMENT_ROOT_URL</code></td>
+                        <td>Record <code>ANNOUNCEMENT_RECORD_ID</code></td>
+                        <td><code>ANNOUNCEMENT_INDICATOR_ID</code></td>
+                        <td>
+                          Reads one indicator value and shows it above the
+                          header. The four constants are at the top of
+                          <code>leaf_header.js</code>, and the fetch is skipped
+                          while they are placeholders. Content is cleaned with
+                          DOMPurify.
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -841,6 +944,202 @@ if (docsKey) ROUTE_MAP[docsKey] = INTERNAL_DOCS_ROUTE;
                   Both are filled by Smarty in <code>main.tpl</code>. A page
                   that loads the header script on its own must set them too.
                 </p>
+              </section>
+
+              <section
+                class="ldc-sec"
+                id="ldc-multigrid"
+                aria-labelledby="ldcMgH"
+              >
+                <h2 id="ldcMgH">Multigrid (My Requests)</h2>
+                <p>
+                  <code>multigrid.js</code> shows a person's records from
+                  several LEAF sites in one sortable table. It is embedded once
+                  in <code>view_homepage.tpl</code> and opened by the
+                  <strong>View My Requests</strong> button.
+                </p>
+                <h3>How it works</h3>
+                <ul class="ldc-list">
+                  <li>
+                    <code>data-user-id</code> carries the signed-in user's ID
+                    from Smarty, because Smarty tags don't render inside a
+                    <code>.js</code> file. The script strips the comment markers
+                    the platform leaves around the value.
+                  </li>
+                  <li>
+                    On load it queries every entry in
+                    <code>SOURCE_SITES</code> at the same time for records that
+                    belong to that user and aren't deleted, in batches of up to
+                    500.
+                  </li>
+                  <li>
+                    Each source loads or fails on its own, so one slow or
+                    failing site doesn't block the others.
+                  </li>
+                  <li>
+                    <code>TABS</code> decides what the person sees. A
+                    <code>single</code> tab shows one source, a
+                    <code>merged</code> tab combines several, and
+                    <code>all</code> shows every source with a Site column.
+                  </li>
+                  <li>
+                    Record IDs repeat across LEAF sites, so each row is keyed by
+                    site URL plus record ID, and the Request column sorts by
+                    title instead of ID.
+                  </li>
+                  <li>
+                    Every tab is drawn by one function,
+                    <code>renderDataTable()</code>, with a column set per
+                    layout: generic, Site Creations and All Requests.
+                  </li>
+                  <li>
+                    Each Request links to the record's print view on its own
+                    site.
+                  </li>
+                </ul>
+                <div class="ldc-note" role="note">
+                  <p>
+                    Keep the file ASCII-only. Non-ASCII characters have been
+                    corrupted by deploy pipelines before, which silently breaks
+                    strings and comments.
+                  </p>
+                </div>
+                <h3>Add a source</h3>
+                <ol>
+                  <li>Add the site to <code>SOURCE_SITES</code>.</li>
+                  <li>
+                    Add its key to the <code>sourceKeys</code> of the All
+                    Requests tab, and either give it its own tab or add it to an
+                    existing merged tab.
+                  </li>
+                  <li>
+                    If it needs custom fields or a filter, add a branch in
+                    <code>myRecordsQuery()</code>.
+                  </li>
+                  <li>
+                    If its Status comes from a custom field, add a branch in
+                    <code>statusTextForSource()</code>. Sources without one
+                    share <code>lastStatus</code>.
+                  </li>
+                  <li>
+                    Open View My Requests with an account that has records on
+                    the new site and check that its rows, links and status
+                    appear.
+                  </li>
+                </ol>
+
+                <h3>Embed tag</h3>
+                <p>
+                  Place once in the template, anywhere in the body. data-trigger
+                  turns it into a modal opened by that button; without it the
+                  grid mounts inline in data-mount.
+                </p>
+                <div data-ldc-code data-title="Embed tag">
+                  <textarea>
+&lt;div id="mst-root"&gt;&lt;/div&gt;
+&lt;script
+  src="./files/multigrid.js"
+  data-user-id="&lt;!--{$userID}--&gt;"
+  data-mount="mst-root"
+  data-trigger="mst-open-btn"
+&gt;&lt;/script&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Add a source</h3>
+                <p>
+                  One entry per LEAF site, in SOURCE_SITES. The url needs its
+                  trailing slash.
+                </p>
+                <div data-ldc-code data-title="Add a source">
+                  <textarea>
+var SOURCE_SITES = {
+  // ...existing sources...
+  newSource: {
+    url: "https://leaf.va.gov/platform/new_site/",
+    name: "New Source",
+    description: "requests you've submitted to New Source",
+    allRequestsLabel: "New Source", // value shown in the Site column of All Requests
+    isNewSource: true, // only needed if the source has custom fields or filters
+  },
+};
+</textarea
+                  >
+                </div>
+
+                <h3>Add or extend a tab</h3>
+                <p>
+                  Tab order here is the display order. Use kind "single" for one
+                  source, "merged" for several in one table, and "all" for every
+                  source.
+                </p>
+                <div data-ldc-code data-title="Add or extend a tab">
+                  <textarea>
+var TABS = [
+  {
+    id: "all",
+    name: "All Requests",
+    kind: "all",
+    sourceKeys: ["siteCreations", "serviceRequests", "support", "ideas", "newSource"],
+    description: "LEAF National requests",
+  },
+  // ...existing tabs...
+  {
+    id: "newSource",
+    name: "New Source",
+    kind: "single",
+    sourceKeys: ["newSource"],
+  },
+];
+
+// To fold the source into an existing merged tab instead:
+// sourceKeys: ["serviceRequests", "support", "newSource"]
+</textarea
+                  >
+                </div>
+
+                <h3>Custom fields and filters</h3>
+                <p>
+                  In myRecordsQuery(). getData lists the indicator IDs to fetch,
+                  and terms narrows the records.
+                </p>
+                <div data-ldc-code data-title="Custom fields and filters">
+                  <textarea>
+if (site &amp;&amp; site.isNewSource) {
+  query.getData = [12]; // indicator IDs your Status column needs
+  query.terms.push({
+    id: "categoryID",
+    operator: "!=",
+    match: "form_xxxxx", // a form to leave out
+    gate: "AND",
+  });
+}
+</textarea
+                  >
+                </div>
+
+                <h3>Custom status</h3>
+                <p>
+                  In statusTextForSource(). Without a branch, a source uses the
+                  shared lastStatus value.
+                </p>
+                <div data-ldc-code data-title="Custom status">
+                  <textarea>
+function statusTextForSource(sourceKey, rec) {
+  var source = SOURCE_SITES[sourceKey];
+  if (source.isNewSource) {
+    var v = rec &amp;&amp; rec.s1 &amp;&amp; rec.s1.id12 ? rec.s1.id12 : "";
+    return v || "Not Submitted";
+  }
+  if (source.isIdeas) {
+    /* ...existing Ideas branch... */
+  }
+  return rec &amp;&amp; rec.lastStatus ? rec.lastStatus : "Not Submitted";
+}
+</textarea
+                  >
+                </div>
               </section>
 
               <section
@@ -2560,8 +2859,8 @@ if (docsKey) ROUTE_MAP[docsKey] = INTERNAL_DOCS_ROUTE;
 
                 <h3>Chrome suppression (suppressChrome)</h3>
                 <p>
-                  How fetched pages lose their own header and footer. Add a
-                  selector to CHROME_SELECTORS to strip more.
+                  How fetched pages lose their own header and footer. See Chrome
+                  suppression under How pages load.
                 </p>
                 <div
                   data-ldc-code
@@ -2704,6 +3003,697 @@ function ensureJumpToTop() {
 </textarea
                   >
                 </div>
+
+                <h3>Announcement banner</h3>
+                <p>
+                  The banner the header inserts above the nav. Its CSS uses the
+                  header's --nav-r variable.
+                </p>
+                <div
+                  data-ldc-code
+                  data-title="Announcement banner"
+                  data-preview="true"
+                >
+                  <textarea>
+&lt;style&gt;
+  :root {
+    --nav-r: 5px;
+  }
+
+  .lp-announcement {
+    position: sticky;
+    top: 0;
+    z-index: 305;
+    background: #fffbeb;
+    border-bottom: 1px solid #f59e0b;
+  }
+
+  .lp-announcement-in {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 10px 24px;
+  }
+
+  .lp-announcement-body {
+    flex: 1;
+    min-width: 0;
+    font-family: "PublicSans-Regular", sans-serif;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: #78350f;
+  }
+
+  .lp-announcement-body p {
+    margin: 0 0 6px;
+  }
+
+  .lp-announcement-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  .lp-announcement-body a {
+    color: #92400e;
+    text-decoration: underline;
+  }
+
+  .lp-announcement-body a:focus-visible {
+    outline: 3px solid #92400e;
+    outline-offset: 2px;
+  }
+
+  .lp-announcement-close {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: var(--nav-r);
+    background: transparent;
+    color: #92400e;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .lp-announcement-close:hover {
+    background: rgba(146, 64, 14, 0.1);
+  }
+
+  .lp-announcement-close:focus-visible {
+    outline: 3px solid #92400e;
+    outline-offset: 2px;
+  }
+
+  .lp-announcement-close .material-symbols-outlined svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  @media (max-width: 640px) {
+    .lp-announcement-in {
+      padding: 10px 16px;
+    }
+  }
+&lt;/style&gt;
+
+&lt;div class="lp-announcement" role="region" aria-label="Site announcement"&gt;
+  &lt;div class="lp-announcement-in"&gt;
+    &lt;div class="lp-announcement-body"&gt;
+      &lt;p&gt;
+        Scheduled maintenance Saturday from 6 to 8 PM ET.
+        &lt;a href="#"&gt;Read the details&lt;/a&gt;.
+      &lt;/p&gt;
+    &lt;/div&gt;
+    &lt;button type="button" class="lp-announcement-close" aria-label="Dismiss announcement"&gt;
+      &lt;span class="material-symbols-outlined" aria-hidden="true"&gt;
+        &lt;svg viewBox="0 -960 960 960" fill="currentColor"&gt;&lt;path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/&gt;&lt;/svg&gt;
+      &lt;/span&gt;
+    &lt;/button&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+</textarea
+                  >
+                </div>
+
+                <h3>Announcement banner loader</h3>
+                <p>
+                  Fetches the banner text from a LEAF indicator, then calls
+                  ensureDompurify() and renderAnnouncementBanner() from
+                  leaf_header.js. Dismissing it lasts until the next page load.
+                </p>
+                <div data-ldc-code data-title="Announcement banner loader">
+                  <textarea>
+// Set these four to turn the banner on; while they are placeholders nothing is fetched
+var ANNOUNCEMENT_ROOT_URL = "REPLACE_ME_ANNOUNCEMENT_ROOT_URL";
+var ANNOUNCEMENT_RECORD_ID = "REPLACE_ME_ANNOUNCEMENT_RECORD_ID";
+var ANNOUNCEMENT_INDICATOR_ID = "REPLACE_ME_ANNOUNCEMENT_INDICATOR_ID";
+var ANNOUNCEMENT_SERIES = 1;
+
+// GET {ROOT_URL}api/form/{RECORD_ID}/rawIndicator/{INDICATOR_ID}/{SERIES}
+function buildAnnouncementURL() {
+  return (
+    ANNOUNCEMENT_ROOT_URL +
+    "api/form/" +
+    encodeURIComponent(ANNOUNCEMENT_RECORD_ID) +
+    "/rawIndicator/" +
+    encodeURIComponent(ANNOUNCEMENT_INDICATOR_ID) +
+    "/" +
+    encodeURIComponent(ANNOUNCEMENT_SERIES)
+  );
+}
+
+// Fetch, sanitize with DOMPurify, then insert the banner only if real text remains
+function initAnnouncementBanner() {
+  if (
+    ANNOUNCEMENT_ROOT_URL.indexOf("REPLACE_ME") === 0 ||
+    ANNOUNCEMENT_RECORD_ID.indexOf("REPLACE_ME") === 0 ||
+    ANNOUNCEMENT_INDICATOR_ID.indexOf("REPLACE_ME") === 0
+  ) {
+    return;
+  }
+  fetch(buildAnnouncementURL())
+    .then(function (res) {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then(function (data) {
+      var rec = data &amp;&amp; data[ANNOUNCEMENT_INDICATOR_ID];
+      if (!rec) return null;
+      var displayed =
+        typeof rec.displayedValue === "string"
+          ? rec.displayedValue.trim()
+          : "";
+      var raw = displayed || rec.value;
+      return raw &amp;&amp; String(raw).trim() ? String(raw) : null;
+    })
+    .then(function (html) {
+      if (!html) return;
+      return ensureDompurify().then(function () {
+        if (!window.DOMPurify) return; 
+        var clean = window.DOMPurify.sanitize(html);
+        var textOnly = clean.replace(/&lt;[^&gt;]*&gt;/g, "").trim();
+        if (!textOnly) return; 
+        renderAnnouncementBanner(clean);
+      });
+    })
+    .catch(function (err) {
+      console.warn("[LP] Announcement banner not shown:", err.message);
+    });
+}
+</textarea
+                  >
+                </div>
+
+                <h3>Modal CSS</h3>
+                <p>
+                  Shared by all three header modals. Uses the --nav-* variables
+                  from leaf_header.css.
+                </p>
+                <div data-ldc-code data-title="Modal CSS">
+                  <textarea>
+.lp-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.lp-modal[hidden] {
+  display: none;
+}
+
+.modal-box {
+  position: relative;
+  width: min(900px, 90vw);
+  background: #000;
+  border-radius: var(--nav-r-lg);
+  overflow: hidden;
+}
+
+.modal-vid {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+}
+
+.modal-vid iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.modal-close:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+.modal-box--form {
+  background: #fff;
+  width: min(1200px, 95vw);
+  max-height: 96vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--nav-panel-bd);
+  flex-shrink: 0;
+}
+
+.modal-hd-title {
+  font-family: "PublicSans-Bold", sans-serif;
+  font-size: 1rem;
+  color: var(--nav-text);
+  margin: 0;
+}
+
+.modal-close--inline {
+  position: static;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  color: var(--nav-muted);
+  flex-shrink: 0;
+}
+
+.modal-close--inline:hover {
+  background: var(--nav-hover-bg);
+  color: var(--nav-accent);
+}
+
+.modal-close--inline:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+
+.modal-close--inline .material-symbols-outlined svg {
+  width: 20px;
+  height: 20px;
+}
+
+.modal-frame-wrap {
+  flex: 1;
+  min-height: 80vh;
+}
+
+.modal-frame-wrap iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 80vh;
+  border: 0;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .modal-box--form {
+    max-height: 100vh;
+    height: 100vh;
+    width: 100vw;
+    border-radius: 0;
+  }
+}
+
+.modal-box--feedback {
+  background: #fff;
+  width: min(480px, 92vw);
+  display: flex;
+  flex-direction: column;
+}
+
+.feedback-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feedback-label {
+  font-family: "PublicSans-Medium", sans-serif;
+  font-size: 0.875rem;
+  color: var(--nav-text);
+}
+
+.feedback-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px 12px;
+  font-family: "PublicSans-Regular", sans-serif;
+  font-size: 0.9rem;
+  color: var(--nav-text);
+  border: 1px solid var(--nav-panel-bd);
+  border-radius: var(--nav-r);
+  resize: vertical;
+}
+
+.feedback-textarea:focus-visible {
+  outline: 3px solid var(--nav-accent);
+  outline-offset: 1px;
+}
+
+.feedback-status {
+  min-height: 1.2em;
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #2e8b57;
+}
+
+.feedback-status.is-error {
+  color: #b91c1c;
+}
+
+.feedback-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .modal-box--feedback {
+    width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+}
+</textarea
+                  >
+                </div>
+
+                <h3>Demo video modal</h3>
+                <p>
+                  Build once, open from any page. Focus returns to the trigger
+                  on close.
+                </p>
+                <div data-ldc-code data-title="Demo video modal">
+                  <textarea>
+// Video modal: the embed loads only while the modal is open
+var DEMO_VIDEO_SRC = "REPLACE_WITH_EMBED_URL";
+var demoModalTrigger = null;
+
+function ensureDemoModal() {
+  if (document.getElementById("lpDemoModal")) return;
+  var modal = document.createElement("div");
+  modal.id = "lpDemoModal";
+  modal.className = "lp-modal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "lpDemoTitle");
+  modal.setAttribute("hidden", "");
+  modal.innerHTML =
+    '&lt;div class="modal-box"&gt;' +
+    '&lt;p id="lpDemoTitle" class="lp-sr-only"&gt;LEAF Platform Demo Video&lt;/p&gt;' +
+    '&lt;button class="modal-close" id="lpDemoClose" aria-label="Close demo video"&gt;&amp;times;&lt;/button&gt;' +
+    '&lt;div class="modal-vid"&gt;' +
+    '&lt;iframe id="lpDemoFrame" src="" data-src="' +
+    DEMO_VIDEO_SRC +
+    '" title="LEAF Platform Demo" allowfullscreen frameborder="0"&gt;&lt;/iframe&gt;' +
+    "&lt;/div&gt;" +
+    "&lt;/div&gt;";
+  document.body.appendChild(modal);
+}
+
+function openDemoModal(trigger) {
+  var modal = document.getElementById("lpDemoModal");
+  var frame = document.getElementById("lpDemoFrame");
+  var closeBtn = document.getElementById("lpDemoClose");
+  if (!modal || !frame || !closeBtn) return;
+  closeAnyOpenModal();
+  demoModalTrigger = trigger || document.activeElement;
+  frame.src = frame.getAttribute("data-src");
+  modal.removeAttribute("hidden");
+  document.body.style.overflow = "hidden";
+  closeBtn.focus();
+}
+
+function closeDemoModal() {
+  var modal = document.getElementById("lpDemoModal");
+  var frame = document.getElementById("lpDemoFrame");
+  if (!modal || !frame || modal.hasAttribute("hidden")) return;
+  frame.src = "";
+  modal.setAttribute("hidden", "");
+  document.body.style.overflow = "";
+  if (demoModalTrigger) {
+    demoModalTrigger.focus();
+    demoModalTrigger = null;
+  }
+}
+
+function wireDemoModal() {
+  var modal = document.getElementById("lpDemoModal");
+  var closeBtn = document.getElementById("lpDemoClose");
+  if (!modal || !closeBtn) return;
+  closeBtn.addEventListener("click", closeDemoModal);
+  modal.addEventListener("click", function (e) {
+    if (e.target === modal) closeDemoModal();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" &amp;&amp; !modal.hasAttribute("hidden")) {
+      closeDemoModal();
+    }
+  });
+  modal.addEventListener("keydown", function (e) {
+    if (e.key === "Tab" &amp;&amp; !modal.hasAttribute("hidden")) {
+      e.preventDefault();
+      closeBtn.focus();
+    }
+  });
+}
+</textarea
+                  >
+                </div>
+
+                <h3>Form modal</h3>
+                <p>
+                  Opens any LEAF form in an iframe. Triggers only need
+                  data-action, data-modal-src and data-modal-title. Also uses
+                  closeAnyOpenModal() and getFocusableElements() from
+                  leaf_header.js.
+                </p>
+                <div data-ldc-code data-title="Form modal">
+                  <textarea>
+// One shared instance; src and title are set on each open
+var formModalTrigger = null;
+
+function ensureFormModal() {
+  if (document.getElementById("lpFormModal")) return;
+  var modal = document.createElement("div");
+  modal.id = "lpFormModal";
+  modal.className = "lp-modal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "lpFormModalTitle");
+  modal.setAttribute("hidden", "");
+  modal.innerHTML =
+    '&lt;div class="modal-box modal-box--form"&gt;' +
+    '&lt;div class="modal-hd"&gt;' +
+    '&lt;p class="modal-hd-title" id="lpFormModalTitle"&gt;&lt;/p&gt;' +
+    '&lt;button class="modal-close modal-close--inline" id="lpFormModalClose" aria-label="Close"&gt;' +
+    '&lt;span class="material-symbols-outlined" aria-hidden="true"&gt;' +
+    ICON_SVG.close +
+    "&lt;/span&gt;" +
+    "&lt;/button&gt;" +
+    "&lt;/div&gt;" +
+    '&lt;div class="modal-frame-wrap"&gt;' +
+    '&lt;iframe id="lpFormModalFrame" src="" data-src="" title=""&gt;&lt;/iframe&gt;' +
+    "&lt;/div&gt;" +
+    "&lt;/div&gt;";
+  document.body.appendChild(modal);
+  var closeBtn = document.getElementById("lpFormModalClose");
+  closeBtn.addEventListener("click", closeFormModal);
+  modal.addEventListener("click", function (e) {
+    if (e.target === modal) closeFormModal();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" &amp;&amp; !modal.hasAttribute("hidden")) {
+      closeFormModal();
+    }
+  });
+  modal.addEventListener("keydown", function (e) {
+    if (e.key !== "Tab" || modal.hasAttribute("hidden")) return;
+    var focusable = getFocusableElements(modal);
+    if (!focusable.length) return;
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    if (e.shiftKey &amp;&amp; document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey &amp;&amp; document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  });
+}
+
+function openFormModal(src, title, trigger) {
+  if (!src) {
+    console.warn("[LP] openFormModal called with no src");
+    return;
+  }
+  ensureFormModal();
+  var modal = document.getElementById("lpFormModal");
+  var frame = document.getElementById("lpFormModalFrame");
+  var titleEl = document.getElementById("lpFormModalTitle");
+  if (!modal || !frame || !titleEl) return;
+  closeAnyOpenModal();
+  formModalTrigger = trigger || document.activeElement;
+  titleEl.textContent = title;
+  frame.title = title || "Form";
+  frame.setAttribute("data-src", src);
+  frame.src = src;
+  modal.removeAttribute("hidden");
+  document.body.style.overflow = "hidden";
+  var closeBtn = document.getElementById("lpFormModalClose");
+  if (closeBtn) closeBtn.focus();
+}
+
+function closeFormModal() {
+  var modal = document.getElementById("lpFormModal");
+  var frame = document.getElementById("lpFormModalFrame");
+  if (!modal || !frame || modal.hasAttribute("hidden")) return;
+  frame.src = "";
+  modal.setAttribute("hidden", "");
+  document.body.style.overflow = "";
+  if (formModalTrigger) {
+    formModalTrigger.focus();
+    formModalTrigger = null;
+  }
+}
+
+// In the shared link click handler: any [data-action="form-modal"] opens the modal
+if (link.dataset.action === "form-modal") {
+  e.preventDefault();
+  openFormModal(
+    link.dataset.modalSrc,
+    link.dataset.modalTitle || "",
+    link,
+  );
+  return;
+}
+</textarea
+                  >
+                </div>
+
+                <h3>Feedback modal</h3>
+                <p>
+                  Markup, focus trap and open/close for the feedback widget. The
+                  form IDs are in Connected forms above. Uses the same helper
+                  functions as the form modal.
+                </p>
+                <div data-ldc-code data-title="Feedback modal">
+                  <textarea>
+// Sysadmin-only modal with a textarea. Submit creates a record on the feedback form
+var feedbackModalTrigger = null;
+
+function ensureFeedbackModal() {
+  if (document.getElementById("lpFeedbackModal")) return;
+  var modal = document.createElement("div");
+  modal.id = "lpFeedbackModal";
+  modal.className = "lp-modal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "lpFeedbackModalTitle");
+  modal.setAttribute("hidden", "");
+  modal.innerHTML =
+    '&lt;div class="modal-box modal-box--feedback"&gt;' +
+    '&lt;div class="modal-hd"&gt;' +
+    '&lt;p class="modal-hd-title" id="lpFeedbackModalTitle"&gt;Send Launchpad v2 Feedback&lt;/p&gt;' +
+    '&lt;button class="modal-close modal-close--inline" id="lpFeedbackModalClose" aria-label="Close"&gt;' +
+    '&lt;span class="material-symbols-outlined" aria-hidden="true"&gt;' +
+    ICON_SVG.close +
+    "&lt;/span&gt;" +
+    "&lt;/button&gt;" +
+    "&lt;/div&gt;" +
+    '&lt;div class="feedback-body"&gt;' +
+    '&lt;label class="feedback-label" for="lpFeedbackText"&gt;Share your feedback on Launchpad v2&lt;/label&gt;' +
+    '&lt;textarea class="feedback-textarea" id="lpFeedbackText" rows="5" maxlength="4000"&gt;&lt;/textarea&gt;' +
+    '&lt;p class="feedback-status" id="lpFeedbackStatus" role="status" aria-live="polite"&gt;&lt;/p&gt;' +
+    '&lt;div class="feedback-actions"&gt;' +
+    '&lt;button class="btn btn-sec" type="button" id="lpFeedbackCancel"&gt;Cancel&lt;/button&gt;' +
+    '&lt;button class="btn btn-primary" type="button" id="lpFeedbackSubmit"&gt;Submit&lt;/button&gt;' +
+    "&lt;/div&gt;" +
+    "&lt;/div&gt;" +
+    "&lt;/div&gt;";
+  document.body.appendChild(modal);
+  var closeBtn = document.getElementById("lpFeedbackModalClose");
+  var cancelBtn = document.getElementById("lpFeedbackCancel");
+  closeBtn.addEventListener("click", closeFeedbackModal);
+  cancelBtn.addEventListener("click", closeFeedbackModal);
+  modal.addEventListener("click", function (e) {
+    if (e.target === modal) closeFeedbackModal();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" &amp;&amp; !modal.hasAttribute("hidden")) {
+      closeFeedbackModal();
+    }
+  });
+  modal.addEventListener("keydown", function (e) {
+    if (e.key !== "Tab" || modal.hasAttribute("hidden")) return;
+    var focusable = getFocusableElements(modal);
+    if (!focusable.length) return;
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    if (e.shiftKey &amp;&amp; document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey &amp;&amp; document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  });
+  // Submit handler: checks the text and session token, then calls submitFeedback(text)
+}
+
+function openFeedbackModal(trigger) {
+  ensureFeedbackModal();
+  var modal = document.getElementById("lpFeedbackModal");
+  var textarea = document.getElementById("lpFeedbackText");
+  var statusEl = document.getElementById("lpFeedbackStatus");
+  var submitBtn = document.getElementById("lpFeedbackSubmit");
+  var cancelBtn = document.getElementById("lpFeedbackCancel");
+  if (!modal || !textarea || !statusEl) return;
+  closeAnyOpenModal();
+  feedbackModalTrigger = trigger || document.activeElement;
+  statusEl.textContent = "";
+  statusEl.classList.remove("is-error");
+  textarea.value = "";
+  if (submitBtn) submitBtn.disabled = false;
+  if (cancelBtn) cancelBtn.disabled = false;
+  modal.removeAttribute("hidden");
+  document.body.style.overflow = "hidden";
+  textarea.focus();
+}
+
+function closeFeedbackModal() {
+  var modal = document.getElementById("lpFeedbackModal");
+  if (!modal || modal.hasAttribute("hidden")) return;
+  modal.setAttribute("hidden", "");
+  document.body.style.overflow = "";
+  if (feedbackModalTrigger) {
+    feedbackModalTrigger.focus();
+    feedbackModalTrigger = null;
+  }
+}
+</textarea
+                  >
+                </div>
               </section>
 
               <section
@@ -2763,10 +3753,6 @@ function ensureJumpToTop() {
                   <li>
                     Match the surrounding code. Use the same class prefixes,
                     tokens and spacing as sibling pages.
-                  </li>
-                  <li>
-                    Keep comments short and only where they explain something a
-                    new developer would not guess.
                   </li>
                 </ul>
               </section>
