@@ -434,7 +434,7 @@
   function recordViewURL(recordID) {
     // Always relative — guarantees the iframe is same-origin with whatever
     // host actually served this page (prod, preprod, etc.), which is
-    // required for suppressRecordFrameHeader() to reach into the iframe's
+    // required for stripLeafChrome() to reach into the iframe's
     // document at all. CONFIG.recordViewBase is intentionally unused here;
     // left in CONFIG in case something else still references it.
     return `index.php?a=printview&recordID=${encodeURIComponent(recordID)}`;
@@ -1502,25 +1502,24 @@
   /* ============================================================
    Record viewer (iframe)
    ============================================================ */
-  // Suppresses LEAF's own page chrome (header/footer/skip-link) inside the
-  // record printview iframe, and collapses the top gap that chrome would
-  // otherwise leave behind. Same-origin (same LEAF site), so we can reach
-  // into the iframe's own document — same pattern used by this project's
-  // other dashboards (see suppressIframeHeader() in project_v17/18/19.js).
-  // Selectors match main.tpl's actual markup (<header id="header">,
-  // <footer id="footer">) rather than guessing at possible class names.
-  function suppressRecordFrameHeader(frame) {
+  // Shared LEAF pattern (also in project_v19/v20.js): strips the embedded
+  // page's own header/footer chrome once a same-origin iframe has loaded,
+  // and clears the top gap that chrome would otherwise leave behind.
+  function stripLeafChrome(frame) {
     try {
       const doc =
         frame.contentDocument ||
         (frame.contentWindow && frame.contentWindow.document);
       if (!doc || !doc.head) return;
-      if (doc.getElementById("cal-record-frame-header-suppress")) return;
+      if (doc.getElementById("leaf-chrome-strip")) return;
 
       const style = doc.createElement("style");
-      style.id = "cal-record-frame-header-suppress";
+      style.id = "leaf-chrome-strip";
       style.textContent = [
-        "#header, footer#footer, #nav-skip-link {",
+        "#header, #siteHeader, .siteHeader, #leafHeader, .leaf-header,",
+        "#topNav, .topNav, #mainNav, .site-header, #site-header,",
+        "header.main, nav.main-nav, #headerWrap, .headerWrap,",
+        "#globalHeader, .globalHeader, footer#footer, #nav-skip-link {",
         "  display: none !important;",
         "}",
         "body, main#body, #content, #bodyarea {",
@@ -1529,9 +1528,12 @@
         "}",
       ].join("\n");
       doc.head.appendChild(style);
+
+      const headerEl = doc.getElementById("header");
+      if (headerEl) headerEl.style.display = "none";
     } catch (e) {
       // Cross-origin or otherwise inaccessible — leave the frame as-is.
-      logDebug("record frame header suppression skipped:", e.message);
+      logDebug("LEAF chrome strip skipped:", e.message);
     }
   }
 
@@ -1548,7 +1550,7 @@
       if (frame._headerSuppressionHandler) {
         frame.removeEventListener("load", frame._headerSuppressionHandler);
       }
-      frame._headerSuppressionHandler = () => suppressRecordFrameHeader(frame);
+      frame._headerSuppressionHandler = () => stripLeafChrome(frame);
       frame.addEventListener("load", frame._headerSuppressionHandler);
       frame.src = url;
     }

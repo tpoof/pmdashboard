@@ -180,61 +180,6 @@
         filter: grayscale(0%);
       }
 
-      /* ── "View My Requests" tooltip ──
-         CSS-only, shown on :hover and :focus-within so keyboard users
-         get it too — dismissal is just moving focus/pointer away, no
-         JS needed. The accessible name/description doesn't depend on
-         visibility at all: aria-describedby on the button (see markup)
-         reaches screen readers on focus regardless of whether this is
-         visually shown. */
-      .lp-tooltip-wrap {
-        position: relative;
-        display: inline-flex;
-      }
-      .lp-tooltip {
-        position: absolute;
-        bottom: calc(100% + 9px);
-        left: 50%;
-        transform: translateX(-50%) translateY(4px);
-        max-width: 220px;
-        width: max-content;
-        text-align: center;
-        padding: 6px 10px;
-        border-radius: 5px;
-        background: #1b1b1b;
-        color: #fff;
-        font-family: "PublicSans-Regular", sans-serif;
-        font-size: 0.8125rem;
-        line-height: 1.4;
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        transition:
-          opacity 0.15s,
-          transform 0.15s;
-        z-index: 20;
-      }
-      .lp-tooltip::after {
-        content: "";
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        border: 5px solid transparent;
-        border-top-color: #1b1b1b;
-      }
-      .lp-tooltip-wrap:hover .lp-tooltip,
-      .lp-tooltip-wrap:focus-within .lp-tooltip {
-        opacity: 1;
-        visibility: visible;
-        transform: translateX(-50%) translateY(0);
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .lp-tooltip {
-          transition: none;
-        }
-      }
-
       /* ── LEAF Finder widget ── */
       .finder-box {
         width: 80%;
@@ -2094,6 +2039,57 @@
         });
 
         render();
+      })();
+
+      // Tooltips (.lp-tooltip-wrap, styled in launchpad.css). CSS handles
+      // hover/focus; this adds Escape-to-dismiss (WCAG 1.4.13) and
+      // tap-to-show, since iOS doesn't focus buttons on tap. Delegated, so
+      // it covers the finder topic tooltips built above.
+      (function bindTooltips() {
+        const reset = (wrap) =>
+          wrap.classList.remove("is-open", "is-dismissed");
+
+        document.addEventListener("mouseout", (e) => {
+          const wrap = e.target.closest?.(".lp-tooltip-wrap");
+          if (!wrap || wrap.contains(e.relatedTarget)) return;
+          if (!wrap.contains(document.activeElement)) reset(wrap);
+        });
+        document.addEventListener("focusout", (e) => {
+          const wrap = e.target.closest?.(".lp-tooltip-wrap");
+          if (!wrap || wrap.contains(e.relatedTarget)) return;
+          if (!wrap.matches(":hover")) reset(wrap);
+        });
+        document.addEventListener("pointerdown", (e) => {
+          const wrap = e.target.closest?.(".lp-tooltip-wrap");
+          document
+            .querySelectorAll(".lp-tooltip-wrap.is-open")
+            .forEach((w) => {
+              if (w !== wrap) w.classList.remove("is-open");
+            });
+          if (wrap && e.pointerType === "touch") wrap.classList.add("is-open");
+        });
+
+        // Capture phase so Escape closes the tooltip before any modal's
+        // Escape handler runs.
+        document.addEventListener(
+          "keydown",
+          (e) => {
+            if (e.key !== "Escape") return;
+            const open = Array.from(
+              document.querySelectorAll(".lp-tooltip-wrap"),
+            ).find(
+              (w) =>
+                !w.classList.contains("is-dismissed") &&
+                (w.classList.contains("is-open") ||
+                  w.matches(":hover, :focus-within")),
+            );
+            if (!open) return;
+            open.classList.remove("is-open");
+            open.classList.add("is-dismissed");
+            e.stopPropagation();
+          },
+          true,
+        );
       })();
     </script>
   </body>

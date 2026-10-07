@@ -995,21 +995,30 @@
         history.length > 1 ? idx + 1 + " / " + history.length : "";
   }
 
-  function suppressIframeHeader(frame) {
+  // Shared LEAF pattern (also in calendar.js and project_v20.js): strips the
+  // embedded page's own header/footer chrome once a same-origin iframe has
+  // loaded, and clears the top gap that chrome would otherwise leave behind.
+  function stripLeafChrome(frame) {
     try {
       var doc =
         frame.contentDocument ||
         (frame.contentWindow && frame.contentWindow.document);
-      if (!doc) return;
+      if (!doc || !doc.head) return;
 
-      if (!doc.getElementById("pm-iframe-header-suppression")) {
+      if (!doc.getElementById("leaf-chrome-strip")) {
         var style = doc.createElement("style");
-        style.id = "pm-iframe-header-suppression";
+        style.id = "leaf-chrome-strip";
         style.textContent = [
-          "#header,#siteHeader,.siteHeader,#leafHeader,.leaf-header,",
-          "#topNav,.topNav,#mainNav,.site-header,#site-header,",
-          "header.main,nav.main-nav,#headerWrap,.headerWrap,",
-          "#globalHeader,.globalHeader { display: none !important; }",
+          "#header, #siteHeader, .siteHeader, #leafHeader, .leaf-header,",
+          "#topNav, .topNav, #mainNav, .site-header, #site-header,",
+          "header.main, nav.main-nav, #headerWrap, .headerWrap,",
+          "#globalHeader, .globalHeader, footer#footer, #nav-skip-link {",
+          "  display: none !important;",
+          "}",
+          "body, main#body, #content, #bodyarea {",
+          "  margin-top: 0 !important;",
+          "  padding-top: 0 !important;",
+          "}",
         ].join("\n");
         doc.head.appendChild(style);
         var headerEl = doc.getElementById("header");
@@ -1075,7 +1084,7 @@
       frame.removeEventListener("load", frame._headerSuppressionHandler);
     }
     frame._headerSuppressionHandler = function () {
-      suppressIframeHeader(frame);
+      stripLeafChrome(frame);
     };
     frame.addEventListener("load", frame._headerSuppressionHandler);
 

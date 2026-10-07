@@ -3244,10 +3244,54 @@
       }
     });
 
+    // Shared LEAF pattern (also in leaf_header.js, calendar.js,
+    // project_v19/v20.js): strips the embedded page's own header/footer
+    // chrome once a same-origin iframe has loaded, and clears the top gap
+    // that chrome would otherwise leave behind.
+    function stripLeafChrome(frame) {
+      try {
+        var doc =
+          frame.contentDocument ||
+          (frame.contentWindow && frame.contentWindow.document);
+        if (!doc || !doc.head) return;
+        if (doc.getElementById("leaf-chrome-strip")) return;
+
+        var style = doc.createElement("style");
+        style.id = "leaf-chrome-strip";
+        style.textContent = [
+          "#header, #siteHeader, .siteHeader, #leafHeader, .leaf-header,",
+          "#topNav, .topNav, #mainNav, .site-header, #site-header,",
+          "header.main, nav.main-nav, #headerWrap, .headerWrap,",
+          "#globalHeader, .globalHeader, footer#footer, #nav-skip-link {",
+          "  display: none !important;",
+          "}",
+          "body, main#body, #content, #bodyarea {",
+          "  margin-top: 0 !important;",
+          "  padding-top: 0 !important;",
+          "}",
+        ].join("\n");
+        doc.head.appendChild(style);
+        var headerEl = doc.getElementById("header");
+        if (headerEl) headerEl.style.display = "none";
+      } catch (e) {}
+    }
+
     function openRecord(rid) {
       var m = document.getElementById("sv-modal"),
+        frame = document.getElementById("sv-modal-frame"),
         url = RECORD_URL + encodeURIComponent(rid);
-      document.getElementById("sv-modal-frame").src = url;
+
+      // Frame is reused across opens — swap the load listener each time
+      // rather than stacking one per open.
+      if (frame._stripChromeHandler) {
+        frame.removeEventListener("load", frame._stripChromeHandler);
+      }
+      frame._stripChromeHandler = function () {
+        stripLeafChrome(frame);
+      };
+      frame.addEventListener("load", frame._stripChromeHandler);
+
+      frame.src = url;
       document.getElementById("sv-modal-open").href = url;
       document.getElementById("sv-modal-title").textContent = "Record #" + rid;
       m.hidden = false;

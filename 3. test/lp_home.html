@@ -806,7 +806,12 @@
 
       <main id="lp-main" tabindex="-1">
         <!-- HERO: layout classes are set by multigrid.js applyLayout() -->
-        <section class="hero" id="lp-hero" aria-labelledby="hero-h1">
+        <section
+          class="hero"
+          id="lp-hero"
+          aria-labelledby="hero-h1"
+          data-track-section="hero"
+        >
           <div class="hero-grid">
             <div class="hero-main">
               <span class="hero-kicker">
@@ -831,6 +836,7 @@
                 <a
                   href="https://leaf.va.gov/launchpad/report.php?a=Start_new_site"
                   class="btn btn-pri"
+                  data-track="build-site"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -843,7 +849,7 @@
                   Build a new site
                   <span class="lp-sr-only">(opens in new tab)</span>
                 </a>
-                <a href="#find_site" class="btn btn-sec">
+                <a href="#find_site" class="btn btn-sec" data-track="find-site">
                   <span class="material-symbols-outlined" aria-hidden="true"
                     ><svg viewBox="0 -960 960 960" fill="currentColor">
                       <path
@@ -857,6 +863,7 @@
                     type="button"
                     class="btn btn-sec"
                     id="mst-open-btn"
+                    data-track="view-my-requests"
                     aria-describedby="mst-open-btn-tip"
                   >
                     <span class="material-symbols-outlined" aria-hidden="true"
@@ -880,7 +887,11 @@
               </div>
             </div>
             <div class="hero-grid-wrap">
-              <section class="hero-requests" aria-labelledby="hero-requests-h2">
+              <section
+                class="hero-requests"
+                aria-labelledby="hero-requests-h2"
+                data-track-section="my-requests"
+              >
                 <div class="hero-requests-hd">
                   <h2
                     class="hero-requests-h2"
@@ -891,12 +902,13 @@
                     your National LEAF Requests:
                   </h2>
                 </div>
-                <div id="mst-root"></div>
+                <div id="mst-root" data-track-mask></div>
                 <div class="hero-requests-ft">
                   <button
                     type="button"
                     class="btn btn-sec btn-sm"
                     id="mst-hide-btn"
+                    data-track="hide-requests"
                     aria-label="Hide National LEAF Requests panel"
                   >
                     Hide
@@ -956,7 +968,12 @@
         </section>
 
         <!-- FINDER — "What can LEAF do for me?" -->
-        <section id="lp-finder" class="section" aria-labelledby="finder-h2">
+        <section
+          id="lp-finder"
+          class="section"
+          aria-labelledby="finder-h2"
+          data-track-section="finder"
+        >
           <div class="finder-box">
             <div class="finder-hd">
               <h2 class="sec-h2" id="finder-h2">
@@ -1010,6 +1027,8 @@
                   type="button"
                   class="finder-topics-arrow"
                   id="finderTopicsPrev"
+                  data-track="finder-prev"
+                  data-track-norage
                   aria-label="Scroll topics left"
                 >
                   <svg viewBox="0 -960 960 960" fill="currentColor">
@@ -1028,6 +1047,8 @@
                   type="button"
                   class="finder-topics-arrow"
                   id="finderTopicsNext"
+                  data-track="finder-next"
+                  data-track-norage
                   aria-label="Scroll topics right"
                 >
                   <svg viewBox="0 -960 960 960" fill="currentColor">
@@ -1072,6 +1093,7 @@
                     type="button"
                     class="btn btn-pri"
                     id="finderCtaLinkNoMatch"
+                    data-track="request-consultation"
                     data-action="support-modal"
                     data-modal-title="Request a Consultation"
                     data-record-title="Consultation Request from Launchpad Finder"
@@ -1102,6 +1124,7 @@
                 <a
                   href="https://leaf.va.gov/launchpad/report.php?a=Start_new_site"
                   class="finder-cta-btn finder-cta-primary"
+                  data-track="build-site"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -1118,6 +1141,7 @@
                   type="button"
                   class="finder-cta-btn finder-cta-secondary"
                   id="finderCtaLinkMatch"
+                  data-track="talk-to-team"
                   data-action="support-modal"
                   data-modal-title="Request a Consultation"
                   data-record-title="Consultation Request from Launchpad Finder"
@@ -1131,7 +1155,7 @@
                   Talk to our team
                 </button>
               </div>
-              <a href="#steps-h2" class="finder-readmore"
+              <a href="#steps-h2" class="finder-readmore" data-track="read-more"
                 >Not ready yet? Read more about LEAF below</a
               >
             </div>
@@ -1139,7 +1163,12 @@
         </section>
 
         <!-- HOW IT WORKS -->
-        <section id="lp-solutions" class="section" aria-labelledby="steps-h2">
+        <section
+          id="lp-solutions"
+          class="section"
+          aria-labelledby="steps-h2"
+          data-track-section="how-it-works"
+        >
           <div class="wrap">
             <div class="sec-hd">
               <span class="eyebrow">How LEAF works</span>
@@ -1255,7 +1284,11 @@
         </section>
 
         <!-- FEATURES -->
-        <section class="section section-alt" aria-labelledby="feats-h2">
+        <section
+          class="section section-alt"
+          aria-labelledby="feats-h2"
+          data-track-section="features"
+        >
           <div class="wrap">
             <div class="sec-hd ctr">
               <span class="eyebrow">Built-in tools</span>
@@ -1367,7 +1400,11 @@
         </section>
 
         <!-- AWARDS -->
-        <section class="section" aria-labelledby="awards-h2">
+        <section
+          class="section"
+          aria-labelledby="awards-h2"
+          data-track-section="awards"
+        >
           <div class="wrap">
             <div class="sec-hd ctr">
               <span class="eyebrow">Recognition</span>
@@ -1408,7 +1445,12 @@
         </section>
 
         <!-- NEWSLETTER + RESOURCE CARDS -->
-        <section id="lp-resources" class="nl" aria-labelledby="nl-h2">
+        <section
+          id="lp-resources"
+          class="nl"
+          aria-labelledby="nl-h2"
+          data-track-section="newsletter"
+        >
           <div class="nl-in">
             <!-- Left: newsletter signup -->
             <div>
@@ -1456,6 +1498,7 @@
                     <a
                       class="nl-footer-link"
                       href="https://leaf.va.gov/launchpad/report.php?a=Cost_Estimator"
+                      data-track="cost-estimator"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -1479,6 +1522,7 @@
                       data-action="form-modal"
                       data-modal-src="https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=LEAF_Start_Request&id=form_21163&title=LEAF+Spotlight+Nomination&iframe=1"
                       data-modal-title="Nominate a Spotlight"
+                      data-track="spotlight-nomination"
                     >
                       <span class="material-symbols-outlined" aria-hidden="true"
                         ><svg viewBox="0 -960 960 960" fill="currentColor">
@@ -1494,6 +1538,7 @@
                     <a
                       class="nl-footer-link"
                       href="https://leaf.va.gov/#goto=teams"
+                      data-track="teams-channel"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -1512,6 +1557,7 @@
                     <a
                       class="nl-footer-link"
                       href="https://vaww.oit.va.gov"
+                      data-track="oit"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -1675,6 +1721,7 @@
 
           subscribe(email)
             .then(() => {
+              window.LPTrack?.event("newsletter", "subscribed");
               form.hidden = true;
               setStatus(
                 "You're subscribed! Watch your VA inbox for updates.",
@@ -1682,6 +1729,7 @@
               );
             })
             .catch((err) => {
+              window.LPTrack?.event("newsletter", "subscribe-error");
               console.error("[Newsletter] subscription failed:", err);
               setStatus(
                 "Something went wrong subscribing you. Please try again.",
@@ -2102,6 +2150,18 @@
           return queryWords.some((w) => haystack.includes(w));
         }
 
+        let searchTimer;
+        function reportSearch(query, matchCount) {
+          clearTimeout(searchTimer);
+          if (!query) return;
+          searchTimer = setTimeout(() => {
+            window.LPTrack?.event(
+              "finder",
+              matchCount ? "search-match" : "search-no-match",
+            );
+          }, 1500);
+        }
+
         function render() {
           const query = input.value.trim().toLowerCase();
           clearBtn.hidden = query.length === 0;
@@ -2111,6 +2171,7 @@
             resultsList.hidden = true;
             emptyState.hidden = true;
             toggleNextSteps(false);
+            reportSearch("", 0);
             return;
           }
           idleState.hidden = true;
@@ -2146,6 +2207,7 @@
           resultsList.hidden = matched.length === 0;
           emptyState.hidden = matched.length !== 0;
           toggleNextSteps(matched.length > 0);
+          reportSearch(query, matched.length);
         }
 
         input.addEventListener("input", () => {
