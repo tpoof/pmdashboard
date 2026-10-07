@@ -766,6 +766,11 @@
     <div class="lp" id="lp-root">
       <main id="lp-main" tabindex="-1">
         <div class="thb-page">
+          <div
+            id="thbGroups"
+            hidden
+            data-groups="<!--{foreach $empMembership['groupID'] as $gid => $member}--><!--{$gid}-->,<!--{/foreach}-->"
+          ></div>
           <header class="thb-header">
             <div class="thb-header-text">
               <p class="thb-kicker">LEAF Team</p>
@@ -930,14 +935,25 @@
             refreshAfterMs: 5000,
           };
 
-          // popup = "Open in popup" (Yes/No), order = "Section Order" (number)
+          // popup = "Open in popup" (Yes/No), order = "Section Order" (number),
+          // groupID = optional; only members of that group see the link
           const INDICATORS = {
             name: 479,
             url: 480,
             category: 489,
             popup: 490,
             order: 491,
+            groupID: 503,
           };
+
+          /* Display-only gate. Fail closed: no parsed groups means every
+             gated link is hidden. Sysadmins (group 1) get no bypass. */
+          const memberGroups = new Set(
+            ($id("thbGroups")?.dataset.groups || "").match(/\d+/g)?.map(Number) ||
+              [],
+          );
+          const canView = (groupID) =>
+            !groupID || memberGroups.has(Number(groupID));
 
           const UNCATEGORIZED_KEY = "uncategorized";
           const UNCATEGORIZED_TITLE = "Uncategorized";
@@ -1033,9 +1049,10 @@
             }
           }
 
-          /* Groups records by category (trimmed, case-insensitive). Links in
-             each group sort A–Z by name (empty names last, ties by record
-             order). Sections sort by their lowest Section Order, then
+          /* Skips links the viewer can't see, so a section with only gated
+             links is never built. Groups records by category (trimmed,
+             case-insensitive). Links in each group sort A–Z by name (empty
+             names last, ties by record order). Sections sort by their lowest Section Order, then
              unnumbered by lowest record ID, with Uncategorized always last. */
           function groupLinks(data) {
             const groups = new Map();
@@ -1051,6 +1068,7 @@
                   );
                   return;
                 }
+                if (!canView(readField(rec, INDICATORS.groupID))) return;
 
                 const rawCategory = readField(rec, INDICATORS.category);
                 const key = rawCategory
