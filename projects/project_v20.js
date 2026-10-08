@@ -190,6 +190,7 @@
     dateRangeFilter: null,
     modalHistory: [],
     modalHistoryIndex: -1,
+    modalOpener: null,
     pendingProjectKeyRefresh: null,
     filters: {
       projectFiscalYear: new Set(),
@@ -1190,6 +1191,12 @@
       lastFocusedElement.focus();
     }
     lastFocusedElement = null;
+    if (state.modalOpener) {
+      try {
+        state.modalOpener.postMessage({ type: "pm-modal-closed" }, window.location.origin);
+      } catch (e) {}
+      state.modalOpener = null;
+    }
     if (state.pendingProjectKeyRefresh) {
       var pk = state.pendingProjectKeyRefresh;
       state.pendingProjectKeyRefresh = null;
@@ -6755,6 +6762,7 @@
       var url = typeof data.url === "string" ? data.url : "";
       if (!url) return;
       var title = typeof data.title === "string" ? data.title : "Details";
+      state.modalOpener = event.source || null;
       openModal(title, url);
     });
     window.addEventListener("message", function (e) {

@@ -4,7 +4,11 @@
   Requires Chart.js 3+ (indexAxis / scales.x API).
 -->
 <link rel="stylesheet" href="./files/project_v20.css" />
-<div id="pmAn" data-csrf="<!--{$CSRFToken}-->">
+<div
+  id="pmAn"
+  data-csrf="<!--{$CSRFToken}-->"
+  data-groups="<!--{foreach $empMembership['groupID'] as $gid => $member}--><!--{$gid}-->,<!--{/foreach}-->"
+>
   <header class="pmAn-header">
     <div>
       <h1 class="pmAn-title">Project &amp; Task Health</h1>
@@ -23,7 +27,7 @@
       </div>
       <div class="pmAn-actions">
         <button type="button" id="pmAnRefresh" class="pm-ghostBtn">Refresh</button>
-        <button type="button" id="pmAnDefaultsBtn" class="pm-ghostBtn pmAn-defaultsBtn" aria-expanded="false" aria-controls="pmAnDefaults">Defaults</button>
+        <button type="button" id="pmAnDefaultsBtn" class="pm-ghostBtn pmAn-defaultsBtn" aria-expanded="false" aria-controls="pmAnDefaults" hidden>Default Filters</button>
       </div>
     </div>
   </header>
@@ -59,51 +63,37 @@
 
     <ul class="pmAn-kpis" id="pmAnKpis" data-fy-scope>
       <li class="pmAn-kpi" data-kpi="inprogress">
-        <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
-          <span class="pmAn-kpiLabel"></span>
-          <span class="pmAn-kpiStat"></span>
-          <span class="pmAn-kpiStat"></span>
-        </button>
+        <span class="pmAn-kpiLabel"></span>
+        <span class="pmAn-kpiStat"></span>
+        <span class="pmAn-kpiStat"></span>
       </li>
       <li class="pmAn-kpi" data-kpi="overdue">
-        <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
-          <span class="pmAn-kpiLabel"></span>
-          <span class="pmAn-kpiStat"></span>
-          <span class="pmAn-kpiStat"></span>
-        </button>
+        <span class="pmAn-kpiLabel"></span>
+        <span class="pmAn-kpiStat"></span>
+        <span class="pmAn-kpiStat"></span>
       </li>
       <li class="pmAn-kpi" data-kpi="atrisk">
-        <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
-          <span class="pmAn-kpiLabel"></span>
-          <span class="pmAn-kpiStat"></span>
-          <span class="pmAn-kpiStat"></span>
-        </button>
+        <span class="pmAn-kpiLabel"></span>
+        <span class="pmAn-kpiStat"></span>
+        <span class="pmAn-kpiStat"></span>
       </li>
       <li class="pmAn-kpi" data-kpi="notstarted">
-        <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
-          <span class="pmAn-kpiLabel"></span>
-          <span class="pmAn-kpiStat"></span>
-          <span class="pmAn-kpiStat"></span>
-        </button>
+        <span class="pmAn-kpiLabel"></span>
+        <span class="pmAn-kpiStat"></span>
+        <span class="pmAn-kpiStat"></span>
       </li>
-      <li class="pmAn-kpi pmAn-kpi--static" id="pmAnOkrKpi">
+      <li class="pmAn-kpi" id="pmAnOkrKpi">
         <span id="pmAnOkrKpiLabel" class="pmAn-kpiLabel"></span>
         <span id="pmAnOkrKpiValue" class="pmAn-kpiValue"></span>
         <span id="pmAnOkrKpiDetail" class="pmAn-kpiStat"></span>
       </li>
     </ul>
 
-    <section id="pmAnDrill" class="pmAn-card pmAn-drill" aria-labelledby="pmAnDrillTitle" hidden>
-      <h2 id="pmAnDrillTitle"></h2>
-      <p id="pmAnDrillEmpty" class="pmAn-empty" hidden>No records in this group.</p>
-      <ul id="pmAnDrillList" class="pmAn-list"></ul>
-      <button type="button" id="pmAnDrillMore" class="pm-ghostBtn pmAn-drillMore" hidden></button>
-    </section>
-
     <section id="pmAnBanner" class="pmAn-card pmAn-banner" aria-labelledby="pmAnBannerTitle" data-fy-scope>
       <h2 id="pmAnBannerTitle">Overall health</h2>
       <p id="pmAnBannerState" class="pmAn-bannerState"></p>
       <div id="pmAnBannerLines"></div>
+      <div id="pmAnBannerList"></div>
     </section>
 
     <section class="pmAn-card pmAn-okrCards" aria-labelledby="pmAnOkrCardsTitle">
@@ -152,6 +142,15 @@
         </div>
         <span id="pmAnUpcomingSummary" hidden></span>
         <table id="pmAnUpcomingTable" class="pm-srOnly"></table>
+      </section>
+
+      <section class="pmAn-card pmAn-chartWide" aria-labelledby="pmAnCompletedTitle" data-fy-scope>
+        <h2 id="pmAnCompletedTitle">Tasks Completed by Month</h2>
+        <div class="pmAn-chartBox">
+          <canvas id="pmAnCompletedChart" role="img" aria-labelledby="pmAnCompletedSummary"></canvas>
+        </div>
+        <span id="pmAnCompletedSummary" hidden></span>
+        <table id="pmAnCompletedTable" class="pm-srOnly"></table>
       </section>
     </div>
     </div>
@@ -317,7 +316,7 @@
     outline-offset: 2px;
   }
 
-  #pmAn :is(.pmAn-kpiBtn, .pmAn-groupBtn, .pmAn-linkBtn, .pm-ghostBtn:enabled:not([aria-pressed="true"]), .pmAn-person:not([aria-current="true"])):hover {
+  #pmAn :is(.pmAn-groupBtn, .pmAn-linkBtn, .pm-ghostBtn:enabled:not([aria-pressed="true"]), .pmAn-person:not([aria-current="true"])):hover {
     background: var(--accent-soft);
   }
 
@@ -388,47 +387,16 @@
   }
 
   .pmAn-kpi {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
     min-width: 0;
+    padding: var(--space-3);
     background: var(--surface);
     border: 1px solid var(--border);
     border-left-width: var(--pmAn-bar);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
-  }
-
-  .pmAn-kpiBtn,
-  .pmAn-kpi--static {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    padding: var(--space-3);
-  }
-
-  .pmAn-kpiBtn {
-    width: 100%;
-    height: 100%;
-    min-height: 24px;
-    border: 0;
-    border-radius: inherit;
-    background: transparent;
-    color: var(--text);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-  }
-
-  /* Outline survives forced colors. The focus rule outranks it; the check icon still marks pressed. */
-  .pmAn-kpiBtn[aria-pressed="true"] {
-    outline: 2px solid var(--text);
-    outline-offset: -2px;
-  }
-
-  .pmAn-drill {
-    margin-bottom: var(--space-4);
-  }
-
-  .pmAn-drillMore {
-    margin-top: var(--space-3);
   }
 
   .pmAn-banner,
@@ -458,6 +426,26 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: var(--space-3);
+  }
+
+  .pmAn-objCardHead {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .pmAn-objCardHead p {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .pmAn-objPct {
+    flex: none;
+    font-size: var(--pmAn-text-2xl);
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
   }
 
   .pmAn-objCard progress {
@@ -554,6 +542,10 @@
   /* Two bars; the visible table below fills the rest of the card. */
   .pmAn-chartBox--short {
     --pmAn-chart-h: 160px;
+  }
+
+  .pmAn-chartWide {
+    grid-column: 1 / -1;
   }
 
   .pmAn-cap {
@@ -839,7 +831,8 @@
     margin-top: var(--space-4);
   }
 
-  .pmAn-roadTheme {
+  .pmAn-roadTheme,
+  .pmAn-actionGroup {
     display: grid;
     gap: var(--space-2);
   }
@@ -865,13 +858,17 @@
   }
 
   .pmAn-roadCard p,
-  .pmAn-objCard p,
+  .pmAn-objCard > p,
   .pmAn-objCard .pmAn-krBar {
     margin: var(--space-2) 0 0;
   }
 
-  .pmAn-objCard p:first-child {
-    margin-top: 0;
+  .pmAn-actionGroup {
+    margin-top: var(--space-4);
+  }
+
+  .pmAn-more {
+    justify-self: start;
   }
 
   @media (max-width: 820px) {
@@ -1014,7 +1011,9 @@
     var UNSPECIFIED = "Unspecified";
     var PRINTVIEW_URL = "index.php?a=printview&recordID=";
     var MS_PER_DAY = 86400000;
-    var DRILL_LIMIT = 50;
+    var LIST_LIMIT = 10;
+    var MONTHS_SHOWN = 12;
+    var TAB_KEY = "pmAn.tab";
     // Labels double as the saved text in the settings record.
     var COMPLETED_WINDOWS = [
       { label: "All time", days: null },
@@ -1053,13 +1052,22 @@
       types: { id: "pmAnTypes", rowHeader: "Type", horizontal: true },
       workload: { id: "pmAnWorkload", rowHeader: "Person", horizontal: true, stacked: true, legend: true, truncate: 20 },
       upcoming: { id: "pmAnUpcoming", rowHeader: "Week", stacked: true, legend: true },
+      completed: { id: "pmAnCompleted", rowHeader: "Month" },
     };
 
     var TIME_FMT = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
     var DAY_FMT = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
+    var MONTH_FMT = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" });
     var DATE_FMT = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 
     var root = document.getElementById("pmAn");
+    var embedded = (function () {
+      try {
+        return window.parent !== window;
+      } catch (e) {
+        return false;
+      }
+    })();
     var els = {
       fy: byId("pmAnFy"),
       scope: byId("pmAnScope"),
@@ -1071,11 +1079,6 @@
       content: byId("pmAnContent"),
       empty: byId("pmAnEmpty"),
       kpis: byId("pmAnKpis"),
-      drill: byId("pmAnDrill"),
-      drillTitle: byId("pmAnDrillTitle"),
-      drillEmpty: byId("pmAnDrillEmpty"),
-      drillList: byId("pmAnDrillList"),
-      drillMore: byId("pmAnDrillMore"),
       status: byId("pmAnStatus"),
       window: byId("pmAnWindow"),
       windowWrap: byId("pmAnWindowWrap"),
@@ -1093,6 +1096,7 @@
       banner: byId("pmAnBanner"),
       bannerState: byId("pmAnBannerState"),
       bannerLines: byId("pmAnBannerLines"),
+      bannerList: byId("pmAnBannerList"),
       okrCardsTitle: byId("pmAnOkrCardsTitle"),
       okrCardsNote: byId("pmAnOkrCardsNote"),
       okrCardsEmpty: byId("pmAnOkrCardsEmpty"),
@@ -1140,8 +1144,6 @@
       krExpanded: {},
       footnote: { base: "", task: [], health: [] },
       healthGroups: {},
-      drill: null,
-      drillAll: false,
       teamDefault: null,
       defaultsLoaded: false,
       defaultsError: false,
@@ -1151,6 +1153,7 @@
       roadmapScope: [],
       roadmapStatus: "",
       roadmapNotes: { noFy: 0, noTheme: 0 },
+      modalLink: null,
     };
 
     function byId(id) {
@@ -1765,7 +1768,7 @@
 
     /* ---- health ---- */
 
-    // Ignores the Completed within window. Tiles, drill, banner and charts 1 to 3 all read these
+    // Ignores the Completed within window. Tiles, banner and charts 1 to 3 all read these
     // groups, so their numbers can't disagree.
     function renderHealth(fy, inScope) {
       var groups = {};
@@ -1802,17 +1805,13 @@
       Array.prototype.forEach.call(els.fyScoped, function (node) {
         node.hidden = isEmpty;
       });
-      if (isEmpty) {
-        state.drill = null;
-        renderDrill(false);
-        return;
-      }
+      if (isEmpty) return;
       renderKpis(groups);
-      renderDrill(false);
       renderBanner(groups);
       renderStatusMix(groups);
       renderTypes(groups);
       renderWorkload(groups);
+      renderCompleted(groups);
     }
 
     function countOf(group) {
@@ -1826,55 +1825,56 @@
     }
 
     function renderKpis(groups) {
-      Array.prototype.forEach.call(els.kpis.querySelectorAll(".pmAn-kpiBtn"), function (btn) {
-        var group = groups[btn.parentNode.getAttribute("data-kpi")];
-        var stats = btn.querySelectorAll(".pmAn-kpiStat");
+      Array.prototype.forEach.call(els.kpis.querySelectorAll("[data-kpi]"), function (tile) {
+        var group = groups[tile.getAttribute("data-kpi")];
+        var stats = tile.querySelectorAll(".pmAn-kpiStat");
         setStat(stats[0], group.task.length, "Task");
         setStat(stats[1], group.project.length, "Project");
       });
     }
 
-    function renderDrill(announce) {
-      var kpi = state.drill;
-      Array.prototype.forEach.call(els.kpis.querySelectorAll(".pmAn-kpiBtn"), function (btn) {
-        btn.setAttribute("aria-pressed", String(btn.parentNode.getAttribute("data-kpi") === kpi));
+    // Urgency order: earliest due/end date first (oldest overdue, soonest at risk), then title.
+    function actionRows(group) {
+      return group.task.concat(group.project).sort(function (a, b) {
+        return workDate(a) - workDate(b) || workTitle(a).localeCompare(workTitle(b));
       });
-      els.drill.hidden = !kpi;
-      if (!kpi) return;
-
-      var group = state.healthGroups[kpi];
-      var rows = group.task.concat(group.project).sort(function (a, b) {
-        var x = workDate(a);
-        var y = workDate(b);
-        return (x && y ? x - y : !x - !y) || workTitle(a).localeCompare(workTitle(b));
-      });
-      els.drillTitle.textContent = HEALTH[kpi].label + " (" + rows.length + ")";
-      els.drillEmpty.hidden = rows.length > 0;
-      var shown = state.drillAll ? rows : rows.slice(0, DRILL_LIMIT);
-      els.drillList.textContent = "";
-      shown.forEach(function (rec) {
-        els.drillList.appendChild(buildDrillRow(rec));
-      });
-      els.drillMore.hidden = shown.length === rows.length;
-      els.drillMore.textContent = "Show all " + rows.length;
-      if (announce) {
-        els.status.textContent =
-          "Showing " + plural(rows.length, "item") + ": " +
-          plural(group.task.length, "task") + ", " + plural(group.project.length, "project") + ".";
-      }
     }
 
-    function buildDrillRow(rec) {
+    function buildActionGroup(id, rows) {
+      var label = HEALTH[id].label;
+      var group = el("div", "pmAn-actionGroup");
+      group.appendChild(el("h3", "pmAn-groupTitle", label + " (" + rows.length + ")"));
+      var list = el("ul", "pmAn-list");
+      rows.slice(0, LIST_LIMIT).forEach(function (rec) {
+        list.appendChild(buildWorkRow(rec));
+      });
+      group.appendChild(list);
+      if (rows.length > LIST_LIMIT) {
+        var more = el("button", "pm-ghostBtn pmAn-more", "Show all " + rows.length);
+        more.type = "button";
+        more.appendChild(el("span", "pm-srOnly", " " + label.toLowerCase() + " items"));
+        more.addEventListener("click", function () {
+          rows.slice(LIST_LIMIT).forEach(function (rec) {
+            list.appendChild(buildWorkRow(rec));
+          });
+          more.remove();
+          // The button is gone; move focus to the first newly shown row.
+          list.children[LIST_LIMIT].querySelector("a").focus();
+        });
+        group.appendChild(more);
+      }
+      return group;
+    }
+
+    function buildWorkRow(rec) {
       var isTask = rec.kind === "task";
-      var date = workDate(rec);
       var li = el("li", "pmAn-task");
       li.appendChild(el("span", "pmAn-badge", isTask ? "Task" : "Project"));
       li.appendChild(document.createTextNode(" "));
-      li.appendChild(newTabLink(workTitle(rec), rec.recordID));
-      var parts = isTask
-        ? [rec.projectName || rec.projectKey || "No project", rec.assignee, date ? "Due " + DATE_FMT.format(date) : "No due date"]
-        : [rec.owner || "No owner", rec.status || "No status", date ? "Ends " + DATE_FMT.format(date) : "No end date"];
-      li.appendChild(el("p", "pmAn-taskMeta", parts.join(" \u00b7 ")));
+      li.appendChild(recordLink(workTitle(rec), rec.recordID, workModalTitle(rec)));
+      var meta = isTask ? [projectText(rec), rec.assignee] : [rec.owner || "No owner", rec.status || "No status"];
+      li.appendChild(el("p", "pmAn-taskMeta", meta.join(" \u00b7 ")));
+      li.appendChild(el("p", "pmAn-taskMeta", dateText(rec)));
       return li;
     }
 
@@ -1893,6 +1893,7 @@
           : "All tasks and projects are on track";
       if (open) els.bannerState.prepend(icon(attention ? "attention" : "onTrack"));
       els.bannerLines.textContent = "";
+      els.bannerList.textContent = "";
       if (!attention) return;
       var kinds = { task: "Tasks", project: "Projects" };
       Object.keys(kinds).forEach(function (kind) {
@@ -1904,6 +1905,9 @@
             return groups[id][kind].length + " " + HEALTH[id].label.toLowerCase();
           });
         els.bannerLines.appendChild(el("p", "pmAn-cap", kinds[kind] + ": " + (parts.join(", ") || "all on track")));
+      });
+      ["overdue", "atrisk"].forEach(function (id) {
+        if (countOf(groups[id])) els.bannerList.appendChild(buildActionGroup(id, actionRows(groups[id])));
       });
     }
 
@@ -1935,12 +1939,15 @@
     function buildObjCard(o) {
       var li = el("li", "pmAn-objCard");
       li.style.borderLeftColor = healthColor(o.stats.health);
-      var head = el("p");
-      head.appendChild(newTabLink(o.key || "Objective", o.recordID));
-      head.appendChild(document.createTextNode(" "));
+      var head = el("div", "pmAn-objCardHead");
+      var id = el("p");
+      id.appendChild(recordLink(o.key || "Objective", o.recordID, modalTitle("Objective", o.key, o.text)));
+      id.appendChild(document.createTextNode(" "));
       var badge = el("span", "pmAn-badge", o.stats.health || "No health label");
       badge.style.setProperty("--pmAn-badge", healthColor(o.stats.health));
-      head.appendChild(badge);
+      id.appendChild(badge);
+      head.appendChild(id);
+      if (o.stats.progress !== null) head.appendChild(el("span", "pmAn-objPct", o.stats.progress + "%"));
       li.appendChild(head);
       li.appendChild(el("p", null, o.text || "Untitled objective"));
       if (o.stats.progress !== null) {
@@ -1950,7 +1957,6 @@
         progress.value = o.stats.progress;
         progress.setAttribute("aria-label", (o.key || "Objective") + " progress");
         bar.appendChild(progress);
-        bar.appendChild(el("span", null, o.stats.progress + "%"));
         li.appendChild(bar);
       }
       li.appendChild(el("p", "pmAn-taskMeta", o.krs.length ? plural(o.krs.length, "Key Result") : "No Key Results"));
@@ -1989,12 +1995,18 @@
       );
     }
 
+    // Text before the first semicolon, so subtypes ("Web; Intranet") share one bar.
+    function typeLabel(type) {
+      return type.split(";")[0].trim() || UNSPECIFIED;
+    }
+
     // Top types by count, then "Other" for the rest, then "Unspecified".
     function renderTypes(groups) {
       var byType = {};
       TASK_BUCKETS.forEach(function (b) {
         groups[b.id].project.forEach(function (p) {
-          byType[p.type] = (byType[p.type] || 0) + 1;
+          var label = typeLabel(p.type);
+          byType[label] = (byType[label] || 0) + 1;
         });
       });
       var types = Object.keys(byType)
@@ -2057,6 +2069,23 @@
           };
         }),
       );
+    }
+
+    // Rolling months ending with the current one, oldest first.
+    function renderCompleted(groups) {
+      var start = new Date(state.today.getFullYear(), state.today.getMonth() - (MONTHS_SHOWN - 1), 1);
+      var labels = [];
+      var data = [];
+      for (var i = 0; i < MONTHS_SHOWN; i++) {
+        labels.push(MONTH_FMT.format(new Date(start.getFullYear(), start.getMonth() + i, 1)));
+        data.push(0);
+      }
+      groups.complete.task.forEach(function (t) {
+        if (!t.completedOn) return;
+        var idx = (t.completedOn.getFullYear() - start.getFullYear()) * 12 + t.completedOn.getMonth() - start.getMonth();
+        if (idx >= 0 && idx < MONTHS_SHOWN) data[idx]++;
+      });
+      updateChart("completed", labels, [{ label: "Completed tasks", data: data, backgroundColor: cssColor("complete") }]);
     }
 
     // All fiscal years. Weekly buckets from today; the last one is partial.
@@ -2390,36 +2419,55 @@
 
     function buildTask(t) {
       var li = el("li", "pmAn-task");
-      li.appendChild(newTabLink(t.title || "Untitled task", t.recordID));
-      var project = t.projectKey
-        ? t.projectKey + (t.projectName ? " \u00b7 " + t.projectName : "")
-        : "No project";
-      li.appendChild(el("p", "pmAn-taskMeta", project));
+      li.appendChild(recordLink(t.title || "Untitled task", t.recordID, workModalTitle(t)));
+      li.appendChild(el("p", "pmAn-taskMeta", projectText(t)));
       li.appendChild(el("p", "pmAn-taskMeta", dateText(t)));
       return li;
     }
 
-    function dateText(t) {
-      if (t.bucket === "complete") {
-        return t.completedOn ? "Completed " + DATE_FMT.format(t.completedOn) : "Completed (no date)";
+    function projectText(t) {
+      return t.projectKey ? t.projectKey + (t.projectName ? " \u00b7 " + t.projectName : "") : "No project";
+    }
+
+    // Tasks read "Due ...", projects "Ends ..." (their end date is their due date).
+    function dateText(rec) {
+      if (rec.bucket === "complete") {
+        return rec.completedOn ? "Completed " + DATE_FMT.format(rec.completedOn) : "Completed (no date)";
       }
-      if (!t.due) return "No due date";
-      var text = "Due " + DATE_FMT.format(t.due);
-      if (t.due < state.today) {
-        text += " \u00b7 " + plural(Math.round((state.today - t.due) / MS_PER_DAY), "day") + " overdue";
+      var isTask = rec.kind === "task";
+      var date = workDate(rec);
+      if (!date) return isTask ? "No due date" : "No end date";
+      var text = (isTask ? "Due " : "Ends ") + DATE_FMT.format(date);
+      if (date < state.today) {
+        text += " \u00b7 " + plural(Math.round((state.today - date) / MS_PER_DAY), "day") + " overdue";
       }
       return text;
     }
 
     /* ---- OKRs ---- */
 
-    function newTabLink(text, recordID) {
+    // Embedded, a plain click opens the parent's record modal (see the click listener at init);
+    // the href still serves modified clicks and the standalone page.
+    function recordLink(text, recordID, title) {
       var link = el("a", "pmAn-taskLink", text);
       link.href = PRINTVIEW_URL + encodeURIComponent(recordID);
       link.target = "_blank";
       link.rel = "noopener";
-      link.appendChild(el("span", "pm-srOnly", " (opens in a new tab)"));
+      link.setAttribute("data-record", "1");
+      link.setAttribute("data-modal-title", title || text);
+      if (embedded) link.setAttribute("aria-haspopup", "dialog");
+      link.appendChild(el("span", "pm-srOnly", embedded ? " (opens in a dialog)" : " (opens in a new tab)"));
       return link;
+    }
+
+    // The parent modal's title format, e.g. "Task 12  \u2014  Fix login"; a missing name drops its dash.
+    function modalTitle(kind, id, name) {
+      var head = kind + (id ? " " + id : "");
+      return name ? head + "  \u2014  " + name : head;
+    }
+
+    function workModalTitle(rec) {
+      return rec.kind === "task" ? modalTitle("Task", rec.recordID, rec.title) : modalTitle("Project", rec.key, rec.name);
     }
 
     function healthColor(label) {
@@ -2544,7 +2592,7 @@
       );
       var heading = el("h3", "pmAn-groupTitle pmAn-objHead");
       heading.appendChild(btn);
-      heading.appendChild(newTabLink(o.key || "Objective", o.recordID));
+      heading.appendChild(recordLink(o.key || "Objective", o.recordID, modalTitle("Objective", o.key, o.text)));
 
       var body;
       if (o.krs.length) {
@@ -2617,7 +2665,7 @@
         .forEach(function (item) {
           var row = el("li", "pmAn-linkRow");
           row.appendChild(el("span", "pmAn-badge", item.rec.bucket ? "Task" : "Project"));
-          row.appendChild(newTabLink(item.title || "Untitled", item.rec.recordID));
+          row.appendChild(recordLink(item.title || "Untitled", item.rec.recordID, workModalTitle(item.rec)));
           var status = el("span", "pmAn-badge", BUCKET[item.bucket].label);
           status.style.setProperty("--pmAn-badge", STATUS_COLORS[BUCKET[item.bucket].color]);
           row.appendChild(status);
@@ -2716,7 +2764,7 @@
     function buildRoadCard(item) {
       var li = el("li", "pmAn-roadCard");
       li.style.borderLeftColor = roadmapColor(item.status);
-      li.appendChild(newTabLink(item.capability, item.recordID));
+      li.appendChild(recordLink(item.capability, item.recordID, item.capability));
       if (item.description) li.appendChild(el("p", "pmAn-taskMeta", item.description));
       var tag = el("span", "pmAn-badge", item.status);
       tag.style.setProperty("--pmAn-badge", roadmapColor(item.status));
@@ -2727,6 +2775,9 @@
     }
 
     function activateTab(tab) {
+      try {
+        sessionStorage.setItem(TAB_KEY, tab.id);
+      } catch (e) {}
       els.tabs.forEach(function (t) {
         var on = t === tab;
         t.setAttribute("aria-selected", String(on));
@@ -2795,6 +2846,12 @@
       els.window.value = d.window;
     }
 
+    // Display gate only, parsed like lp_team.html. Fails closed: unrendered tags hold no digits.
+    function inGroup(id) {
+      var ids = (root.getAttribute("data-groups") || "").match(/\d+/g) || [];
+      return new Set(ids.map(Number)).has(id);
+    }
+
     function csrfToken() {
       var raw = (root.getAttribute("data-csrf") || "").replace(/<!--|-->/g, "").trim();
       // An unrendered template tag means the page was not served through LEAF.
@@ -2856,12 +2913,13 @@
 
     /* ---- init ---- */
 
-    Array.prototype.forEach.call(els.kpis.querySelectorAll(".pmAn-kpiBtn"), function (btn) {
-      var bucket = HEALTH[btn.parentNode.getAttribute("data-kpi")];
-      btn.parentNode.style.borderLeftColor = STATUS_COLORS[bucket.color];
-      btn.firstElementChild.append(icon("check"), bucket.label);
+    Array.prototype.forEach.call(els.kpis.querySelectorAll("[data-kpi]"), function (tile) {
+      var bucket = HEALTH[tile.getAttribute("data-kpi")];
+      tile.style.borderLeftColor = STATUS_COLORS[bucket.color];
+      tile.firstElementChild.textContent = bucket.label;
     });
     els.defaultsBtn.prepend(icon("collapsed"), icon("expanded"));
+    els.defaultsBtn.hidden = !inGroup(1);
     els.tabs.forEach(function (tab, i) {
       tab.addEventListener("click", function () {
         activateTab(tab);
@@ -2876,6 +2934,15 @@
         activateTab(target);
       });
     });
+    var savedTab = null;
+    try {
+      savedTab = sessionStorage.getItem(TAB_KEY);
+    } catch (e) {}
+    activateTab(
+      els.tabs.filter(function (t) {
+        return t.id === savedTab;
+      })[0] || els.tabs[0],
+    );
     els.people.addEventListener("click", function (e) {
       var btn = e.target.closest(".pmAn-person");
       if (!btn) return;
@@ -2899,21 +2966,6 @@
       els.roadStatus.textContent =
         "Showing " + shown + " of " + plural(state.roadmapScope.length, "item") + ".";
     });
-    els.kpis.addEventListener("click", function (e) {
-      var btn = e.target.closest(".pmAn-kpiBtn");
-      if (!btn) return;
-      var kpi = btn.parentNode.getAttribute("data-kpi");
-      state.drill = state.drill === kpi ? null : kpi;
-      state.drillAll = false;
-      if (!state.drill) els.status.textContent = "";
-      renderDrill(true);
-    });
-    els.drillMore.addEventListener("click", function () {
-      state.drillAll = true;
-      renderDrill(false);
-      // The button disappears; move focus to the first newly shown row.
-      els.drillList.children[DRILL_LIMIT].querySelector("a").focus();
-    });
     COMPLETED_WINDOWS.forEach(function (w) {
       els.window.add(new Option(w.label, w.label));
     });
@@ -2936,6 +2988,38 @@
       applyFilters(state.teamDefault);
       render();
       els.status.textContent = "Team default applied: " + (els.fy.value || "All") + ", " + els.window.value + ".";
+    });
+    // Plain left clicks open the parent's modal; anything modified falls through to the new-tab href.
+    root.addEventListener("click", function (e) {
+      var link = e.target.closest("a[data-record]");
+      if (!link || !embedded || e.defaultPrevented || e.button !== 0) return;
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      state.modalLink = link;
+      window.parent.postMessage(
+        {
+          type: "pm-open-modal",
+          url: new URL(link.getAttribute("href"), window.location.href).href,
+          title: link.getAttribute("data-modal-title"),
+        },
+        window.location.origin,
+      );
+    });
+    // The parent echoes pm-modal-closed to the frame that opened the modal.
+    window.addEventListener("message", function (e) {
+      if (e.source !== window.parent || e.origin !== window.location.origin) return;
+      if (!e.data || e.data.type !== "pm-modal-closed" || !state.modalLink) return;
+      var link = state.modalLink;
+      state.modalLink = null;
+      if (link.isConnected) link.focus();
+      // A removed, collapsed or hidden link can't take focus; fall back to the active tab.
+      if (document.activeElement !== link) {
+        els.tabs
+          .filter(function (t) {
+            return t.getAttribute("aria-selected") === "true";
+          })[0]
+          .focus();
+      }
     });
     els.refresh.addEventListener("click", load);
     els.retry.addEventListener("click", function () {
