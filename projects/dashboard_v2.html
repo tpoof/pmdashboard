@@ -31,6 +31,7 @@
       <button type="button" class="pm-tab" role="tab" id="pmAnTabHealth" aria-controls="pmAnPanelHealth" aria-selected="true">Health</button>
       <button type="button" class="pm-tab" role="tab" id="pmAnTabMeeting" aria-controls="pmAnPanelMeeting" aria-selected="false" tabindex="-1">Team Meeting</button>
       <button type="button" class="pm-tab" role="tab" id="pmAnTabOkr" aria-controls="pmAnPanelOkr" aria-selected="false" tabindex="-1">OKRs</button>
+      <button type="button" class="pm-tab" role="tab" id="pmAnTabRoadmap" aria-controls="pmAnPanelRoadmap" aria-selected="false" tabindex="-1">Roadmap</button>
     </div>
 
     <div id="pmAnPanelHealth" role="tabpanel" aria-labelledby="pmAnTabHealth" tabindex="0">
@@ -138,6 +139,18 @@
           <div id="pmAnOkrList"></div>
         </div>
       </div>
+    </div>
+
+    <div id="pmAnPanelRoadmap" role="tabpanel" aria-labelledby="pmAnTabRoadmap" hidden>
+      <p id="pmAnRoadEmpty" class="pmAn-empty" hidden>No roadmap items for this scope.</p>
+      <div id="pmAnRoad">
+        <div class="pmAn-card pmAn-okrStrip">
+          <p id="pmAnRoadTotals" class="pmAn-okrTotals"></p>
+          <div id="pmAnRoadFilter" class="pmAn-filters" role="group" aria-label="Filter by status"></div>
+        </div>
+        <div id="pmAnRoadSections"></div>
+      </div>
+      <p id="pmAnRoadStatus" class="pm-srOnly" role="status"></p>
     </div>
 
     <p id="pmAnFootnote" class="pm-muted pmAn-footnote" role="status" aria-live="polite"></p>
@@ -525,6 +538,54 @@
     accent-color: var(--accent);
   }
 
+  .pmAn-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+  }
+
+  .pmAn-filterBtn[aria-pressed="true"] {
+    border: 2px solid var(--text);
+  }
+
+  .pmAn-filterBtn[aria-pressed="true"]::before {
+    content: "\2713" / "";
+    margin-right: var(--space-1);
+  }
+
+  .pmAn-roadYear + .pmAn-roadYear {
+    margin-top: var(--space-4);
+  }
+
+  .pmAn-roadTheme + .pmAn-roadTheme {
+    margin-top: var(--space-4);
+  }
+
+  .pmAn-roadTheme h3 {
+    margin-bottom: var(--space-2);
+  }
+
+  .pmAn-roadGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .pmAn-roadCard {
+    min-width: 0;
+    padding: var(--space-3);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left-width: 4px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .pmAn-roadCard p {
+    margin: var(--space-2) 0 0;
+  }
+
   @media (max-width: 1200px) {
     .pmAn-kpis {
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -539,6 +600,10 @@
     .pmAn-people {
       max-height: 260px;
       overflow-y: auto;
+    }
+
+    .pmAn-roadGrid {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
@@ -589,7 +654,10 @@
         owner: 120,
       },
       objective: { key: 23, text: 24, start: 25, end: 26, fy: 33 },
+      roadmap: { fy: 122, theme: 123, description: 124, capability: 125, status: 127 },
     };
+    // Indicator IDs are unique per site, so a filled capability identifies roadmap records.
+    var ROADMAP_SCOPE = { id: "data", indicatorID: "125", operator: "!=", match: "", gate: "AND" };
     var AT_RISK_DAYS = 3;
     var TOP_ASSIGNEES = 10;
     var MONTHS_SHOWN = 6;
@@ -602,6 +670,7 @@
       complete: "#2e7d32",
       neutral: "var(--muted)",
       inflight: "var(--accent)",
+      active: "var(--accent-strong)",
     };
 
     // Ordered to match the KPI tiles: open buckets first, then blocked, then complete.
@@ -632,6 +701,13 @@
       { label: "At risk", color: "atrisk" },
       { label: "Off track", color: "overdue" },
     ];
+    var ROADMAP_STATUSES = [
+      { label: "Planned", color: "neutral" },
+      { label: "In Progress", color: "active" },
+      { label: "Delivered", color: "complete" },
+    ];
+    var NO_STATUS = "No status";
+    var NO_THEME = "Uncategorized";
     var PROJECT_STATUSES = [
       { label: "Not Started", color: "neutral" },
       { label: "In Progress", color: "inflight" },
@@ -681,6 +757,12 @@
       okrHealth: byId("pmAnOkrHealth"),
       okrToggleAll: byId("pmAnOkrToggleAll"),
       okrList: byId("pmAnOkrList"),
+      roadEmpty: byId("pmAnRoadEmpty"),
+      road: byId("pmAnRoad"),
+      roadTotals: byId("pmAnRoadTotals"),
+      roadFilter: byId("pmAnRoadFilter"),
+      roadSections: byId("pmAnRoadSections"),
+      roadStatus: byId("pmAnRoadStatus"),
     };
     var decoder = document.createElement("textarea");
     var charts = {};
@@ -697,6 +779,11 @@
       okrNotes: { excludedKrs: 0, unmatched: 0, ambiguous: 0, noFy: 0 },
       okrExpanded: {},
       footnote: { base: "", task: [] },
+      roadmap: [],
+      roadmapThemes: [],
+      roadmapScope: [],
+      roadmapStatus: "",
+      roadmapNotes: { noFy: 0, noTheme: 0 },
     };
 
     function byId(id) {
@@ -842,12 +929,9 @@
 
     /* ---- data ---- */
 
-    function fetchPage(formId, indicators, offset) {
+    function fetchPage(scope, indicators, offset) {
       var q = {
-        terms: [
-          { id: "categoryID", operator: "=", match: formId, gate: "AND" },
-          { id: "deleted", operator: "=", match: "0", gate: "AND" },
-        ],
+        terms: [scope, { id: "deleted", operator: "=", match: "0", gate: "AND" }],
         joins: [],
         sort: {},
         getData: indicators,
@@ -870,15 +954,17 @@
       });
     }
 
-    function fetchAll(formId, indicators) {
+    // Pass a scope term instead of a form ID for records that carry no categoryID.
+    function fetchAll(formId, indicators, scope) {
       var rows = {};
+      scope = scope || { id: "categoryID", operator: "=", match: formId, gate: "AND" };
       function next(offset) {
-        return fetchPage(formId, indicators, offset).then(function (page) {
+        return fetchPage(scope, indicators, offset).then(function (page) {
           if (!page || typeof page !== "object") throw new SyntaxError("Unexpected response");
           var ids = Object.keys(page);
           ids.forEach(function (id) {
             var row = page[id];
-            if (row && row.categoryID === formId && hasAnyValue(row, indicators)) rows[id] = row;
+            if (row && (!formId || row.categoryID === formId) && hasAnyValue(row, indicators)) rows[id] = row;
           });
           return ids.length < PAGE_SIZE ? values(rows) : next(offset + PAGE_SIZE);
         });
@@ -886,7 +972,7 @@
       return next(0);
     }
 
-    function ingest(projectRows, taskRows, krRows, objectiveRows) {
+    function ingest(projectRows, taskRows, krRows, objectiveRows, roadmapRows) {
       var today = new Date();
       today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       var projectByKey = Object.create(null);
@@ -930,6 +1016,69 @@
       state.today = today;
       state.loadedAt = new Date();
       ingestOkrs(krRows, objectiveRows);
+      ingestRoadmap(roadmapRows);
+    }
+
+    function ingestRoadmap(rows) {
+      var notes = { noFy: 0, noTheme: 0 };
+      state.roadmap = rows
+        .map(function (row) {
+          return {
+            recordID: String(row.recordID),
+            fy: normalizeFy(clean(field(row, IND.roadmap.fy))),
+            theme: field(row, IND.roadmap.theme),
+            capability: field(row, IND.roadmap.capability),
+            description: field(row, IND.roadmap.description),
+            status: roadmapStatus(field(row, IND.roadmap.status)),
+          };
+        })
+        .filter(function (item) {
+          return item.capability;
+        })
+        .sort(function (a, b) {
+          return Number(a.recordID) - Number(b.recordID);
+        });
+      state.roadmapThemes = [];
+      var statusByKey = Object.create(null);
+      state.roadmap.forEach(function (item) {
+        // Group statuses case-insensitively, labeled by the lowest recordID's spelling.
+        var key = norm(item.status);
+        item.status = statusByKey[key] || (statusByKey[key] = item.status);
+        if (!item.fy) notes.noFy++;
+        if (!item.theme) {
+          notes.noTheme++;
+          item.theme = NO_THEME;
+        }
+        if (state.roadmapThemes.indexOf(item.theme) === -1) state.roadmapThemes.push(item.theme);
+      });
+      state.roadmapNotes = notes;
+    }
+
+    function knownRoadmapStatus(label) {
+      return ROADMAP_STATUSES.filter(function (s) {
+        return norm(s.label) === norm(label);
+      })[0];
+    }
+
+    function roadmapStatus(raw) {
+      var s = clean(raw);
+      if (!s) return NO_STATUS;
+      var known = knownRoadmapStatus(s);
+      return known ? known.label : s;
+    }
+
+    // Known statuses first, then any other value A-Z, then "No status".
+    function roadmapStatusOrder(a, b) {
+      function rank(label) {
+        var i = ROADMAP_STATUSES.indexOf(knownRoadmapStatus(label));
+        return i !== -1 ? i : label === NO_STATUS ? ROADMAP_STATUSES.length + 1 : ROADMAP_STATUSES.length;
+      }
+      return rank(a) - rank(b) || a.localeCompare(b);
+    }
+
+    function roadmapColor(label) {
+      var known = knownRoadmapStatus(label);
+      return STATUS_COLORS[known ? known.color : "neutral"];
     }
 
     function ingestOkrs(krRows, objectiveRows) {
@@ -1074,10 +1223,11 @@
         fetchAll(FORM.task, values(IND.task)),
         fetchAll(FORM.keyResult, values(IND.keyResult)),
         fetchAll(FORM.objective, values(IND.objective)),
+        fetchAll(null, values(IND.roadmap), ROADMAP_SCOPE),
       ])
         .then(function (res) {
           if (seq !== state.seq) return;
-          ingest(res[0], res[1], res[2], res[3]);
+          ingest(res[0], res[1], res[2], res[3], res[4]);
           populateFyOptions();
           setView("ready");
           render();
@@ -1106,7 +1256,7 @@
     function populateFyOptions() {
       var current = els.fy.value;
       var seen = {};
-      state.projects.concat(state.objectives).forEach(function (x) {
+      state.projects.concat(state.objectives, state.roadmap).forEach(function (x) {
         if (x.fy) seen[x.fy] = true;
       });
       var fys = Object.keys(seen).sort(function (a, b) {
@@ -1188,6 +1338,7 @@
       };
       renderMeeting(live);
       renderOkrs(fy);
+      renderRoadmap(fy);
       renderFootnote();
 
       var isEmpty = c.projects + c.tasks === 0;
@@ -1574,14 +1725,8 @@
       return STATUS_COLORS[match ? match.color : "neutral"];
     }
 
-    function okrFootnotes() {
-      var n = state.okrNotes;
-      return [
-        [n.excludedKrs, plural(n.excludedKrs, "Key Result") + " excluded (no objective or code)"],
-        [n.unmatched, plural(n.unmatched, "linked record") + (n.unmatched === 1 ? " matches" : " match") + " no Key Result"],
-        [n.ambiguous, plural(n.ambiguous, "link") + (n.ambiguous === 1 ? " matches" : " match") + " more than one Key Result name"],
-        [n.noFy, plural(n.noFy, "objective") + " with no fiscal year"],
-      ]
+    function nonZeroNotes(notes) {
+      return notes
         .filter(function (note) {
           return note[0];
         })
@@ -1590,11 +1735,32 @@
         });
     }
 
+    function okrFootnotes() {
+      var n = state.okrNotes;
+      return nonZeroNotes([
+        [n.excludedKrs, plural(n.excludedKrs, "Key Result") + " excluded (no objective or code)"],
+        [n.unmatched, plural(n.unmatched, "linked record") + (n.unmatched === 1 ? " matches" : " match") + " no Key Result"],
+        [n.ambiguous, plural(n.ambiguous, "link") + (n.ambiguous === 1 ? " matches" : " match") + " more than one Key Result name"],
+        [n.noFy, plural(n.noFy, "objective") + " with no fiscal year"],
+      ]);
+    }
+
+    function roadmapFootnotes() {
+      var n = state.roadmapNotes;
+      return nonZeroNotes([
+        [n.noFy, plural(n.noFy, "item") + " with no fiscal year"],
+        [n.noTheme, plural(n.noTheme, "item") + " with no theme"],
+      ]);
+    }
+
     // Only the active tab's notes; skipping identical text keeps the live region from re-announcing.
     function renderFootnote() {
-      var okrTab = byId("pmAnTabOkr").getAttribute("aria-selected") === "true";
+      var notesByTab = { pmAnTabOkr: okrFootnotes, pmAnTabRoadmap: roadmapFootnotes };
+      var active = els.tabs.filter(function (t) {
+        return t.getAttribute("aria-selected") === "true";
+      })[0];
       var text = [state.footnote.base]
-        .concat(okrTab ? okrFootnotes() : state.footnote.task)
+        .concat(notesByTab[active.id] ? notesByTab[active.id]() : state.footnote.task)
         .join(" \u00b7 ");
       if (els.footnote.textContent !== text) els.footnote.textContent = text;
     }
@@ -1704,6 +1870,100 @@
       return li;
     }
 
+    /* ---- Roadmap ---- */
+
+    function renderRoadmap(fy) {
+      var items = state.roadmap.filter(function (item) {
+        return !fy || item.fy === fy;
+      });
+      var counts = {};
+      items.forEach(function (item) {
+        counts[item.status] = (counts[item.status] || 0) + 1;
+      });
+      var statuses = Object.keys(counts).sort(roadmapStatusOrder);
+      state.roadmapStatus =
+        statuses.filter(function (s) {
+          return norm(s) === norm(state.roadmapStatus);
+        })[0] || "";
+      state.roadmapScope = items;
+
+      els.roadEmpty.hidden = items.length > 0;
+      els.road.hidden = items.length === 0;
+      els.roadTotals.textContent = [items.length + (items.length === 1 ? " capability" : " capabilities")]
+        .concat(
+          statuses.map(function (s) {
+            return counts[s] + " " + s.toLowerCase();
+          }),
+        )
+        .join(" \u00b7 ");
+      els.roadFilter.textContent = "";
+      [""].concat(statuses).forEach(function (s) {
+        var btn = el("button", "pm-ghostBtn pmAn-filterBtn", (s || "All") + " " + (s ? counts[s] : items.length));
+        btn.type = "button";
+        btn.setAttribute("data-status", s);
+        els.roadFilter.appendChild(btn);
+      });
+      renderRoadmapItems();
+    }
+
+    function renderRoadmapItems() {
+      var status = state.roadmapStatus;
+      Array.prototype.forEach.call(els.roadFilter.children, function (btn) {
+        btn.setAttribute("aria-pressed", String(btn.getAttribute("data-status") === status));
+      });
+      var items = state.roadmapScope.filter(function (item) {
+        return !status || item.status === status;
+      });
+      var years = [];
+      items.forEach(function (item) {
+        if (years.indexOf(item.fy) === -1) years.push(item.fy);
+      });
+      years.sort(function (a, b) {
+        return !a - !b || a.localeCompare(b, undefined, { numeric: true });
+      });
+
+      els.roadSections.textContent = "";
+      years.forEach(function (fy) {
+        var inYear = items.filter(function (item) {
+          return item.fy === fy;
+        });
+        var section = el("section", "pmAn-card pmAn-roadYear");
+        var heading = el("h2", null, (fy || "No fiscal year") + " \u00b7 " + plural(inYear.length, "item"));
+        heading.id = "pmAnRoadYear-" + (fy || "none");
+        section.setAttribute("aria-labelledby", heading.id);
+        section.appendChild(heading);
+        state.roadmapThemes.forEach(function (theme) {
+          var cards = inYear.filter(function (item) {
+            return item.theme === theme;
+          });
+          if (!cards.length) return;
+          var group = el("div", "pmAn-roadTheme");
+          group.appendChild(el("h3", "pmAn-groupTitle", theme));
+          var list = el("ul", "pmAn-list pmAn-roadGrid");
+          cards.forEach(function (item) {
+            list.appendChild(buildRoadCard(item));
+          });
+          group.appendChild(list);
+          section.appendChild(group);
+        });
+        els.roadSections.appendChild(section);
+      });
+      return items.length;
+    }
+
+    function buildRoadCard(item) {
+      var li = el("li", "pmAn-roadCard");
+      li.style.borderLeftColor = roadmapColor(item.status);
+      li.appendChild(newTabLink(item.capability, item.recordID));
+      if (item.description) li.appendChild(el("p", "pmAn-taskMeta", item.description));
+      var tag = el("span", "pmAn-badge", item.status);
+      tag.style.borderColor = roadmapColor(item.status);
+      var status = el("p");
+      status.appendChild(tag);
+      li.appendChild(status);
+      return li;
+    }
+
     function activateTab(tab) {
       els.tabs.forEach(function (t) {
         var on = t === tab;
@@ -1750,6 +2010,14 @@
     });
     bindDisclosures(els.groups, els.toggleAll, state.expanded);
     bindDisclosures(els.okrList, els.okrToggleAll, state.okrExpanded);
+    els.roadFilter.addEventListener("click", function (e) {
+      var btn = e.target.closest(".pmAn-filterBtn");
+      if (!btn) return;
+      state.roadmapStatus = btn.getAttribute("data-status");
+      var shown = renderRoadmapItems();
+      els.roadStatus.textContent =
+        "Showing " + shown + " of " + plural(state.roadmapScope.length, "item") + ".";
+    });
     els.fy.addEventListener("change", render);
     els.refresh.addEventListener("click", load);
     els.retry.addEventListener("click", function () {
