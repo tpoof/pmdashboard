@@ -30,6 +30,7 @@
     <div class="pm-tabs pmAn-tabs" role="tablist" aria-label="Report views">
       <button type="button" class="pm-tab" role="tab" id="pmAnTabHealth" aria-controls="pmAnPanelHealth" aria-selected="true">Health</button>
       <button type="button" class="pm-tab" role="tab" id="pmAnTabMeeting" aria-controls="pmAnPanelMeeting" aria-selected="false" tabindex="-1">Team Meeting</button>
+      <button type="button" class="pm-tab" role="tab" id="pmAnTabOkr" aria-controls="pmAnPanelOkr" aria-selected="false" tabindex="-1">OKRs</button>
     </div>
 
     <div id="pmAnPanelHealth" role="tabpanel" aria-labelledby="pmAnTabHealth" tabindex="0">
@@ -120,6 +121,23 @@
         </div>
       </div>
       <p id="pmAnMeetStatus" class="pm-srOnly" role="status"></p>
+    </div>
+
+    <div id="pmAnPanelOkr" role="tabpanel" aria-labelledby="pmAnTabOkr" hidden>
+      <p id="pmAnOkrEmpty" class="pmAn-empty" hidden>No objectives for this scope.</p>
+      <div id="pmAnOkr">
+        <div class="pmAn-card pmAn-okrStrip">
+          <p id="pmAnOkrTotals" class="pmAn-okrTotals"></p>
+          <p id="pmAnOkrHealth" class="pm-muted pmAn-cap"></p>
+        </div>
+        <div class="pmAn-card">
+          <div class="pmAn-detailHead">
+            <h2>Objectives</h2>
+            <button type="button" id="pmAnOkrToggleAll" class="pm-ghostBtn"></button>
+          </div>
+          <div id="pmAnOkrList"></div>
+        </div>
+      </div>
     </div>
 
     <p id="pmAnFootnote" class="pm-muted pmAn-footnote" role="status" aria-live="polite"></p>
@@ -355,6 +373,7 @@
     border-radius: 999px;
     color: var(--text);
     font-weight: 700;
+    white-space: nowrap;
   }
 
   .pmAn-detailHead {
@@ -440,6 +459,72 @@
     overflow-wrap: anywhere;
   }
 
+  .pmAn-okrStrip {
+    margin-bottom: var(--space-4);
+  }
+
+  .pmAn-okrTotals {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .pmAn-objHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .pmAn-objHead .pmAn-groupBtn {
+    flex: 1 1 240px;
+    flex-wrap: wrap;
+    width: auto;
+    min-width: 0;
+  }
+
+  /* The 10em basis makes the health label and % wrap below short widths instead of squeezing the text. */
+  .pmAn-objText {
+    flex: 1 1 10em;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .pmAn-kr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pmAn-kr:last-child {
+    border-bottom: 0;
+  }
+
+  .pmAn-kr .pmAn-taskMeta {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+
+  .pmAn-krHead {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .pmAn-krBar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .pmAn-krBar progress {
+    width: 160px;
+    height: 12px;
+    accent-color: var(--accent);
+  }
+
   @media (max-width: 1200px) {
     .pmAn-kpis {
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -467,6 +552,16 @@
     .pmAn-kpis {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .pmAn-kr {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pmAn-krBar progress {
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 0;
+    }
   }
 </style>
 
@@ -477,10 +572,23 @@
     // Relative so it resolves to /platform/projects/api/form/query in prod and preprod.
     var ENDPOINT = "api/form/query";
     var PAGE_SIZE = 500;
-    var FORM = { project: "form_55445", task: "form_9b302" };
+    var FORM = { project: "form_55445", task: "form_9b302", keyResult: "form_6530b", objective: "form_a2b55" };
     var IND = {
-      project: { key: 2, name: 3, owner: 5, status: 6, type: 32, fy: 38, end: 70 },
-      task: { projectKey: 8, title: 9, status: 10, otherSubType: 44, assignee: 11, due: 13, completedOn: 47 },
+      project: { key: 2, name: 3, owner: 5, status: 6, type: 32, fy: 38, end: 70, krLink: 37 },
+      task: { projectKey: 8, title: 9, status: 10, otherSubType: 44, assignee: 11, due: 13, completedOn: 47, krLink: 39 },
+      keyResult: {
+        objective: 35,
+        name: 36,
+        type: 107,
+        complete: 108,
+        code: 109,
+        start: 110,
+        current: 111,
+        target: 112,
+        weight: 113,
+        owner: 120,
+      },
+      objective: { key: 23, text: 24, start: 25, end: 26, fy: 33 },
     };
     var AT_RISK_DAYS = 3;
     var TOP_ASSIGNEES = 10;
@@ -515,6 +623,15 @@
     var UNASSIGNED = "Unassigned";
     var PRINTVIEW_URL = "index.php?a=printview&recordID=";
     var MS_PER_DAY = 86400000;
+    var KR_TYPES = ["Metric", "Binary", "Milestone"];
+    var KR_PENDING = "KR-PENDING";
+    var DEFAULT_KR_WEIGHT = 1;
+    var OKR_GAP = { offTrack: 30, atRisk: 15 };
+    var OKR_HEALTH = [
+      { label: "On track", color: "complete" },
+      { label: "At risk", color: "atrisk" },
+      { label: "Off track", color: "overdue" },
+    ];
     var PROJECT_STATUSES = [
       { label: "Not Started", color: "neutral" },
       { label: "In Progress", color: "inflight" },
@@ -558,6 +675,12 @@
       toggleAll: byId("pmAnToggleAll"),
       groups: byId("pmAnGroups"),
       meetStatus: byId("pmAnMeetStatus"),
+      okrEmpty: byId("pmAnOkrEmpty"),
+      okr: byId("pmAnOkr"),
+      okrTotals: byId("pmAnOkrTotals"),
+      okrHealth: byId("pmAnOkrHealth"),
+      okrToggleAll: byId("pmAnOkrToggleAll"),
+      okrList: byId("pmAnOkrList"),
     };
     var decoder = document.createElement("textarea");
     var charts = {};
@@ -570,6 +693,10 @@
       people: [],
       person: null,
       expanded: Object.assign({}, MEETING_EXPANDED),
+      objectives: [],
+      okrNotes: { excludedKrs: 0, unmatched: 0, ambiguous: 0, noFy: 0 },
+      okrExpanded: {},
+      footnote: { base: "", task: [] },
     };
 
     function byId(id) {
@@ -648,6 +775,34 @@
     function normalizeFy(value) {
       var m = /(\d{4}|\d{2})\s*$/.exec(value);
       return m ? "FY" + m[1].slice(-2) : "";
+    }
+
+    // KR and objective values can arrive wrapped, e.g. "( No )".
+    function clean(value) {
+      return value.replace(/^\(/, "").replace(/\)$/, "").trim();
+    }
+
+    function parseNumber(value) {
+      var s = clean(value).replace(/,/g, "");
+      if (s === "") return null;
+      var n = Number(s);
+      return isFinite(n) ? n : null;
+    }
+
+    function keyNumber(key) {
+      var m = /\d+/.exec(key);
+      return m ? +m[0] : Infinity;
+    }
+
+    // v20's normalizeOkrKey: "okr 18" and "OKR-18" both become "OKR-18".
+    function normalizeOkrKey(value) {
+      var key = clean(value).toUpperCase();
+      var m = /\d+/.exec(key);
+      return m ? "OKR-" + m[0] : key;
+    }
+
+    function clampPct(n) {
+      return Math.max(0, Math.min(100, n));
     }
 
     function isCancelled(status) {
@@ -731,13 +886,15 @@
       return next(0);
     }
 
-    function ingest(projectRows, taskRows) {
+    function ingest(projectRows, taskRows, krRows, objectiveRows) {
       var today = new Date();
       today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       var projectByKey = Object.create(null);
 
       state.projects = projectRows.map(function (row) {
         var p = {
+          recordID: String(row.recordID),
+          krLink: field(row, IND.project.krLink),
           key: field(row, IND.project.key),
           name: field(row, IND.project.name),
           status: field(row, IND.project.status),
@@ -761,6 +918,7 @@
           status: field(row, IND.task.status),
           due: parseDate(field(row, IND.task.due)),
           completedOn: parseDate(field(row, IND.task.completedOn)),
+          krLink: field(row, IND.task.krLink),
           assignee: field(row, IND.task.assignee) || UNASSIGNED,
           hasProject: !!project,
           fy: project ? project.fy : "",
@@ -771,6 +929,137 @@
 
       state.today = today;
       state.loadedAt = new Date();
+      ingestOkrs(krRows, objectiveRows);
+    }
+
+    function ingestOkrs(krRows, objectiveRows) {
+      var notes = { excludedKrs: 0, unmatched: 0, ambiguous: 0, noFy: 0 };
+      var byKey = Object.create(null);
+      var objectives = objectiveRows.map(function (row) {
+        var o = {
+          recordID: String(row.recordID),
+          key: normalizeOkrKey(field(row, IND.objective.key)),
+          text: field(row, IND.objective.text),
+          start: parseDate(clean(field(row, IND.objective.start))),
+          end: parseDate(clean(field(row, IND.objective.end))),
+          fy: normalizeFy(clean(field(row, IND.objective.fy))),
+          krs: [],
+        };
+        if (!o.fy) notes.noFy++;
+        if (o.key && !byKey[o.key]) byKey[o.key] = o;
+        return o;
+      });
+
+      var byCode = Object.create(null);
+      var byName = Object.create(null);
+      var krs = [];
+      krRows.forEach(function (row) {
+        var weight = parseFloat(clean(field(row, IND.keyResult.weight)).replace(/[^\d.]/g, ""));
+        var type = clean(field(row, IND.keyResult.type)).toLowerCase();
+        var kr = {
+          objective: byKey[normalizeOkrKey(field(row, IND.keyResult.objective))],
+          code: clean(field(row, IND.keyResult.code)),
+          name: field(row, IND.keyResult.name),
+          type: KR_TYPES.filter(function (t) {
+            return t.toLowerCase() === type;
+          })[0] || "",
+          complete: norm(clean(field(row, IND.keyResult.complete))) === "yes",
+          start: parseNumber(field(row, IND.keyResult.start)),
+          current: parseNumber(field(row, IND.keyResult.current)),
+          target: parseNumber(field(row, IND.keyResult.target)),
+          weight: weight > 0 ? weight : DEFAULT_KR_WEIGHT,
+          owner: field(row, IND.keyResult.owner),
+          linked: 0,
+          done: 0,
+        };
+        if (!kr.objective || !kr.code || kr.code.toUpperCase() === KR_PENDING) {
+          notes.excludedKrs++;
+          return;
+        }
+        krs.push(kr);
+        (byCode[kr.code.toLowerCase()] = byCode[kr.code.toLowerCase()] || []).push(kr);
+        if (kr.name) (byName[kr.name.toLowerCase()] = byName[kr.name.toLowerCase()] || []).push(kr);
+      });
+
+      // Linked work ignores the FY filter; field() has already decoded and trimmed the link.
+      state.projects.concat(state.tasks).forEach(function (rec) {
+        var link = rec.krLink.toLowerCase();
+        if (!link || isCancelled(rec.status)) return;
+        var hits = byCode[link] || byName[link];
+        if (!hits) {
+          notes.unmatched++;
+          return;
+        }
+        if (!byCode[link] && hits.length > 1) notes.ambiguous++;
+        hits.forEach(function (kr) {
+          kr.linked++;
+          if (norm(rec.status) === "completed") kr.done++;
+        });
+      });
+
+      krs.forEach(function (kr) {
+        Object.assign(kr, krProgress(kr));
+        kr.objective.krs.push(kr);
+      });
+      objectives.forEach(function (o) {
+        o.krs.sort(function (a, b) {
+          return keyNumber(a.code) - keyNumber(b.code) || a.code.localeCompare(b.code);
+        });
+        o.stats = objectiveStats(o);
+      });
+      state.objectives = objectives.sort(function (a, b) {
+        return keyNumber(a.key) - keyNumber(b.key) || a.key.localeCompare(b.key);
+      });
+      state.okrNotes = notes;
+    }
+
+    function formatNumber(n) {
+      return n.toLocaleString("en-US");
+    }
+
+    function krProgress(kr) {
+      if (kr.type === "Metric") {
+        var missing = ["start", "current", "target"].filter(function (k) {
+          return kr[k] === null;
+        });
+        if (missing.length) return { pct: 0, message: "Missing " + missing.join(" / ") };
+        var pct =
+          kr.target === kr.start
+            ? kr.current >= kr.target ? 100 : 0
+            : clampPct(Math.round(((kr.current - kr.start) / (kr.target - kr.start)) * 100));
+        return {
+          pct: pct,
+          detail: formatNumber(kr.start) + " \u2192 " + formatNumber(kr.current) + " of " + formatNumber(kr.target),
+        };
+      }
+      if (kr.type === "Binary") {
+        return { pct: kr.complete ? 100 : 0, detail: kr.complete ? "Complete" : "Not complete" };
+      }
+      if (kr.type === "Milestone") {
+        if (!kr.linked) return { pct: 0, message: "No linked work" };
+        return {
+          pct: Math.round((kr.done / kr.linked) * 100),
+          detail: kr.done + " of " + kr.linked + " linked tasks and projects done",
+        };
+      }
+      return { pct: 0, message: "No type" };
+    }
+
+    function objectiveStats(o) {
+      if (!o.krs.length) return { progress: null, health: "" };
+      var weights = 0;
+      var sum = 0;
+      o.krs.forEach(function (kr) {
+        weights += kr.weight;
+        sum += kr.pct * kr.weight;
+      });
+      var progress = Math.round(sum / weights);
+      if (!o.start || !o.end) return { progress: progress, health: "" };
+      var span = o.end - o.start;
+      var timePct = span <= 0 ? 100 : clampPct(((state.today - o.start) / span) * 100);
+      var gap = timePct - progress;
+      var health = gap > OKR_GAP.offTrack ? "Off track" : gap > OKR_GAP.atRisk ? "At risk" : "On track";
+      return { progress: progress, health: health };
     }
 
     function load() {
@@ -783,10 +1072,12 @@
       Promise.all([
         fetchAll(FORM.project, values(IND.project)),
         fetchAll(FORM.task, values(IND.task)),
+        fetchAll(FORM.keyResult, values(IND.keyResult)),
+        fetchAll(FORM.objective, values(IND.objective)),
       ])
         .then(function (res) {
           if (seq !== state.seq) return;
-          ingest(res[0], res[1]);
+          ingest(res[0], res[1], res[2], res[3]);
           populateFyOptions();
           setView("ready");
           render();
@@ -815,8 +1106,8 @@
     function populateFyOptions() {
       var current = els.fy.value;
       var seen = {};
-      state.projects.forEach(function (p) {
-        if (p.fy) seen[p.fy] = true;
+      state.projects.concat(state.objectives).forEach(function (x) {
+        if (x.fy) seen[x.fy] = true;
       });
       var fys = Object.keys(seen).sort(function (a, b) {
         return b.localeCompare(a, undefined, { numeric: true });
@@ -887,13 +1178,17 @@
 
       els.scope.textContent =
         (fy || "All fiscal years") + " \u00b7 Updated " + TIME_FMT.format(state.loadedAt);
-      els.footnote.textContent = [
-        plural(c.projects, "project") + ", " + plural(c.tasks, "task"),
-        c.cancelled + " cancelled excluded",
-        plural(c.missingDate, "completed task") + " missing a completion date",
-        plural(c.orphans, "task") + " with no matching project",
-      ].join(" \u00b7 ");
+      state.footnote = {
+        base: plural(c.projects, "project") + ", " + plural(c.tasks, "task"),
+        task: [
+          c.cancelled + " cancelled excluded",
+          plural(c.missingDate, "completed task") + " missing a completion date",
+          plural(c.orphans, "task") + " with no matching project",
+        ],
+      };
       renderMeeting(live);
+      renderOkrs(fy);
+      renderFootnote();
 
       var isEmpty = c.projects + c.tasks === 0;
       els.empty.hidden = !isEmpty;
@@ -1170,7 +1465,7 @@
           els.groups.querySelector('[data-group="complete"]'),
         );
       }
-      updateToggleAll();
+      updateToggleAll(els.groups, els.toggleAll);
     }
 
     function buildGroup(id, tasks) {
@@ -1192,21 +1487,38 @@
       });
       group.appendChild(heading);
       group.appendChild(list);
-      setGroupOpen(group, !!state.expanded[id]);
+      setGroupOpen(group, !!state.expanded[id], state.expanded);
       return group;
     }
 
-    function setGroupOpen(group, open) {
-      state.expanded[group.getAttribute("data-group")] = open;
+    // Shared by Team Meeting groups and OKR objectives: heading first, disclosed body last.
+    function setGroupOpen(group, open, store) {
+      store[group.getAttribute("data-group")] = open;
       group.querySelector(".pmAn-groupBtn").setAttribute("aria-expanded", String(open));
-      group.querySelector("ul").hidden = !open;
+      group.lastElementChild.hidden = !open;
     }
 
-    function updateToggleAll() {
-      var allOpen = Array.prototype.every.call(els.groups.querySelectorAll(".pmAn-groupBtn"), function (btn) {
+    function updateToggleAll(container, button) {
+      var allOpen = Array.prototype.every.call(container.querySelectorAll(".pmAn-groupBtn"), function (btn) {
         return btn.getAttribute("aria-expanded") === "true";
       });
-      els.toggleAll.textContent = allOpen ? "Collapse all" : "Expand all";
+      button.textContent = allOpen ? "Collapse all" : "Expand all";
+    }
+
+    function bindDisclosures(container, toggleAll, store) {
+      container.addEventListener("click", function (e) {
+        var btn = e.target.closest(".pmAn-groupBtn");
+        if (!btn) return;
+        setGroupOpen(btn.closest(".pmAn-group"), btn.getAttribute("aria-expanded") !== "true", store);
+        updateToggleAll(container, toggleAll);
+      });
+      toggleAll.addEventListener("click", function () {
+        var open = toggleAll.textContent === "Expand all";
+        Array.prototype.forEach.call(container.querySelectorAll(".pmAn-group"), function (group) {
+          setGroupOpen(group, open, store);
+        });
+        updateToggleAll(container, toggleAll);
+      });
     }
 
     // Completed sorts by completion date, newest first; everything else by due date. Undated last.
@@ -1223,12 +1535,7 @@
 
     function buildTask(t) {
       var li = el("li", "pmAn-task");
-      var link = el("a", "pmAn-taskLink", t.title || "Untitled task");
-      link.href = PRINTVIEW_URL + encodeURIComponent(t.recordID);
-      link.target = "_blank";
-      link.rel = "noopener";
-      link.appendChild(el("span", "pm-srOnly", " (opens in a new tab)"));
-      li.appendChild(link);
+      li.appendChild(newTabLink(t.title || "Untitled task", t.recordID));
       var project = t.projectKey
         ? t.projectKey + (t.projectName ? " \u00b7 " + t.projectName : "")
         : "No project";
@@ -1249,6 +1556,154 @@
       return text;
     }
 
+    /* ---- OKRs ---- */
+
+    function newTabLink(text, recordID) {
+      var link = el("a", "pmAn-taskLink", text);
+      link.href = PRINTVIEW_URL + encodeURIComponent(recordID);
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.appendChild(el("span", "pm-srOnly", " (opens in a new tab)"));
+      return link;
+    }
+
+    function healthColor(label) {
+      var match = OKR_HEALTH.filter(function (h) {
+        return h.label === label;
+      })[0];
+      return STATUS_COLORS[match ? match.color : "neutral"];
+    }
+
+    function okrFootnotes() {
+      var n = state.okrNotes;
+      return [
+        [n.excludedKrs, plural(n.excludedKrs, "Key Result") + " excluded (no objective or code)"],
+        [n.unmatched, plural(n.unmatched, "linked record") + (n.unmatched === 1 ? " matches" : " match") + " no Key Result"],
+        [n.ambiguous, plural(n.ambiguous, "link") + (n.ambiguous === 1 ? " matches" : " match") + " more than one Key Result name"],
+        [n.noFy, plural(n.noFy, "objective") + " with no fiscal year"],
+      ]
+        .filter(function (note) {
+          return note[0];
+        })
+        .map(function (note) {
+          return note[1];
+        });
+    }
+
+    // Only the active tab's notes; skipping identical text keeps the live region from re-announcing.
+    function renderFootnote() {
+      var okrTab = byId("pmAnTabOkr").getAttribute("aria-selected") === "true";
+      var text = [state.footnote.base]
+        .concat(okrTab ? okrFootnotes() : state.footnote.task)
+        .join(" \u00b7 ");
+      if (els.footnote.textContent !== text) els.footnote.textContent = text;
+    }
+
+    function renderOkrs(fy) {
+      var objectives = state.objectives.filter(function (o) {
+        return !fy || o.fy === fy;
+      });
+      els.okrEmpty.hidden = objectives.length > 0;
+      els.okr.hidden = objectives.length === 0;
+
+      var scored = objectives.filter(function (o) {
+        return o.stats.progress !== null;
+      });
+      var overall = scored.length
+        ? Math.round(
+            scored.reduce(function (sum, o) {
+              return sum + o.stats.progress;
+            }, 0) / scored.length,
+          )
+        : null;
+      els.okrTotals.textContent =
+        plural(objectives.length, "objective") +
+        " \u00b7 " +
+        (overall === null ? "Overall: no Key Results" : "Overall " + overall + "%");
+      var byHealth = {};
+      objectives.forEach(function (o) {
+        var label = o.stats.health || "no label";
+        byHealth[label] = (byHealth[label] || 0) + 1;
+      });
+      els.okrHealth.textContent = pluck(OKR_HEALTH, "label")
+        .concat("no label")
+        .filter(function (label) {
+          return byHealth[label];
+        })
+        .map(function (label) {
+          return byHealth[label] + " " + label.toLowerCase();
+        })
+        .join(" \u00b7 ");
+
+      els.okrList.textContent = "";
+      objectives.forEach(function (o) {
+        els.okrList.appendChild(buildObjective(o));
+      });
+      updateToggleAll(els.okrList, els.okrToggleAll);
+    }
+
+    function buildObjective(o) {
+      var group = el("div", "pmAn-group");
+      group.setAttribute("data-group", o.recordID);
+      var btn = el("button", "pmAn-groupBtn");
+      btn.type = "button";
+      btn.setAttribute("aria-controls", "pmAnObj-" + o.recordID);
+      btn.style.borderLeftColor = healthColor(o.stats.health);
+      btn.appendChild(el("span", "pmAn-objText", o.text || "Untitled objective"));
+      if (o.stats.health) {
+        var badge = el("span", "pmAn-badge", o.stats.health);
+        badge.style.borderColor = healthColor(o.stats.health);
+        btn.appendChild(document.createTextNode(" "));
+        btn.appendChild(badge);
+      }
+      btn.appendChild(document.createTextNode(" "));
+      btn.appendChild(
+        el("span", "pmAn-groupCount", o.stats.progress === null ? "No Key Results" : o.stats.progress + "%"),
+      );
+      var heading = el("h3", "pmAn-groupTitle pmAn-objHead");
+      heading.appendChild(btn);
+      heading.appendChild(newTabLink(o.key || "Objective", o.recordID));
+
+      var body;
+      if (o.krs.length) {
+        body = el("ul", "pmAn-list");
+        o.krs.forEach(function (kr) {
+          body.appendChild(buildKr(kr));
+        });
+      } else {
+        body = el("p", "pm-muted pmAn-noOpen", "No Key Results");
+      }
+      body.id = "pmAnObj-" + o.recordID;
+      group.appendChild(heading);
+      group.appendChild(body);
+      setGroupOpen(group, !!state.okrExpanded[o.recordID], state.okrExpanded);
+      return group;
+    }
+
+    function buildKr(kr) {
+      var li = el("li", "pmAn-kr");
+      var head = el("p", "pmAn-krHead");
+      head.appendChild(el("strong", null, kr.code));
+      head.appendChild(document.createTextNode(" " + (kr.name || "Untitled Key Result")));
+      if (kr.type) {
+        head.appendChild(document.createTextNode(" "));
+        head.appendChild(el("span", "pmAn-badge", kr.type));
+      }
+      var bar = el("div", "pmAn-krBar");
+      var progress = el("progress");
+      progress.max = 100;
+      progress.value = kr.pct;
+      progress.setAttribute("aria-label", (kr.name || kr.code) + " progress");
+      bar.appendChild(progress);
+      bar.appendChild(el("span", null, kr.pct + "%"));
+      li.appendChild(head);
+      li.appendChild(bar);
+      [kr.detail, kr.owner && "Owner: " + kr.owner, kr.message].forEach(function (text) {
+        if (text) li.appendChild(el("p", "pmAn-taskMeta", text));
+      });
+      return li;
+    }
+
     function activateTab(tab) {
       els.tabs.forEach(function (t) {
         var on = t === tab;
@@ -1256,6 +1711,7 @@
         t.tabIndex = on ? 0 : -1;
         byId(t.getAttribute("aria-controls")).hidden = !on;
       });
+      renderFootnote();
       // Charts sized while their panel was hidden collapse to zero.
       if (tab.id === "pmAnTabHealth") {
         values(charts).forEach(function (chart) {
@@ -1292,19 +1748,8 @@
         })[0],
       );
     });
-    els.groups.addEventListener("click", function (e) {
-      var btn = e.target.closest(".pmAn-groupBtn");
-      if (!btn) return;
-      setGroupOpen(btn.closest(".pmAn-group"), btn.getAttribute("aria-expanded") !== "true");
-      updateToggleAll();
-    });
-    els.toggleAll.addEventListener("click", function () {
-      var open = els.toggleAll.textContent === "Expand all";
-      Array.prototype.forEach.call(els.groups.querySelectorAll(".pmAn-group"), function (group) {
-        setGroupOpen(group, open);
-      });
-      updateToggleAll();
-    });
+    bindDisclosures(els.groups, els.toggleAll, state.expanded);
+    bindDisclosures(els.okrList, els.okrToggleAll, state.okrExpanded);
     els.fy.addEventListener("change", render);
     els.refresh.addEventListener("click", load);
     els.retry.addEventListener("click", function () {
