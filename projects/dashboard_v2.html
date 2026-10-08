@@ -4,7 +4,7 @@
   Requires Chart.js 3+ (indexAxis / scales.x API).
 -->
 <link rel="stylesheet" href="./files/project_v20.css" />
-<div id="pmAn">
+<div id="pmAn" data-csrf="<!--{$CSRFToken}-->">
   <header class="pmAn-header">
     <div>
       <h1 class="pmAn-title">Project &amp; Task Health</h1>
@@ -15,9 +15,25 @@
       <select id="pmAnFy" class="pm-select">
         <option value="">All</option>
       </select>
+      <span id="pmAnWindowWrap" class="pmAn-controls">
+        <label class="pm-label" for="pmAnWindow">Completed within</label>
+        <select id="pmAnWindow" class="pm-select"></select>
+      </span>
       <button type="button" id="pmAnRefresh" class="pm-ghostBtn">Refresh</button>
+      <button type="button" id="pmAnDefaultsBtn" class="pm-ghostBtn pmAn-defaultsBtn" aria-expanded="false" aria-controls="pmAnDefaults">Defaults</button>
     </div>
   </header>
+
+  <div id="pmAnDefaults" class="pmAn-card pmAn-defaults" hidden>
+    <p id="pmAnDefaultsSaved"></p>
+    <div class="pmAn-defaultsActions">
+      <button type="button" id="pmAnSaveDefault" class="pm-ghostBtn">Save as team default</button>
+      <button type="button" id="pmAnResetDefault" class="pm-ghostBtn">Reset to team default</button>
+    </div>
+    <p id="pmAnDefaultsMsg" class="pm-muted pmAn-cap"></p>
+  </div>
+
+  <p id="pmAnStatus" class="pm-srOnly" role="status"></p>
 
   <p id="pmAnLoading" class="pmAn-loading" role="status"></p>
 
@@ -34,35 +50,54 @@
       <button type="button" class="pm-tab" role="tab" id="pmAnTabRoadmap" aria-controls="pmAnPanelRoadmap" aria-selected="false" tabindex="-1">Roadmap</button>
     </div>
 
-    <div id="pmAnPanelHealth" role="tabpanel" aria-labelledby="pmAnTabHealth" tabindex="0">
+    <div id="pmAnPanelHealth" role="tabpanel" aria-labelledby="pmAnTabHealth">
     <p id="pmAnEmpty" class="pmAn-empty" hidden></p>
 
     <ul class="pmAn-kpis" id="pmAnKpis">
       <li class="pmAn-kpi" data-kpi="openProjects" data-color="inflight">
-        <span class="pmAn-kpiValue"></span>
-        <span class="pmAn-kpiLabel">Open Projects</span>
+        <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
+          <span class="pmAn-kpiValue"></span>
+          <span class="pmAn-kpiLabel">Open Projects</span>
+        </button>
       </li>
       <li class="pmAn-kpi" data-kpi="openTasks" data-color="inflight">
-        <span class="pmAn-kpiValue"></span>
-        <span class="pmAn-kpiLabel">Open Tasks</span>
+        <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
+          <span class="pmAn-kpiValue"></span>
+          <span class="pmAn-kpiLabel">Open Tasks</span>
+        </button>
       </li>
       <li class="pmAn-kpi" data-kpi="overdue" data-color="overdue">
-        <span class="pmAn-kpiValue"></span>
-        <span class="pmAn-kpiLabel">Overdue Tasks</span>
+        <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
+          <span class="pmAn-kpiValue"></span>
+          <span class="pmAn-kpiLabel">Overdue Tasks</span>
+        </button>
       </li>
       <li class="pmAn-kpi" data-kpi="atrisk" data-color="atrisk">
-        <span class="pmAn-kpiValue"></span>
-        <span class="pmAn-kpiLabel">At Risk Tasks</span>
+        <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
+          <span class="pmAn-kpiValue"></span>
+          <span class="pmAn-kpiLabel">At Risk Tasks</span>
+        </button>
       </li>
       <li class="pmAn-kpi" data-kpi="blocked" data-color="neutral">
-        <span class="pmAn-kpiValue"></span>
-        <span class="pmAn-kpiLabel">Blocked / On Hold Tasks</span>
+        <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
+          <span class="pmAn-kpiValue"></span>
+          <span class="pmAn-kpiLabel">Blocked / On Hold Tasks</span>
+        </button>
       </li>
       <li class="pmAn-kpi" data-kpi="complete" data-color="complete">
-        <span class="pmAn-kpiValue"></span>
-        <span class="pmAn-kpiLabel">Completed Tasks</span>
+        <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
+          <span class="pmAn-kpiValue"></span>
+          <span class="pmAn-kpiLabel">Completed Tasks</span>
+        </button>
       </li>
     </ul>
+
+    <section id="pmAnDrill" class="pmAn-card pmAn-drill" aria-labelledby="pmAnDrillTitle" hidden>
+      <h2 id="pmAnDrillTitle"></h2>
+      <p id="pmAnDrillEmpty" class="pmAn-empty" hidden>No records in this group.</p>
+      <ul id="pmAnDrillList" class="pmAn-list"></ul>
+      <button type="button" id="pmAnDrillMore" class="pm-ghostBtn pmAn-drillMore" hidden></button>
+    </section>
 
     <div class="pmAn-charts" id="pmAnCharts">
       <section class="pmAn-card" aria-labelledby="pmAnTaskStatusTitle">
@@ -200,6 +235,25 @@
     gap: var(--space-2);
   }
 
+  .pmAn-defaultsBtn::before {
+    margin-right: var(--space-1);
+  }
+
+  .pmAn-defaults {
+    margin-bottom: var(--space-4);
+  }
+
+  .pmAn-defaults p {
+    margin: 0;
+  }
+
+  .pmAn-defaultsActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 var(--space-2);
+  }
+
   .pmAn-loading {
     margin: 0 0 var(--space-4);
     font-weight: 600;
@@ -247,16 +301,46 @@
   }
 
   .pmAn-kpi {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
     min-width: 0;
-    padding: var(--space-3);
     background: var(--surface);
     border: 1px solid var(--border);
     border-left-width: 4px;
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
+  }
+
+  .pmAn-kpiBtn {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    width: 100%;
+    height: 100%;
+    min-height: 24px;
+    padding: var(--space-3);
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .pmAn-kpiBtn[aria-pressed="true"] {
+    box-shadow: inset 0 0 0 2px var(--text);
+  }
+
+  .pmAn-kpiBtn[aria-pressed="true"] .pmAn-kpiLabel::before {
+    content: "\2713" / "";
+    margin-right: var(--space-1);
+  }
+
+  .pmAn-drill {
+    margin-bottom: var(--space-4);
+  }
+
+  .pmAn-drillMore {
+    margin-top: var(--space-3);
   }
 
   .pmAn-kpiValue {
@@ -311,13 +395,23 @@
   }
 
   .pmAn-tabs {
+    flex-wrap: wrap;
     margin-bottom: var(--space-4);
   }
 
+  /* v20 marks the selected tab with background colors only, which forced colors removes. */
+  @media (forced-colors: active) {
+    .pmAn-tabs .pm-tab[aria-selected="true"] {
+      text-decoration: underline 2px;
+    }
+  }
+
   #pmAn [role="tabpanel"]:focus-visible,
+  .pmAn-kpiBtn:focus-visible,
   .pmAn-person:focus-visible,
   .pmAn-groupBtn:focus-visible,
-  .pmAn-taskLink:focus-visible {
+  .pmAn-taskLink:focus-visible,
+  .pmAn-linkBtn:focus-visible {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
   }
@@ -434,12 +528,16 @@
     cursor: pointer;
   }
 
-  .pmAn-groupBtn::before {
+  .pmAn-groupBtn::before,
+  .pmAn-linkBtn::before,
+  .pmAn-defaultsBtn::before {
     content: "\25BE" / "";
     display: inline-block;
   }
 
-  .pmAn-groupBtn[aria-expanded="false"]::before {
+  .pmAn-groupBtn[aria-expanded="false"]::before,
+  .pmAn-linkBtn[aria-expanded="false"]::before,
+  .pmAn-defaultsBtn[aria-expanded="false"]::before {
     transform: rotate(-90deg);
   }
 
@@ -458,6 +556,7 @@
 
   .pmAn-taskLink {
     display: inline-block;
+    min-width: 24px;
     min-height: 24px;
     padding: 2px 0;
     color: var(--accent-strong);
@@ -514,6 +613,34 @@
 
   .pmAn-kr:last-child {
     border-bottom: 0;
+  }
+
+  .pmAn-krLinks {
+    grid-column: 1 / -1;
+  }
+
+  .pmAn-linkBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 24px;
+    padding: 2px 0;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .pmAn-linkRow {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) 0;
+    font-size: 13px;
   }
 
   .pmAn-kr .pmAn-taskMeta {
@@ -614,6 +741,16 @@
   }
 
   @media (max-width: 560px) {
+    .pmAn-defaultsActions {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .pmAn-linkRow {
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: start;
+    }
+
     .pmAn-kpis {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -637,7 +774,14 @@
     // Relative so it resolves to /platform/projects/api/form/query in prod and preprod.
     var ENDPOINT = "api/form/query";
     var PAGE_SIZE = 500;
-    var FORM = { project: "form_55445", task: "form_9b302", keyResult: "form_6530b", objective: "form_a2b55" };
+    var FORM = {
+      project: "form_55445",
+      task: "form_9b302",
+      keyResult: "form_6530b",
+      objective: "form_a2b55",
+      settings: "form_4e825",
+    };
+    var SETTINGS_RECORD_ID = 1231;
     var IND = {
       project: { key: 2, name: 3, owner: 5, status: 6, type: 32, fy: 38, end: 70, krLink: 37 },
       task: { projectKey: 8, title: 9, status: 10, otherSubType: 44, assignee: 11, due: 13, completedOn: 47, krLink: 39 },
@@ -655,6 +799,7 @@
       },
       objective: { key: 23, text: 24, start: 25, end: 26, fy: 33 },
       roadmap: { fy: 122, theme: 123, description: 124, capability: 125, status: 127 },
+      settings: { fy: 130, window: 131 },
     };
     // Indicator IDs are unique per site, so a filled capability identifies roadmap records.
     var ROADMAP_SCOPE = { id: "data", indicatorID: "125", operator: "!=", match: "", gate: "AND" };
@@ -689,9 +834,19 @@
     });
     var MEETING_GROUPS = ["overdue", "atrisk", "inprogress", "blocked", "notstarted", "complete"];
     var MEETING_EXPANDED = { overdue: true, atrisk: true, blocked: true, inprogress: true };
+    var LINKED_ORDER = ["overdue", "atrisk", "inprogress", "blocked", "notstarted", "complete"];
     var UNASSIGNED = "Unassigned";
     var PRINTVIEW_URL = "index.php?a=printview&recordID=";
     var MS_PER_DAY = 86400000;
+    var DRILL_LIMIT = 50;
+    // Labels double as the saved text in the settings record.
+    var COMPLETED_WINDOWS = [
+      { label: "All time", days: null },
+      { label: "Last 7 days", days: 7 },
+      { label: "Last 14 days", days: 14 },
+      { label: "Last 30 days", days: 30 },
+      { label: "Last 90 days", days: 90 },
+    ];
     var KR_TYPES = ["Metric", "Binary", "Milestone"];
     var KR_PENDING = "KR-PENDING";
     var DEFAULT_KR_WEIGHT = 1;
@@ -739,6 +894,20 @@
       content: byId("pmAnContent"),
       empty: byId("pmAnEmpty"),
       kpis: byId("pmAnKpis"),
+      drill: byId("pmAnDrill"),
+      drillTitle: byId("pmAnDrillTitle"),
+      drillEmpty: byId("pmAnDrillEmpty"),
+      drillList: byId("pmAnDrillList"),
+      drillMore: byId("pmAnDrillMore"),
+      status: byId("pmAnStatus"),
+      window: byId("pmAnWindow"),
+      windowWrap: byId("pmAnWindowWrap"),
+      defaultsBtn: byId("pmAnDefaultsBtn"),
+      defaults: byId("pmAnDefaults"),
+      defaultsSaved: byId("pmAnDefaultsSaved"),
+      defaultsMsg: byId("pmAnDefaultsMsg"),
+      saveDefault: byId("pmAnSaveDefault"),
+      resetDefault: byId("pmAnResetDefault"),
       charts: byId("pmAnCharts"),
       assigneeCap: byId("pmAnAssigneeCap"),
       footnote: byId("pmAnFootnote"),
@@ -778,7 +947,15 @@
       objectives: [],
       okrNotes: { excludedKrs: 0, unmatched: 0, ambiguous: 0, noFy: 0 },
       okrExpanded: {},
+      krExpanded: {},
       footnote: { base: "", task: [] },
+      healthGroups: {},
+      drill: null,
+      drillAll: false,
+      teamDefault: null,
+      defaultsLoaded: false,
+      defaultsError: false,
+      filtersTouched: false,
       roadmap: [],
       roadmapThemes: [],
       roadmapScope: [],
@@ -931,7 +1108,7 @@
 
     function fetchPage(scope, indicators, offset) {
       var q = {
-        terms: [scope, { id: "deleted", operator: "=", match: "0", gate: "AND" }],
+        terms: [].concat(scope, { id: "deleted", operator: "=", match: "0", gate: "AND" }),
         joins: [],
         sort: {},
         getData: indicators,
@@ -978,16 +1155,17 @@
       var projectByKey = Object.create(null);
 
       state.projects = projectRows.map(function (row) {
+        var end = parseDate(field(row, IND.project.end));
         var p = {
           recordID: String(row.recordID),
           krLink: field(row, IND.project.krLink),
           key: field(row, IND.project.key),
           name: field(row, IND.project.name),
           status: field(row, IND.project.status),
+          owner: field(row, IND.project.owner),
+          end: end,
           // Fall back to the end date's FY when id38 is blank.
-          fy:
-            normalizeFy(field(row, IND.project.fy)) ||
-            fyOf(parseDate(field(row, IND.project.end))),
+          fy: normalizeFy(field(row, IND.project.fy)) || fyOf(end),
         };
         if (p.key && !projectByKey[p.key]) projectByKey[p.key] = p;
         return p;
@@ -1106,6 +1284,7 @@
         var weight = parseFloat(clean(field(row, IND.keyResult.weight)).replace(/[^\d.]/g, ""));
         var type = clean(field(row, IND.keyResult.type)).toLowerCase();
         var kr = {
+          recordID: String(row.recordID),
           objective: byKey[normalizeOkrKey(field(row, IND.keyResult.objective))],
           code: clean(field(row, IND.keyResult.code)),
           name: field(row, IND.keyResult.name),
@@ -1118,8 +1297,8 @@
           target: parseNumber(field(row, IND.keyResult.target)),
           weight: weight > 0 ? weight : DEFAULT_KR_WEIGHT,
           owner: field(row, IND.keyResult.owner),
-          linked: 0,
-          done: 0,
+          links: [],
+          cancelled: 0,
         };
         if (!kr.objective || !kr.code || kr.code.toUpperCase() === KR_PENDING) {
           notes.excludedKrs++;
@@ -1133,16 +1312,22 @@
       // Linked work ignores the FY filter; field() has already decoded and trimmed the link.
       state.projects.concat(state.tasks).forEach(function (rec) {
         var link = rec.krLink.toLowerCase();
-        if (!link || isCancelled(rec.status)) return;
+        if (!link) return;
+        var cancelled = isCancelled(rec.status);
         var hits = byCode[link] || byName[link];
         if (!hits) {
-          notes.unmatched++;
+          if (!cancelled) notes.unmatched++;
+          return;
+        }
+        if (cancelled) {
+          hits.forEach(function (kr) {
+            kr.cancelled++;
+          });
           return;
         }
         if (!byCode[link] && hits.length > 1) notes.ambiguous++;
         hits.forEach(function (kr) {
-          kr.linked++;
-          if (norm(rec.status) === "completed") kr.done++;
+          kr.links.push(rec);
         });
       });
 
@@ -1185,10 +1370,13 @@
         return { pct: kr.complete ? 100 : 0, detail: kr.complete ? "Complete" : "Not complete" };
       }
       if (kr.type === "Milestone") {
-        if (!kr.linked) return { pct: 0, message: "No linked work" };
+        if (!kr.links.length) return { pct: 0, message: "No linked work" };
+        var done = kr.links.filter(function (rec) {
+          return linkedBucket(rec) === "complete";
+        }).length;
         return {
-          pct: Math.round((kr.done / kr.linked) * 100),
-          detail: kr.done + " of " + kr.linked + " linked tasks and projects done",
+          pct: Math.round((done / kr.links.length) * 100),
+          detail: done + " of " + kr.links.length + " linked tasks and projects done",
         };
       }
       return { pct: 0, message: "No type" };
@@ -1224,11 +1412,22 @@
         fetchAll(FORM.keyResult, values(IND.keyResult)),
         fetchAll(FORM.objective, values(IND.objective)),
         fetchAll(null, values(IND.roadmap), ROADMAP_SCOPE),
+        // Re-read only when nothing loaded yet or the panel is open; a failed read never fails the report.
+        !state.defaultsLoaded || !els.defaults.hidden ? fetchTeamDefault().catch(function () { return false; }) : null,
       ])
         .then(function (res) {
           if (seq !== state.seq) return;
           ingest(res[0], res[1], res[2], res[3], res[4]);
           populateFyOptions();
+          if (res[5] !== null) {
+            state.defaultsError = res[5] === false;
+            if (res[5]) {
+              state.defaultsLoaded = true;
+              state.teamDefault = res[5].saved ? res[5] : null;
+              if (!state.filtersTouched && state.teamDefault) applyFilters(state.teamDefault);
+            }
+          }
+          renderDefaults();
           setView("ready");
           render();
         })
@@ -1274,7 +1473,9 @@
       var inScope = function (x) {
         return !fy || x.fy === fy;
       };
-      var c = { projects: 0, tasks: 0, cancelled: 0, openProjects: 0, missingDate: 0, orphans: 0 };
+      var c = { projects: 0, tasks: 0, cancelled: 0, missingDate: 0, orphans: 0 };
+      // Tile counts are these arrays' lengths, so a tile and its list can't disagree.
+      var groups = { openProjects: [], openTasks: [], overdue: [], atrisk: [], blocked: [], complete: [] };
       var byBucket = {};
       TASK_BUCKETS.forEach(function (b) {
         byBucket[b.id] = 0;
@@ -1293,7 +1494,7 @@
           return;
         }
         c.projects++;
-        if (isOpenProject(p)) c.openProjects++;
+        if (isOpenProject(p)) groups.openProjects.push(p);
         var known = PROJECT_STATUSES.filter(function (s) {
           return norm(s.label) === norm(p.status);
         })[0];
@@ -1306,23 +1507,24 @@
           c.cancelled++;
           return;
         }
+        if (t.bucket === "complete" && !t.completedOn) c.missingDate++;
+        if (!inWindow(t)) return;
         c.tasks++;
         live.push(t);
         byBucket[t.bucket]++;
+        if (groups[t.bucket]) groups[t.bucket].push(t);
         if (!t.hasProject) c.orphans++;
         if (OPEN_BUCKETS.indexOf(t.bucket) !== -1) {
+          groups.openTasks.push(t);
           var a = byAssignee[t.assignee] || (byAssignee[t.assignee] = { onTime: 0, overdue: 0 });
           if (t.bucket === "overdue") a.overdue++;
           else a.onTime++;
         }
-        if (t.bucket === "complete") {
-          if (!t.completedOn) c.missingDate++;
-          else {
-            var idx =
-              (t.completedOn.getFullYear() - monthStart.getFullYear()) * 12 +
-              t.completedOn.getMonth() - monthStart.getMonth();
-            if (idx >= 0 && idx < MONTHS_SHOWN) byMonth[idx]++;
-          }
+        if (t.bucket === "complete" && t.completedOn) {
+          var idx =
+            (t.completedOn.getFullYear() - monthStart.getFullYear()) * 12 +
+            t.completedOn.getMonth() - monthStart.getMonth();
+          if (idx >= 0 && idx < MONTHS_SHOWN) byMonth[idx]++;
         }
       });
 
@@ -1346,18 +1548,19 @@
       els.empty.textContent = fy ? "No records for this fiscal year." : "No records found.";
       els.kpis.hidden = isEmpty;
       els.charts.hidden = isEmpty;
-      if (isEmpty) return;
+      state.healthGroups = groups;
+      if (isEmpty) {
+        state.drill = null;
+        renderDrill(false);
+        return;
+      }
 
-      renderKpis({
-        openProjects: c.openProjects,
-        openTasks: OPEN_BUCKETS.reduce(function (sum, id) {
-          return sum + byBucket[id];
-        }, 0),
-        overdue: byBucket.overdue,
-        atrisk: byBucket.atrisk,
-        blocked: byBucket.blocked,
-        complete: byBucket.complete,
+      var counts = {};
+      Object.keys(groups).forEach(function (key) {
+        counts[key] = groups[key].length;
       });
+      renderKpis(counts);
+      renderDrill(false);
 
       updateChart("taskStatus", pluck(TASK_BUCKETS, "label"), [
         {
@@ -1431,6 +1634,52 @@
       Array.prototype.forEach.call(els.kpis.children, function (li) {
         li.querySelector(".pmAn-kpiValue").textContent = counts[li.getAttribute("data-kpi")];
       });
+    }
+
+    function renderDrill(announce) {
+      var kpi = state.drill;
+      Array.prototype.forEach.call(els.kpis.children, function (li) {
+        li.firstElementChild.setAttribute("aria-pressed", String(li.getAttribute("data-kpi") === kpi));
+      });
+      els.drill.hidden = !kpi;
+      if (!kpi) return;
+
+      var isProject = kpi === "openProjects";
+      var rows = isProject
+        ? state.healthGroups[kpi].slice().sort(function (a, b) {
+            return (a.name || a.key).localeCompare(b.name || b.key);
+          })
+        : sortTasks(state.healthGroups[kpi], "due");
+      var label = els.kpis.querySelector('[data-kpi="' + kpi + '"] .pmAn-kpiLabel').textContent;
+      els.drillTitle.textContent = label.charAt(0) + label.slice(1).toLowerCase() + " (" + rows.length + ")";
+      els.drillEmpty.hidden = rows.length > 0;
+      var shown = state.drillAll ? rows : rows.slice(0, DRILL_LIMIT);
+      els.drillList.textContent = "";
+      shown.forEach(function (row) {
+        els.drillList.appendChild(buildDrillRow(row, isProject));
+      });
+      els.drillMore.hidden = shown.length === rows.length;
+      els.drillMore.textContent = "Show all " + rows.length;
+      if (announce) {
+        var phrase = label.toLowerCase();
+        els.status.textContent =
+          "Showing " + rows.length + " " + (rows.length === 1 ? phrase.replace(/s$/, "") : phrase) + ".";
+      }
+    }
+
+    function buildDrillRow(row, isProject) {
+      var li = el("li", "pmAn-task");
+      var title = isProject ? row.name || row.key || "Untitled project" : row.title || "Untitled task";
+      li.appendChild(newTabLink(title, row.recordID));
+      var parts = isProject
+        ? [row.owner || "No owner", row.status || "No status", row.end ? "Ends " + DATE_FMT.format(row.end) : "No end date"]
+        : [
+            row.projectName || row.projectKey || "No project",
+            row.assignee,
+            row.due ? "Due " + DATE_FMT.format(row.due) : "No due date",
+          ];
+      li.appendChild(el("p", "pmAn-taskMeta", parts.join(" \u00b7 ")));
+      return li;
     }
 
     function chartOptions(cfg) {
@@ -1642,10 +1891,10 @@
       return group;
     }
 
-    // Shared by Team Meeting groups and OKR objectives: heading first, disclosed body last.
+    // Shared by Team Meeting groups, OKR objectives and Key Result links: toggle first, disclosed body last.
     function setGroupOpen(group, open, store) {
       store[group.getAttribute("data-group")] = open;
-      group.querySelector(".pmAn-groupBtn").setAttribute("aria-expanded", String(open));
+      group.querySelector("button").setAttribute("aria-expanded", String(open));
       group.lastElementChild.hidden = !open;
     }
 
@@ -1761,6 +2010,7 @@
       })[0];
       var text = [state.footnote.base]
         .concat(notesByTab[active.id] ? notesByTab[active.id]() : state.footnote.task)
+        .concat(state.defaultsError ? ["Team defaults could not be loaded."] : [])
         .join(" \u00b7 ");
       if (els.footnote.textContent !== text) els.footnote.textContent = text;
     }
@@ -1867,7 +2117,51 @@
       [kr.detail, kr.owner && "Owner: " + kr.owner, kr.message].forEach(function (text) {
         if (text) li.appendChild(el("p", "pmAn-taskMeta", text));
       });
+      if (kr.links.length) li.appendChild(buildKrLinks(kr));
       return li;
+    }
+
+    // Projects have no due-date bucket, so their status maps onto the task bucket labels.
+    function linkedBucket(rec) {
+      if (rec.bucket) return rec.bucket;
+      var s = norm(rec.status);
+      if (s === "completed") return "complete";
+      if (s === "on hold") return "blocked";
+      return s === "" || s === "not started" ? "notstarted" : "inprogress";
+    }
+
+    function buildKrLinks(kr) {
+      var wrap = el("div", "pmAn-krLinks");
+      wrap.setAttribute("data-group", kr.recordID);
+      var btn = el("button", "pmAn-linkBtn", "Linked work (" + kr.links.length + ")");
+      btn.appendChild(el("span", "pm-srOnly", " for " + kr.code));
+      btn.type = "button";
+      btn.setAttribute("aria-controls", "pmAnKrLinks-" + kr.recordID);
+      var body = el("div");
+      body.id = "pmAnKrLinks-" + kr.recordID;
+      var list = el("ul", "pmAn-list");
+      kr.links
+        .map(function (rec) {
+          return { rec: rec, bucket: linkedBucket(rec), title: rec.bucket ? rec.title : rec.name || rec.key };
+        })
+        .sort(function (a, b) {
+          return LINKED_ORDER.indexOf(a.bucket) - LINKED_ORDER.indexOf(b.bucket) || a.title.localeCompare(b.title);
+        })
+        .forEach(function (item) {
+          var row = el("li", "pmAn-linkRow");
+          row.appendChild(el("span", "pmAn-badge", item.rec.bucket ? "Task" : "Project"));
+          row.appendChild(newTabLink(item.title || "Untitled", item.rec.recordID));
+          var status = el("span", "pmAn-badge", BUCKET[item.bucket].label);
+          status.style.borderColor = STATUS_COLORS[BUCKET[item.bucket].color];
+          row.appendChild(status);
+          list.appendChild(row);
+        });
+      body.appendChild(list);
+      if (kr.cancelled) body.appendChild(el("p", "pmAn-taskMeta", kr.cancelled + " cancelled, not counted"));
+      wrap.appendChild(btn);
+      wrap.appendChild(body);
+      setGroupOpen(wrap, !!state.krExpanded[kr.recordID], state.krExpanded);
+      return wrap;
     }
 
     /* ---- Roadmap ---- */
@@ -1971,6 +2265,7 @@
         t.tabIndex = on ? 0 : -1;
         byId(t.getAttribute("aria-controls")).hidden = !on;
       });
+      els.windowWrap.hidden = tab.id === "pmAnTabOkr" || tab.id === "pmAnTabRoadmap";
       renderFootnote();
       // Charts sized while their panel was hidden collapse to zero.
       if (tab.id === "pmAnTabHealth") {
@@ -1978,6 +2273,117 @@
           chart.resize();
         });
       }
+    }
+
+    /* ---- Completed within + team defaults ---- */
+
+    function windowDays() {
+      var w = COMPLETED_WINDOWS.filter(function (x) {
+        return x.label === els.window.value;
+      })[0];
+      return w ? w.days : null;
+    }
+
+    // Only completed tasks are limited; undated ones drop out once a window is set.
+    function inWindow(t) {
+      var days = windowDays();
+      if (t.bucket !== "complete" || days === null) return true;
+      return !!t.completedOn && t.completedOn >= addDays(state.today, -days);
+    }
+
+    function windowPhrase() {
+      var days = windowDays();
+      return days === null ? "all time" : "the last " + days + " days";
+    }
+
+    function fetchTeamDefault() {
+      var inds = values(IND.settings);
+      var form = { id: "categoryID", operator: "=", match: FORM.settings, gate: "AND" };
+      var record = { id: "recordID", operator: "=", match: String(SETTINGS_RECORD_ID), gate: "AND" };
+      return fetchAll(FORM.settings, inds, [form, record])
+        .catch(function () {
+          return fetchAll(FORM.settings, inds, form);
+        })
+        .then(function (rows) {
+          var row = rows.filter(function (x) {
+            return String(x.recordID) === String(SETTINGS_RECORD_ID);
+          })[0];
+          var fy = row ? clean(field(row, IND.settings.fy)) : "";
+          var win = row ? clean(field(row, IND.settings.window)) : "";
+          var known = COMPLETED_WINDOWS.filter(function (x) {
+            return norm(x.label) === norm(win);
+          })[0];
+          return {
+            saved: !!(fy || win),
+            fy: norm(fy) === "all" ? "" : normalizeFy(fy),
+            window: (known || COMPLETED_WINDOWS[0]).label,
+          };
+        });
+    }
+
+    function applyFilters(d) {
+      els.fy.value = d.fy;
+      if (els.fy.value !== d.fy) els.fy.value = "";
+      els.window.value = d.window;
+    }
+
+    function csrfToken() {
+      var raw = (root.getAttribute("data-csrf") || "").replace(/<!--|-->/g, "").trim();
+      // An unrendered template tag means the page was not served through LEAF.
+      return raw.indexOf("{") === -1 ? raw : "";
+    }
+
+    function renderDefaults(message) {
+      var d = state.teamDefault;
+      els.defaultsSaved.textContent = state.defaultsError
+        ? "Team defaults could not be loaded."
+        : d
+          ? "Team default: " + (d.fy || "All") + " \u00b7 " + d.window
+          : "No team default saved.";
+      els.resetDefault.disabled = !d;
+      els.saveDefault.disabled = !csrfToken();
+      els.defaultsMsg.textContent = csrfToken() ? message || "" : "Saving is not available here.";
+    }
+
+    function saveDefault() {
+      var sent = { fy: els.fy.value, window: els.window.value };
+      var body = new URLSearchParams();
+      body.append("CSRFToken", csrfToken());
+      body.append(String(IND.settings.fy), sent.fy || "All");
+      body.append(String(IND.settings.window), sent.window);
+      els.saveDefault.disabled = true;
+      els.resetDefault.disabled = true;
+      els.status.textContent = "Saving\u2026";
+      els.defaultsMsg.textContent = "Saving\u2026";
+      fetch("api/form/" + SETTINGS_RECORD_ID, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString(),
+      })
+        .then(function (res) {
+          if (res.status === 401 || res.status === 403) throw new Error("forbidden");
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.text();
+        })
+        .then(function (text) {
+          // LEAF answers a successful write with 1.
+          if (text.replace(/"/g, "").trim() !== "1") throw new Error("Unexpected response");
+          state.teamDefault = { saved: true, fy: sent.fy, window: sent.window };
+          state.defaultsLoaded = true;
+          state.defaultsError = false;
+          return "Team default saved.";
+        })
+        .catch(function (err) {
+          return err.message === "forbidden"
+            ? "You do not have permission to save the team default."
+            : "Could not save team default.";
+        })
+        .then(function (message) {
+          renderDefaults(message);
+          renderFootnote();
+          els.status.textContent = message;
+        });
     }
 
     /* ---- init ---- */
@@ -2010,6 +2416,10 @@
     });
     bindDisclosures(els.groups, els.toggleAll, state.expanded);
     bindDisclosures(els.okrList, els.okrToggleAll, state.okrExpanded);
+    els.okrList.addEventListener("click", function (e) {
+      var btn = e.target.closest(".pmAn-linkBtn");
+      if (btn) setGroupOpen(btn.parentNode, btn.getAttribute("aria-expanded") !== "true", state.krExpanded);
+    });
     els.roadFilter.addEventListener("click", function (e) {
       var btn = e.target.closest(".pmAn-filterBtn");
       if (!btn) return;
@@ -2018,7 +2428,44 @@
       els.roadStatus.textContent =
         "Showing " + shown + " of " + plural(state.roadmapScope.length, "item") + ".";
     });
-    els.fy.addEventListener("change", render);
+    els.kpis.addEventListener("click", function (e) {
+      var btn = e.target.closest(".pmAn-kpiBtn");
+      if (!btn) return;
+      var kpi = btn.parentNode.getAttribute("data-kpi");
+      state.drill = state.drill === kpi ? null : kpi;
+      state.drillAll = false;
+      if (!state.drill) els.status.textContent = "";
+      renderDrill(true);
+    });
+    els.drillMore.addEventListener("click", function () {
+      state.drillAll = true;
+      renderDrill(false);
+      // The button disappears; move focus to the first newly shown row.
+      els.drillList.children[DRILL_LIMIT].querySelector("a").focus();
+    });
+    COMPLETED_WINDOWS.forEach(function (w) {
+      els.window.add(new Option(w.label, w.label));
+    });
+    els.fy.addEventListener("change", function () {
+      state.filtersTouched = true;
+      render();
+    });
+    els.window.addEventListener("change", function () {
+      state.filtersTouched = true;
+      render();
+      els.status.textContent = "Showing completed tasks from " + windowPhrase() + ".";
+    });
+    els.defaultsBtn.addEventListener("click", function () {
+      var open = els.defaultsBtn.getAttribute("aria-expanded") !== "true";
+      els.defaultsBtn.setAttribute("aria-expanded", String(open));
+      els.defaults.hidden = !open;
+    });
+    els.saveDefault.addEventListener("click", saveDefault);
+    els.resetDefault.addEventListener("click", function () {
+      applyFilters(state.teamDefault);
+      render();
+      els.status.textContent = "Team default applied: " + (els.fy.value || "All") + ", " + els.window.value + ".";
+    });
     els.refresh.addEventListener("click", load);
     els.retry.addEventListener("click", function () {
       els.refresh.focus(); // Retry is about to be hidden; keep focus on a visible control.
