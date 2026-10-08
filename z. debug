@@ -1,1 +1,36 @@
-Keep it small in scope, surgical in nature, touch only the code necessary to affect the change, stress test for elegance and simplicity.
+(async () => {
+  const get = (cat, ids) => fetch("/platform/projects/api/form/query?q=" +
+    encodeURIComponent(JSON.stringify({
+      terms: [{ id: "categoryID", operator: "=", match: cat, gate: "AND" },
+              { id: "deleted", operator: "=", match: "0", gate: "AND" }],
+      joins: [], sort: {}, getData: ids, limit: 500, limitOffset: 0 })),
+    { credentials: "same-origin", headers: { Accept: "application/json" } })
+    .then(r => r.json()).then(o => Object.values(o));
+  const val = (row, id) => {
+    const k = "id" + id;
+    for (const b of [row.s1, ...Object.keys(row).filter(x => /^s\d+$/.test(x) && x !== "s1").map(x => row[x]), row]) {
+      if (b && b[k] != null && String(b[k]).trim() !== "") return String(b[k]).trim();
+    }
+    return "";
+  };
+  const KR = [35, 36, 107, 108, 109, 110, 111, 112, 113, 120];
+  const krs = await get("form_6530b", KR);
+  const tasks = await get("form_9b302", [39]);
+  const projs = await get("form_55445", [37]);
+  const objs = await get("form_a2b55", [23, 24, 25, 26, 33]);
+  console.log("Key Results:", krs.length, "| Objectives:", objs.length);
+  console.table(KR.map(id => ({
+    indicator: id,
+    filled: krs.filter(r => val(r, id)).length,
+    sample: [...new Set(krs.map(r => val(r, id)).filter(Boolean))].slice(0, 4).join(" | ")
+  })));
+  const codes = new Set(krs.map(r => val(r, 109)).filter(Boolean));
+  const names = new Set(krs.map(r => val(r, 36)).filter(Boolean));
+  const links = [...tasks.map(r => val(r, 39)), ...projs.map(r => val(r, 37))].filter(Boolean);
+  console.log("Linked tasks/projects:", links.length,
+    "| match a KR code(109):", links.filter(l => codes.has(l)).length,
+    "| match a KR name(36):", links.filter(l => names.has(l)).length,
+    "| sample links:", [...new Set(links)].slice(0, 4));
+  console.log("Objective keys:", objs.slice(0, 3).map(r => val(r, 23)),
+    "| KR parent keys:", [...new Set(krs.map(r => val(r, 35)))].slice(0, 3));
+})();
