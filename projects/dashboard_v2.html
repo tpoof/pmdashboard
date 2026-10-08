@@ -1,0 +1,840 @@
+<!--
+  LEAF Project & Task Health - standalone report (loaded via report.php iframe).
+  Separate document, so it links project_v20.css directly for tokens and pm- classes.
+  Requires Chart.js 3+ (indexAxis / scales.x API).
+-->
+<link rel="stylesheet" href="./files/project_v20.css" />
+<div id="pmAn">
+  <header class="pmAn-header">
+    <div>
+      <h1 class="pmAn-title">Project &amp; Task Health</h1>
+      <p class="pm-muted pmAn-scope" id="pmAnScope">All fiscal years</p>
+    </div>
+    <div class="pmAn-controls">
+      <label class="pm-label" for="pmAnFy">Fiscal Year</label>
+      <select id="pmAnFy" class="pm-select">
+        <option value="">All</option>
+      </select>
+      <button type="button" id="pmAnRefresh" class="pm-ghostBtn">Refresh</button>
+    </div>
+  </header>
+
+  <p id="pmAnLoading" class="pmAn-loading" role="status"></p>
+
+  <div id="pmAnError" class="pmAn-error" role="alert" hidden>
+    <p id="pmAnErrorMsg"></p>
+    <button type="button" id="pmAnRetry" class="pm-ghostBtn">Retry</button>
+  </div>
+
+  <div id="pmAnContent" hidden>
+    <p id="pmAnEmpty" class="pmAn-empty" hidden></p>
+
+    <ul class="pmAn-kpis" id="pmAnKpis">
+      <li class="pmAn-kpi" data-kpi="openProjects" data-color="inflight">
+        <span class="pmAn-kpiValue"></span>
+        <span class="pmAn-kpiLabel">Open Projects</span>
+      </li>
+      <li class="pmAn-kpi" data-kpi="openTasks" data-color="inflight">
+        <span class="pmAn-kpiValue"></span>
+        <span class="pmAn-kpiLabel">Open Tasks</span>
+      </li>
+      <li class="pmAn-kpi" data-kpi="overdue" data-color="overdue">
+        <span class="pmAn-kpiValue"></span>
+        <span class="pmAn-kpiLabel">Overdue Tasks</span>
+      </li>
+      <li class="pmAn-kpi" data-kpi="atrisk" data-color="atrisk">
+        <span class="pmAn-kpiValue"></span>
+        <span class="pmAn-kpiLabel">At Risk Tasks</span>
+      </li>
+      <li class="pmAn-kpi" data-kpi="blocked" data-color="neutral">
+        <span class="pmAn-kpiValue"></span>
+        <span class="pmAn-kpiLabel">Blocked / On Hold Tasks</span>
+      </li>
+      <li class="pmAn-kpi" data-kpi="complete" data-color="complete">
+        <span class="pmAn-kpiValue"></span>
+        <span class="pmAn-kpiLabel">Completed Tasks</span>
+      </li>
+    </ul>
+
+    <div class="pmAn-charts" id="pmAnCharts">
+      <section class="pmAn-card" aria-labelledby="pmAnTaskStatusTitle">
+        <h2 id="pmAnTaskStatusTitle">Tasks by Status</h2>
+        <div class="pmAn-chartBox">
+          <canvas id="pmAnTaskStatusChart" role="img" aria-labelledby="pmAnTaskStatusSummary"></canvas>
+        </div>
+        <span id="pmAnTaskStatusSummary" hidden></span>
+        <table id="pmAnTaskStatusTable" class="pm-srOnly"></table>
+      </section>
+
+      <section class="pmAn-card" aria-labelledby="pmAnProjectStatusTitle">
+        <h2 id="pmAnProjectStatusTitle">Projects by Status</h2>
+        <div class="pmAn-chartBox">
+          <canvas id="pmAnProjectStatusChart" role="img" aria-labelledby="pmAnProjectStatusSummary"></canvas>
+        </div>
+        <span id="pmAnProjectStatusSummary" hidden></span>
+        <table id="pmAnProjectStatusTable" class="pm-srOnly"></table>
+      </section>
+
+      <section class="pmAn-card" aria-labelledby="pmAnAssigneeTitle">
+        <h2 id="pmAnAssigneeTitle">Open Tasks by Assignee</h2>
+        <div class="pmAn-chartBox">
+          <canvas id="pmAnAssigneeChart" role="img" aria-labelledby="pmAnAssigneeSummary"></canvas>
+        </div>
+        <span id="pmAnAssigneeSummary" hidden></span>
+        <p id="pmAnAssigneeCap" class="pm-muted pmAn-cap" hidden></p>
+        <table id="pmAnAssigneeTable" class="pm-srOnly"></table>
+      </section>
+
+      <section class="pmAn-card" aria-labelledby="pmAnCompletedTitle">
+        <h2 id="pmAnCompletedTitle">Completed by Month</h2>
+        <div class="pmAn-chartBox">
+          <canvas id="pmAnCompletedChart" role="img" aria-labelledby="pmAnCompletedSummary"></canvas>
+        </div>
+        <span id="pmAnCompletedSummary" hidden></span>
+        <table id="pmAnCompletedTable" class="pm-srOnly"></table>
+      </section>
+    </div>
+
+    <p id="pmAnFootnote" class="pm-muted pmAn-footnote" role="status" aria-live="polite"></p>
+  </div>
+</div>
+
+<script src="./files/chart.js"></script>
+
+<style>
+  #pmAn {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--space-4);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: var(--text);
+  }
+
+  #pmAn *,
+  #pmAn *::before,
+  #pmAn *::after {
+    box-sizing: border-box;
+  }
+
+  .pmAn-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+
+  .pmAn-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+  }
+
+  .pmAn-scope {
+    margin: var(--space-1) 0 0;
+  }
+
+  .pmAn-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .pmAn-loading {
+    margin: 0 0 var(--space-4);
+    font-weight: 600;
+  }
+
+  .pmAn-loading:empty {
+    margin: 0;
+  }
+
+  .pmAn-error {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid #b00020;
+    border-radius: var(--radius-md);
+  }
+
+  .pmAn-error p {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .pmAn-empty {
+    margin: 0 0 var(--space-4);
+    padding: var(--space-6) var(--space-4);
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .pmAn-kpis {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--space-3);
+    margin: 0 0 var(--space-4);
+    padding: 0;
+    list-style: none;
+  }
+
+  .pmAn-kpi {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
+    padding: var(--space-3);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left-width: 4px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .pmAn-kpiValue {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .pmAn-kpiLabel {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  .pmAn-charts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  /* Contains the absolutely positioned sr-only tables, which ignore width: 1px. */
+  .pmAn-card {
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    padding: var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .pmAn-card h2 {
+    margin: 0 0 var(--space-3);
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .pmAn-chartBox {
+    position: relative;
+    height: 260px;
+  }
+
+  .pmAn-cap {
+    margin: var(--space-2) 0 0;
+    font-size: 13px;
+  }
+
+  .pmAn-footnote {
+    margin: var(--space-4) 0 0;
+    font-size: 13px;
+  }
+
+  @media (max-width: 1200px) {
+    .pmAn-kpis {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 760px) {
+    .pmAn-charts {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .pmAn-kpis {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    "use strict";
+
+    // Relative so it resolves to /platform/projects/api/form/query in prod and preprod.
+    var ENDPOINT = "api/form/query";
+    var PAGE_SIZE = 500;
+    var FORM = { project: "form_55445", task: "form_9b302" };
+    var IND = {
+      project: { key: 2, name: 3, owner: 5, status: 6, type: 32, fy: 38, end: 70 },
+      task: { projectKey: 8, title: 9, status: 10, otherSubType: 44, assignee: 11, due: 13, completedOn: 47 },
+    };
+    var AT_RISK_DAYS = 3;
+    var TOP_ASSIGNEES = 10;
+    var MONTHS_SHOWN = 6;
+    var FY_START_MONTH = 9; // October, 0-based
+    var YEAR_RANGE = { min: 1900, max: 2100 };
+    var MIN_CHART_MAJOR = 3;
+    var STATUS_COLORS = {
+      overdue: "#b00020",
+      atrisk: "#b26a00",
+      complete: "#2e7d32",
+      neutral: "var(--muted)",
+      inflight: "var(--accent)",
+    };
+
+    // Ordered to match the KPI tiles: open buckets first, then blocked, then complete.
+    var TASK_BUCKETS = [
+      { id: "notstarted", label: "Not Started", color: "neutral" },
+      { id: "inprogress", label: "In Progress", color: "inflight" },
+      { id: "overdue", label: "Overdue", color: "overdue" },
+      { id: "atrisk", label: "At Risk", color: "atrisk" },
+      { id: "blocked", label: "Blocked / On Hold", color: "neutral" },
+      { id: "complete", label: "Completed", color: "complete" },
+    ];
+    var OPEN_BUCKETS = ["notstarted", "inprogress", "overdue", "atrisk"];
+    var PROJECT_STATUSES = [
+      { label: "Not Started", color: "neutral" },
+      { label: "In Progress", color: "inflight" },
+      { label: "On Hold", color: "neutral" },
+      { label: "Completed", color: "complete" },
+    ];
+    var UNRECOGNIZED_STATUS = { label: "Other / blank", color: "neutral" };
+
+    var CHARTS = {
+      taskStatus: { id: "pmAnTaskStatus", rowHeader: "Status", horizontal: true },
+      projectStatus: { id: "pmAnProjectStatus", rowHeader: "Status", horizontal: true },
+      assignee: { id: "pmAnAssignee", rowHeader: "Assignee", horizontal: true, stacked: true },
+      completed: { id: "pmAnCompleted", rowHeader: "Month", horizontal: false },
+    };
+
+    var TIME_FMT = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
+    var MONTH_FMT = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" });
+
+    var root = document.getElementById("pmAn");
+    var els = {
+      fy: byId("pmAnFy"),
+      scope: byId("pmAnScope"),
+      refresh: byId("pmAnRefresh"),
+      loading: byId("pmAnLoading"),
+      error: byId("pmAnError"),
+      errorMsg: byId("pmAnErrorMsg"),
+      retry: byId("pmAnRetry"),
+      content: byId("pmAnContent"),
+      empty: byId("pmAnEmpty"),
+      kpis: byId("pmAnKpis"),
+      charts: byId("pmAnCharts"),
+      assigneeCap: byId("pmAnAssigneeCap"),
+      footnote: byId("pmAnFootnote"),
+    };
+    var decoder = document.createElement("textarea");
+    var charts = {};
+    var state = { projects: [], tasks: [], loadedAt: null, seq: 0 };
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    /* ---- helpers ---- */
+
+    // Same lookup order as v20's extractRawIndicator: s1, later steps, row root, row.data.
+    function field(row, id) {
+      var key = "id" + id;
+      var steps = Object.keys(row).filter(function (k) {
+        return /^s\d+$/.test(k);
+      });
+      var sources = [row.s1].concat(
+        steps.map(function (k) {
+          return row[k];
+        }),
+        [row, row.data],
+      );
+      var v = null;
+      for (var i = 0; i < sources.length && v == null; i++) {
+        if (sources[i]) v = sources[i][key];
+      }
+      if (v == null) return "";
+      if (typeof v === "object") {
+        try {
+          v = JSON.stringify(v);
+        } catch (e) {
+          v = "";
+        }
+      } else {
+        decoder.innerHTML = String(v);
+        v = decoder.value;
+      }
+      return v.trim();
+    }
+
+    function hasAnyValue(row, indicators) {
+      return indicators.some(function (id) {
+        return field(row, id) !== "";
+      });
+    }
+
+    function norm(status) {
+      return String(status || "").trim().toLowerCase();
+    }
+
+    function parseDate(str) {
+      var s = String(str || "").trim();
+      var m, y, mo, d;
+      if ((m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s))) {
+        y = +m[3]; mo = +m[1]; d = +m[2];
+      } else if ((m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s))) {
+        y = +m[1]; mo = +m[2]; d = +m[3];
+      } else {
+        return null;
+      }
+      if (y < YEAR_RANGE.min || y > YEAR_RANGE.max) return null;
+      var date = new Date(y, mo - 1, d);
+      // Rejects rollovers like 2/31.
+      return date.getMonth() === mo - 1 && date.getDate() === d ? date : null;
+    }
+
+    function addDays(date, n) {
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate() + n);
+    }
+
+    function fyOf(date) {
+      if (!date) return "";
+      var year = date.getFullYear() + (date.getMonth() >= FY_START_MONTH ? 1 : 0);
+      return "FY" + String(year).slice(-2);
+    }
+
+    // id38 is free text; normalize "2027", "FY27", "FY 2027" to "FY27".
+    function normalizeFy(value) {
+      var m = /(\d{4}|\d{2})\s*$/.exec(value);
+      return m ? "FY" + m[1].slice(-2) : "";
+    }
+
+    function isCancelled(status) {
+      return norm(status).indexOf("cancel") !== -1;
+    }
+
+    function isOpenProject(p) {
+      return norm(p.status) !== "completed" && !isCancelled(p.status);
+    }
+
+    function bucketTask(t, today) {
+      var s = norm(t.status);
+      if (isCancelled(s)) return "cancelled";
+      if (s === "completed") return "complete";
+      if (s === "other") return "blocked";
+      if (t.due && t.due < today) return "overdue";
+      if (t.due && t.due <= addDays(today, AT_RISK_DAYS)) return "atrisk";
+      if (s === "" || s === "not started") return "notstarted";
+      return "inprogress";
+    }
+
+    function cssColor(name) {
+      var c = STATUS_COLORS[name];
+      var m = /^var\((--[\w-]+)\)$/.exec(c);
+      return m ? getComputedStyle(root).getPropertyValue(m[1]).trim() : c;
+    }
+
+    function plural(n, word) {
+      return n + " " + word + (n === 1 ? "" : "s");
+    }
+
+    function values(obj) {
+      return Object.keys(obj).map(function (k) {
+        return obj[k];
+      });
+    }
+
+    /* ---- data ---- */
+
+    function fetchPage(formId, indicators, offset) {
+      var q = {
+        terms: [
+          { id: "categoryID", operator: "=", match: formId, gate: "AND" },
+          { id: "deleted", operator: "=", match: "0", gate: "AND" },
+        ],
+        joins: [],
+        sort: {},
+        getData: indicators,
+        limit: PAGE_SIZE,
+        limitOffset: offset,
+      };
+      var url =
+        ENDPOINT + "?q=" + encodeURIComponent(JSON.stringify(q)) + "&x-filterData=recordID,categoryID";
+      return fetch(url, {
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+      }).then(function (res) {
+        if (!res.ok) {
+          var err = new Error("HTTP " + res.status);
+          err.status = res.status;
+          throw err;
+        }
+        return res.json();
+      });
+    }
+
+    function fetchAll(formId, indicators) {
+      var rows = {};
+      function next(offset) {
+        return fetchPage(formId, indicators, offset).then(function (page) {
+          if (!page || typeof page !== "object") throw new SyntaxError("Unexpected response");
+          var ids = Object.keys(page);
+          ids.forEach(function (id) {
+            var row = page[id];
+            if (row && row.categoryID === formId && hasAnyValue(row, indicators)) rows[id] = row;
+          });
+          return ids.length < PAGE_SIZE ? values(rows) : next(offset + PAGE_SIZE);
+        });
+      }
+      return next(0);
+    }
+
+    function ingest(projectRows, taskRows) {
+      var today = new Date();
+      today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      var fyByKey = {};
+
+      state.projects = projectRows.map(function (row) {
+        var p = {
+          key: field(row, IND.project.key),
+          status: field(row, IND.project.status),
+          // Fall back to the end date's FY when id38 is blank.
+          fy:
+            normalizeFy(field(row, IND.project.fy)) ||
+            fyOf(parseDate(field(row, IND.project.end))),
+        };
+        if (p.key && !(p.key in fyByKey)) fyByKey[p.key] = p.fy;
+        return p;
+      });
+
+      state.tasks = taskRows.map(function (row) {
+        var key = field(row, IND.task.projectKey);
+        var t = {
+          status: field(row, IND.task.status),
+          due: parseDate(field(row, IND.task.due)),
+          completedOn: parseDate(field(row, IND.task.completedOn)),
+          assignee: field(row, IND.task.assignee) || "Unassigned",
+          hasProject: key in fyByKey,
+          fy: fyByKey[key] || "",
+        };
+        t.bucket = bucketTask(t, today);
+        return t;
+      });
+
+      state.loadedAt = new Date();
+    }
+
+    function load() {
+      var seq = ++state.seq;
+      setView("loading");
+      if (!window.Chart || parseInt(Chart.version, 10) < MIN_CHART_MAJOR) {
+        setView("error", "Couldn't load analytics data (Chart.js " + MIN_CHART_MAJOR + "+ not found).");
+        return;
+      }
+      Promise.all([
+        fetchAll(FORM.project, values(IND.project)),
+        fetchAll(FORM.task, values(IND.task)),
+      ])
+        .then(function (res) {
+          if (seq !== state.seq) return;
+          ingest(res[0], res[1]);
+          populateFyOptions();
+          setView("ready");
+          render();
+        })
+        .catch(function (err) {
+          if (seq !== state.seq) return;
+          console.error("pmAn: load failed", err);
+          var detail = err.status
+            ? "HTTP " + err.status
+            : err instanceof SyntaxError
+              ? "unexpected response"
+              : "network error";
+          setView("error", "Couldn't load analytics data (" + detail + ").");
+        });
+    }
+
+    /* ---- view ---- */
+
+    function setView(view, message) {
+      els.loading.textContent = view === "loading" ? "Loading project data\u2026" : "";
+      els.error.hidden = view !== "error";
+      els.errorMsg.textContent = view === "error" ? message : "";
+      els.content.hidden = view !== "ready";
+    }
+
+    function populateFyOptions() {
+      var current = els.fy.value;
+      var seen = {};
+      state.projects.forEach(function (p) {
+        if (p.fy) seen[p.fy] = true;
+      });
+      var fys = Object.keys(seen).sort(function (a, b) {
+        return b.localeCompare(a, undefined, { numeric: true });
+      });
+      els.fy.length = 1;
+      fys.forEach(function (fy) {
+        els.fy.add(new Option(fy, fy));
+      });
+      els.fy.value = seen[current] ? current : "";
+    }
+
+    function render() {
+      var fy = els.fy.value;
+      var inScope = function (x) {
+        return !fy || x.fy === fy;
+      };
+      var c = { projects: 0, tasks: 0, cancelled: 0, openProjects: 0, missingDate: 0, orphans: 0 };
+      var byBucket = {};
+      TASK_BUCKETS.forEach(function (b) {
+        byBucket[b.id] = 0;
+      });
+      var byProjectStatus = {};
+      var byAssignee = {};
+      var now = state.loadedAt;
+      var monthStart = new Date(now.getFullYear(), now.getMonth() - (MONTHS_SHOWN - 1), 1);
+      var byMonth = [];
+      for (var i = 0; i < MONTHS_SHOWN; i++) byMonth.push(0);
+
+      state.projects.filter(inScope).forEach(function (p) {
+        if (isCancelled(p.status)) {
+          c.cancelled++;
+          return;
+        }
+        c.projects++;
+        if (isOpenProject(p)) c.openProjects++;
+        var known = PROJECT_STATUSES.filter(function (s) {
+          return norm(s.label) === norm(p.status);
+        })[0];
+        var label = (known || UNRECOGNIZED_STATUS).label;
+        byProjectStatus[label] = (byProjectStatus[label] || 0) + 1;
+      });
+
+      state.tasks.filter(inScope).forEach(function (t) {
+        if (t.bucket === "cancelled") {
+          c.cancelled++;
+          return;
+        }
+        c.tasks++;
+        byBucket[t.bucket]++;
+        if (!t.hasProject) c.orphans++;
+        if (OPEN_BUCKETS.indexOf(t.bucket) !== -1) {
+          var a = byAssignee[t.assignee] || (byAssignee[t.assignee] = { onTime: 0, overdue: 0 });
+          if (t.bucket === "overdue") a.overdue++;
+          else a.onTime++;
+        }
+        if (t.bucket === "complete") {
+          if (!t.completedOn) c.missingDate++;
+          else {
+            var idx =
+              (t.completedOn.getFullYear() - monthStart.getFullYear()) * 12 +
+              t.completedOn.getMonth() - monthStart.getMonth();
+            if (idx >= 0 && idx < MONTHS_SHOWN) byMonth[idx]++;
+          }
+        }
+      });
+
+      els.scope.textContent =
+        (fy || "All fiscal years") + " \u00b7 Updated " + TIME_FMT.format(state.loadedAt);
+      els.footnote.textContent = [
+        plural(c.projects, "project") + ", " + plural(c.tasks, "task"),
+        c.cancelled + " cancelled excluded",
+        plural(c.missingDate, "completed task") + " missing a completion date",
+        plural(c.orphans, "task") + " with no matching project",
+      ].join(" \u00b7 ");
+
+      var isEmpty = c.projects + c.tasks === 0;
+      els.empty.hidden = !isEmpty;
+      els.empty.textContent = fy ? "No records for this fiscal year." : "No records found.";
+      els.kpis.hidden = isEmpty;
+      els.charts.hidden = isEmpty;
+      if (isEmpty) return;
+
+      renderKpis({
+        openProjects: c.openProjects,
+        openTasks: OPEN_BUCKETS.reduce(function (sum, id) {
+          return sum + byBucket[id];
+        }, 0),
+        overdue: byBucket.overdue,
+        atrisk: byBucket.atrisk,
+        blocked: byBucket.blocked,
+        complete: byBucket.complete,
+      });
+
+      updateChart("taskStatus", pluck(TASK_BUCKETS, "label"), [
+        {
+          label: "Tasks",
+          data: TASK_BUCKETS.map(function (b) {
+            return byBucket[b.id];
+          }),
+          backgroundColor: TASK_BUCKETS.map(function (b) {
+            return cssColor(b.color);
+          }),
+        },
+      ]);
+
+      var projectStatuses = PROJECT_STATUSES.concat(
+        byProjectStatus[UNRECOGNIZED_STATUS.label] ? [UNRECOGNIZED_STATUS] : [],
+      );
+      updateChart("projectStatus", pluck(projectStatuses, "label"), [
+        {
+          label: "Projects",
+          data: projectStatuses.map(function (s) {
+            return byProjectStatus[s.label] || 0;
+          }),
+          backgroundColor: projectStatuses.map(function (s) {
+            return cssColor(s.color);
+          }),
+        },
+      ]);
+
+      var assignees = Object.keys(byAssignee).sort(function (x, y) {
+        var dx = byAssignee[x].onTime + byAssignee[x].overdue;
+        var dy = byAssignee[y].onTime + byAssignee[y].overdue;
+        return dy - dx || x.localeCompare(y);
+      });
+      var top = assignees.slice(0, TOP_ASSIGNEES);
+      els.assigneeCap.hidden = assignees.length <= TOP_ASSIGNEES;
+      els.assigneeCap.textContent =
+        "Showing top " + TOP_ASSIGNEES + " of " + assignees.length;
+      updateChart("assignee", top, [
+        {
+          label: "On time",
+          data: top.map(function (n) {
+            return byAssignee[n].onTime;
+          }),
+          backgroundColor: cssColor("inflight"),
+        },
+        {
+          label: "Overdue",
+          data: top.map(function (n) {
+            return byAssignee[n].overdue;
+          }),
+          backgroundColor: cssColor("overdue"),
+        },
+      ]);
+
+      updateChart(
+        "completed",
+        byMonth.map(function (_, i) {
+          return MONTH_FMT.format(new Date(monthStart.getFullYear(), monthStart.getMonth() + i, 1));
+        }),
+        [{ label: "Completed tasks", data: byMonth, backgroundColor: cssColor("complete") }],
+      );
+    }
+
+    function pluck(list, key) {
+      return list.map(function (item) {
+        return item[key];
+      });
+    }
+
+    function renderKpis(counts) {
+      Array.prototype.forEach.call(els.kpis.children, function (li) {
+        li.querySelector(".pmAn-kpiValue").textContent = counts[li.getAttribute("data-kpi")];
+      });
+    }
+
+    function chartOptions(cfg) {
+      var valueAxis = { beginAtZero: true, stacked: !!cfg.stacked, ticks: { precision: 0 } };
+      var categoryAxis = { stacked: !!cfg.stacked, grid: { display: false } };
+      return {
+        indexAxis: cfg.horizontal ? "y" : "x",
+        animation: false,
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: !!cfg.stacked } },
+        scales: cfg.horizontal
+          ? { x: valueAxis, y: categoryAxis }
+          : { x: categoryAxis, y: valueAxis },
+      };
+    }
+
+    function updateChart(name, labels, datasets) {
+      var cfg = CHARTS[name];
+      var chart = charts[name];
+      if (!chart) {
+        chart = charts[name] = new Chart(byId(cfg.id + "Chart"), {
+          type: "bar",
+          data: { labels: [], datasets: [] },
+          options: chartOptions(cfg),
+        });
+      }
+      chart.data.labels = labels;
+      chart.data.datasets = datasets;
+      chart.update();
+
+      var title = byId(cfg.id + "Title").textContent;
+      byId(cfg.id + "Summary").textContent = summarize(title, labels, datasets);
+      fillTable(byId(cfg.id + "Table"), title, cfg.rowHeader, labels, datasets);
+    }
+
+    // One-sentence takeaway used as the canvas's accessible name.
+    function summarize(title, labels, datasets) {
+      var parts = labels.map(function (label, i) {
+        if (datasets.length === 1) return label + " " + datasets[0].data[i];
+        return (
+          label +
+          ": " +
+          datasets
+            .map(function (ds) {
+              return ds.data[i] + " " + ds.label.toLowerCase();
+            })
+            .join(", ")
+        );
+      });
+      return title + ": " + (parts.length ? parts.join(datasets.length === 1 ? ", " : "; ") : "none") + ".";
+    }
+
+    function fillTable(table, caption, rowHeader, labels, datasets) {
+      table.textContent = "";
+      table.createCaption().textContent = caption;
+      var head = table.createTHead().insertRow();
+      [rowHeader].concat(pluck(datasets, "label")).forEach(function (text) {
+        var th = document.createElement("th");
+        th.scope = "col";
+        th.textContent = text;
+        head.appendChild(th);
+      });
+      var body = table.createTBody();
+      labels.forEach(function (label, i) {
+        var tr = body.insertRow();
+        var th = document.createElement("th");
+        th.scope = "row";
+        th.textContent = label;
+        tr.appendChild(th);
+        datasets.forEach(function (ds) {
+          tr.insertCell().textContent = ds.data[i];
+        });
+      });
+    }
+
+    /* ---- init ---- */
+
+    Array.prototype.forEach.call(els.kpis.children, function (li) {
+      li.style.borderLeftColor = STATUS_COLORS[li.getAttribute("data-color")];
+    });
+    els.fy.addEventListener("change", render);
+    els.refresh.addEventListener("click", load);
+    els.retry.addEventListener("click", function () {
+      els.refresh.focus(); // Retry is about to be hidden; keep focus on a visible control.
+      load();
+    });
+    load();
+  })();
+</script>
