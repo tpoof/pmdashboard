@@ -27,6 +27,12 @@
   </div>
 
   <div id="pmAnContent" hidden>
+    <div class="pm-tabs pmAn-tabs" role="tablist" aria-label="Report views">
+      <button type="button" class="pm-tab" role="tab" id="pmAnTabHealth" aria-controls="pmAnPanelHealth" aria-selected="true">Health</button>
+      <button type="button" class="pm-tab" role="tab" id="pmAnTabMeeting" aria-controls="pmAnPanelMeeting" aria-selected="false" tabindex="-1">Team Meeting</button>
+    </div>
+
+    <div id="pmAnPanelHealth" role="tabpanel" aria-labelledby="pmAnTabHealth" tabindex="0">
     <p id="pmAnEmpty" class="pmAn-empty" hidden></p>
 
     <ul class="pmAn-kpis" id="pmAnKpis">
@@ -93,6 +99,27 @@
         <span id="pmAnCompletedSummary" hidden></span>
         <table id="pmAnCompletedTable" class="pm-srOnly"></table>
       </section>
+    </div>
+    </div>
+
+    <div id="pmAnPanelMeeting" role="tabpanel" aria-labelledby="pmAnTabMeeting" hidden>
+      <p id="pmAnMeetEmpty" class="pmAn-empty" hidden>No tasks for this scope.</p>
+      <div id="pmAnMeet" class="pmAn-meet">
+        <nav class="pmAn-card pmAn-people" aria-label="Team members">
+          <ul id="pmAnPeople" class="pmAn-list"></ul>
+        </nav>
+        <div class="pmAn-card" role="region" aria-labelledby="pmAnPersonName">
+          <div class="pmAn-detailHead">
+            <div>
+              <h2 id="pmAnPersonName"></h2>
+              <p id="pmAnPersonSummary" class="pm-muted pmAn-cap"></p>
+            </div>
+            <button type="button" id="pmAnToggleAll" class="pm-ghostBtn"></button>
+          </div>
+          <div id="pmAnGroups"></div>
+        </div>
+      </div>
+      <p id="pmAnMeetStatus" class="pm-srOnly" role="status"></p>
     </div>
 
     <p id="pmAnFootnote" class="pm-muted pmAn-footnote" role="status" aria-live="polite"></p>
@@ -252,9 +279,181 @@
     font-size: 13px;
   }
 
+  .pmAn-tabs {
+    margin-bottom: var(--space-4);
+  }
+
+  #pmAn [role="tabpanel"]:focus-visible,
+  .pmAn-person:focus-visible,
+  .pmAn-groupBtn:focus-visible,
+  .pmAn-taskLink:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .pmAn-meet {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  .pmAn-people {
+    padding: var(--space-2);
+  }
+
+  .pmAn-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pmAn-person {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    width: 100%;
+    min-height: 24px;
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    border-left: 4px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .pmAn-person:hover {
+    background: var(--surface-alt);
+  }
+
+  .pmAn-person[aria-current="true"] {
+    border-left-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .pmAn-personName,
+  #pmAnPersonName {
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .pmAn-personMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .pmAn-badge {
+    padding: 0 var(--space-2);
+    border: 1px solid;
+    border-radius: 999px;
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .pmAn-detailHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+
+  .pmAn-detailHead h2 {
+    margin: 0;
+  }
+
+  .pmAn-group + .pmAn-group,
+  .pmAn-noOpen + .pmAn-group {
+    margin-top: var(--space-3);
+  }
+
+  .pmAn-noOpen {
+    margin: var(--space-3) 0 0;
+  }
+
+  .pmAn-groupTitle {
+    margin: 0;
+    font-size: 14px;
+  }
+
+  .pmAn-groupBtn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    min-height: 34px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-left-width: 4px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-alt);
+    color: var(--text);
+    font: inherit;
+    font-weight: 800;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .pmAn-groupBtn::before {
+    content: "\25BE" / "";
+    display: inline-block;
+  }
+
+  .pmAn-groupBtn[aria-expanded="false"]::before {
+    transform: rotate(-90deg);
+  }
+
+  .pmAn-groupCount {
+    margin-left: auto;
+  }
+
+  .pmAn-task {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pmAn-task:last-child {
+    border-bottom: 0;
+  }
+
+  .pmAn-taskLink {
+    display: inline-block;
+    min-height: 24px;
+    padding: 2px 0;
+    color: var(--accent-strong);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .pmAn-taskMeta {
+    margin: var(--space-1) 0 0;
+    font-size: 13px;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+
   @media (max-width: 1200px) {
     .pmAn-kpis {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 820px) {
+    .pmAn-meet {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pmAn-people {
+      max-height: 260px;
+      overflow-y: auto;
     }
   }
 
@@ -307,6 +506,15 @@
       { id: "complete", label: "Completed", color: "complete" },
     ];
     var OPEN_BUCKETS = ["notstarted", "inprogress", "overdue", "atrisk"];
+    var BUCKET = {};
+    TASK_BUCKETS.forEach(function (b) {
+      BUCKET[b.id] = b;
+    });
+    var MEETING_GROUPS = ["overdue", "atrisk", "blocked", "inprogress", "notstarted", "complete"];
+    var MEETING_EXPANDED = { overdue: true, atrisk: true, blocked: true, inprogress: true };
+    var UNASSIGNED = "Unassigned";
+    var PRINTVIEW_URL = "index.php?a=printview&recordID=";
+    var MS_PER_DAY = 86400000;
     var PROJECT_STATUSES = [
       { label: "Not Started", color: "neutral" },
       { label: "In Progress", color: "inflight" },
@@ -324,6 +532,7 @@
 
     var TIME_FMT = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
     var MONTH_FMT = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" });
+    var DATE_FMT = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 
     var root = document.getElementById("pmAn");
     var els = {
@@ -340,10 +549,28 @@
       charts: byId("pmAnCharts"),
       assigneeCap: byId("pmAnAssigneeCap"),
       footnote: byId("pmAnFootnote"),
+      tabs: Array.prototype.slice.call(root.querySelectorAll('[role="tab"]')),
+      meetEmpty: byId("pmAnMeetEmpty"),
+      meet: byId("pmAnMeet"),
+      people: byId("pmAnPeople"),
+      personName: byId("pmAnPersonName"),
+      personSummary: byId("pmAnPersonSummary"),
+      toggleAll: byId("pmAnToggleAll"),
+      groups: byId("pmAnGroups"),
+      meetStatus: byId("pmAnMeetStatus"),
     };
     var decoder = document.createElement("textarea");
     var charts = {};
-    var state = { projects: [], tasks: [], loadedAt: null, seq: 0 };
+    var state = {
+      projects: [],
+      tasks: [],
+      loadedAt: null,
+      today: null,
+      seq: 0,
+      people: [],
+      person: null,
+      expanded: Object.assign({}, MEETING_EXPANDED),
+    };
 
     function byId(id) {
       return document.getElementById(id);
@@ -507,35 +734,42 @@
     function ingest(projectRows, taskRows) {
       var today = new Date();
       today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      var fyByKey = {};
+      var projectByKey = Object.create(null);
 
       state.projects = projectRows.map(function (row) {
         var p = {
           key: field(row, IND.project.key),
+          name: field(row, IND.project.name),
           status: field(row, IND.project.status),
           // Fall back to the end date's FY when id38 is blank.
           fy:
             normalizeFy(field(row, IND.project.fy)) ||
             fyOf(parseDate(field(row, IND.project.end))),
         };
-        if (p.key && !(p.key in fyByKey)) fyByKey[p.key] = p.fy;
+        if (p.key && !projectByKey[p.key]) projectByKey[p.key] = p;
         return p;
       });
 
       state.tasks = taskRows.map(function (row) {
         var key = field(row, IND.task.projectKey);
+        var project = projectByKey[key];
         var t = {
+          recordID: String(row.recordID),
+          title: field(row, IND.task.title),
+          projectKey: key,
+          projectName: project ? project.name : "",
           status: field(row, IND.task.status),
           due: parseDate(field(row, IND.task.due)),
           completedOn: parseDate(field(row, IND.task.completedOn)),
-          assignee: field(row, IND.task.assignee) || "Unassigned",
-          hasProject: key in fyByKey,
-          fy: fyByKey[key] || "",
+          assignee: field(row, IND.task.assignee) || UNASSIGNED,
+          hasProject: !!project,
+          fy: project ? project.fy : "",
         };
         t.bucket = bucketTask(t, today);
         return t;
       });
 
+      state.today = today;
       state.loadedAt = new Date();
     }
 
@@ -606,6 +840,7 @@
       });
       var byProjectStatus = {};
       var byAssignee = {};
+      var live = [];
       var now = state.loadedAt;
       var monthStart = new Date(now.getFullYear(), now.getMonth() - (MONTHS_SHOWN - 1), 1);
       var byMonth = [];
@@ -631,6 +866,7 @@
           return;
         }
         c.tasks++;
+        live.push(t);
         byBucket[t.bucket]++;
         if (!t.hasProject) c.orphans++;
         if (OPEN_BUCKETS.indexOf(t.bucket) !== -1) {
@@ -657,6 +893,7 @@
         plural(c.missingDate, "completed task") + " missing a completion date",
         plural(c.orphans, "task") + " with no matching project",
       ].join(" \u00b7 ");
+      renderMeeting(live);
 
       var isEmpty = c.projects + c.tasks === 0;
       els.empty.hidden = !isEmpty;
@@ -824,10 +1061,249 @@
       });
     }
 
+    /* ---- team meeting ---- */
+
+    function el(tag, className, text) {
+      var node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text != null) node.textContent = text;
+      return node;
+    }
+
+    // Unlike Health's OPEN_BUCKETS, the meeting view counts Blocked / On Hold as open.
+    function openCount(counts) {
+      return MEETING_GROUPS.reduce(function (sum, id) {
+        return id === "complete" ? sum : sum + counts[id];
+      }, 0);
+    }
+
+    function bucketPhrase(id, n) {
+      return n + " " + BUCKET[id].label.toLowerCase();
+    }
+
+    function renderMeeting(tasks) {
+      var byName = {};
+      tasks.forEach(function (t) {
+        var person = byName[t.assignee];
+        if (!person) {
+          person = byName[t.assignee] = { name: t.assignee, tasks: [], counts: {} };
+          TASK_BUCKETS.forEach(function (b) {
+            person.counts[b.id] = 0;
+          });
+        }
+        person.tasks.push(t);
+        person.counts[t.bucket]++;
+      });
+      state.people = values(byName).sort(function (a, b) {
+        return (
+          (a.name === UNASSIGNED) - (b.name === UNASSIGNED) ||
+          b.counts.overdue - a.counts.overdue ||
+          b.counts.atrisk - a.counts.atrisk ||
+          a.name.localeCompare(b.name)
+        );
+      });
+
+      els.meetEmpty.hidden = state.people.length > 0;
+      els.meet.hidden = state.people.length === 0;
+      els.people.textContent = "";
+      state.people.forEach(function (person) {
+        var btn = el("button", "pmAn-person");
+        btn.type = "button";
+        btn.setAttribute("data-person", person.name);
+        btn.appendChild(el("span", "pmAn-personName", person.name));
+        btn.appendChild(document.createTextNode(" "));
+        var meta = el("span", "pmAn-personMeta", openCount(person.counts) + " open");
+        ["overdue", "atrisk"].forEach(function (id) {
+          if (!person.counts[id]) return;
+          var badge = el("span", "pmAn-badge", bucketPhrase(id, person.counts[id]));
+          badge.style.borderColor = STATUS_COLORS[BUCKET[id].color];
+          meta.appendChild(document.createTextNode(" "));
+          meta.appendChild(badge);
+        });
+        btn.appendChild(meta);
+        var li = el("li");
+        li.appendChild(btn);
+        els.people.appendChild(li);
+      });
+
+      var kept = state.people.filter(function (p) {
+        return p.name === state.person;
+      })[0];
+      selectPerson(kept || state.people[0]);
+    }
+
+    function selectPerson(person) {
+      var changed = !!person && person.name !== state.person;
+      state.person = person ? person.name : null;
+      Array.prototype.forEach.call(els.people.querySelectorAll("button"), function (btn) {
+        if (btn.getAttribute("data-person") === state.person) btn.setAttribute("aria-current", "true");
+        else btn.removeAttribute("aria-current");
+      });
+      if (!person) return;
+      renderDetail(person);
+      if (changed) {
+        els.meetStatus.textContent =
+          "Showing " + plural(person.tasks.length, "task") + " for " + person.name + ".";
+      }
+    }
+
+    function renderDetail(person) {
+      els.personName.textContent = person.name;
+      els.personSummary.textContent = MEETING_GROUPS.filter(function (id) {
+        return person.counts[id];
+      })
+        .map(function (id) {
+          return bucketPhrase(id, person.counts[id]);
+        })
+        .join(" \u00b7 ");
+
+      els.groups.textContent = "";
+      MEETING_GROUPS.forEach(function (id) {
+        var tasks = person.tasks.filter(function (t) {
+          return t.bucket === id;
+        });
+        if (tasks.length) els.groups.appendChild(buildGroup(id, tasks));
+      });
+      if (!openCount(person.counts)) {
+        els.groups.insertBefore(
+          el("p", "pm-muted pmAn-noOpen", "No open tasks."),
+          els.groups.querySelector('[data-group="complete"]'),
+        );
+      }
+      updateToggleAll();
+    }
+
+    function buildGroup(id, tasks) {
+      var group = el("div", "pmAn-group");
+      group.setAttribute("data-group", id);
+      var btn = el("button", "pmAn-groupBtn");
+      btn.type = "button";
+      btn.setAttribute("aria-controls", "pmAnGroup-" + id);
+      btn.style.borderLeftColor = STATUS_COLORS[BUCKET[id].color];
+      btn.appendChild(el("span", null, BUCKET[id].label));
+      btn.appendChild(document.createTextNode(" "));
+      btn.appendChild(el("span", "pmAn-groupCount", String(tasks.length)));
+      var heading = el("h3", "pmAn-groupTitle");
+      heading.appendChild(btn);
+      var list = el("ul", "pmAn-list");
+      list.id = "pmAnGroup-" + id;
+      sortTasks(tasks, id).forEach(function (t) {
+        list.appendChild(buildTask(t));
+      });
+      group.appendChild(heading);
+      group.appendChild(list);
+      setGroupOpen(group, !!state.expanded[id]);
+      return group;
+    }
+
+    function setGroupOpen(group, open) {
+      state.expanded[group.getAttribute("data-group")] = open;
+      group.querySelector(".pmAn-groupBtn").setAttribute("aria-expanded", String(open));
+      group.querySelector("ul").hidden = !open;
+    }
+
+    function updateToggleAll() {
+      var allOpen = Array.prototype.every.call(els.groups.querySelectorAll(".pmAn-groupBtn"), function (btn) {
+        return btn.getAttribute("aria-expanded") === "true";
+      });
+      els.toggleAll.textContent = allOpen ? "Collapse all" : "Expand all";
+    }
+
+    // Completed sorts by completion date, newest first; everything else by due date. Undated last.
+    function sortTasks(tasks, id) {
+      var key = id === "complete" ? "completedOn" : "due";
+      var dir = id === "complete" ? -1 : 1;
+      return tasks.slice().sort(function (a, b) {
+        var x = a[key];
+        var y = b[key];
+        var byDate = x && y ? dir * (x - y) : !x - !y;
+        return byDate || a.title.localeCompare(b.title);
+      });
+    }
+
+    function buildTask(t) {
+      var li = el("li", "pmAn-task");
+      var link = el("a", "pmAn-taskLink", t.title || "Untitled task");
+      link.href = PRINTVIEW_URL + encodeURIComponent(t.recordID);
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.appendChild(el("span", "pm-srOnly", " (opens in a new tab)"));
+      li.appendChild(link);
+      var project = t.projectKey
+        ? t.projectKey + (t.projectName ? " \u00b7 " + t.projectName : "")
+        : "No project";
+      li.appendChild(el("p", "pmAn-taskMeta", project));
+      li.appendChild(el("p", "pmAn-taskMeta", dateText(t)));
+      return li;
+    }
+
+    function dateText(t) {
+      if (t.bucket === "complete") {
+        return t.completedOn ? "Completed " + DATE_FMT.format(t.completedOn) : "Completed (no date)";
+      }
+      if (!t.due) return "No due date";
+      var text = "Due " + DATE_FMT.format(t.due);
+      if (t.due < state.today) {
+        text += " \u00b7 " + plural(Math.round((state.today - t.due) / MS_PER_DAY), "day") + " overdue";
+      }
+      return text;
+    }
+
+    function activateTab(tab) {
+      els.tabs.forEach(function (t) {
+        var on = t === tab;
+        t.setAttribute("aria-selected", String(on));
+        t.tabIndex = on ? 0 : -1;
+        byId(t.getAttribute("aria-controls")).hidden = !on;
+      });
+      // Charts sized while their panel was hidden collapse to zero.
+      if (tab.id === "pmAnTabHealth") {
+        values(charts).forEach(function (chart) {
+          chart.resize();
+        });
+      }
+    }
+
     /* ---- init ---- */
 
     Array.prototype.forEach.call(els.kpis.children, function (li) {
       li.style.borderLeftColor = STATUS_COLORS[li.getAttribute("data-color")];
+    });
+    els.tabs.forEach(function (tab, i) {
+      tab.addEventListener("click", function () {
+        activateTab(tab);
+      });
+      tab.addEventListener("keydown", function (e) {
+        var last = els.tabs.length - 1;
+        var next = { ArrowLeft: i - 1, ArrowRight: i + 1, Home: 0, End: last }[e.key];
+        if (next === undefined) return;
+        e.preventDefault();
+        var target = els.tabs[(next + els.tabs.length) % els.tabs.length];
+        target.focus();
+        activateTab(target);
+      });
+    });
+    els.people.addEventListener("click", function (e) {
+      var btn = e.target.closest(".pmAn-person");
+      if (!btn) return;
+      selectPerson(
+        state.people.filter(function (p) {
+          return p.name === btn.getAttribute("data-person");
+        })[0],
+      );
+    });
+    els.groups.addEventListener("click", function (e) {
+      var btn = e.target.closest(".pmAn-groupBtn");
+      if (!btn) return;
+      setGroupOpen(btn.closest(".pmAn-group"), btn.getAttribute("aria-expanded") !== "true");
+      updateToggleAll();
+    });
+    els.toggleAll.addEventListener("click", function () {
+      var open = els.toggleAll.textContent === "Expand all";
+      Array.prototype.forEach.call(els.groups.querySelectorAll(".pmAn-group"), function (group) {
+        setGroupOpen(group, open);
+      });
+      updateToggleAll();
     });
     els.fy.addEventListener("change", render);
     els.refresh.addEventListener("click", load);
