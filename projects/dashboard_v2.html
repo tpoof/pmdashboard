@@ -17,7 +17,7 @@
           <option value="">All</option>
         </select>
       </div>
-      <div id="pmAnWindowWrap" class="pmAn-field">
+      <div id="pmAnWindowWrap" class="pmAn-field" hidden>
         <label class="pm-label" for="pmAnWindow">Completed within</label>
         <select id="pmAnWindow" class="pm-select"></select>
       </div>
@@ -57,42 +57,39 @@
     <div id="pmAnPanelHealth" role="tabpanel" aria-labelledby="pmAnTabHealth">
     <p id="pmAnEmpty" class="pmAn-empty" hidden></p>
 
-    <ul class="pmAn-kpis" id="pmAnKpis">
-      <li class="pmAn-kpi" data-kpi="openProjects" data-color="inflight">
+    <ul class="pmAn-kpis" id="pmAnKpis" data-fy-scope>
+      <li class="pmAn-kpi" data-kpi="inprogress">
         <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
-          <span class="pmAn-kpiValue"></span>
-          <span class="pmAn-kpiLabel">Open Projects</span>
+          <span class="pmAn-kpiLabel"></span>
+          <span class="pmAn-kpiStat"></span>
+          <span class="pmAn-kpiStat"></span>
         </button>
       </li>
-      <li class="pmAn-kpi" data-kpi="openTasks" data-color="inflight">
+      <li class="pmAn-kpi" data-kpi="overdue">
         <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
-          <span class="pmAn-kpiValue"></span>
-          <span class="pmAn-kpiLabel">Open Tasks</span>
+          <span class="pmAn-kpiLabel"></span>
+          <span class="pmAn-kpiStat"></span>
+          <span class="pmAn-kpiStat"></span>
         </button>
       </li>
-      <li class="pmAn-kpi" data-kpi="overdue" data-color="overdue">
+      <li class="pmAn-kpi" data-kpi="atrisk">
         <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
-          <span class="pmAn-kpiValue"></span>
-          <span class="pmAn-kpiLabel">Overdue Tasks</span>
+          <span class="pmAn-kpiLabel"></span>
+          <span class="pmAn-kpiStat"></span>
+          <span class="pmAn-kpiStat"></span>
         </button>
       </li>
-      <li class="pmAn-kpi" data-kpi="atrisk" data-color="atrisk">
+      <li class="pmAn-kpi" data-kpi="notstarted">
         <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
-          <span class="pmAn-kpiValue"></span>
-          <span class="pmAn-kpiLabel">At Risk Tasks</span>
+          <span class="pmAn-kpiLabel"></span>
+          <span class="pmAn-kpiStat"></span>
+          <span class="pmAn-kpiStat"></span>
         </button>
       </li>
-      <li class="pmAn-kpi" data-kpi="blocked" data-color="neutral">
-        <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
-          <span class="pmAn-kpiValue"></span>
-          <span class="pmAn-kpiLabel">Blocked / On Hold Tasks</span>
-        </button>
-      </li>
-      <li class="pmAn-kpi" data-kpi="complete" data-color="complete">
-        <button type="button" class="pmAn-kpiBtn" aria-pressed="false" aria-controls="pmAnDrill">
-          <span class="pmAn-kpiValue"></span>
-          <span class="pmAn-kpiLabel">Completed Tasks</span>
-        </button>
+      <li class="pmAn-kpi pmAn-kpi--static" id="pmAnOkrKpi">
+        <span id="pmAnOkrKpiLabel" class="pmAn-kpiLabel"></span>
+        <span id="pmAnOkrKpiValue" class="pmAn-kpiValue"></span>
+        <span id="pmAnOkrKpiDetail" class="pmAn-kpiStat"></span>
       </li>
     </ul>
 
@@ -103,42 +100,58 @@
       <button type="button" id="pmAnDrillMore" class="pm-ghostBtn pmAn-drillMore" hidden></button>
     </section>
 
-    <div class="pmAn-charts" id="pmAnCharts">
-      <section class="pmAn-card" aria-labelledby="pmAnTaskStatusTitle">
-        <h2 id="pmAnTaskStatusTitle">Tasks by Status</h2>
+    <section id="pmAnBanner" class="pmAn-card pmAn-banner" aria-labelledby="pmAnBannerTitle" data-fy-scope>
+      <h2 id="pmAnBannerTitle">Overall health</h2>
+      <p id="pmAnBannerState" class="pmAn-bannerState"></p>
+      <div id="pmAnBannerLines"></div>
+    </section>
+
+    <section class="pmAn-card pmAn-okrCards" aria-labelledby="pmAnOkrCardsTitle">
+      <h2 id="pmAnOkrCardsTitle"></h2>
+      <p id="pmAnOkrCardsNote" class="pm-muted pmAn-note" hidden>Showing the current fiscal year. Choose a year to change.</p>
+      <p id="pmAnOkrCardsEmpty" class="pm-muted pmAn-note" hidden></p>
+      <ul id="pmAnOkrCards" class="pmAn-list pmAn-objGrid"></ul>
+    </section>
+
+    <div class="pmAn-charts">
+      <section class="pmAn-card" aria-labelledby="pmAnStatusMixTitle" data-fy-scope>
+        <h2 id="pmAnStatusMixTitle">Status mix</h2>
+        <div class="pmAn-chartBox pmAn-chartBox--short">
+          <canvas id="pmAnStatusMixChart" role="img" aria-labelledby="pmAnStatusMixSummary"></canvas>
+        </div>
+        <span id="pmAnStatusMixSummary" hidden></span>
+        <table id="pmAnStatusMixTable" class="pmAn-legendTable"></table>
+        <p id="pmAnStatusMixCap" class="pm-muted pmAn-cap" hidden></p>
+      </section>
+
+      <section class="pmAn-card" aria-labelledby="pmAnTypesTitle" data-fy-scope>
+        <h2 id="pmAnTypesTitle">Projects by type</h2>
         <div class="pmAn-chartBox">
-          <canvas id="pmAnTaskStatusChart" role="img" aria-labelledby="pmAnTaskStatusSummary"></canvas>
+          <canvas id="pmAnTypesChart" role="img" aria-labelledby="pmAnTypesSummary"></canvas>
         </div>
-        <span id="pmAnTaskStatusSummary" hidden></span>
-        <table id="pmAnTaskStatusTable" class="pm-srOnly"></table>
+        <span id="pmAnTypesSummary" hidden></span>
+        <p id="pmAnTypesCap" class="pm-muted pmAn-cap" hidden></p>
+        <table id="pmAnTypesTable" class="pm-srOnly"></table>
       </section>
 
-      <section class="pmAn-card" aria-labelledby="pmAnProjectStatusTitle">
-        <h2 id="pmAnProjectStatusTitle">Projects by Status</h2>
+      <section class="pmAn-card" aria-labelledby="pmAnWorkloadTitle" data-fy-scope>
+        <h2 id="pmAnWorkloadTitle">Workload by person</h2>
         <div class="pmAn-chartBox">
-          <canvas id="pmAnProjectStatusChart" role="img" aria-labelledby="pmAnProjectStatusSummary"></canvas>
+          <canvas id="pmAnWorkloadChart" role="img" aria-labelledby="pmAnWorkloadSummary"></canvas>
         </div>
-        <span id="pmAnProjectStatusSummary" hidden></span>
-        <table id="pmAnProjectStatusTable" class="pm-srOnly"></table>
+        <span id="pmAnWorkloadSummary" hidden></span>
+        <p id="pmAnWorkloadCap" class="pm-muted pmAn-cap" hidden></p>
+        <table id="pmAnWorkloadTable" class="pm-srOnly"></table>
       </section>
 
-      <section class="pmAn-card" aria-labelledby="pmAnAssigneeTitle">
-        <h2 id="pmAnAssigneeTitle">Open Tasks by Assignee</h2>
-        <div class="pmAn-chartBox pmAn-chartBox--tall">
-          <canvas id="pmAnAssigneeChart" role="img" aria-labelledby="pmAnAssigneeSummary"></canvas>
+      <section class="pmAn-card" aria-labelledby="pmAnUpcomingTitle">
+        <h2 id="pmAnUpcomingTitle">Due in the next 30 days</h2>
+        <p class="pm-muted pmAn-note">All fiscal years &middot; next 30 days</p>
+        <div class="pmAn-chartBox">
+          <canvas id="pmAnUpcomingChart" role="img" aria-labelledby="pmAnUpcomingSummary"></canvas>
         </div>
-        <span id="pmAnAssigneeSummary" hidden></span>
-        <p id="pmAnAssigneeCap" class="pm-muted pmAn-cap" hidden></p>
-        <table id="pmAnAssigneeTable" class="pm-srOnly"></table>
-      </section>
-
-      <section class="pmAn-card" aria-labelledby="pmAnCompletedTitle">
-        <h2 id="pmAnCompletedTitle">Completed by Month</h2>
-        <div class="pmAn-chartBox pmAn-chartBox--tall">
-          <canvas id="pmAnCompletedChart" role="img" aria-labelledby="pmAnCompletedSummary"></canvas>
-        </div>
-        <span id="pmAnCompletedSummary" hidden></span>
-        <table id="pmAnCompletedTable" class="pm-srOnly"></table>
+        <span id="pmAnUpcomingSummary" hidden></span>
+        <table id="pmAnUpcomingTable" class="pm-srOnly"></table>
       </section>
     </div>
     </div>
@@ -216,7 +229,7 @@
     --pmAn-control-h: 34px;
     --pmAn-sidebar-w: 300px;
     --pmAn-progress-w: 160px;
-    --pmAn-chart-h: 260px;
+    --pmAn-chart-h: 320px;
     max-width: 1400px;
     margin: 0 auto;
     padding: var(--space-4);
@@ -367,7 +380,7 @@
 
   .pmAn-kpis {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: var(--space-3);
     margin: 0 0 var(--space-4);
     padding: 0;
@@ -383,14 +396,18 @@
     box-shadow: var(--shadow-sm);
   }
 
-  .pmAn-kpiBtn {
+  .pmAn-kpiBtn,
+  .pmAn-kpi--static {
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
+    padding: var(--space-3);
+  }
+
+  .pmAn-kpiBtn {
     width: 100%;
     height: 100%;
     min-height: 24px;
-    padding: var(--space-3);
     border: 0;
     border-radius: inherit;
     background: transparent;
@@ -414,10 +431,86 @@
     margin-top: var(--space-3);
   }
 
+  .pmAn-banner,
+  .pmAn-okrCards {
+    margin-bottom: var(--space-4);
+  }
+
+  .pmAn-banner {
+    border-left-width: var(--pmAn-bar);
+  }
+
+  .pmAn-bannerState {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--pmAn-text-lg);
+    font-weight: 700;
+  }
+
+  .pmAn-note {
+    margin: 0 0 var(--space-3);
+    font-size: var(--pmAn-text-sm);
+  }
+
+  .pmAn-objGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-3);
+  }
+
+  .pmAn-objCard progress {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+
+  .pmAn-legendTable {
+    width: 100%;
+    margin-top: var(--space-3);
+    border-collapse: collapse;
+    font-size: var(--pmAn-text-sm);
+  }
+
+  .pmAn-legendTable th,
+  .pmAn-legendTable td {
+    padding: var(--space-1) var(--space-2);
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+
+  .pmAn-legendTable td,
+  .pmAn-legendTable th:not(:first-child) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Swatches keep their chart colors in forced colors; the currentColor edge keeps them visible on any background. */
+  .pmAn-swatch {
+    display: inline-block;
+    width: 0.75em;
+    height: 0.75em;
+    margin-right: var(--space-2);
+    border: 1px solid currentColor;
+    forced-color-adjust: none;
+  }
+
   .pmAn-kpiValue {
+    color: var(--text);
     font-size: var(--pmAn-text-2xl);
     font-weight: 800;
     line-height: 1.1;
+  }
+
+  .pmAn-kpiStat {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1);
+    font-size: var(--pmAn-text-sm);
+    font-weight: 700;
+    color: var(--muted);
   }
 
   .pmAn-kpiLabel {
@@ -458,8 +551,9 @@
     height: var(--pmAn-chart-h);
   }
 
-  .pmAn-chartBox--tall {
-    --pmAn-chart-h: 360px;
+  /* Two bars; the visible table below fills the rest of the card. */
+  .pmAn-chartBox--short {
+    --pmAn-chart-h: 160px;
   }
 
   .pmAn-cap {
@@ -760,7 +854,8 @@
     gap: var(--space-3);
   }
 
-  .pmAn-roadCard {
+  .pmAn-roadCard,
+  .pmAn-objCard {
     min-width: 0;
     padding: var(--space-3);
     background: var(--surface);
@@ -769,14 +864,14 @@
     border-radius: var(--radius-md);
   }
 
-  .pmAn-roadCard p {
+  .pmAn-roadCard p,
+  .pmAn-objCard p,
+  .pmAn-objCard .pmAn-krBar {
     margin: var(--space-2) 0 0;
   }
 
-  @media (max-width: 1200px) {
-    .pmAn-kpis {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+  .pmAn-objCard p:first-child {
+    margin-top: 0;
   }
 
   @media (max-width: 820px) {
@@ -784,6 +879,11 @@
     .pmAn-roadGrid,
     .pmAn-charts {
       grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* Single column has no neighbor card to match, so keep the default height. */
+    .pmAn-chartBox--short {
+      --pmAn-chart-h: inherit;
     }
 
     /* scroll-padding keeps a focused person's ring inside the scrollport. */
@@ -815,10 +915,6 @@
     .pmAn-linkRow {
       grid-template-columns: minmax(0, 1fr);
       justify-items: start;
-    }
-
-    .pmAn-kpis {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .pmAn-kr {
@@ -871,7 +967,8 @@
     var ROADMAP_SCOPE = { id: "data", indicatorID: "125", operator: "!=", match: "", gate: "AND" };
     var AT_RISK_DAYS = 3;
     var TOP_ASSIGNEES = 10;
-    var MONTHS_SHOWN = 6;
+    var TOP_TYPES = 8;
+    var UPCOMING_DAYS = 30;
     var FY_START_MONTH = 9; // October, 0-based
     var YEAR_RANGE = { min: 1900, max: 2100 };
     var MIN_CHART_MAJOR = 3;
@@ -882,9 +979,9 @@
       neutral: "var(--muted)",
       inflight: "var(--accent)",
       active: "var(--accent-strong)",
+      faint: "var(--border)",
     };
 
-    // Ordered to match the KPI tiles: open buckets first, then blocked, then complete.
     var TASK_BUCKETS = [
       { id: "notstarted", label: "Not Started", color: "neutral" },
       { id: "inprogress", label: "In Progress", color: "inflight" },
@@ -898,10 +995,23 @@
     TASK_BUCKETS.forEach(function (b) {
       BUCKET[b.id] = b;
     });
+    // Health tab names and order (Status mix legend) for the open buckets shared by tasks and projects.
+    var HEALTH_BUCKETS = [
+      { id: "inprogress", label: "In flight", color: "inflight" },
+      { id: "atrisk", label: "At risk", color: "atrisk" },
+      { id: "overdue", label: "Overdue", color: "overdue" },
+      { id: "notstarted", label: "Backlog", color: "neutral" },
+      { id: "blocked", label: "Blocked / On Hold", color: "faint" },
+    ];
+    var HEALTH = {};
+    HEALTH_BUCKETS.forEach(function (b) {
+      HEALTH[b.id] = b;
+    });
     var MEETING_GROUPS = ["overdue", "atrisk", "inprogress", "blocked", "notstarted", "complete"];
     var MEETING_EXPANDED = { overdue: true, atrisk: true, blocked: true, inprogress: true };
     var LINKED_ORDER = ["overdue", "atrisk", "inprogress", "blocked", "notstarted", "complete"];
     var UNASSIGNED = "Unassigned";
+    var UNSPECIFIED = "Unspecified";
     var PRINTVIEW_URL = "index.php?a=printview&recordID=";
     var MS_PER_DAY = 86400000;
     var DRILL_LIMIT = 50;
@@ -929,29 +1039,24 @@
     ];
     var NO_STATUS = "No status";
     var NO_THEME = "Uncategorized";
-    var PROJECT_STATUSES = [
-      { label: "Not Started", color: "neutral" },
-      { label: "In Progress", color: "inflight" },
-      { label: "On Hold", color: "neutral" },
-      { label: "Completed", color: "complete" },
-    ];
-    var UNRECOGNIZED_STATUS = { label: "Other / blank", color: "neutral" };
-    // Material Symbols (filled): unfold_more, unfold_less, check.
+    // Material Symbols (filled): unfold_more, unfold_less, check, check_circle, warning.
     var ICONS = {
       collapsed: "M480-120 300-300l58-58 122 122 122-122 58 58-180 180ZM358-598l-58-58 180-180 180 180-58 58-122-122-122 122Z",
       expanded: "m356-160-56-56 180-180 180 180-56 56-124-124-124 124Zm124-404L300-744l56-56 124 124 124-124 56 56-180 180Z",
       check: "M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z",
+      onTrack: "m424-296 282-282-56-56-226 226-114-114-56 56 170 170Zm56 216q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z",
+      attention: "m40-120 440-760 440 760H40Zm468.5-131.5Q520-263 520-280t-11.5-28.5Q497-320 480-320t-28.5 11.5Q440-297 440-280t11.5 28.5Q463-240 480-240t28.5-11.5ZM440-360h80v-200h-80v200Z",
     };
 
     var CHARTS = {
-      taskStatus: { id: "pmAnTaskStatus", rowHeader: "Status", horizontal: true },
-      projectStatus: { id: "pmAnProjectStatus", rowHeader: "Status", horizontal: true },
-      assignee: { id: "pmAnAssignee", rowHeader: "Assignee", horizontal: true, stacked: true },
-      completed: { id: "pmAnCompleted", rowHeader: "Month", horizontal: false },
+      statusMix: { id: "pmAnStatusMix", rowHeader: "Status", horizontal: true, stacked: true, percent: true, legendTable: true },
+      types: { id: "pmAnTypes", rowHeader: "Type", horizontal: true },
+      workload: { id: "pmAnWorkload", rowHeader: "Person", horizontal: true, stacked: true, legend: true, truncate: 20 },
+      upcoming: { id: "pmAnUpcoming", rowHeader: "Week", stacked: true, legend: true },
     };
 
     var TIME_FMT = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
-    var MONTH_FMT = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" });
+    var DAY_FMT = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
     var DATE_FMT = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 
     var root = document.getElementById("pmAn");
@@ -980,8 +1085,21 @@
       defaultsMsg: byId("pmAnDefaultsMsg"),
       saveDefault: byId("pmAnSaveDefault"),
       resetDefault: byId("pmAnResetDefault"),
-      charts: byId("pmAnCharts"),
-      assigneeCap: byId("pmAnAssigneeCap"),
+      fyScoped: root.querySelectorAll("[data-fy-scope]"),
+      okrKpi: byId("pmAnOkrKpi"),
+      okrKpiLabel: byId("pmAnOkrKpiLabel"),
+      okrKpiValue: byId("pmAnOkrKpiValue"),
+      okrKpiDetail: byId("pmAnOkrKpiDetail"),
+      banner: byId("pmAnBanner"),
+      bannerState: byId("pmAnBannerState"),
+      bannerLines: byId("pmAnBannerLines"),
+      okrCardsTitle: byId("pmAnOkrCardsTitle"),
+      okrCardsNote: byId("pmAnOkrCardsNote"),
+      okrCardsEmpty: byId("pmAnOkrCardsEmpty"),
+      okrCards: byId("pmAnOkrCards"),
+      statusMixCap: byId("pmAnStatusMixCap"),
+      typesCap: byId("pmAnTypesCap"),
+      workloadCap: byId("pmAnWorkloadCap"),
       footnote: byId("pmAnFootnote"),
       tabs: Array.prototype.slice.call(root.querySelectorAll('[role="tab"]')),
       meetEmpty: byId("pmAnMeetEmpty"),
@@ -1020,7 +1138,7 @@
       okrNotes: { excludedKrs: 0, unmatched: 0, ambiguous: 0, noFy: 0 },
       okrExpanded: {},
       krExpanded: {},
-      footnote: { base: "", task: [] },
+      footnote: { base: "", task: [], health: [] },
       healthGroups: {},
       drill: null,
       drillAll: false,
@@ -1145,8 +1263,29 @@
       return norm(status).indexOf("cancel") !== -1;
     }
 
-    function isOpenProject(p) {
-      return norm(p.status) !== "completed" && !isCancelled(p.status);
+    // Mirrors bucketTask, using the project's end date as its due date.
+    function bucketProject(p, today) {
+      var s = norm(p.status);
+      if (isCancelled(s)) return "cancelled";
+      if (s === "completed") return "complete";
+      if (s === "on hold") return "blocked";
+      if (p.end && p.end < today) return "overdue";
+      if (p.end && p.end <= addDays(today, AT_RISK_DAYS)) return "atrisk";
+      if (s === "" || s === "not started") return "notstarted";
+      return "inprogress";
+    }
+
+    // Projects carry `health`, not `bucket`: linkedBucket tells tasks from projects by `bucket`.
+    function workBucket(rec) {
+      return rec.kind === "task" ? rec.bucket : rec.health;
+    }
+
+    function workDate(rec) {
+      return rec.kind === "task" ? rec.due : rec.end;
+    }
+
+    function workTitle(rec) {
+      return rec.kind === "task" ? rec.title || "Untitled task" : rec.name || rec.key || "Untitled project";
     }
 
     function bucketTask(t, today) {
@@ -1243,16 +1382,19 @@
       state.projects = projectRows.map(function (row) {
         var end = parseDate(field(row, IND.project.end));
         var p = {
+          kind: "project",
           recordID: String(row.recordID),
           krLink: field(row, IND.project.krLink),
           key: field(row, IND.project.key),
           name: field(row, IND.project.name),
           status: field(row, IND.project.status),
           owner: field(row, IND.project.owner),
+          type: field(row, IND.project.type) || UNSPECIFIED,
           end: end,
           // Fall back to the end date's FY when id38 is blank.
           fy: normalizeFy(field(row, IND.project.fy)) || fyOf(end),
         };
+        p.health = bucketProject(p, today);
         if (p.key && !projectByKey[p.key]) projectByKey[p.key] = p;
         return p;
       });
@@ -1261,6 +1403,7 @@
         var key = field(row, IND.task.projectKey);
         var project = projectByKey[key];
         var t = {
+          kind: "task",
           recordID: String(row.recordID),
           title: field(row, IND.task.title),
           projectKey: key,
@@ -1562,19 +1705,7 @@
         return !fy || x.fy === fy;
       };
       var c = { projects: 0, tasks: 0, cancelled: 0, missingDate: 0, orphans: 0 };
-      // Tile counts are these arrays' lengths, so a tile and its list can't disagree.
-      var groups = { openProjects: [], openTasks: [], overdue: [], atrisk: [], blocked: [], complete: [] };
-      var byBucket = {};
-      TASK_BUCKETS.forEach(function (b) {
-        byBucket[b.id] = 0;
-      });
-      var byProjectStatus = {};
-      var byAssignee = {};
       var live = [];
-      var now = state.loadedAt;
-      var monthStart = new Date(now.getFullYear(), now.getMonth() - (MONTHS_SHOWN - 1), 1);
-      var byMonth = [];
-      for (var i = 0; i < MONTHS_SHOWN; i++) byMonth.push(0);
 
       state.projects.filter(inScope).forEach(function (p) {
         if (isCancelled(p.status)) {
@@ -1582,12 +1713,6 @@
           return;
         }
         c.projects++;
-        if (isOpenProject(p)) groups.openProjects.push(p);
-        var known = PROJECT_STATUSES.filter(function (s) {
-          return norm(s.label) === norm(p.status);
-        })[0];
-        var label = (known || UNRECOGNIZED_STATUS).label;
-        byProjectStatus[label] = (byProjectStatus[label] || 0) + 1;
       });
 
       state.tasks.filter(inScope).forEach(function (t) {
@@ -1599,117 +1724,37 @@
         if (!inWindow(t)) return;
         c.tasks++;
         live.push(t);
-        byBucket[t.bucket]++;
-        if (groups[t.bucket]) groups[t.bucket].push(t);
         if (!t.hasProject) c.orphans++;
-        if (OPEN_BUCKETS.indexOf(t.bucket) !== -1) {
-          groups.openTasks.push(t);
-          var a = byAssignee[t.assignee] || (byAssignee[t.assignee] = { onTime: 0, overdue: 0 });
-          if (t.bucket === "overdue") a.overdue++;
-          else a.onTime++;
-        }
-        if (t.bucket === "complete" && t.completedOn) {
-          var idx =
-            (t.completedOn.getFullYear() - monthStart.getFullYear()) * 12 +
-            t.completedOn.getMonth() - monthStart.getMonth();
-          if (idx >= 0 && idx < MONTHS_SHOWN) byMonth[idx]++;
-        }
       });
 
       els.scope.textContent =
         (fy || "All fiscal years") + " \u00b7 Updated " + TIME_FMT.format(state.loadedAt);
-      state.footnote = {
-        base: plural(c.projects, "project") + ", " + plural(c.tasks, "task"),
-        task: [
-          c.cancelled + " cancelled excluded",
-          plural(c.missingDate, "completed task") + " missing a completion date",
-          plural(c.orphans, "task") + " with no matching project",
-        ],
-      };
+      state.footnote = { base: footnoteBase(c), task: taskNotes(c) };
       renderMeeting(live);
       renderOkrs(fy);
       renderRoadmap(fy);
+      renderHealth(fy, inScope);
       renderFootnote();
+    }
 
-      var isEmpty = c.projects + c.tasks === 0;
-      els.empty.hidden = !isEmpty;
-      els.empty.textContent = fy ? "No records for this fiscal year." : "No records found.";
-      els.kpis.hidden = isEmpty;
-      els.charts.hidden = isEmpty;
-      state.healthGroups = groups;
-      if (isEmpty) {
-        state.drill = null;
-        renderDrill(false);
-        return;
-      }
+    function footnoteBase(c) {
+      return plural(c.projects, "project") + ", " + plural(c.tasks, "task");
+    }
 
-      var counts = {};
-      Object.keys(groups).forEach(function (key) {
-        counts[key] = groups[key].length;
-      });
-      renderKpis(counts);
-      renderDrill(false);
+    function taskNotes(c) {
+      return [
+        c.cancelled + " cancelled excluded",
+        plural(c.missingDate, "completed task") + " missing a completion date",
+        plural(c.orphans, "task") + " with no matching project",
+      ];
+    }
 
-      updateChart("taskStatus", pluck(TASK_BUCKETS, "label"), [
-        {
-          label: "Tasks",
-          data: TASK_BUCKETS.map(function (b) {
-            return byBucket[b.id];
-          }),
-          backgroundColor: TASK_BUCKETS.map(function (b) {
-            return cssColor(b.color);
-          }),
-        },
-      ]);
-
-      var projectStatuses = PROJECT_STATUSES.concat(
-        byProjectStatus[UNRECOGNIZED_STATUS.label] ? [UNRECOGNIZED_STATUS] : [],
-      );
-      updateChart("projectStatus", pluck(projectStatuses, "label"), [
-        {
-          label: "Projects",
-          data: projectStatuses.map(function (s) {
-            return byProjectStatus[s.label] || 0;
-          }),
-          backgroundColor: projectStatuses.map(function (s) {
-            return cssColor(s.color);
-          }),
-        },
-      ]);
-
-      var assignees = Object.keys(byAssignee).sort(function (x, y) {
-        var dx = byAssignee[x].onTime + byAssignee[x].overdue;
-        var dy = byAssignee[y].onTime + byAssignee[y].overdue;
-        return dy - dx || x.localeCompare(y);
-      });
-      var top = assignees.slice(0, TOP_ASSIGNEES);
-      els.assigneeCap.hidden = assignees.length <= TOP_ASSIGNEES;
-      els.assigneeCap.textContent =
-        "Showing top " + TOP_ASSIGNEES + " of " + assignees.length;
-      updateChart("assignee", top, [
-        {
-          label: "On time",
-          data: top.map(function (n) {
-            return byAssignee[n].onTime;
-          }),
-          backgroundColor: cssColor("inflight"),
-        },
-        {
-          label: "Overdue",
-          data: top.map(function (n) {
-            return byAssignee[n].overdue;
-          }),
-          backgroundColor: cssColor("overdue"),
-        },
-      ]);
-
-      updateChart(
-        "completed",
-        byMonth.map(function (_, i) {
-          return MONTH_FMT.format(new Date(monthStart.getFullYear(), monthStart.getMonth() + i, 1));
-        }),
-        [{ label: "Completed tasks", data: byMonth, backgroundColor: cssColor("complete") }],
-      );
+    // Undated open work can never be bucketed overdue or at risk, so the banner can't flag it.
+    function undatedNote(n) {
+      var who = [n.task && plural(n.task, "open task"), n.project && plural(n.project, "open project")].filter(Boolean);
+      var what = n.task && n.project ? "no due or end date" : n.task ? "no due date" : "no end date";
+      var verb = n.task + n.project === 1 ? " has " : " have ";
+      return nonZeroNotes([[who.length, who.join(" and ") + verb + what + " and can't be flagged overdue or at risk"]]);
     }
 
     function pluck(list, key) {
@@ -1718,67 +1763,361 @@
       });
     }
 
-    function renderKpis(counts) {
-      Array.prototype.forEach.call(els.kpis.children, function (li) {
-        li.querySelector(".pmAn-kpiValue").textContent = counts[li.getAttribute("data-kpi")];
+    /* ---- health ---- */
+
+    // Ignores the Completed within window. Tiles, drill, banner and charts 1 to 3 all read these
+    // groups, so their numbers can't disagree.
+    function renderHealth(fy, inScope) {
+      var groups = {};
+      TASK_BUCKETS.forEach(function (b) {
+        groups[b.id] = { task: [], project: [] };
+      });
+      var c = { projects: 0, tasks: 0, cancelled: 0, missingDate: 0, orphans: 0 };
+      var undated = { task: 0, project: 0 };
+      state.tasks.concat(state.projects).filter(inScope).forEach(function (rec) {
+        var bucket = workBucket(rec);
+        if (bucket === "cancelled") {
+          c.cancelled++;
+          return;
+        }
+        groups[bucket][rec.kind].push(rec);
+        if (bucket !== "complete" && !workDate(rec)) undated[rec.kind]++;
+        if (rec.kind === "project") {
+          c.projects++;
+          return;
+        }
+        c.tasks++;
+        if (!rec.hasProject) c.orphans++;
+        if (bucket === "complete" && !rec.completedOn) c.missingDate++;
+      });
+      state.healthGroups = groups;
+      state.footnote.health = [footnoteBase(c)].concat(taskNotes(c), undatedNote(undated));
+
+      renderOkrSummary(fy);
+      renderUpcoming();
+
+      var isEmpty = c.projects + c.tasks === 0;
+      els.empty.hidden = !isEmpty;
+      els.empty.textContent = fy ? "No records for this fiscal year." : "No records found.";
+      Array.prototype.forEach.call(els.fyScoped, function (node) {
+        node.hidden = isEmpty;
+      });
+      if (isEmpty) {
+        state.drill = null;
+        renderDrill(false);
+        return;
+      }
+      renderKpis(groups);
+      renderDrill(false);
+      renderBanner(groups);
+      renderStatusMix(groups);
+      renderTypes(groups);
+      renderWorkload(groups);
+    }
+
+    function countOf(group) {
+      return group.task.length + group.project.length;
+    }
+
+    function setStat(node, n, word) {
+      node.textContent = "";
+      node.appendChild(el("span", "pmAn-kpiValue", String(n)));
+      node.appendChild(document.createTextNode(" " + word + (n === 1 ? "" : "s")));
+    }
+
+    function renderKpis(groups) {
+      Array.prototype.forEach.call(els.kpis.querySelectorAll(".pmAn-kpiBtn"), function (btn) {
+        var group = groups[btn.parentNode.getAttribute("data-kpi")];
+        var stats = btn.querySelectorAll(".pmAn-kpiStat");
+        setStat(stats[0], group.task.length, "Task");
+        setStat(stats[1], group.project.length, "Project");
       });
     }
 
     function renderDrill(announce) {
       var kpi = state.drill;
-      Array.prototype.forEach.call(els.kpis.children, function (li) {
-        li.firstElementChild.setAttribute("aria-pressed", String(li.getAttribute("data-kpi") === kpi));
+      Array.prototype.forEach.call(els.kpis.querySelectorAll(".pmAn-kpiBtn"), function (btn) {
+        btn.setAttribute("aria-pressed", String(btn.parentNode.getAttribute("data-kpi") === kpi));
       });
       els.drill.hidden = !kpi;
       if (!kpi) return;
 
-      var isProject = kpi === "openProjects";
-      var rows = isProject
-        ? state.healthGroups[kpi].slice().sort(function (a, b) {
-            return (a.name || a.key).localeCompare(b.name || b.key);
-          })
-        : sortTasks(state.healthGroups[kpi], "due");
-      var label = els.kpis.querySelector('[data-kpi="' + kpi + '"] .pmAn-kpiLabel').textContent;
-      els.drillTitle.textContent = label.charAt(0) + label.slice(1).toLowerCase() + " (" + rows.length + ")";
+      var group = state.healthGroups[kpi];
+      var rows = group.task.concat(group.project).sort(function (a, b) {
+        var x = workDate(a);
+        var y = workDate(b);
+        return (x && y ? x - y : !x - !y) || workTitle(a).localeCompare(workTitle(b));
+      });
+      els.drillTitle.textContent = HEALTH[kpi].label + " (" + rows.length + ")";
       els.drillEmpty.hidden = rows.length > 0;
       var shown = state.drillAll ? rows : rows.slice(0, DRILL_LIMIT);
       els.drillList.textContent = "";
-      shown.forEach(function (row) {
-        els.drillList.appendChild(buildDrillRow(row, isProject));
+      shown.forEach(function (rec) {
+        els.drillList.appendChild(buildDrillRow(rec));
       });
       els.drillMore.hidden = shown.length === rows.length;
       els.drillMore.textContent = "Show all " + rows.length;
       if (announce) {
-        var phrase = label.toLowerCase();
         els.status.textContent =
-          "Showing " + rows.length + " " + (rows.length === 1 ? phrase.replace(/s$/, "") : phrase) + ".";
+          "Showing " + plural(rows.length, "item") + ": " +
+          plural(group.task.length, "task") + ", " + plural(group.project.length, "project") + ".";
       }
     }
 
-    function buildDrillRow(row, isProject) {
+    function buildDrillRow(rec) {
+      var isTask = rec.kind === "task";
+      var date = workDate(rec);
       var li = el("li", "pmAn-task");
-      var title = isProject ? row.name || row.key || "Untitled project" : row.title || "Untitled task";
-      li.appendChild(newTabLink(title, row.recordID));
-      var parts = isProject
-        ? [row.owner || "No owner", row.status || "No status", row.end ? "Ends " + DATE_FMT.format(row.end) : "No end date"]
-        : [
-            row.projectName || row.projectKey || "No project",
-            row.assignee,
-            row.due ? "Due " + DATE_FMT.format(row.due) : "No due date",
-          ];
+      li.appendChild(el("span", "pmAn-badge", isTask ? "Task" : "Project"));
+      li.appendChild(document.createTextNode(" "));
+      li.appendChild(newTabLink(workTitle(rec), rec.recordID));
+      var parts = isTask
+        ? [rec.projectName || rec.projectKey || "No project", rec.assignee, date ? "Due " + DATE_FMT.format(date) : "No due date"]
+        : [rec.owner || "No owner", rec.status || "No status", date ? "Ends " + DATE_FMT.format(date) : "No end date"];
       li.appendChild(el("p", "pmAn-taskMeta", parts.join(" \u00b7 ")));
       return li;
+    }
+
+    function renderBanner(groups) {
+      var open = HEALTH_BUCKETS.reduce(function (sum, b) {
+        return sum + countOf(groups[b.id]);
+      }, 0);
+      var overdue = countOf(groups.overdue);
+      var atrisk = countOf(groups.atrisk);
+      var attention = overdue + atrisk > 0;
+      els.banner.style.borderLeftColor = STATUS_COLORS[!open ? "neutral" : overdue ? "overdue" : atrisk ? "atrisk" : "complete"];
+      els.bannerState.textContent = !open
+        ? "No open tasks or projects."
+        : attention
+          ? "Needs attention"
+          : "All tasks and projects are on track";
+      if (open) els.bannerState.prepend(icon(attention ? "attention" : "onTrack"));
+      els.bannerLines.textContent = "";
+      if (!attention) return;
+      var kinds = { task: "Tasks", project: "Projects" };
+      Object.keys(kinds).forEach(function (kind) {
+        var parts = ["overdue", "atrisk"]
+          .filter(function (id) {
+            return groups[id][kind].length;
+          })
+          .map(function (id) {
+            return groups[id][kind].length + " " + HEALTH[id].label.toLowerCase();
+          });
+        els.bannerLines.appendChild(el("p", "pmAn-cap", kinds[kind] + ": " + (parts.join(", ") || "all on track")));
+      });
+    }
+
+    // Selected FY, or the current one when FY = All; never falls back to another year.
+    function renderOkrSummary(fy) {
+      var okrFy = fy || fyOf(state.today);
+      var objectives = state.objectives.filter(function (o) {
+        return o.fy === okrFy;
+      });
+      var overall = overallProgress(objectives);
+      els.okrKpi.style.borderLeftColor = STATUS_COLORS.active;
+      els.okrKpiLabel.textContent = okrFy + " OKR progress";
+      els.okrKpiValue.hidden = overall === null;
+      els.okrKpiValue.textContent = overall === null ? "" : overall + "%";
+      els.okrKpiDetail.textContent = objectives.length
+        ? plural(objectives.length, "objective") + (overall === null ? ", no Key Results" : "")
+        : "No objectives";
+
+      els.okrCardsTitle.textContent = "OKR progress \u00b7 " + okrFy;
+      els.okrCardsNote.hidden = !!fy;
+      els.okrCardsEmpty.hidden = objectives.length > 0;
+      els.okrCardsEmpty.textContent = "No objectives for " + okrFy + ".";
+      els.okrCards.textContent = "";
+      objectives.forEach(function (o) {
+        els.okrCards.appendChild(buildObjCard(o));
+      });
+    }
+
+    function buildObjCard(o) {
+      var li = el("li", "pmAn-objCard");
+      li.style.borderLeftColor = healthColor(o.stats.health);
+      var head = el("p");
+      head.appendChild(newTabLink(o.key || "Objective", o.recordID));
+      head.appendChild(document.createTextNode(" "));
+      var badge = el("span", "pmAn-badge", o.stats.health || "No health label");
+      badge.style.setProperty("--pmAn-badge", healthColor(o.stats.health));
+      head.appendChild(badge);
+      li.appendChild(head);
+      li.appendChild(el("p", null, o.text || "Untitled objective"));
+      if (o.stats.progress !== null) {
+        var bar = el("div", "pmAn-krBar");
+        var progress = el("progress");
+        progress.max = 100;
+        progress.value = o.stats.progress;
+        progress.setAttribute("aria-label", (o.key || "Objective") + " progress");
+        bar.appendChild(progress);
+        bar.appendChild(el("span", null, o.stats.progress + "%"));
+        li.appendChild(bar);
+      }
+      li.appendChild(el("p", "pmAn-taskMeta", o.krs.length ? plural(o.krs.length, "Key Result") : "No Key Results"));
+      return li;
+    }
+
+    function renderStatusMix(groups) {
+      var kinds = ["task", "project"];
+      var open = kinds.map(function (kind) {
+        return HEALTH_BUCKETS.reduce(function (sum, b) {
+          return sum + groups[b.id][kind].length;
+        }, 0);
+      });
+      var completed = countOf(groups.complete);
+      els.statusMixCap.hidden = !completed;
+      els.statusMixCap.textContent = "Excludes " + completed + " completed";
+      updateChart(
+        "statusMix",
+        ["Tasks", "Projects"],
+        HEALTH_BUCKETS.map(function (b) {
+          var counts = kinds.map(function (kind) {
+            return groups[b.id][kind].length;
+          });
+          return {
+            label: b.label,
+            counts: counts,
+            data: counts.map(function (n, i) {
+              return open[i] ? (n / open[i]) * 100 : 0;
+            }),
+            backgroundColor: cssColor(b.color),
+            // The light Blocked fill needs an edge to stand out from the background.
+            borderColor: cssColor("neutral"),
+            borderWidth: b.id === "blocked" ? 1 : 0,
+          };
+        }),
+      );
+    }
+
+    // Top types by count, then "Other" for the rest, then "Unspecified".
+    function renderTypes(groups) {
+      var byType = {};
+      TASK_BUCKETS.forEach(function (b) {
+        groups[b.id].project.forEach(function (p) {
+          byType[p.type] = (byType[p.type] || 0) + 1;
+        });
+      });
+      var types = Object.keys(byType)
+        .filter(function (t) {
+          return t !== UNSPECIFIED;
+        })
+        .sort(function (x, y) {
+          return byType[y] - byType[x] || x.localeCompare(y);
+        });
+      var rest = types.slice(TOP_TYPES);
+      var labels = types.slice(0, TOP_TYPES);
+      var data = labels.map(function (t) {
+        return byType[t];
+      });
+      if (rest.length) {
+        labels.push("Other");
+        data.push(
+          rest.reduce(function (sum, t) {
+            return sum + byType[t];
+          }, 0),
+        );
+      }
+      if (byType[UNSPECIFIED]) {
+        labels.push(UNSPECIFIED);
+        data.push(byType[UNSPECIFIED]);
+      }
+      els.typesCap.hidden = !rest.length;
+      els.typesCap.textContent = "Other combines " + plural(rest.length, "type");
+      updateChart("types", labels, [{ label: "Projects", data: data, backgroundColor: cssColor("inflight") }]);
+    }
+
+    function renderWorkload(groups) {
+      var buckets = HEALTH_BUCKETS.filter(function (b) {
+        return OPEN_BUCKETS.indexOf(b.id) !== -1;
+      });
+      var byPerson = {};
+      buckets.forEach(function (b) {
+        groups[b.id].task.forEach(function (t) {
+          var person = byPerson[t.assignee] || (byPerson[t.assignee] = { total: 0 });
+          person[b.id] = (person[b.id] || 0) + 1;
+          person.total++;
+        });
+      });
+      var people = Object.keys(byPerson).sort(function (x, y) {
+        return byPerson[y].total - byPerson[x].total || x.localeCompare(y);
+      });
+      var top = people.slice(0, TOP_ASSIGNEES);
+      els.workloadCap.hidden = people.length <= TOP_ASSIGNEES;
+      els.workloadCap.textContent = "Showing top " + TOP_ASSIGNEES + " of " + people.length;
+      updateChart(
+        "workload",
+        top,
+        buckets.map(function (b) {
+          return {
+            label: b.label,
+            data: top.map(function (name) {
+              return byPerson[name][b.id] || 0;
+            }),
+            backgroundColor: cssColor(b.color),
+          };
+        }),
+      );
+    }
+
+    // All fiscal years. Weekly buckets from today; the last one is partial.
+    function renderUpcoming() {
+      var weeks = Math.ceil((UPCOMING_DAYS + 1) / 7);
+      var counts = { task: [], project: [] };
+      var labels = [];
+      for (var i = 0; i < weeks; i++) {
+        counts.task.push(0);
+        counts.project.push(0);
+        var start = addDays(state.today, i * 7);
+        var end = addDays(state.today, Math.min(i * 7 + 6, UPCOMING_DAYS));
+        labels.push(
+          DAY_FMT.format(start) + "\u2013" + (start.getMonth() === end.getMonth() ? end.getDate() : DAY_FMT.format(end)),
+        );
+      }
+      state.tasks.concat(state.projects).forEach(function (rec) {
+        var bucket = workBucket(rec);
+        var date = workDate(rec);
+        if (bucket === "complete" || bucket === "cancelled" || !date) return;
+        var days = Math.round((date - state.today) / MS_PER_DAY);
+        if (days >= 0 && days <= UPCOMING_DAYS) counts[rec.kind][Math.floor(days / 7)]++;
+      });
+      updateChart("upcoming", labels, [
+        { label: "Tasks", noun: "task", data: counts.task, backgroundColor: cssColor("inflight") },
+        { label: "Projects", noun: "project", data: counts.project, backgroundColor: cssColor("neutral") },
+      ]);
     }
 
     function chartOptions(cfg) {
       var valueAxis = { beginAtZero: true, stacked: !!cfg.stacked, ticks: { precision: 0 } };
       var categoryAxis = { stacked: !!cfg.stacked, grid: { display: false } };
+      var plugins = { legend: { display: !!cfg.legend } };
+      // Tick text only; tooltips, the summary and the table keep the full label.
+      if (cfg.truncate) {
+        categoryAxis.ticks = {
+          callback: function (value) {
+            var label = this.getLabelForValue(value);
+            return label.length > cfg.truncate ? label.slice(0, cfg.truncate - 1) + "\u2026" : label;
+          },
+        };
+      }
+      if (cfg.percent) {
+        valueAxis.max = 100;
+        valueAxis.ticks.callback = function (v) {
+          return v + "%";
+        };
+        plugins.tooltip = {
+          callbacks: {
+            label: function (ctx) {
+              return ctx.dataset.label + ": " + ctx.dataset.counts[ctx.dataIndex] + " (" + Math.round(ctx.raw) + "%)";
+            },
+          },
+        };
+      }
       return {
         indexAxis: cfg.horizontal ? "y" : "x",
         animation: false,
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: !!cfg.stacked } },
+        plugins: plugins,
         scales: cfg.horizontal
           ? { x: valueAxis, y: categoryAxis }
           : { x: categoryAxis, y: valueAxis },
@@ -1800,20 +2139,41 @@
       chart.update();
 
       var title = byId(cfg.id + "Title").textContent;
+      var table = byId(cfg.id + "Table");
       byId(cfg.id + "Summary").textContent = summarize(title, labels, datasets);
-      fillTable(byId(cfg.id + "Table"), title, cfg.rowHeader, labels, datasets);
+      if (!cfg.legendTable) {
+        fillTable(table, title, cfg.rowHeader, labels, datasets);
+        return;
+      }
+      // Visible legend table: one row per dataset with its swatch, one column per bar.
+      var columns = labels.map(function (label, i) {
+        return {
+          label: label,
+          data: datasets.map(function (ds) {
+            return valueAt(ds, i);
+          }),
+        };
+      });
+      fillTable(table, title, cfg.rowHeader, pluck(datasets, "label"), columns, pluck(datasets, "backgroundColor"));
+      table.caption.className = "pm-srOnly";
+    }
+
+    // Percent charts plot shares but report the raw counts.
+    function valueAt(ds, i) {
+      return ds.counts ? ds.counts[i] : ds.data[i];
     }
 
     // One-sentence takeaway used as the canvas's accessible name.
     function summarize(title, labels, datasets) {
       var parts = labels.map(function (label, i) {
-        if (datasets.length === 1) return label + " " + datasets[0].data[i];
+        if (datasets.length === 1) return label + " " + valueAt(datasets[0], i);
         return (
           label +
           ": " +
           datasets
             .map(function (ds) {
-              return ds.data[i] + " " + ds.label.toLowerCase();
+              var n = valueAt(ds, i);
+              return ds.noun ? plural(n, ds.noun) : n + " " + ds.label.toLowerCase();
             })
             .join(", ")
         );
@@ -1821,7 +2181,7 @@
       return title + ": " + (parts.length ? parts.join(datasets.length === 1 ? ", " : "; ") : "none") + ".";
     }
 
-    function fillTable(table, caption, rowHeader, labels, datasets) {
+    function fillTable(table, caption, rowHeader, labels, datasets, swatches) {
       table.textContent = "";
       table.createCaption().textContent = caption;
       var head = table.createTHead().insertRow();
@@ -1836,10 +2196,16 @@
         var tr = body.insertRow();
         var th = document.createElement("th");
         th.scope = "row";
-        th.textContent = label;
+        if (swatches) {
+          var swatch = el("span", "pmAn-swatch");
+          swatch.setAttribute("aria-hidden", "true");
+          swatch.style.background = swatches[i];
+          th.appendChild(swatch);
+        }
+        th.appendChild(document.createTextNode(label));
         tr.appendChild(th);
         datasets.forEach(function (ds) {
-          tr.insertCell().textContent = ds.data[i];
+          tr.insertCell().textContent = valueAt(ds, i);
         });
       });
     }
@@ -2097,8 +2463,13 @@
       var active = els.tabs.filter(function (t) {
         return t.getAttribute("aria-selected") === "true";
       })[0];
-      var text = [state.footnote.base]
-        .concat(notesByTab[active.id] ? notesByTab[active.id]() : state.footnote.task)
+      var f = state.footnote;
+      // Health counts ignore the Completed within window; the other tabs keep the windowed base.
+      var notes =
+        active.id === "pmAnTabHealth"
+          ? f.health
+          : [f.base].concat(notesByTab[active.id] ? notesByTab[active.id]() : f.task);
+      var text = notes
         .concat(state.defaultsError ? ["Team defaults could not be loaded."] : [])
         .join(" \u00b7 ");
       if (els.footnote.textContent !== text) els.footnote.textContent = text;
@@ -2111,16 +2482,7 @@
       els.okrEmpty.hidden = objectives.length > 0;
       els.okr.hidden = objectives.length === 0;
 
-      var scored = objectives.filter(function (o) {
-        return o.stats.progress !== null;
-      });
-      var overall = scored.length
-        ? Math.round(
-            scored.reduce(function (sum, o) {
-              return sum + o.stats.progress;
-            }, 0) / scored.length,
-          )
-        : null;
+      var overall = overallProgress(objectives);
       els.okrTotals.textContent =
         plural(objectives.length, "objective") +
         " \u00b7 " +
@@ -2145,6 +2507,20 @@
         els.okrList.appendChild(buildObjective(o));
       });
       updateToggleAll(els.okrList, els.okrToggleAll);
+    }
+
+    // Average of the objectives that have Key Results; null when none do.
+    function overallProgress(objectives) {
+      var scored = objectives.filter(function (o) {
+        return o.stats.progress !== null;
+      });
+      return scored.length
+        ? Math.round(
+            scored.reduce(function (sum, o) {
+              return sum + o.stats.progress;
+            }, 0) / scored.length,
+          )
+        : null;
     }
 
     function buildObjective(o) {
@@ -2357,7 +2733,7 @@
         t.tabIndex = on ? 0 : -1;
         byId(t.getAttribute("aria-controls")).hidden = !on;
       });
-      els.windowWrap.hidden = tab.id === "pmAnTabOkr" || tab.id === "pmAnTabRoadmap";
+      els.windowWrap.hidden = tab.id !== "pmAnTabMeeting";
       renderFootnote();
       // Charts sized while their panel was hidden collapse to zero.
       if (tab.id === "pmAnTabHealth") {
@@ -2480,9 +2856,10 @@
 
     /* ---- init ---- */
 
-    Array.prototype.forEach.call(els.kpis.children, function (li) {
-      li.style.borderLeftColor = STATUS_COLORS[li.getAttribute("data-color")];
-      li.querySelector(".pmAn-kpiLabel").prepend(icon("check"));
+    Array.prototype.forEach.call(els.kpis.querySelectorAll(".pmAn-kpiBtn"), function (btn) {
+      var bucket = HEALTH[btn.parentNode.getAttribute("data-kpi")];
+      btn.parentNode.style.borderLeftColor = STATUS_COLORS[bucket.color];
+      btn.firstElementChild.append(icon("check"), bucket.label);
     });
     els.defaultsBtn.prepend(icon("collapsed"), icon("expanded"));
     els.tabs.forEach(function (tab, i) {
