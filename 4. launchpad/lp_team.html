@@ -1,0 +1,1814 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Team Hub — LEAF Launchpad</title>
+
+    <link rel="stylesheet" href="./files/launchpad.css" />
+
+    <style>
+      /* Local LEAF fonts (self-hosted) — same source as leaf_header.css,
+       declared here since this page can load standalone. Only the
+       weights actually used on this page are included. */
+      @font-face {
+        font-family: "PublicSans-Bold";
+        src:
+          url("/app/libs/css/fonts/public-sans/PublicSans-Bold.woff2")
+            format("woff2"),
+          url("/app/libs/css/fonts/public-sans/PublicSans-Bold.woff")
+            format("woff");
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Source Sans Pro Web";
+        src:
+          url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-regular-webfont.woff2")
+            format("woff2"),
+          url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-regular-webfont.woff")
+            format("woff");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Source Sans Pro Web-Bold";
+        src:
+          url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-bold-webfont.woff2")
+            format("woff2"),
+          url("/app/libs/css/fonts/source-sans-pro/sourcesanspro-bold-webfont.woff")
+            format("woff");
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      /* Icons render as inline SVG — static ones in the markup, JS-built ones
+       from ICON_PATHS below — matching leaf_header.js; no icon web font. */
+      .material-symbols-outlined {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .material-symbols-outlined svg {
+        width: 1em;
+        height: 1em;
+        display: block;
+      }
+
+      /* ── Page shell ── */
+      .thb-page {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem 5rem;
+      }
+
+      /* ── Header ── */
+      .thb-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+      .thb-header-text {
+        min-width: 0;
+      }
+      .thb-header .thb-update-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-shrink: 0;
+        min-height: 44px;
+        padding: 0 18px;
+        background: #fff;
+        color: var(--lp-accent);
+        border: 1px solid var(--lp-accent);
+        border-radius: 8px;
+        font-family: "PublicSans-Bold", sans-serif;
+        font-weight: 700;
+        font-size: 0.88rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background 0.12s;
+      }
+      .thb-header .thb-update-btn:hover {
+        background: var(--c-blue5);
+      }
+      .thb-header .thb-update-btn:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+      .thb-update-btn .material-symbols-outlined {
+        font-size: 1.15rem !important;
+      }
+      @media (max-width: 600px) {
+        .thb-header {
+          flex-direction: column;
+        }
+      }
+      .thb-kicker {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--lp-accent);
+        margin: 0 0 0.5rem;
+      }
+      .thb-title {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: clamp(1.6rem, 3vw, 2.15rem);
+        font-weight: 800;
+        color: var(--lp-hl);
+        margin: 0 0 0.4rem;
+        line-height: 1.15;
+      }
+      .thb-sub {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 1.05rem;
+        color: var(--c-muted);
+        margin: 0;
+      }
+
+      /* ── Search / filter ── */
+      .thb-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 1.75rem 0 2rem;
+        flex-wrap: wrap;
+      }
+      .thb-search {
+        position: relative;
+        flex: 1 1 340px;
+        max-width: 460px;
+      }
+      .thb-search .material-symbols-outlined {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--c-muted);
+        font-size: 1.25rem !important;
+        pointer-events: none;
+      }
+      .thb-search input {
+        width: 100%;
+        height: 44px;
+        padding: 0 2.5rem 0 2.4rem;
+        border: 1px solid var(--c-blue20);
+        border-radius: 999px;
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.95rem;
+        background: #fff;
+        color: var(--c-text);
+        outline: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .thb-search input:focus {
+        border-color: var(--lp-accent);
+        box-shadow: 0 0 0 3px rgba(0, 94, 162, 0.15);
+      }
+      .thb-search .thb-clear {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        color: var(--c-muted);
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      .thb-search .thb-clear:hover {
+        background: var(--c-blue10);
+      }
+      .thb-search .thb-clear.vis {
+        display: inline-flex;
+      }
+      .thb-search .thb-clear .material-symbols-outlined {
+        position: static;
+        transform: none;
+        font-size: 1.15rem !important;
+      }
+      .thb-filters {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .thb-filter {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-weight: 700;
+        font-size: 0.82rem;
+        border: 1px solid var(--c-blue20);
+        background: #fff;
+        color: var(--c-muted);
+        min-height: 44px;
+        padding: 8px 14px;
+        line-height: 1.2;
+        border-radius: 999px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition:
+          background 0.12s,
+          color 0.12s,
+          border-color 0.12s;
+      }
+      .thb-filter:hover {
+        background: var(--c-blue5);
+      }
+      .thb-filter.active {
+        background: var(--lp-accent);
+        color: #fff;
+        border-color: var(--lp-accent);
+      }
+      .thb-result-count {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.85rem;
+        color: var(--c-muted);
+        margin-left: auto;
+        white-space: nowrap;
+      }
+      .thb-result-count:empty {
+        display: none;
+      }
+
+      /* ── Admin banner ── */
+      .thb-admin {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.1rem 1.35rem;
+        margin-bottom: 1.75rem;
+        background: linear-gradient(
+          135deg,
+          var(--lp-accent-strong, #004a82),
+          var(--lp-accent)
+        );
+        color: #fff;
+        border-radius: var(--r-lg);
+      }
+      .thb-admin-left {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+      }
+      .thb-admin-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.18);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .thb-admin-icon .material-symbols-outlined {
+        font-size: 1.5rem !important;
+        color: #fff;
+      }
+      .thb-admin h2 {
+        font-family: "PublicSans-Bold", sans-serif;
+        margin: 0;
+        font-size: 1.1rem;
+      }
+      .thb-admin p {
+        margin: 0.1rem 0 0;
+        font-size: 0.85rem;
+        opacity: 0.85;
+      }
+      .thb-admin a,
+      .thb-admin-btn {
+        background: #fff;
+        color: var(--lp-accent-strong, #004a82);
+        text-decoration: none;
+        font-family: "PublicSans-Bold", sans-serif;
+        font-weight: 700;
+        font-size: 0.88rem;
+        padding: 9px 18px;
+        border-radius: 8px;
+        white-space: nowrap;
+        border: 0;
+        cursor: pointer;
+        transition: background 0.12s;
+      }
+      .thb-admin a:hover,
+      .thb-admin-btn:hover {
+        background: var(--c-blue10);
+      }
+      .thb-admin a:focus-visible,
+      .thb-admin-btn:focus-visible {
+        outline: 3px solid #fff;
+        outline-offset: 2px;
+      }
+      @media (max-width: 560px) {
+        .thb-admin {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .thb-admin-left,
+        .thb-admin-left > div {
+          min-width: 0;
+        }
+        .thb-admin-btn {
+          width: 100%;
+          min-height: 44px;
+          white-space: normal;
+        }
+      }
+
+      /* ── Sections ── */
+      .thb-sec {
+        margin-bottom: 1.5rem;
+        background: #fff;
+        border: 1px solid var(--c-blue10);
+        border-radius: var(--r-lg);
+        overflow: hidden;
+      }
+      .thb-sec-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        width: 100%;
+        padding: 1rem 1.25rem;
+        background: var(--c-blue5);
+        border: 0;
+        border-bottom: 1px solid var(--c-blue10);
+        cursor: pointer;
+        font: inherit;
+        text-align: left;
+      }
+      /* Heading wrapper for the accordion button; resets launchpad.css .lp h2 */
+      .thb-sec .thb-sec-h {
+        margin: 0;
+        font: inherit;
+        letter-spacing: normal;
+      }
+      .thb-sec-head:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: -3px;
+      }
+      .thb-sec-head-left {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .thb-sec-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        flex-shrink: 0;
+        background: #fff;
+        border: 1px solid var(--c-blue10);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .thb-sec-icon .material-symbols-outlined {
+        font-size: 1.35rem !important;
+      }
+      .thb-sec-title {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin: 0;
+        color: var(--lp-hl);
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .thb-sec-count {
+        flex-shrink: 0;
+        white-space: nowrap;
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--c-muted);
+        background: #fff;
+        border: 1px solid var(--c-blue10);
+        padding: 2px 10px;
+        border-radius: 999px;
+      }
+      .thb-sec-count:empty {
+        display: none;
+      }
+      .thb-chev {
+        flex-shrink: 0;
+        color: var(--c-muted);
+        transition: transform 0.2s;
+      }
+      .thb-sec.collapsed .thb-sec-body {
+        display: none;
+      }
+      .thb-sec.collapsed .thb-chev {
+        transform: rotate(-90deg);
+      }
+      .thb-sec-body {
+        padding: 1.15rem 1.25rem;
+      }
+
+      /* ── Access restricted state ── */
+      .lp-gate {
+        max-width: 460px;
+        margin: 4rem auto;
+        padding: 2.5rem 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        text-align: center;
+        background: #fff;
+        border: 1px solid var(--c-blue20);
+        border-radius: var(--r-lg);
+      }
+      .lp-gate-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--c-blue5);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .lp-gate-icon .material-symbols-outlined {
+        font-size: 1.75rem !important;
+        color: var(--lp-accent);
+      }
+      .lp-gate h1 {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--lp-hl);
+        margin: 0;
+      }
+      .lp-gate p {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.95rem;
+        color: var(--c-muted);
+        margin: 0;
+      }
+      .lp-gate a {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #fff;
+        background: var(--lp-accent);
+        text-decoration: none;
+        padding: 0.6rem 1.3rem;
+        border-radius: 8px;
+      }
+      .lp-gate a:hover {
+        background: var(--lp-accent-strong, #004a82);
+      }
+      .lp-gate a:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+
+      .thb-sec-icon {
+        border-color: var(--c-blue20);
+        background: var(--c-blue5);
+      }
+      .thb-sec-icon .material-symbols-outlined {
+        color: var(--lp-accent);
+      }
+
+      /* ── Load status / error ── */
+      .thb-status {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.95rem;
+        color: var(--c-muted);
+        margin: 0 0 1.25rem;
+      }
+      .thb-status:focus {
+        outline: none;
+      }
+      /* Kept rendered (not display:none) so live-region updates announce */
+      .thb-status:empty {
+        margin: 0;
+      }
+      .thb-error:empty {
+        display: none;
+      }
+      .thb-error {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.9rem 1.15rem;
+        margin-bottom: 1.5rem;
+        background: #fff;
+        border: 1px solid #b50909;
+        border-left-width: 4px;
+        border-radius: var(--r-lg);
+        font-family: "Source Sans Pro Web", sans-serif;
+        color: var(--c-text);
+      }
+      .thb-error p {
+        margin: 0;
+      }
+      .thb-retry {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-weight: 700;
+        font-size: 0.88rem;
+        color: #fff;
+        background: var(--lp-accent);
+        border: 0;
+        border-radius: 8px;
+        min-height: 44px;
+        min-width: 44px;
+        padding: 9px 18px;
+        cursor: pointer;
+      }
+      .thb-retry:hover {
+        background: var(--lp-accent-strong, #004a82);
+      }
+      .thb-retry:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+
+      /* ── Link grid ── */
+      .thb-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.7rem;
+        align-items: stretch;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .thb-grid > li {
+        display: flex;
+        min-width: 0;
+      }
+      .thb-grid > li[hidden] {
+        display: none;
+      }
+      @media (max-width: 900px) {
+        .thb-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 560px) {
+        .thb-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .thb-tile {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        width: 100%;
+        min-height: 58px;
+        padding: 0.6rem 0.85rem;
+        background: #fff;
+        border: 1px solid var(--c-blue10);
+        border-left-width: 3px;
+        border-radius: var(--r);
+        text-decoration: none;
+        text-align: left;
+        color: var(--lp-hl);
+        font-family: "Source Sans Pro Web-Bold", sans-serif;
+        font-size: 0.92rem;
+        font-weight: 700;
+        line-height: 1.25;
+        cursor: pointer;
+        transition:
+          border-color 0.12s,
+          box-shadow 0.12s,
+          transform 0.12s;
+      }
+      .thb-tile:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+      }
+      .thb-tile:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+      .thb-tile .material-symbols-outlined {
+        font-size: 1.15rem !important;
+        flex-shrink: 0;
+      }
+      .thb-tile .thb-tile-label {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .thb-tile {
+        border-left-color: var(--lp-accent);
+      }
+      .thb-tile .material-symbols-outlined {
+        color: var(--lp-accent);
+      }
+      .thb-tile:hover {
+        border-color: var(--c-blue20);
+        border-left-color: var(--lp-accent);
+      }
+
+      /* empty state */
+      .thb-empty {
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.9rem;
+        color: var(--c-muted);
+        padding: 0.4rem 0;
+        display: none;
+      }
+      .thb-sec.no-matches .thb-sec-body .thb-grid {
+        display: none;
+      }
+      .thb-sec.no-matches .thb-empty {
+        display: block;
+      }
+
+      /* whole section hidden by filter */
+      .thb-sec[hidden],
+      .thb-admin[hidden] {
+        display: none;
+      }
+
+      /* ── Footer ── */
+      .thb-footer {
+        margin-top: 2.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--c-blue10);
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.85rem;
+        color: var(--c-muted);
+      }
+
+      /* ── Admin modal ── */
+      /* Global header (launchpad.css) is fixed with a high z-index and paints
+       over centered overlays. We push the dialog down below the header via
+       --thb-header-offset instead of relying on z-index alone. */
+      .thb-modal {
+        --thb-header-offset: 120px;
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        padding: var(--thb-header-offset) 20px 24px;
+        z-index: 2147483000;
+      }
+      .thb-modal.is-open {
+        display: flex;
+      }
+      .thb-modal__backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.78);
+      }
+      .thb-modal__dialog {
+        position: relative;
+        width: min(1100px, 92vw);
+        height: calc(100vh - var(--thb-header-offset) - 24px);
+        background: #fff;
+        border-radius: var(--r-lg);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+      }
+      .thb-modal__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        background: var(--c-blue5);
+        border-bottom: 1px solid var(--c-blue20);
+        flex-shrink: 0;
+        position: relative;
+        z-index: 2;
+      }
+      .thb-modal__title {
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--lp-hl);
+        margin: 0;
+      }
+      .thb-modal__close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--c-blue20);
+        background: #fff;
+        color: var(--c-text);
+        border-radius: var(--r);
+        cursor: pointer;
+        font-size: 1.1rem;
+        transition: background 0.15s;
+        flex-shrink: 0;
+      }
+      .thb-modal__close:hover {
+        background: var(--lp-accent);
+        color: #fff;
+        border-color: var(--lp-accent);
+      }
+      .thb-modal__close:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 2px;
+      }
+      .thb-modal__body {
+        flex: 1;
+        min-height: 0;
+        position: relative;
+        z-index: 1;
+      }
+      .thb-modal__frame {
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+
+      @media (max-width: 600px) {
+        .thb-page {
+          padding: 2rem 1rem 4rem;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .thb-tile,
+        .thb-chev,
+        .thb-update-btn {
+          transition: none;
+        }
+        .thb-tile:hover {
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!--{if $empMembership['groupID'][1]}-->
+    <div class="lp" id="lp-root">
+      <main id="lp-main" tabindex="-1">
+        <div class="thb-page">
+          <div
+            id="thbGroups"
+            hidden
+            data-groups="<!--{foreach $empMembership['groupID'] as $gid => $member}--><!--{$gid}-->,<!--{/foreach}-->"
+          ></div>
+          <header class="thb-header">
+            <div class="thb-header-text">
+              <p class="thb-kicker">LEAF Team</p>
+              <h1 class="thb-title">Team Hub</h1>
+              <p class="thb-sub">Your hub for internal team links and inbox.</p>
+            </div>
+            <!-- data-nav-external: leaf_header.js's link interceptor skips it,
+                 so it opens normally instead of being hash-routed -->
+            <a
+              class="thb-update-btn"
+              href="/platform/service_requests_launchpad/open.php?report=32wnw"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-nav-external
+            >
+              <span
+                class="material-symbols-outlined"
+                aria-hidden="true"
+                data-icon="edit_note"
+              ></span
+              >Update links<span class="sr-only"> (opens in a new tab)</span>
+            </a>
+          </header>
+
+          <!-- Search / filter -->
+          <div class="thb-toolbar">
+            <div class="thb-search">
+              <span class="material-symbols-outlined" aria-hidden="true"
+                ><svg viewBox="0 -960 960 960" fill="currentColor">
+                  <path
+                    d="M796-121 533-384q-30 26-70 40.5T378-329q-108 0-183-75t-75-181q0-106 75-181t182-75q106 0 180.5 75T632-585q0 43-14 83t-42 75l264 262-44 44ZM377-389q81 0 138-57.5T572-585q0-81-57-138.5T377-781q-82 0-139.5 57.5T180-585q0 81 57.5 138.5T377-389Z"
+                  /></svg
+              ></span>
+              <input
+                type="text"
+                id="thbSearch"
+                placeholder="Search links…"
+                aria-label="Search links"
+                autocomplete="off"
+              />
+              <button
+                class="thb-clear"
+                id="thbClear"
+                type="button"
+                aria-label="Clear search"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true"
+                  ><svg viewBox="0 -960 960 960" fill="currentColor">
+                    <path
+                      d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+                    /></svg
+                ></span>
+              </button>
+            </div>
+            <div
+              class="thb-filters"
+              id="thbFilters"
+              role="group"
+              aria-label="Filter by category"
+            >
+              <button
+                class="thb-filter active"
+                data-filter="all"
+                type="button"
+                aria-pressed="true"
+              >
+                All
+              </button>
+            </div>
+            <span
+              class="thb-result-count"
+              id="thbResultCount"
+              aria-live="polite"
+            ></span>
+          </div>
+
+          <!-- Admin inbox -->
+          <div
+            class="thb-admin"
+            id="thbAdmin"
+            data-type="admin"
+            role="region"
+            aria-label="Admin inbox"
+          >
+            <div class="thb-admin-left">
+              <span class="thb-admin-icon"
+                ><span class="material-symbols-outlined" aria-hidden="true"
+                  ><svg viewBox="0 -960 960 960" fill="currentColor">
+                    <path
+                      d="M180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h600q24 0 42 18t18 42v600q0 24-18 42t-42 18H180Zm374-196.5q33-23.5 56-59.5h170v-404H180v404h170q23 36 56 59.5t74 23.5q41 0 74-23.5Z"
+                    /></svg></span
+              ></span>
+              <div>
+                <h2>Admin Inbox</h2>
+                <p>Requests, approvals, and queue management</p>
+              </div>
+            </div>
+            <button
+              class="thb-admin-btn thb-modal-trigger"
+              type="button"
+              id="thbAdminOpen"
+              data-report-title="Admin Inbox"
+              data-report-src="https://leaf.va.gov/platform/service_requests_launchpad/report.php?a=LEAF_Inbox&organizeByRole&iframe=1"
+            >
+              Open Inbox
+            </button>
+          </div>
+
+          <!-- Link load status (filled by JS) -->
+          <p
+            class="thb-status"
+            id="thbStatus"
+            role="status"
+            aria-live="polite"
+            tabindex="-1"
+          >
+            Loading team links…
+          </p>
+          <div class="thb-error" id="thbError" role="alert"></div>
+          <p class="thb-status" id="thbRefreshMsg" aria-live="polite"></p>
+
+          <!-- One section per form_531cc category, built by the script below -->
+          <div id="thbSections" aria-busy="true"></div>
+
+          <div class="thb-footer">Internal use only</div>
+        </div>
+      </main>
+
+      <button
+        class="lp-jump"
+        id="lpJump"
+        type="button"
+        aria-label="Back to top"
+        aria-hidden="true"
+        tabindex="-1"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true"
+          ><svg viewBox="0 -960 960 960" fill="currentColor">
+            <path
+              d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z"
+            /></svg
+        ></span>
+      </button>
+    </div>
+
+    <script>
+      (() => {
+        "use strict";
+        const init = () => {
+          const $id = (id) => document.getElementById(id);
+
+          // An earlier inline visit may not have been torn down; destroy() is idempotent.
+          window.LP_PAGES?.team?.destroy?.();
+
+          /* Links are records of form_531cc on the Service Requests Launchpad
+             LEAF site. Root-relative (same origin) so the user's LEAF session
+             cookie is sent. Trailing slash required. */
+          const CONFIG = {
+            apiBase: "/platform/service_requests_launchpad/",
+            formID: "form_531cc",
+            timeoutMs: 15000,
+            refreshAfterMs: 5000,
+          };
+
+          // popup = "Open in popup" (Yes/No), order = "Section Order" (number),
+          // groupID = optional; only members of that group see the link
+          const INDICATORS = {
+            name: 479,
+            url: 480,
+            category: 489,
+            popup: 490,
+            order: 491,
+            groupID: 503,
+          };
+
+          /* Display-only gate. Fail closed: no parsed groups means every
+             gated link is hidden. Sysadmins (group 1) get no bypass. */
+          const memberGroups = new Set(
+            ($id("thbGroups")?.dataset.groups || "").match(/\d+/g)?.map(Number) ||
+              [],
+          );
+          const canView = (groupID) =>
+            !groupID || memberGroups.has(Number(groupID));
+
+          const UNCATEGORIZED_KEY = "uncategorized";
+          const UNCATEGORIZED_TITLE = "Uncategorized";
+
+          /* Material Symbols (Filled) path data for viewBox "0 -960 960 960",
+             for icons built by JS. Static icons are inline SVG in the markup. */
+          const ICON_PATHS = {
+            expand_more:
+              "M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z",
+            link: "M440-280H280q-83 0-141.5-58.5T80-480q0-83 58.5-141.5T280-680h160v80H280q-50 0-85 35t-35 85q0 50 35 85t85 35h160v80ZM320-440v-80h320v80H320Zm200 160v-80h160q50 0 85-35t35-85q0-50-35-85t-85-35H520v-80h160q83 0 141.5 58.5T880-480q0 83-58.5 141.5T680-280H520Z",
+            edit_note:
+              "M160-400v-80h280v80H160Zm0-160v-80h440v80H160Zm0-160v-80h440v80H160Zm360 560v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q8 9 12.5 20t4.5 22q0 11-4 22.5T863-380L643-160H520Zm263-224 37-39-37-37-38 38 38 38Z",
+          };
+
+          const SVG_NS = "http://www.w3.org/2000/svg";
+          const fillIcon = (el, name) => {
+            const d = ICON_PATHS[name];
+            if (!d) return;
+            const svg = document.createElementNS(SVG_NS, "svg");
+            svg.setAttribute("viewBox", "0 -960 960 960");
+            svg.setAttribute("fill", "currentColor");
+            svg.setAttribute("focusable", "false");
+            const path = document.createElementNS(SVG_NS, "path");
+            path.setAttribute("d", d);
+            svg.appendChild(path);
+            el.replaceChildren(svg);
+          };
+          const makeIcon = (name, extraClass) => {
+            const span = document.createElement("span");
+            span.className = "material-symbols-outlined";
+            if (extraClass) span.classList.add(extraClass);
+            span.setAttribute("aria-hidden", "true");
+            fillIcon(span, name);
+            return span;
+          };
+          document
+            .querySelectorAll("[data-icon]")
+            .forEach((el) => fillIcon(el, el.dataset.icon));
+
+          function getS1Value(record, indicatorId) {
+            const value = record?.s1?.["id" + indicatorId];
+            if (value === null || value === undefined) return "";
+            return typeof value === "string" ? value.trim() : value;
+          }
+
+          // LEAF returns text fields HTML-escaped (e.g. "&amp;" in URLs).
+          // A <textarea> only parses the string as text, never as markup.
+          function decodeHtmlEntities(text) {
+            if (!text) return "";
+            const textarea = document.createElement("textarea");
+            textarea.innerHTML = String(text);
+            return textarea.value;
+          }
+
+          const readField = (record, indicatorId) =>
+            decodeHtmlEntities(getS1Value(record, indicatorId)).trim();
+
+          // Normalized view of the grouped, sorted links (what render() shows),
+          // used to skip no-op refreshes.
+          const snapshotOf = (groups) =>
+            JSON.stringify(
+              groups.map((g) => [
+                g.key,
+                g.title,
+                g.links.map((l) => [l.recordID, l.name, l.href, l.popup]),
+              ]),
+            );
+
+          const isYes = (value) =>
+            ["yes", "true", "1"].includes(value.toLowerCase());
+
+          const parseOrder = (value) => {
+            if (value === "") return null;
+            const n = Number(value);
+            return Number.isFinite(n) ? n : null;
+          };
+
+          // Allows same-origin root-relative paths and https: URLs only.
+          // "//host" and "/\host" start with "/" but resolve off-origin.
+          function safeUrl(raw) {
+            if (!raw) return null;
+            try {
+              if (raw.startsWith("/")) {
+                const u = new URL(raw, window.location.origin);
+                return u.origin === window.location.origin
+                  ? u.pathname + u.search + u.hash
+                  : null;
+              }
+              const u = new URL(raw);
+              return u.protocol === "https:" ? u.href : null;
+            } catch {
+              return null;
+            }
+          }
+
+          /* Skips links the viewer can't see, so a section with only gated
+             links is never built. Groups records by category (trimmed,
+             case-insensitive). Links in each group sort A–Z by name (empty
+             names last, ties by record order). Sections sort by their lowest Section Order, then
+             unnumbered by lowest record ID, with Uncategorized always last. */
+          function groupLinks(data) {
+            const groups = new Map();
+            Object.keys(data)
+              .sort((a, b) => Number(a) - Number(b))
+              .forEach((recordID) => {
+                const rec = data[recordID];
+                const rawUrl = readField(rec, INDICATORS.url);
+                const href = safeUrl(rawUrl);
+                if (!href) {
+                  console.warn(
+                    `[TeamHub] Record ${recordID}: skipped — URL must start with "/" or "https:" (got "${rawUrl}").`,
+                  );
+                  return;
+                }
+                if (!canView(readField(rec, INDICATORS.groupID))) return;
+
+                const rawCategory = readField(rec, INDICATORS.category);
+                const key = rawCategory
+                  ? rawCategory.toLowerCase()
+                  : UNCATEGORIZED_KEY;
+                let group = groups.get(key);
+                if (!group) {
+                  group = {
+                    key,
+                    title: rawCategory || UNCATEGORIZED_TITLE,
+                    order: Infinity,
+                    firstRecord: Number(recordID),
+                    links: [],
+                  };
+                  groups.set(key, group);
+                }
+
+                const order = parseOrder(readField(rec, INDICATORS.order));
+                if (order !== null && order < group.order) group.order = order;
+
+                const name = readField(rec, INDICATORS.name);
+                group.links.push({
+                  recordID,
+                  name,
+                  label: name || href,
+                  href,
+                  popup: isYes(readField(rec, INDICATORS.popup)),
+                });
+              });
+
+            // Sorted once here so page tiles and modal triggers share one order
+            groups.forEach((group) => {
+              group.links = group.links
+                .map((link, i) => ({ link, i }))
+                .sort((a, b) => {
+                  const an = a.link.name;
+                  const bn = b.link.name;
+                  if (!an !== !bn) return an ? -1 : 1;
+                  return (
+                    an.localeCompare(bn, undefined, {
+                      sensitivity: "base",
+                      numeric: true,
+                    }) || a.i - b.i
+                  );
+                })
+                .map(({ link }) => link);
+            });
+
+            return [...groups.values()].sort((a, b) => {
+              const aLast = a.key === UNCATEGORIZED_KEY;
+              const bLast = b.key === UNCATEGORIZED_KEY;
+              if (aLast !== bLast) return aLast ? 1 : -1;
+              if (a.order !== b.order) return a.order < b.order ? -1 : 1;
+              return a.firstRecord - b.firstRecord;
+            });
+          }
+
+          // Category text → unique, id-safe slug ("Q&A / FAQ" → "q-a-faq").
+          const slugify = (key, used) => {
+            const base =
+              key
+                .normalize("NFKD")
+                .replace(/[̀-ͯ]/g, "")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "") || "category";
+            let slug = base;
+            for (let n = 2; used.has(slug); n++) slug = `${base}-${n}`;
+            used.add(slug);
+            return slug;
+          };
+
+          function makeTile(link) {
+            let tile;
+            if (link.popup) {
+              tile = document.createElement("button");
+              tile.type = "button";
+              tile.classList.add("thb-modal-trigger");
+              tile.setAttribute("aria-haspopup", "dialog");
+              tile.dataset.reportTitle = link.label;
+              tile.dataset.reportSrc = link.href;
+            } else {
+              tile = document.createElement("a");
+              tile.href = link.href;
+              tile.target = "_blank";
+              tile.rel = "noopener noreferrer";
+              // leaf_header.js's link interceptor skips anchors with
+              // data-nav-external, so they open normally instead of being hash-routed
+              tile.setAttribute("data-nav-external", "");
+            }
+            tile.classList.add("thb-tile");
+            tile.dataset.label = link.label.toLowerCase();
+            tile.dataset.focusKey = "tile:" + link.recordID;
+
+            const label = document.createElement("span");
+            label.className = "thb-tile-label";
+            label.textContent = link.label;
+            tile.append(makeIcon("link"), label);
+
+            if (!link.popup) {
+              const sr = document.createElement("span");
+              sr.className = "sr-only";
+              sr.textContent = " (opens in a new tab)";
+              tile.appendChild(sr);
+            }
+
+            const li = document.createElement("li");
+            li.appendChild(tile);
+            return li;
+          }
+
+          const collapsedKeys = new Set();
+
+          function makeSection(group, slug) {
+            const n = group.links.length;
+            const section = document.createElement("section");
+            section.className = "thb-sec";
+            section.id = "thb-sec-" + slug;
+            section.dataset.key = group.key;
+            section.setAttribute("aria-labelledby", "thb-title-" + slug);
+
+            const heading = document.createElement("h2");
+            heading.className = "thb-sec-h";
+            const head = document.createElement("button");
+            head.className = "thb-sec-head";
+            head.type = "button";
+            head.setAttribute("aria-controls", "thb-body-" + slug);
+            head.dataset.focusKey = "head:" + group.key;
+
+            const left = document.createElement("span");
+            left.className = "thb-sec-head-left";
+            const iconWrap = document.createElement("span");
+            iconWrap.className = "thb-sec-icon";
+            iconWrap.appendChild(makeIcon("link"));
+            const title = document.createElement("span");
+            title.className = "thb-sec-title";
+            title.id = "thb-title-" + slug;
+            title.textContent = group.title;
+            const count = document.createElement("span");
+            count.className = "thb-sec-count";
+            count.textContent = `${n} link${n === 1 ? "" : "s"}`;
+            left.append(iconWrap, title, count);
+            head.append(left, makeIcon("expand_more", "thb-chev"));
+            heading.appendChild(head);
+
+            const body = document.createElement("div");
+            body.className = "thb-sec-body";
+            body.id = "thb-body-" + slug;
+            const grid = document.createElement("ul");
+            grid.className = "thb-grid";
+            grid.append(...group.links.map((link) => makeTile(link)));
+            const empty = document.createElement("p");
+            empty.className = "thb-empty";
+            empty.setAttribute("aria-live", "polite");
+            empty.textContent = "No links match your search.";
+            body.append(grid, empty);
+
+            section.append(heading, body);
+            setCollapsed(section, collapsedKeys.has(group.key));
+            return section;
+          }
+
+          function makeChip(group) {
+            const chip = document.createElement("button");
+            chip.className = "thb-filter";
+            chip.type = "button";
+            chip.dataset.key = group.key;
+            chip.dataset.focusKey = "chip:" + group.key;
+            chip.textContent = group.title;
+            return chip;
+          }
+
+          function setCollapsed(section, collapsed) {
+            section.classList.toggle("collapsed", collapsed);
+            section
+              .querySelector(".thb-sec-head")
+              .setAttribute("aria-expanded", String(!collapsed));
+            if (collapsed) collapsedKeys.add(section.dataset.key);
+            else collapsedKeys.delete(section.dataset.key);
+          }
+
+          const findByFocusKey = (key) =>
+            key
+              ? Array.from(document.querySelectorAll("[data-focus-key]")).find(
+                  (el) => el.dataset.focusKey === key,
+                )
+              : null;
+
+          /* ── Search + category filter ── */
+          const search = $id("thbSearch");
+          const clearBtn = $id("thbClear");
+          const admin = $id("thbAdmin");
+          const resultCount = $id("thbResultCount");
+          const filters = $id("thbFilters");
+          const sectionsWrap = $id("thbSections");
+          const status = $id("thbStatus");
+          const errorBox = $id("thbError");
+          const refreshMsg = $id("thbRefreshMsg");
+          let activeKey = null; // null = "All"
+          let lastSuccess = 0;
+
+          const syncChips = () => {
+            filters.querySelectorAll(".thb-filter").forEach((chip) => {
+              const on = (chip.dataset.key ?? null) === activeKey;
+              chip.classList.toggle("active", on);
+              chip.setAttribute("aria-pressed", String(on));
+            });
+          };
+
+          const apply = () => {
+            const q = search.value.trim().toLowerCase();
+            clearBtn.classList.toggle("vis", q.length > 0);
+
+            admin.hidden = activeKey !== null;
+
+            let shown = 0;
+            let considered = 0;
+
+            sectionsWrap.querySelectorAll(".thb-sec").forEach((el) => {
+              const typeOK = activeKey === null || activeKey === el.dataset.key;
+              el.hidden = !typeOK;
+              if (!typeOK) return;
+
+              const tiles = el.querySelectorAll(".thb-tile");
+              considered += tiles.length;
+              let matches = 0;
+              tiles.forEach((t) => {
+                const hit = !q || t.dataset.label.includes(q);
+                t.closest("li").hidden = !hit;
+                if (hit) matches++;
+              });
+              shown += matches;
+
+              el.classList.toggle("no-matches", matches === 0);
+              if (q) setCollapsed(el, false);
+            });
+
+            // "Showing X of Y" badge — only while searching or filtering
+            resultCount.textContent =
+              lastSuccess && (q || activeKey !== null)
+                ? `Showing ${shown} of ${considered}`
+                : "";
+          };
+
+          search.addEventListener("input", apply);
+          clearBtn.addEventListener("click", () => {
+            search.value = "";
+            apply();
+            search.focus();
+          });
+
+          filters.addEventListener("click", (e) => {
+            const chip = e.target.closest(".thb-filter");
+            if (!chip) return;
+            activeKey = chip.dataset.key ?? null;
+            syncChips();
+            apply();
+          });
+
+          sectionsWrap.addEventListener("click", (e) => {
+            const head = e.target.closest(".thb-sec-head");
+            if (!head) return;
+            const section = head.closest(".thb-sec");
+            setCollapsed(section, !section.classList.contains("collapsed"));
+          });
+
+          /* Rebuilds sections + chips. Search text, active filter, collapsed
+             state and keyboard focus survive a refresh. */
+          function render(groups) {
+            const focused = document.activeElement;
+            const focusKey = focused?.dataset?.focusKey;
+            const focusCategory = focusKey
+              ? (focused.closest(".thb-sec") || focused).dataset.key
+              : undefined;
+
+            const used = new Set();
+            sectionsWrap.replaceChildren(
+              ...groups.map((g) => makeSection(g, slugify(g.key, used))),
+            );
+
+            // Only category chips are rebuilt; the static "All" chip stays put.
+            filters.querySelectorAll("[data-key]").forEach((c) => c.remove());
+            filters.append(...groups.map((g) => makeChip(g)));
+
+            if (activeKey !== null && !groups.some((g) => g.key === activeKey))
+              activeKey = null;
+            syncChips();
+            apply();
+
+            // Focus was on a replaced element: same element → its category's
+            // header → "All" chip, so it never drops to <body>.
+            if (!focusKey) return;
+            const target = [
+              findByFocusKey(focusKey),
+              findByFocusKey("head:" + focusCategory),
+              filters.querySelector('[data-filter="all"]'),
+            ].find((el) => el && !el.closest("[hidden]"));
+            target.focus({ preventScroll: true });
+          }
+
+          /* ── Load links from form_531cc ── */
+          const showError = () => {
+            const msg = document.createElement("p");
+            msg.textContent =
+              "Team links couldn't be loaded. Check your connection or LEAF access, then try again.";
+            const retry = document.createElement("button");
+            retry.type = "button";
+            retry.className = "thb-retry";
+            retry.textContent = "Retry";
+            retry.addEventListener("click", () => {
+              loadLinks("retry");
+              // Retry is removed on reload; keep focus on the status message
+              status.focus();
+            });
+            errorBox.replaceChildren(msg, retry);
+          };
+
+          const focusFirstSection = () =>
+            (
+              sectionsWrap.querySelector(".thb-sec:not([hidden]) .thb-sec-head") ||
+              status
+            ).focus({ preventScroll: true });
+
+          /* mode: "initial" | "retry" (Retry button) | "auto-retry" (tab return
+             after a failed first load; error UI stays until it succeeds) |
+             "refresh" (tab return after a successful load).
+             loadSeq drops responses from superseded requests; starting a new
+             request aborts the previous one so they never overlap. */
+          let loadSeq = 0;
+          let inFlight = false;
+          let currentCtrl = null;
+          let lastAttempt = 0;
+          let lastSnapshot = null;
+          async function loadLinks(mode = "initial") {
+            currentCtrl?.abort();
+            const seq = ++loadSeq;
+            const ctrl = new AbortController();
+            currentCtrl = ctrl;
+            inFlight = true;
+            lastAttempt = Date.now();
+            const isRefresh = mode === "refresh";
+            const isAuto = mode === "auto-retry";
+            if (!isRefresh) sectionsWrap.setAttribute("aria-busy", "true");
+            if (!isRefresh && !isAuto) {
+              errorBox.replaceChildren();
+              status.textContent = "Loading team links…";
+            }
+
+            const timer = setTimeout(() => ctrl.abort(), CONFIG.timeoutMs);
+            try {
+              // Plain fetch + encodeURIComponent, same as lp_blog.html
+              // (LeafFormQuery's URL encoding is unreliable for this API).
+              const q = {
+                terms: [
+                  {
+                    id: "categoryID",
+                    operator: "=",
+                    match: CONFIG.formID,
+                    gate: "AND",
+                  },
+                  { id: "deleted", operator: "=", match: 0, gate: "AND" },
+                ],
+                joins: [],
+                sort: {},
+                getData: Object.values(INDICATORS),
+              };
+              const r = await fetch(
+                `${CONFIG.apiBase}api/form/query?q=${encodeURIComponent(JSON.stringify(q))}`,
+                {
+                  credentials: "include",
+                  cache: "no-store",
+                  signal: ctrl.signal,
+                },
+              );
+              if (!r.ok) throw new Error("Query failed HTTP " + r.status);
+              const data = await r.json();
+              if (!data || typeof data !== "object")
+                throw new Error("Unexpected query response");
+              if (seq !== loadSeq) return;
+
+              // Focus on Retry/status is about to lose its target
+              const active = document.activeElement;
+              const focusOnError =
+                active === status || errorBox.contains(active);
+              lastSuccess = Date.now();
+              refreshMsg.textContent = "";
+              const groups = groupLinks(data);
+              const snapshot = snapshotOf(groups);
+              if (isRefresh && snapshot === lastSnapshot) return;
+              lastSnapshot = snapshot;
+
+              render(groups);
+              status.textContent = groups.length
+                ? ""
+                : "No team links were found. If you expected links here, check that you have access to the Service Requests Launchpad site.";
+              if (mode === "retry" || isAuto) {
+                errorBox.replaceChildren();
+                if (focusOnError) focusFirstSection();
+              }
+            } catch (err) {
+              if (seq !== loadSeq) return;
+              console.error("[TeamHub] Failed to load links:", err);
+              if (isRefresh) {
+                refreshMsg.textContent =
+                  "Links couldn't be refreshed. Showing the last loaded version.";
+              } else if (isAuto) {
+                // Keep the existing error + Retry (and any focus on it) as-is
+              } else {
+                status.textContent = "";
+                showError();
+              }
+            } finally {
+              clearTimeout(timer);
+              if (seq === loadSeq) {
+                inFlight = false;
+                currentCtrl = null;
+                sectionsWrap.setAttribute("aria-busy", "false");
+              }
+            }
+          }
+
+          // Document/window listeners from this visit, removed by destroy()
+          const pageCtl = new AbortController();
+          const listen = { signal: pageCtl.signal };
+
+          /* ── Report modal (Admin Inbox and popup links) ──
+             Inline under the Launchpad router (#team) this page's markup lives
+             inside the shell's #lpSwapHost, and earlier visits may have left a
+             modal on <body>. Keep only this visit's copy (the one not yet on
+             <body>; standalone there is just one) and move it to <body> so no
+             ancestor's inert/aria-hidden/transform/overflow can affect it. */
+          const modal = (() => {
+            const copies = Array.from(document.querySelectorAll("#thbModal"));
+            const current =
+              copies.find((m) => m.parentElement !== document.body) ||
+              copies[copies.length - 1];
+            copies.forEach((m) => m !== current && m.remove());
+            if (current && current.parentElement !== document.body)
+              document.body.appendChild(current);
+            return current || null;
+          })();
+          // Scoped to this modal — ids may be duplicated while stale copies exist
+          const frame = modal?.querySelector("#thbModalFrame");
+          const titleEl = modal?.querySelector("#thbModalTitle");
+          const closeBtn = modal?.querySelector("#thbModalClose");
+          const backdrop = modal?.querySelector("#thbModalBackdrop");
+          const modalReady = !!(frame && titleEl && closeBtn && backdrop);
+          const isModalOpen = () =>
+            modalReady && modal.classList.contains("is-open");
+
+          let savedOverflow = null;
+          // Hides the modal and restores body scroll; shared by close and destroy()
+          const releaseModal = () => {
+            modal.classList.remove("is-open");
+            modal.setAttribute("aria-hidden", "true");
+            if (savedOverflow !== null) {
+              document.body.style.overflow = savedOverflow;
+              savedOverflow = null;
+            }
+            // Clearing src stops the iframe so audio/video and resources free up
+            frame.src = "";
+          };
+
+          if (modalReady) {
+            let lastFocused = null;
+            let lastFocusKey = null;
+
+            /* Shared LEAF pattern (also in leaf_header.js, calendar.js,
+               project_v19/v20.js): strips the embedded page's own
+               header/footer chrome once a same-origin iframe has loaded,
+               and clears the top gap that chrome would otherwise leave
+               behind. */
+            const stripLeafChrome = (f) => {
+              try {
+                const doc =
+                  f.contentDocument ||
+                  (f.contentWindow && f.contentWindow.document);
+                if (!doc || !doc.head) return;
+                if (doc.getElementById("leaf-chrome-strip")) return;
+
+                const style = doc.createElement("style");
+                style.id = "leaf-chrome-strip";
+                style.textContent = [
+                  "#header, #siteHeader, .siteHeader, #leafHeader, .leaf-header,",
+                  "#topNav, .topNav, #mainNav, .site-header, #site-header,",
+                  "header.main, nav.main-nav, #headerWrap, .headerWrap,",
+                  "#globalHeader, .globalHeader, footer#footer, #nav-skip-link {",
+                  "  display: none !important;",
+                  "}",
+                  "body, main#body, #content, #bodyarea {",
+                  "  margin-top: 0 !important;",
+                  "  padding-top: 0 !important;",
+                  "}",
+                ].join("\n");
+                doc.head.appendChild(style);
+
+                const headerEl = doc.getElementById("header");
+                if (headerEl) headerEl.style.display = "none";
+              } catch (e) {
+                // Cross-origin or otherwise inaccessible — leave the frame as-is.
+              }
+            };
+            frame.addEventListener("load", () => stripLeafChrome(frame));
+
+            /* Measures the fixed/sticky global header so the dialog clears it.
+               Anything taller than 40% of the viewport (e.g. an open mobile
+               drawer matching [class*="nav"]) is ignored and the 120px CSS
+               default is used instead. */
+            const measureHeaderOffset = () => {
+              let bottom = 0;
+              document
+                .querySelectorAll(
+                  'header, nav, [class*="breadcrumb"], [class*="nav"]',
+                )
+                .forEach((el) => {
+                  const cs = getComputedStyle(el);
+                  if (cs.position === "fixed" || cs.position === "sticky") {
+                    const rect = el.getBoundingClientRect();
+                    // Only count bars anchored near the top of the viewport
+                    if (rect.top <= 4 && rect.bottom > bottom)
+                      bottom = rect.bottom;
+                  }
+                });
+              if (bottom > 0 && bottom <= window.innerHeight * 0.4) {
+                modal.style.setProperty(
+                  "--thb-header-offset",
+                  `${Math.ceil(bottom) + 16}px`,
+                );
+              } else {
+                modal.style.removeProperty("--thb-header-offset");
+              }
+            };
+
+            const openModal = (trigger) => {
+              lastFocused = trigger;
+              lastFocusKey = trigger.dataset.focusKey || null;
+              measureHeaderOffset();
+              const reportTitle = trigger.dataset.reportTitle || "Report";
+              titleEl.textContent = reportTitle;
+              frame.setAttribute("title", reportTitle);
+              frame.src = trigger.dataset.reportSrc;
+              // Background is not made inert: aria-modal + the focus trap
+              // cover it, and "#lp-root" is ambiguous when loaded inline.
+              modal.inert = false;
+              modal.removeAttribute("aria-hidden");
+              modal.classList.add("is-open");
+              if (savedOverflow === null)
+                savedOverflow = document.body.style.overflow;
+              document.body.style.overflow = "hidden";
+              closeBtn.focus();
+            };
+            const closeModal = () => {
+              releaseModal();
+              // The trigger may have been replaced by a refresh while open
+              const target = lastFocused?.isConnected
+                ? lastFocused
+                : findByFocusKey(lastFocusKey) ||
+                  sectionsWrap.querySelector(".thb-sec-head") ||
+                  status;
+              target.focus();
+            };
+
+            // Delegated: popup tiles are rendered after the fetch, and the
+            // Admin Inbox button sits outside the sections.
+            document.addEventListener(
+              "click",
+              (e) => {
+                const trigger = e.target.closest(".thb-modal-trigger");
+                if (trigger) openModal(trigger);
+              },
+              listen,
+            );
+            closeBtn.addEventListener("click", closeModal);
+            backdrop.addEventListener("click", closeModal);
+            document.addEventListener(
+              "keydown",
+              (e) => {
+                if (e.key === "Escape" && isModalOpen()) closeModal();
+              },
+              listen,
+            );
+
+            /* Focus trap: close button <-> iframe. Keys pressed inside a
+               cross-origin iframe never reach this page, so Tab out of the
+               report is caught by focusin instead and sent back to Close. */
+            modal.addEventListener("keydown", (e) => {
+              if (e.key !== "Tab" || !isModalOpen()) return;
+              if (e.shiftKey && document.activeElement === closeBtn) {
+                e.preventDefault();
+                frame.focus();
+              } else if (!e.shiftKey && document.activeElement === frame) {
+                e.preventDefault();
+                closeBtn.focus();
+              }
+            });
+            document.addEventListener(
+              "focusin",
+              (e) => {
+                if (isModalOpen() && !modal.contains(e.target))
+                  closeBtn.focus();
+              },
+              listen,
+            );
+          }
+
+          // Router teardown (leaf_header.js calls LP_PAGES.team.destroy()
+          // before replacing this route): stop loads, drop document listeners,
+          // and close and remove the body-level modal.
+          let destroyed = false;
+          window.LP_PAGES = window.LP_PAGES || {};
+          window.LP_PAGES.team = {
+            ...window.LP_PAGES.team,
+            destroy() {
+              if (destroyed) return;
+              destroyed = true;
+              loadSeq++;
+              currentCtrl?.abort();
+              pageCtl.abort();
+              if (isModalOpen()) releaseModal();
+              modal?.remove();
+            },
+          };
+
+          /* ── Refresh (or retry a failed first load) on tab return ── */
+          document.addEventListener(
+            "visibilitychange",
+            () => {
+              if (document.visibilityState !== "visible" || inFlight) return;
+              if (isModalOpen()) return;
+              if (lastSuccess) {
+                if (Date.now() - lastSuccess >= CONFIG.refreshAfterMs)
+                  loadLinks("refresh");
+              } else if (
+                errorBox.childElementCount &&
+                Date.now() - lastAttempt >= CONFIG.refreshAfterMs
+              ) {
+                loadLinks("auto-retry");
+              }
+            },
+            listen,
+          );
+
+          /* ── Jump to top ── */
+          (() => {
+            const btn = $id("lpJump");
+            if (!btn) return;
+            const reduceMotion = window.matchMedia(
+              "(prefers-reduced-motion: reduce)",
+            );
+            const update = () => {
+              const vis =
+                (window.pageYOffset || document.documentElement.scrollTop) >
+                120;
+              btn.classList.toggle("vis", vis);
+              btn.setAttribute("aria-hidden", String(!vis));
+              btn.tabIndex = vis ? 0 : -1;
+            };
+            btn.addEventListener("click", () =>
+              window.scrollTo({
+                top: 0,
+                behavior: reduceMotion.matches ? "auto" : "smooth",
+              }),
+            );
+            window.addEventListener("scroll", update, {
+              passive: true,
+              signal: pageCtl.signal,
+            });
+            window.addEventListener("resize", update, listen);
+            update();
+          })();
+
+          loadLinks();
+        };
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", init, { once: true });
+        } else {
+          init();
+        }
+      })();
+    </script>
+
+    <!-- Shared report modal — at body level so no ancestor stacking context can trap it under the global header -->
+    <div
+      class="thb-modal"
+      id="thbModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="thbModalTitle"
+      aria-hidden="true"
+    >
+      <div class="thb-modal__backdrop" id="thbModalBackdrop"></div>
+      <div class="thb-modal__dialog">
+        <div class="thb-modal__header">
+          <h2 class="thb-modal__title" id="thbModalTitle">Admin Inbox</h2>
+          <button
+            class="thb-modal__close"
+            id="thbModalClose"
+            type="button"
+            aria-label="Close dialog"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true"
+              ><svg viewBox="0 -960 960 960" fill="currentColor">
+                <path
+                  d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+                /></svg
+            ></span>
+          </button>
+        </div>
+        <div class="thb-modal__body">
+          <iframe
+            class="thb-modal__frame"
+            id="thbModalFrame"
+            title="Admin Inbox"
+            tabindex="0"
+          ></iframe>
+        </div>
+      </div>
+    </div>
+    <!--{else}-->
+    <div class="lp" id="lp-root">
+      <main id="lp-main" tabindex="-1">
+        <div class="lp-gate">
+          <span class="lp-gate-icon" aria-hidden="true">
+            <span class="material-symbols-outlined" aria-hidden="true"
+              ><svg viewBox="0 -960 960 960" fill="currentColor">
+                <path
+                  d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm240-200q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z"
+                /></svg
+            ></span>
+          </span>
+          <h1>Access restricted</h1>
+          <p>
+            The Team Hub is available to LEAF Sysadmins only. Contact your LEAF
+            administrator if you believe you should have access.
+          </p>
+          <a href="/launchpad">Return to Launchpad</a>
+        </div>
+      </main>
+    </div>
+    <!--{/if}-->
+  </body>
+</html>
