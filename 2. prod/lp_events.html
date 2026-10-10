@@ -1,0 +1,1390 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Events — LEAF Launchpad</title>
+
+    <link rel="stylesheet" href="./files/launchpad.css" />
+    <link rel="stylesheet" href="./files/leaf_header.css" />
+
+    <style>
+      /* launchpad.css sizes .material-symbols-outlined via font-size,
+         which doesn't affect inlined <svg> — these rules size each icon. */
+      .hero-kicker .material-symbols-outlined svg {
+        width: 1rem;
+        height: 1rem;
+      }
+      .btn .material-symbols-outlined svg {
+        width: 1.15rem;
+        height: 1.15rem;
+      }
+      .lp-jump .material-symbols-outlined svg {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+      .ev-ico-tile svg,
+      .ev-arrow svg {
+        width: 24px;
+        height: 24px;
+      }
+      .ev-tile-time .material-symbols-outlined svg {
+        width: 1rem;
+        height: 1rem;
+      }
+
+      /* Event accents, chosen per card by data-type (see kindFor()). */
+      [data-type] {
+        --ev-accent: var(--c-blue60v);
+        --ev-tint: var(--c-blue5);
+      }
+      [data-type="101"] {
+        --ev-accent: #1b6b3a;
+        --ev-tint: #e6f4ea;
+      }
+      [data-type="102"] {
+        --ev-accent: #54278f;
+        --ev-tint: #f0e9f8;
+      }
+      [data-type="lunch"] {
+        --ev-accent: #9a4400;
+        --ev-tint: #fdeedd;
+      }
+
+      .ev-hero .sec-hd {
+        margin-bottom: 0;
+      }
+
+      .ev-ico-tile {
+        flex: none;
+        width: 44px;
+        height: 44px;
+        border-radius: var(--r);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        background: var(--ev-accent, var(--c-blue60v));
+      }
+
+      .ev-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .ev-btn {
+        min-height: 44px;
+        padding: 0 16px;
+        font-size: 0.9375rem;
+        justify-content: center;
+        text-align: center;
+        line-height: 1.2;
+      }
+      .ev-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: auto;
+      }
+
+      /* ── Special events band ── */
+      .ev-special {
+        background: var(--c-blue60);
+        color: #fff;
+      }
+      .ev-special-hd {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+      .ev-special-hd .sec-h2 {
+        margin: 0;
+        color: #fff;
+      }
+      .ev-star-tile {
+        flex: none;
+        width: 40px;
+        height: 40px;
+        border-radius: var(--r);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        color: var(--c-blue60);
+      }
+      .ev-star-tile svg {
+        width: 24px;
+        height: 24px;
+      }
+      /* auto-fill keeps 1–2 cards at card width instead of stretching. */
+      .ev-special-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+      }
+      .ev-special-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: #fff;
+        border: 1px solid #fff;
+        border-radius: var(--r-lg);
+        padding: 20px;
+        color: var(--c-text);
+      }
+      .ev-special .ev-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+      .ev-special .ev-btn {
+        flex: 1 1 auto;
+      }
+
+      /* One event: centered heading and a single wide card. */
+      .ev-special.is-single .ev-special-hd {
+        justify-content: center;
+      }
+      .ev-special.is-single .ev-special-list {
+        display: block;
+        max-width: 760px;
+        margin: 0 auto;
+      }
+      .ev-special.is-single .ev-special-card {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 20px;
+      }
+      .ev-special.is-single .ev-chip {
+        width: 80px;
+        padding: 10px 0;
+      }
+      .ev-special.is-single .ev-chip-mon {
+        font-size: 0.875rem;
+      }
+      .ev-special.is-single .ev-chip-day {
+        font-size: 2.25rem;
+      }
+      .ev-special-main {
+        flex: 1 1 280px;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .ev-special.is-single .ev-special-title {
+        font-size: 22px;
+      }
+      .ev-special.is-single .ev-actions {
+        margin-top: 0;
+        align-self: center;
+      }
+      .ev-special-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .ev-chip {
+        flex: none;
+        width: 56px;
+        padding: 6px 0;
+        border-radius: var(--r);
+        background: var(--c-blue60);
+        color: #fff;
+        text-align: center;
+        font-family: "Public Sans", sans-serif;
+        line-height: 1.1;
+      }
+      .ev-chip-mon {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+      .ev-chip-day {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 800;
+      }
+      .ev-special-when {
+        margin: 0;
+        color: var(--c-muted);
+        font-size: 0.9375rem;
+        font-weight: 600;
+      }
+      .ev-special-title {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 800;
+        line-height: 1.3;
+        color: var(--c-blue60);
+      }
+      .ev-special-desc {
+        margin: 0;
+        color: var(--c-muted);
+      }
+
+      /* ── Monthly sessions: event cards ── */
+      .ev-types-block {
+        padding-bottom: 48px;
+      }
+      .ev-types {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 16px;
+      }
+      .ev-types li {
+        display: flex;
+      }
+      .ev-type-btn {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 20px;
+        text-align: left;
+        font: inherit;
+        color: var(--c-text);
+        background: #fff;
+        border: 2px solid var(--c-blue20);
+        border-radius: var(--r-lg);
+        cursor: pointer;
+      }
+      .ev-type-btn:hover {
+        border-color: var(--ev-accent);
+      }
+      .ev-type-btn[aria-pressed="true"] {
+        background: var(--ev-tint);
+        border-color: var(--ev-accent);
+      }
+      .ev-type-btn > span {
+        display: block;
+      }
+      .ev-type-name {
+        font-family: "Public Sans", sans-serif;
+        font-weight: 800;
+        font-size: 18px;
+        line-height: 1.3;
+        color: var(--ev-accent);
+      }
+      .ev-type-desc {
+        color: var(--c-muted);
+        font-size: 0.9375rem;
+      }
+      .ev-type-state {
+        margin-top: auto;
+        font-weight: 700;
+        font-size: 0.9375rem;
+        color: var(--ev-accent);
+      }
+
+      /* ── Monthly sessions: upcoming dates band ── */
+      .ev-dates {
+        background: var(--c-blue5);
+        border-top: 1px solid var(--c-blue20);
+        border-bottom: 1px solid var(--c-blue20);
+        padding: 48px 0 64px;
+      }
+      .ev-dates-h3 {
+        margin: 0 0 24px;
+        font-size: 24px;
+        font-weight: 800;
+        line-height: 1.3;
+        color: var(--lp-hl);
+      }
+      .ev-pager {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .ev-tiles {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      .ev-dates-empty {
+        flex: 1;
+        margin: 0;
+        padding: 24px 0;
+        text-align: center;
+        color: var(--c-muted);
+      }
+      .ev-arrow {
+        flex: none;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        background: #fff;
+        border: 1px solid var(--c-blue20);
+        color: var(--c-blue60v);
+        cursor: pointer;
+      }
+      .ev-arrow:hover:not(:disabled) {
+        background: var(--c-blue10);
+      }
+      .ev-arrow:disabled {
+        color: var(--c-gray20);
+        cursor: default;
+      }
+
+      .ev-tile {
+        flex: 1 1 170px;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        border: 1px solid var(--c-blue20);
+        border-radius: var(--r-lg);
+        overflow: hidden;
+      }
+      .ev-tile-strip {
+        padding: 6px 12px;
+        background: var(--ev-accent);
+        color: #fff;
+        font-family: "Public Sans", sans-serif;
+        font-size: 0.8125rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-align: center;
+      }
+      .ev-tile-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 16px;
+        text-align: center;
+      }
+      .ev-tile-day {
+        display: block;
+        font-family: "Public Sans", sans-serif;
+        font-size: 56px;
+        font-weight: 800;
+        line-height: 1;
+        color: var(--c-text);
+      }
+      .ev-tile-wd {
+        display: block;
+        margin-top: 4px;
+        font-size: 0.8125rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: var(--c-muted);
+      }
+      .ev-tile-name {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 800;
+        line-height: 1.3;
+        color: var(--ev-accent);
+      }
+      .ev-tile-topic {
+        margin: 0;
+        font-family: "Public Sans", sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.35;
+        color: var(--c-text);
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow: hidden;
+      }
+      .ev-tile-time {
+        margin: 0 0 8px;
+        color: var(--c-muted);
+        font-size: 0.9375rem;
+      }
+
+      .ev-pager-foot {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-top: 20px;
+      }
+      .ev-dots {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+      }
+      .ev-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--c-blue20);
+      }
+      .ev-dot.is-active {
+        background: var(--c-blue60);
+      }
+      .ev-range {
+        margin: 0;
+        color: var(--c-muted);
+        font-size: 0.9375rem;
+      }
+
+      .ev-type-btn:focus-visible,
+      .ev-arrow:focus-visible {
+        outline: 3px solid var(--lp-hl);
+        outline-offset: 2px;
+      }
+
+      /* ── Loading / error / empty ── */
+      .ev-status {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        padding: 3rem 1.5rem;
+        color: var(--c-muted);
+      }
+      .ev-spinner {
+        width: 32px;
+        height: 32px;
+        border: 4px solid var(--c-blue10);
+        border-top-color: var(--c-blue60v);
+        border-radius: 50%;
+        animation: ev-spin 0.75s linear infinite;
+      }
+      @keyframes ev-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ev-spinner {
+          animation-duration: 1.6s;
+        }
+      }
+      .ev-error {
+        max-width: 640px;
+        margin: 0 auto;
+        background: #f4e3db;
+        border-left: 4px solid #d54309;
+        border-radius: var(--r-lg);
+        padding: 1rem 1.5rem;
+        color: #8b0a03;
+      }
+      .ev-empty {
+        margin: 0;
+        padding: 3rem 1.5rem;
+        text-align: center;
+        color: var(--c-muted);
+        font-size: 1.05rem;
+      }
+
+      @media (forced-colors: active) {
+        .ev-type-btn[aria-pressed="true"] {
+          border-width: 4px;
+          border-color: Highlight;
+        }
+        .ev-dot.is-active {
+          background: CanvasText;
+        }
+      }
+
+      /* display:flex/grid beats the browser's default [hidden] style,
+         so JS alone can't hide these — this override is required. */
+      .ev-status[hidden],
+      .ev-special-list[hidden],
+      .ev-types[hidden],
+      .ev-pager[hidden],
+      .ev-tiles[hidden],
+      .ev-arrow[hidden],
+      .ev-dots[hidden],
+      .ev-actions[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="lp" id="lp-root">
+      <div id="lp-header-host"></div>
+
+      <main id="lp-main" tabindex="-1">
+        <div
+          id="ev-live"
+          class="sr-only"
+          aria-live="polite"
+          aria-atomic="true"
+        ></div>
+
+        <section
+          class="section ev-hero"
+          aria-labelledby="ev-h1"
+          data-track-section="hero"
+        >
+          <div class="wrap">
+            <div class="sec-hd ctr">
+              <span class="hero-kicker">
+                <span class="material-symbols-outlined" aria-hidden="true"
+                  ><!-- TODO icon: videocam --></span
+                >
+                Online events
+              </span>
+              <h1 class="sec-h2" id="ev-h1">LEAF Events</h1>
+              <p class="sec-sub">
+                Join the LEAF team online for demos, training, and community
+                sessions.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          class="section ev-special"
+          id="ev-special"
+          aria-labelledby="ev-special-h2"
+          data-track-section="special-events"
+          hidden
+        >
+          <div class="wrap">
+            <div class="ev-special-hd">
+              <span class="ev-star-tile" aria-hidden="true"
+                ><svg viewBox="0 -960 960 960" fill="currentColor">
+                  <path
+                    d="m233-120 65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Z"
+                  /></svg
+              ></span>
+              <h2 class="sec-h2" id="ev-special-h2">Special Events</h2>
+            </div>
+            <ul class="ev-list ev-special-list" id="ev-special-list"></ul>
+          </div>
+        </section>
+
+        <section aria-labelledby="ev-monthly-h2" data-track-section="events-list">
+          <div class="section ev-types-block">
+            <div class="wrap">
+              <div class="sec-hd ctr">
+                <span class="eyebrow">Monthly sessions</span>
+                <h2 class="sec-h2" id="ev-monthly-h2">Find a session that fits</h2>
+                <p class="sec-sub">
+                  Choose an event to see its upcoming dates, then add it to your
+                  calendar.
+                </p>
+              </div>
+
+              <div id="ev-status" class="ev-status" role="status">
+                <div class="ev-spinner" aria-hidden="true"></div>
+                <p>Loading events&hellip;</p>
+              </div>
+
+              <div id="ev-error" class="ev-error" role="alert" hidden></div>
+
+              <p id="ev-empty" class="ev-empty" hidden>
+                No upcoming events are scheduled right now. Check back soon.
+              </p>
+
+              <ul class="ev-list ev-types" id="ev-types" hidden></ul>
+            </div>
+          </div>
+
+          <section class="ev-dates" id="ev-dates" aria-labelledby="ev-dates-h3" hidden>
+            <div class="wrap">
+              <h3 class="ev-dates-h3" id="ev-dates-h3">
+                Upcoming dates<span id="ev-dates-suffix"></span>
+              </h3>
+              <div
+                class="ev-pager"
+                role="group"
+                aria-label="Page through dates"
+              >
+                <button
+                  class="ev-arrow"
+                  id="ev-prev"
+                  type="button"
+                  aria-label="Previous dates"
+                  data-track="dates-prev"
+                  data-track-norage
+                >
+                  <!-- TODO icon: chevron_left -->
+                </button>
+                <ul class="ev-list ev-tiles" id="ev-tiles"></ul>
+                <p class="ev-dates-empty" id="ev-dates-empty" hidden>
+                  No upcoming dates for this event.
+                </p>
+                <button
+                  class="ev-arrow"
+                  id="ev-next"
+                  type="button"
+                  aria-label="Next dates"
+                  data-track="dates-next"
+                  data-track-norage
+                >
+                  <svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true">
+                    <path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z" />
+                  </svg>
+                </button>
+              </div>
+              <div class="ev-pager-foot">
+                <div class="ev-dots" id="ev-dots" aria-hidden="true"></div>
+                <p
+                  class="ev-range"
+                  id="ev-range"
+                  aria-live="polite"
+                  aria-atomic="true"
+                ></p>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <button
+        class="lp-jump"
+        id="lpJump"
+        type="button"
+        aria-label="Back to top"
+        aria-hidden="true"
+        tabindex="-1"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true"
+          ><svg viewBox="0 -960 960 960" fill="currentColor">
+            <path
+              d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z"
+            /></svg
+        ></span>
+      </button>
+    </div>
+    <!-- /.lp -->
+
+    <script
+      src="./files/leaf_header.js"
+      data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
+      data-csrf-token="<!--{$CSRFToken}-->"
+    ></script>
+
+    <script>
+      (() => {
+        "use strict";
+
+        // Every REPLACE_ME value keeps the page inert: no requests, empty state.
+        // Absolute apiBase paths — this page lives in /launchpad/, not the forms' sites.
+        const CONFIG = {
+          types: {
+            apiBase: "REPLACE_ME_TYPES_API_BASE", // e.g. "/platform/<site>/"
+            formId: "REPLACE_ME_TYPES_FORM_ID",
+            indicators: {
+              name: "REPLACE_ME",
+              description: "REPLACE_ME",
+              sortOrder: "REPLACE_ME",
+              action: "REPLACE_ME", // dropdown: "Join meeting" or "Register for training"
+            },
+          },
+          dates: {
+            apiBase: "REPLACE_ME_DATES_API_BASE",
+            formId: "REPLACE_ME_DATES_FORM_ID",
+            indicators: {
+              eventType: "REPLACE_ME", // dropdown; values match type names exactly
+              startDate: "REPLACE_ME",
+              startTime: "REPLACE_ME",
+              endTime: "REPLACE_ME",
+              link: "REPLACE_ME",
+              special: "REPLACE_ME", // Yes/No
+              title: "REPLACE_ME", // used by special events
+              description: "REPLACE_ME", // used by special events
+            },
+          },
+          publishedStatus: "REPLACE_ME_PUBLISHED_STATUS",
+          specialYesValue: "Yes",
+          registerValue: "Register for training",
+          timeZone: "America/New_York", // zone admins enter times in
+          maxSpecial: 4,
+          queryLimit: 200,
+        };
+
+        // Material Symbols (Filled). Constant markup only — never LEAF data.
+        const ICONS = {
+          play_circle:
+            '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m380-300 280-180-280-180v360ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg>',
+          school:
+            '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M840-280v-276L480-360 40-600l440-240 440 240v320h-80ZM480-120 200-272v-200l280 152 280-152v200L480-120Z"/></svg>',
+          layers: "", // TODO icon: layers
+          restaurant: "", // TODO icon: restaurant
+          event: "", // TODO icon: event
+          calendar_add_on: "", // TODO icon: calendar_add_on
+          videocam: "", // TODO icon: videocam
+          how_to_reg: "", // TODO icon: how_to_reg
+          schedule: "", // TODO icon: schedule
+        };
+
+        // First keyword found in the event name picks the accent and icon.
+        const EVENT_KINDS = [
+          { key: "demo", icon: "play_circle" },
+          { key: "101", icon: "school" },
+          { key: "102", icon: "layers" },
+          { key: "lunch", icon: "restaurant" },
+        ];
+        const FALLBACK_KIND = { key: "other", icon: "event" };
+
+        const byId = (id) => document.getElementById(id);
+        const mqOne = window.matchMedia("(max-width: 640px)");
+        const mqTwo = window.matchMedia("(max-width: 999px)");
+        const pageSize = () => (mqOne.matches ? 1 : mqTwo.matches ? 2 : 4);
+
+        const state = {
+          types: [],
+          calendar: [],
+          filter: null,
+          page: 0,
+          size: pageSize(),
+        };
+        let ui = {};
+
+        // Duplicated from lp_blog.html (no shared file between pages).
+        function decodeEntities(str) {
+          if (!str || typeof str !== "string") return str;
+          return str
+            .replace(/&amp;/g, "&")
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/&quot;/g, '"')
+            .replace(/&#039;/g, "'")
+            .replace(/&#39;/g, "'")
+            .replace(/&#x27;/g, "'")
+            .replace(/&apos;/g, "'");
+        }
+
+        function getField(s1, indicatorID) {
+          const v = s1["id" + indicatorID];
+          if (v == null) return "";
+          return decodeEntities(String(v).trim());
+        }
+
+        function unsetConfigValues(obj, path) {
+          return Object.entries(obj).flatMap(([k, v]) => {
+            const p = `${path}.${k}`;
+            if (v && typeof v === "object") return unsetConfigValues(v, p);
+            return typeof v === "string" && v.startsWith("REPLACE_ME")
+              ? [p]
+              : [];
+          });
+        }
+
+        function kindFor(name) {
+          const n = (name || "").trim().toLowerCase();
+          return EVENT_KINDS.find((k) => n.includes(k.key)) || FALLBACK_KIND;
+        }
+
+        function safeLink(raw) {
+          try {
+            const u = new URL(raw);
+            return u.protocol === "https:" || u.protocol === "http:"
+              ? u.href
+              : "";
+          } catch {
+            return "";
+          }
+        }
+
+        /* ── Time ── */
+
+        // MM/DD/YYYY or YYYY-MM-DD, rejecting impossible dates like 02/31.
+        function parseDate(raw) {
+          let m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(raw);
+          const ymd = m
+            ? [+m[3], +m[1], +m[2]]
+            : (m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw)) && [+m[1], +m[2], +m[3]];
+          if (!ymd) return null;
+          const t = new Date(Date.UTC(ymd[0], ymd[1] - 1, ymd[2]));
+          return t.getUTCFullYear() === ymd[0] &&
+            t.getUTCMonth() === ymd[1] - 1 &&
+            t.getUTCDate() === ymd[2]
+            ? ymd
+            : null;
+        }
+
+        // "h:mm AM/PM" or "HH:mm" → [hour, minute].
+        function parseTime(raw) {
+          let m = /^(1[0-2]|0?[1-9]):([0-5]\d)\s?([AaPp])[Mm]$/.exec(raw);
+          if (m) return [(+m[1] % 12) + (/p/i.test(m[3]) ? 12 : 0), +m[2]];
+          m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(raw);
+          return m ? [+m[1], +m[2]] : null;
+        }
+
+        const zoneParts = new Intl.DateTimeFormat("en-US", {
+          timeZone: CONFIG.timeZone,
+          hourCycle: "h23",
+          year: "numeric",
+          month: "numeric",
+          day: "numeric",
+          hour: "numeric",
+          minute: "numeric",
+        });
+
+        // Wall-clock time in CONFIG.timeZone → UTC ms. The second pass
+        // settles the offset when the first guess lands across a DST change.
+        function zonedToUtc([y, mo, d], [h, mi]) {
+          const want = Date.UTC(y, mo - 1, d, h, mi);
+          let t = want;
+          for (let i = 0; i < 2; i++) {
+            const p = {};
+            zoneParts
+              .formatToParts(new Date(t))
+              .forEach((x) => (p[x.type] = +x.value));
+            t += want - Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute);
+          }
+          return t;
+        }
+
+        // Viewer's local zone, always en-US so labels read "PDT", not "GMT-7".
+        const fmt = (opts) => new Intl.DateTimeFormat("en-US", opts);
+        const F = {
+          time: fmt({ hour: "numeric", minute: "2-digit", timeZoneName: "short" }),
+          month: fmt({ month: "short" }),
+          year: fmt({ year: "numeric" }),
+          day: fmt({ day: "numeric" }),
+          weekday: fmt({ weekday: "short" }),
+          short: fmt({ weekday: "short", month: "short", day: "numeric" }),
+          full: fmt({ weekday: "long", month: "long", day: "numeric" }),
+          fullYear: fmt({
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          }),
+        };
+
+        // "1:00 – 3:00 PM PDT", sharing AM/PM and zone when both ends match.
+        function timeRange(start, end) {
+          const parts = (t) => {
+            const o = {};
+            F.time.formatToParts(t).forEach((x) => (o[x.type] = x.value));
+            o.clock = `${o.hour}:${o.minute}`;
+            return o;
+          };
+          const a = parts(start);
+          if (end === start) return `${a.clock} ${a.dayPeriod} ${a.timeZoneName}`;
+          const b = parts(end);
+          const tail = `${b.clock} ${b.dayPeriod} ${b.timeZoneName}`;
+          if (a.timeZoneName !== b.timeZoneName) {
+            return `${a.clock} ${a.dayPeriod} ${a.timeZoneName} – ${tail}`;
+          }
+          return a.dayPeriod === b.dayPeriod
+            ? `${a.clock} – ${tail}`
+            : `${a.clock} ${a.dayPeriod} – ${tail}`;
+        }
+
+        function localYmd(t) {
+          const d = new Date(t);
+          const pad = (n) => String(n).padStart(2, "0");
+          return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        }
+
+        /* ── Data ── */
+
+        // Manual fetch, not LeafFormQuery, and no server-side sort — both
+        // silently return [] on this endpoint (see lp_blog.html).
+        async function queryForm(form) {
+          const q = {
+            terms: [
+              { id: "recordID", operator: ">", match: 0, gate: "AND" },
+              { id: "categoryID", operator: "=", match: form.formId, gate: "AND" },
+            ],
+            joins: [],
+            sort: {},
+            getData: Object.values(form.indicators),
+            limit: CONFIG.queryLimit,
+          };
+          const r = await fetch(
+            `${form.apiBase}api/form/query?q=${encodeURIComponent(JSON.stringify(q))}`,
+            { credentials: "include" },
+          );
+          if (!r.ok) throw new Error("Query failed HTTP " + r.status);
+          const entries = Object.entries((await r.json()) || {});
+          if (entries.length >= CONFIG.queryLimit) {
+            console.warn(
+              `[Events] ${form.formId} returned ${entries.length} records (queryLimit) — some may be missing.`,
+            );
+          }
+          return entries
+            .filter(([, rec]) => rec && rec.lastStatus === CONFIG.publishedStatus)
+            .map(([recordID, rec]) => ({ recordID, s1: rec.s1 || {} }));
+        }
+
+        function toTypes(rows) {
+          const ind = CONFIG.types.indicators;
+          const order = (t) => (Number.isFinite(t.sortOrder) ? t.sortOrder : Infinity);
+          return rows
+            .map(({ recordID, s1 }) => ({
+              recordID: Number(recordID),
+              name: getField(s1, ind.name),
+              description: getField(s1, ind.description),
+              sortOrder: parseFloat(getField(s1, ind.sortOrder)),
+              action: getField(s1, ind.action),
+            }))
+            .filter((t) => t.name)
+            .sort((a, b) => order(a) - order(b) || a.recordID - b.recordID);
+        }
+
+        function toEvents(rows, types) {
+          const ind = CONFIG.dates.indicators;
+          const typeByName = new Map(types.map((t) => [t.name, t]));
+          const now = Date.now();
+          const events = [];
+
+          rows.forEach(({ recordID, s1 }) => {
+            const date = parseDate(getField(s1, ind.startDate));
+            const startTime = parseTime(getField(s1, ind.startTime));
+            const endRaw = getField(s1, ind.endTime);
+            const endTime = endRaw ? parseTime(endRaw) : startTime;
+            if (!date || !startTime || !endTime) {
+              console.warn(`[Events] Date record ${recordID} skipped — unparseable date or time.`);
+              return;
+            }
+            const start = zonedToUtc(date, startTime);
+            const end = zonedToUtc(date, endTime);
+            if (end < start) {
+              console.warn(`[Events] Date record ${recordID} skipped — end time is before start time.`);
+              return;
+            }
+            if (end < now) return;
+
+            const typeName = getField(s1, ind.eventType);
+            const type = typeByName.get(typeName) || null;
+            const isSpecial = getField(s1, ind.special) === CONFIG.specialYesValue;
+            if (!type && !isSpecial) {
+              console.warn(
+                `[Events] Date record ${recordID}: event type "${typeName}" matches no published type — using fallback style.`,
+              );
+            }
+
+            const name = isSpecial
+              ? getField(s1, ind.title) || typeName || "Special event"
+              : (type && type.name) || typeName || "LEAF event";
+            // Optional per-date topic for regular sessions; display only.
+            const topic = isSpecial ? "" : getField(s1, ind.title);
+            events.push({
+              recordID,
+              typeName,
+              name,
+              topic,
+              label: topic ? `${name}: ${topic}` : name,
+              description:
+                getField(s1, ind.description) ||
+                (!isSpecial && type && type.description) ||
+                "",
+              kind: type ? kindFor(type.name) : FALLBACK_KIND,
+              start,
+              end,
+              link: safeLink(getField(s1, ind.link)),
+              isSpecial,
+              isRegister:
+                !isSpecial && !!type && type.action === CONFIG.registerValue,
+            });
+          });
+
+          return events.sort((a, b) => a.start - b.start);
+        }
+
+        /* ── .ics ── */
+
+        const icsStamp = (t) =>
+          new Date(t).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+
+        const icsText = (s) =>
+          String(s)
+            .replace(/\\/g, "\\\\")
+            .replace(/;/g, "\\;")
+            .replace(/,/g, "\\,")
+            .replace(/\r\n|\r|\n/g, "\\n");
+
+        // RFC 5545: fold at 75 octets without splitting a UTF-8 character.
+        function foldLine(line) {
+          const enc = new TextEncoder();
+          const out = [];
+          let cur = "";
+          let bytes = 0;
+          for (const ch of line) {
+            const n = enc.encode(ch).length;
+            if (bytes + n > 75) {
+              out.push(cur);
+              cur = " ";
+              bytes = 1;
+            }
+            cur += ch;
+            bytes += n;
+          }
+          out.push(cur);
+          return out.join("\r\n");
+        }
+
+        function buildIcs(ev) {
+          const desc = [ev.description];
+          if (ev.link) desc.push(`${ev.isRegister ? "Register" : "Join"}: ${ev.link}`);
+          const lines = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//LEAF//Launchpad Events//EN",
+            "CALSCALE:GREGORIAN",
+            "METHOD:PUBLISH",
+            "BEGIN:VEVENT",
+            `UID:${ev.recordID}-${icsStamp(ev.start)}@leaf.va.gov`,
+            `DTSTAMP:${icsStamp(Date.now())}`,
+            `DTSTART:${icsStamp(ev.start)}`,
+          ];
+          // RFC 5545 requires DTEND to be later than DTSTART.
+          if (ev.end > ev.start) lines.push(`DTEND:${icsStamp(ev.end)}`);
+          lines.push(`SUMMARY:${icsText(ev.label)}`);
+          const d = desc.filter(Boolean).join("\n");
+          if (d) lines.push(`DESCRIPTION:${icsText(d)}`);
+          if (ev.link) lines.push(`URL:${ev.link}`);
+          lines.push("LOCATION:Online", "END:VEVENT", "END:VCALENDAR");
+          return lines.map(foldLine).join("\r\n") + "\r\n";
+        }
+
+        function downloadIcs(ev) {
+          const blob = new Blob([buildIcs(ev)], { type: "text/calendar;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const slug =
+            ev.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ||
+            "event";
+          // Appended to <body>, outside the shell's swap host, so the
+          // header's link interceptor ignores the click.
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `leaf-${slug}-${localYmd(ev.start)}.ics`;
+          a.hidden = true;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          announce(`Calendar file downloaded for ${ev.name}.`);
+        }
+
+        /* ── Rendering ── */
+
+        function el(tag, className, text) {
+          const node = document.createElement(tag);
+          if (className) node.className = className;
+          if (text != null) node.textContent = text;
+          return node;
+        }
+
+        function icon(name) {
+          const s = el("span", "material-symbols-outlined");
+          s.setAttribute("aria-hidden", "true");
+          s.innerHTML = ICONS[name] || "";
+          return s;
+        }
+
+        function announce(message) {
+          ui.live.textContent = "";
+          setTimeout(() => {
+            ui.live.textContent = message;
+          }, 60);
+        }
+
+        function actionButtons(ev) {
+          const wrap = el("div", "ev-actions");
+          const when = F.full.format(ev.start);
+
+          if (ev.link) {
+            const reg = ev.isRegister;
+            const a = el("a", "btn btn-pri ev-btn");
+            a.href = ev.link;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            // Skipped by the shell's link interceptor, as in lp_team.html.
+            a.setAttribute("data-nav-external", "");
+            a.dataset.track = reg ? "register-training" : "join-meeting";
+            a.setAttribute(
+              "aria-label",
+              `${reg ? "Register for" : "Join"} ${ev.label} on ${when} (opens in a new tab)`,
+            );
+            a.append(
+              icon(reg ? "how_to_reg" : "videocam"),
+              reg ? "Register for training" : "Join meeting",
+              el("span", "sr-only", "(opens in a new tab)"),
+            );
+            wrap.appendChild(a);
+          }
+
+          const cal = el("button", "btn btn-sec ev-btn");
+          cal.type = "button";
+          cal.dataset.track = "add-to-calendar";
+          cal.setAttribute("aria-label", `Add ${ev.label} on ${when} to calendar`);
+          cal.append(icon("calendar_add_on"), "Add to calendar");
+          cal.addEventListener("click", () => downloadIcs(ev));
+          wrap.appendChild(cal);
+          return wrap;
+        }
+
+        // Single card: chip | title, time, description | buttons.
+        // Grid card: chip + time, then title, description, buttons.
+        function specialCard(ev, single) {
+          const li = el("li", "ev-special-card");
+          const chip = el("span", "ev-chip");
+          chip.setAttribute("aria-hidden", "true");
+          chip.append(
+            el("span", "ev-chip-mon", F.month.format(ev.start).toUpperCase()),
+            el("span", "ev-chip-day", F.day.format(ev.start)),
+          );
+          const when = el(
+            "p",
+            "ev-special-when",
+            `${F.short.format(ev.start)} · ${timeRange(ev.start, ev.end)}`,
+          );
+          const title = el("h3", "ev-special-title", ev.name);
+          const desc = ev.description
+            ? el("p", "ev-special-desc", ev.description)
+            : null;
+
+          if (single) {
+            const main = el("div", "ev-special-main");
+            main.append(title, when);
+            if (desc) main.appendChild(desc);
+            li.append(chip, main);
+          } else {
+            const top = el("div", "ev-special-top");
+            top.append(chip, when);
+            li.append(top, title);
+            if (desc) li.appendChild(desc);
+          }
+          li.appendChild(actionButtons(ev));
+          return li;
+        }
+
+        function typeCard(type) {
+          const kind = kindFor(type.name);
+          const li = el("li");
+          li.dataset.type = kind.key;
+          const btn = el("button", "ev-type-btn");
+          btn.type = "button";
+          btn.dataset.track = "filter-event";
+          btn.setAttribute("aria-pressed", "false");
+          const tile = icon(kind.icon);
+          tile.classList.add("ev-ico-tile");
+          btn.append(tile, el("span", "ev-type-name", type.name));
+          if (type.description) btn.appendChild(el("span", "ev-type-desc", type.description));
+          btn.appendChild(el("span", "ev-type-state", "See upcoming dates"));
+          btn.addEventListener("click", () => setFilter(type.name));
+          li.appendChild(btn);
+          return li;
+        }
+
+        function dateTile(ev) {
+          const li = el("li", "ev-tile");
+          li.dataset.type = ev.kind.key;
+
+          const strip = el(
+            "div",
+            "ev-tile-strip",
+            `${F.month.format(ev.start).toUpperCase()} ${F.year.format(ev.start)}`,
+          );
+          strip.setAttribute("aria-hidden", "true");
+
+          const body = el("div", "ev-tile-body");
+          const date = el("div");
+          date.setAttribute("aria-hidden", "true");
+          date.append(
+            el("span", "ev-tile-day", F.day.format(ev.start)),
+            el("span", "ev-tile-wd", F.weekday.format(ev.start).toUpperCase()),
+          );
+          const time = el("p", "ev-tile-time");
+          time.append(
+            icon("schedule"),
+            el("span", "sr-only", `${F.fullYear.format(ev.start)}, `),
+            timeRange(ev.start, ev.end),
+          );
+          body.append(date, el("h4", "ev-tile-name", ev.name));
+          if (ev.topic) body.appendChild(el("p", "ev-tile-topic", ev.topic));
+          body.append(time, actionButtons(ev));
+          li.append(strip, body);
+          return li;
+        }
+
+        function filteredDates() {
+          return state.filter
+            ? state.calendar.filter((ev) => ev.typeName === state.filter)
+            : state.calendar;
+        }
+
+        function renderDates(activated) {
+          const items = filteredDates();
+          const size = state.size;
+          const pages = Math.max(1, Math.ceil(items.length / size));
+          state.page = Math.min(state.page, pages - 1);
+          const first = state.page * size;
+          const shown = items.slice(first, first + size);
+          const empty = items.length === 0;
+
+          ui.tiles.replaceChildren(...shown.map(dateTile));
+          ui.tiles.hidden = empty;
+          ui.datesEmpty.hidden = !empty;
+          ui.prev.hidden = ui.next.hidden = ui.dots.hidden = empty;
+          ui.prev.disabled = state.page === 0;
+          ui.next.disabled = state.page >= pages - 1;
+          ui.dots.replaceChildren(
+            ...Array.from({ length: empty ? 0 : pages }, (_, i) =>
+              el("span", i === state.page ? "ev-dot is-active" : "ev-dot"),
+            ),
+          );
+          ui.range.textContent = empty
+            ? ""
+            : `${first + 1}–${first + shown.length} of ${items.length}`;
+          ui.suffix.textContent = state.filter ? ` · ${state.filter}` : "";
+
+          // Keep focus on an arrow when the one just pressed becomes disabled.
+          if (activated && activated.disabled) {
+            (activated === ui.prev ? ui.next : ui.prev).focus();
+          }
+        }
+
+        function setFilter(name) {
+          state.filter = state.filter === name ? null : name;
+          state.page = 0;
+          ui.types.querySelectorAll(".ev-type-btn").forEach((btn) => {
+            const on = btn.querySelector(".ev-type-name").textContent === state.filter;
+            btn.setAttribute("aria-pressed", String(on));
+            btn.querySelector(".ev-type-state").textContent = on
+              ? "Showing these dates · select to clear"
+              : "See upcoming dates";
+          });
+          renderDates();
+          const n = filteredDates().length;
+          announce(
+            state.filter
+              ? `Showing ${n} date${n === 1 ? "" : "s"} for ${state.filter}.`
+              : "Showing all upcoming dates.",
+          );
+        }
+
+        // Recompute the page so the first visible date stays visible.
+        function onSizeChange() {
+          const first = state.page * state.size;
+          state.size = pageSize();
+          state.page = Math.floor(first / state.size);
+          if (!ui.dates.hidden) renderDates();
+        }
+
+        function showEmpty() {
+          ui.status.hidden = true;
+          ui.empty.hidden = false;
+        }
+
+        function render(types, events) {
+          const specials = events.filter((ev) => ev.isSpecial).slice(0, CONFIG.maxSpecial);
+          state.types = types;
+          state.calendar = events.filter((ev) => !ev.isSpecial);
+
+          if (specials.length) {
+            const single = specials.length === 1;
+            ui.special.classList.toggle("is-single", single);
+            ui.specialList.replaceChildren(
+              ...specials.map((ev) => specialCard(ev, single)),
+            );
+            ui.special.hidden = false;
+          }
+
+          ui.status.hidden = true;
+          if (!state.calendar.length) {
+            ui.empty.hidden = false;
+            return;
+          }
+          ui.types.replaceChildren(...types.map(typeCard));
+          ui.types.hidden = !types.length;
+          ui.dates.hidden = false;
+          renderDates();
+        }
+
+        async function init() {
+          ui = {
+            live: byId("ev-live"),
+            special: byId("ev-special"),
+            specialList: byId("ev-special-list"),
+            status: byId("ev-status"),
+            error: byId("ev-error"),
+            empty: byId("ev-empty"),
+            types: byId("ev-types"),
+            dates: byId("ev-dates"),
+            suffix: byId("ev-dates-suffix"),
+            tiles: byId("ev-tiles"),
+            datesEmpty: byId("ev-dates-empty"),
+            prev: byId("ev-prev"),
+            next: byId("ev-next"),
+            dots: byId("ev-dots"),
+            range: byId("ev-range"),
+          };
+          initJumpBtn();
+
+          ui.prev.addEventListener("click", () => {
+            state.page--;
+            renderDates(ui.prev);
+          });
+          ui.next.addEventListener("click", () => {
+            state.page++;
+            renderDates(ui.next);
+          });
+          mqOne.addEventListener("change", onSizeChange);
+          mqTwo.addEventListener("change", onSizeChange);
+
+          const unset = unsetConfigValues(CONFIG, "CONFIG");
+          if (unset.length) {
+            console.info(`[Events] Not configured — no requests made. Unset: ${unset.join(", ")}`);
+            showEmpty();
+            return;
+          }
+
+          try {
+            const [typeRows, dateRows] = await Promise.all([
+              queryForm(CONFIG.types),
+              queryForm(CONFIG.dates),
+            ]);
+            const types = toTypes(typeRows);
+            render(types, toEvents(dateRows, types));
+          } catch (err) {
+            console.error("[Events]", err);
+            ui.status.hidden = true;
+            ui.special.hidden = true;
+            ui.types.hidden = true;
+            ui.dates.hidden = true;
+            ui.error.textContent =
+              "Something went wrong loading events. Try refreshing the page.";
+            ui.error.hidden = false;
+          }
+        }
+
+        // Jump to top — copied verbatim from the other Launchpad pages.
+        const initJumpBtn = () => {
+          const btn = document.getElementById("lpJump");
+          if (!btn) return;
+
+          const update = () => {
+            const vis =
+              (window.pageYOffset || document.documentElement.scrollTop) > 120;
+            btn.classList.toggle("vis", vis);
+            btn.setAttribute("aria-hidden", String(!vis));
+            btn.tabIndex = vis ? 0 : -1;
+          };
+
+          btn.addEventListener("click", () =>
+            window.scrollTo({ top: 0, behavior: "smooth" }),
+          );
+          window.addEventListener("scroll", update, { passive: true });
+          window.addEventListener("resize", update);
+          update();
+        };
+
+        // When spliced into the shell, the router's document proxy reports
+        // "loading" and runs captured DOMContentLoaded listeners after mount.
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", init);
+        } else {
+          init();
+        }
+      })();
+    </script>
+  </body>
+</html>

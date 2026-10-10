@@ -105,8 +105,7 @@ var HelpLib = (function () {
   let hasStartHere = false;
   let groupVisible = {};
   let lastOpenedId = null;
-  // Record currently flagged by the exact article-ID search below (getFiltered),
-  // so its temporary _idMatch marker can be cleared before the next filter pass.
+  // Record pinned by getFiltered()'s exact ID/title match; its _exactLabel is cleared each pass.
   let idMatchRecord = null;
 
   // Config injected by the page (mirrors window.leafIdeaPortal used by
@@ -689,18 +688,27 @@ ${statusLine}`;
     }
 
     if (idMatchRecord) {
-      delete idMatchRecord._idMatch;
+      delete idMatchRecord._exactLabel;
       idMatchRecord = null;
     }
     const qTrim = state.q.trim();
+    // Exact ID/title lookups search DATA, so they ignore the cat/type/days filters.
     if (/^\d+$/.test(qTrim)) {
-      // Runs against DATA, not the filtered `list` — an ID lookup is unique
-      // enough to ignore the active cat/type/days filters.
       const idMatch = DATA.find((r) => String(r.id) === qTrim);
       if (idMatch && !list.includes(idMatch)) {
-        idMatch._idMatch = true;
+        idMatch._exactLabel = `Exact match for article #${idMatch.id}`;
         idMatchRecord = idMatch;
         list = [idMatch, ...list];
+      }
+    }
+    if (qTrim && !idMatchRecord) {
+      const fold = (s) => s.trim().replace(/\s+/g, " ").toLowerCase();
+      const q = fold(qTrim);
+      const titleMatch = DATA.find((r) => fold(r.title) === q);
+      if (titleMatch) {
+        titleMatch._exactLabel = "Exact match";
+        idMatchRecord = titleMatch;
+        list = [titleMatch, ...list.filter((r) => r !== titleMatch)];
       }
     }
     return list;
@@ -892,15 +900,15 @@ ${renderMediaIcon(r, "hl-lr-ico")}
 </a>`;
   }
 
-  /* ── Render: exact article-ID match band ── */
+  /* ── Render: exact ID/title match band ── */
   /* Wraps renderRow()'s own output in a highlighted band (styled like the
      Start Here / Featured bands) rather than a separate row markup path,
      so the row itself keeps normal rows' structure/aria-label. */
-  function renderIdMatchRow(r) {
+  function renderExactMatchRow(r) {
     return `<div class="hl-idmatch">
   <div class="hl-idmatch-hdr">
     ${icon("label")}
-    <span class="hl-idmatch-label">Exact match for article #${r.id}</span>
+    <span class="hl-idmatch-label">${esc(r._exactLabel)}</span>
   </div>
   ${renderRow(r)}
 </div>`;
@@ -1029,7 +1037,7 @@ ${r.isNew ? `<span class="hl-badge hl-bn hl-fc-badge-corner">Recently updated</s
       const flatVisible = groupVisible["__flat__"] ?? CFG.FLAT_CAP;
       const shownFlat = list.slice(0, flatVisible);
       const rowsHTML = shownFlat
-        .map((r) => (r._idMatch ? renderIdMatchRow(r) : renderRow(r)))
+        .map((r) => (r._exactLabel ? renderExactMatchRow(r) : renderRow(r)))
         .join("");
       el.innerHTML = `
   <div class="hl-list-rows">${rowsHTML}</div>
