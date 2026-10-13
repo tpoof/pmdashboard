@@ -1,14 +1,10 @@
-fetch("/platform/projects/api/form/query?q=" + encodeURIComponent(JSON.stringify({
-  terms: [{ id: "data", indicatorID: "125", operator: "!=", match: "", gate: "AND" },
-          { id: "deleted", operator: "=", match: "0", gate: "AND" }],
-  joins: [], sort: {}, getData: [122, 123, 125, 127], limit: 500, limitOffset: 0 })) +
-  "&x-filterData=recordID,categoryID", { credentials: "same-origin", headers: { Accept: "application/json" } })
+fetch('/platform/events/api/form/query?q=' + encodeURIComponent(JSON.stringify({
+  terms: [
+    { id: 'recordID', operator: '>', match: 0 },
+    { id: 'categoryID', operator: '=', match: 'form_84fd4' }
+  ],
+  joins: ['status'],
+  limit: 10
+})), { credentials: 'include' })
   .then(r => r.json())
-  .then(o => {
-    const rows = Object.values(o);
-    const pick = (r, id) => { const s = r.s1 || r; return s["id" + id] ?? ""; };
-    console.log("ROADMAP CHECK v3 | records with capability:", rows.length);
-    console.log("ROADMAP CHECK v3 | forms:", JSON.stringify(rows.reduce((a, r) => (a[r.categoryID] = (a[r.categoryID] || 0) + 1, a), {})));
-    [122, 123, 127].forEach(id => console.log("ROADMAP CHECK v3 | id" + id + ":", [...new Set(rows.map(r => pick(r, id)))].slice(0, 8).join(" | ")));
-    console.log("ROADMAP CHECK v3 | raw start:", JSON.stringify(o).slice(0, 300));
-  });
+  .then(d => console.table(Object.values(d).map(r => ({ id: r.recordID, status: r.lastStatus }))));
