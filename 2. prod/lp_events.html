@@ -673,31 +673,32 @@
         // Absolute apiBase paths — this page lives in /launchpad/, not the forms' sites.
         const CONFIG = {
           types: {
-            apiBase: "REPLACE_ME_TYPES_API_BASE", // e.g. "/platform/<site>/"
-            formId: "REPLACE_ME_TYPES_FORM_ID",
+            apiBase: "/platform/events/",
+            formId: "form_a5f36",
             indicators: {
-              name: "REPLACE_ME",
-              description: "REPLACE_ME",
-              sortOrder: "REPLACE_ME",
-              action: "REPLACE_ME", // dropdown: "Join meeting" or "Register for training"
+              name: "3",
+              description: "4",
+              sortOrder: "5",
+              action: "6", // dropdown: "Join meeting" or "Register for training"
             },
           },
+          // Same site as types — the categoryID term keeps the two apart.
           dates: {
-            apiBase: "REPLACE_ME_DATES_API_BASE",
-            formId: "REPLACE_ME_DATES_FORM_ID",
+            apiBase: "/platform/events/",
+            formId: "form_84fd4",
             indicators: {
-              eventType: "REPLACE_ME", // dropdown; values match type names exactly
-              startDate: "REPLACE_ME",
-              startTime: "REPLACE_ME",
-              endTime: "REPLACE_ME",
-              link: "REPLACE_ME",
-              special: "REPLACE_ME", // Yes/No
-              title: "REPLACE_ME", // used by special events
-              description: "REPLACE_ME", // used by special events
+              eventType: "7", // dropdown; values match type names exactly
+              startDate: "8",
+              startTime: "9",
+              endTime: "10",
+              link: "11",
+              special: "12", // single "Yes" checkbox, blank when unchecked
+              title: "14", // special event title, or optional topic
+              description: "15", // overrides the type's description
             },
           },
           publishedStatus: "REPLACE_ME_PUBLISHED_STATUS",
-          specialYesValue: "Yes",
+          // Must match the Action dropdown option text exactly.
           registerValue: "Register for training",
           timeZone: "America/New_York", // zone admins enter times in
           maxSpecial: 4,
@@ -760,6 +761,12 @@
           const v = s1["id" + indicatorID];
           if (v == null) return "";
           return decodeEntities(String(v).trim());
+        }
+
+        // Checkbox indicator: any non-blank value (or array entry) means checked.
+        function isChecked(v) {
+          if (Array.isArray(v)) return v.some((x) => String(x ?? "").trim());
+          return v != null && String(v).trim() !== "";
         }
 
         function unsetConfigValues(obj, path) {
@@ -924,7 +931,12 @@
               sortOrder: parseFloat(getField(s1, ind.sortOrder)),
               action: getField(s1, ind.action),
             }))
-            .filter((t) => t.name)
+            .filter((t) => {
+              if (!t.name) {
+                console.warn(`[Events] Type record ${t.recordID} skipped — no name.`);
+              }
+              return t.name;
+            })
             .sort((a, b) => order(a) - order(b) || a.recordID - b.recordID);
         }
 
@@ -935,7 +947,12 @@
           const events = [];
 
           rows.forEach(({ recordID, s1 }) => {
-            const date = parseDate(getField(s1, ind.startDate));
+            const dateRaw = getField(s1, ind.startDate);
+            if (!dateRaw) {
+              console.warn(`[Events] Date record ${recordID} skipped — no date.`);
+              return;
+            }
+            const date = parseDate(dateRaw);
             const startTime = parseTime(getField(s1, ind.startTime));
             const endRaw = getField(s1, ind.endTime);
             const endTime = endRaw ? parseTime(endRaw) : startTime;
@@ -953,10 +970,12 @@
 
             const typeName = getField(s1, ind.eventType);
             const type = typeByName.get(typeName) || null;
-            const isSpecial = getField(s1, ind.special) === CONFIG.specialYesValue;
+            const isSpecial = isChecked(s1["id" + ind.special]);
             if (!type && !isSpecial) {
               console.warn(
-                `[Events] Date record ${recordID}: event type "${typeName}" matches no published type — using fallback style.`,
+                typeName
+                  ? `[Events] Date record ${recordID}: event type "${typeName}" matches no published type — using fallback style.`
+                  : `[Events] Date record ${recordID}: no event type — using fallback style.`,
               );
             }
 
