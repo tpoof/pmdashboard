@@ -510,8 +510,6 @@
   </head>
   <body>
     <div class="lp" id="lp-root">
-      <div id="lp-header-host"></div>
-
       <main id="lp-main" tabindex="-1">
         <div
           id="ev-live"
@@ -659,12 +657,6 @@
     </div>
     <!-- /.lp -->
 
-    <script
-      src="./files/leaf_header.js"
-      data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
-      data-csrf-token="<!--{$CSRFToken}-->"
-    ></script>
-
     <script>
       (() => {
         "use strict";
@@ -697,7 +689,7 @@
               description: "15", // overrides the type's description
             },
           },
-          publishedStatus: "REPLACE_ME_PUBLISHED_STATUS",
+          publishedStatus: "Submitted",
           // Must match the Action dropdown option text exactly.
           registerValue: "Register for training",
           timeZone: "America/New_York", // zone admins enter times in
