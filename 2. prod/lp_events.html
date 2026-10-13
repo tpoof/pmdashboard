@@ -755,10 +755,11 @@
           return decodeEntities(String(v).trim());
         }
 
-        // Checkbox indicator: any non-blank value (or array entry) means checked.
+        // Checkbox indicator: special only when the value (or any array entry)
+        // is "yes". Unchecked comes back as "no".
         function isChecked(v) {
-          if (Array.isArray(v)) return v.some((x) => String(x ?? "").trim());
-          return v != null && String(v).trim() !== "";
+          const yes = (x) => String(x ?? "").trim().toLowerCase() === "yes";
+          return Array.isArray(v) ? v.some(yes) : yes(v);
         }
 
         function unsetConfigValues(obj, path) {
@@ -804,8 +805,21 @@
             : null;
         }
 
-        // "h:mm AM/PM" or "HH:mm" → [hour, minute].
+        // Times are Eastern; an optional ET/EST/EDT suffix is allowed.
+        const EASTERN_LABEL = /\s*E[SD]?T$/i;
+
+        // Zone label other than Eastern (e.g. "PT", "UTC", "GMT+1"), or "".
+        function foreignZone(raw) {
+          const m =
+            /^\d{1,2}:\d{2}(?:\s?[ap]m)?\s*([a-z]{1,5}(?:[+-]\d{1,2}(?::?\d{2})?)?)$/i.exec(
+              raw.replace(EASTERN_LABEL, ""),
+            );
+          return m && !/^[ap]m$/i.test(m[1]) ? m[1] : "";
+        }
+
+        // "h:mm AM/PM" or "HH:mm", optional Eastern suffix → [hour, minute].
         function parseTime(raw) {
+          raw = raw.replace(EASTERN_LABEL, "");
           let m = /^(1[0-2]|0?[1-9]):([0-5]\d)\s?([AaPp])[Mm]$/.exec(raw);
           if (m) return [(+m[1] % 12) + (/p/i.test(m[3]) ? 12 : 0), +m[2]];
           m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(raw);
@@ -945,8 +959,16 @@
               return;
             }
             const date = parseDate(dateRaw);
-            const startTime = parseTime(getField(s1, ind.startTime));
+            const startRaw = getField(s1, ind.startTime);
             const endRaw = getField(s1, ind.endTime);
+            const badZone = [startRaw, endRaw].find((t) => t && foreignZone(t));
+            if (badZone) {
+              console.warn(
+                `[Events] Date record ${recordID} skipped — time "${badZone}" is not Eastern; enter times in ET.`,
+              );
+              return;
+            }
+            const startTime = parseTime(startRaw);
             const endTime = endRaw ? parseTime(endRaw) : startTime;
             if (!date || !startTime || !endTime) {
               console.warn(`[Events] Date record ${recordID} skipped — unparseable date or time.`);
