@@ -1,11 +1,16 @@
 fetch('/platform/events/api/form/query?q=' + encodeURIComponent(JSON.stringify({
   terms: [
-    { id: 'recordID', operator: '=', match: 5 },
-    { id: 'categoryID', operator: '=', match: 'form_84fd4' }
+    { id: 'recordID', operator: '>', match: 0 },
+    { id: 'categoryID', operator: '=', match: 'form_a5f36' }
   ],
-  getData: ['7', '8', '9', '10', '11', '12', '14', '15'],
+  getData: ['3', '4', '5', '6'],
   joins: ['status'],
-  limit: 1
+  limit: 20
 })), { credentials: 'include' })
   .then(r => r.json())
-  .then(d => console.log(JSON.stringify(d, null, 2)));
+  .then(d => console.table(Object.values(d).map(r => ({
+    id: r.recordID,
+    status: r.lastStatus,
+    name: JSON.stringify(r.s1 && r.s1.id3),
+    action: JSON.stringify(r.s1 && r.s1.id6)
+  }))));
