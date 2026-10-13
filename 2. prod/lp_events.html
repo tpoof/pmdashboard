@@ -11,26 +11,37 @@
     <style>
       /* launchpad.css sizes .material-symbols-outlined via font-size,
          which doesn't affect inlined <svg> — these rules size each icon. */
-      .hero-kicker .material-symbols-outlined svg {
-        width: 1rem;
-        height: 1rem;
+      .ev-hero .hero-kicker .material-symbols-outlined svg,
+      .ev-star-tile svg,
+      .ev-ico-tile svg,
+      .ev-btn .material-symbols-outlined svg,
+      .ev-tile-time .material-symbols-outlined svg,
+      .ev-type-state .material-symbols-outlined svg,
+      .ev-arrow svg {
+        display: block;
+        flex-shrink: 0;
       }
-      .btn .material-symbols-outlined svg {
-        width: 1.15rem;
-        height: 1.15rem;
+      .hero-kicker .material-symbols-outlined svg,
+      .ev-tile-time .material-symbols-outlined svg {
+        width: 16px;
+        height: 16px;
+      }
+      .btn .material-symbols-outlined svg,
+      .ev-type-state .material-symbols-outlined svg {
+        width: 18px;
+        height: 18px;
       }
       .lp-jump .material-symbols-outlined svg {
         width: 1.25rem;
         height: 1.25rem;
       }
-      .ev-ico-tile svg,
+      .ev-ico-tile svg {
+        width: 26px;
+        height: 26px;
+      }
       .ev-arrow svg {
         width: 24px;
         height: 24px;
-      }
-      .ev-tile-time .material-symbols-outlined svg {
-        width: 1rem;
-        height: 1rem;
       }
 
       /* Event accents, chosen per card by data-type (see kindFor()). */
@@ -57,8 +68,8 @@
 
       .ev-ico-tile {
         flex: none;
-        width: 44px;
-        height: 44px;
+        width: 48px;
+        height: 48px;
         border-radius: var(--r);
         display: flex;
         align-items: center;
@@ -115,8 +126,8 @@
         color: var(--c-blue60);
       }
       .ev-star-tile svg {
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
       }
       /* auto-fill keeps 1–2 cards at card width instead of stretching. */
       .ev-special-list {
@@ -228,6 +239,7 @@
 
       /* ── Monthly sessions: event cards ── */
       .ev-types-block {
+        padding-top: 24px;
         padding-bottom: 48px;
       }
       .ev-types {
@@ -260,7 +272,8 @@
         background: var(--ev-tint);
         border-color: var(--ev-accent);
       }
-      .ev-type-btn > span {
+      .ev-type-name,
+      .ev-type-desc {
         display: block;
       }
       .ev-type-name {
@@ -271,10 +284,14 @@
         color: var(--ev-accent);
       }
       .ev-type-desc {
+        margin-bottom: 4px;
         color: var(--c-muted);
         font-size: 0.9375rem;
       }
       .ev-type-state {
+        display: flex;
+        align-items: center;
+        gap: 4px;
         margin-top: auto;
         font-weight: 700;
         font-size: 0.9375rem;
@@ -401,9 +418,16 @@
         overflow: hidden;
       }
       .ev-tile-time {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
         margin: 0 0 8px;
-        color: var(--c-muted);
-        font-size: 0.9375rem;
+        font-family: "Public Sans", sans-serif;
+        font-size: 15px;
+        font-weight: 400;
+        color: var(--c-text);
       }
 
       .ev-pager-foot {
@@ -503,7 +527,8 @@
       .ev-tiles[hidden],
       .ev-arrow[hidden],
       .ev-dots[hidden],
-      .ev-actions[hidden] {
+      .ev-actions[hidden],
+      .ev-type-state .material-symbols-outlined[hidden] {
         display: none;
       }
     </style>
@@ -670,7 +695,7 @@
               name: "3",
               description: "4",
               sortOrder: "5",
-              action: "6", // dropdown: "Join meeting" or "Register for training"
+              action: "6", // dropdown: "Join Meeting" or "Register for Training"
             },
           },
           // Same site as types — the categoryID term keeps the two apart.
@@ -689,8 +714,8 @@
             },
           },
           publishedStatus: "Submitted",
-          // Must match the Action dropdown option text exactly.
-          registerValue: "Register for training",
+          // Action dropdown option text (compared ignoring case and extra spaces).
+          registerValue: "Register for Training",
           timeZone: "America/New_York", // zone admins enter times in
           maxSpecial: 4,
           queryLimit: 200,
@@ -716,6 +741,8 @@
             '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M622-144 484-282l56-56 82 82 202-202 56 56-258 258ZM287-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47Zm227 99L368-282l122 122H80v-112q0-33 17-62t47-44q51-26 115-44t141-18q30 0 58.5 3t55.5 9Z"/></svg>',
           schedule:
             '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="m612-292 56-56-148-148v-184h-80v216l172 172ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg>',
+          chevron_right:
+            '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg>',
         };
 
         // First keyword found in the event name picks the accent and icon.
@@ -954,7 +981,12 @@
 
         function toEvents(rows, types) {
           const ind = CONFIG.dates.indicators;
-          const typeByName = new Map(types.map((t) => [t.name, t]));
+          // Event (dropdown) → type name: entity-decoded, trimmed, case-insensitive.
+          const nameKey = (s) => decodeEntities(s).trim().toLowerCase();
+          const typeByName = new Map(types.map((t) => [nameKey(t.name), t]));
+          const sameText = (a, b) =>
+            a.trim().replace(/\s+/g, " ").toLowerCase() ===
+            b.trim().replace(/\s+/g, " ").toLowerCase();
           const now = Date.now();
           const events = [];
 
@@ -989,7 +1021,7 @@
             if (end < now) return;
 
             const typeName = getField(s1, ind.eventType);
-            const type = typeByName.get(typeName) || null;
+            const type = typeByName.get(nameKey(typeName)) || null;
             const isSpecial = isChecked(s1["id" + ind.special]);
             if (!type && !isSpecial) {
               console.warn(
@@ -1006,7 +1038,7 @@
             const topic = isSpecial ? "" : getField(s1, ind.title);
             events.push({
               recordID,
-              typeName,
+              typeName: type ? type.name : typeName, // filter key
               name,
               topic,
               label: topic ? `${name}: ${topic}` : name,
@@ -1020,7 +1052,7 @@
               link: safeLink(getField(s1, ind.link)),
               isSpecial,
               isRegister:
-                !isSpecial && !!type && type.action === CONFIG.registerValue,
+                !isSpecial && !!type && sameText(type.action, CONFIG.registerValue),
             });
           });
 
@@ -1207,7 +1239,9 @@
           tile.classList.add("ev-ico-tile");
           btn.append(tile, el("span", "ev-type-name", type.name));
           if (type.description) btn.appendChild(el("span", "ev-type-desc", type.description));
-          btn.appendChild(el("span", "ev-type-state", "See upcoming dates"));
+          const stateLine = el("span", "ev-type-state");
+          stateLine.append(el("span", null, "See upcoming dates"), icon("chevron_right"));
+          btn.appendChild(stateLine);
           btn.addEventListener("click", () => setFilter(type.name));
           li.appendChild(btn);
           return li;
@@ -1262,7 +1296,7 @@
           ui.tiles.replaceChildren(...shown.map(dateTile));
           ui.tiles.hidden = empty;
           ui.datesEmpty.hidden = !empty;
-          ui.prev.hidden = ui.next.hidden = ui.dots.hidden = empty;
+          ui.prev.hidden = ui.next.hidden = ui.dots.hidden = pages === 1;
           ui.prev.disabled = state.page === 0;
           ui.next.disabled = state.page >= pages - 1;
           ui.dots.replaceChildren(
@@ -1287,9 +1321,11 @@
           ui.types.querySelectorAll(".ev-type-btn").forEach((btn) => {
             const on = btn.querySelector(".ev-type-name").textContent === state.filter;
             btn.setAttribute("aria-pressed", String(on));
-            btn.querySelector(".ev-type-state").textContent = on
+            const stateLine = btn.querySelector(".ev-type-state");
+            stateLine.firstChild.textContent = on
               ? "Showing these dates · select to clear"
               : "See upcoming dates";
+            stateLine.lastChild.hidden = on; // chevron only when not pressed
           });
           renderDates();
           const n = filteredDates().length;
