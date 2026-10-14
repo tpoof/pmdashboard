@@ -927,9 +927,8 @@
 
   .pmAn-kr {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--space-1) var(--space-3);
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
     padding: var(--space-2) var(--space-3);
     border-bottom: 1px solid var(--border);
   }
@@ -988,6 +987,108 @@
     width: var(--pmAn-progress-w);
     height: 12px;
     accent-color: var(--accent);
+  }
+
+  /* Key Result rows only (the Health OKR cards keep the native bar): a --muted edge gives the track 3:1. */
+  .pmAn-kr progress {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    appearance: none;
+    border: 1px solid var(--muted);
+    border-radius: 6px;
+    background: var(--surface-alt);
+    overflow: hidden;
+  }
+
+  .pmAn-kr progress::-webkit-progress-bar {
+    background: var(--surface-alt);
+  }
+
+  .pmAn-kr progress::-webkit-progress-value {
+    background: var(--accent-strong);
+  }
+
+  .pmAn-kr progress::-moz-progress-bar {
+    background: var(--accent-strong);
+  }
+
+  /* A fixed column so the bars and percentages line up across rows. */
+  .pmAn-krPct {
+    flex: none;
+    width: 4.5ch;
+    font-size: var(--pmAn-text-base);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* Key Result types differ by icon, shape and border style; one neutral hue so color carries nothing. */
+  .pmAn-typePill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 1px 8px;
+    border: 1.5px solid var(--muted);
+    color: var(--text);
+    font-size: var(--pmAn-text-xs);
+    font-weight: 700;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  .pmAn-typePill .pmAn-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .pmAn-typePill--metric {
+    border-radius: var(--pmAn-pill);
+    background: transparent;
+  }
+
+  .pmAn-typePill--binary {
+    border-radius: 3px;
+    background: var(--surface-alt);
+  }
+
+  .pmAn-typePill--milestone {
+    border-style: dashed;
+    border-radius: var(--pmAn-pill);
+    background: var(--surface-alt);
+  }
+
+  .pmAn-badge.pmAn-notRated {
+    border-color: var(--muted);
+    background: var(--surface-alt);
+    color: var(--muted);
+  }
+
+  @media (forced-colors: active) {
+    .pmAn-typePill {
+      border-color: CanvasText;
+      background: Canvas;
+      color: CanvasText;
+    }
+
+    .pmAn-kr progress {
+      forced-color-adjust: none;
+      border-color: CanvasText;
+      background: Canvas;
+    }
+
+    .pmAn-kr progress::-webkit-progress-bar {
+      background: Canvas;
+    }
+
+    .pmAn-kr progress::-webkit-progress-value {
+      background: Highlight;
+    }
+
+    .pmAn-kr progress::-moz-progress-bar {
+      background: Highlight;
+    }
   }
 
   .pmAn-filters {
@@ -1117,10 +1218,6 @@
       justify-items: start;
     }
 
-    .pmAn-kr {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
     .pmAn-krBar progress {
       flex: 1 1 auto;
       width: auto;
@@ -1242,11 +1339,15 @@
     ];
     var NO_STATUS = "No status";
     var NO_THEME = "Uncategorized";
-    // Material Symbols (filled): unfold_more, unfold_less, check, check_circle, warning.
+    // Material Symbols (filled): unfold_more, unfold_less, check, check_circle, warning, monitoring, check_box, flag.
     var ICONS = {
       collapsed: "M480-120 300-300l58-58 122 122 122-122 58 58-180 180ZM358-598l-58-58 180-180 180 180-58 58-122-122-122 122Z",
       expanded: "m356-160-56-56 180-180 180 180-56 56-124-124-124 124Zm124-404L300-744l56-56 124 124 124-124 56 56-180 180Z",
       check: "M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z",
+      // Key Result types, from Material Symbols 400 filled: monitoring.svg, check_box.svg, flag.svg.
+      metric: "M120-120v-76l60-60v136h-60Zm165 0v-236l60-60v296h-60Zm165 0v-296l60 61v235h-60Zm165 0v-235l60-60v295h-60Zm165 0v-396l60-60v456h-60ZM120-356v-85l280-278 160 160 280-281v85L560-474 400-634 120-356Z",
+      binary: "m419-321 289-290-43-43-246 247-119-119-43 43 162 162ZM180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h600q24 0 42 18t18 42v600q0 24-18 42t-42 18H180Z",
+      milestone: "M200-120v-680h343l19 86h238v370H544l-19-85H260v309h-60Z",
       onTrack: "m424-296 282-282-56-56-226 226-114-114-56 56 170 170Zm56 216q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z",
       attention: "m40-120 440-760 440 760H40Zm468.5-131.5Q520-263 520-280t-11.5-28.5Q497-320 480-320t-28.5 11.5Q440-297 440-280t11.5 28.5Q463-240 480-240t28.5-11.5ZM440-360h80v-200h-80v200Z",
     };
@@ -2983,7 +3084,7 @@
         [n.unmatched, plural(n.unmatched, "linked record") + (n.unmatched === 1 ? " matches" : " match") + " no Key Result"],
         [n.ambiguous, plural(n.ambiguous, "link") + (n.ambiguous === 1 ? " matches" : " match") + " more than one Key Result name"],
         [n.noFy, plural(n.noFy, "objective") + " with no fiscal year"],
-      ]);
+      ]).concat("Not rated: needs start and end dates and at least one Key Result.");
     }
 
     function roadmapFootnotes() {
@@ -3031,7 +3132,7 @@
       var overall = overallProgress(objectives);
       var byHealth = {};
       objectives.forEach(function (o) {
-        var label = o.stats.health || "No label";
+        var label = o.stats.health || "Not rated";
         byHealth[label] = (byHealth[label] || 0) + 1;
       });
       els.okrTotals.textContent = "";
@@ -3040,7 +3141,7 @@
       else overallTile.lastChild.classList.add("pmAn-kpiValue--lg");
       els.okrTotals.appendChild(overallTile);
       els.okrTotals.appendChild(buildTile("Objectives", String(objectives.length), "neutral"));
-      OKR_HEALTH.concat({ label: "No label", color: "neutral" }).forEach(function (h) {
+      OKR_HEALTH.concat({ label: "Not rated", color: "neutral" }).forEach(function (h) {
         els.okrTotals.appendChild(buildTile(h.label, String(byHealth[h.label] || 0), h.color));
       });
 
@@ -3065,6 +3166,19 @@
         : null;
     }
 
+    // objectiveStats leaves health empty without both dates or without Key Results; dates are named first.
+    function notRatedReason(o) {
+      if (o.stats.health) return "";
+      return !o.start || !o.end ? "No dates" : "No Key Results";
+    }
+
+    function typePill(type) {
+      var pill = el("span", "pmAn-typePill pmAn-typePill--" + type.toLowerCase());
+      pill.appendChild(icon(type.toLowerCase()));
+      pill.appendChild(document.createTextNode(type));
+      return pill;
+    }
+
     function buildObjective(o) {
       var group = el("div", "pmAn-group");
       group.setAttribute("data-group", o.recordID);
@@ -3074,18 +3188,20 @@
       btn.style.borderLeftColor = healthColor(o.stats.health);
       btn.prepend(icon("collapsed"), icon("expanded"));
       btn.appendChild(el("span", "pmAn-objText", o.text || "Untitled objective"));
-      if (o.stats.health) {
-        var badge = el("span", "pmAn-badge", o.stats.health);
-        badge.style.setProperty("--pmAn-badge", healthColor(o.stats.health));
-        btn.appendChild(document.createTextNode(" "));
-        btn.appendChild(badge);
-      }
+      var reason = notRatedReason(o);
+      var badge = el("span", reason ? "pmAn-badge pmAn-notRated" : "pmAn-badge", reason || o.stats.health);
+      if (!reason) badge.style.setProperty("--pmAn-badge", healthColor(o.stats.health));
       btn.appendChild(document.createTextNode(" "));
-      btn.appendChild(
-        o.stats.progress === null
-          ? el("span", "pmAn-groupCount", "No Key Results")
-          : el("span", "pmAn-groupCount pmAn-objPct", o.stats.progress + "%"),
-      );
+      btn.appendChild(badge);
+      // The pill already says "No Key Results"; repeat it in the % slot only when the pill names the dates.
+      if (o.stats.progress !== null || reason !== "No Key Results") {
+        btn.appendChild(document.createTextNode(" "));
+        btn.appendChild(
+          o.stats.progress === null
+            ? el("span", "pmAn-groupCount", "No Key Results")
+            : el("span", "pmAn-groupCount pmAn-objPct", o.stats.progress + "%"),
+        );
+      }
       var heading = el("h3", "pmAn-groupTitle pmAn-objHead");
       heading.appendChild(recordLink(o.key || "Objective", o.recordID, modalTitle("Objective", o.key, o.text)));
       heading.appendChild(btn);
@@ -3113,7 +3229,7 @@
       head.appendChild(document.createTextNode(" " + (kr.name || "Untitled Key Result")));
       if (kr.type) {
         head.appendChild(document.createTextNode(" "));
-        head.appendChild(el("span", "pmAn-badge", kr.type));
+        head.appendChild(typePill(kr.type));
       }
       var bar = el("div", "pmAn-krBar");
       var progress = el("progress");
@@ -3121,7 +3237,7 @@
       progress.value = kr.pct;
       progress.setAttribute("aria-label", (kr.name || kr.code) + " progress");
       bar.appendChild(progress);
-      bar.appendChild(el("span", null, kr.pct + "%"));
+      bar.appendChild(el("span", "pmAn-krPct", kr.pct + "%"));
       li.appendChild(head);
       li.appendChild(bar);
       [kr.detail, kr.owner && "Owner: " + kr.owner, kr.message].forEach(function (text) {
