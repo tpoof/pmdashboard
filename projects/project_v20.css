@@ -140,6 +140,8 @@ body {
 
 .pm-tabs {
   display: inline-flex;
+  /* Pin to row top so hiding the taller Search box on Analytics doesn't shift tabs. */
+  align-self: flex-start;
   border-bottom: 1px solid var(--border);
   border-radius: var(--radius-sm);
   overflow: hidden;
@@ -193,6 +195,21 @@ body {
   border-radius: 12px;
   padding: 6px 10px;
   background: transparent;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.pm-filters[hidden] {
+  display: none;
+}
+
+/* Header Search only: lets the input shrink below 220px for 320px reflow. */
+.pm-filters .pm-input {
+  flex: 1 1 220px;
+  min-width: 0;
+  width: 220px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .pm-label {

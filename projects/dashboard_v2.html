@@ -989,9 +989,14 @@
     accent-color: var(--accent);
   }
 
-  /* Key Result rows only (the Health OKR cards keep the native bar): a --muted edge gives the track 3:1. */
+  /* Key Result rows only (the Health OKR cards keep the native bar): a --muted edge gives the track 3:1.
+     A fixed 240px bar at the right of the row; the 560px rule lets it fill the row. */
+  .pmAn-kr .pmAn-krBar {
+    justify-content: flex-end;
+  }
+
   .pmAn-kr progress {
-    flex: 1 1 auto;
+    flex: 0 1 240px;
     width: auto;
     min-width: 0;
     appearance: none;
@@ -1024,14 +1029,15 @@
     white-space: nowrap;
   }
 
-  /* Key Result types differ by icon, shape and border style; one neutral hue so color carries nothing. */
+  /* Key Result types differ by icon, shape and border style; each modifier adds a hue (the icon follows the text). */
   .pmAn-typePill {
     display: inline-flex;
     align-items: center;
     gap: var(--space-1);
     padding: 1px 8px;
-    border: 1.5px solid var(--muted);
-    color: var(--text);
+    border: 1.5px solid var(--pmAn-pill-border);
+    background: var(--pmAn-pill-bg);
+    color: var(--pmAn-pill-fg);
     font-size: var(--pmAn-text-xs);
     font-weight: 700;
     white-space: nowrap;
@@ -1044,19 +1050,25 @@
   }
 
   .pmAn-typePill--metric {
+    --pmAn-pill-border: #00796b;
+    --pmAn-pill-bg: #e0f2f1;
+    --pmAn-pill-fg: #00382f;
     border-radius: var(--pmAn-pill);
-    background: transparent;
   }
 
   .pmAn-typePill--binary {
+    --pmAn-pill-border: #6a1b9a;
+    --pmAn-pill-bg: #f3e5f5;
+    --pmAn-pill-fg: #38006b;
     border-radius: 3px;
-    background: var(--surface-alt);
   }
 
   .pmAn-typePill--milestone {
+    --pmAn-pill-border: #8a3b12;
+    --pmAn-pill-bg: #fbeee6;
+    --pmAn-pill-fg: #4a1c05;
     border-style: dashed;
     border-radius: var(--pmAn-pill);
-    background: var(--surface-alt);
   }
 
   .pmAn-badge.pmAn-notRated {

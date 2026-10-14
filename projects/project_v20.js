@@ -4212,6 +4212,9 @@
     var panel = document.getElementById("pmTab-" + tabName);
     if (panel) panel.classList.add("is-active");
 
+    var filters = document.querySelector(".pm-filters");
+    if (filters) filters.hidden = tabName === "analytics";
+
     localStorage.setItem(STORAGE_KEYS.activeTab, tabName);
 
     renderProjectHealthSticky(
