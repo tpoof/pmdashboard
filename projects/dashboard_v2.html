@@ -925,16 +925,20 @@
     font-size: calc(var(--pmAn-text-2xl) * 1.5);
   }
 
+  /* One bordered card per Key Result. */
   .pmAn-kr {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-1);
-    padding: var(--space-2) var(--space-3);
-    border-bottom: 1px solid var(--border);
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--muted);
+    border-radius: var(--radius-md);
+    background: var(--surface);
   }
 
-  .pmAn-kr:last-child {
-    border-bottom: 0;
+  .pmAn-kr + .pmAn-kr {
+    margin-top: var(--space-4);
   }
 
   .pmAn-linkBtn {
@@ -983,7 +987,7 @@
   }
 
   .pmAn-krMeta dt {
-    font-size: var(--pmAn-text-sm);
+    font-size: var(--pmAn-text-md);
     font-weight: 600;
     color: var(--muted);
   }
@@ -1020,8 +1024,44 @@
   }
 
   .pmAn-krHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-2);
+  }
+
+  .pmAn-krCode {
+    font-size: var(--pmAn-text-sm);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .pmAn-krName {
+    min-width: 0;
     margin: 0;
+    font-size: var(--pmAn-text-lg);
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--text);
     overflow-wrap: anywhere;
+  }
+
+  .pmAn-krName .pmAn-taskLink {
+    color: inherit;
+  }
+
+  /* Linked work is always the last row; its list can be long, so it spans both columns. */
+  @media (min-width: 900px) {
+    .pmAn-krMeta {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--space-4);
+    }
+
+    .pmAn-krMeta > div:last-child {
+      grid-column: 1 / -1;
+    }
   }
 
   .pmAn-krBar {
@@ -1037,11 +1077,7 @@
   }
 
   /* Key Result rows only (the Health OKR cards keep the native bar): a --muted edge gives the track 3:1.
-     A fixed 240px bar at the right of the row; the 560px rule lets it fill the row. */
-  .pmAn-kr .pmAn-krBar {
-    justify-content: flex-end;
-  }
-
+     A fixed 240px bar; the 560px rule lets it fill the row. */
   .pmAn-kr progress {
     flex: 0 1 240px;
     width: auto;
@@ -1129,6 +1165,10 @@
       border-color: CanvasText;
       background: Canvas;
       color: CanvasText;
+    }
+
+    .pmAn-kr {
+      border-color: CanvasText;
     }
 
     .pmAn-kr progress {
@@ -3287,13 +3327,13 @@
 
     function buildKr(kr) {
       var li = el("li", "pmAn-kr");
-      var head = el("p", "pmAn-krHead");
-      head.appendChild(el("strong", null, kr.code));
-      head.appendChild(document.createTextNode(" " + (kr.name || "Untitled Key Result")));
-      if (kr.type) {
-        head.appendChild(document.createTextNode(" "));
-        head.appendChild(typePill(kr.type));
-      }
+      var head = el("div", "pmAn-krHead");
+      head.appendChild(el("span", "pmAn-krCode", kr.code));
+      // One level below the Objective's h3.
+      var name = el("h4", "pmAn-krName");
+      name.appendChild(recordLink(kr.name || "Untitled Key Result", kr.recordID, modalTitle("Key Result", kr.code, kr.name)));
+      head.appendChild(name);
+      if (kr.type) head.appendChild(typePill(kr.type));
       var bar = el("div", "pmAn-krBar");
       var progress = el("progress");
       progress.max = 100;
