@@ -1097,6 +1097,14 @@
             day: "numeric",
             year: "numeric",
           }),
+          // Entered (Eastern) calendar date; UTC so the weekday never shifts.
+          enteredDate: new Intl.DateTimeFormat("en-US", {
+            timeZone: "UTC",
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          }),
         };
 
         // "1:00 – 3:00 PM PDT", sharing AM/PM and zone when both ends match.
@@ -1249,6 +1257,12 @@
             const dateDesc = getField(s1, ind.description);
             // Specials don't inherit type text, matching the on-page description.
             const typeOwn = !isSpecial && type;
+            // .ics "When:" line, as entered in Eastern (no zone conversion).
+            const clock = ([h, mi]) =>
+              `${h % 12 || 12}:${String(mi).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+            const whenText =
+              `${F.enteredDate.format(Date.UTC(date[0], date[1] - 1, date[2]))} | ` +
+              `${clock(startTime)}${endRaw ? ` – ${clock(endTime)}` : ""} ET`;
             events.push({
               recordID,
               typeName: type ? type.name : typeName, // filter key
@@ -1263,6 +1277,10 @@
                 htmlToText(dateDesc) ||
                 (typeOwn && (type.calendarText || htmlToText(type.description))) ||
                 "",
+              // .ics heading: bold part, then " | " and the title (regular only).
+              icsHeading: isSpecial ? title : name,
+              icsSubhead: isSpecial ? "" : title,
+              whenText,
               kind: type ? kindFor(type.name) : FALLBACK_KIND,
               start,
               end,
@@ -1317,18 +1335,28 @@
         }
 
         function buildIcs(ev) {
-          const linkLine = ev.link
-            ? `${ev.isRegister ? "Register" : "Join"}: ${ev.link}`
-            : "";
-          const body = [linkLine, ev.calendarBody].filter(Boolean).join("\n\n");
+          // Heading, invite text, then "When:" with the action link right under it.
+          const label = ev.isRegister ? "Register for training" : "Join meeting";
+          const sub = ev.icsSubhead ? ` | ${ev.icsSubhead}` : "";
+          const heading = ev.icsHeading ? ev.icsHeading + sub : "";
+          const when = `When: ${ev.whenText}`;
+          const body = [
+            heading,
+            ev.calendarBody,
+            [when, ev.link && `${label}: ${ev.link}`].filter(Boolean).join("\n"),
+          ]
+            .filter(Boolean)
+            .join("\n\n");
           // HTML twin so Outlook desktop shows a clickable link.
           const htmlBody = [
-            linkLine &&
-              `<p><a href="${htmlEscape(ev.link)}">${htmlEscape(linkLine)}</a></p>`,
+            heading &&
+              `<p><strong>${htmlEscape(ev.icsHeading)}</strong>${htmlEscape(sub)}</p>`,
             ...ev.calendarBody
               .split(/\n\s*\n/)
               .filter((p) => p.trim())
               .map((p) => `<p>${p.split("\n").map(htmlEscape).join("<br>")}</p>`),
+            `<p><strong>When:</strong> ${htmlEscape(ev.whenText)}</p>`,
+            ev.link && `<p><a href="${htmlEscape(ev.link)}">${label}</a></p>`,
           ].filter(Boolean);
           const lines = [
             "BEGIN:VCALENDAR",
