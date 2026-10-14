@@ -14,32 +14,10 @@
       <h1 class="pmAn-title">Project &amp; Task Health</h1>
       <p class="pm-muted pmAn-scope" id="pmAnScope">All fiscal years</p>
     </div>
-    <div class="pmAn-controls">
-      <div class="pmAn-field">
-        <label class="pm-label" for="pmAnFy">Fiscal Year</label>
-        <select id="pmAnFy" class="pm-select">
-          <option value="">All</option>
-        </select>
-      </div>
-      <div id="pmAnWindowWrap" class="pmAn-field" hidden>
-        <label class="pm-label" for="pmAnWindow">Completed within</label>
-        <select id="pmAnWindow" class="pm-select"></select>
-      </div>
-      <div class="pmAn-actions">
-        <button type="button" id="pmAnRefresh" class="pm-ghostBtn">Refresh</button>
-        <button type="button" id="pmAnDefaultsBtn" class="pm-ghostBtn pmAn-defaultsBtn" aria-expanded="false" aria-controls="pmAnDefaults" hidden>Default Filters</button>
-      </div>
+    <div class="pmAn-actions">
+      <button type="button" id="pmAnRefresh" class="pm-ghostBtn">Refresh</button>
     </div>
   </header>
-
-  <div id="pmAnDefaults" class="pmAn-card pmAn-defaults" hidden>
-    <p id="pmAnDefaultsSaved"></p>
-    <div class="pmAn-defaultsActions">
-      <button type="button" id="pmAnSaveDefault" class="pm-ghostBtn">Save as team default</button>
-      <button type="button" id="pmAnResetDefault" class="pm-ghostBtn">Reset to team default</button>
-    </div>
-    <p id="pmAnDefaultsMsg" class="pm-muted pmAn-cap"></p>
-  </div>
 
   <p id="pmAnStatus" class="pm-srOnly" role="status"></p>
 
@@ -57,6 +35,54 @@
       <button type="button" class="pm-tab" role="tab" id="pmAnTabOkr" aria-controls="pmAnPanelOkr" aria-selected="false" tabindex="-1">OKRs</button>
       <button type="button" class="pm-tab" role="tab" id="pmAnTabRoadmap" aria-controls="pmAnPanelRoadmap" aria-selected="false" tabindex="-1">Roadmap</button>
     </div>
+
+    <section id="pmAnFilters" class="pmAn-card pmAn-filterBar" aria-label="Filters">
+      <div class="pmAn-controls">
+        <div class="pmAn-field">
+          <label class="pm-label" for="pmAnFy">Fiscal Year</label>
+          <select id="pmAnFy" class="pm-select">
+            <option value="">All</option>
+          </select>
+        </div>
+        <div id="pmAnWindowWrap" class="pmAn-field">
+          <label class="pm-label" for="pmAnWindow">Completed within</label>
+          <select id="pmAnWindow" class="pm-select"></select>
+        </div>
+        <div id="pmAnAssigneeWrap" class="pmAn-field">
+          <label class="pm-label" for="pmAnAssigneeToggle">Assigned To</label>
+          <div id="pmAnAssignee" class="pm-multiSelect">
+            <button type="button" id="pmAnAssigneeToggle" class="pm-multiSelectToggle" aria-expanded="false" aria-controls="pmAnAssigneePanel">All</button>
+            <div id="pmAnAssigneePanel" class="pm-multiSelectPanel" hidden>
+              <div class="pm-multiSelectActions">
+                <button type="button" id="pmAnAssigneeAll" class="pm-multiSelectActionBtn">Select all</button>
+                <button type="button" id="pmAnAssigneeClear" class="pm-multiSelectActionBtn">Clear</button>
+              </div>
+              <div class="pm-multiSelectSearch">
+                <input type="text" id="pmAnAssigneeSearch" placeholder="Search" aria-label="Search Assigned To options" />
+              </div>
+              <div id="pmAnAssigneeList" class="pm-multiSelectList" role="group" aria-label="Assigned To options"></div>
+            </div>
+          </div>
+        </div>
+        <div class="pmAn-field">
+          <label class="pm-label" for="pmAnSearch">Search</label>
+          <input type="search" id="pmAnSearch" class="pm-input pmAn-search" />
+        </div>
+        <div class="pmAn-actions">
+          <button type="button" id="pmAnClearAll" class="pm-ghostBtn" disabled>Clear all</button>
+          <button type="button" id="pmAnDefaultsBtn" class="pm-ghostBtn pmAn-defaultsBtn" aria-expanded="false" aria-controls="pmAnDefaults" hidden>Default Filters</button>
+        </div>
+      </div>
+      <p id="pmAnFilterSummary" class="pm-muted pmAn-cap" hidden></p>
+      <div id="pmAnDefaults" class="pmAn-defaults" hidden>
+        <p id="pmAnDefaultsSaved"></p>
+        <div class="pmAn-defaultsActions">
+          <button type="button" id="pmAnSaveDefault" class="pm-ghostBtn">Save as team default</button>
+          <button type="button" id="pmAnResetDefault" class="pm-ghostBtn">Reset to team default</button>
+        </div>
+        <p id="pmAnDefaultsMsg" class="pm-muted pmAn-cap"></p>
+      </div>
+    </section>
 
     <div id="pmAnPanelHealth" role="tabpanel" aria-labelledby="pmAnTabHealth">
     <p id="pmAnEmpty" class="pmAn-empty" hidden></p>
@@ -157,14 +183,6 @@
 
     <div id="pmAnPanelMeeting" role="tabpanel" aria-labelledby="pmAnTabMeeting" hidden>
       <p id="pmAnMeetEmpty" class="pmAn-empty" hidden>No tasks for this scope.</p>
-      <div id="pmAnAssigneeFilter" class="pmAn-field pmAn-assignees">
-        <label class="pm-label" for="pmAnAssignees">Assignees</label>
-        <div class="pmAn-assigneeRow">
-          <select id="pmAnAssignees" class="pmAn-multi" multiple aria-describedby="pmAnAssigneesHint"></select>
-          <button type="button" id="pmAnAssigneesClear" class="pm-ghostBtn" disabled>Clear</button>
-        </div>
-        <p id="pmAnAssigneesHint" class="pm-muted pmAn-cap">Hold Ctrl or Cmd to select several. None selected shows everyone.</p>
-      </div>
       <ul id="pmAnMeetCards" class="pmAn-kpis" aria-label="Tasks by status"></ul>
       <div id="pmAnMeet" class="pmAn-meet">
         <nav class="pmAn-card pmAn-people" aria-label="Team members">
@@ -187,10 +205,8 @@
     <div id="pmAnPanelOkr" role="tabpanel" aria-labelledby="pmAnTabOkr" hidden>
       <p id="pmAnOkrEmpty" class="pmAn-empty" hidden>No objectives for this scope.</p>
       <div id="pmAnOkr">
-        <div class="pmAn-card pmAn-strip">
-          <p id="pmAnOkrTotals" class="pmAn-totals"></p>
-          <p id="pmAnOkrHealth" class="pm-muted pmAn-cap"></p>
-        </div>
+        <ul id="pmAnOkrTotals" class="pmAn-kpis" aria-label="OKR totals"></ul>
+        <p id="pmAnOkrNote" class="pm-muted pmAn-note" hidden></p>
         <div class="pmAn-card">
           <div class="pmAn-detailHead">
             <h2>Objectives</h2>
@@ -290,6 +306,54 @@
     margin-left: auto;
   }
 
+  #pmAn .pm-multiSelect {
+    min-width: 220px;
+  }
+
+  /* v20 positions the arrow and active dot against .pm-multiSelect, which now grows with the panel. */
+  #pmAn .pm-multiSelectToggle {
+    position: relative;
+  }
+
+  /* v20's literal arrow mis-decodes in this charset-less page; same glyph, escaped. */
+  #pmAn .pm-multiSelectToggle::after {
+    content: "\25BE" / "";
+  }
+
+  /* --border is under 3:1; the active toggle keeps v20's accent border. */
+  #pmAn .pm-multiSelectToggle:not(.is-active),
+  #pmAn .pm-multiSelectSearch input,
+  #pmAn .pmAn-search {
+    border-color: var(--muted);
+  }
+
+  /* In page flow: the iframe sizes to its content, so a floating panel would be clipped.
+     contain keeps long names from widening the field and shifting the other filters. */
+  #pmAn .pm-multiSelectPanel {
+    position: static;
+    contain: inline-size;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin-top: var(--space-1);
+    z-index: auto;
+  }
+
+  #pmAn .pm-multiSelectActionBtn,
+  #pmAn .pm-multiSelectOption {
+    min-height: 24px;
+  }
+
+  /* While the panel is open the row grows, so align to the top and drop the actions one label line (13px, as .pm-label). */
+  .pmAn-filterBar:has(.pm-multiSelectPanel:not([hidden])) .pmAn-controls {
+    align-items: flex-start;
+  }
+
+  .pmAn-filterBar:has(.pm-multiSelectPanel:not([hidden])) .pmAn-actions {
+    font-size: 13px;
+    margin-top: calc(1lh + var(--space-1));
+  }
+
   /* v20 fixes .pm-ghostBtn at 34px, which clips labels under text zoom. */
   .pmAn-actions .pm-ghostBtn,
   .pmAn-filterBtn {
@@ -320,7 +384,7 @@
     display: inline;
   }
 
-  #pmAn :is(button, a, select):focus-visible {
+  #pmAn :is(button, a, select, input):focus-visible {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
   }
@@ -334,8 +398,12 @@
     cursor: default;
   }
 
-  .pmAn-defaults {
+  .pmAn-filterBar {
     margin-bottom: var(--space-4);
+  }
+
+  .pmAn-defaults {
+    margin-top: var(--space-3);
   }
 
   .pmAn-defaults p {
@@ -581,33 +649,6 @@
     padding: var(--space-2);
   }
 
-  .pmAn-assignees {
-    margin-bottom: var(--space-4);
-  }
-
-  .pmAn-assigneeRow {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: var(--space-2);
-  }
-
-  .pmAn-multi {
-    min-width: 220px;
-    max-width: 100%;
-    padding: var(--space-1);
-    border: 1px solid var(--muted);
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    color: var(--text);
-    font: inherit;
-  }
-
-  /* Padding lifts each option to the 24px target size. */
-  .pmAn-multi option {
-    padding: var(--space-1) var(--space-2);
-  }
-
   .pmAn-list {
     margin: 0;
     padding: 0;
@@ -777,6 +818,10 @@
     overflow-wrap: anywhere;
   }
 
+  .pmAn-taskMeta.pmAn-overdue {
+    color: var(--pmAn-overdue);
+  }
+
   .pmAn-strip {
     margin-bottom: var(--space-4);
   }
@@ -795,17 +840,36 @@
   }
 
   .pmAn-objHead .pmAn-groupBtn {
-    flex: 1 1 240px;
-    flex-wrap: wrap;
+    display: grid;
+    flex: 1 1 0;
+    grid-template-areas: "icon text pill pct";
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
     width: auto;
     min-width: 0;
   }
 
-  /* The 10em basis makes the health label and % wrap below short widths instead of squeezing the text. */
+  .pmAn-objHead .pmAn-icon {
+    grid-area: icon;
+  }
+
   .pmAn-objText {
-    flex: 1 1 10em;
+    grid-area: text;
     min-width: 0;
     overflow-wrap: anywhere;
+  }
+
+  .pmAn-objHead .pmAn-badge {
+    grid-area: pill;
+  }
+
+  .pmAn-objHead .pmAn-groupCount {
+    grid-area: pct;
+    justify-self: end;
+    white-space: nowrap;
+  }
+
+  .pmAn-kpiValue--lg {
+    font-size: calc(var(--pmAn-text-2xl) * 1.5);
   }
 
   .pmAn-kr {
@@ -956,8 +1020,30 @@
   }
 
   @media (max-width: 560px) {
-    .pmAn-controls {
-      flex-basis: 100%;
+    .pmAn-filterBar .pmAn-controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    /* Key and % keep the first line; the objective text and pill stack below at full width. */
+    .pmAn-objHead {
+      align-items: flex-start;
+    }
+
+    .pmAn-objHead > .pmAn-taskLink {
+      margin-top: var(--space-2);
+    }
+
+    .pmAn-objHead .pmAn-groupBtn {
+      grid-template-areas:
+        "icon . pct"
+        "text text text"
+        "pill pill pill";
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .pmAn-objHead .pmAn-badge {
+      justify-self: start;
     }
 
     .pmAn-field {
@@ -1078,6 +1164,7 @@
     var LIST_LIMIT = 5;
     var MONTHS_SHOWN = 12;
     var TAB_KEY = "pmAn.tab";
+    var DEFAULTS_GROUPS = [1, 486];
     // Labels double as the saved text in the settings record.
     var COMPLETED_WINDOWS = [
       { label: "All time", days: null },
@@ -1146,6 +1233,18 @@
       status: byId("pmAnStatus"),
       window: byId("pmAnWindow"),
       windowWrap: byId("pmAnWindowWrap"),
+      assigneeWrap: byId("pmAnAssigneeWrap"),
+      assignee: byId("pmAnAssignee"),
+      assigneeToggle: byId("pmAnAssigneeToggle"),
+      assigneePanel: byId("pmAnAssigneePanel"),
+      assigneeAll: byId("pmAnAssigneeAll"),
+      assigneeClear: byId("pmAnAssigneeClear"),
+      assigneeSearch: byId("pmAnAssigneeSearch"),
+      assigneeList: byId("pmAnAssigneeList"),
+      clearAll: byId("pmAnClearAll"),
+      filterSummary: byId("pmAnFilterSummary"),
+      okrNote: byId("pmAnOkrNote"),
+      search: byId("pmAnSearch"),
       defaultsBtn: byId("pmAnDefaultsBtn"),
       defaults: byId("pmAnDefaults"),
       defaultsSaved: byId("pmAnDefaultsSaved"),
@@ -1178,14 +1277,10 @@
       toggleAll: byId("pmAnToggleAll"),
       groups: byId("pmAnGroups"),
       meetStatus: byId("pmAnMeetStatus"),
-      assigneeFilter: byId("pmAnAssigneeFilter"),
-      assignees: byId("pmAnAssignees"),
-      assigneesClear: byId("pmAnAssigneesClear"),
       meetCards: byId("pmAnMeetCards"),
       okrEmpty: byId("pmAnOkrEmpty"),
       okr: byId("pmAnOkr"),
       okrTotals: byId("pmAnOkrTotals"),
-      okrHealth: byId("pmAnOkrHealth"),
       okrToggleAll: byId("pmAnOkrToggleAll"),
       okrList: byId("pmAnOkrList"),
       roadEmpty: byId("pmAnRoadEmpty"),
@@ -1207,6 +1302,11 @@
       person: null,
       expanded: Object.assign({}, MEETING_EXPANDED),
       assignees: [],
+      assigneeNames: [],
+      assigneesAll: false,
+      query: "",
+      results: {},
+      searchTimer: null,
       meetingShown: { tasks: 0, people: 0, completed: 0 },
       completedWindowed: false,
       objectives: [],
@@ -1780,6 +1880,7 @@
       };
       var c = { projects: 0, tasks: 0, cancelled: 0, missingDate: 0, orphans: 0 };
       var live = [];
+      syncAssignees(personNames(inScope));
 
       state.projects.filter(inScope).forEach(function (p) {
         if (isCancelled(p.status)) {
@@ -1795,7 +1896,7 @@
           return;
         }
         if (t.bucket === "complete" && !t.completedOn) c.missingDate++;
-        if (!inWindow(t)) return;
+        if (!inWindow(t) || !matchesQuery([t.title, t.projectName, t.assignee])) return;
         c.tasks++;
         live.push(t);
         if (!t.hasProject) c.orphans++;
@@ -1807,8 +1908,101 @@
       state.footnote.meeting = footnoteBase({ projects: c.projects, tasks: renderMeeting(live) });
       renderOkrs(fy);
       renderRoadmap(fy);
-      renderHealth(fy, inScope);
+      renderHealth(fy, function (rec) {
+        return inScope(rec) && personIncluded(recPerson(rec)) && (rec.kind !== "task" || inWindow(rec)) && matchesQuery(healthText(rec));
+      });
       renderFootnote();
+      updateFilterBar();
+    }
+
+    // Every word of the search must appear somewhere in the record's fields (AND, case-insensitive).
+    function matchesQuery(fields) {
+      var text = fields.join(" ").toLowerCase();
+      return state.query
+        .toLowerCase()
+        .split(" ")
+        .every(function (word) {
+          return !word || text.indexOf(word) !== -1;
+        });
+    }
+
+    function healthText(rec) {
+      return rec.kind === "task" ? [rec.title, rec.projectName] : [rec.name, rec.key];
+    }
+
+    function emptyText(node, fallback) {
+      node.textContent = state.query ? "No results for \u201c" + state.query + "\u201d." : fallback;
+    }
+
+    function applySearch() {
+      clearTimeout(state.searchTimer);
+      var query = els.search.value.trim().replace(/\s+/g, " ");
+      if (query === state.query) return;
+      state.query = query;
+      render();
+      var active = els.tabs.filter(function (t) {
+        return t.getAttribute("aria-selected") === "true";
+      })[0].id;
+      var n = state.results[active];
+      els.status.textContent = n ? plural(n, "result") + "." : "No results.";
+    }
+
+    // Assigned To: nothing stored means everyone.
+    function personIncluded(name) {
+      return !state.assignees.length || state.assignees.indexOf(name) !== -1;
+    }
+
+    function recPerson(rec) {
+      return rec.kind === "task" ? rec.assignee : rec.owner;
+    }
+
+    function objectiveMatches(o) {
+      return (
+        matchesQuery([o.key, o.text]) ||
+        o.krs.some(function (kr) {
+          return matchesQuery([kr.code, kr.name, kr.owner]);
+        })
+      );
+    }
+
+    // Progress and health stay those of the whole objective; only inclusion depends on Key Result owners.
+    function objectiveIncluded(o) {
+      return (
+        !state.assignees.length ||
+        o.krs.some(function (kr) {
+          return personIncluded(kr.owner);
+        })
+      );
+    }
+
+    // Task assignees, project owners and Key Result owners in the Fiscal Year scope, A to Z.
+    function personNames(inScope) {
+      var seen = {};
+      state.tasks.concat(state.projects).filter(inScope).forEach(function (rec) {
+        if (workBucket(rec) !== "cancelled" && recPerson(rec)) seen[recPerson(rec)] = true;
+      });
+      state.objectives.filter(inScope).forEach(function (o) {
+        o.krs.forEach(function (kr) {
+          if (kr.owner) seen[kr.owner] = true;
+        });
+      });
+      return Object.keys(seen).sort(function (a, b) {
+        return a.localeCompare(b);
+      });
+    }
+
+    function updateFilterBar() {
+      var parts = [];
+      if (els.fy.value) parts.push("Fiscal Year " + els.fy.value);
+      if (windowDays() !== null) parts.push("Completed within the past " + windowDays() + " days");
+      var n = state.assignees.length;
+      if (n) parts.push("Assigned To " + (n === 1 ? state.assignees[0] : peoplePhrase(n)));
+      if (state.query) parts.push("Search \u201c" + state.query + "\u201d");
+      els.filterSummary.hidden = !parts.length;
+      els.filterSummary.textContent = parts.length ? "Filters: " + parts.join(" \u00b7 ") : "";
+      // A focused button that disables itself drops focus to the page.
+      if (!parts.length && document.activeElement === els.clearAll) els.fy.focus();
+      els.clearAll.disabled = !parts.length;
     }
 
     function footnoteBase(c) {
@@ -1839,7 +2033,7 @@
 
     /* ---- health ---- */
 
-    // Ignores the Completed within window. Tiles, banner and charts 1 to 3 all read these
+    // The window limits completed tasks only. Tiles, banner and charts 1 to 3 all read these
     // groups, so their numbers can't disagree.
     function renderHealth(fy, inScope) {
       var groups = {};
@@ -1872,7 +2066,8 @@
 
       var isEmpty = c.projects + c.tasks === 0;
       els.empty.hidden = !isEmpty;
-      els.empty.textContent = fy ? "No records for this fiscal year." : "No records found.";
+      state.results.pmAnTabHealth = c.projects + c.tasks;
+      emptyText(els.empty, fy ? "No records for this fiscal year." : "No records found.");
       Array.prototype.forEach.call(els.fyScoped, function (node) {
         node.hidden = isEmpty;
       });
@@ -1945,7 +2140,7 @@
       li.appendChild(recordLink(workTitle(rec), rec.recordID, workModalTitle(rec)));
       var meta = isTask ? [projectText(rec), rec.assignee] : [rec.owner || "No owner", rec.status || "No status"];
       li.appendChild(el("p", "pmAn-taskMeta", meta.join(" \u00b7 ")));
-      li.appendChild(el("p", "pmAn-taskMeta", dateText(rec)));
+      li.appendChild(dateLine(rec));
       return li;
     }
 
@@ -1986,7 +2181,7 @@
     function renderOkrSummary(fy) {
       var okrFy = fy || fyOf(state.today);
       var objectives = state.objectives.filter(function (o) {
-        return o.fy === okrFy;
+        return o.fy === okrFy && objectiveIncluded(o);
       });
       var overall = overallProgress(objectives);
       els.okrKpi.style.borderLeftColor = STATUS_COLORS.active;
@@ -2177,6 +2372,7 @@
         var bucket = workBucket(rec);
         var date = workDate(rec);
         if (bucket === "complete" || bucket === "cancelled" || !date) return;
+        if (!personIncluded(recPerson(rec)) || !matchesQuery(healthText(rec))) return;
         var days = Math.round((date - state.today) / MS_PER_DAY);
         if (days >= 0 && days <= UPCOMING_DAYS) counts[rec.kind][Math.floor(days / 7)]++;
       });
@@ -2351,6 +2547,15 @@
       });
     }
 
+    // Static summary tile shared by Team Meeting and OKRs; label then value, both plain text.
+    function buildTile(label, value, color) {
+      var li = el("li", "pmAn-kpi");
+      li.style.borderLeftColor = STATUS_COLORS[color];
+      li.appendChild(el("span", "pmAn-kpiLabel", label));
+      if (value) li.appendChild(el("span", "pmAn-kpiValue", value));
+      return li;
+    }
+
     function peoplePhrase(n) {
       return n === 1 ? "1 person" : n + " people";
     }
@@ -2383,34 +2588,19 @@
         state.completedWindowed = windowed;
         state.expanded.complete = windowed;
       }
-      var names = pluck(state.people, "name");
-      state.assignees = state.assignees.filter(function (name) {
-        return names.indexOf(name) !== -1;
-      });
-      // Rebuilding the options on every change would reset the listbox's Shift+Arrow anchor.
-      if (pluck(Array.prototype.slice.call(els.assignees.options), "value").join("\n") !== names.join("\n")) {
-        els.assignees.textContent = "";
-        els.assignees.size = Math.min(6, Math.max(2, names.length));
-        names.forEach(function (name) {
-          els.assignees.add(new Option(name, name));
-        });
-      }
-      Array.prototype.forEach.call(els.assignees.options, function (option) {
-        option.selected = state.assignees.indexOf(option.value) !== -1;
-      });
-      els.assigneesClear.disabled = !state.assignees.length;
       var included = state.people.filter(function (p) {
-        return !state.assignees.length || state.assignees.indexOf(p.name) !== -1;
+        return personIncluded(p.name);
       });
       var shown = included.reduce(function (sum, p) {
         return sum + p.tasks.length;
       }, 0);
       state.meetingShown = { tasks: shown, people: included.length, completed: 0 };
 
-      els.meetEmpty.hidden = state.people.length > 0;
-      els.meet.hidden = state.people.length === 0;
-      els.assigneeFilter.hidden = state.people.length === 0;
-      els.meetCards.hidden = state.people.length === 0;
+      state.results.pmAnTabMeeting = shown;
+      emptyText(els.meetEmpty, "No tasks for this scope.");
+      els.meetEmpty.hidden = included.length > 0;
+      els.meet.hidden = included.length === 0;
+      els.meetCards.hidden = included.length === 0;
       els.meetCards.textContent = "";
       meetingGroups().forEach(function (id) {
         // Summed from the same groupTasks the person sections render.
@@ -2418,11 +2608,7 @@
           return sum + groupTasks(p, id).length;
         }, 0);
         if (id === "complete") state.meetingShown.completed = count;
-        var li = el("li", "pmAn-kpi");
-        li.style.borderLeftColor = STATUS_COLORS[BUCKET[id].color];
-        li.appendChild(el("span", "pmAn-kpiLabel", groupLabel(id)));
-        li.appendChild(el("span", "pmAn-kpiValue", String(count)));
-        els.meetCards.appendChild(li);
+        els.meetCards.appendChild(buildTile(groupLabel(id), String(count), BUCKET[id].color));
       });
       els.people.textContent = "";
       included.forEach(function (person) {
@@ -2561,7 +2747,7 @@
       var li = el("li", "pmAn-task");
       li.appendChild(recordLink(t.title || "Untitled task", t.recordID, workModalTitle(t)));
       li.appendChild(el("p", "pmAn-taskMeta", projectText(t)));
-      li.appendChild(el("p", "pmAn-taskMeta", dateText(t)));
+      li.appendChild(dateLine(t));
       return li;
     }
 
@@ -2570,6 +2756,12 @@
     }
 
     // Tasks read "Due ...", projects "Ends ..." (their end date is their due date).
+    // Late open tasks (Overdue, and Blocked / On Hold past due) get red text; the words carry the meaning.
+    function dateLine(rec) {
+      var late = rec.kind === "task" && rec.bucket !== "complete" && rec.due && rec.due < state.today;
+      return el("p", "pmAn-taskMeta" + (late ? " pmAn-overdue" : ""), dateText(rec));
+    }
+
     function dateText(rec) {
       if (rec.bucket === "complete") {
         return rec.completedOn ? "Completed " + DATE_FMT.format(rec.completedOn) : "Completed (no date)";
@@ -2667,30 +2859,33 @@
 
     function renderOkrs(fy) {
       var objectives = state.objectives.filter(function (o) {
-        return !fy || o.fy === fy;
+        return (!fy || o.fy === fy) && objectiveIncluded(o) && objectiveMatches(o);
       });
+      state.results.pmAnTabOkr = objectives.length;
+      emptyText(els.okrEmpty, "No objectives for this scope.");
+      var notes = [];
+      if (state.assignees.length) notes.push("Showing objectives with a Key Result owned by the selected people.");
+      if (state.query) notes.push("Showing objectives that match, or that have a matching Key Result.");
+      els.okrNote.hidden = !notes.length;
+      els.okrNote.textContent = notes.join(" ");
       els.okrEmpty.hidden = objectives.length > 0;
       els.okr.hidden = objectives.length === 0;
 
       var overall = overallProgress(objectives);
-      els.okrTotals.textContent =
-        plural(objectives.length, "objective") +
-        " \u00b7 " +
-        (overall === null ? "Overall: no Key Results" : "Overall " + overall + "%");
       var byHealth = {};
       objectives.forEach(function (o) {
-        var label = o.stats.health || "no label";
+        var label = o.stats.health || "No label";
         byHealth[label] = (byHealth[label] || 0) + 1;
       });
-      els.okrHealth.textContent = pluck(OKR_HEALTH, "label")
-        .concat("no label")
-        .filter(function (label) {
-          return byHealth[label];
-        })
-        .map(function (label) {
-          return byHealth[label] + " " + label.toLowerCase();
-        })
-        .join(" \u00b7 ");
+      els.okrTotals.textContent = "";
+      var overallTile = buildTile("Overall progress", overall === null ? "" : overall + "%", "active");
+      if (overall === null) overallTile.appendChild(el("span", "pmAn-kpiStat", "No Key Results"));
+      else overallTile.lastChild.classList.add("pmAn-kpiValue--lg");
+      els.okrTotals.appendChild(overallTile);
+      els.okrTotals.appendChild(buildTile("Objectives", String(objectives.length), "neutral"));
+      OKR_HEALTH.concat({ label: "No label", color: "neutral" }).forEach(function (h) {
+        els.okrTotals.appendChild(buildTile(h.label, String(byHealth[h.label] || 0), h.color));
+      });
 
       els.okrList.textContent = "";
       objectives.forEach(function (o) {
@@ -2730,11 +2925,13 @@
       }
       btn.appendChild(document.createTextNode(" "));
       btn.appendChild(
-        el("span", "pmAn-groupCount", o.stats.progress === null ? "No Key Results" : o.stats.progress + "%"),
+        o.stats.progress === null
+          ? el("span", "pmAn-groupCount", "No Key Results")
+          : el("span", "pmAn-groupCount pmAn-objPct", o.stats.progress + "%"),
       );
       var heading = el("h3", "pmAn-groupTitle pmAn-objHead");
-      heading.appendChild(btn);
       heading.appendChild(recordLink(o.key || "Objective", o.recordID, modalTitle("Objective", o.key, o.text)));
+      heading.appendChild(btn);
 
       var body;
       if (o.krs.length) {
@@ -2825,8 +3022,10 @@
 
     function renderRoadmap(fy) {
       var items = state.roadmap.filter(function (item) {
-        return !fy || item.fy === fy;
+        return (!fy || item.fy === fy) && matchesQuery([item.capability, item.description, item.theme]);
       });
+      state.results.pmAnTabRoadmap = items.length;
+      emptyText(els.roadEmpty, "No roadmap items for this scope.");
       var counts = {};
       items.forEach(function (item) {
         counts[item.status] = (counts[item.status] || 0) + 1;
@@ -2926,7 +3125,9 @@
         t.tabIndex = on ? 0 : -1;
         byId(t.getAttribute("aria-controls")).hidden = !on;
       });
-      els.windowWrap.hidden = tab.id !== "pmAnTabMeeting";
+      els.windowWrap.hidden = tab.id !== "pmAnTabHealth" && tab.id !== "pmAnTabMeeting";
+      els.assigneeWrap.hidden = tab.id === "pmAnTabRoadmap";
+      closeAssignees(false);
       renderFootnote();
       // Charts sized while their panel was hidden collapse to zero.
       if (tab.id === "pmAnTabHealth") {
@@ -2950,6 +3151,68 @@
       var days = windowDays();
       if (t.bucket !== "complete" || days === null) return true;
       return !!t.completedOn && t.completedOn >= addDays(state.today, -days);
+    }
+
+    // Rebuilds the checkboxes only when the people change; a rebuild on every click would drop focus.
+    function syncAssignees(names) {
+      state.assignees = state.assignees.filter(function (name) {
+        return names.indexOf(name) !== -1;
+      });
+      if (names.join("\n") !== state.assigneeNames.join("\n")) {
+        state.assigneeNames = names;
+        renderAssigneeList();
+      }
+      Array.prototype.forEach.call(els.assigneeList.querySelectorAll("input"), function (box) {
+        box.checked = isChecked(box.value);
+      });
+      var n = state.assignees.length;
+      els.assigneeToggle.textContent = !n ? "All" : n === 1 ? state.assignees[0] : n + " selected";
+      els.assigneeToggle.classList.toggle("is-active", n > 0);
+    }
+
+    function isChecked(name) {
+      return state.assigneesAll || state.assignees.indexOf(name) !== -1;
+    }
+
+    function renderAssigneeList() {
+      var query = els.assigneeSearch.value.trim().toLowerCase();
+      var names = state.assigneeNames.filter(function (name) {
+        return name.toLowerCase().indexOf(query) !== -1;
+      });
+      els.assigneeList.textContent = "";
+      if (!names.length) els.assigneeList.appendChild(el("div", "pm-multiSelectEmpty", "No options"));
+      names.forEach(function (name) {
+        var row = el("label", "pm-multiSelectOption");
+        var box = el("input");
+        box.type = "checkbox";
+        box.value = name;
+        box.checked = isChecked(name);
+        row.appendChild(box);
+        row.appendChild(el("span", null, name));
+        els.assigneeList.appendChild(row);
+      });
+    }
+
+    function openAssignees() {
+      els.assigneePanel.hidden = false;
+      els.assigneeToggle.setAttribute("aria-expanded", "true");
+      var first = els.assigneeList.querySelector("input");
+      (state.assigneeNames.length > 15 || !first ? els.assigneeSearch : first).focus();
+    }
+
+    function closeAssignees(returnFocus) {
+      if (els.assigneePanel.hidden) return;
+      els.assigneePanel.hidden = true;
+      els.assigneeToggle.setAttribute("aria-expanded", "false");
+      if (returnFocus) els.assigneeToggle.focus();
+    }
+
+    // Selecting everyone is stored as nothing, so people added later (e.g. by an FY change) are included.
+    function setAssignees(names) {
+      state.assigneesAll = names.length > 0 && names.length === state.assigneeNames.length;
+      state.assignees = state.assigneesAll ? [] : names;
+      render();
+      announceAssignees();
     }
 
     function announceAssignees() {
@@ -2989,9 +3252,11 @@
     }
 
     // Display gate only, parsed like lp_team.html. Fails closed: unrendered tags hold no digits.
-    function inGroup(id) {
-      var ids = (root.getAttribute("data-groups") || "").match(/\d+/g) || [];
-      return new Set(ids.map(Number)).has(id);
+    function inGroup(allowed) {
+      var mine = new Set(((root.getAttribute("data-groups") || "").match(/\d+/g) || []).map(Number));
+      return allowed.some(function (id) {
+        return mine.has(id);
+      });
     }
 
     function csrfToken() {
@@ -3061,7 +3326,7 @@
       tile.firstElementChild.textContent = bucket.label;
     });
     els.defaultsBtn.prepend(icon("collapsed"), icon("expanded"));
-    els.defaultsBtn.hidden = !inGroup(1);
+    els.defaultsBtn.hidden = !inGroup(DEFAULTS_GROUPS);
     els.tabs.forEach(function (tab, i) {
       tab.addEventListener("click", function () {
         activateTab(tab);
@@ -3120,18 +3385,57 @@
       render();
       els.status.textContent = groupLabel("complete") + ": " + plural(state.meetingShown.completed, "task") + ".";
     });
-    els.assignees.addEventListener("change", function () {
-      state.assignees = pluck(Array.prototype.slice.call(els.assignees.selectedOptions), "value");
-      render();
-      announceAssignees();
+    els.assigneeToggle.addEventListener("click", function () {
+      if (els.assigneePanel.hidden) openAssignees();
+      else closeAssignees(true);
     });
-    els.assigneesClear.addEventListener("click", function () {
+    els.assignee.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape" || els.assigneePanel.hidden) return;
+      e.preventDefault();
+      closeAssignees(true);
+    });
+    els.assignee.addEventListener("focusout", function (e) {
+      if (!els.assignee.contains(e.relatedTarget)) closeAssignees(false);
+    });
+    document.addEventListener("mousedown", function (e) {
+      if (!els.assignee.contains(e.target)) closeAssignees(false);
+    });
+    els.assigneeList.addEventListener("change", function (e) {
+      var current = state.assigneesAll ? state.assigneeNames : state.assignees;
+      setAssignees(
+        current
+          .filter(function (name) {
+            return name !== e.target.value;
+          })
+          .concat(e.target.checked ? [e.target.value] : []),
+      );
+    });
+    els.assigneeAll.addEventListener("click", function () {
+      setAssignees(state.assigneeNames.slice());
+    });
+    els.assigneeClear.addEventListener("click", function () {
+      setAssignees([]);
+    });
+    els.clearAll.addEventListener("click", function () {
+      els.fy.value = "";
+      els.window.value = COMPLETED_WINDOWS[0].label;
       state.assignees = [];
+      state.assigneesAll = false;
+      state.filtersTouched = true;
+      els.search.value = "";
+      state.query = "";
+      clearTimeout(state.searchTimer);
       render();
-      // Clear is now disabled, so keep focus on the list instead of losing it.
-      els.assignees.focus();
-      announceAssignees();
+      els.status.textContent = "Filters cleared.";
     });
+    els.search.addEventListener("input", function () {
+      clearTimeout(state.searchTimer);
+      state.searchTimer = setTimeout(applySearch, 200);
+    });
+    els.search.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") applySearch();
+    });
+    els.assigneeSearch.addEventListener("input", renderAssigneeList);
     els.defaultsBtn.addEventListener("click", function () {
       var open = els.defaultsBtn.getAttribute("aria-expanded") !== "true";
       els.defaultsBtn.setAttribute("aria-expanded", String(open));
