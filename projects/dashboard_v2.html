@@ -1306,6 +1306,7 @@
       assigneesAll: false,
       query: "",
       results: {},
+      healthShown: { tasks: 0, projects: 0 },
       searchTimer: null,
       meetingShown: { tasks: 0, people: 0, completed: 0 },
       completedWindowed: false,
@@ -1927,11 +1928,26 @@
     }
 
     function healthText(rec) {
-      return rec.kind === "task" ? [rec.title, rec.projectName] : [rec.name, rec.key];
+      return (rec.kind === "task" ? [rec.title, rec.projectName] : [rec.name, rec.key]).concat(recPerson(rec));
     }
 
-    function emptyText(node, fallback) {
-      node.textContent = state.query ? "No results for \u201c" + state.query + "\u201d." : fallback;
+    // Blame the filters that apply to this tab before blaming the data.
+    function emptyText(node, fallback, tabId) {
+      var filtered =
+        !!els.fy.value ||
+        (tabId !== "pmAnTabRoadmap" && state.assignees.length > 0) ||
+        ((tabId === "pmAnTabHealth" || tabId === "pmAnTabMeeting") && windowDays() !== null);
+      node.textContent = state.query
+        ? "No results for \u201c" + state.query + "\u201d."
+        : filtered
+          ? "No records match the current filters."
+          : fallback;
+    }
+
+    function activeTabId() {
+      return els.tabs.filter(function (t) {
+        return t.getAttribute("aria-selected") === "true";
+      })[0].id;
     }
 
     function applySearch() {
@@ -1940,10 +1956,7 @@
       if (query === state.query) return;
       state.query = query;
       render();
-      var active = els.tabs.filter(function (t) {
-        return t.getAttribute("aria-selected") === "true";
-      })[0].id;
-      var n = state.results[active];
+      var n = state.results[activeTabId()];
       els.status.textContent = n ? plural(n, "result") + "." : "No results.";
     }
 
@@ -2067,7 +2080,8 @@
       var isEmpty = c.projects + c.tasks === 0;
       els.empty.hidden = !isEmpty;
       state.results.pmAnTabHealth = c.projects + c.tasks;
-      emptyText(els.empty, fy ? "No records for this fiscal year." : "No records found.");
+      state.healthShown = { tasks: c.tasks, projects: c.projects };
+      emptyText(els.empty, "No records found.", "pmAnTabHealth");
       Array.prototype.forEach.call(els.fyScoped, function (node) {
         node.hidden = isEmpty;
       });
@@ -2597,7 +2611,7 @@
       state.meetingShown = { tasks: shown, people: included.length, completed: 0 };
 
       state.results.pmAnTabMeeting = shown;
-      emptyText(els.meetEmpty, "No tasks for this scope.");
+      emptyText(els.meetEmpty, "No tasks for this scope.", "pmAnTabMeeting");
       els.meetEmpty.hidden = included.length > 0;
       els.meet.hidden = included.length === 0;
       els.meetCards.hidden = included.length === 0;
@@ -2862,7 +2876,7 @@
         return (!fy || o.fy === fy) && objectiveIncluded(o) && objectiveMatches(o);
       });
       state.results.pmAnTabOkr = objectives.length;
-      emptyText(els.okrEmpty, "No objectives for this scope.");
+      emptyText(els.okrEmpty, "No objectives for this scope.", "pmAnTabOkr");
       var notes = [];
       if (state.assignees.length) notes.push("Showing objectives with a Key Result owned by the selected people.");
       if (state.query) notes.push("Showing objectives that match, or that have a matching Key Result.");
@@ -3025,7 +3039,7 @@
         return (!fy || item.fy === fy) && matchesQuery([item.capability, item.description, item.theme]);
       });
       state.results.pmAnTabRoadmap = items.length;
-      emptyText(els.roadEmpty, "No roadmap items for this scope.");
+      emptyText(els.roadEmpty, "No roadmap items for this scope.", "pmAnTabRoadmap");
       var counts = {};
       items.forEach(function (item) {
         counts[item.status] = (counts[item.status] || 0) + 1;
@@ -3215,9 +3229,19 @@
       announceAssignees();
     }
 
+    // Each tab reports what it shows; Roadmap ignores Assigned To, so it says nothing.
     function announceAssignees() {
-      els.status.textContent =
-        "Showing " + plural(state.meetingShown.tasks, "task") + " for " + peoplePhrase(state.meetingShown.people) + ".";
+      var tab = activeTabId();
+      var who = state.assignees.length ? peoplePhrase(state.assignees.length) : "everyone";
+      if (tab === "pmAnTabMeeting") {
+        els.status.textContent =
+          "Showing " + plural(state.meetingShown.tasks, "task") + " for " + peoplePhrase(state.meetingShown.people) + ".";
+      } else if (tab === "pmAnTabHealth") {
+        els.status.textContent =
+          "Showing " + plural(state.healthShown.tasks, "task") + " and " + plural(state.healthShown.projects, "project") + " for " + who + ".";
+      } else if (tab === "pmAnTabOkr") {
+        els.status.textContent = "Showing " + plural(state.results.pmAnTabOkr, "objective") + " for " + who + ".";
+      }
     }
 
     function fetchTeamDefault() {

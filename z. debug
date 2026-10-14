@@ -1,5 +1,1 @@
-JSON.stringify({
-  groups: [...document.querySelectorAll('[data-groups]')].map(e => e.getAttribute('data-groups')),
-  modalLinks: document.querySelectorAll('a[data-record]').length,
-  recordLinks: document.querySelectorAll('a[href*="printview"]').length
-})
+(document.getElementById('pmAn') || {}).dataset
