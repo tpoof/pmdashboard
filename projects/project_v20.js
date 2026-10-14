@@ -2615,7 +2615,7 @@
   function getProjectCompletionPct(projectKey) {
     var key = String(projectKey || "").trim();
     var tasks = (state.tasksAll || []).filter(function (t) {
-      return String(t.projectKey || "").trim() === key;
+      return String(t.projectKey || "").trim() === key && !isCancelledTask(t);
     });
     var total = tasks.length;
     if (total === 0) return 0;
@@ -2897,7 +2897,7 @@
     var title = String(state.projectKeyToTitle[key] || "").trim();
     if (!title) title = "{no project title}";
     var tasksForProject = state.tasksAll.filter(function (t) {
-      return String(t.projectKey || "").trim() === key;
+      return String(t.projectKey || "").trim() === key && !isCancelledTask(t);
     });
 
     var total = tasksForProject.length;
@@ -2911,7 +2911,7 @@
       if (isOverdueTask(t, now)) overdue += 1;
     });
 
-    var compPct = total ? Math.round((completed / total) * 100) : 0;
+    var compPct = getProjectCompletionPct(key);
     var compClass =
       compPct === 100 ? "pm-healthValue pm-completeGreen" : "pm-healthValue";
     var overdueClass =
@@ -2952,6 +2952,12 @@
       );
     });
     if (!p || !p.recordID) return;
+    // No tasks left to judge by (none, or all cancelled): leave the status alone.
+    var key = String(projectKey || "").trim();
+    var hasActiveTasks = (state.tasksAll || []).some(function (t) {
+      return String(t.projectKey || "").trim() === key && !isCancelledTask(t);
+    });
+    if (!hasActiveTasks) return;
 
     var pct = getProjectCompletionPct(projectKey);
 
@@ -4087,6 +4093,11 @@
     if (yyyy < 1900 || yyyy > 2100) return null;
     var d = new Date(yyyy, mm - 1, dd);
     return isNaN(d.getTime()) ? null : d;
+  }
+
+  function isCancelledTask(t) {
+    var st = String(t.status || "").trim().toLowerCase();
+    return st === "cancelled" || st === "canceled";
   }
 
   function isCompletedStatus(status) {
