@@ -1134,6 +1134,7 @@
             terms: [
               { id: "recordID", operator: ">", match: 0, gate: "AND" },
               { id: "categoryID", operator: "=", match: form.formId, gate: "AND" },
+              { id: "deleted", operator: "=", match: 0, gate: "AND" },
             ],
             joins: [],
             sort: {},
@@ -1151,8 +1152,15 @@
               `[Events] ${form.formId} returned ${entries.length} records (queryLimit) — some may be missing.`,
             );
           }
+          // Safety net for the deleted term; cancelled records skip silently.
+          const published = CONFIG.publishedStatus.toLowerCase();
           return entries
-            .filter(([, rec]) => rec && rec.lastStatus === CONFIG.publishedStatus)
+            .filter(
+              ([, rec]) =>
+                rec &&
+                !(Number(rec.deleted) > 0) &&
+                String(rec.lastStatus ?? "").trim().toLowerCase() === published,
+            )
             .map(([recordID, rec]) => ({ recordID, s1: rec.s1 || {} }));
         }
 
