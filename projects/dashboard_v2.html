@@ -38,13 +38,13 @@
 
     <section id="pmAnFilters" class="pmAn-card pmAn-filterBar" aria-label="Filters">
       <div class="pmAn-controls">
-        <div class="pmAn-field">
+        <div class="pmAn-field pmAn-selectField">
           <label class="pm-label" for="pmAnFy">Fiscal Year</label>
           <select id="pmAnFy" class="pm-select">
             <option value="">All</option>
           </select>
         </div>
-        <div id="pmAnWindowWrap" class="pmAn-field">
+        <div id="pmAnWindowWrap" class="pmAn-field pmAn-selectField">
           <label class="pm-label" for="pmAnWindow">Completed within</label>
           <select id="pmAnWindow" class="pm-select"></select>
         </div>
@@ -69,16 +69,27 @@
           <input type="search" id="pmAnSearch" class="pm-input pmAn-search" />
         </div>
         <div class="pmAn-actions">
-          <button type="button" id="pmAnClearAll" class="pm-ghostBtn" disabled>Clear all</button>
-          <button type="button" id="pmAnDefaultsBtn" class="pm-ghostBtn pmAn-defaultsBtn" aria-expanded="false" aria-controls="pmAnDefaults" hidden>Default Filters</button>
+          <button type="button" id="pmAnResetDefault" class="pm-ghostBtn" aria-describedby="pmAnResetWhy" disabled>Reset to team default</button>
+          <button type="button" id="pmAnClearAll" class="pm-ghostBtn" disabled>Clear all filters</button>
+          <button type="button" id="pmAnDefaultsBtn" class="pm-ghostBtn pmAn-defaultsBtn" aria-expanded="false" aria-controls="pmAnDefaults" hidden>Set team default</button>
         </div>
+        <span id="pmAnResetWhy" class="pm-srOnly"></span>
       </div>
       <p id="pmAnFilterSummary" class="pm-muted pmAn-cap" hidden></p>
-      <div id="pmAnDefaults" class="pmAn-defaults" hidden>
+      <div id="pmAnDefaults" class="pmAn-defaults" role="region" aria-labelledby="pmAnDefaultsTitle" hidden>
+        <h2 id="pmAnDefaultsTitle" tabindex="-1">Team default</h2>
+        <p>These filters apply to everyone on the team when they open the report.</p>
         <p id="pmAnDefaultsSaved"></p>
-        <div class="pmAn-defaultsActions">
-          <button type="button" id="pmAnSaveDefault" class="pm-ghostBtn">Save as team default</button>
-          <button type="button" id="pmAnResetDefault" class="pm-ghostBtn">Reset to team default</button>
+        <p id="pmAnDefaultsNext"></p>
+        <p class="pm-muted pmAn-cap">Assigned To and Search are not saved.</p>
+        <div id="pmAnSaveRow" class="pmAn-defaultsActions">
+          <button type="button" id="pmAnSaveDefault" class="pm-primaryBtn" aria-describedby="pmAnSaveWhy">Save as team default</button>
+          <p id="pmAnSaveWhy" class="pm-muted pmAn-cap"></p>
+        </div>
+        <div id="pmAnConfirm" class="pmAn-defaultsActions" hidden>
+          <p>This changes the default for everyone on the team.</p>
+          <button type="button" id="pmAnConfirmSave" class="pm-primaryBtn">Confirm</button>
+          <button type="button" id="pmAnCancelSave" class="pm-ghostBtn">Cancel</button>
         </div>
         <p id="pmAnDefaultsMsg" class="pm-muted pmAn-cap"></p>
       </div>
@@ -172,10 +183,12 @@
 
       <section class="pmAn-card" aria-labelledby="pmAnCompletedTitle" data-fy-scope>
         <h2 id="pmAnCompletedTitle">Tasks Completed by Month</h2>
+        <p id="pmAnCompletedNote" class="pm-muted pmAn-note"></p>
         <div class="pmAn-chartBox">
           <canvas id="pmAnCompletedChart" role="img" aria-labelledby="pmAnCompletedSummary"></canvas>
         </div>
         <span id="pmAnCompletedSummary" hidden></span>
+        <p id="pmAnCompletedCap" class="pm-muted pmAn-cap" hidden></p>
         <table id="pmAnCompletedTable" class="pm-srOnly"></table>
       </section>
     </div>
@@ -310,48 +323,68 @@
     min-width: 220px;
   }
 
-  /* v20 positions the arrow and active dot against .pm-multiSelect, which now grows with the panel. */
+  /* The toggle copies the selects' text; v20 makes it bolder. */
   #pmAn .pm-multiSelectToggle {
-    position: relative;
+    color: FieldText;
+    font-weight: 400;
   }
 
-  /* v20's literal arrow mis-decodes in this charset-less page; same glyph, escaped. */
-  #pmAn .pm-multiSelectToggle::after {
-    content: "\25BE" / "";
-  }
-
-  /* --border is under 3:1; the active toggle keeps v20's accent border. */
+  /* --border is under 3:1, so every filter control uses --muted; the active toggle keeps v20's accent. */
+  .pmAn-filterBar .pm-select,
+  .pmAn-filterBar .pm-ghostBtn,
   #pmAn .pm-multiSelectToggle:not(.is-active),
   #pmAn .pm-multiSelectSearch input,
   #pmAn .pmAn-search {
     border-color: var(--muted);
   }
 
-  /* In page flow: the iframe sizes to its content, so a floating panel would be clipped.
-     contain keeps long names from widening the field and shifting the other filters. */
+  /* One arrow for the selects and the toggle: v20's glyph, escaped because this page declares no charset. */
+  .pmAn-selectField .pm-select {
+    appearance: none;
+    padding-right: 28px;
+  }
+
+  .pmAn-selectField {
+    position: relative;
+  }
+
+  /* Same font on both, or the glyph's size differs between the select field and the button. */
+  .pmAn-selectField::after,
+  #pmAn .pm-multiSelectToggle::after {
+    content: "\25BE" / "";
+    font-family: system-ui, sans-serif;
+  }
+
+  .pmAn-selectField::after {
+    position: absolute;
+    right: 10px;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    height: var(--pmAn-control-h);
+    color: var(--muted);
+    font-size: 12px;
+    pointer-events: none;
+  }
+
+  /* Floats over the content, at least as wide as the field; .pmAn-alignRight keeps it inside the frame. */
   #pmAn .pm-multiSelectPanel {
-    position: static;
-    contain: inline-size;
-    width: 100%;
+    min-width: 100%;
+  }
+
+  #pmAn .pm-multiSelectPanel.pmAn-alignRight {
+    right: 0;
+    left: auto;
+  }
+
+  #pmAn .pm-multiSelectOption span {
     min-width: 0;
-    max-width: none;
-    margin-top: var(--space-1);
-    z-index: auto;
+    overflow-wrap: anywhere;
   }
 
   #pmAn .pm-multiSelectActionBtn,
   #pmAn .pm-multiSelectOption {
     min-height: 24px;
-  }
-
-  /* While the panel is open the row grows, so align to the top and drop the actions one label line (13px, as .pm-label). */
-  .pmAn-filterBar:has(.pm-multiSelectPanel:not([hidden])) .pmAn-controls {
-    align-items: flex-start;
-  }
-
-  .pmAn-filterBar:has(.pm-multiSelectPanel:not([hidden])) .pmAn-actions {
-    font-size: 13px;
-    margin-top: calc(1lh + var(--space-1));
   }
 
   /* v20 fixes .pm-ghostBtn at 34px, which clips labels under text zoom. */
@@ -393,7 +426,13 @@
     background: var(--accent-soft);
   }
 
-  #pmAn .pm-ghostBtn:disabled {
+  #pmAn .pm-primaryBtn {
+    min-height: var(--pmAn-control-h);
+    padding: 6px 12px;
+    transition: none;
+  }
+
+  #pmAn :is(.pm-ghostBtn, .pm-primaryBtn):disabled {
     opacity: 0.35;
     cursor: default;
   }
@@ -402,19 +441,33 @@
     margin-bottom: var(--space-4);
   }
 
+  /* The Assigned To panel floats past the card's edge; the card's hidden overflow would clip it and scroll on focus. */
+  .pmAn-card.pmAn-filterBar {
+    overflow: visible;
+  }
+
   .pmAn-defaults {
     margin-top: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-left: var(--pmAn-bar) solid var(--accent-strong);
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
   }
 
   .pmAn-defaults p {
-    margin: 0;
+    margin: var(--space-1) 0 0;
   }
 
   .pmAn-defaultsActions {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: var(--space-2);
     margin: var(--space-3) 0 var(--space-2);
+  }
+
+  .pmAn-defaultsActions p {
+    margin: 0;
   }
 
   .pmAn-loading {
@@ -1203,7 +1256,7 @@
       types: { id: "pmAnTypes", rowHeader: "Type", horizontal: true },
       workload: { id: "pmAnWorkload", rowHeader: "Person", horizontal: true, stacked: true, legend: true, truncate: 20 },
       upcoming: { id: "pmAnUpcoming", rowHeader: "Week", stacked: true, legend: true },
-      completed: { id: "pmAnCompleted", rowHeader: "Month" },
+      completed: { id: "pmAnCompleted", rowHeader: "Month", monthTicks: true },
     };
 
     var TIME_FMT = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
@@ -1244,6 +1297,8 @@
       clearAll: byId("pmAnClearAll"),
       filterSummary: byId("pmAnFilterSummary"),
       okrNote: byId("pmAnOkrNote"),
+      completedNote: byId("pmAnCompletedNote"),
+      completedCap: byId("pmAnCompletedCap"),
       search: byId("pmAnSearch"),
       defaultsBtn: byId("pmAnDefaultsBtn"),
       defaults: byId("pmAnDefaults"),
@@ -1251,6 +1306,14 @@
       defaultsMsg: byId("pmAnDefaultsMsg"),
       saveDefault: byId("pmAnSaveDefault"),
       resetDefault: byId("pmAnResetDefault"),
+      resetWhy: byId("pmAnResetWhy"),
+      defaultsTitle: byId("pmAnDefaultsTitle"),
+      defaultsNext: byId("pmAnDefaultsNext"),
+      saveRow: byId("pmAnSaveRow"),
+      saveWhy: byId("pmAnSaveWhy"),
+      confirm: byId("pmAnConfirm"),
+      confirmSave: byId("pmAnConfirmSave"),
+      cancelSave: byId("pmAnCancelSave"),
       fyScoped: root.querySelectorAll("[data-fy-scope]"),
       okrKpi: byId("pmAnOkrKpi"),
       okrKpiLabel: byId("pmAnOkrKpiLabel"),
@@ -1909,9 +1972,16 @@
       state.footnote.meeting = footnoteBase({ projects: c.projects, tasks: renderMeeting(live) });
       renderOkrs(fy);
       renderRoadmap(fy);
-      renderHealth(fy, function (rec) {
-        return inScope(rec) && personIncluded(recPerson(rec)) && (rec.kind !== "task" || inWindow(rec)) && matchesQuery(healthText(rec));
-      });
+      var healthBase = function (rec) {
+        return inScope(rec) && personIncluded(recPerson(rec)) && matchesQuery(healthText(rec));
+      };
+      renderHealth(
+        fy,
+        function (rec) {
+          return healthBase(rec) && (rec.kind !== "task" || inWindow(rec));
+        },
+        healthBase,
+      );
       renderFootnote();
       updateFilterBar();
     }
@@ -2013,9 +2083,44 @@
       if (state.query) parts.push("Search \u201c" + state.query + "\u201d");
       els.filterSummary.hidden = !parts.length;
       els.filterSummary.textContent = parts.length ? "Filters: " + parts.join(" \u00b7 ") : "";
-      // A focused button that disables itself drops focus to the page.
-      if (!parts.length && document.activeElement === els.clearAll) els.fy.focus();
-      els.clearAll.disabled = !parts.length;
+      var d = state.teamDefault;
+      var atDefault = d && els.fy.value === d.fy && els.window.value === d.window && !n && !state.query;
+      els.resetWhy.textContent = !d ? "No team default is saved." : atDefault ? "Filters already match the team default." : "";
+      setDisabled(els.clearAll, !parts.length);
+      setDisabled(els.resetDefault, !!els.resetWhy.textContent);
+      renderSavePreview();
+    }
+
+    // A focused button that disables itself drops focus to the page.
+    function setDisabled(btn, off) {
+      if (off && document.activeElement === btn) els.fy.focus();
+      btn.disabled = off;
+    }
+
+    function defaultPhrase(fy, windowLabel) {
+      var w = COMPLETED_WINDOWS.filter(function (x) {
+        return x.label === windowLabel;
+      })[0];
+      return (
+        "Fiscal Year " + (fy || "All") + " \u00b7 Completed within " + (w && w.days ? "the past " + w.days + " days" : "All time")
+      );
+    }
+
+    function renderSavePreview() {
+      var d = state.teamDefault;
+      els.defaultsNext.textContent = "Will be saved: " + defaultPhrase(els.fy.value, els.window.value);
+      els.saveWhy.textContent = !csrfToken()
+        ? "Saving is not available here."
+        : d && d.fy === els.fy.value && d.window === els.window.value
+          ? "Nothing to save: the filters above already match the team default."
+          : "";
+      els.saveDefault.disabled = !!els.saveWhy.textContent;
+    }
+
+    function showConfirm(open) {
+      els.saveRow.hidden = open;
+      els.confirm.hidden = !open;
+      (open ? els.confirmSave : els.saveDefault).focus();
     }
 
     function footnoteBase(c) {
@@ -2048,7 +2153,7 @@
 
     // The window limits completed tasks only. Tiles, banner and charts 1 to 3 all read these
     // groups, so their numbers can't disagree.
-    function renderHealth(fy, inScope) {
+    function renderHealth(fy, inScope, completedScope) {
       var groups = {};
       TASK_BUCKETS.forEach(function (b) {
         groups[b.id] = { task: [], project: [] };
@@ -2091,7 +2196,12 @@
       renderStatusMix(groups);
       renderTypes(groups);
       renderWorkload(groups);
-      renderCompleted(groups);
+      renderCompleted(
+        fy,
+        state.tasks.filter(function (t) {
+          return t.bucket === "complete" && completedScope(t);
+        }),
+      );
     }
 
     function countOf(group) {
@@ -2275,19 +2385,27 @@
       );
     }
 
-    // Text before the first semicolon, so subtypes ("Web; Intranet") share one bar.
+    // Text before the first spaced dash ("ABC - Platform" -> "ABC"); "Self-Service" stays whole.
     function typeLabel(type) {
-      return type.split(";")[0].trim() || UNSPECIFIED;
+      return type.replace(/\s+/g, " ").trim().split(/ [-\u2013\u2014] /)[0] || UNSPECIFIED;
     }
 
     // Top types by count, then "Other" for the rest, then "Unspecified".
     function renderTypes(groups) {
-      var byType = {};
+      var inChart = new Set();
       TASK_BUCKETS.forEach(function (b) {
         groups[b.id].project.forEach(function (p) {
-          var label = typeLabel(p.type);
-          byType[label] = (byType[label] || 0) + 1;
+          inChart.add(p);
         });
+      });
+      // Case-insensitive groups, shown with the spelling seen first in record order.
+      var byType = {};
+      var spelling = {};
+      state.projects.forEach(function (p) {
+        if (!inChart.has(p)) return;
+        var label = typeLabel(p.type);
+        var name = spelling[label.toLowerCase()] || (spelling[label.toLowerCase()] = label);
+        byType[name] = (byType[name] || 0) + 1;
       });
       var types = Object.keys(byType)
         .filter(function (t) {
@@ -2351,20 +2469,36 @@
       );
     }
 
-    // Rolling months ending with the current one, oldest first.
-    function renderCompleted(groups) {
-      var start = new Date(state.today.getFullYear(), state.today.getMonth() - (MONTHS_SHOWN - 1), 1);
+    // A selected FY shows its October to September; All shows the last 12 months. Ignores the window.
+    function renderCompleted(fy, tasks) {
+      var start = fy
+        ? new Date(2000 + Number(fy.slice(2)) - 1, FY_START_MONTH, 1)
+        : new Date(state.today.getFullYear(), state.today.getMonth() - (MONTHS_SHOWN - 1), 1);
       var labels = [];
       var data = [];
       for (var i = 0; i < MONTHS_SHOWN; i++) {
         labels.push(MONTH_FMT.format(new Date(start.getFullYear(), start.getMonth() + i, 1)));
         data.push(0);
       }
-      groups.complete.task.forEach(function (t) {
-        if (!t.completedOn) return;
+      var outside = 0;
+      var undated = 0;
+      tasks.forEach(function (t) {
+        if (!t.completedOn) {
+          undated++;
+          return;
+        }
         var idx = (t.completedOn.getFullYear() - start.getFullYear()) * 12 + t.completedOn.getMonth() - start.getMonth();
         if (idx >= 0 && idx < MONTHS_SHOWN) data[idx]++;
+        else outside++;
       });
+      var range = labels[0] + " to " + labels[MONTHS_SHOWN - 1];
+      els.completedNote.textContent = fy ? "Fiscal year " + fy + " (" + range + ")" : "Last 12 months";
+      var parts = nonZeroNotes([
+        [outside, outside + " completed " + (fy ? "outside " + range : "older than 12 months")],
+        [undated, (outside ? "" : "completed ") + undated + " with no completion date"],
+      ]);
+      els.completedCap.hidden = !parts.length;
+      els.completedCap.textContent = "Excludes " + parts.join(" and ");
       updateChart("completed", labels, [{ label: "Completed tasks", data: data, backgroundColor: cssColor("complete") }]);
     }
 
@@ -2400,6 +2534,15 @@
       var valueAxis = { beginAtZero: true, stacked: !!cfg.stacked, ticks: { precision: 0 } };
       var categoryAxis = { stacked: !!cfg.stacked, grid: { display: false } };
       var plugins = { legend: { display: !!cfg.legend } };
+      // Month only, with the year on the first month and on January; the table keeps the full label.
+      if (cfg.monthTicks) {
+        categoryAxis.ticks = {
+          callback: function (value) {
+            var label = this.getLabelForValue(value);
+            return value === 0 || label.indexOf("Jan") === 0 ? label : label.split(" ")[0];
+          },
+        };
+      }
       // Tick text only; tooltips, the summary and the table keep the full label.
       if (cfg.truncate) {
         categoryAxis.ticks = {
@@ -3208,7 +3351,14 @@
     }
 
     function openAssignees() {
+      els.assigneePanel.classList.remove("pmAn-alignRight");
       els.assigneePanel.hidden = false;
+      if (els.assigneePanel.getBoundingClientRect().right > document.documentElement.clientWidth) {
+        els.assigneePanel.classList.add("pmAn-alignRight");
+      }
+      // The auto-height frame would clip a floating panel on a short tab, so reserve room until it closes.
+      root.style.minHeight =
+        Math.ceil(els.assigneePanel.getBoundingClientRect().bottom - root.getBoundingClientRect().top) + "px";
       els.assigneeToggle.setAttribute("aria-expanded", "true");
       var first = els.assigneeList.querySelector("input");
       (state.assigneeNames.length > 15 || !first ? els.assigneeSearch : first).focus();
@@ -3217,6 +3367,7 @@
     function closeAssignees(returnFocus) {
       if (els.assigneePanel.hidden) return;
       els.assigneePanel.hidden = true;
+      root.style.minHeight = "";
       els.assigneeToggle.setAttribute("aria-expanded", "false");
       if (returnFocus) els.assigneeToggle.focus();
     }
@@ -3294,11 +3445,10 @@
       els.defaultsSaved.textContent = state.defaultsError
         ? "Team defaults could not be loaded."
         : d
-          ? "Team default: " + (d.fy || "All") + " \u00b7 " + d.window
+          ? "Currently saved: " + defaultPhrase(d.fy, d.window)
           : "No team default saved.";
-      els.resetDefault.disabled = !d;
-      els.saveDefault.disabled = !csrfToken();
-      els.defaultsMsg.textContent = csrfToken() ? message || "" : "Saving is not available here.";
+      els.defaultsMsg.textContent = message || "";
+      updateFilterBar();
     }
 
     function saveDefault() {
@@ -3308,7 +3458,6 @@
       body.append(String(IND.settings.fy), sent.fy || "All");
       body.append(String(IND.settings.window), sent.window);
       els.saveDefault.disabled = true;
-      els.resetDefault.disabled = true;
       els.status.textContent = "Saving\u2026";
       els.defaultsMsg.textContent = "Saving\u2026";
       fetch("api/form/" + SETTINGS_RECORD_ID, {
@@ -3465,11 +3614,35 @@
       els.defaultsBtn.setAttribute("aria-expanded", String(open));
       els.defaults.hidden = !open;
     });
-    els.saveDefault.addEventListener("click", saveDefault);
+    // Save asks first; only Confirm writes.
+    els.saveDefault.addEventListener("click", function () {
+      showConfirm(true);
+    });
+    els.cancelSave.addEventListener("click", function () {
+      showConfirm(false);
+    });
+    els.confirm.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      showConfirm(false);
+    });
+    els.confirmSave.addEventListener("click", function () {
+      els.confirm.hidden = true;
+      els.saveRow.hidden = false;
+      // Save disables itself while writing, so keep focus in the panel on its heading.
+      els.defaultsTitle.focus();
+      saveDefault();
+    });
     els.resetDefault.addEventListener("click", function () {
       applyFilters(state.teamDefault);
+      state.assignees = [];
+      state.assigneesAll = false;
+      state.filtersTouched = true;
+      els.search.value = "";
+      state.query = "";
+      clearTimeout(state.searchTimer);
       render();
-      els.status.textContent = "Team default applied: " + (els.fy.value || "All") + ", " + els.window.value + ".";
+      els.status.textContent = "Filters reset to the team default.";
     });
     // Plain left clicks open the parent's modal; anything modified falls through to the new-tab href.
     root.addEventListener("click", function (e) {
