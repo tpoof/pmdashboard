@@ -93,7 +93,7 @@
       <h2 id="pmAnBannerTitle">Overall health</h2>
       <p id="pmAnBannerState" class="pmAn-bannerState"></p>
       <div id="pmAnBannerLines"></div>
-      <div id="pmAnBannerList"></div>
+      <div id="pmAnBannerList" class="pmAn-actionLists"></div>
     </section>
 
     <section class="pmAn-card pmAn-okrCards" aria-labelledby="pmAnOkrCardsTitle">
@@ -106,7 +106,7 @@
     <div class="pmAn-charts">
       <section class="pmAn-card" aria-labelledby="pmAnStatusMixTitle" data-fy-scope>
         <h2 id="pmAnStatusMixTitle">Status mix</h2>
-        <div class="pmAn-chartBox pmAn-chartBox--short">
+        <div class="pmAn-chartBox">
           <canvas id="pmAnStatusMixChart" role="img" aria-labelledby="pmAnStatusMixSummary"></canvas>
         </div>
         <span id="pmAnStatusMixSummary" hidden></span>
@@ -144,7 +144,7 @@
         <table id="pmAnUpcomingTable" class="pm-srOnly"></table>
       </section>
 
-      <section class="pmAn-card pmAn-chartWide" aria-labelledby="pmAnCompletedTitle" data-fy-scope>
+      <section class="pmAn-card" aria-labelledby="pmAnCompletedTitle" data-fy-scope>
         <h2 id="pmAnCompletedTitle">Tasks Completed by Month</h2>
         <div class="pmAn-chartBox">
           <canvas id="pmAnCompletedChart" role="img" aria-labelledby="pmAnCompletedSummary"></canvas>
@@ -539,15 +539,6 @@
     height: var(--pmAn-chart-h);
   }
 
-  /* Two bars; the visible table below fills the rest of the card. */
-  .pmAn-chartBox--short {
-    --pmAn-chart-h: 160px;
-  }
-
-  .pmAn-chartWide {
-    grid-column: 1 / -1;
-  }
-
   .pmAn-cap {
     margin: var(--space-2) 0 0;
     font-size: var(--pmAn-text-sm);
@@ -632,6 +623,39 @@
     font-size: var(--pmAn-text-xs);
     font-weight: 700;
     white-space: nowrap;
+  }
+
+  /* Task vs Project differ by shape (pill vs square) and fill (outline vs solid), not color alone. */
+  .pmAn-kind {
+    display: inline-block;
+    padding: 2px 10px;
+    border: 1.5px solid;
+    font-size: var(--pmAn-text-xs);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .pmAn-kind--task {
+    border-color: var(--accent-strong);
+    border-radius: var(--pmAn-pill);
+    background: transparent;
+    color: var(--accent-strong);
+  }
+
+  .pmAn-kind--project {
+    border-color: var(--muted);
+    border-radius: 2px;
+    background: var(--muted);
+    color: var(--surface);
+  }
+
+  @media (forced-colors: active) {
+    .pmAn-kind--project {
+      forced-color-adjust: none;
+      border-color: CanvasText;
+      background: CanvasText;
+      color: Canvas;
+    }
   }
 
   /* With --pmAn-badge unset, var() is invalid and the background stays transparent. */
@@ -867,6 +891,14 @@
     margin-top: var(--space-4);
   }
 
+  /* Column gap only: each group's own margin spaces the rows when they stack. */
+  .pmAn-actionLists {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--space-4);
+    align-items: start;
+  }
+
   .pmAn-more {
     justify-self: start;
   }
@@ -874,13 +906,9 @@
   @media (max-width: 820px) {
     .pmAn-meet,
     .pmAn-roadGrid,
-    .pmAn-charts {
+    .pmAn-charts,
+    .pmAn-actionLists {
       grid-template-columns: minmax(0, 1fr);
-    }
-
-    /* Single column has no neighbor card to match, so keep the default height. */
-    .pmAn-chartBox--short {
-      --pmAn-chart-h: inherit;
     }
 
     /* scroll-padding keeps a focused person's ring inside the scrollport. */
@@ -1011,7 +1039,7 @@
     var UNSPECIFIED = "Unspecified";
     var PRINTVIEW_URL = "index.php?a=printview&recordID=";
     var MS_PER_DAY = 86400000;
-    var LIST_LIMIT = 10;
+    var LIST_LIMIT = 5;
     var MONTHS_SHOWN = 12;
     var TAB_KEY = "pmAn.tab";
     // Labels double as the saved text in the settings record.
@@ -1869,7 +1897,7 @@
     function buildWorkRow(rec) {
       var isTask = rec.kind === "task";
       var li = el("li", "pmAn-task");
-      li.appendChild(el("span", "pmAn-badge", isTask ? "Task" : "Project"));
+      li.appendChild(el("span", "pmAn-kind pmAn-kind--" + rec.kind, isTask ? "Task" : "Project"));
       li.appendChild(document.createTextNode(" "));
       li.appendChild(recordLink(workTitle(rec), rec.recordID, workModalTitle(rec)));
       var meta = isTask ? [projectText(rec), rec.assignee] : [rec.owner || "No owner", rec.status || "No status"];
@@ -2664,7 +2692,7 @@
         })
         .forEach(function (item) {
           var row = el("li", "pmAn-linkRow");
-          row.appendChild(el("span", "pmAn-badge", item.rec.bucket ? "Task" : "Project"));
+          row.appendChild(el("span", "pmAn-kind pmAn-kind--" + item.rec.kind, item.rec.bucket ? "Task" : "Project"));
           row.appendChild(recordLink(item.title || "Untitled", item.rec.recordID, workModalTitle(item.rec)));
           var status = el("span", "pmAn-badge", BUCKET[item.bucket].label);
           status.style.setProperty("--pmAn-badge", STATUS_COLORS[BUCKET[item.bucket].color]);
