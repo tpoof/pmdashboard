@@ -1,9 +1,5 @@
-// 1. Raw group attribute as LEAF rendered it
-[...document.querySelectorAll('[data-groups]')].map(e => e.getAttribute('data-groups'))
-
-// 2. Are record links the new kind?
-[...document.querySelectorAll('a[data-record]')].length
-document.querySelector('a[href*="printview"]')?.outerHTML
-
-// 3. Does the parent page open the modal from a message?
-parent.postMessage({ type: 'pm-open-modal', url: location.origin + '/platform/projects/index.php?a=printview&recordID=1231', title: 'Test' }, location.origin)
+JSON.stringify({
+  groups: [...document.querySelectorAll('[data-groups]')].map(e => e.getAttribute('data-groups')),
+  modalLinks: document.querySelectorAll('a[data-record]').length,
+  recordLinks: document.querySelectorAll('a[href*="printview"]').length
+})
