@@ -237,6 +237,30 @@
         color: var(--c-muted);
       }
 
+      /* Rich-text descriptions (renderRichText); size and color inherit. */
+      .ev-rich p {
+        margin: 0 0 8px;
+      }
+      .ev-rich ul,
+      .ev-rich ol {
+        margin: 0 0 8px;
+        padding-left: 20px;
+      }
+      .ev-rich > :last-child {
+        margin-bottom: 0;
+      }
+      .ev-rich li {
+        margin: 0 0 4px;
+      }
+      .ev-rich a {
+        color: var(--c-blue60);
+        text-decoration: underline;
+      }
+      .ev-rich a:focus-visible {
+        outline: 3px solid var(--lp-hl);
+        outline-offset: 3px;
+      }
+
       /* ── Monthly sessions: event cards ── */
       .ev-types-block {
         padding-top: 24px;
@@ -247,30 +271,50 @@
         grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
         gap: 16px;
       }
-      .ev-types li {
-        display: flex;
-      }
-      .ev-type-btn {
-        flex: 1;
+      /* The li is the card; the button's ::after stretches over it so the
+         whole card toggles the filter, while description links (outside
+         the button — links can't nest in a button) sit above the overlay. */
+      .ev-type-card {
+        position: relative;
         display: flex;
         flex-direction: column;
         align-items: flex-start;
         gap: 8px;
         padding: 20px;
-        text-align: left;
-        font: inherit;
         color: var(--c-text);
         background: #fff;
         border: 2px solid var(--c-blue20);
         border-radius: var(--r-lg);
-        cursor: pointer;
       }
-      .ev-type-btn:hover {
+      .ev-type-card:hover {
         border-color: var(--ev-accent);
       }
-      .ev-type-btn[aria-pressed="true"] {
+      .ev-type-card.is-on {
         background: var(--ev-tint);
         border-color: var(--ev-accent);
+      }
+      .ev-type-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 0;
+        text-align: left;
+        font: inherit;
+        color: inherit;
+        background: none;
+        border: 0;
+        cursor: pointer;
+      }
+      .ev-type-btn::after {
+        content: "";
+        position: absolute;
+        inset: -2px;
+        border-radius: var(--r-lg);
+      }
+      .ev-type-desc a {
+        position: relative;
+        z-index: 1;
       }
       .ev-type-name,
       .ev-type-desc {
@@ -290,11 +334,55 @@
       }
       .ev-type-state {
         display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-top: auto;
+        font-size: 0.9375rem;
+      }
+      .ev-type-state-main {
+        display: flex;
         align-items: center;
         gap: 4px;
-        margin-top: auto;
         font-weight: 700;
-        font-size: 0.9375rem;
+        color: var(--ev-accent);
+      }
+      .ev-type-hint {
+        font-size: 15px;
+        font-weight: 400;
+        color: var(--c-text);
+      }
+      .ev-type-hint:empty {
+        display: none;
+      }
+
+      /* Selected: the card keeps its four-across width; objectives fill
+         the other three columns. Stacked below 900px. */
+      .ev-types.is-filtered {
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 900px) {
+        .ev-types.is-filtered {
+          grid-template-columns: minmax(230px, calc((100% - 48px) / 4)) 1fr;
+        }
+      }
+      .ev-obj-item {
+        display: flex;
+      }
+      .ev-obj {
+        flex: 1;
+        padding: 24px;
+        background: var(--ev-tint);
+        border: 2px solid var(--ev-accent);
+        border-radius: var(--r-lg);
+        color: var(--c-text);
+        font-size: 17px;
+      }
+      .ev-obj-h {
+        margin: 0 0 12px;
+        font-family: "Public Sans", sans-serif;
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1.3;
         color: var(--ev-accent);
       }
 
@@ -306,11 +394,17 @@
         padding: 48px 0 64px;
       }
       .ev-dates-h3 {
-        margin: 0 0 24px;
+        margin: 0 0 8px;
         font-size: 24px;
         font-weight: 800;
         line-height: 1.3;
         color: var(--lp-hl);
+      }
+      .ev-dates-note {
+        max-width: 70ch;
+        margin: 0 0 20px;
+        color: var(--c-muted);
+        font-size: 15px;
       }
       .ev-pager {
         display: flex;
@@ -458,7 +552,10 @@
         font-size: 0.9375rem;
       }
 
-      .ev-type-btn:focus-visible,
+      .ev-type-btn:focus-visible {
+        outline: none;
+      }
+      .ev-type-btn:focus-visible::after,
       .ev-arrow:focus-visible {
         outline: 3px solid var(--lp-hl);
         outline-offset: 2px;
@@ -509,7 +606,7 @@
       }
 
       @media (forced-colors: active) {
-        .ev-type-btn[aria-pressed="true"] {
+        .ev-type-card.is-on {
           border-width: 4px;
           border-color: Highlight;
         }
@@ -523,6 +620,7 @@
       .ev-status[hidden],
       .ev-special-list[hidden],
       .ev-types[hidden],
+      .ev-type-card[hidden],
       .ev-pager[hidden],
       .ev-tiles[hidden],
       .ev-arrow[hidden],
@@ -615,6 +713,10 @@
               <h2 class="ev-dates-h3" id="ev-dates-h3">
                 Upcoming dates<span id="ev-dates-suffix"></span>
               </h2>
+              <p class="ev-dates-note">
+                Times are shown in your local time zone. All links open in a new
+                window.
+              </p>
               <div
                 class="ev-pager"
                 role="group"
@@ -696,6 +798,8 @@
               description: "4",
               sortOrder: "5",
               action: "6", // dropdown: "Join Meeting" or "Register for Training"
+              calendarText: "17", // plain-text .ics body (e.g. Teams invite text)
+              objectives: "18", // rich text (Trumbowyg), shown when the type is selected
             },
           },
           // Same site as types — the categoryID term keeps the two apart.
@@ -810,16 +914,92 @@
           return EVENT_KINDS.find((k) => n.includes(k.key)) || FALLBACK_KIND;
         }
 
+        // Returns the link exactly as entered (u.href would re-encode it).
+        // Whitespace or control characters inside make it invalid.
         function safeLink(raw) {
+          if (!raw || /[\s\x00-\x1f\x7f]/.test(raw)) return "";
           try {
             const u = new URL(raw);
-            return u.protocol === "https:" || u.protocol === "http:"
-              ? u.href
-              : "";
+            return u.protocol === "https:" || u.protocol === "http:" ? raw : "";
           } catch {
             return "";
           }
         }
+
+        /* ── Rich text (Trumbowyg HTML) ── */
+
+        const RICH_KEEP = new Set(["p", "br", "strong", "b", "em", "i", "u", "ul", "ol", "li", "a"]);
+        const RICH_DROP = new Set([
+          "script", "style", "iframe", "object", "embed", "svg", "form", "input", "button",
+          "noscript", "template", "math",
+        ]);
+
+        // Rebuilds parsed nodes into target with createElement/createTextNode:
+        // allowlisted tags only, no attributes except a validated link href.
+        function appendRich(target, nodes) {
+          nodes.forEach((n) => {
+            if (n.nodeType === Node.TEXT_NODE) {
+              target.appendChild(document.createTextNode(n.data));
+              return;
+            }
+            if (n.nodeType !== Node.ELEMENT_NODE) return;
+            const tag = n.localName;
+            if (RICH_DROP.has(tag)) return;
+            const href = tag === "a" ? safeLink((n.getAttribute("href") || "").trim()) : "";
+            if (!RICH_KEEP.has(tag) || (tag === "a" && !href)) {
+              appendRich(target, n.childNodes); // unwrap
+              return;
+            }
+            const out = document.createElement(tag);
+            appendRich(out, n.childNodes);
+            if (tag === "p" && !out.textContent.trim()) return;
+            if (tag === "a") {
+              out.setAttribute("href", href);
+              out.target = "_blank";
+              out.rel = "noopener noreferrer";
+              out.setAttribute("data-nav-external", "");
+              out.appendChild(el("span", "sr-only", " (opens in a new tab)"));
+            }
+            target.appendChild(out);
+          });
+        }
+
+        function renderRichText(target, value) {
+          const s = decodeEntities(value == null ? "" : String(value));
+          if (!s.includes("<")) {
+            target.textContent = s;
+            return;
+          }
+          const doc = new DOMParser().parseFromString(s, "text/html");
+          target.replaceChildren();
+          appendRich(target, doc.body.childNodes);
+        }
+
+        // HTML → plain text for the .ics body. Plain text passes through.
+        function htmlToText(value) {
+          if (typeof value !== "string") return "";
+          let s = decodeEntities(value).replace(/\r\n?/g, "\n");
+          if (!s.includes("<")) return s.trim();
+          const BLOCK = "\u0000";
+          s = s
+            .replace(/<(script|style|iframe|object|embed|svg|form|button|noscript|template|math)\b[\s\S]*?<\/\1\s*>/gi, "")
+            .replace(/<!--[\s\S]*?-->/g, "")
+            .replace(/\s+/g, " ") // source newlines are spaces in HTML
+            .replace(/<br\s*\/?>/gi, "\n")
+            .replace(/<li\b[^>]*>/gi, BLOCK + "- ")
+            .replace(/<\/?(p|div|ul|ol|li)\b[^>]*>/gi, BLOCK)
+            .replace(/<[^>]*>/g, "")
+            .replace(/&nbsp;/g, " ");
+          return decodeEntities(s)
+            .replace(/[ \t]*\u0000[ \t\u0000]*/g, "\n") // adjacent blocks → one break
+            .replace(/[ \t]+\n/g, "\n")
+            .replace(/\n[ \t]+/g, "\n")
+            .replace(/\n{3,}/g, "\n\n")
+            .trim();
+        }
+
+        // Titles and topics: text only, even if the value contains tags.
+        const plainText = (value) => htmlToText(value).replace(/\s+/g, " ").trim();
 
         /* ── Time ── */
 
@@ -969,6 +1149,10 @@
               description: getField(s1, ind.description),
               sortOrder: parseFloat(getField(s1, ind.sortOrder)),
               action: getField(s1, ind.action),
+              calendarText: getField(s1, ind.calendarText).replace(/\r\n?/g, "\n"),
+              objectives: htmlToText(getField(s1, ind.objectives))
+                ? getField(s1, ind.objectives)
+                : "",
             }))
             .filter((t) => {
               if (!t.name) {
@@ -1031,20 +1215,26 @@
               );
             }
 
+            const title = plainText(getField(s1, ind.title));
             const name = isSpecial
-              ? getField(s1, ind.title) || typeName || "Special event"
+              ? title || typeName || "Special event"
               : (type && type.name) || typeName || "LEAF event";
             // Optional per-date topic for regular sessions; display only.
-            const topic = isSpecial ? "" : getField(s1, ind.title);
+            const topic = isSpecial ? "" : title;
+            const dateDesc = getField(s1, ind.description);
+            // Specials don't inherit type text, matching the on-page description.
+            const typeOwn = !isSpecial && type;
             events.push({
               recordID,
               typeName: type ? type.name : typeName, // filter key
               name,
               topic,
               label: topic ? `${name}: ${topic}` : name,
-              description:
-                getField(s1, ind.description) ||
-                (!isSpecial && type && type.description) ||
+              description: dateDesc || (typeOwn && type.description) || "",
+              // .ics body: date description, then type calendar text, then type description.
+              calendarBody:
+                htmlToText(dateDesc) ||
+                (typeOwn && (type.calendarText || htmlToText(type.description))) ||
                 "",
               kind: type ? kindFor(type.name) : FALLBACK_KIND,
               start,
@@ -1071,20 +1261,28 @@
             .replace(/,/g, "\\,")
             .replace(/\r\n|\r|\n/g, "\\n");
 
-        // RFC 5545: fold at 75 octets without splitting a UTF-8 character.
+        const htmlEscape = (s) =>
+          String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+
+        // RFC 5545: fold at 75 octets without splitting a UTF-8 character
+        // or a TEXT escape sequence like "\,".
         function foldLine(line) {
           const enc = new TextEncoder();
           const out = [];
           let cur = "";
           let bytes = 0;
-          for (const ch of line) {
-            const n = enc.encode(ch).length;
+          for (const [unit] of line.matchAll(/\\.|[\s\S]/gu)) {
+            const n = enc.encode(unit).length;
             if (bytes + n > 75) {
               out.push(cur);
               cur = " ";
               bytes = 1;
             }
-            cur += ch;
+            cur += unit;
             bytes += n;
           }
           out.push(cur);
@@ -1092,8 +1290,19 @@
         }
 
         function buildIcs(ev) {
-          const desc = [ev.description];
-          if (ev.link) desc.push(`${ev.isRegister ? "Register" : "Join"}: ${ev.link}`);
+          const linkLine = ev.link
+            ? `${ev.isRegister ? "Register" : "Join"}: ${ev.link}`
+            : "";
+          const body = [linkLine, ev.calendarBody].filter(Boolean).join("\n\n");
+          // HTML twin so Outlook desktop shows a clickable link.
+          const htmlBody = [
+            linkLine &&
+              `<p><a href="${htmlEscape(ev.link)}">${htmlEscape(linkLine)}</a></p>`,
+            ...ev.calendarBody
+              .split(/\n\s*\n/)
+              .filter((p) => p.trim())
+              .map((p) => `<p>${p.split("\n").map(htmlEscape).join("<br>")}</p>`),
+          ].filter(Boolean);
           const lines = [
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
@@ -1108,10 +1317,20 @@
           // RFC 5545 requires DTEND to be later than DTSTART.
           if (ev.end > ev.start) lines.push(`DTEND:${icsStamp(ev.end)}`);
           lines.push(`SUMMARY:${icsText(ev.label)}`);
-          const d = desc.filter(Boolean).join("\n");
-          if (d) lines.push(`DESCRIPTION:${icsText(d)}`);
+          if (body) lines.push(`DESCRIPTION:${icsText(body)}`);
+          if (htmlBody.length) {
+            lines.push(
+              `X-ALT-DESC;FMTTYPE=text/html:${icsText(
+                `<html><body>${htmlBody.join("")}</body></html>`,
+              )}`,
+            );
+          }
           if (ev.link) lines.push(`URL:${ev.link}`);
-          lines.push("LOCATION:Online", "END:VEVENT", "END:VCALENDAR");
+          lines.push(
+            `LOCATION:${icsText(ev.link || "Online")}`,
+            "END:VEVENT",
+            "END:VCALENDAR",
+          );
           return lines.map(foldLine).join("\r\n") + "\r\n";
         }
 
@@ -1208,9 +1427,11 @@
             `${F.short.format(ev.start)} · ${timeRange(ev.start, ev.end)}`,
           );
           const title = el("h3", "ev-special-title", ev.name);
-          const desc = ev.description
-            ? el("p", "ev-special-desc", ev.description)
-            : null;
+          let desc = null;
+          if (ev.description) {
+            desc = el("div", "ev-special-desc ev-rich");
+            renderRichText(desc, ev.description);
+          }
 
           if (single) {
             const main = el("div", "ev-special-main");
@@ -1227,23 +1448,50 @@
           return li;
         }
 
-        function typeCard(type) {
+        // Description (may hold links) sits outside the button; the button's
+        // name is still "event name + state text" via aria-labelledby.
+        function typeCard(type, i) {
           const kind = kindFor(type.name);
-          const li = el("li");
+          const li = el("li", "ev-type-card");
           li.dataset.type = kind.key;
           const btn = el("button", "ev-type-btn");
           btn.type = "button";
           btn.dataset.track = "filter-event";
           btn.setAttribute("aria-pressed", "false");
+          btn.setAttribute("aria-labelledby", `ev-type-name-${i} ev-type-state-${i}`);
           const tile = icon(kind.icon);
           tile.classList.add("ev-ico-tile");
-          btn.append(tile, el("span", "ev-type-name", type.name));
-          if (type.description) btn.appendChild(el("span", "ev-type-desc", type.description));
-          const stateLine = el("span", "ev-type-state");
-          stateLine.append(el("span", null, "See upcoming dates"), icon("chevron_right"));
-          btn.appendChild(stateLine);
-          btn.addEventListener("click", () => setFilter(type.name));
+          const name = el("span", "ev-type-name", type.name);
+          name.id = `ev-type-name-${i}`;
+          btn.append(tile, name);
           li.appendChild(btn);
+          if (type.description) {
+            const desc = el("div", "ev-type-desc ev-rich");
+            renderRichText(desc, type.description);
+            li.appendChild(desc);
+          }
+          const stateLine = el("span", "ev-type-state");
+          stateLine.id = `ev-type-state-${i}`;
+          stateLine.setAttribute("aria-hidden", "true");
+          const main = el("span", "ev-type-state-main");
+          main.append(el("span", null, "See upcoming dates"), icon("chevron_right"));
+          stateLine.append(main, el("span", "ev-type-hint"));
+          li.appendChild(stateLine);
+          btn.addEventListener("click", () => setFilter(type.name));
+          return li;
+        }
+
+        function objectivesCard(type) {
+          const li = el("li", "ev-obj-item");
+          const sec = el("section", "ev-obj");
+          sec.dataset.type = kindFor(type.name).key;
+          sec.setAttribute("aria-labelledby", "ev-obj-h");
+          const h = el("h2", "ev-obj-h", "Learning objectives");
+          h.id = "ev-obj-h";
+          const body = el("div", "ev-obj-body ev-rich");
+          renderRichText(body, type.objectives);
+          sec.append(h, body);
+          li.appendChild(sec);
           return li;
         }
 
@@ -1315,23 +1563,44 @@
           }
         }
 
+        // Toggles hidden on the existing cards (no rebuild), so the pressed
+        // button keeps focus. While selected, the other cards are hidden and
+        // pressing the selected card again is the only way to clear.
         function setFilter(name) {
           state.filter = state.filter === name ? null : name;
           state.page = 0;
-          ui.types.querySelectorAll(".ev-type-btn").forEach((btn) => {
+          const selected = state.filter
+            ? state.types.find((t) => t.name === state.filter)
+            : null;
+          let selectedCard = null;
+          ui.types.querySelectorAll(".ev-type-card").forEach((card) => {
+            const btn = card.querySelector(".ev-type-btn");
             const on = btn.querySelector(".ev-type-name").textContent === state.filter;
+            if (on) selectedCard = card;
+            card.hidden = !!state.filter && !on;
+            card.classList.toggle("is-on", on);
             btn.setAttribute("aria-pressed", String(on));
-            const stateLine = btn.querySelector(".ev-type-state");
-            stateLine.firstChild.textContent = on
-              ? "Showing these dates · select to clear"
-              : "See upcoming dates";
-            stateLine.lastChild.hidden = on; // chevron only when not pressed
+            const main = card.querySelector(".ev-type-state-main");
+            main.firstChild.textContent = on ? "Showing these dates" : "See upcoming dates";
+            main.lastChild.hidden = on; // chevron only when not pressed
+            // Leading space keeps the two lines apart in the button's name.
+            card.querySelector(".ev-type-hint").textContent = on
+              ? " Click this card again to clear your selection."
+              : "";
           });
+
+          const old = ui.types.querySelector(".ev-obj-item");
+          if (old) old.remove();
+          const hasObjectives = !!(selected && selected.objectives && selectedCard);
+          if (hasObjectives) selectedCard.after(objectivesCard(selected));
+          ui.types.classList.toggle("is-filtered", !!state.filter);
+
           renderDates();
           const n = filteredDates().length;
           announce(
             state.filter
-              ? `Showing ${n} date${n === 1 ? "" : "s"} for ${state.filter}.`
+              ? `Showing ${n} date${n === 1 ? "" : "s"} for ${state.filter}.` +
+                  (hasObjectives ? " Learning objectives shown." : "")
               : "Showing all upcoming dates.",
           );
         }
@@ -1368,7 +1637,7 @@
             ui.empty.hidden = false;
             return;
           }
-          ui.types.replaceChildren(...types.map(typeCard));
+          ui.types.replaceChildren(...types.map((t, i) => typeCard(t, i)));
           ui.types.hidden = !types.length;
           ui.dates.hidden = false;
           renderDates();
