@@ -937,10 +937,6 @@
     border-bottom: 0;
   }
 
-  .pmAn-krLinks {
-    grid-column: 1 / -1;
-  }
-
   .pmAn-linkBtn {
     display: inline-flex;
     align-items: center;
@@ -968,8 +964,59 @@
   }
 
   .pmAn-kr .pmAn-taskMeta {
-    grid-column: 1 / -1;
     margin: 0;
+  }
+
+  /* A fixed label column so values line up across Key Results; the 560px rule stacks them. */
+  .pmAn-krMeta {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .pmAn-krMeta > div {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    column-gap: var(--space-2);
+    align-items: baseline;
+  }
+
+  .pmAn-krMeta dt {
+    font-size: var(--pmAn-text-sm);
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  .pmAn-krMeta dd {
+    margin: 0;
+    font-size: var(--pmAn-text-base);
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+
+  /* Project's rendered width, so titles line up across Task and Project rows. */
+  .pmAn-linkRow .pmAn-kind {
+    min-width: 8ch;
+    text-align: center;
+  }
+
+  /* Number and title share a cell; long titles wrap beside the number, not under it. */
+  .pmAn-linkRow > :has(> .pmAn-recNo) {
+    display: flex;
+    align-items: baseline;
+  }
+
+  /* A fixed width so titles line up when record numbers differ in length. */
+  .pmAn-recNo {
+    flex: none;
+    min-width: 6ch;
+    margin-right: 6px;
+    font-size: var(--pmAn-text-sm);
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    text-align: right;
+    white-space: nowrap;
   }
 
   .pmAn-krHead {
@@ -1228,6 +1275,10 @@
     .pmAn-linkRow {
       grid-template-columns: minmax(0, 1fr);
       justify-items: start;
+    }
+
+    .pmAn-krMeta > div {
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .pmAn-krBar progress {
@@ -3252,11 +3303,24 @@
       bar.appendChild(el("span", "pmAn-krPct", kr.pct + "%"));
       li.appendChild(head);
       li.appendChild(bar);
-      [kr.detail, kr.owner && "Owner: " + kr.owner, kr.message].forEach(function (text) {
-        if (text) li.appendChild(el("p", "pmAn-taskMeta", text));
-      });
-      if (kr.links.length) li.appendChild(buildKrLinks(kr));
+      var meta = el("dl", "pmAn-krMeta");
+      // With no links, "None linked" below already says it.
+      if (kr.links.length || kr.message !== "No linked work") krMetaRow(meta, "Progress", kr.detail || kr.message);
+      krMetaRow(meta, "Owner", kr.owner || "Unassigned");
+      krMetaRow(meta, "Linked work", kr.links.length ? buildKrLinks(kr) : "None linked");
+      li.appendChild(meta);
       return li;
+    }
+
+    // value is text or a node; a row with no value is left out.
+    function krMetaRow(dl, label, value) {
+      if (!value) return;
+      var row = el("div");
+      var dd = el("dd", null, typeof value === "string" ? value : null);
+      if (typeof value !== "string") dd.appendChild(value);
+      row.appendChild(el("dt", null, label));
+      row.appendChild(dd);
+      dl.appendChild(row);
     }
 
     // Projects have no due-date bucket, so their status maps onto the task bucket labels.
@@ -3271,9 +3335,9 @@
     function buildKrLinks(kr) {
       var wrap = el("div", "pmAn-krLinks");
       wrap.setAttribute("data-group", kr.recordID);
-      var btn = el("button", "pmAn-linkBtn", "Linked work (" + kr.links.length + ")");
+      var btn = el("button", "pmAn-linkBtn", plural(kr.links.length, "item"));
       btn.prepend(icon("collapsed"), icon("expanded"));
-      btn.appendChild(el("span", "pm-srOnly", " for " + kr.code));
+      btn.appendChild(el("span", "pm-srOnly", " linked to " + kr.code));
       btn.type = "button";
       btn.setAttribute("aria-controls", "pmAnKrLinks-" + kr.recordID);
       var body = el("div");
@@ -3289,7 +3353,10 @@
         .forEach(function (item) {
           var row = el("li", "pmAn-linkRow");
           row.appendChild(el("span", "pmAn-kind pmAn-kind--" + item.rec.kind, item.rec.bucket ? "Task" : "Project"));
-          row.appendChild(recordLink(item.title || "Untitled", item.rec.recordID, workModalTitle(item.rec)));
+          var title = el("span");
+          if (item.rec.recordID) title.appendChild(el("span", "pmAn-recNo", "#" + item.rec.recordID));
+          title.appendChild(recordLink(item.title || "Untitled", item.rec.recordID, workModalTitle(item.rec)));
+          row.appendChild(title);
           var status = el("span", "pmAn-badge", BUCKET[item.bucket].label);
           status.style.setProperty("--pmAn-badge", STATUS_COLORS[BUCKET[item.bucket].color]);
           row.appendChild(status);
