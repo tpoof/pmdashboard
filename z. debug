@@ -1,16 +1,9 @@
-fetch('/platform/events/api/form/query?q=' + encodeURIComponent(JSON.stringify({
-  terms: [
-    { id: 'recordID', operator: '>', match: 0 },
-    { id: 'categoryID', operator: '=', match: 'form_a5f36' }
-  ],
-  getData: ['3', '4', '5', '6'],
-  joins: ['status'],
-  limit: 20
-})), { credentials: 'include' })
-  .then(r => r.json())
-  .then(d => console.table(Object.values(d).map(r => ({
-    id: r.recordID,
-    status: r.lastStatus,
-    name: JSON.stringify(r.s1 && r.s1.id3),
-    action: JSON.stringify(r.s1 && r.s1.id6)
-  }))));
+// 1. Raw group attribute as LEAF rendered it
+[...document.querySelectorAll('[data-groups]')].map(e => e.getAttribute('data-groups'))
+
+// 2. Are record links the new kind?
+[...document.querySelectorAll('a[data-record]')].length
+document.querySelector('a[href*="printview"]')?.outerHTML
+
+// 3. Does the parent page open the modal from a message?
+parent.postMessage({ type: 'pm-open-modal', url: location.origin + '/platform/projects/index.php?a=printview&recordID=1231', title: 'Test' }, location.origin)
