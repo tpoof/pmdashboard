@@ -1383,6 +1383,12 @@
           if (ev.link) lines.push(`URL:${ev.link}`);
           lines.push(
             `LOCATION:${icsText(ev.link || "Online")}`,
+            // 15-minute reminder.
+            "BEGIN:VALARM",
+            "ACTION:DISPLAY",
+            `DESCRIPTION:${icsText(ev.label)}`,
+            "TRIGGER:-PT15M",
+            "END:VALARM",
             "END:VEVENT",
             "END:VCALENDAR",
           );
