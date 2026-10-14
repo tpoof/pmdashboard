@@ -62,6 +62,14 @@
         --ev-tint: #fdeedd;
       }
 
+      /* Same gap on both sides of the special events band. */
+      .lp {
+        --ev-section-gap: 24px;
+      }
+      .ev-hero {
+        margin-bottom: 0;
+        padding-bottom: var(--ev-section-gap);
+      }
       .ev-hero .sec-hd {
         margin-bottom: 0;
       }
@@ -197,16 +205,23 @@
         align-items: center;
         gap: 12px;
       }
+      /* One solid navy tile; !important because outside styles were turning
+         the month/day black on the live page. */
       .ev-chip {
         flex: none;
         width: 56px;
         padding: 6px 0;
         border-radius: var(--r);
-        background: var(--c-blue60);
+        background: var(--c-blue60) !important;
         color: #fff;
         text-align: center;
         font-family: "Public Sans", sans-serif;
         line-height: 1.1;
+      }
+      .ev-chip .ev-chip-mon,
+      .ev-chip .ev-chip-day {
+        background: transparent !important;
+        color: #ffffff !important;
       }
       .ev-chip-mon {
         display: block;
@@ -263,7 +278,8 @@
 
       /* ── Monthly sessions: event cards ── */
       .ev-types-block {
-        padding-top: 24px;
+        margin-top: 0;
+        padding-top: var(--ev-section-gap);
         padding-bottom: 48px;
       }
       .ev-types {
@@ -815,6 +831,7 @@
               special: "12", // single "Yes" checkbox, blank when unchecked
               title: "14", // special event title, or optional topic
               description: "15", // overrides the type's description
+              calendarText: "19", // plain-text .ics body; overrides everything else
             },
           },
           publishedStatus: "Submitted",
@@ -1231,8 +1248,10 @@
               topic,
               label: topic ? `${name}: ${topic}` : name,
               description: dateDesc || (typeOwn && type.description) || "",
-              // .ics body: date description, then type calendar text, then type description.
+              // .ics body: date calendar text, date description, then (regular
+              // events only) type calendar text, then type description.
               calendarBody:
+                htmlToText(getField(s1, ind.calendarText)) ||
                 htmlToText(dateDesc) ||
                 (typeOwn && (type.calendarText || htmlToText(type.description))) ||
                 "",
@@ -1581,7 +1600,7 @@
             card.classList.toggle("is-on", on);
             btn.setAttribute("aria-pressed", String(on));
             const main = card.querySelector(".ev-type-state-main");
-            main.firstChild.textContent = on ? "Showing these dates" : "See upcoming dates";
+            main.firstChild.textContent = on ? "View the available dates for this session below" : "See upcoming dates";
             main.lastChild.hidden = on; // chevron only when not pressed
             // Leading space keeps the two lines apart in the button's name.
             card.querySelector(".ev-type-hint").textContent = on
