@@ -511,7 +511,12 @@
                                         <tr>
                                             <td>Idea Portal</td>
                                             <td><a href="https://leaf.va.gov/platform/ideas" target="_blank" rel="noopener">leaf.va.gov/platform/ideas</a></td>
-                                            <td class="notes">—</td>
+                                            <td class="notes">Legacy ideas (PowerApps) and new ideas are housed within this portal.</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Events</td>
+                                            <td><a href="https://leaf.va.gov/platform/events" target="_blank" rel="noopener">leaf.va.gov/platform/events</a></td>
+                                            <td class="notes">Add event types and dates to the Events page in Launchpad.</td>
                                         </tr>
                                         <tr>
                                             <td>Privacy</td>
@@ -654,10 +659,12 @@
                                 </p>
                                 <ul class="scale-list">
                                     <li>
-                                        Axure login: Axure Files &gt; axure-login.txt. This file
-                                        contains the shared login information, since we only have
-                                        one Axure license. Only those who need access should be
-                                        downloading and accessing these files.
+                                        To access the Axure login information, visit this pathway
+                                        in the LEAF UX/HCD SharePoint: Axure Files &gt;
+                                        axure-login.txt. This file contains the shared login
+                                        information, since we only have one Axure license. Only
+                                        those who need access should be downloading and accessing
+                                        these files.
                                     </li>
                                     <li>
                                         To install Axure: submit a YourIT ticket (general software
