@@ -584,8 +584,6 @@
                     <li><a href="#ldc-modals">Modals</a></li>
                     <li><a href="#ldc-jump">Jump-to-top button</a></li>
                     <li><a href="#ldc-multigrid">Multigrid</a></li>
-                    <li><a href="#ldc-events">Events page</a></li>
-                    <li><a href="#ldc-external">CoP and Privacy pages</a></li>
                     <li><a href="#ldc-forms">Connected forms</a></li>
                   </ul>
                 </li>
@@ -2723,152 +2721,6 @@ function statusTextForSource(sourceKey, rec) {
                   </div>
                 </div>
 
-                <div class="ldc-topic" id="ldc-events">
-                  <h3 id="h-ldc-events">Events page</h3>
-                  <p>
-                    <code>lp_events.html</code> lists LEAF's online events. It
-                    reads two forms on <code>/platform/events/</code>: one
-                    record per event type, and one per scheduled date. Admins
-                    manage events there, so the page needs no code change to add
-                    a date.
-                  </p>
-                  <h4>How it works</h4>
-                  <ul class="ldc-list">
-                    <li>
-                      Both forms load at the same time. Only records with the
-                      status <code>Submitted</code> are shown. If either form
-                      fails to load, the page shows one error message.
-                    </li>
-                    <li>
-                      Admins enter dates and times in Eastern Time. The page
-                      converts them and shows each visitor their own time zone.
-                      Events that have ended are hidden.
-                    </li>
-                    <li>
-                      A date whose <strong>Special event</strong> box is checked
-                      appears in the Special Events band instead of the
-                      calendar. The band shows the four soonest and is hidden
-                      when there are none.
-                    </li>
-                    <li>
-                      Add to calendar builds an <code>.ics</code> file in the
-                      browser. Nothing is sent to a server.
-                    </li>
-                    <li>
-                      Join meeting only appears when the date has a valid
-                      <code>http</code> or <code>https</code> link. A type whose
-                      <strong>Action</strong> is Register for Training shows
-                      Register for training instead.
-                    </li>
-                    <li>
-                      The card color and icon come from a keyword in the type
-                      name (<code>demo</code>, <code>101</code>,
-                      <code>102</code>, <code>lunch</code>). Any other name uses
-                      the default blue and the event icon. See
-                      <code>EVENT_KINDS</code> in the page script.
-                    </li>
-                  </ul>
-                  <p>
-                    The form IDs and indicators are in
-                    <a href="#ldc-forms">Connected forms and services</a>. They
-                    sit in <code>CONFIG</code> at the top of the page script,
-                    and the page stays inert while any value is still a
-                    <code>REPLACE_ME</code> placeholder.
-                  </p>
-                </div>
-
-                <div class="ldc-topic" id="ldc-external">
-                  <h3 id="h-ldc-external">CoP and Privacy pages</h3>
-                  <p>
-                    <code>lp_cop.html</code> and <code>lp_privacy.html</code>
-                    show content that is kept on their own LEAF sites, so
-                    program staff update it in a form and the page needs no code
-                    change. Events works the same way.
-                  </p>
-                  <ul class="ldc-list">
-                    <li>
-                      Both pages use <code>LeafFormQuery</code>, which the
-                      platform loads site-wide. They call
-                      <code>setRootURL()</code> with the other site's address
-                      (<code>COP_ROOT_URL</code>,
-                      <code>PRIVACY_ROOT_URL</code>). Without it the query runs
-                      against the Launchpad's own site and finds nothing. Keep
-                      the trailing slash.
-                    </li>
-                    <li>
-                      Form and indicator IDs are set in each page's script. The
-                      full list is in
-                      <a href="#ldc-forms">Connected forms and services</a>.
-                    </li>
-                  </ul>
-
-                  <h4>Community of Practice</h4>
-                  <p>Source: <code>/platform/CoP/</code></p>
-                  <ul class="ldc-list">
-                    <li>
-                      <strong>Upcoming session</strong> shows the When and What
-                      of the next Open Office Hours call. The page reads one
-                      record, <code>4</code>, from <code>form_605bd</code>. To
-                      change the next call, edit that record. If it is missing,
-                      the card stays empty.
-                    </li>
-                    <li>
-                      <strong>Past sessions</strong> list every record in
-                      <code>form_8fc8b</code>, newest first by date, five at a
-                      time with a Show More button. Each shows the date and
-                      topic, a Watch Session link when there is a recording
-                      link, and a Download Presentation link when a file is
-                      attached.
-                    </li>
-                    <li>
-                      Search sends the typed text to the server as a
-                      <code>MATCH ALL</code> term across every field, after a
-                      300 ms pause. The browser then ranks the matches, with
-                      topic hits counting more than other fields.
-                    </li>
-                    <li>
-                      The presentation link points at <code>file.php</code> on
-                      the CoP site, not the Launchpad, so it keeps the full CoP
-                      address. The browser downloads the file rather than
-                      opening it.
-                    </li>
-                    <li>
-                      The Teams channel link on the Join button is written
-                      directly into the page.
-                    </li>
-                  </ul>
-
-                  <h4>Privacy</h4>
-                  <p>Source: <code>/platform/privacy/</code></p>
-                  <ul class="ldc-list">
-                    <li>
-                      <strong>Recent Enhancements</strong> lists platform
-                      changes, newest first. Each needs a date, title and
-                      summary, or it is skipped. The page shows the latest five
-                      and a Show all changes button for the rest.
-                    </li>
-                    <li>
-                      A change counts as published when its record is at step
-                      <code>20</code> of <code>form_8f7e8</code>. A second query
-                      finds those records, and the page keeps only matching
-                      changes. If that query fails, the page logs a warning and
-                      shows every change instead.
-                    </li>
-                    <li>
-                      Summaries are plain text. Lines that all start with
-                      <code>-</code> or <code>*</code> become a bullet list,
-                      lines that all start with a number become a numbered list,
-                      and anything else becomes paragraphs.
-                    </li>
-                    <li>
-                      The LEAF-S and VA Privacy Resources sections are written
-                      into the page. Their buttons link to the Privacy site
-                      (<code>/platform/privacy/#goto=...</code>) and the Help
-                      Library, and open in a new tab.
-                    </li>
-                  </ul>
-                </div>
-
                 <div class="ldc-topic" id="ldc-forms">
                   <h3 id="h-ldc-forms">Connected forms and services</h3>
                   <div
@@ -4997,12 +4849,18 @@ function statusTextForSource(sourceKey, rec) {
                 id="ldc-appendix"
                 aria-labelledby="ldc-appendix-h"
               >
-                <h2 id="ldc-appendix-h">Appendix: Ideas and Help Library</h2>
+                <h2 id="ldc-appendix-h">Appendix: Other LEAF sites</h2>
                 <p>
                   Submit an Idea and Help Library appear inside the Launchpad,
                   but they are separate LEAF sites. The Launchpad fetches them
                   and shows them in its own frame, so their content and behavior
                   are changed at their own root, not here.
+                </p>
+                <p>
+                  Events, Community of Practice and Privacy are Launchpad pages
+                  that read their content from forms on other LEAF sites. The
+                  pages are changed here. Their content is changed in those
+                  forms.
                 </p>
                 <div
                   class="ldc-table-wrap"
@@ -5034,6 +4892,18 @@ function statusTextForSource(sourceKey, rec) {
                       <tr>
                         <th scope="row">Help Library articles and layout</th>
                         <td><code>/platform/help_library/</code></td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Event types and dates</th>
+                        <td><code>/platform/events/</code></td>
+                      </tr>
+                      <tr>
+                        <th scope="row">CoP sessions</th>
+                        <td><code>/platform/CoP/</code></td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Privacy recent changes</th>
+                        <td><code>/platform/privacy/</code></td>
                       </tr>
                       <tr>
                         <th scope="row">Menu entry, route and hash key</th>
@@ -5229,6 +5099,144 @@ function statusTextForSource(sourceKey, rec) {
                   <code>/platform/votes/report.php?a=dashboard</code>, which is
                   also linked from the Team page.
                 </p>
+                <h3 id="ldc-events">Events page</h3>
+                <p>
+                  <code>lp_events.html</code> lists LEAF's online events. It
+                  reads two forms on <code>/platform/events/</code>: one record
+                  per event type, and one per scheduled date. Admins manage
+                  events there, so the page needs no code change to add a date.
+                </p>
+                <h4>How it works</h4>
+                <ul class="ldc-list">
+                  <li>
+                    Both forms load at the same time. Only records with the
+                    status <code>Submitted</code> are shown. If either form
+                    fails to load, the page shows one error message.
+                  </li>
+                  <li>
+                    Admins enter dates and times in Eastern Time. The page
+                    converts them and shows each visitor their own time zone.
+                    Events that have ended are hidden.
+                  </li>
+                  <li>
+                    A date whose <strong>Special event</strong> box is checked
+                    appears in the Special Events band instead of the calendar.
+                    The band shows the four soonest and is hidden when there are
+                    none.
+                  </li>
+                  <li>
+                    Add to calendar builds an <code>.ics</code> file in the
+                    browser. Nothing is sent to a server.
+                  </li>
+                  <li>
+                    Join meeting only appears when the date has a valid
+                    <code>http</code> or <code>https</code> link. A type whose
+                    <strong>Action</strong> is Register for Training shows
+                    Register for training instead.
+                  </li>
+                  <li>
+                    The card color and icon come from a keyword in the type name
+                    (<code>demo</code>, <code>101</code>, <code>102</code>,
+                    <code>lunch</code>). Any other name uses the default blue
+                    and the event icon. See <code>EVENT_KINDS</code> in the page
+                    script.
+                  </li>
+                </ul>
+                <p>
+                  The form IDs and indicators are in
+                  <a href="#ldc-forms">Connected forms and services</a>. They
+                  sit in <code>CONFIG</code> at the top of the page script, and
+                  the page stays inert while any value is still a
+                  <code>REPLACE_ME</code> placeholder.
+                </p>
+
+                <h3 id="ldc-external">CoP and Privacy pages</h3>
+                <p>
+                  <code>lp_cop.html</code> and <code>lp_privacy.html</code>
+                  show content that is kept on their own LEAF sites, so program
+                  staff update it in a form and the page needs no code change.
+                  Events works the same way.
+                </p>
+                <ul class="ldc-list">
+                  <li>
+                    Both pages use <code>LeafFormQuery</code>, which the
+                    platform loads site-wide. They call
+                    <code>setRootURL()</code> with the other site's address
+                    (<code>COP_ROOT_URL</code>, <code>PRIVACY_ROOT_URL</code>).
+                    Without it the query runs against the Launchpad's own site
+                    and finds nothing. Keep the trailing slash.
+                  </li>
+                  <li>
+                    Form and indicator IDs are set in each page's script. The
+                    full list is in
+                    <a href="#ldc-forms">Connected forms and services</a>.
+                  </li>
+                </ul>
+
+                <h4>Community of Practice</h4>
+                <p>Source: <code>/platform/CoP/</code></p>
+                <ul class="ldc-list">
+                  <li>
+                    <strong>Upcoming session</strong> shows the When and What of
+                    the next Open Office Hours call. The page reads one record,
+                    <code>4</code>, from <code>form_605bd</code>. To change the
+                    next call, edit that record. If it is missing, the card
+                    stays empty.
+                  </li>
+                  <li>
+                    <strong>Past sessions</strong> list every record in
+                    <code>form_8fc8b</code>, newest first by date, five at a
+                    time with a Show More button. Each shows the date and topic,
+                    a Watch Session link when there is a recording link, and a
+                    Download Presentation link when a file is attached.
+                  </li>
+                  <li>
+                    Search sends the typed text to the server as a
+                    <code>MATCH ALL</code> term across every field, after a 300
+                    ms pause. The browser then ranks the matches, with topic
+                    hits counting more than other fields.
+                  </li>
+                  <li>
+                    The presentation link points at <code>file.php</code> on the
+                    CoP site, not the Launchpad, so it keeps the full CoP
+                    address. The browser downloads the file rather than opening
+                    it.
+                  </li>
+                  <li>
+                    The Teams channel link on the Join button is written
+                    directly into the page.
+                  </li>
+                </ul>
+
+                <h4>Privacy</h4>
+                <p>Source: <code>/platform/privacy/</code></p>
+                <ul class="ldc-list">
+                  <li>
+                    <strong>Recent Enhancements</strong> lists platform changes,
+                    newest first. Each needs a date, title and summary, or it is
+                    skipped. The page shows the latest five and a Show all
+                    changes button for the rest.
+                  </li>
+                  <li>
+                    A change counts as published when its record is at step
+                    <code>20</code> of <code>form_8f7e8</code>. A second query
+                    finds those records, and the page keeps only matching
+                    changes. If that query fails, the page logs a warning and
+                    shows every change instead.
+                  </li>
+                  <li>
+                    Summaries are plain text. Lines that all start with
+                    <code>-</code> or <code>*</code> become a bullet list, lines
+                    that all start with a number become a numbered list, and
+                    anything else becomes paragraphs.
+                  </li>
+                  <li>
+                    The LEAF-S and VA Privacy Resources sections are written
+                    into the page. Their buttons link to the Privacy site
+                    (<code>/platform/privacy/#goto=...</code>) and the Help
+                    Library, and open in a new tab.
+                  </li>
+                </ul>
               </section>
             </div>
           </div>
