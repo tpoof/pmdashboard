@@ -867,6 +867,7 @@
             // Rows are role="option", not <button> — activation and roving
             // tabindex are wired up by hand (click, Enter/Space, arrow keys).
             function insertRow(siteURL, label) {
+              const safeLabel = escapeHtml(label);
               const html = `
               <div class="lf-site-row"
                    id="${rowId(siteURL)}"
@@ -874,8 +875,8 @@
                    tabindex="-1"
                    data-url="${siteURL}"
                    aria-selected="false"
-                   aria-label="View forms for ${label}">
-                <p class="lf-site-row__name">${label}</p>
+                   aria-label="View forms for ${safeLabel}">
+                <p class="lf-site-row__name">${safeLabel}</p>
                 <p class="lf-site-row__admin" id="${adminId(siteURL)}" aria-live="polite"></p>
               </div>`;
               $("#lf-sitelist").append(html);
@@ -966,7 +967,7 @@
                 const items = d.forms
                   .map(
                     (n) =>
-                      `<li><a href="${siteURL}" target="_blank" rel="noopener">${n}</a></li>`,
+                      `<li><a href="${siteURL}" target="_blank" rel="noopener">${escapeHtml(n)}</a></li>`,
                   )
                   .join("");
                 formsHtml = `<ul class="lf-form-list">${items}</ul>`;
@@ -975,7 +976,7 @@
               $("#lf-detail").html(`
               <div class="lf-detail__header">
                 <h2 class="lf-detail__name">
-                  <a href="${siteURL}" target="_blank" rel="noopener">${d.label}</a>
+                  <a href="${siteURL}" target="_blank" rel="noopener">${escapeHtml(d.label)}</a>
                 </h2>
                 ${adminHtml}
               </div>
@@ -1040,7 +1041,7 @@
                       type: "GET",
                       url: siteURL + "/api/system/settings",
                     }).then((r) => {
-                      const label = r.heading || siteURL;
+                      const label = decodeHtml(r.heading || siteURL);
 
                       // Tolerant of API drift — treats a non-array response,
                       // string-typed flags, or blank names as "no forms" rather than passing bad data through.
@@ -1059,9 +1060,7 @@
                                 Number(f.visible) === 1 &&
                                 Number(f.disabled) === 0,
                             )
-                            .map((f) =>
-                              (f.categoryName || "").toString().trim(),
-                            )
+                            .map((f) => decodeHtml(f.categoryName || "").trim())
                             .filter(Boolean)
                             .sort();
                         })
@@ -1279,6 +1278,12 @@
             const NO_ADMIN_LABEL = "No administrator set";
             const REPORT_HEADERS = ["Administrator", "Site", "URL"];
             let reportRows = [];
+
+            // API text can arrive HTML-encoded (e.g. &amp;); decode to plain text.
+            function decodeHtml(value) {
+              return new DOMParser().parseFromString(String(value), "text/html")
+                .documentElement.textContent;
+            }
 
             function escapeHtml(value) {
               return String(value).replace(

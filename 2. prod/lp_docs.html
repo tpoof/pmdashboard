@@ -581,6 +581,7 @@
                     <li><a href="#ldc-modals">Modals</a></li>
                     <li><a href="#ldc-jump">Jump-to-top button</a></li>
                     <li><a href="#ldc-multigrid">Multigrid</a></li>
+                    <li><a href="#ldc-events">Events page</a></li>
                     <li><a href="#ldc-forms">Connected forms</a></li>
                   </ul>
                 </li>
@@ -2718,6 +2719,60 @@ function statusTextForSource(sourceKey, rec) {
                   </div>
                 </div>
 
+                <div class="ldc-topic" id="ldc-events">
+                  <h3 id="h-ldc-events">Events page</h3>
+                  <p>
+                    <code>lp_events.html</code> lists LEAF's online events. It
+                    reads two forms on <code>/platform/events/</code>: one
+                    record per event type, and one per scheduled date. Admins
+                    manage events there, so the page needs no code change to add
+                    a date.
+                  </p>
+                  <h4>How it works</h4>
+                  <ul class="ldc-list">
+                    <li>
+                      Both forms load at the same time. Only records with the
+                      status <code>Submitted</code> are shown. If either form
+                      fails to load, the page shows one error message.
+                    </li>
+                    <li>
+                      Admins enter dates and times in Eastern Time. The page
+                      converts them and shows each visitor their own time zone.
+                      Events that have ended are hidden.
+                    </li>
+                    <li>
+                      A date whose <strong>Special event</strong> box is checked
+                      appears in the Special Events band instead of the
+                      calendar. The band shows the four soonest and is hidden
+                      when there are none.
+                    </li>
+                    <li>
+                      Add to calendar builds an <code>.ics</code> file in the
+                      browser. Nothing is sent to a server.
+                    </li>
+                    <li>
+                      Join meeting only appears when the date has a valid
+                      <code>http</code> or <code>https</code> link. A type whose
+                      <strong>Action</strong> is Register for Training shows
+                      Register for training instead.
+                    </li>
+                    <li>
+                      The card color and icon come from a keyword in the type
+                      name (<code>demo</code>, <code>101</code>,
+                      <code>102</code>, <code>lunch</code>). Any other name uses
+                      the default blue and the event icon. See
+                      <code>EVENT_KINDS</code> in the page script.
+                    </li>
+                  </ul>
+                  <p>
+                    The form IDs and indicators are in
+                    <a href="#ldc-forms">Connected forms and services</a>. They
+                    sit in <code>CONFIG</code> at the top of the page script,
+                    and the page stays inert while any value is still a
+                    <code>REPLACE_ME</code> placeholder.
+                  </p>
+                </div>
+
                 <div class="ldc-topic" id="ldc-forms">
                   <h3 id="h-ldc-forms">Connected forms and services</h3>
                   <div
@@ -2846,6 +2901,48 @@ function statusTextForSource(sourceKey, rec) {
                             top of <code>leaf_header.js</code>, and the fetch is
                             skipped while any is a placeholder. Content is
                             cleaned with DOMPurify.
+                          </td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Events: types</th>
+                          <td><code>/platform/events/</code></td>
+                          <td><code>form_a5f36</code></td>
+                          <td>
+                            <code>3</code> name<br />
+                            <code>4</code> description<br />
+                            <code>5</code> sort order<br />
+                            <code>6</code> action<br />
+                            <code>17</code> calendar text<br />
+                            <code>18</code> objectives
+                          </td>
+                          <td>
+                            Read only. One record per event type, shown only
+                            when the status is <code>Submitted</code>. Action is
+                            Join Meeting or Register for Training. Objectives
+                            are shown when the type is selected.
+                          </td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Events: dates</th>
+                          <td><code>/platform/events/</code></td>
+                          <td><code>form_84fd4</code></td>
+                          <td>
+                            <code>7</code> event type<br />
+                            <code>8</code> date<br />
+                            <code>9</code> start time<br />
+                            <code>10</code> end time<br />
+                            <code>11</code> link<br />
+                            <code>12</code> special event<br />
+                            <code>14</code> title<br />
+                            <code>15</code> description<br />
+                            <code>19</code> calendar text
+                          </td>
+                          <td>
+                            Read only. One record per scheduled date, shown only
+                            when the status is <code>Submitted</code>. Times are
+                            entered in Eastern. The event type must match a type
+                            name exactly. Title and description are required for
+                            special events and optional otherwise.
                           </td>
                         </tr>
                       </tbody>
