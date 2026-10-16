@@ -582,6 +582,8 @@
                     <li><a href="#ldc-jump">Jump-to-top button</a></li>
                     <li><a href="#ldc-multigrid">Multigrid</a></li>
                     <li><a href="#ldc-events">Events page</a></li>
+                    <li><a href="#ldc-external">CoP and Privacy pages</a></li>
+                    <li><a href="#ldc-votes">Votes and feedback</a></li>
                     <li><a href="#ldc-forms">Connected forms</a></li>
                   </ul>
                 </li>
@@ -2773,6 +2775,229 @@ function statusTextForSource(sourceKey, rec) {
                   </p>
                 </div>
 
+                <div class="ldc-topic" id="ldc-external">
+                  <h3 id="h-ldc-external">CoP and Privacy pages</h3>
+                  <p>
+                    <code>lp_cop.html</code> and <code>lp_privacy.html</code>
+                    show content that is kept on their own LEAF sites, so
+                    program staff update it in a form and the page needs no code
+                    change. Events works the same way.
+                  </p>
+                  <ul class="ldc-list">
+                    <li>
+                      Both pages use <code>LeafFormQuery</code>, which the
+                      platform loads site-wide. They call
+                      <code>setRootURL()</code> with the other site's address
+                      (<code>COP_ROOT_URL</code>,
+                      <code>PRIVACY_ROOT_URL</code>). Without it the query runs
+                      against the Launchpad's own site and finds nothing. Keep
+                      the trailing slash.
+                    </li>
+                    <li>
+                      Form and indicator IDs are set in each page's script. The
+                      full list is in
+                      <a href="#ldc-forms">Connected forms and services</a>.
+                    </li>
+                  </ul>
+
+                  <h4>Community of Practice</h4>
+                  <p>Source: <code>/platform/CoP/</code></p>
+                  <ul class="ldc-list">
+                    <li>
+                      <strong>Upcoming session</strong> shows the When and What
+                      of the next Open Office Hours call. The page reads one
+                      record, <code>4</code>, from <code>form_605bd</code>. To
+                      change the next call, edit that record. If it is missing,
+                      the card stays empty.
+                    </li>
+                    <li>
+                      <strong>Past sessions</strong> list every record in
+                      <code>form_8fc8b</code>, newest first by date, five at a
+                      time with a Show More button. Each shows the date and
+                      topic, a Watch Session link when there is a recording
+                      link, and a Download Presentation link when a file is
+                      attached.
+                    </li>
+                    <li>
+                      Search sends the typed text to the server as a
+                      <code>MATCH ALL</code> term across every field, after a
+                      300 ms pause. The browser then ranks the matches, with
+                      topic hits counting more than other fields.
+                    </li>
+                    <li>
+                      The presentation link points at <code>file.php</code> on
+                      the CoP site, not the Launchpad, so it keeps the full CoP
+                      address. The browser downloads the file rather than
+                      opening it.
+                    </li>
+                    <li>
+                      The Teams channel link on the Join button is written
+                      directly into the page.
+                    </li>
+                  </ul>
+
+                  <h4>Privacy</h4>
+                  <p>Source: <code>/platform/privacy/</code></p>
+                  <ul class="ldc-list">
+                    <li>
+                      <strong>Recent Enhancements</strong> lists platform
+                      changes, newest first. Each needs a date, title and
+                      summary, or it is skipped. The page shows the latest five
+                      and a Show all changes button for the rest.
+                    </li>
+                    <li>
+                      A change counts as published when its record is at step
+                      <code>20</code> of <code>form_8f7e8</code>. A second query
+                      finds those records, and the page keeps only matching
+                      changes. If that query fails, the page logs a warning and
+                      shows every change instead.
+                    </li>
+                    <li>
+                      Summaries are plain text. Lines that all start with
+                      <code>-</code> or <code>*</code> become a bullet list,
+                      lines that all start with a number become a numbered list,
+                      and anything else becomes paragraphs.
+                    </li>
+                    <li>
+                      The LEAF-S and VA Privacy Resources sections are written
+                      into the page. Their buttons link to the Privacy site
+                      (<code>/platform/privacy/#goto=...</code>) and the Help
+                      Library, and open in a new tab.
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="ldc-topic" id="ldc-votes">
+                  <h3 id="h-ldc-votes">Votes and feedback</h3>
+                  <p>
+                    Idea votes and Help Library article feedback are both saved
+                    on the Votes site, <code>/platform/votes/</code>, as one
+                    record per click. The two pages are separate sites, so each
+                    writes to Votes by its full address (<code
+                      >VOTES_API_BASE</code
+                    >
+                    in the Ideas script, <code>votesApiRoot</code> in the Help
+                    Library script).
+                  </p>
+                  <div
+                    class="ldc-table-wrap"
+                    role="region"
+                    aria-label="Votes forms table"
+                    tabindex="0"
+                  >
+                    <table class="ldc-table">
+                      <caption>
+                        The two forms on the Votes site
+                      </caption>
+                      <thead>
+                        <tr>
+                          <th scope="col">Source</th>
+                          <th scope="col">Form</th>
+                          <th scope="col">Indicator</th>
+                          <th scope="col">What it holds</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <th scope="row">Idea Portal vote</th>
+                          <td><code>form_ce926</code></td>
+                          <td>
+                            <code>7</code><br />
+                            <code>8</code>
+                          </td>
+                          <td>
+                            <code>7</code>: record ID of the idea on the Ideas
+                            site<br />
+                            <code>8</code>: the voter's email, or their user ID
+                            if no email is found
+                          </td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Help Library feedback</th>
+                          <td><code>form_faf54</code></td>
+                          <td>
+                            <code>2</code><br />
+                            <code>3</code><br />
+                            <code>4</code><br />
+                            <code>5</code>
+                          </td>
+                          <td>
+                            <code>2</code>: the user ID<br />
+                            <code>3</code>: article ID<br />
+                            <code>4</code>: Yes or No<br />
+                            <code>5</code>: article title
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <h4>Idea votes</h4>
+                  <ul class="ldc-list">
+                    <li>
+                      A vote is a new record posted to
+                      <code>/platform/votes/api/?a=form/new</code> with the
+                      title <code>Idea #&lt;id&gt;</code>. It is never
+                      submitted, so there is no workflow.
+                    </li>
+                    <li>
+                      The Ideas page reads every non-deleted record on
+                      <code>form_ce926</code> and counts them in the browser.
+                      There is no stored total, so a count is the number of
+                      records with that idea ID in indicator <code>7</code>.
+                    </li>
+                    <li>
+                      A person's own votes are the records whose indicator
+                      <code>8</code> matches their email or user ID, in any
+                      case.
+                    </li>
+                    <li>
+                      Removing a vote cancels the record
+                      (<code>form/&lt;id&gt;/cancel</code>) with notifications
+                      off. It is a soft delete, and cancelled records are left
+                      out of every read.
+                    </li>
+                    <li>
+                      Voting on your own idea, voting twice, and voting on a
+                      closed idea (Duplicate, Already exists, Unlikely) are
+                      blocked in the page only. The Votes site accepts them if
+                      posted directly.
+                    </li>
+                    <li>
+                      If the Votes read fails, voting is paused until the page
+                      is reloaded and ideas show their imported vote counts.
+                    </li>
+                  </ul>
+
+                  <h4>Help Library feedback</h4>
+                  <ul class="ldc-list">
+                    <li>
+                      Each Yes or No click posts a new record titled
+                      <code>Help Library Feedback — Article #&lt;id&gt;</code>.
+                      Changing your answer adds another record and does not
+                      replace the first.
+                    </li>
+                    <li>
+                      After the record is created, the page posts it to
+                      <code>form/&lt;id&gt;/submit</code> so it enters the
+                      form's workflow. Do not also advance it with
+                      <code>currentStep</code> and <code>apply</code>. That
+                      would move it a second time.
+                    </li>
+                    <li>
+                      The user ID comes from
+                      <code>window.helpLibConfig</code>, set by Smarty in
+                      <code>help_library.html</code>. If it is empty the
+                      feedback still saves, with no user on it.
+                    </li>
+                  </ul>
+                  <p>
+                    Results are reviewed on the Votes dashboard,
+                    <code>/platform/votes/report.php?a=dashboard</code>, which
+                    is also linked from the Team page.
+                  </p>
+                </div>
+
                 <div class="ldc-topic" id="ldc-forms">
                   <h3 id="h-ldc-forms">Connected forms and services</h3>
                   <div
@@ -2943,6 +3168,82 @@ function statusTextForSource(sourceKey, rec) {
                             entered in Eastern. The event type must match a type
                             name exactly. Title and description are required for
                             special events and optional otherwise.
+                          </td>
+                        </tr>
+                        <tr>
+                          <th scope="row">CoP: upcoming session</th>
+                          <td><code>/platform/CoP/</code></td>
+                          <td><code>form_605bd</code></td>
+                          <td>
+                            <code>16</code> when<br />
+                            <code>17</code> what
+                          </td>
+                          <td>
+                            Read only. The page reads record
+                            <code>4</code> only. <code>17</code> is a rich text
+                            field.
+                          </td>
+                        </tr>
+                        <tr>
+                          <th scope="row">CoP: past sessions</th>
+                          <td><code>/platform/CoP/</code></td>
+                          <td><code>form_8fc8b</code></td>
+                          <td>
+                            <code>25</code> date<br />
+                            <code>26</code> topic<br />
+                            <code>27</code> recording link<br />
+                            <code>35</code> presentation file
+                          </td>
+                          <td>
+                            Read only. Every record that isn't deleted.
+                            <code>26</code> is a rich text field. The
+                            presentation downloads from <code>file.php</code> on
+                            the CoP site.
+                          </td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Privacy: recent changes</th>
+                          <td><code>/platform/privacy/</code></td>
+                          <td><code>form_8f7e8</code></td>
+                          <td>
+                            <code>39</code> change date<br />
+                            <code>40</code> title<br />
+                            <code>41</code> summary
+                          </td>
+                          <td>
+                            Read only. Reads every record that isn't deleted on
+                            the site. Records at step <code>20</code> of
+                            <code>form_8f7e8</code> count as published. If the
+                            step check fails, all of them show.
+                          </td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Idea votes</th>
+                          <td><code>/platform/votes/</code></td>
+                          <td><code>form_ce926</code></td>
+                          <td>
+                            <code>7</code> idea record ID<br />
+                            <code>8</code> voter
+                          </td>
+                          <td>
+                            Read and write. One record per vote, never
+                            submitted. See
+                            <a href="#ldc-votes">Votes and feedback</a>.
+                          </td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Help Library feedback</th>
+                          <td><code>/platform/votes/</code></td>
+                          <td><code>form_faf54</code></td>
+                          <td>
+                            <code>2</code> user ID<br />
+                            <code>3</code> article ID<br />
+                            <code>4</code> Yes or No<br />
+                            <code>5</code> article title
+                          </td>
+                          <td>
+                            Write only. One record per click, then submitted to
+                            its workflow.
                           </td>
                         </tr>
                       </tbody>
