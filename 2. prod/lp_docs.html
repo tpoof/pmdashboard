@@ -248,6 +248,9 @@
         padding: 2rem 0 0;
         border-top: 1px solid var(--c-blue10);
       }
+      .ldc-sec h3[id] {
+        scroll-margin-top: 9rem;
+      }
       .ldc-sec .ldc-topic > h3 {
         font-family: "PublicSans-Bold", sans-serif;
         font-size: 1.3rem;
@@ -583,7 +586,6 @@
                     <li><a href="#ldc-multigrid">Multigrid</a></li>
                     <li><a href="#ldc-events">Events page</a></li>
                     <li><a href="#ldc-external">CoP and Privacy pages</a></li>
-                    <li><a href="#ldc-votes">Votes and feedback</a></li>
                     <li><a href="#ldc-forms">Connected forms</a></li>
                   </ul>
                 </li>
@@ -2867,137 +2869,6 @@ function statusTextForSource(sourceKey, rec) {
                   </ul>
                 </div>
 
-                <div class="ldc-topic" id="ldc-votes">
-                  <h3 id="h-ldc-votes">Votes and feedback</h3>
-                  <p>
-                    Idea votes and Help Library article feedback are both saved
-                    on the Votes site, <code>/platform/votes/</code>, as one
-                    record per click. The two pages are separate sites, so each
-                    writes to Votes by its full address (<code
-                      >VOTES_API_BASE</code
-                    >
-                    in the Ideas script, <code>votesApiRoot</code> in the Help
-                    Library script).
-                  </p>
-                  <div
-                    class="ldc-table-wrap"
-                    role="region"
-                    aria-label="Votes forms table"
-                    tabindex="0"
-                  >
-                    <table class="ldc-table">
-                      <caption>
-                        The two forms on the Votes site
-                      </caption>
-                      <thead>
-                        <tr>
-                          <th scope="col">Source</th>
-                          <th scope="col">Form</th>
-                          <th scope="col">Indicator</th>
-                          <th scope="col">What it holds</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <th scope="row">Idea Portal vote</th>
-                          <td><code>form_ce926</code></td>
-                          <td>
-                            <code>7</code><br />
-                            <code>8</code>
-                          </td>
-                          <td>
-                            <code>7</code>: record ID of the idea on the Ideas
-                            site<br />
-                            <code>8</code>: the voter's email, or their user ID
-                            if no email is found
-                          </td>
-                        </tr>
-                        <tr>
-                          <th scope="row">Help Library feedback</th>
-                          <td><code>form_faf54</code></td>
-                          <td>
-                            <code>2</code><br />
-                            <code>3</code><br />
-                            <code>4</code><br />
-                            <code>5</code>
-                          </td>
-                          <td>
-                            <code>2</code>: the user ID<br />
-                            <code>3</code>: article ID<br />
-                            <code>4</code>: Yes or No<br />
-                            <code>5</code>: article title
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <h4>Idea votes</h4>
-                  <ul class="ldc-list">
-                    <li>
-                      A vote is a new record posted to
-                      <code>/platform/votes/api/?a=form/new</code> with the
-                      title <code>Idea #&lt;id&gt;</code>. It is never
-                      submitted, so there is no workflow.
-                    </li>
-                    <li>
-                      The Ideas page reads every non-deleted record on
-                      <code>form_ce926</code> and counts them in the browser.
-                      There is no stored total, so a count is the number of
-                      records with that idea ID in indicator <code>7</code>.
-                    </li>
-                    <li>
-                      A person's own votes are the records whose indicator
-                      <code>8</code> matches their email or user ID, in any
-                      case.
-                    </li>
-                    <li>
-                      Removing a vote cancels the record
-                      (<code>form/&lt;id&gt;/cancel</code>) with notifications
-                      off. It is a soft delete, and cancelled records are left
-                      out of every read.
-                    </li>
-                    <li>
-                      Voting on your own idea, voting twice, and voting on a
-                      closed idea (Duplicate, Already exists, Unlikely) are
-                      blocked in the page only. The Votes site accepts them if
-                      posted directly.
-                    </li>
-                    <li>
-                      If the Votes read fails, voting is paused until the page
-                      is reloaded and ideas show their imported vote counts.
-                    </li>
-                  </ul>
-
-                  <h4>Help Library feedback</h4>
-                  <ul class="ldc-list">
-                    <li>
-                      Each Yes or No click posts a new record titled
-                      <code>Help Library Feedback — Article #&lt;id&gt;</code>.
-                      Changing your answer adds another record and does not
-                      replace the first.
-                    </li>
-                    <li>
-                      After the record is created, the page posts it to
-                      <code>form/&lt;id&gt;/submit</code> so it enters the
-                      form's workflow. Do not also advance it with
-                      <code>currentStep</code> and <code>apply</code>. That
-                      would move it a second time.
-                    </li>
-                    <li>
-                      The user ID comes from
-                      <code>window.helpLibConfig</code>, set by Smarty in
-                      <code>help_library.html</code>. If it is empty the
-                      feedback still saves, with no user on it.
-                    </li>
-                  </ul>
-                  <p>
-                    Results are reviewed on the Votes dashboard,
-                    <code>/platform/votes/report.php?a=dashboard</code>, which
-                    is also linked from the Team page.
-                  </p>
-                </div>
-
                 <div class="ldc-topic" id="ldc-forms">
                   <h3 id="h-ldc-forms">Connected forms and services</h3>
                   <div
@@ -5192,7 +5063,7 @@ function statusTextForSource(sourceKey, rec) {
                   </li>
                   <li>
                     Votes are saved in <code>/platform/votes</code>, not in the
-                    Launchpad.
+                    Launchpad. See <a href="#ldc-votes">Votes and feedback</a>.
                   </li>
                   <li>
                     My Requests also reads the Ideas site. See
@@ -5223,7 +5094,8 @@ function statusTextForSource(sourceKey, rec) {
                   <li>
                     Article feedback is saved in
                     <code>/platform/votes</code>, the same place as Idea votes,
-                    and not in the Launchpad.
+                    and not in the Launchpad. See
+                    <a href="#ldc-votes">Votes and feedback</a>.
                   </li>
                   <li>
                     Articles and layout are edited at
@@ -5232,6 +5104,131 @@ function statusTextForSource(sourceKey, rec) {
                     Launchpad expects that message.
                   </li>
                 </ul>
+                <h3 id="ldc-votes">Votes and feedback</h3>
+                <p>
+                  Idea votes and Help Library article feedback are both saved on
+                  the Votes site, <code>/platform/votes/</code>, as one record
+                  per click. The two pages are separate sites, so each writes to
+                  Votes by its full address (<code>VOTES_API_BASE</code> in the
+                  Ideas script, <code>votesApiRoot</code> in the Help Library
+                  script).
+                </p>
+                <div
+                  class="ldc-table-wrap"
+                  role="region"
+                  aria-label="Votes forms table"
+                  tabindex="0"
+                >
+                  <table class="ldc-table">
+                    <caption>
+                      The two forms on the Votes site
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Source</th>
+                        <th scope="col">Form</th>
+                        <th scope="col">Indicator</th>
+                        <th scope="col">What it holds</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th scope="row">Idea Portal vote</th>
+                        <td><code>form_ce926</code></td>
+                        <td>
+                          <code>7</code><br />
+                          <code>8</code>
+                        </td>
+                        <td>
+                          <code>7</code>: record ID of the idea on the Ideas
+                          site<br />
+                          <code>8</code>: the voter's email, or their user ID if
+                          no email is found
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Help Library feedback</th>
+                        <td><code>form_faf54</code></td>
+                        <td>
+                          <code>2</code><br />
+                          <code>3</code><br />
+                          <code>4</code><br />
+                          <code>5</code>
+                        </td>
+                        <td>
+                          <code>2</code>: the user ID<br />
+                          <code>3</code>: article ID<br />
+                          <code>4</code>: Yes or No<br />
+                          <code>5</code>: article title
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <h4>Idea votes</h4>
+                <ul class="ldc-list">
+                  <li>
+                    A vote is a new record posted to
+                    <code>/platform/votes/api/?a=form/new</code> with the title
+                    <code>Idea #&lt;id&gt;</code>. It is never submitted, so
+                    there is no workflow.
+                  </li>
+                  <li>
+                    The Ideas page reads every non-deleted record on
+                    <code>form_ce926</code> and counts them in the browser.
+                    There is no stored total, so a count is the number of
+                    records with that idea ID in indicator <code>7</code>.
+                  </li>
+                  <li>
+                    A person's own votes are the records whose indicator
+                    <code>8</code> matches their email or user ID, in any case.
+                  </li>
+                  <li>
+                    Removing a vote cancels the record
+                    (<code>form/&lt;id&gt;/cancel</code>) with notifications
+                    off. It is a soft delete, and cancelled records are left out
+                    of every read.
+                  </li>
+                  <li>
+                    Voting on your own idea, voting twice, and voting on a
+                    closed idea (Duplicate, Already exists, Unlikely) are
+                    blocked in the page only. The Votes site accepts them if
+                    posted directly.
+                  </li>
+                  <li>
+                    If the Votes read fails, voting is paused until the page is
+                    reloaded and ideas show their imported vote counts.
+                  </li>
+                </ul>
+
+                <h4>Help Library feedback</h4>
+                <ul class="ldc-list">
+                  <li>
+                    Each Yes or No click posts a new record titled
+                    <code>Help Library Feedback — Article #&lt;id&gt;</code>.
+                    Changing your answer adds another record and does not
+                    replace the first.
+                  </li>
+                  <li>
+                    After the record is created, the page posts it to
+                    <code>form/&lt;id&gt;/submit</code> so it enters the form's
+                    workflow. Do not also advance it with
+                    <code>currentStep</code> and <code>apply</code>. That would
+                    move it a second time.
+                  </li>
+                  <li>
+                    The user ID comes from
+                    <code>window.helpLibConfig</code>, set by Smarty in
+                    <code>help_library.html</code>. If it is empty the feedback
+                    still saves, with no user on it.
+                  </li>
+                </ul>
+                <p>
+                  Results are reviewed on the Votes dashboard,
+                  <code>/platform/votes/report.php?a=dashboard</code>, which is
+                  also linked from the Team page.
+                </p>
               </section>
             </div>
           </div>
