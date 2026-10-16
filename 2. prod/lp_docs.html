@@ -77,6 +77,118 @@
         max-width: 640px;
       }
 
+      /* ── Search ── */
+      .ldc-search {
+        position: relative;
+        z-index: 20;
+        max-width: 640px;
+        margin: 1.25rem 0 0;
+      }
+      .ldc-search-box {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        min-height: 48px;
+        padding: 0 0.75rem 0 1rem;
+        background: var(--c-white);
+        border: 1px solid var(--c-blue20);
+        border-radius: var(--r-lg);
+      }
+      .ldc-search-box:focus-within {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: 1px;
+      }
+      .ldc-search-box > .material-symbols-outlined {
+        flex-shrink: 0;
+        color: var(--c-muted);
+      }
+      .ldc-search-box input {
+        flex: 1;
+        min-width: 0;
+        min-height: 44px;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 1rem;
+        color: var(--c-text);
+      }
+      .ldc-search-clear {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 44px;
+        height: 44px;
+        margin-right: -0.5rem;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--c-muted);
+        cursor: pointer;
+      }
+      .ldc-search-clear:hover {
+        background: var(--c-blue5);
+      }
+      .ldc-search-clear:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: -3px;
+      }
+      .ldc-search-results {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        max-height: 60vh;
+        margin: 0;
+        padding: 0.25rem;
+        overflow-y: auto;
+        list-style: none;
+        background: var(--c-white);
+        border: 1px solid var(--c-blue20);
+        border-radius: var(--r-lg);
+        box-shadow: 0 8px 24px rgba(0, 10, 40, 0.15);
+      }
+      .ldc-search-results[hidden],
+      .ldc-search-clear[hidden] {
+        display: none;
+      }
+      .ldc-search-results a {
+        display: block;
+        min-height: 44px;
+        padding: 0.55rem 0.75rem;
+        border-radius: var(--r);
+        color: var(--c-text);
+        text-decoration: none;
+      }
+      .ldc-search-results a:hover {
+        background: var(--c-blue5);
+      }
+      .ldc-search-results a:focus-visible {
+        outline: 3px solid var(--lp-accent);
+        outline-offset: -3px;
+      }
+      .ldc-search-title {
+        display: block;
+        font-family: "PublicSans-Bold", sans-serif;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--lp-hl);
+      }
+      .ldc-search-path,
+      .ldc-search-snip {
+        display: block;
+        font-family: "Source Sans Pro Web", sans-serif;
+        font-size: 0.875rem;
+        color: var(--c-muted);
+        overflow-wrap: anywhere;
+      }
+      .ldc-search-none {
+        padding: 0.75rem;
+        font-family: "Source Sans Pro Web", sans-serif;
+        color: var(--c-muted);
+      }
+
       /* ── Layout: contents list + article ── */
       .ldc-layout {
         display: grid;
@@ -248,7 +360,9 @@
         padding: 2rem 0 0;
         border-top: 1px solid var(--c-blue10);
       }
-      .ldc-sec h3[id] {
+      .ldc-sec h2[id],
+      .ldc-sec h3[id],
+      .ldc-sec h4[id] {
         scroll-margin-top: 9rem;
       }
       .ldc-sec .ldc-topic > h3 {
@@ -554,6 +668,39 @@
               How the Launchpad is put together, how to add to it, and where its
               connected forms live.
             </p>
+            <div class="ldc-search" role="search">
+              <div class="ldc-search-box">
+                <span class="material-symbols-outlined" aria-hidden="true"
+                  ><svg viewBox="0 -960 960 960" fill="currentColor">
+                    <path
+                      d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"
+                    /></svg
+                ></span>
+                <label for="ldcSearch" class="sr-only">Search the docs</label>
+                <input
+                  id="ldcSearch"
+                  type="search"
+                  placeholder="Search the docs, e.g. badge, votes, redirect"
+                  autocomplete="off"
+                  aria-controls="ldcSearchResults"
+                />
+                <button
+                  type="button"
+                  id="ldcSearchClear"
+                  class="ldc-search-clear"
+                  aria-label="Clear search"
+                  hidden
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true"
+                    ><svg viewBox="0 -960 960 960" fill="currentColor">
+                      <path
+                        d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+                      /></svg
+                  ></span>
+                </button>
+              </div>
+              <ul class="ldc-search-results" id="ldcSearchResults" hidden></ul>
+            </div>
           </header>
 
           <div class="ldc-layout">
@@ -5498,8 +5645,214 @@ function statusTextForSource(sourceKey, rec) {
           });
         };
 
+        /* Search. The index is read from the page's own headings and text
+           the first time someone types, so new sections are found with no
+           extra setup. Code viewers and their buttons are skipped. */
+        const SEARCH_SKIP = ".ldc-code-bar, .ldc-hint, .ldc-preview, button";
+        const SEARCH_MAX = 8;
+
+        const initSearch = () => {
+          const box = document.querySelector(".ldc-search");
+          const input = document.getElementById("ldcSearch");
+          const list = document.getElementById("ldcSearchResults");
+          const clearBtn = document.getElementById("ldcSearchClear");
+          const article = document.querySelector(".ldc-article");
+          if (!box || !input || !list || !clearBtn || !article) return;
+
+          let index = null;
+          let announceTimer;
+
+          const buildIndex = () => {
+            const out = [];
+            const trail = [];
+            let current = null;
+            let count = 0;
+            const walker = document.createTreeWalker(
+              article,
+              NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+              {
+                acceptNode: (node) =>
+                  node.nodeType === 1 && node.matches(SEARCH_SKIP)
+                    ? NodeFilter.FILTER_REJECT
+                    : NodeFilter.FILTER_ACCEPT,
+              },
+            );
+            while (walker.nextNode()) {
+              const node = walker.currentNode;
+              if (node.nodeType === 1) {
+                if (!/^H[2-4]$/.test(node.tagName)) continue;
+                const level = Number(node.tagName[1]) - 2;
+                const title = node.textContent.replace(/\s+/g, " ").trim();
+                trail.length = level;
+                trail[level] = title;
+                if (!node.id) node.id = "ldc-s-" + ++count;
+                current = {
+                  id: node.id,
+                  title,
+                  path: trail.slice(0, level).filter(Boolean).join(" › "),
+                  body: "",
+                };
+                out.push(current);
+              } else if (current && !/^H[2-4]$/.test(node.parentNode.tagName)) {
+                current.body += node.data + " ";
+              }
+            }
+            out.forEach((s) => {
+              s.body = s.body.replace(/\s+/g, " ").trim();
+              s.lowTitle = s.title.toLowerCase();
+              s.lowPath = s.path.toLowerCase();
+              s.lowBody = s.body.toLowerCase();
+            });
+            return out;
+          };
+
+          const find = (words) => {
+            const hits = [];
+            index.forEach((s, order) => {
+              let score = 0;
+              for (const w of words) {
+                const inTitle = s.lowTitle.includes(w);
+                const inPath = s.lowPath.includes(w);
+                const inBody = s.lowBody.includes(w);
+                if (!inTitle && !inPath && !inBody) return;
+                score +=
+                  (inTitle ? 10 : 0) + (inPath ? 3 : 0) + (inBody ? 1 : 0);
+              }
+              hits.push({ s, score, order });
+            });
+            return hits.sort((a, b) => b.score - a.score || a.order - b.order);
+          };
+
+          const snippet = (s, words) => {
+            if (words.some((w) => s.lowTitle.includes(w))) return "";
+            const at = Math.min(
+              ...words.map((w) => s.lowBody.indexOf(w)).filter((i) => i >= 0),
+            );
+            if (!Number.isFinite(at)) return "";
+            const from = Math.max(0, at - 40);
+            const text = s.body.slice(from, from + 110);
+            return (
+              (from > 0 ? "… " : "") +
+              text +
+              (from + 110 < s.body.length ? " …" : "")
+            );
+          };
+
+          const item = (s, words) => {
+            const li = el("li");
+            const a = el("a");
+            a.href = "#" + s.id;
+            const title = el("span", "ldc-search-title");
+            title.textContent = s.title;
+            a.appendChild(title);
+            if (s.path) {
+              const path = el("span", "ldc-search-path");
+              path.textContent = s.path;
+              a.appendChild(path);
+            }
+            const text = snippet(s, words);
+            if (text) {
+              const snip = el("span", "ldc-search-snip");
+              snip.textContent = text;
+              a.appendChild(snip);
+            }
+            li.appendChild(a);
+            return li;
+          };
+
+          const render = () => {
+            const query = input.value.trim();
+            clearBtn.hidden = !query;
+            list.replaceChildren();
+            if (query.length < 2) {
+              list.hidden = true;
+              return;
+            }
+            index = index || buildIndex();
+            const words = query.toLowerCase().split(/\s+/);
+            const hits = find(words);
+            hits
+              .slice(0, SEARCH_MAX)
+              .forEach((h) => list.appendChild(item(h.s, words)));
+            if (!hits.length) {
+              const none = el("li", "ldc-search-none");
+              none.textContent = "No sections found.";
+              list.appendChild(none);
+            }
+            list.hidden = false;
+            clearTimeout(announceTimer);
+            announceTimer = setTimeout(() => {
+              announce(
+                hits.length
+                  ? hits.length +
+                      (hits.length === 1
+                        ? " section found."
+                        : " sections found.")
+                  : "No sections found.",
+              );
+            }, 400);
+          };
+
+          const links = () => Array.from(list.querySelectorAll("a"));
+
+          input.addEventListener("input", render);
+          input.addEventListener("focus", render);
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowDown" && !list.hidden) {
+              const first = links()[0];
+              if (first) {
+                e.preventDefault();
+                first.focus();
+              }
+            }
+          });
+          list.addEventListener("keydown", (e) => {
+            const all = links();
+            const at = all.indexOf(document.activeElement);
+            if (e.key === "ArrowDown" && at < all.length - 1) {
+              e.preventDefault();
+              all[at + 1].focus();
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              (at > 0 ? all[at - 1] : input).focus();
+            }
+          });
+          box.addEventListener("keydown", (e) => {
+            if (e.key !== "Escape") return;
+            if (!list.hidden) {
+              list.hidden = true;
+              input.focus();
+            } else if (input.value) {
+              input.value = "";
+              render();
+            }
+          });
+          list.addEventListener("click", (e) => {
+            const a = e.target.closest("a");
+            if (!a) return;
+            const target = document.getElementById(
+              a.getAttribute("href").slice(1),
+            );
+            list.hidden = true;
+            if (!target) return;
+            setTimeout(() => {
+              target.setAttribute("tabindex", "-1");
+              target.focus({ preventScroll: true });
+            }, 0);
+          });
+          clearBtn.addEventListener("click", () => {
+            input.value = "";
+            render();
+            input.focus();
+          });
+          document.addEventListener("click", (e) => {
+            if (!box.contains(e.target)) list.hidden = true;
+          });
+        };
+
         const init = () => {
           document.querySelectorAll("[data-ldc-code]").forEach(mount);
+          initSearch();
         };
         if (document.readyState === "loading") {
           document.addEventListener("DOMContentLoaded", init);
