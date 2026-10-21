@@ -106,6 +106,17 @@
         gap: 8px;
         margin-top: auto;
       }
+      .ev-join-note {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        margin: 0;
+        color: var(--c-muted);
+        font-size: 0.9375rem;
+        line-height: 1.2;
+        text-align: center;
+      }
 
       /* ── Special events band ── */
       .ev-special {
@@ -157,7 +168,8 @@
         flex-direction: row;
         flex-wrap: wrap;
       }
-      .ev-special .ev-btn {
+      .ev-special .ev-btn,
+      .ev-special .ev-join-note {
         flex: 1 1 auto;
       }
 
@@ -840,6 +852,8 @@
           timeZone: "America/New_York", // zone admins enter times in
           maxSpecial: 4,
           queryLimit: 200,
+          joinLeadMinutes: 15, // Join opens this many minutes before start
+          defaultLengthMinutes: 60, // Join stays open this long when a date has no end time
         };
 
         // Material Symbols (Filled). Constant markup only — never LEAF data.
@@ -1235,7 +1249,7 @@
               console.warn(`[Events] Date record ${recordID} skipped — end time is before start time.`);
               return;
             }
-            if (end < now) return;
+            if (joinState(start, end, now) === "ended") return;
 
             const typeName = getField(s1, ind.eventType);
             const type = typeByName.get(nameKey(typeName)) || null;
@@ -1292,6 +1306,20 @@
           });
 
           return events.sort((a, b) => a.start - b.start);
+        }
+
+        // Live from joinLeadMinutes before start until end (no end time: start + defaultLengthMinutes).
+        function joinState(startUtc, endUtc, now = Date.now()) {
+          const [open, close] = joinWindow(startUtc, endUtc);
+          return now < open ? "before" : now < close ? "live" : "ended";
+        }
+
+        function joinWindow(startUtc, endUtc) {
+          const min = 60000;
+          return [
+            startUtc - CONFIG.joinLeadMinutes * min,
+            endUtc > startUtc ? endUtc : startUtc + CONFIG.defaultLengthMinutes * min,
+          ];
         }
 
         /* ── .ics ── */
@@ -1437,29 +1465,83 @@
           }, 60);
         }
 
+        const joinSlots = new WeakMap();
+        let joinTimer = 0;
+        const MAX_TIMEOUT = 2 ** 31 - 1;
+
+        function joinSlot(ev, now) {
+          const state = joinState(ev.start, ev.end, now);
+          let node;
+          if (state === "live") {
+            node = linkButton(ev, F.full.format(ev.start));
+          } else {
+            node = el(
+              "p",
+              "ev-join-note",
+              state === "before"
+                ? `Join link opens ${CONFIG.joinLeadMinutes} minute${CONFIG.joinLeadMinutes === 1 ? "" : "s"} before start`
+                : "This session has ended",
+            );
+          }
+          node.dataset.join = state;
+          joinSlots.set(node, ev);
+          return node;
+        }
+
+        function syncJoin() {
+          clearTimeout(joinTimer);
+          if (!ui.tiles.isConnected) return;
+          const now = Date.now();
+          let next = Infinity;
+          [ui.specialList, ui.tiles].forEach((list) =>
+            list.querySelectorAll("[data-join]").forEach((node) => {
+              const ev = joinSlots.get(node);
+              const [open, close] = joinWindow(ev.start, ev.end);
+              if (now < open) next = Math.min(next, open);
+              else if (now < close) next = Math.min(next, close);
+              const state = joinState(ev.start, ev.end, now);
+              if (node.dataset.join === state) return;
+              const hadFocus = node.contains(document.activeElement);
+              const wrap = node.parentNode;
+              const fresh = joinSlot(ev, now);
+              node.replaceWith(fresh);
+              if (hadFocus && state !== "live") {
+                wrap.querySelector('[data-track="add-to-calendar"]').focus();
+              }
+            }),
+          );
+          if (next < Infinity) {
+            joinTimer = setTimeout(syncJoin, Math.min(next - now, MAX_TIMEOUT));
+          }
+        }
+
+        function linkButton(ev, when) {
+          const reg = ev.isRegister;
+          const a = el("a", "btn btn-pri ev-btn");
+          a.href = ev.link;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          // Skipped by the shell's link interceptor, as in lp_team.html.
+          a.setAttribute("data-nav-external", "");
+          a.dataset.track = reg ? "register-training" : "join-meeting";
+          a.setAttribute(
+            "aria-label",
+            `${reg ? "Register for" : "Join"} ${ev.label} on ${when} (opens in a new tab)`,
+          );
+          a.append(
+            icon(reg ? "how_to_reg" : "videocam"),
+            reg ? "Register for training" : "Join meeting",
+            el("span", "sr-only", "(opens in a new tab)"),
+          );
+          return a;
+        }
+
         function actionButtons(ev) {
           const wrap = el("div", "ev-actions");
           const when = F.full.format(ev.start);
 
           if (ev.link) {
-            const reg = ev.isRegister;
-            const a = el("a", "btn btn-pri ev-btn");
-            a.href = ev.link;
-            a.target = "_blank";
-            a.rel = "noopener noreferrer";
-            // Skipped by the shell's link interceptor, as in lp_team.html.
-            a.setAttribute("data-nav-external", "");
-            a.dataset.track = reg ? "register-training" : "join-meeting";
-            a.setAttribute(
-              "aria-label",
-              `${reg ? "Register for" : "Join"} ${ev.label} on ${when} (opens in a new tab)`,
-            );
-            a.append(
-              icon(reg ? "how_to_reg" : "videocam"),
-              reg ? "Register for training" : "Join meeting",
-              el("span", "sr-only", "(opens in a new tab)"),
-            );
-            wrap.appendChild(a);
+            wrap.appendChild(ev.isRegister ? linkButton(ev, when) : joinSlot(ev));
           }
 
           const cal = el("button", "btn btn-sec ev-btn");
@@ -1617,6 +1699,7 @@
             ? ""
             : `${first + 1}–${first + shown.length} of ${items.length}`;
           ui.suffix.textContent = state.filter ? ` · ${state.filter}` : "";
+          syncJoin();
 
           // Keep focus on an arrow when the one just pressed becomes disabled.
           if (activated && activated.disabled) {
@@ -1692,6 +1775,7 @@
             );
             ui.special.hidden = false;
           }
+          syncJoin();
 
           ui.status.hidden = true;
           if (!state.calendar.length) {
@@ -1734,6 +1818,9 @@
           });
           mqOne.addEventListener("change", onSizeChange);
           mqTwo.addEventListener("change", onSizeChange);
+          document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) syncJoin();
+          });
 
           const unset = unsetConfigValues(CONFIG, "CONFIG");
           if (unset.length) {
