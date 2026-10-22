@@ -16,13 +16,15 @@
    A new page only needs one line, right before </head> or </body>:
 
        <script src="/launchpad/files/leaf_header.js"
-               data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->">
+               data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
+               data-is-coach="<!--{if $empMembership['groupID'][17]}-->1<!--{else}-->0<!--{/if}-->">
        </script>
 
    data-is-sysadmin gates the Internal nav bar (Coaches/Team/Leadership/
    Admin/Users Online/Feedback) — see IS_SYSADMIN below. Separate from
-   $is_admin; requires Sysadmin group (groupID 1). Omitting it is safe
-   (bar stays hidden).
+   $is_admin; requires Sysadmin group (groupID 1). data-is-coach (group
+   17) shows the bar with Coaches only. Omitting either is safe (stays
+   hidden).
 
    Cross-site form writes (Feedback button, homepage newsletter) go
    through window.LEAF_LP.createPortalRecord, which fetches its CSRF
@@ -64,17 +66,18 @@
   }
 
   /* document.currentScript is only valid synchronously during this
-     script's first execution, so it's captured immediately. Reads
-     data-is-sysadmin off this same <script> tag (from Smarty's
-     $empMembership['groupID'][1], not the broader $is_admin flag).
+     script's first execution, so it's captured immediately. Group flags
+     are read off this same <script> tag (from Smarty's
+     $empMembership['groupID'][N], not the broader $is_admin flag).
      Anything but "1"/"true"/"yes" fails hidden, never fails open. */
   var HEADER_SCRIPT_EL = document.currentScript;
-  var IS_SYSADMIN = (function () {
-    var raw =
-      HEADER_SCRIPT_EL && HEADER_SCRIPT_EL.getAttribute("data-is-sysadmin");
+  function readScriptFlag(attr) {
+    var raw = HEADER_SCRIPT_EL && HEADER_SCRIPT_EL.getAttribute(attr);
     raw = stripSmartyCommentWrapper(raw);
     return !!raw && /^(1|true|yes)$/i.test(raw);
-  })();
+  }
+  var IS_SYSADMIN = readScriptFlag("data-is-sysadmin"); // groupID 1
+  var IS_COACH = readScriptFlag("data-is-coach"); // groupID 17: Coaches link only
 
   /* ── Announcement banner config ──
      Live — sourced from a LEAF form's rawIndicator endpoint:
@@ -256,6 +259,12 @@
           desc: "Sign up for a live session with the LEAF team",
           href: "#",
           action: "training-modal",
+        },
+        {
+          icon: "event",
+          title: "Events",
+          desc: "Live online demos, training, and special events",
+          href: "/launchpad/report.php?a=lp_events",
         },
         {
           icon: "quiz",
@@ -479,6 +488,8 @@
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M840-280v-276L480-360 40-600l440-240 440 240v320h-80ZM480-120 200-272v-200l280 152 280-152v200L480-120Z"/></svg>',
     event_available:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M438-226 296-368l58-58 84 84 168-168 58 58-226 226ZM200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Z"/></svg>',
+    event:
+      '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M509-269q-29-29-29-71t29-71q29-29 71-29t71 29q29 29 29 71t-29 71q-29 29-71 29t-71-29ZM200-80q-33 0-56.5-23.5T120-160v-560q0-33 23.5-56.5T200-800h40v-80h80v80h320v-80h80v80h40q33 0 56.5 23.5T840-720v560q0 33-23.5 56.5T760-80H200Zm0-80h560v-400H200v400Z"/></svg>',
     quiz: '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M560-360q17 0 29.5-12.5T602-402q0-17-12.5-29.5T560-444q-17 0-29.5 12.5T518-402q0 17 12.5 29.5T560-360Zm-30-128h60q0-29 6-42.5t28-35.5q30-30 40-48.5t10-43.5q0-45-31.5-73.5T560-760q-41 0-71.5 23T446-676l54 22q9-25 24.5-37.5T560-704q24 0 39 13.5t15 36.5q0 14-8 26.5T578-596q-33 29-40.5 45.5T530-488ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Z"/></svg>',
     arrow_drop_down:
       '<svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-360 280-560h400L480-360Z"/></svg>',
@@ -619,10 +630,9 @@
      INTERNAL NAV SECTION
      Right-aligned pill: [Coaches (new tab) → Team → Leadership → Admin
      → Users Online → Feedback] [lock toggle]. The lock collapses the
-     bracketed items (see wireInternalNavToggle in wire()). Sysadmin-only
-     — gated on IS_SYSADMIN, so the section never enters the DOM for
-     non-sysadmins rather than being hidden with CSS (the CSS rule is
-     defense in depth only).
+     bracketed items (see wireInternalNavToggle in wire()). Renders for
+     IS_SYSADMIN (all items) or IS_COACH (Coaches only); items a user
+     can't see never enter the DOM rather than being hidden with CSS.
   ───────────────────────────────────────────────────────────── */
   /* Saved choice ("1" collapsed / "0" expanded) always wins; with none,
      collapse at INTERNAL_NAV_NARROW_MQ widths. Storage can be blocked,
@@ -664,7 +674,7 @@
   }
 
   function buildInternalNavHTML() {
-    if (!IS_SYSADMIN) {
+    if (!IS_SYSADMIN && !IS_COACH) {
       return { desktop: "", mobile: "" };
     }
 
@@ -673,7 +683,7 @@
     var collapsed = initialInternalNavCollapsed();
 
     var desktopInternal = `
-<div class="lp-nav-internal" data-sysadmin="1" data-collapsed="${collapsed}" role="navigation" aria-label="Internal team links">
+<div class="lp-nav-internal" data-collapsed="${collapsed}" role="navigation" aria-label="Internal team links">
 
   <!-- Collapsible items. inert while collapsed keeps them out of the
        tab order and accessibility tree. The rule sits last so the
@@ -687,7 +697,7 @@
         Coaches
         <span class="lp-sr-only">(opens in new tab)</span>
       </a>
-
+${IS_SYSADMIN ? `
       <button class="lp-internal-btn" data-href="/launchpad/report.php?a=lp_team">
         Team
       </button>
@@ -711,14 +721,14 @@
         <span class="lp-internal-online-count" aria-live="polite" aria-atomic="true">0</span>
       </span>
 
-      <!-- Feedback: icon-only, opens lpFeedbackModal (see wireFeedbackWidget). -->
+      <!-- Feedback: icon-only, opens lpFeedbackModal (see openFeedbackModal). -->
       <span class="lp-nav-tip-wrap">
         <button class="lp-internal-feedback-btn" type="button" data-action="feedback-modal" aria-label="Send feedback" aria-describedby="lpFeedbackTip">
           <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.add_comment}</span>
         </button>
         <span class="lp-nav-tip" id="lpFeedbackTip" role="tooltip">Send feedback on Launchpad v2</span>
       </span>
-
+` : ""}
       <span class="lp-internal-rule" aria-hidden="true"></span>
 
     </div>
@@ -741,13 +751,13 @@
     var mobileInternal = `
 
 <!-- Mobile separator before Internal section — same lock icon treatment as desktop. -->
-<li class="lp-internal-mobile-item" data-sysadmin="1" role="separator">
+<li class="lp-internal-mobile-item" role="separator">
   <div class="lp-mobile-internal-sep" role="img" aria-label="Internal">
     <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.lock}</span>
   </div>
 </li>
 
-<li class="lp-internal-mobile-item" data-sysadmin="1">
+<li class="lp-internal-mobile-item">
   <a class="dd-link" href="https://leaf.va.gov/launchpad/report.php?a=Coaches" data-nav-external target="_blank" rel="noopener noreferrer">
     <span class="dd-link-ico">
       <span class="material-symbols-outlined" aria-hidden="true">${ICON_SVG.co_present}</span>
@@ -759,7 +769,7 @@
     </span>
   </a>
 </li>
-
+${IS_SYSADMIN ? `
 <li class="lp-internal-mobile-item" data-sysadmin="1">
   <button class="dd-link" data-href="/launchpad/report.php?a=lp_team">
     <span class="dd-link-ico">
@@ -820,7 +830,7 @@
       <span class="dd-link-desc">Report an issue or share a quick note</span>
     </span>
   </button>
-</li>`;
+</li>` : ""}`;
 
     return { desktop: desktopInternal, mobile: mobileInternal };
   }
@@ -2877,6 +2887,22 @@
 
   var feedbackModalTrigger = null;
 
+  /* Shows or clears the textarea's inline error ("" clears). */
+  function setFeedbackError(message) {
+    var textarea = document.getElementById("lpFeedbackText");
+    var errorEl = document.getElementById("lpFeedbackTextError");
+    if (!textarea || !errorEl) return;
+    errorEl.textContent = message;
+    errorEl.hidden = !message;
+    if (message) {
+      textarea.setAttribute("aria-invalid", "true");
+      textarea.setAttribute("aria-describedby", "lpFeedbackTextError");
+    } else {
+      textarea.removeAttribute("aria-invalid");
+      textarea.removeAttribute("aria-describedby");
+    }
+  }
+
   function ensureFeedbackModal() {
     if (document.getElementById("lpFeedbackModal")) return;
     var modal = document.createElement("div");
@@ -2897,8 +2923,9 @@
       "</button>" +
       "</div>" +
       '<div class="feedback-body">' +
-      '<label class="feedback-label" for="lpFeedbackText">Share your feedback on Launchpad v2</label>' +
-      '<textarea class="feedback-textarea" id="lpFeedbackText" rows="5" maxlength="4000"></textarea>' +
+      '<label class="feedback-label" for="lpFeedbackText">Feedback (required)</label>' +
+      '<textarea class="feedback-textarea" id="lpFeedbackText" rows="5" maxlength="4000" aria-required="true"></textarea>' +
+      '<p class="feedback-field-error" id="lpFeedbackTextError" hidden></p>' +
       '<p class="feedback-status" id="lpFeedbackStatus" role="status" aria-live="polite"></p>' +
       '<div class="feedback-actions">' +
       '<button class="btn btn-sec" type="button" id="lpFeedbackCancel">Cancel</button>' +
@@ -2935,14 +2962,22 @@
       }
     });
 
+    var feedbackTextarea = document.getElementById("lpFeedbackText");
+    feedbackTextarea.addEventListener("input", function () {
+      if (feedbackTextarea.value.trim()) setFeedbackError("");
+    });
+
     var submitBtn = document.getElementById("lpFeedbackSubmit");
     submitBtn.addEventListener("click", function () {
       var textarea = document.getElementById("lpFeedbackText");
       var statusEl = document.getElementById("lpFeedbackStatus");
       var text = textarea.value.trim();
       if (!text) {
-        statusEl.textContent = "Please enter some feedback first.";
-        statusEl.classList.add("is-error");
+        /* Focusing the field reads the error via aria-describedby, so
+           the status region stays clear to avoid a double announcement. */
+        statusEl.textContent = "";
+        statusEl.classList.remove("is-error");
+        setFeedbackError("Enter your feedback.");
         textarea.focus();
         return;
       }
@@ -2989,6 +3024,7 @@
     statusEl.textContent = "";
     statusEl.classList.remove("is-error");
     textarea.value = "";
+    setFeedbackError("");
     /* A prior successful submit leaves Submit disabled (see the click
        handler above) to block double-submits while the confirmation is
        showing. Reset both buttons here so a reopened modal is fresh. */

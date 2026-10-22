@@ -11,7 +11,6 @@
     <style>
       /* launchpad.css sizes .material-symbols-outlined via font-size,
          which doesn't affect inlined <svg> — these rules size each icon. */
-      .ev-hero .hero-kicker .material-symbols-outlined svg,
       .ev-star-tile svg,
       .ev-ico-tile svg,
       .ev-btn .material-symbols-outlined svg,
@@ -21,7 +20,6 @@
         display: block;
         flex-shrink: 0;
       }
-      .hero-kicker .material-symbols-outlined svg,
       .ev-tile-time .material-symbols-outlined svg {
         width: 16px;
         height: 16px;
@@ -362,8 +360,6 @@
       }
       .ev-type-state {
         display: flex;
-        flex-direction: column;
-        gap: 2px;
         margin-top: auto;
         font-size: 0.9375rem;
       }
@@ -373,14 +369,6 @@
         gap: 4px;
         font-weight: 700;
         color: var(--ev-accent);
-      }
-      .ev-type-hint {
-        font-size: 15px;
-        font-weight: 400;
-        color: var(--c-text);
-      }
-      .ev-type-hint:empty {
-        display: none;
       }
 
       /* Selected: the card keeps its four-across width; objectives fill
@@ -421,18 +409,15 @@
         border-bottom: 1px solid var(--c-blue20);
         padding: 48px 0 64px;
       }
-      .ev-dates-h3 {
-        margin: 0 0 8px;
-        font-size: 24px;
-        font-weight: 800;
-        line-height: 1.3;
-        color: var(--lp-hl);
+      /* Hero title/subtitle classes, one step smaller than the hero. */
+      .ev-dates .sec-h2 {
+        font-size: clamp(1.4rem, 2.5vw, 1.75rem);
       }
-      .ev-dates-note {
-        max-width: 70ch;
-        margin: 0 0 20px;
-        color: var(--c-muted);
-        font-size: 15px;
+      .ev-dates .sec-sub + .sec-sub {
+        margin-top: 8px;
+      }
+      .ev-clear {
+        margin-top: 16px;
       }
       .ev-pager {
         display: flex;
@@ -654,6 +639,7 @@
       .ev-arrow[hidden],
       .ev-dots[hidden],
       .ev-actions[hidden],
+      .ev-clear[hidden],
       .ev-type-state .material-symbols-outlined[hidden] {
         display: none;
       }
@@ -676,12 +662,6 @@
         >
           <div class="wrap">
             <div class="sec-hd ctr">
-              <span class="hero-kicker">
-                <span class="material-symbols-outlined" aria-hidden="true"
-                  ><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h480q33 0 56.5 23.5T720-720v180l160-160v440L720-420v180q0 33-23.5 56.5T640-160H160Z"/></svg></span
-                >
-                Monthly sessions
-              </span>
               <h1 class="sec-h2" id="ev-h1">Find a session that fits</h1>
               <p class="sec-sub">
                 Join the LEAF team for demos, trainings, and community sessions.
@@ -738,13 +718,25 @@
 
           <section class="ev-dates" id="ev-dates" aria-labelledby="ev-dates-h3" hidden>
             <div class="wrap">
-              <h2 class="ev-dates-h3" id="ev-dates-h3">
-                Upcoming dates<span id="ev-dates-suffix"></span>
-              </h2>
-              <p class="ev-dates-note">
-                Times are shown in your local time zone. All links open in a new
-                window.
-              </p>
+              <div class="sec-hd ctr">
+                <h2 class="sec-h2" id="ev-dates-h3">
+                  Upcoming dates<span id="ev-dates-suffix"></span>
+                </h2>
+                <p class="sec-sub">
+                  Times are shown in your local time zone. All links open in a
+                  new window.
+                </p>
+                <p class="sec-sub" id="ev-dates-hint" hidden></p>
+                <button
+                  class="btn btn-sec ev-btn ev-clear"
+                  id="ev-clear"
+                  type="button"
+                  data-track="clear-selection"
+                  hidden
+                >
+                  Clear selection
+                </button>
+              </div>
               <div
                 class="ev-pager"
                 role="group"
@@ -1617,8 +1609,8 @@
           stateLine.id = `ev-type-state-${i}`;
           stateLine.setAttribute("aria-hidden", "true");
           const main = el("span", "ev-type-state-main");
-          main.append(el("span", null, "See upcoming dates"), icon("chevron_right"));
-          stateLine.append(main, el("span", "ev-type-hint"));
+          main.append(el("span", null, "View more details"), icon("chevron_right"));
+          stateLine.appendChild(main);
           li.appendChild(stateLine);
           btn.addEventListener("click", () => setFilter(type.name));
           return li;
@@ -1699,6 +1691,10 @@
             ? ""
             : `${first + 1}–${first + shown.length} of ${items.length}`;
           ui.suffix.textContent = state.filter ? ` · ${state.filter}` : "";
+          ui.hint.textContent = state.filter
+            ? `Viewing dates for ${state.filter}. Select the card again or use Clear selection to see all sessions.`
+            : "";
+          ui.hint.hidden = ui.clear.hidden = !state.filter;
           syncJoin();
 
           // Keep focus on an arrow when the one just pressed becomes disabled.
@@ -1708,8 +1704,8 @@
         }
 
         // Toggles hidden on the existing cards (no rebuild), so the pressed
-        // button keeps focus. While selected, the other cards are hidden and
-        // pressing the selected card again is the only way to clear.
+        // button keeps focus. While selected, the other cards are hidden;
+        // pressing the selected card again or Clear selection clears it.
         function setFilter(name) {
           state.filter = state.filter === name ? null : name;
           state.page = 0;
@@ -1725,12 +1721,8 @@
             card.classList.toggle("is-on", on);
             btn.setAttribute("aria-pressed", String(on));
             const main = card.querySelector(".ev-type-state-main");
-            main.firstChild.textContent = on ? "View the available dates for this session below" : "See upcoming dates";
+            main.firstChild.textContent = on ? "Selected. Select again to clear." : "View more details";
             main.lastChild.hidden = on; // chevron only when not pressed
-            // Leading space keeps the two lines apart in the button's name.
-            card.querySelector(".ev-type-hint").textContent = on
-              ? " Click this card again to clear your selection."
-              : "";
           });
 
           const old = ui.types.querySelector(".ev-obj-item");
@@ -1744,7 +1736,8 @@
           announce(
             state.filter
               ? `Showing ${n} date${n === 1 ? "" : "s"} for ${state.filter}.` +
-                  (hasObjectives ? " Learning objectives shown." : "")
+                  (hasObjectives ? " Learning objectives shown." : "") +
+                  " Select the card again or use Clear selection to clear."
               : "Showing all upcoming dates.",
           );
         }
@@ -1799,6 +1792,8 @@
             types: byId("ev-types"),
             dates: byId("ev-dates"),
             suffix: byId("ev-dates-suffix"),
+            hint: byId("ev-dates-hint"),
+            clear: byId("ev-clear"),
             tiles: byId("ev-tiles"),
             datesEmpty: byId("ev-dates-empty"),
             prev: byId("ev-prev"),
@@ -1815,6 +1810,11 @@
           ui.next.addEventListener("click", () => {
             state.page++;
             renderDates(ui.next);
+          });
+          ui.clear.addEventListener("click", () => {
+            const card = ui.types.querySelector(".ev-type-card.is-on .ev-type-btn");
+            setFilter(state.filter);
+            if (card) card.focus();
           });
           mqOne.addEventListener("change", onSizeChange);
           mqTwo.addEventListener("change", onSizeChange);

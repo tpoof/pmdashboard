@@ -79,6 +79,7 @@
     <script
       src="./files/leaf_header.js"
       data-is-sysadmin="<!--{if $empMembership['groupID'][1]}-->1<!--{else}-->0<!--{/if}-->"
+      data-is-coach="<!--{if $empMembership['groupID'][17]}-->1<!--{else}-->0<!--{/if}-->"
     ></script>
 
     {* TODO: launchpad.css is linked from view_homepage.tpl's body content (non-standard, can cause a FOUC) — move it here when header is revisited. *}

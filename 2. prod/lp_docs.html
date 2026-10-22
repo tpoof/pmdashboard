@@ -1128,9 +1128,11 @@ function extractContent(doc) {
                   <p>
                     <code>leaf_header.js</code> reads
                     <code>data-is-sysadmin</code> from its own script tag to
-                    show or hide the Internal nav. Anything other than
+                    show or hide the Internal nav, and
+                    <code>data-is-coach</code> (group 17) to show the Coaches
+                    link alone. Anything other than
                     <code>1</code>, <code>true</code> or <code>yes</code> keeps
-                    it hidden. This only controls what appears in the nav, so
+                    it hidden. These only control what appears in the nav, so
                     never use it to protect data.
                   </p>
                 </div>
