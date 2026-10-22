@@ -54,6 +54,7 @@
     projectStartDate: 69,
     projectEndDate: 70,
     customerOverviewUrl: 73,
+    leafSiteUrl: 132,
   };
 
   // Indicators excluded from inline editing per form type: fields driven by
@@ -2334,6 +2335,7 @@
         row,
         PROJECT_IND.customerOverviewUrl,
       ),
+      leafSiteUrl: extractFieldText(row, PROJECT_IND.leafSiteUrl),
       ownerUserName: (function () {
         var idKey = "id" + PROJECT_IND.owner + "_orgchart";
         var og = row.s1 && row.s1[idKey];
@@ -5792,9 +5794,20 @@
   function buildTaskFilterState() {
     var q = getSearchQuery();
     var qCompact = normalizeForSearch(q);
+    // Tasks have no site URL of their own; match on their parent project's.
+    var siteUrlByKey = null;
+    if (q) {
+      siteUrlByKey = {};
+      (state.projectsAll || []).forEach(function (p) {
+        var pkNorm = normalizeProjectKey(p.projectKey);
+        if (pkNorm && !(pkNorm in siteUrlByKey))
+          siteUrlByKey[pkNorm] = p.leafSiteUrl || "";
+      });
+    }
     return {
       q: q,
       qCompact: qCompact,
+      siteUrlByKey: siteUrlByKey,
       projectKeys: new Set(getFilterSet("projectKey")),
       statuses: new Set(getFilterSet("status")),
       assignees: new Set(getFilterSet("assignee")),
@@ -5834,7 +5847,11 @@
         " " +
         task.okrAssociation +
         " " +
-        task.keyResultSelection
+        task.keyResultSelection +
+        " " +
+        ((filters.siteUrlByKey &&
+          filters.siteUrlByKey[normalizeProjectKey(task.projectKey)]) ||
+          "")
       ).toLowerCase();
       if (
         !matchesQuery(hay, q, qCompact) &&
@@ -5884,6 +5901,7 @@
     return [
       "t",
       state.tasksVersion,
+      state.projectsVersion,
       sigPart(filters.q),
       filters.devOnly ? "1" : "0",
       filters.recurringOnly ? "r" : "0",
@@ -5992,7 +6010,9 @@
         " " +
         project.keyResultSelection +
         " " +
-        project.projectType
+        project.projectType +
+        " " +
+        project.leafSiteUrl
       ).toLowerCase();
       if (
         !matchesQuery(hay, q, qCompact) &&
@@ -7715,6 +7735,7 @@
         PROJECT_IND.projectStartDate,
         PROJECT_IND.projectEndDate,
         PROJECT_IND.customerOverviewUrl,
+        PROJECT_IND.leafSiteUrl,
         OKR_IND.okrKey,
         OKR_IND.objective,
         OKR_IND.startDate,
@@ -8048,6 +8069,7 @@
         PROJECT_IND.projectStartDate,
         PROJECT_IND.projectEndDate,
         PROJECT_IND.customerOverviewUrl,
+        PROJECT_IND.leafSiteUrl,
         OKR_IND.okrKey,
         OKR_IND.objective,
         OKR_IND.startDate,
